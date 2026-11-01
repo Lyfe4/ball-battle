@@ -11,6 +11,7 @@ function ballAt(x: number, y: number, radius = 50): BallState {
     velocity: { x: 0, y: 0 },
     radius,
     health: 50,
+    abilityState: {},
   };
 }
 

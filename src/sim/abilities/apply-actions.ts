@@ -1,0 +1,107 @@
+import { isAlive } from '../combat.ts';
+import { getDefinition } from '../definitions.ts';
+import type { AbilityAction, BallState, DefinitionLookup, SimEvent, Vec2 } from '../types.ts';
+import { scale } from '../vec2.ts';
+
+export interface ActionResult {
+  readonly balls: readonly BallState[];
+  readonly events: readonly SimEvent[];
+}
+
+function assertFinite(velocity: Vec2, ownerId: string): Vec2 {
+  if (!Number.isFinite(velocity.x) || !Number.isFinite(velocity.y)) {
+    throw new Error(`An ability of "${ownerId}" produced a non-finite velocity`);
+  }
+  return velocity;
+}
+
+/**
+ * Applies one hook's actions, in the order returned, on behalf of `ownerId`. Pure: returns new
+ * balls and the events the actions produced. Actions on a defeated target do nothing (a heal never
+ * revives); an unknown target id throws because only a bug can produce one.
+ */
+export function applyActions(
+  balls: readonly BallState[],
+  ownerId: string,
+  actions: readonly AbilityAction[],
+  definitions: DefinitionLookup,
+  tick: number,
+): ActionResult {
+  const next = [...balls];
+  const events: SimEvent[] = [];
+
+  const indexOf = (id: string): number => {
+    const index = next.findIndex((ball) => ball.id === id);
+    if (index === -1) throw new Error(`An ability of "${ownerId}" targeted unknown ball "${id}"`);
+    return index;
+  };
+  const update = (id: string, change: (ball: BallState) => BallState | undefined): void => {
+    const index = indexOf(id);
+    const ball = next[index];
+    if (ball === undefined || !isAlive(ball)) return;
+    const changed = change(ball);
+    if (changed !== undefined) next[index] = changed;
+  };
+
+  for (const action of actions) {
+    switch (action.kind) {
+      case 'damage':
+        update(action.targetId, (target) => {
+          const amount = Math.min(target.health, Math.max(0, action.amount));
+          if (amount <= 0) return undefined;
+          const healthAfter = target.health - amount;
+          events.push({
+            type: 'damage',
+            tick,
+            targetId: target.id,
+            sourceId: ownerId,
+            cause: 'ability',
+            amount,
+            healthAfter,
+            multiplier: 1,
+            survivedLethal: false,
+          });
+          return { ...target, health: healthAfter };
+        });
+        break;
+      case 'heal':
+        update(action.targetId, (target) => {
+          const { maxHealth } = getDefinition(definitions, target.definitionId);
+          const healthAfter = Math.min(maxHealth, target.health + Math.max(0, action.amount));
+          const amount = healthAfter - target.health;
+          if (amount <= 0) return undefined;
+          events.push({
+            type: 'healed',
+            tick,
+            ballId: target.id,
+            sourceId: ownerId,
+            amount,
+            healthAfter,
+          });
+          return { ...target, health: healthAfter };
+        });
+        break;
+      case 'setVelocity':
+        update(ownerId, (self) => ({
+          ...self,
+          velocity: assertFinite(action.velocity, ownerId),
+        }));
+        break;
+      case 'scaleVelocity':
+        update(ownerId, (self) => ({
+          ...self,
+          velocity: assertFinite(scale(self.velocity, action.factor), ownerId),
+        }));
+        break;
+      case 'setAbilityState':
+        update(ownerId, (self) => ({ ...self, abilityState: action.state }));
+        break;
+      default: {
+        // Adding an action kind without handling it here is a compile error.
+        const unhandled: never = action;
+        throw new Error(`Unhandled ability action ${JSON.stringify(unhandled)}`);
+      }
+    }
+  }
+  return { balls: next, events };
+}

@@ -74,8 +74,9 @@ Speedster's hooks see `ctx.self.abilityState` as `{ stacks: number }` rather tha
 The world holds balls of many kinds, so storage is the erased `AbilityState`. `defineBall` is the
 single place that bridges the two, with one cast. The cast is sound because a ball's state is
 only ever created from its own `initialAbilityState` and replaced by its own hooks'
-`setAbilityState` actions. Ability state types must be `type` aliases, because TypeScript
-interfaces do not satisfy the serialisable index signature.
+`setAbilityState` actions. Ability state types are written as `type X = Readonly<{ ... }>`:
+TypeScript interfaces do not satisfy the serialisable index signature, and the `Readonly<>`
+wrapper keeps ESLint's interface-over-type rule satisfied.
 
 ### 4. Randomness in hooks
 

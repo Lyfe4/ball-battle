@@ -1,7 +1,13 @@
 import type { PairContact } from './collision.ts';
 import { CONTACT_SLOP, MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
-import type { BallDefeatedEvent, BallState, DamageEvent, DefinitionLookup } from './types.ts';
+import type {
+  BallDefeatedEvent,
+  BallState,
+  DamageEvent,
+  DefinitionLookup,
+  SimEvent,
+} from './types.ts';
 
 export function isAlive(ball: BallState): boolean {
   return ball.health > 0;
@@ -59,7 +65,6 @@ export function impactDamage(contactDamage: number, multiplier: number): number 
 export interface DamageResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
-  readonly defeated: readonly BallDefeatedEvent[];
 }
 
 /** One ball's hit on another, before it is applied. `raw` is not yet clamped to the target's health. */
@@ -84,7 +89,6 @@ export function applyContactDamage(
 ): DamageResult {
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   const damage: DamageEvent[] = [];
-  const lastHitBy = new Map<string, string>();
 
   const pendingHit = (target: BallState, source: BallState, approachSpeed: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
@@ -103,12 +107,12 @@ export function applyContactDamage(
       tick,
       targetId: target.id,
       sourceId: source.id,
+      cause: 'contact',
       amount,
       healthAfter,
       multiplier,
       survivedLethal: survives,
     });
-    lastHitBy.set(target.id, source.id);
     return { ...target, health: healthAfter };
   };
 
@@ -123,13 +127,31 @@ export function applyContactDamage(
     byId.set(b.id, apply(toB, mutualLethal && toA.raw > toB.raw));
   }
 
+  return { balls: balls.map((ball) => byId.get(ball.id) ?? ball), damage };
+}
+
+/**
+ * A ballDefeated event for every ball that was alive at the start of the tick and is not now.
+ * The defeater is the source of the last damage event that hit it this tick.
+ */
+export function defeatsThisTick(
+  before: readonly BallState[],
+  after: readonly BallState[],
+  events: readonly SimEvent[],
+  tick: number,
+): BallDefeatedEvent[] {
+  const lastHitBy = new Map<string, string>();
+  for (const event of events) {
+    if (event.type === 'damage') lastHitBy.set(event.targetId, event.sourceId);
+  }
+  const afterById = new Map(after.map((ball) => [ball.id, ball]));
   const defeated: BallDefeatedEvent[] = [];
-  for (const before of balls) {
-    const after = byId.get(before.id);
-    const defeatedById = lastHitBy.get(before.id);
-    if (after !== undefined && defeatedById !== undefined && isAlive(before) && !isAlive(after)) {
-      defeated.push({ type: 'ballDefeated', tick, ballId: before.id, defeatedById });
+  for (const ball of before) {
+    const now = afterById.get(ball.id);
+    const defeatedById = lastHitBy.get(ball.id);
+    if (now !== undefined && defeatedById !== undefined && isAlive(ball) && !isAlive(now)) {
+      defeated.push({ type: 'ballDefeated', tick, ballId: ball.id, defeatedById });
     }
   }
-  return { balls: balls.map((ball) => byId.get(ball.id) ?? ball), damage, defeated };
+  return defeated;
 }

@@ -7,6 +7,7 @@ const hit: DamageEvent = {
   tick: 10,
   targetId: 'ball-1',
   sourceId: 'ball-0',
+  cause: 'contact',
   amount: 15,
   healthAfter: 70,
   multiplier: 1,

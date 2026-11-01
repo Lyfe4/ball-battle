@@ -9,15 +9,24 @@ export interface Arena {
   readonly size: number;
 }
 
+/** Plain data that survives a JSON round trip unchanged. */
+export type Serializable =
+  | null
+  | boolean
+  | number
+  | string
+  | readonly Serializable[]
+  | { readonly [key: string]: Serializable };
+
 /**
- * What a kind of ball is: plain data plus optional behaviour hooks. One definition per file in
- * src/sim/balls/. Definitions are static; per-match values live in BallState.
+ * Per-ball ability state: plain serialisable data, so WorldState stays plain data. Each ball
+ * declares its own shape as a type alias, e.g. `type SpeedsterState = Readonly<{ stacks: number }>`.
+ * An interface won't do: interfaces don't satisfy this index signature.
  */
-export interface BallDefinition {
-  readonly id: string;
-  readonly name: string;
-  /** CSS colour used to draw the ball. Part of the ball's identity, not a theme token. */
-  readonly color: string;
+export type AbilityState = Readonly<Record<string, Serializable>>;
+
+/** The numbers every ball has. Hooks receive their own ball's stats. */
+export interface BallStats {
   /** World units. */
   readonly radius: number;
   /** Launch speed in world units per second. */
@@ -28,28 +37,88 @@ export interface BallDefinition {
    * ball hit (see DamageEvent.multiplier).
    */
   readonly contactDamage: number;
-  readonly hooks?: BallHooks;
 }
 
-/** Read-only view of the world handed to a hook. */
-export interface HookContext {
+/**
+ * What a kind of ball is: plain data plus optional ability hooks. One definition per file in
+ * src/sim/balls/, created with defineBall so its hooks see its own typed ability state.
+ * Definitions are static; per-match values live in BallState.
+ */
+export interface BallDefinition<S extends AbilityState = AbilityState> extends BallStats {
+  readonly id: string;
+  readonly name: string;
+  /** One line for the ball picker. */
+  readonly description: string;
+  /** CSS colour used to draw the ball. Part of the ball's identity, not a theme token. */
+  readonly color: string;
+  readonly initialAbilityState: S;
+  readonly hooks: BallHooks<S>;
+}
+
+/** A ball as its own hooks see it: its ability state has the definition's type. */
+export type BallView<S extends AbilityState> = Omit<BallState, 'abilityState'> & {
+  readonly abilityState: S;
+};
+
+export type HookName = 'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt';
+
+export type DamageCause = 'contact' | 'ability';
+
+/** Read-only inputs every hook receives. Hooks never mutate anything; they return actions. */
+export interface HookContext<S extends AbilityState = AbilityState> {
+  /** The world as it was at the start of this hook phase, with `tick` set to the current tick. */
   readonly world: WorldState;
-  readonly self: BallState;
+  readonly self: BallView<S>;
+  readonly stats: BallStats;
+}
+
+export interface WallHitContext<S extends AbilityState = AbilityState> extends HookContext<S> {
+  /** Walls hit this tick; a corner counts as 2. */
+  readonly bounces: number;
+}
+
+export interface HitBallContext<S extends AbilityState = AbilityState> extends HookContext<S> {
+  /** The ball this one just started touching. */
+  readonly other: BallState;
+}
+
+export interface DamageDealtContext<S extends AbilityState = AbilityState> extends HookContext<S> {
+  readonly target: BallState;
+  /** Health actually removed. */
+  readonly amount: number;
+  readonly cause: DamageCause;
 }
 
 /**
- * A hook returns the ball's next state instead of mutating it, so step() stays pure. Hooks must
- * follow the same rules as the rest of src/sim: deterministic, randomness only via rng.ts.
+ * What a hook asks the simulation to do. Plain data; step() applies actions in the order they are
+ * returned (ADR 0003). New kinds are added here and in apply-actions.ts without touching balls
+ * that don't use them.
  */
-export type BallHook = (context: HookContext) => BallState;
+export type AbilityAction<S extends AbilityState = AbilityState> =
+  | { readonly kind: 'damage'; readonly targetId: string; readonly amount: number }
+  | { readonly kind: 'heal'; readonly targetId: string; readonly amount: number }
+  /** Own ball only. */
+  | { readonly kind: 'setVelocity'; readonly velocity: Vec2 }
+  /** Own ball only. */
+  | { readonly kind: 'scaleVelocity'; readonly factor: number }
+  /** Own ball only; replaces the whole state. */
+  | { readonly kind: 'setAbilityState'; readonly state: S };
+
+export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 
 /**
- * Optional ability hooks. The shape is in place so definitions can grow into it; the simulation
- * does not call any hooks yet.
+ * Optional ability hooks. Each runs at a fixed point in the tick (see step.ts and ADR 0003) and
+ * returns the actions to apply.
  */
-export interface BallHooks {
-  readonly onTick?: BallHook;
-  readonly onWallHit?: BallHook;
+export interface BallHooks<S extends AbilityState = AbilityState> {
+  /** Every tick, before movement. */
+  readonly onTick?: (context: HookContext<S>) => Actions<S>;
+  /** After movement, if the ball bounced off at least one wall. */
+  readonly onWallHit?: (context: WallHitContext<S>) => Actions<S>;
+  /** After contact damage, when this ball started touching another. */
+  readonly onHitBall?: (context: HitBallContext<S>) => Actions<S>;
+  /** After damage resolves, once per damage instance this ball dealt. */
+  readonly onDamageDealt?: (context: DamageDealtContext<S>) => Actions<S>;
 }
 
 /** One ball in a running match. Plain serialisable data; refers to its definition by id. */
@@ -63,6 +132,8 @@ export interface BallState {
   readonly radius: number;
   /** Starts at the definition's maxHealth. At 0 the ball is defeated: it stops moving and colliding. */
   readonly health: number;
+  /** Starts as the definition's initialAbilityState; changed only by its own hooks. */
+  readonly abilityState: AbilityState;
 }
 
 /**
@@ -121,12 +192,14 @@ export interface DamageEvent {
   readonly tick: number;
   readonly targetId: string;
   readonly sourceId: string;
+  readonly cause: DamageCause;
   /** Health actually removed (never more than the target had left). */
   readonly amount: number;
   readonly healthAfter: number;
   /**
    * Impact strength the damage was scaled by: the source's speed towards the target before the
    * bounce, over its definition speed, clamped to [MIN_IMPACT_MULTIPLIER, MAX_IMPACT_MULTIPLIER].
+   * Always 1 for ability damage.
    */
   readonly multiplier: number;
   /**
@@ -135,6 +208,24 @@ export interface DamageEvent {
    * describe what actually happened.
    */
   readonly survivedLethal: boolean;
+}
+
+export interface HealedEvent {
+  readonly type: 'healed';
+  readonly tick: number;
+  readonly ballId: string;
+  readonly sourceId: string;
+  /** Health actually restored (never above maxHealth). */
+  readonly amount: number;
+  readonly healthAfter: number;
+}
+
+/** A hook returned at least one action. Comes just before that hook's other events. */
+export interface AbilityTriggeredEvent {
+  readonly type: 'abilityTriggered';
+  readonly tick: number;
+  readonly ballId: string;
+  readonly hook: HookName;
 }
 
 export interface BallDefeatedEvent {
@@ -153,10 +244,17 @@ export interface MatchEndedEvent {
 
 /**
  * What happened during one tick, as plain data. Output only: events are for rendering, sound and
- * replays, and never feed back into the simulation (ADR 0002). Within a tick they are ordered
- * collision, damage, ballDefeated, matchEnded.
+ * replays, and never feed back into the simulation (ADR 0002). They come out in tick order (see
+ * step.ts): onTick and onWallHit effects, collisions, contact damage, onHitBall and onDamageDealt
+ * effects, defeats, match end.
  */
-export type SimEvent = CollisionEvent | DamageEvent | BallDefeatedEvent | MatchEndedEvent;
+export type SimEvent =
+  | CollisionEvent
+  | DamageEvent
+  | HealedEvent
+  | AbilityTriggeredEvent
+  | BallDefeatedEvent
+  | MatchEndedEvent;
 
 export interface StepResult {
   readonly world: WorldState;

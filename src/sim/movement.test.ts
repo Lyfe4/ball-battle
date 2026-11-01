@@ -14,6 +14,7 @@ function ballMoving(x: number, y: number, vx: number, vy: number): BallState {
     velocity: { x: vx, y: vy },
     radius: RADIUS,
     health: 1,
+    abilityState: {},
   };
 }
 
