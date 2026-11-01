@@ -22,8 +22,9 @@ export interface BallDefinition {
   readonly radius: number;
   /** Launch speed in world units per second. */
   readonly speed: number;
-  /** Not used yet; reserved for health and damage. */
   readonly maxHealth: number;
+  /** Health removed from the other ball each time the two start touching. */
+  readonly contactDamage: number;
   readonly hooks?: BallHooks;
 }
 
@@ -57,6 +58,8 @@ export interface BallState {
   /** World units per second. */
   readonly velocity: Vec2;
   readonly radius: number;
+  /** Starts at the definition's maxHealth. At 0 the ball is defeated: it stops moving and colliding. */
+  readonly health: number;
 }
 
 /**
@@ -68,6 +71,11 @@ export interface WorldState {
   readonly arena: Arena;
   readonly balls: readonly BallState[];
   readonly rngState: number;
+  /**
+   * Pairs of balls touching at the end of this tick, as sorted "idA|idB" keys. A pair only deals
+   * damage when it starts touching, so contact that lasts several ticks counts once (ADR 0002).
+   */
+  readonly contacts: readonly string[];
 }
 
 /**

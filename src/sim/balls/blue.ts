@@ -7,4 +7,5 @@ export const blue: BallDefinition = {
   radius: 40,
   speed: 420,
   maxHealth: 100,
+  contactDamage: 10,
 };

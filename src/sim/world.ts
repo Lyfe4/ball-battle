@@ -55,8 +55,9 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
       position: vec2(x.value, y.value),
       velocity: scale(direction.value, definition.speed),
       radius,
+      health: definition.maxHealth,
     };
   });
 
-  return { tick: 0, arena, balls, rngState };
+  return { tick: 0, arena, balls, rngState, contacts: [] };
 }
