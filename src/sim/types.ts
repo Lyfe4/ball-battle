@@ -70,6 +70,12 @@ export interface HookContext<S extends AbilityState = AbilityState> {
   readonly world: WorldState;
   readonly self: BallView<S>;
   readonly stats: BallStats;
+  /**
+   * Deterministic random numbers in [0, 1), private to this hook call. Seeded from the world's RNG
+   * state, the tick, the ball and the hook, so the same match always draws the same numbers and
+   * one ball's draws never affect another's (ADR 0003). Never use Math.random.
+   */
+  readonly random: () => number;
 }
 
 export interface WallHitContext<S extends AbilityState = AbilityState> extends HookContext<S> {

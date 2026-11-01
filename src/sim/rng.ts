@@ -38,3 +38,32 @@ export function nextRange(state: RngState, min: number, max: number): RngResult<
   const { value, state: next } = nextFloat(state);
   return { value: min + value * (max - min), state: next };
 }
+
+/**
+ * Mixes several integers into one generator state (a murmur3-style finaliser per part). Used to
+ * give each hook call its own independent stream; see ADR 0003. Integer-only, so exact everywhere.
+ */
+export function deriveSeed(parts: readonly number[]): RngState {
+  let hash = 0x811c9dc5;
+  for (const part of parts) {
+    hash = Math.imul(hash ^ (part >>> 0), 0x85ebca6b);
+    hash ^= hash >>> 13;
+    hash = Math.imul(hash, 0xc2b2ae35);
+    hash ^= hash >>> 16;
+  }
+  return hash >>> 0;
+}
+
+/**
+ * A stream of floats in [0, 1) starting from `state`. The returned function keeps its own
+ * position, so it must only be handed to one consumer (one hook call) and never stored in the
+ * world.
+ */
+export function createStream(state: RngState): () => number {
+  let current = state;
+  return () => {
+    const result = nextFloat(current);
+    current = result.state;
+    return result.value;
+  };
+}
