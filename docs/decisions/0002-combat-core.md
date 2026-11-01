@@ -1,0 +1,79 @@
+# 0002: Combat core — step output, collisions, damage and match end
+
+- Status: Accepted
+- Date: 2026-11-01
+
+## Context
+
+Step 1 had balls bouncing off walls (ADR 0001). To make a fight we need balls to collide, deal
+damage, be defeated, and for every match to end with a result. Several choices here shape how
+abilities, effects, sound and replays will plug in later, so they are recorded together.
+
+## Decision
+
+### 1. `step(world, definitions)` returns `{ world, events }`
+
+Ball definitions are passed to `step` rather than stored in `WorldState`. Definitions may hold
+functions (ability hooks), which are not serialisable, and they never change during a match.
+Keeping them out keeps `WorldState` plain data that can be compared, cloned and saved. `step`
+takes a `ReadonlyMap` keyed by definition id because it looks definitions up per ball.
+
+### 2. Events are output only
+
+Each step returns the events that happened during that tick as plain data: `collision`,
+`damage`, `ballDefeated` and `matchEnded` (with a win or draw result). Within a tick they are
+ordered collision → damage → ballDefeated → matchEnded.
+
+Events never feed back into the simulation. The sim's next tick depends only on `WorldState` and
+the definitions. This keeps a single source of truth: anything the sim needs to remember (health,
+contacts, match state) is in `WorldState`. The renderer uses events for transient effects such as
+the damage flash; sound and replays can consume the same stream later.
+
+### 3. Collisions: discrete circle-vs-circle, positional separation, elastic impulse
+
+After movement, every pair of live balls (in array order, for determinism) is tested for overlap.
+Overlapping balls are pushed apart along the collision normal, split by inverse mass, then clamped
+to the arena; if a wall stops one ball, the other takes the remaining separation. If the balls are
+approaching along the normal, an elastic impulse is applied. Mass is radius squared (area).
+
+This conserves momentum and kinetic energy and uses only `+ - * /` and `Math.sqrt`, which are
+correctly rounded and identical across engines (ADR 0001). Coincident centres use a fixed fallback
+normal so the result is still deterministic.
+
+Detection is discrete: two balls can pass through each other if their relative movement in one
+tick exceeds the sum of their radii (about 5000 world units per second for current sizes). Current
+speeds are far below this. Fast movement abilities will need swept collision tests.
+
+### 4. Damage once per collision, tracked in `WorldState.contacts`
+
+`WorldState.contacts` lists the pairs of balls that were touching at the end of the previous tick.
+Damage is dealt only when a pair overlaps and was not already in contact. A pair that stays in
+contact across ticks (pinned against a wall, grazing, separating slowly) therefore deals damage
+exactly once. Relying only on "are they approaching" would re-hit a ball pinned against a wall
+every time the wall bounced it back.
+
+On a new contact each ball deals its `contactDamage` to the other simultaneously, so a mutual
+knockout is possible. Health floors at 0.
+
+### 5. Match state and guaranteed end
+
+`WorldState.match` is either `running` or `finished` with a result (a winner id or a draw), the
+reason (`knockout` or `timeLimit`) and the end tick. Once finished, `step` returns the same world
+and no events.
+
+A ball at 0 health is defeated. It stays in the world (so the renderer can still show it) but no
+longer moves or collides. If no balls are left the match is a draw; if one is left it wins.
+
+Every fight must end, so a match also ends at a fixed time limit of 60 seconds of sim time
+(3600 ticks). The ball with the higher health fraction (`health / maxHealth`) wins; equal fractions
+are a draw. Division is correctly rounded, so equal fractions compare equal on every engine.
+
+## Consequences
+
+- Positive: `WorldState` stays plain data; events give the renderer, and later sound and replays,
+  a clean feed without coupling them to sim internals. Matches always end, which makes headless
+  balance runs (`pnpm balance`) possible.
+- Negative: `step` callers must pass the same definitions every tick. Contact tracking adds a
+  small amount of state. Separation is exact for two balls; with three or more, one pairwise pass
+  can leave small overlaps, which will need iteration when multi-ball matches arrive.
+- Ability hooks remain uncalled; their design is revisited in the next step.
