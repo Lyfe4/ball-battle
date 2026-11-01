@@ -31,7 +31,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   const tick = world.tick + 1;
   const { size } = world.arena;
-  const moved = world.balls.map((ball) => (isAlive(ball) ? moveBall(ball, size) : ball));
+  const moved = world.balls.map((ball) => (isAlive(ball) ? moveBall(ball, size).ball : ball));
   const collisions = resolveCollisions(moved, size, isAlive);
 
   // Pairs already in contact last tick are the same collision continuing: no new hit.
