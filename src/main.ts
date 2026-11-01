@@ -3,6 +3,7 @@ import { advanceClock } from './app/fixed-step.ts';
 import { generateSeed, parseSeed } from './app/seed.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
+import { createEffects } from './render/effects.ts';
 import { blue } from './sim/balls/blue.ts';
 import { red } from './sim/balls/red.ts';
 import { indexDefinitions } from './sim/definitions.ts';
@@ -36,14 +37,18 @@ const definitions = [red, blue];
 const definitionsById = indexDefinitions(definitions);
 let world = createWorld(seed, definitions);
 
+const effects = createEffects();
+
 let canvasPixels = 0;
-const render = (): void => {
-  drawWorld(ctx, world, definitionsById, canvasPixels);
+const render = (nowMs: number): void => {
+  drawWorld(ctx, world, definitionsById, canvasPixels, {
+    flash: (ballId) => effects.flash(ballId, nowMs),
+  });
 };
 
 fitCanvasToContainer(canvas, container, (size) => {
   canvasPixels = size.pixels;
-  render();
+  render(performance.now());
 });
 
 let accumulatorMs = 0;
@@ -54,9 +59,12 @@ function frame(nowMs: number): void {
     const advance = advanceClock(accumulatorMs, nowMs - lastFrameMs);
     accumulatorMs = advance.accumulatorMs;
     for (let i = 0; i < advance.ticks; i++) {
-      world = step(world, definitionsById).world;
+      const result = step(world, definitionsById);
+      world = result.world;
+      effects.apply(result.events, nowMs);
     }
-    if (advance.ticks > 0) render();
+    // Keep drawing after the match ends while effects (like the final hit's flash) fade out.
+    if (advance.ticks > 0 || effects.isActive(nowMs)) render(nowMs);
   }
   lastFrameMs = nowMs;
   requestAnimationFrame(frame);

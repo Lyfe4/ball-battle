@@ -1,5 +1,12 @@
-import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
+import { healthBarRect, healthColor } from './health-bar.ts';
 import { theme } from './theme.ts';
+
+/** Render-only inputs that are not sim state, such as effect strengths. */
+export interface FrameEffects {
+  /** Damage flash strength for a ball, 0 to 1. */
+  readonly flash: (ballId: string) => number;
+}
 
 /**
  * Draws one frame. Reads the world and never writes to it. Everything is drawn in world units
@@ -10,6 +17,7 @@ export function drawWorld(
   world: WorldState,
   definitions: DefinitionLookup,
   canvasPixels: number,
+  effects: FrameEffects,
 ): void {
   const { size } = world.arena;
   // The border sits outside the arena so balls touching a wall touch the border, not overlap it.
@@ -24,7 +32,14 @@ export function drawWorld(
   drawArena(ctx, size);
   for (const ball of world.balls) {
     const color = definitions.get(ball.definitionId)?.color ?? theme.unknownBall;
-    drawBall(ctx, ball.position.x, ball.position.y, ball.radius, color);
+    drawBall(ctx, ball, color, effects.flash(ball.id));
+  }
+  // Bars go on top of every ball so a neighbour never hides them.
+  for (const ball of world.balls) {
+    const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
+    if (ball.health > 0 && maxHealth !== undefined) {
+      drawHealthBar(ctx, ball, ball.health / maxHealth, size);
+    }
   }
 }
 
@@ -41,16 +56,40 @@ function drawArena(ctx: CanvasRenderingContext2D, size: number): void {
 
 function drawBall(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
+  ball: BallState,
   color: string,
+  flash: number,
 ): void {
+  const { x, y } = ball.position;
+  ctx.save();
+  if (ball.health <= 0) ctx.globalAlpha = theme.defeatedAlpha;
+
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
+  if (flash > 0) {
+    ctx.save();
+    ctx.globalAlpha *= flash * theme.flashMaxAlpha;
+    ctx.fillStyle = theme.flash;
+    ctx.fill();
+    ctx.restore();
+  }
   ctx.strokeStyle = theme.ballOutline;
   ctx.lineWidth = theme.ballOutlineWidth;
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawHealthBar(
+  ctx: CanvasRenderingContext2D,
+  ball: BallState,
+  fraction: number,
+  arenaSize: number,
+): void {
+  const rect = healthBarRect(ball, arenaSize);
+  ctx.fillStyle = theme.healthTrack;
+  ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+  ctx.fillStyle = healthColor(fraction);
+  ctx.fillRect(rect.x, rect.y, rect.width * Math.min(1, Math.max(0, fraction)), rect.height);
 }
