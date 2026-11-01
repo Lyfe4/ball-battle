@@ -32,7 +32,9 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
    `WorldState.rngState`, so a world snapshot fully determines the future.
 4. **`src/render/` only reads sim state and draws it.** Rendering never mutates state.
 5. **`src/main.ts` wires it together** with a `requestAnimationFrame` loop that uses an
-   accumulator to run the fixed timestep independently of display refresh rate.
+   accumulator to run the fixed timestep independently of display refresh rate. Browser-side
+   helpers that are not sim or rendering (the fixed-step clock, seed parsing) live in `src/app/`
+   as small pure functions with tests; keep `main.ts` to wiring.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`. A
    `BallDefinition` is plain data plus optional hooks (`BallHooks`). Runtime state (`BallState`)
    is kept separate from the definition.
