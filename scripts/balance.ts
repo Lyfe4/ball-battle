@@ -1,17 +1,29 @@
-// Runs many matches headlessly with the real simulation and prints balance statistics.
-// Usage: pnpm balance [seeds]   (default 1000; seeds 0..N-1, so results are reproducible)
-import { speedster } from '../src/sim/balls/speedster.ts';
-import { vampire } from '../src/sim/balls/vampire.ts';
+// Plays every matchup headlessly with the real simulation and prints a balance matrix.
+// Usage: pnpm balance [seeds]   (default 500 per slot order; seeds 0..N-1, so results reproduce)
+import { BALL_LOOKUP, BALLS } from '../src/sim/balls/index.ts';
 import { MATCH_TIME_LIMIT_TICKS, TICK_RATE } from '../src/sim/constants.ts';
-import { indexDefinitions } from '../src/sim/definitions.ts';
 import { step } from '../src/sim/step.ts';
-import type { BallDefinition, MatchState, WorldState } from '../src/sim/types.ts';
+import type { BallDefinition, WorldState } from '../src/sim/types.ts';
 import { createWorld } from '../src/sim/world.ts';
 
-const DEFAULT_SEEDS = 1000;
-const roster: readonly BallDefinition[] = [speedster, vampire];
+const DEFAULT_SEEDS = 500;
 
-type Finished = Extract<MatchState, { status: 'finished' }>;
+/** Balance targets; the summary marks each one as met or not. */
+const TARGETS = {
+  ballWinRate: [0.4, 0.6],
+  worstMatchup: 0.25,
+  drawRate: 0.05,
+  medianSeconds: [15, 30],
+} as const;
+
+type Outcome = 'a' | 'b' | 'draw';
+
+interface Tally {
+  a: number;
+  b: number;
+  draw: number;
+  readonly lengths: number[];
+}
 
 function parseSeedCount(raw: string | undefined): number {
   if (raw === undefined) return DEFAULT_SEEDS;
@@ -24,59 +36,109 @@ function parseSeedCount(raw: string | undefined): number {
   return count;
 }
 
-function playMatch(seed: number): Finished {
-  const definitions = indexDefinitions(roster);
-  let world: WorldState = createWorld(seed, roster);
+function playMatch(a: BallDefinition, b: BallDefinition, seed: number) {
+  let world: WorldState = createWorld(seed, [a, b]);
   // The time limit guarantees an end; the extra tick only guards against a sim bug looping forever.
   for (let i = 0; i <= MATCH_TIME_LIMIT_TICKS && world.match.status === 'running'; i++) {
-    world = step(world, definitions).world;
+    world = step(world, BALL_LOOKUP).world;
   }
   if (world.match.status !== 'finished') {
-    throw new Error(`Seed ${seed} did not finish within the time limit`);
+    throw new Error(`${a.id} vs ${b.id}, seed ${seed}: did not finish within the time limit`);
   }
-  return world.match;
+  const { result, endTick } = world.match;
+  const outcome: Outcome =
+    result.kind === 'draw' ? 'draw' : result.winnerId === 'ball-0' ? 'a' : 'b';
+  return { outcome, seconds: endTick / TICK_RATE };
 }
 
-function percent(part: number, whole: number): string {
-  return `${((part / whole) * 100).toFixed(1)}%`.padStart(6);
+function tally(a: BallDefinition, b: BallDefinition, seeds: number): Tally {
+  const counts: Tally = { a: 0, b: 0, draw: 0, lengths: [] };
+  for (let seed = 0; seed < seeds; seed++) {
+    const { outcome, seconds } = playMatch(a, b, seed);
+    counts[outcome]++;
+    counts.lengths.push(seconds);
+  }
+  return counts;
 }
 
-function median(sorted: readonly number[]): number {
+function median(values: readonly number[]): number {
+  const sorted = [...values].sort((x, y) => x - y);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1
     ? (sorted[middle] ?? 0)
     : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
-const seeds = parseSeedCount(process.argv[2]);
-const wins = new Map<string, number>();
-let draws = 0;
-let knockouts = 0;
-const lengths: number[] = [];
+const percent = (part: number, whole: number): string =>
+  `${((part / whole) * 100).toFixed(1)}%`.padStart(6);
+const check = (ok: boolean): string => (ok ? 'ok  ' : 'MISS');
 
-for (let seed = 0; seed < seeds; seed++) {
-  const match = playMatch(seed);
-  if (match.result.kind === 'draw') {
-    draws++;
-  } else {
-    wins.set(match.result.winnerId, (wins.get(match.result.winnerId) ?? 0) + 1);
+const seeds = parseSeedCount(process.argv[2]);
+const wins = new Map<string, number>(BALLS.map((ball) => [ball.id, 0]));
+const games = new Map<string, number>(BALLS.map((ball) => [ball.id, 0]));
+const lengths: number[] = [];
+let draws = 0;
+let total = 0;
+let worstShare = 1;
+
+console.log(`BallBattle balance: ${seeds} seeds per slot order (seeds 0-${seeds - 1})\n`);
+console.log(`  ${'Matchup'.padEnd(24)} ${'Wins'.padEnd(15)}  Draw   Median`);
+
+BALLS.forEach((x, i) => {
+  for (const y of BALLS.slice(i + 1)) {
+    // Both slot orders, so any advantage from starting on the left or right cancels out.
+    const xFirst = tally(x, y, seeds);
+    const yFirst = tally(y, x, seeds);
+    const xWins = xFirst.a + yFirst.b;
+    const yWins = xFirst.b + yFirst.a;
+    const matchDraws = xFirst.draw + yFirst.draw;
+    const played = seeds * 2;
+    const matchLengths = [...xFirst.lengths, ...yFirst.lengths];
+
+    wins.set(x.id, (wins.get(x.id) ?? 0) + xWins);
+    wins.set(y.id, (wins.get(y.id) ?? 0) + yWins);
+    games.set(x.id, (games.get(x.id) ?? 0) + played);
+    games.set(y.id, (games.get(y.id) ?? 0) + played);
+    draws += matchDraws;
+    total += played;
+    lengths.push(...matchLengths);
+    worstShare = Math.min(worstShare, xWins / played, yWins / played);
+
+    const label = `${x.name} vs ${y.name}`.padEnd(24);
+    console.log(
+      `  ${label} ${percent(xWins, played)} / ${percent(yWins, played)}  ${percent(matchDraws, played)}  ${median(matchLengths).toFixed(1).padStart(5)} s`,
+    );
   }
-  if (match.reason === 'knockout') knockouts++;
-  lengths.push(match.endTick / TICK_RATE);
+});
+
+console.log('\n  Mirror matches (not counted in the totals)');
+for (const ball of BALLS) {
+  const mirror = tally(ball, ball, seeds);
+  const label = `${ball.name} vs ${ball.name}`.padEnd(24);
+  console.log(
+    `  ${label} ${percent(mirror.a, seeds)} / ${percent(mirror.b, seeds)}  ${percent(mirror.draw, seeds)}  ${median(mirror.lengths).toFixed(1).padStart(5)} s`,
+  );
 }
 
-lengths.sort((a, b) => a - b);
-const mean = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+console.log('\n  Overall win rate (non-mirror)');
+let ballsInRange = true;
+for (const ball of BALLS) {
+  const rate = (wins.get(ball.id) ?? 0) / (games.get(ball.id) ?? 1);
+  ballsInRange &&= rate >= TARGETS.ballWinRate[0] && rate <= TARGETS.ballWinRate[1];
+  console.log(`  ${ball.name.padEnd(24)} ${percent(rate, 1)}`);
+}
 
-console.log(`BallBattle balance: ${seeds} matches (seeds 0-${seeds - 1})\n`);
-roster.forEach((definition, index) => {
-  const label = `${definition.name} (ball-${index})`.padEnd(16);
-  console.log(`  ${label} ${percent(wins.get(`ball-${index}`) ?? 0, seeds)} wins`);
-});
-console.log(`  ${'Draw'.padEnd(16)} ${percent(draws, seeds)}\n`);
-console.log(`  Knockout         ${percent(knockouts, seeds)}`);
-console.log(`  Time limit       ${percent(seeds - knockouts, seeds)}\n`);
-console.log(`  Match length     median ${median(lengths).toFixed(1)} s, mean ${mean.toFixed(1)} s`);
+const drawRate = draws / total;
+const medianLength = median(lengths);
+console.log(`\n  ${'Draws'.padEnd(24)} ${percent(drawRate, 1)}`);
+console.log(`  ${'Median match length'.padEnd(24)} ${medianLength.toFixed(1)} s\n`);
+
+console.log('  Targets');
+console.log(`  ${check(ballsInRange)} every ball wins 40-60% overall`);
 console.log(
-  `                   min ${(lengths[0] ?? 0).toFixed(1)} s, max ${(lengths.at(-1) ?? 0).toFixed(1)} s`,
+  `  ${check(worstShare >= TARGETS.worstMatchup)} no matchup worse than 25/75 (worst side ${percent(worstShare, 1).trim()})`,
+);
+console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
+console.log(
+  `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 15-30 s`,
 );
