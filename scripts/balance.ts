@@ -1,7 +1,7 @@
 // Runs many matches headlessly with the real simulation and prints balance statistics.
 // Usage: pnpm balance [seeds]   (default 1000; seeds 0..N-1, so results are reproducible)
-import { blue } from '../src/sim/balls/blue.ts';
-import { red } from '../src/sim/balls/red.ts';
+import { speedster } from '../src/sim/balls/speedster.ts';
+import { vampire } from '../src/sim/balls/vampire.ts';
 import { MATCH_TIME_LIMIT_TICKS, TICK_RATE } from '../src/sim/constants.ts';
 import { indexDefinitions } from '../src/sim/definitions.ts';
 import { step } from '../src/sim/step.ts';
@@ -9,7 +9,7 @@ import type { BallDefinition, MatchState, WorldState } from '../src/sim/types.ts
 import { createWorld } from '../src/sim/world.ts';
 
 const DEFAULT_SEEDS = 1000;
-const roster: readonly BallDefinition[] = [red, blue];
+const roster: readonly BallDefinition[] = [speedster, vampire];
 
 type Finished = Extract<MatchState, { status: 'finished' }>;
 

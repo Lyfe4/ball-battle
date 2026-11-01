@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { blue } from './balls/blue.ts';
-import { red } from './balls/red.ts';
 import { impactDamage, impactMultiplier, pairKey } from './combat.ts';
 import { MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { step } from './step.ts';
-import { run, testDefinitions, testLookup, withBalls } from './test-support.ts';
+import { blue, red, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
 import type { DamageEvent, SimEvent, WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 

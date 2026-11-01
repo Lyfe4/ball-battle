@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { blue } from '../sim/balls/blue.ts';
-import { red } from '../sim/balls/red.ts';
 import { indexDefinitions } from '../sim/definitions.ts';
+import { blue, red } from '../sim/test-support.ts';
 import type { MatchState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { describeResult } from './result-text.ts';

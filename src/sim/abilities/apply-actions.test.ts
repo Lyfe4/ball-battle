@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { blue } from '../balls/blue.ts';
-import { red } from '../balls/red.ts';
 import { indexDefinitions } from '../definitions.ts';
-import { withBalls } from '../test-support.ts';
+import { blue, red, withBalls } from '../test-support.ts';
 import { createWorld } from '../world.ts';
 import { applyActions } from './apply-actions.ts';
 

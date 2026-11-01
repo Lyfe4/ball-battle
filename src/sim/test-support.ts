@@ -1,10 +1,39 @@
 // Helpers shared by the sim tests. Plain functions with no test-framework imports, so they obey
 // the same rules as the rest of src/sim.
-import { blue } from './balls/blue.ts';
-import { red } from './balls/red.ts';
+import { defineBall } from './define-ball.ts';
 import { indexDefinitions } from './definitions.ts';
 import { step } from './step.ts';
 import type { BallState, SimEvent, WorldState } from './types.ts';
+
+/**
+ * Fixture balls for core sim tests: no abilities, fixed stats, so collision, damage and match
+ * tests don't change whenever the real balls are rebalanced.
+ */
+export const red = defineBall({
+  id: 'red',
+  name: 'Red',
+  description: 'Test fixture: small and fast, no ability.',
+  color: '#ef4444',
+  radius: 50,
+  speed: 800,
+  maxHealth: 75,
+  contactDamage: 15,
+  initialAbilityState: {},
+  hooks: {},
+});
+
+export const blue = defineBall({
+  id: 'blue',
+  name: 'Blue',
+  description: 'Test fixture: big and slow, no ability.',
+  color: '#3b82f6',
+  radius: 76,
+  speed: 560,
+  maxHealth: 85,
+  contactDamage: 17,
+  initialAbilityState: {},
+  hooks: {},
+});
 
 export const testDefinitions = [red, blue] as const;
 export const testLookup = indexDefinitions(testDefinitions);

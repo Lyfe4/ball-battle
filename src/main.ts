@@ -4,8 +4,8 @@ import { generateSeed, parseSeed } from './app/seed.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
-import { blue } from './sim/balls/blue.ts';
-import { red } from './sim/balls/red.ts';
+import { speedster } from './sim/balls/speedster.ts';
+import { vampire } from './sim/balls/vampire.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
@@ -32,7 +32,7 @@ const container = getElement('arena-container', HTMLDivElement);
 const hudRoot = getElement('hud', HTMLElement);
 const ctx = getContext2d(canvas);
 
-const definitions = [red, blue];
+const definitions = [speedster, vampire];
 const definitionsById = indexDefinitions(definitions);
 const effects = createEffects();
 

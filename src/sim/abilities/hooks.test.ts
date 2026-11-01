@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { blue } from '../balls/blue.ts';
-import { red } from '../balls/red.ts';
 import { DT } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
-import { withBalls } from '../test-support.ts';
+import { blue, red, withBalls } from '../test-support.ts';
 import type { BallHooks, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
 

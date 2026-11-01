@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { red } from './balls/red.ts';
 import { DT } from './constants.ts';
 import { indexDefinitions } from './definitions.ts';
 import { step } from './step.ts';
-import { deepFreeze, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
+import { deepFreeze, red, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
 import type { WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 
