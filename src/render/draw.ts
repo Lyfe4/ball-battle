@@ -1,4 +1,4 @@
-import type { BallDefinition, WorldState } from '../sim/types.ts';
+import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { theme } from './theme.ts';
 
 /**
@@ -8,7 +8,7 @@ import { theme } from './theme.ts';
 export function drawWorld(
   ctx: CanvasRenderingContext2D,
   world: WorldState,
-  definitions: ReadonlyMap<string, BallDefinition>,
+  definitions: DefinitionLookup,
   canvasPixels: number,
 ): void {
   const { size } = world.arena;

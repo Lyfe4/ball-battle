@@ -1,21 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { blue } from './balls/blue.ts';
 import { red } from './balls/red.ts';
 import { DT } from './constants.ts';
+import { indexDefinitions } from './definitions.ts';
 import { step } from './step.ts';
-import type { BallState, WorldState } from './types.ts';
+import { deepFreeze, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
+import type { WorldState } from './types.ts';
 import { createWorld } from './world.ts';
-
-const definitions = [red, blue];
-
-function run(world: WorldState, ticks: number, onTick?: (world: WorldState) => void): WorldState {
-  let current = world;
-  for (let i = 0; i < ticks; i++) {
-    current = step(current);
-    onTick?.(current);
-  }
-  return current;
-}
 
 function expectInsideArena(world: WorldState): void {
   for (const ball of world.balls) {
@@ -27,43 +17,29 @@ function expectInsideArena(world: WorldState): void {
   }
 }
 
-function withBall(world: WorldState, overrides: Partial<BallState>): WorldState {
-  const [first] = world.balls;
-  if (first === undefined) throw new Error('expected a ball');
-  return { ...world, balls: [{ ...first, ...overrides }] };
-}
-
-function deepFreeze<T>(value: T): T {
-  if (typeof value === 'object' && value !== null) {
-    Object.values(value).forEach(deepFreeze);
-    Object.freeze(value);
-  }
-  return value;
-}
-
 describe('step', () => {
-  it('gives identical state after 1000 ticks for the same seed', () => {
-    const first = run(createWorld(2026, definitions), 1000);
-    const second = run(createWorld(2026, definitions), 1000);
+  it('gives identical state and events after 1000 ticks for the same seed', () => {
+    const first = run(createWorld(2026, testDefinitions), 1000);
+    const second = run(createWorld(2026, testDefinitions), 1000);
     // toStrictEqual also distinguishes 0 from -0, so any divergence in float maths shows up.
-    expect(second).toStrictEqual(first);
-    expect(first.tick).toBe(1000);
+    expect(second.world).toStrictEqual(first.world);
+    expect(second.events).toStrictEqual(first.events);
   });
 
   it('diverges for different seeds', () => {
-    expect(run(createWorld(1, definitions), 1000)).not.toStrictEqual(
-      run(createWorld(2, definitions), 1000),
+    expect(run(createWorld(1, testDefinitions), 1000).world).not.toStrictEqual(
+      run(createWorld(2, testDefinitions), 1000).world,
     );
   });
 
   it('never lets balls leave the arena', () => {
     for (let seed = 0; seed < 200; seed++) {
-      run(createWorld(seed, definitions), 5000, expectInsideArena);
+      run(createWorld(seed, testDefinitions), 5000, expectInsideArena);
     }
   });
 
   it('keeps extremely fast balls inside the arena instead of tunnelling', () => {
-    const base = createWorld(7, definitions);
+    const base = createWorld(7, testDefinitions);
     const perTick = (base.arena.size * 50) / DT;
     const velocities = [
       { x: perTick, y: perTick * 0.37 },
@@ -72,34 +48,39 @@ describe('step', () => {
       { x: 0, y: -perTick },
     ];
     for (const velocity of velocities) {
-      run(withBall(base, { velocity }), 500, expectInsideArena);
+      run(withBalls(base, [{ velocity }]), 500, expectInsideArena);
     }
   });
 
   it('reflects off a wall and preserves speed', () => {
-    const base = createWorld(1, definitions);
+    const base = createWorld(1, testDefinitions);
     const max = base.arena.size - red.radius;
-    const world = withBall(base, {
-      position: { x: max - 1, y: 500 },
-      velocity: { x: 600, y: 0 },
-    });
-    const [ball] = step(world).balls;
+    const world = withBalls(base, [
+      { position: { x: max - 1, y: 500 }, velocity: { x: 600, y: 0 } },
+      { position: { x: 200, y: 200 }, velocity: { x: 0, y: 0 } },
+    ]);
+    const [ball] = step(world, testLookup).world.balls;
     // Travels 10 units: 1 to reach the wall, 9 back.
     expect(ball?.position.x).toBeCloseTo(max - 9, 9);
     expect(ball?.velocity).toStrictEqual({ x: -600, y: 0 });
   });
 
   it('does not mutate the input world', () => {
-    const world = deepFreeze(createWorld(5, definitions));
+    const world = deepFreeze(createWorld(5, testDefinitions));
     const snapshot = structuredClone(world);
     expect(() => run(world, 100)).not.toThrow();
     expect(world).toStrictEqual(snapshot);
   });
 
   it('rejects non-finite velocities rather than producing NaN positions', () => {
-    const world = withBall(createWorld(1, definitions), {
-      velocity: { x: Number.POSITIVE_INFINITY, y: 0 },
-    });
-    expect(() => step(world)).toThrow(/non-finite/);
+    const world = withBalls(createWorld(1, testDefinitions), [
+      { velocity: { x: Number.POSITIVE_INFINITY, y: 0 } },
+    ]);
+    expect(() => step(world, testLookup)).toThrow(/non-finite/);
+  });
+
+  it('rejects a world whose balls have no matching definition', () => {
+    const world = createWorld(1, testDefinitions);
+    expect(() => step(world, indexDefinitions([red]))).toThrow(/No ball definition/);
   });
 });

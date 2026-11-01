@@ -69,3 +69,63 @@ export interface WorldState {
   readonly balls: readonly BallState[];
   readonly rngState: number;
 }
+
+/**
+ * Definitions by id, passed to step() every tick. Kept out of WorldState because definitions can
+ * hold functions (hooks) and never change during a match; see ADR 0002.
+ */
+export type DefinitionLookup = ReadonlyMap<string, BallDefinition>;
+
+export type MatchResult =
+  { readonly kind: 'win'; readonly winnerId: string } | { readonly kind: 'draw' };
+
+export type MatchEndReason = 'knockout' | 'timeLimit';
+
+/** Two balls started touching this tick. */
+export interface CollisionEvent {
+  readonly type: 'collision';
+  readonly tick: number;
+  readonly ballIds: readonly [string, string];
+  /** Contact point on the line between the centres. */
+  readonly point: Vec2;
+  /** Unit vector from the first ball towards the second. */
+  readonly normal: Vec2;
+  /** Size of the impulse exchanged; 0 if the balls were already moving apart. */
+  readonly impulse: number;
+}
+
+export interface DamageEvent {
+  readonly type: 'damage';
+  readonly tick: number;
+  readonly targetId: string;
+  readonly sourceId: string;
+  /** Health actually removed (never more than the target had left). */
+  readonly amount: number;
+  readonly healthAfter: number;
+}
+
+export interface BallDefeatedEvent {
+  readonly type: 'ballDefeated';
+  readonly tick: number;
+  readonly ballId: string;
+  readonly defeatedById: string;
+}
+
+export interface MatchEndedEvent {
+  readonly type: 'matchEnded';
+  readonly tick: number;
+  readonly result: MatchResult;
+  readonly reason: MatchEndReason;
+}
+
+/**
+ * What happened during one tick, as plain data. Output only: events are for rendering, sound and
+ * replays, and never feed back into the simulation (ADR 0002). Within a tick they are ordered
+ * collision, damage, ballDefeated, matchEnded.
+ */
+export type SimEvent = CollisionEvent | DamageEvent | BallDefeatedEvent | MatchEndedEvent;
+
+export interface StepResult {
+  readonly world: WorldState;
+  readonly events: readonly SimEvent[];
+}

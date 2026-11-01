@@ -5,6 +5,7 @@ import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { blue } from './sim/balls/blue.ts';
 import { red } from './sim/balls/red.ts';
+import { indexDefinitions } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
 
@@ -32,7 +33,7 @@ window.history.replaceState(null, '', url);
 seedLabel.textContent = `Seed ${seed}`;
 
 const definitions = [red, blue];
-const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
+const definitionsById = indexDefinitions(definitions);
 let world = createWorld(seed, definitions);
 
 let canvasPixels = 0;
@@ -53,7 +54,7 @@ function frame(nowMs: number): void {
     const advance = advanceClock(accumulatorMs, nowMs - lastFrameMs);
     accumulatorMs = advance.accumulatorMs;
     for (let i = 0; i < advance.ticks; i++) {
-      world = step(world);
+      world = step(world, definitionsById).world;
     }
     if (advance.ticks > 0) render();
   }
