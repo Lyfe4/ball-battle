@@ -29,8 +29,10 @@ function play(world: WorldState, ticks: number) {
 
 describe('Vampire', () => {
   it('rounds lifesteal to a whole number', () => {
-    expect(lifestealFor(14)).toBe(Math.round(14 * LIFESTEAL));
-    expect(lifestealFor(5)).toBe(3);
+    for (const amount of [1, 5, 14, 23]) {
+      expect(lifestealFor(amount)).toBe(Math.round(amount * LIFESTEAL));
+      expect(Number.isInteger(lifestealFor(amount))).toBe(true);
+    }
     expect(lifestealFor(0)).toBe(0);
   });
 
