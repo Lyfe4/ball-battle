@@ -1,12 +1,26 @@
 :root {
   --color-page: #0f1117;
+  --color-surface: #161a23;
+  --color-border: #2d3446;
+  --color-text: #e6e9f0;
   --color-text-muted: #8b93a7;
+  --color-accent: #3b82f6;
+  --color-accent-text: #ffffff;
+  --color-focus: #93c5fd;
+  --color-health-track: #0b0d12;
+  --color-health-fill: #22c55e;
+
   --space-gutter: 16px;
-  --space-gap: 8px;
+  --space-gap: 12px;
+  --space-small: 8px;
+  --radius: 8px;
+  --hud-width: 16rem;
+  --tap-target: 44px;
   --font-size-small: 0.875rem;
 
   color-scheme: dark;
   font-family: system-ui, sans-serif;
+  color: var(--color-text);
 }
 
 * {
@@ -20,9 +34,15 @@ body {
   background: var(--color-page);
 }
 
+/*
+ * The arena and HUD are one centred group. On tall screens the HUD sits directly under the
+ * arena; on wide screens beside it, so the arena keeps as much room as possible.
+ */
 .stage {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-gap);
   /* dvh tracks the visible viewport on mobile as browser chrome shows and hides. */
   height: 100dvh;
@@ -30,18 +50,131 @@ body {
 }
 
 .arena-container {
-  /* min-height: 0 lets the container shrink below the canvas size so the canvas can refit. */
-  flex: 1;
+  /* Square by default, but allowed to shrink when the HUD needs the height. */
+  flex: 0 1 auto;
+  width: 100%;
+  aspect-ratio: 1;
   min-height: 0;
   display: grid;
   place-items: center;
+}
+
+.hud {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 32rem;
+  display: grid;
+  gap: var(--space-small);
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage {
+    flex-direction: row;
+  }
+
+  .arena-container {
+    width: auto;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .hud {
+    width: var(--hud-width);
+  }
 }
 
 canvas {
   display: block;
 }
 
-.seed {
+.hud-balls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .hud-balls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hud-ball {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px var(--space-small);
+  align-items: baseline;
+}
+
+.hud-ball-name {
+  font-weight: 600;
+  color: var(--ball-color);
+}
+
+.hud-ball-health {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-health-track {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-health-track);
+  overflow: hidden;
+}
+
+.hud-health-fill {
+  height: 100%;
+  background: var(--ball-color, var(--color-health-fill));
+}
+
+.hud-result {
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hud-result:empty {
+  display: none;
+}
+
+.hud-actions {
+  display: flex;
+  gap: var(--space-small);
+}
+
+.hud-actions[hidden] {
+  display: none;
+}
+
+.hud-button {
+  flex: 1;
+  min-height: var(--tap-target);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.hud-button-primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.hud-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.hud-seed {
   margin: 0;
   text-align: center;
   color: var(--color-text-muted);

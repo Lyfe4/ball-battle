@@ -9,6 +9,7 @@ import { red } from './sim/balls/red.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
+import { createHud } from './ui/hud.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.getElementById(id);
@@ -18,41 +19,66 @@ function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   return element;
 }
 
-const canvas = getElement('arena', HTMLCanvasElement);
-const container = getElement('arena-container', HTMLDivElement);
-const seedLabel = getElement('seed', HTMLParagraphElement);
-const ctx = canvas.getContext('2d');
-if (ctx === null) {
-  throw new Error('Canvas 2D is not supported in this browser');
+function getContext2d(target: HTMLCanvasElement): CanvasRenderingContext2D {
+  const context = target.getContext('2d');
+  if (context === null) {
+    throw new Error('Canvas 2D is not supported in this browser');
+  }
+  return context;
 }
 
-// The seed is written back to the URL so reloading or sharing the link replays the same match.
-const url = new URL(window.location.href);
-const seed = parseSeed(url.searchParams.get('seed')) ?? generateSeed();
-url.searchParams.set('seed', String(seed));
-window.history.replaceState(null, '', url);
-seedLabel.textContent = `Seed ${seed}`;
+const canvas = getElement('arena', HTMLCanvasElement);
+const container = getElement('arena-container', HTMLDivElement);
+const hudRoot = getElement('hud', HTMLElement);
+const ctx = getContext2d(canvas);
 
 const definitions = [red, blue];
 const definitionsById = indexDefinitions(definitions);
-let world = createWorld(seed, definitions);
-
 const effects = createEffects();
 
+let seed = parseSeed(new URL(window.location.href).searchParams.get('seed')) ?? generateSeed();
+let world = createWorld(seed, definitions);
+let accumulatorMs = 0;
+let lastFrameMs: number | undefined;
 let canvasPixels = 0;
-const render = (nowMs: number): void => {
+
+const hud = createHud(hudRoot, world, definitionsById, {
+  onReplay: () => {
+    startMatch(seed);
+  },
+  onNewMatch: () => {
+    startMatch(generateSeed());
+  },
+});
+
+function render(nowMs: number): void {
   drawWorld(ctx, world, definitionsById, canvasPixels, {
     flash: (ballId) => effects.flash(ballId, nowMs),
   });
-};
+  hud.update(world, seed);
+}
+
+/**
+ * Starts (or restarts) a match from a seed. The seed is written to the URL so reloading or
+ * sharing the link replays the same match.
+ */
+function startMatch(nextSeed: number): void {
+  seed = nextSeed;
+  world = createWorld(seed, definitions);
+  effects.reset();
+  accumulatorMs = 0;
+  lastFrameMs = undefined;
+
+  const url = new URL(window.location.href);
+  url.searchParams.set('seed', String(seed));
+  window.history.replaceState(null, '', url);
+  render(performance.now());
+}
 
 fitCanvasToContainer(canvas, container, (size) => {
   canvasPixels = size.pixels;
   render(performance.now());
 });
-
-let accumulatorMs = 0;
-let lastFrameMs: number | undefined;
 
 function frame(nowMs: number): void {
   if (lastFrameMs !== undefined) {
@@ -76,4 +102,5 @@ document.addEventListener('visibilitychange', () => {
   lastFrameMs = undefined;
 });
 
+startMatch(seed);
 requestAnimationFrame(frame);
