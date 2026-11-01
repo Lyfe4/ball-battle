@@ -2,6 +2,8 @@
   --color-page: #0f1117;
   --color-text-muted: #8b93a7;
   --space-gutter: 16px;
+  --space-gap: 8px;
+  --font-size-small: 0.875rem;
 
   color-scheme: dark;
   font-family: system-ui, sans-serif;
@@ -19,13 +21,30 @@ body {
 }
 
 .stage {
-  display: grid;
-  place-items: center;
-  /* dvh tracks the visible viewport on mobile when browser chrome shows/hides. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-gap);
+  /* dvh tracks the visible viewport on mobile as browser chrome shows and hides. */
   height: 100dvh;
   padding: var(--space-gutter);
 }
 
+.arena-container {
+  /* min-height: 0 lets the container shrink below the canvas size so the canvas can refit. */
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
 canvas {
   display: block;
+}
+
+.seed {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
 }

@@ -7,8 +7,11 @@
     <title>BallBattle</title>
   </head>
   <body>
-    <main class="stage" id="stage">
-      <canvas id="arena" aria-label="Battle arena"></canvas>
+    <main class="stage">
+      <div class="arena-container" id="arena-container">
+        <canvas id="arena" role="img" aria-label="Battle arena"></canvas>
+      </div>
+      <p class="seed" id="seed"></p>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
