@@ -67,3 +67,6 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md` and
 - Conventional Commits (`feat(sim): ...`, `chore: ...`), small and single-purpose. The commit body
   explains why.
 - Record significant decisions as numbered ADRs in `docs/decisions/`.
+- Stop any dev server or other background process you started before finishing a task. Check the
+  port is actually free afterwards: stopping the `pnpm dev` wrapper can leave the `vite` child
+  process running and holding the port.
