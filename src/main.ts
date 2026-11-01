@@ -1,12 +1,12 @@
 import './style.css';
 import { advanceClock } from './app/fixed-step.ts';
+import { parseMatchup, writeMatchParams, type Matchup } from './app/matchup.ts';
 import { generateSeed, parseSeed } from './app/seed.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
-import { speedster } from './sim/balls/speedster.ts';
-import { vampire } from './sim/balls/vampire.ts';
-import { indexDefinitions } from './sim/definitions.ts';
+import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
+import { getDefinition } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
@@ -32,45 +32,54 @@ const container = getElement('arena-container', HTMLDivElement);
 const hudRoot = getElement('hud', HTMLElement);
 const ctx = getContext2d(canvas);
 
-const definitions = [speedster, vampire];
-const definitionsById = indexDefinitions(definitions);
 const effects = createEffects();
+const ballIds = BALLS.map((ball) => ball.id);
 
-let seed = parseSeed(new URL(window.location.href).searchParams.get('seed')) ?? generateSeed();
-let world = createWorld(seed, definitions);
+const params = new URL(window.location.href).searchParams;
+let matchup = parseMatchup(params, ballIds);
+let seed = parseSeed(params.get('seed')) ?? generateSeed();
+let world = createMatchWorld(matchup, seed);
 let accumulatorMs = 0;
 let lastFrameMs: number | undefined;
 let canvasPixels = 0;
 
-const hud = createHud(hudRoot, world, definitionsById, {
+function createMatchWorld(next: Matchup, nextSeed: number) {
+  return createWorld(nextSeed, [
+    getDefinition(BALL_LOOKUP, next.a),
+    getDefinition(BALL_LOOKUP, next.b),
+  ]);
+}
+
+const hud = createHud(hudRoot, world, BALL_LOOKUP, {
   onReplay: () => {
-    startMatch(seed);
+    startMatch(matchup, seed);
   },
   onNewMatch: () => {
-    startMatch(generateSeed());
+    startMatch(matchup, generateSeed());
   },
 });
 
 function render(nowMs: number): void {
-  drawWorld(ctx, world, definitionsById, canvasPixels, {
+  drawWorld(ctx, world, BALL_LOOKUP, canvasPixels, {
     flash: (ballId) => effects.flash(ballId, nowMs),
   });
   hud.update(world, seed);
 }
 
 /**
- * Starts (or restarts) a match from a seed. The seed is written to the URL so reloading or
- * sharing the link replays the same match.
+ * Starts (or restarts) a match. The matchup and seed are written to the URL, so reloading or
+ * sharing the link replays the same match, and a link with an invalid id is corrected.
  */
-function startMatch(nextSeed: number): void {
+function startMatch(nextMatchup: Matchup, nextSeed: number): void {
+  matchup = nextMatchup;
   seed = nextSeed;
-  world = createWorld(seed, definitions);
+  world = createMatchWorld(matchup, seed);
   effects.reset();
   accumulatorMs = 0;
   lastFrameMs = undefined;
 
   const url = new URL(window.location.href);
-  url.searchParams.set('seed', String(seed));
+  writeMatchParams(url.searchParams, matchup, seed);
   window.history.replaceState(null, '', url);
   render(performance.now());
 }
@@ -85,7 +94,7 @@ function frame(nowMs: number): void {
     const advance = advanceClock(accumulatorMs, nowMs - lastFrameMs);
     accumulatorMs = advance.accumulatorMs;
     for (let i = 0; i < advance.ticks; i++) {
-      const result = step(world, definitionsById);
+      const result = step(world, BALL_LOOKUP);
       world = result.world;
       effects.apply(result.events, nowMs);
     }
@@ -102,5 +111,5 @@ document.addEventListener('visibilitychange', () => {
   lastFrameMs = undefined;
 });
 
-startMatch(seed);
+startMatch(matchup, seed);
 requestAnimationFrame(frame);
