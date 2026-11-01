@@ -1,6 +1,7 @@
+import { resolveCollisions } from './collision.ts';
 import { getDefinition } from './definitions.ts';
 import { moveBall } from './movement.ts';
-import type { DefinitionLookup, StepResult, WorldState } from './types.ts';
+import type { DefinitionLookup, SimEvent, StepResult, WorldState } from './types.ts';
 
 /**
  * Advances the world by exactly one tick of DT seconds and reports what happened. Pure: returns a
@@ -12,12 +13,15 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
     getDefinition(definitions, ball.definitionId);
   }
 
-  return {
-    world: {
-      ...world,
-      tick: world.tick + 1,
-      balls: world.balls.map((ball) => moveBall(ball, world.arena.size)),
-    },
-    events: [],
-  };
+  const tick = world.tick + 1;
+  const moved = world.balls.map((ball) => moveBall(ball, world.arena.size));
+  const collisions = resolveCollisions(moved, world.arena.size, () => true);
+
+  const events: SimEvent[] = collisions.contacts.map((contact) => ({
+    type: 'collision',
+    tick,
+    ...contact,
+  }));
+
+  return { world: { ...world, tick, balls: collisions.balls }, events };
 }
