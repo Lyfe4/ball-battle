@@ -15,6 +15,15 @@ export const theme = {
   /** Overlay colour for the damage flash; its opacity follows the flash strength. */
   flash: '#ffffff',
   flashMaxAlpha: 0.85,
+  /** Ring that grows and fades around a ball when it heals. */
+  healRing: '#4ade80',
+  healRingWidth: 6,
+  healRingGrowth: 28,
+  /** Ability pips (e.g. Speedster stacks), drawn across the middle of the ball. */
+  pipRadius: 7,
+  pipSpacing: 15,
+  pipFilled: '#111827',
+  pipEmpty: 'rgba(17, 24, 39, 0.25)',
 
   healthBarHeight: 12,
   healthBarGap: 10,

@@ -1,4 +1,5 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
+import { ABILITY_OVERLAYS } from './ability-overlays.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
 import { theme } from './theme.ts';
 
@@ -6,6 +7,8 @@ import { theme } from './theme.ts';
 export interface FrameEffects {
   /** Damage flash strength for a ball, 0 to 1. */
   readonly flash: (ballId: string) => number;
+  /** Heal pulse strength for a ball, 0 to 1. */
+  readonly heal: (ballId: string) => number;
 }
 
 /**
@@ -33,6 +36,10 @@ export function drawWorld(
   for (const ball of world.balls) {
     const color = definitions.get(ball.definitionId)?.color ?? theme.unknownBall;
     drawBall(ctx, ball, color, effects.flash(ball.id));
+    if (ball.health > 0) {
+      ABILITY_OVERLAYS.get(ball.definitionId)?.(ctx, ball);
+      drawHealPulse(ctx, ball, effects.heal(ball.id));
+    }
   }
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
@@ -77,6 +84,25 @@ function drawBall(
   }
   ctx.strokeStyle = theme.ballOutline;
   ctx.lineWidth = theme.ballOutlineWidth;
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A ring that grows outwards and fades as `strength` falls from 1 to 0. */
+function drawHealPulse(ctx: CanvasRenderingContext2D, ball: BallState, strength: number): void {
+  if (strength <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.beginPath();
+  ctx.arc(
+    ball.position.x,
+    ball.position.y,
+    ball.radius + (1 - strength) * theme.healRingGrowth,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = theme.healRing;
+  ctx.lineWidth = theme.healRingWidth;
   ctx.stroke();
   ctx.restore();
 }

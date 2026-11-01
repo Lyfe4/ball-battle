@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DamageEvent } from '../sim/types.ts';
-import { createEffects, FLASH_MS } from './effects.ts';
+import { createEffects, FLASH_MS, HEAL_MS } from './effects.ts';
 
 const hit: DamageEvent = {
   type: 'damage',
@@ -47,5 +47,27 @@ describe('effects', () => {
     effects.apply([hit], 0);
     effects.reset();
     expect(effects.flash('ball-1', 0)).toBe(0);
+  });
+
+  it('pulses a healed ball and fades it out', () => {
+    const effects = createEffects();
+    effects.apply(
+      [
+        {
+          type: 'healed',
+          tick: 3,
+          ballId: 'ball-0',
+          sourceId: 'ball-0',
+          amount: 7,
+          healthAfter: 50,
+        },
+      ],
+      0,
+    );
+    expect(effects.heal('ball-0', 0)).toBe(1);
+    expect(effects.flash('ball-0', 0)).toBe(0);
+    expect(effects.isActive(HEAL_MS - 1)).toBe(true);
+    expect(effects.heal('ball-0', HEAL_MS)).toBe(0);
+    expect(effects.isActive(HEAL_MS)).toBe(false);
   });
 });

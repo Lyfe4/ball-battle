@@ -68,6 +68,7 @@ const picker = createPicker(pickerForm, BALLS, (chosen) => {
 function render(nowMs: number): void {
   drawWorld(ctx, world, BALL_LOOKUP, canvasPixels, {
     flash: (ballId) => effects.flash(ballId, nowMs),
+    heal: (ballId) => effects.heal(ballId, nowMs),
   });
   hud.update(world, seed);
 }
