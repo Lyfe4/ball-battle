@@ -27,8 +27,8 @@ function randomDirection(state: RngState): RngResult<Vec2> {
  * balls never start overlapping, a random position inside it, and a random launch direction.
  */
 export function createWorld(seed: number, definitions: readonly BallDefinition[]): WorldState {
-  if (definitions.length === 0) {
-    throw new Error('createWorld needs at least one ball definition');
+  if (definitions.length < 2) {
+    throw new Error('A match needs at least two balls');
   }
 
   const arena = { size: ARENA_SIZE };
@@ -59,5 +59,5 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
     };
   });
 
-  return { tick: 0, arena, balls, rngState, contacts: [] };
+  return { tick: 0, arena, balls, rngState, contacts: [], match: { status: 'running' } };
 }

@@ -12,3 +12,8 @@ export const ARENA_SIZE = 1000;
  * were just separated and drift apart slowly, so one collision is never counted twice.
  */
 export const CONTACT_SLOP = 0.5;
+
+/** Every match ends by this much sim time; the healthier ball (by fraction) wins. */
+export const MATCH_TIME_LIMIT_SECONDS = 60;
+
+export const MATCH_TIME_LIMIT_TICKS = MATCH_TIME_LIMIT_SECONDS * TICK_RATE;

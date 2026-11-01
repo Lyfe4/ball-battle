@@ -1,8 +1,15 @@
 import { resolveCollisions } from './collision.ts';
 import { applyContactDamage, isAlive, nextContacts, pairKey } from './combat.ts';
 import { getDefinition } from './definitions.ts';
+import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
-import type { CollisionEvent, DefinitionLookup, StepResult, WorldState } from './types.ts';
+import type {
+  CollisionEvent,
+  DefinitionLookup,
+  SimEvent,
+  StepResult,
+  WorldState,
+} from './types.ts';
 
 /**
  * Advances the world by exactly one tick of DT seconds and reports what happened. Pure: returns a
@@ -10,9 +17,14 @@ import type { CollisionEvent, DefinitionLookup, StepResult, WorldState } from '.
  * replay. `definitions` must be the same lookup every tick of a match.
  *
  * Order within a tick: move live balls, resolve collisions, apply damage for new contacts, record
- * defeats. Events come out in that same order.
+ * defeats, decide whether the match is over. Events come out in that same order. A finished
+ * match is returned as is, with no events.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
+  if (world.match.status === 'finished') {
+    return { world, events: [] };
+  }
+
   for (const ball of world.balls) {
     getDefinition(definitions, ball.definitionId);
   }
@@ -35,6 +47,12 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   }));
 
   const combat = applyContactDamage(collisions.balls, newContacts, definitions, tick);
+  const match = evaluateMatch(combat.balls, tick, definitions);
+
+  const events: SimEvent[] = [...collisionEvents, ...combat.damage, ...combat.defeated];
+  if (match.status === 'finished') {
+    events.push({ type: 'matchEnded', tick, result: match.result, reason: match.reason });
+  }
 
   return {
     world: {
@@ -42,7 +60,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
       tick,
       balls: combat.balls,
       contacts: nextContacts(combat.balls, world.contacts, collidedKeys),
+      match,
     },
-    events: [...collisionEvents, ...combat.damage, ...combat.defeated],
+    events,
   };
 }

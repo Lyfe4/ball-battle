@@ -44,8 +44,9 @@ describe('createWorld', () => {
     expect(world.balls.map((ball) => ball.id)).toStrictEqual(['ball-0', 'ball-1']);
   });
 
-  it('rejects an empty roster and balls too large for their strip', () => {
-    expect(() => createWorld(1, [])).toThrow();
+  it('rejects fewer than two balls and balls too large for their strip', () => {
+    expect(() => createWorld(1, [])).toThrow(/at least two/);
+    expect(() => createWorld(1, [red])).toThrow(/at least two/);
     const huge: BallDefinition = { ...red, id: 'huge', radius: 300 };
     expect(() => createWorld(1, [huge, huge])).toThrow(/too large/);
   });

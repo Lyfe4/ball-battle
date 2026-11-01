@@ -76,6 +76,7 @@ export interface WorldState {
    * damage when it starts touching, so contact that lasts several ticks counts once (ADR 0002).
    */
   readonly contacts: readonly string[];
+  readonly match: MatchState;
 }
 
 /**
@@ -88,6 +89,16 @@ export type MatchResult =
   { readonly kind: 'win'; readonly winnerId: string } | { readonly kind: 'draw' };
 
 export type MatchEndReason = 'knockout' | 'timeLimit';
+
+/** Once finished, step() returns the world unchanged and emits no events. */
+export type MatchState =
+  | { readonly status: 'running' }
+  | {
+      readonly status: 'finished';
+      readonly result: MatchResult;
+      readonly reason: MatchEndReason;
+      readonly endTick: number;
+    };
 
 /** Two balls started touching this tick. */
 export interface CollisionEvent {
