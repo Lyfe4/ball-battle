@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "balance": "node scripts/balance.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare": "husky"
