@@ -52,8 +52,29 @@ contact across ticks (pinned against a wall, grazing, separating slowly) therefo
 exactly once. Relying only on "are they approaching" would re-hit a ball pinned against a wall
 every time the wall bounced it back.
 
-On a new contact each ball deals its `contactDamage` to the other simultaneously, so a mutual
-knockout is possible. Health floors at 0.
+On a new contact each ball deals damage to the other simultaneously, so a mutual knockout is
+possible. Health floors at 0.
+
+### 4a. Damage scales with impact
+
+A flat `contactDamage` exchanged on every hit makes the winner a pure function of the stats:
+both balls take one hit per collision, so whichever needs fewer hits always loses, and at the
+time limit the health fractions compare the same way after any number of hits. The seed would
+only change how long a match takes, never who wins.
+
+So each ball's hit is scaled by how hard it drove into the other:
+
+```
+multiplier = clamp(approachSpeed / definition.speed, 0.25, 2)
+damage     = max(1, round(contactDamage × multiplier))
+```
+
+`approachSpeed` is the ball's velocity along the collision normal towards the other ball,
+measured **before** the impulse, so the bounce itself never changes the damage. A ball charging
+head-on at its normal speed deals exactly `contactDamage`; a glancing or stationary ball deals a
+quarter; the cap stops fast rebounds from one-shotting. Rounding keeps health whole and readable,
+and `Math.round` is exact, so this stays deterministic. The multiplier is reported on each
+`damage` event so the renderer can show heavy hits differently.
 
 ### 5. Match state and guaranteed end
 

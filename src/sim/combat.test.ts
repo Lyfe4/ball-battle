@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { blue } from './balls/blue.ts';
 import { red } from './balls/red.ts';
-import { pairKey } from './combat.ts';
+import { impactDamage, impactMultiplier, pairKey } from './combat.ts';
+import { MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { step } from './step.ts';
 import { run, testDefinitions, testLookup, withBalls } from './test-support.ts';
 import type { DamageEvent, SimEvent, WorldState } from './types.ts';
@@ -9,10 +10,11 @@ import { createWorld } from './world.ts';
 
 const base = createWorld(1, testDefinitions);
 
+/** Each ball charges straight at the other at its own definition speed: multiplier 1. */
 function headOn(): WorldState {
   return withBalls(base, [
-    { position: { x: 400, y: 500 }, velocity: { x: 300, y: 0 } },
-    { position: { x: 600, y: 500 }, velocity: { x: -300, y: 0 } },
+    { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 } },
+    { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
   ]);
 }
 
@@ -28,14 +30,22 @@ describe('contact damage', () => {
     expect(base.contacts).toStrictEqual([]);
   });
 
-  it('deals each ball the other ball’s contact damage exactly once per collision', () => {
+  it('deals each ball the other ball’s contact damage once per collision at full speed', () => {
     const { world, events } = run(headOn(), 60);
     const toRed = damageTo(events, 'ball-0');
     const toBlue = damageTo(events, 'ball-1');
     expect(toRed).toHaveLength(1);
     expect(toBlue).toHaveLength(1);
-    expect(toRed[0]).toMatchObject({ sourceId: 'ball-1', amount: blue.contactDamage });
-    expect(toBlue[0]).toMatchObject({ sourceId: 'ball-0', amount: red.contactDamage });
+    expect(toRed[0]).toMatchObject({
+      sourceId: 'ball-1',
+      amount: blue.contactDamage,
+      multiplier: 1,
+    });
+    expect(toBlue[0]).toMatchObject({
+      sourceId: 'ball-0',
+      amount: red.contactDamage,
+      multiplier: 1,
+    });
     expect(world.balls.map((ball) => ball.health)).toStrictEqual([
       red.maxHealth - blue.contactDamage,
       blue.maxHealth - red.contactDamage,
@@ -84,16 +94,32 @@ describe('contact damage', () => {
   });
 
   it('defeats a ball at 0 health, which then stops moving and colliding', () => {
-    const lowRed = withBalls(headOn(), [{ health: blue.contactDamage }]);
-    const { world, events } = run(lowRed, 60);
+    // Three balls, so the match keeps running after the first defeat.
+    const three = createWorld(1, [red, blue, red]);
+    const lowRed = withBalls(three, [
+      {
+        position: { x: 400, y: 500 },
+        velocity: { x: red.speed, y: 0 },
+        health: blue.contactDamage,
+      },
+      { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
+      { position: { x: 850, y: 150 }, velocity: { x: 0, y: 0 } },
+    ]);
+    const { world, events } = run(lowRed, 30);
     expect(events).toContainEqual(
       expect.objectContaining({ type: 'ballDefeated', ballId: 'ball-0', defeatedById: 'ball-1' }),
     );
+    expect(world.match.status).toBe('running');
     const [defeated] = world.balls;
     expect(defeated?.health).toBe(0);
 
-    const later = step(world, testLookup).world;
-    expect(later.balls[0]?.position).toStrictEqual(defeated?.position);
+    // A live ball driven straight through the defeated one's position passes without a hit.
+    const later = run(
+      withBalls(world, [{}, { position: { x: 300, y: 500 }, velocity: { x: -blue.speed, y: 0 } }]),
+      30,
+    );
+    expect(later.world.balls[0]?.position).toStrictEqual(defeated?.position);
+    expect(later.events.filter((event) => event.type === 'collision')).toStrictEqual([]);
   });
 
   it('never takes health below 0', () => {
@@ -101,5 +127,65 @@ describe('contact damage', () => {
     const { world, events } = run(lowRed, 60);
     expect(world.balls[0]?.health).toBe(0);
     expect(damageTo(events, 'ball-0')[0]?.amount).toBe(1);
+  });
+
+  describe('impact scaling', () => {
+    it('scales by approach speed over definition speed, clamped', () => {
+      expect(impactMultiplier(red.speed, red.speed)).toBe(1);
+      expect(impactMultiplier(red.speed / 2, red.speed)).toBe(0.5);
+      expect(impactMultiplier(0, red.speed)).toBe(MIN_IMPACT_MULTIPLIER);
+      expect(impactMultiplier(-100, red.speed)).toBe(MIN_IMPACT_MULTIPLIER);
+      expect(impactMultiplier(red.speed * 10, red.speed)).toBe(MAX_IMPACT_MULTIPLIER);
+    });
+
+    it('rounds damage to whole numbers with a minimum of 1', () => {
+      expect(impactDamage(10, 0.25)).toBe(3);
+      expect(impactDamage(2, 0.25)).toBe(1);
+      expect(impactDamage(0, 2)).toBe(0);
+    });
+
+    it('lets the ball that drove into the other hit harder', () => {
+      // Red charges a stationary blue: red hits at full strength, blue only at the minimum.
+      const charge = withBalls(base, [
+        { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 } },
+        { position: { x: 600, y: 500 }, velocity: { x: 0, y: 0 } },
+      ]);
+      const { events } = run(charge, 60);
+      expect(damageTo(events, 'ball-1')[0]).toMatchObject({
+        amount: red.contactDamage,
+        multiplier: 1,
+      });
+      expect(damageTo(events, 'ball-0')[0]).toMatchObject({
+        amount: impactDamage(blue.contactDamage, MIN_IMPACT_MULTIPLIER),
+        multiplier: MIN_IMPACT_MULTIPLIER,
+      });
+    });
+
+    it('measures speed before the bounce, so the impulse does not change the damage', () => {
+      // After the impulse the stationary blue moves away from red at speed; if damage used
+      // post-bounce velocities, red's multiplier would drop and blue's would change.
+      const charge = withBalls(base, [
+        { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 } },
+        { position: { x: 600, y: 500 }, velocity: { x: 0, y: 0 } },
+      ]);
+      const { events } = run(charge, 60);
+      const multipliers = events.flatMap((event) =>
+        event.type === 'damage' ? [event.multiplier] : [],
+      );
+      expect(multipliers).toStrictEqual([MIN_IMPACT_MULTIPLIER, 1]);
+    });
+
+    it('scales a glancing hit down', () => {
+      // Red moves mostly sideways past blue, clipping it: only a fraction of its speed is along
+      // the normal.
+      const glance = withBalls(base, [
+        { position: { x: 400, y: 500 }, velocity: { x: red.speed * 0.3, y: red.speed * 0.95 } },
+        { position: { x: 460, y: 560 + red.radius + blue.radius }, velocity: { x: 0, y: 0 } },
+      ]);
+      const { events } = run(glance, 60);
+      const toBlue = damageTo(events, 'ball-1')[0];
+      expect(toBlue?.multiplier).toBeGreaterThan(MIN_IMPACT_MULTIPLIER);
+      expect(toBlue?.multiplier).toBeLessThan(1);
+    });
   });
 });

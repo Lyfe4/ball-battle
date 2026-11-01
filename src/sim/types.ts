@@ -23,7 +23,10 @@ export interface BallDefinition {
   /** Launch speed in world units per second. */
   readonly speed: number;
   readonly maxHealth: number;
-  /** Health removed from the other ball each time the two start touching. */
+  /**
+   * Base damage dealt to the other ball each time the two start touching, scaled by how hard this
+   * ball hit (see DamageEvent.multiplier).
+   */
   readonly contactDamage: number;
   readonly hooks?: BallHooks;
 }
@@ -121,6 +124,11 @@ export interface DamageEvent {
   /** Health actually removed (never more than the target had left). */
   readonly amount: number;
   readonly healthAfter: number;
+  /**
+   * Impact strength the damage was scaled by: the source's speed towards the target before the
+   * bounce, over its definition speed, clamped to [MIN_IMPACT_MULTIPLIER, MAX_IMPACT_MULTIPLIER].
+   */
+  readonly multiplier: number;
 }
 
 export interface BallDefeatedEvent {

@@ -1,5 +1,5 @@
 import type { PairContact } from './collision.ts';
-import { CONTACT_SLOP } from './constants.ts';
+import { CONTACT_SLOP, MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
 import type { BallDefeatedEvent, BallState, DamageEvent, DefinitionLookup } from './types.ts';
 
@@ -39,6 +39,23 @@ export function nextContacts(
     .sort();
 }
 
+/** How hard a ball hit, relative to its own definition speed. */
+export function impactMultiplier(approachSpeed: number, baseSpeed: number): number {
+  if (baseSpeed <= 0) return MIN_IMPACT_MULTIPLIER;
+  return Math.min(
+    MAX_IMPACT_MULTIPLIER,
+    Math.max(MIN_IMPACT_MULTIPLIER, approachSpeed / baseSpeed),
+  );
+}
+
+/**
+ * Damage for one hit, rounded to a whole number so health stays readable. Any hit from a ball with
+ * contact damage deals at least 1. Math.round is exact, so this is deterministic (ADR 0001).
+ */
+export function impactDamage(contactDamage: number, multiplier: number): number {
+  return contactDamage > 0 ? Math.max(1, Math.round(contactDamage * multiplier)) : 0;
+}
+
 export interface DamageResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
@@ -46,8 +63,9 @@ export interface DamageResult {
 }
 
 /**
- * Applies contact damage for each new contact. Within a pair both hits use health from before
- * the pair's exchange, so two balls can knock each other out at once.
+ * Applies contact damage for each new contact. Each ball's hit is scaled by how hard it drove
+ * into the other before the bounce. Within a pair both hits use health from before the exchange,
+ * so two balls can knock each other out at once.
  */
 export function applyContactDamage(
   balls: readonly BallState[],
@@ -59,11 +77,10 @@ export function applyContactDamage(
   const damage: DamageEvent[] = [];
   const lastHitBy = new Map<string, string>();
 
-  const hit = (target: BallState, source: BallState): BallState => {
-    const amount = Math.min(
-      target.health,
-      getDefinition(definitions, source.definitionId).contactDamage,
-    );
+  const hit = (target: BallState, source: BallState, approachSpeed: number): BallState => {
+    const definition = getDefinition(definitions, source.definitionId);
+    const multiplier = impactMultiplier(approachSpeed, definition.speed);
+    const amount = Math.min(target.health, impactDamage(definition.contactDamage, multiplier));
     if (amount <= 0) return target;
     const healthAfter = target.health - amount;
     damage.push({
@@ -73,17 +90,18 @@ export function applyContactDamage(
       sourceId: source.id,
       amount,
       healthAfter,
+      multiplier,
     });
     lastHitBy.set(target.id, source.id);
     return { ...target, health: healthAfter };
   };
 
-  for (const { ballIds } of newContacts) {
+  for (const { ballIds, approachSpeeds } of newContacts) {
     const a = byId.get(ballIds[0]);
     const b = byId.get(ballIds[1]);
     if (a === undefined || b === undefined) continue;
-    byId.set(a.id, hit(a, b));
-    byId.set(b.id, hit(b, a));
+    byId.set(a.id, hit(a, b, approachSpeeds[1]));
+    byId.set(b.id, hit(b, a, approachSpeeds[0]));
   }
 
   const defeated: BallDefeatedEvent[] = [];

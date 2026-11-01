@@ -11,8 +11,8 @@ const base = createWorld(1, testDefinitions);
 
 function headOn(redHealth: number, blueHealth: number): WorldState {
   return withBalls(base, [
-    { position: { x: 400, y: 500 }, velocity: { x: 300, y: 0 }, health: redHealth },
-    { position: { x: 600, y: 500 }, velocity: { x: -300, y: 0 }, health: blueHealth },
+    { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 }, health: redHealth },
+    { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 }, health: blueHealth },
   ]);
 }
 

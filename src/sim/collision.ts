@@ -20,6 +20,11 @@ export interface Contact {
   readonly normal: Vec2;
   /** Impulse exchanged; 0 if the balls were already moving apart. */
   readonly impulse: number;
+  /**
+   * How fast each ball was moving towards the other along the normal, measured before the impulse
+   * so the bounce itself never changes it. Negative means moving away. Order matches the pair.
+   */
+  readonly approachSpeeds: readonly [number, number];
 }
 
 export interface PairResolution {
@@ -115,15 +120,21 @@ export function resolvePair(
 
   const inverseA = 1 / massOf(a);
   const inverseB = 1 / massOf(b);
-  const closingSpeed =
-    (b.velocity.x - a.velocity.x) * normal.x + (b.velocity.y - a.velocity.y) * normal.y;
+  const approachA = a.velocity.x * normal.x + a.velocity.y * normal.y;
+  const approachB = -(b.velocity.x * normal.x + b.velocity.y * normal.y);
+  const closingSpeed = -(approachA + approachB);
   // Only push apart balls that are moving towards each other; separating balls keep going.
   const impulse = closingSpeed < 0 ? (-2 * closingSpeed) / (inverseA + inverseB) : 0;
 
   return {
     a: { ...a, position: positionA, velocity: addScaled(a.velocity, normal, -impulse * inverseA) },
     b: { ...b, position: positionB, velocity: addScaled(b.velocity, normal, impulse * inverseB) },
-    contact: { point: addScaled(positionA, normal, a.radius), normal, impulse },
+    contact: {
+      point: addScaled(positionA, normal, a.radius),
+      normal,
+      impulse,
+      approachSpeeds: [approachA, approachB],
+    },
   };
 }
 

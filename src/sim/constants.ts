@@ -17,3 +17,11 @@ export const CONTACT_SLOP = 0.5;
 export const MATCH_TIME_LIMIT_SECONDS = 60;
 
 export const MATCH_TIME_LIMIT_TICKS = MATCH_TIME_LIMIT_SECONDS * TICK_RATE;
+
+/**
+ * Contact damage scales with how hard the attacker drove into the target: its speed towards the
+ * target, before the bounce, divided by its definition speed. Clamped so glancing or standing hits
+ * still hurt a little and very fast hits can't one-shot (ADR 0002).
+ */
+export const MIN_IMPACT_MULTIPLIER = 0.25;
+export const MAX_IMPACT_MULTIPLIER = 2;

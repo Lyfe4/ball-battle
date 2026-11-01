@@ -40,11 +40,16 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const newContacts = collisions.contacts.filter(
     (_contact, index) => !previousContacts.has(collidedKeys[index] ?? ''),
   );
-  const collisionEvents = newContacts.map((contact): CollisionEvent => ({
-    type: 'collision',
-    tick,
-    ...contact,
-  }));
+  const collisionEvents = newContacts.map(
+    ({ ballIds, point, normal, impulse }): CollisionEvent => ({
+      type: 'collision',
+      tick,
+      ballIds,
+      point,
+      normal,
+      impulse,
+    }),
+  );
 
   const combat = applyContactDamage(collisions.balls, newContacts, definitions, tick);
   const match = evaluateMatch(combat.balls, tick, definitions);
