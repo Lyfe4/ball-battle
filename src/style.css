@@ -1,0 +1,31 @@
+:root {
+  --color-page: #0f1117;
+  --color-text-muted: #8b93a7;
+  --space-gutter: 16px;
+
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--color-page);
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+  /* dvh tracks the visible viewport on mobile when browser chrome shows/hides. */
+  height: 100dvh;
+  padding: var(--space-gutter);
+}
+
+canvas {
+  display: block;
+}
