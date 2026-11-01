@@ -1,11 +1,12 @@
 import type { BallDefinition } from '../types.ts';
 
+/** Small and fast: lands more full-speed hits, but can't take many. */
 export const red: BallDefinition = {
   id: 'red',
   name: 'Red',
   color: '#ef4444',
-  radius: 40,
-  speed: 420,
-  maxHealth: 100,
-  contactDamage: 10,
+  radius: 50,
+  speed: 800,
+  maxHealth: 75,
+  contactDamage: 15,
 };

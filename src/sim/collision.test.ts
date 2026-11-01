@@ -53,7 +53,8 @@ function draws(state: RngState, count: number, min: number, max: number): [numbe
 
 describe('ball collisions', () => {
   it('makes balls moving towards each other collide once and separate', () => {
-    const { world, events } = run(headOn(300), 60);
+    // 20 ticks: enough to collide and move apart, too few to reach a wall and come back.
+    const { world, events } = run(headOn(300), 20);
     const collisions = events.filter((event) => event.type === 'collision');
     expect(collisions).toHaveLength(1);
     expect(collisions[0]?.ballIds).toStrictEqual(['ball-0', 'ball-1']);

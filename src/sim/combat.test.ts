@@ -71,9 +71,11 @@ describe('contact damage', () => {
   it('still counts a hit after a tick that ended close but not overlapping', () => {
     // Regression: balls ending a tick within CONTACT_SLOP but not overlapping were once recorded
     // as in contact, so the real hit on the next tick dealt no damage.
+    // After one tick at 300 units/s (5 units each), they end 0.4 units apart: inside the slop.
+    const halfGap = (red.radius + blue.radius) / 2 + 0.2 + 5;
     const nearMiss = withBalls(base, [
-      { position: { x: 454.8, y: 500 }, velocity: { x: 300, y: 0 } },
-      { position: { x: 545.2, y: 500 }, velocity: { x: -300, y: 0 } },
+      { position: { x: 500 - halfGap, y: 500 }, velocity: { x: 300, y: 0 } },
+      { position: { x: 500 + halfGap, y: 500 }, velocity: { x: -300, y: 0 } },
     ]);
     const first = step(nearMiss, testLookup);
     expect(first.world.contacts).toStrictEqual([]);
