@@ -75,7 +75,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0003: Ability system](docs/decisions/0003-ability-system.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 12.31 kB JS (5.22 kB gzipped), 2.41 kB CSS. First version baseline: 5.05 kB
+Production bundle: 19.05 kB JS (7.65 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
