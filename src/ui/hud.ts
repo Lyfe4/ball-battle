@@ -1,4 +1,5 @@
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import { element, setText } from './dom.ts';
 import { describeResult } from './result-text.ts';
 
 export interface HudActions {
@@ -7,6 +8,8 @@ export interface HudActions {
 }
 
 export interface Hud {
+  /** Rebuilds the ball rows for a new matchup. Call when a match starts. */
+  setMatch(world: WorldState): void;
   /** Syncs the HUD with the world. Cheap to call every frame: it only touches changed text. */
   update(world: WorldState, seed: number): void;
 }
@@ -16,29 +19,16 @@ interface BallRow {
   readonly fill: HTMLElement;
 }
 
-function element<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className: string,
-  text?: string,
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
-
-/** Sets text only when it changed, so screen readers and layout aren't disturbed every frame. */
-function setText(node: HTMLElement, text: string): void {
-  if (node.textContent !== text) node.textContent = text;
-}
+/** Slot labels, so mirror matches (two identical balls) are still told apart. */
+const SIDES = ['A', 'B'];
 
 /**
- * Builds the match HUD inside `root` with plain DOM: one row per ball (name, health), the seed,
- * and the result with Replay / New match once the match ends. All text is set with textContent.
+ * Builds the match HUD inside `root` with plain DOM: one row per ball (side, name, health), the
+ * seed, and the result with Replay / New match once the match ends. All text is set with
+ * textContent.
  */
 export function createHud(
   root: HTMLElement,
-  initial: WorldState,
   definitions: DefinitionLookup,
   actions: HudActions,
 ): Hud {
@@ -46,22 +36,6 @@ export function createHud(
 
   const list = element('ul', 'hud-balls');
   const rows = new Map<string, BallRow>();
-  for (const ball of initial.balls) {
-    const definition = definitions.get(ball.definitionId);
-    const item = element('li', 'hud-ball');
-    item.style.setProperty('--ball-color', definition?.color ?? 'currentColor');
-
-    const name = element('span', 'hud-ball-name', definition?.name ?? ball.id);
-    const health = element('span', 'hud-ball-health');
-    const track = element('div', 'hud-health-track');
-    track.setAttribute('aria-hidden', 'true');
-    const fill = element('div', 'hud-health-fill');
-    track.append(fill);
-    item.append(name, health, track);
-    list.append(item);
-    rows.set(ball.id, { health, fill });
-  }
-
   const seedLine = element('p', 'hud-seed');
   // Live region exists (empty) from the start so the result is announced when it appears.
   const result = element('p', 'hud-result');
@@ -79,6 +53,29 @@ export function createHud(
   root.append(list, result, buttons, seedLine);
 
   return {
+    setMatch(world) {
+      list.replaceChildren();
+      rows.clear();
+      world.balls.forEach((ball, index) => {
+        const definition = definitions.get(ball.definitionId);
+        const item = element('li', 'hud-ball');
+        item.style.setProperty('--ball-color', definition?.color ?? 'currentColor');
+
+        const name = element('span', 'hud-ball-name');
+        name.append(
+          element('span', 'hud-ball-side', SIDES[index] ?? String(index + 1)),
+          definition?.name ?? ball.id,
+        );
+        const health = element('span', 'hud-ball-health');
+        const track = element('div', 'hud-health-track');
+        track.setAttribute('aria-hidden', 'true');
+        const fill = element('div', 'hud-health-fill');
+        track.append(fill);
+        item.append(name, health, track);
+        list.append(item);
+        rows.set(ball.id, { health, fill });
+      });
+    },
     update(world, seed) {
       for (const ball of world.balls) {
         const row = rows.get(ball.id);

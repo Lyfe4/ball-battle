@@ -64,6 +64,11 @@ body {
   width: 100%;
   max-width: 32rem;
   display: grid;
+  gap: var(--space-gap);
+}
+
+.hud-status {
+  display: grid;
   gap: var(--space-small);
 }
 
@@ -180,4 +185,60 @@ canvas {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   font-variant-numeric: tabular-nums;
+}
+
+.hud-ball-side {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-right: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* Picker: two selects and a start button, on one row where there is room. */
+.picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: var(--space-small);
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .picker {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .picker-start {
+    grid-column: 1 / -1;
+  }
+}
+
+.picker-field {
+  display: grid;
+  gap: 4px;
+}
+
+.picker-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.picker-select {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.picker-select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.picker-start {
+  padding: 0 var(--space-gap);
 }

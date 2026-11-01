@@ -10,6 +10,7 @@ import { getDefinition } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
+import { createPicker } from './ui/picker.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.getElementById(id);
@@ -29,7 +30,8 @@ function getContext2d(target: HTMLCanvasElement): CanvasRenderingContext2D {
 
 const canvas = getElement('arena', HTMLCanvasElement);
 const container = getElement('arena-container', HTMLDivElement);
-const hudRoot = getElement('hud', HTMLElement);
+const hudRoot = getElement('hud-status', HTMLDivElement);
+const pickerForm = getElement('picker', HTMLFormElement);
 const ctx = getContext2d(canvas);
 
 const effects = createEffects();
@@ -50,13 +52,17 @@ function createMatchWorld(next: Matchup, nextSeed: number) {
   ]);
 }
 
-const hud = createHud(hudRoot, world, BALL_LOOKUP, {
+const hud = createHud(hudRoot, BALL_LOOKUP, {
   onReplay: () => {
     startMatch(matchup, seed);
   },
   onNewMatch: () => {
     startMatch(matchup, generateSeed());
   },
+});
+
+const picker = createPicker(pickerForm, BALLS, (chosen) => {
+  startMatch(chosen, generateSeed());
 });
 
 function render(nowMs: number): void {
@@ -74,6 +80,8 @@ function startMatch(nextMatchup: Matchup, nextSeed: number): void {
   matchup = nextMatchup;
   seed = nextSeed;
   world = createMatchWorld(matchup, seed);
+  hud.setMatch(world);
+  picker.show(matchup);
   effects.reset();
   accumulatorMs = 0;
   lastFrameMs = undefined;
