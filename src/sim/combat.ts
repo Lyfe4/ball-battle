@@ -62,10 +62,19 @@ export interface DamageResult {
   readonly defeated: readonly BallDefeatedEvent[];
 }
 
+/** One ball's hit on another, before it is applied. `raw` is not yet clamped to the target's health. */
+interface PendingHit {
+  readonly target: BallState;
+  readonly source: BallState;
+  readonly raw: number;
+  readonly multiplier: number;
+}
+
 /**
  * Applies contact damage for each new contact. Each ball's hit is scaled by how hard it drove
- * into the other before the bounce. Within a pair both hits use health from before the exchange,
- * so two balls can knock each other out at once.
+ * into the other before the bounce. Within a pair both hits are worked out from health before the
+ * exchange. If both hits would be lethal, the ball that dealt the larger raw damage survives on
+ * 1 health; equal raw damage knocks both out (ADR 0002, lethal-exchange tiebreak).
  */
 export function applyContactDamage(
   balls: readonly BallState[],
@@ -77,12 +86,18 @@ export function applyContactDamage(
   const damage: DamageEvent[] = [];
   const lastHitBy = new Map<string, string>();
 
-  const hit = (target: BallState, source: BallState, approachSpeed: number): BallState => {
+  const pendingHit = (target: BallState, source: BallState, approachSpeed: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
     const multiplier = impactMultiplier(approachSpeed, definition.speed);
-    const amount = Math.min(target.health, impactDamage(definition.contactDamage, multiplier));
-    if (amount <= 0) return target;
-    const healthAfter = target.health - amount;
+    return { target, source, raw: impactDamage(definition.contactDamage, multiplier), multiplier };
+  };
+
+  const apply = ({ target, source, raw, multiplier }: PendingHit, survives: boolean): BallState => {
+    // A survivor keeps 1 health (or less, if it somehow had less) instead of dropping to 0.
+    const healthAfter = survives ? Math.min(target.health, 1) : Math.max(0, target.health - raw);
+    const amount = target.health - healthAfter;
+    // A survival is worth reporting even if no health was actually lost.
+    if (amount <= 0 && !survives) return target;
     damage.push({
       type: 'damage',
       tick,
@@ -91,6 +106,7 @@ export function applyContactDamage(
       amount,
       healthAfter,
       multiplier,
+      survivedLethal: survives,
     });
     lastHitBy.set(target.id, source.id);
     return { ...target, health: healthAfter };
@@ -100,8 +116,11 @@ export function applyContactDamage(
     const a = byId.get(ballIds[0]);
     const b = byId.get(ballIds[1]);
     if (a === undefined || b === undefined) continue;
-    byId.set(a.id, hit(a, b, approachSpeeds[1]));
-    byId.set(b.id, hit(b, a, approachSpeeds[0]));
+    const toA = pendingHit(a, b, approachSpeeds[1]);
+    const toB = pendingHit(b, a, approachSpeeds[0]);
+    const mutualLethal = isAlive(a) && isAlive(b) && toA.raw >= a.health && toB.raw >= b.health;
+    byId.set(a.id, apply(toA, mutualLethal && toB.raw > toA.raw));
+    byId.set(b.id, apply(toB, mutualLethal && toA.raw > toB.raw));
   }
 
   const defeated: BallDefeatedEvent[] = [];

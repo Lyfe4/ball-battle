@@ -45,6 +45,7 @@ describe('contact damage', () => {
       sourceId: 'ball-0',
       amount: red.contactDamage,
       multiplier: 1,
+      survivedLethal: false,
     });
     expect(world.balls.map((ball) => ball.health)).toStrictEqual([
       red.maxHealth - blue.contactDamage,

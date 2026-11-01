@@ -10,6 +10,7 @@ const hit: DamageEvent = {
   amount: 15,
   healthAfter: 70,
   multiplier: 1,
+  survivedLethal: false,
 };
 
 describe('effects', () => {

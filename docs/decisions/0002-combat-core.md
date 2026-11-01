@@ -52,8 +52,8 @@ contact across ticks (pinned against a wall, grazing, separating slowly) therefo
 exactly once. Relying only on "are they approaching" would re-hit a ball pinned against a wall
 every time the wall bounced it back.
 
-On a new contact each ball deals damage to the other simultaneously, so a mutual knockout is
-possible. Health floors at 0.
+On a new contact each ball deals damage to the other simultaneously. Health floors at 0. When
+both hits would be lethal, the tiebreak in 4b applies.
 
 ### 4a. Damage scales with impact
 
@@ -76,6 +76,23 @@ quarter; the cap stops fast rebounds from one-shotting. Rounding keeps health wh
 and `Math.round` is exact, so this stays deterministic. The multiplier is reported on each
 `damage` event so the renderer can show heavy hits differently.
 
+### 4b. Lethal-exchange tiebreak
+
+With simultaneous damage, both balls often reach 0 on the same collision: most hits are
+exchanged both ways, and two balls worn down together tend to finish each other. After 4a,
+`pnpm balance 1000` showed 31.7% of matches ending in a draw, almost all of them mutual
+knockouts. That is a poor result for a game you watch to see who wins.
+
+So when a collision would reduce **both** balls to 0, the ball that dealt the larger raw damage
+(before clamping to the target's remaining health) survives on 1 health and the other is
+defeated. If both raw amounts are exactly equal, it stays a mutual knockout and a draw.
+
+Raw damage is already a rounded whole number, so the comparison is exact and deterministic. The
+survivor's `damage` event reports what actually happened (`amount` down to 1 health,
+`healthAfter: 1`) and sets `survivedLethal: true`, so the renderer can show a clutch survival.
+The rule lives entirely in `applyContactDamage` in `src/sim/combat.ts`; match-end logic is
+unchanged, since it simply sees one ball left.
+
 ### 5. Match state and guaranteed end
 
 `WorldState.match` is either `running` or `finished` with a result (a winner id or a draw), the
@@ -83,7 +100,8 @@ reason (`knockout` or `timeLimit`) and the end tick. Once finished, `step` retur
 and no events.
 
 A ball at 0 health is defeated. It stays in the world (so the renderer can still show it) but no
-longer moves or collides. If no balls are left the match is a draw; if one is left it wins.
+longer moves or collides. If no balls are left (a mutual knockout with equal raw damage, see 4b)
+the match is a draw; if one is left it wins.
 
 Every fight must end, so a match also ends at a fixed time limit of 60 seconds of sim time
 (3600 ticks). The ball with the higher health fraction (`health / maxHealth`) wins; equal fractions

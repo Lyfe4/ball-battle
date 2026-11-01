@@ -4,7 +4,7 @@ import { red } from './balls/red.ts';
 import { MATCH_TIME_LIMIT_TICKS } from './constants.ts';
 import { step } from './step.ts';
 import { run, testDefinitions, testLookup, withBalls } from './test-support.ts';
-import type { WorldState } from './types.ts';
+import type { DamageEvent, SimEvent, WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 
 const base = createWorld(1, testDefinitions);
@@ -47,12 +47,6 @@ describe('match end', () => {
       'matchEnded',
     ]);
     expect(events.at(-1)).toMatchObject({ result: { kind: 'win', winnerId: 'ball-1' } });
-  });
-
-  it('is a draw when both balls are defeated by the same collision', () => {
-    const { world, events } = run(headOn(blue.contactDamage, red.contactDamage), 60);
-    expect(world.match).toMatchObject({ result: { kind: 'draw' }, reason: 'knockout' });
-    expect(events.filter((event) => event.type === 'ballDefeated')).toHaveLength(2);
   });
 
   it('gives the win to the higher health fraction at the time limit', () => {
@@ -105,5 +99,79 @@ describe('match end', () => {
       expect(ended).toHaveLength(1);
       expect(events.at(-1)).toBe(ended[0]);
     }
+  });
+
+  describe('lethal-exchange tiebreak', () => {
+    function damageTo(events: readonly SimEvent[], targetId: string): DamageEvent | undefined {
+      return events.find(
+        (event): event is DamageEvent => event.type === 'damage' && event.targetId === targetId,
+      );
+    }
+
+    it('lets the bigger hitter survive on 1 health and win', () => {
+      // Head-on at full speed: red deals 15, blue deals 17. Both hits are lethal.
+      const { world, events } = run(headOn(blue.contactDamage, red.contactDamage), 60);
+      expect(world.match).toMatchObject({
+        result: { kind: 'win', winnerId: 'ball-1' },
+        reason: 'knockout',
+      });
+      expect(world.balls.map((ball) => ball.health)).toStrictEqual([0, 1]);
+      expect(damageTo(events, 'ball-1')).toMatchObject({
+        sourceId: 'ball-0',
+        amount: red.contactDamage - 1,
+        healthAfter: 1,
+        survivedLethal: true,
+      });
+      expect(damageTo(events, 'ball-0')).toMatchObject({
+        amount: blue.contactDamage,
+        healthAfter: 0,
+        survivedLethal: false,
+      });
+      expect(events.filter((event) => event.type === 'ballDefeated')).toStrictEqual([
+        expect.objectContaining({ ballId: 'ball-0', defeatedById: 'ball-1' }),
+      ]);
+    });
+
+    it('compares raw damage, so the side that hit harder this time survives', () => {
+      // Blue arrives at half speed, so its hit drops to round(17 * 0.5) = 9; red's stays 15.
+      const world = withBalls(headOn(9, red.contactDamage), [
+        {},
+        { velocity: { x: -blue.speed / 2, y: 0 } },
+      ]);
+      const result = run(world, 60);
+      expect(result.world.match).toMatchObject({ result: { kind: 'win', winnerId: 'ball-0' } });
+      expect(damageTo(result.events, 'ball-0')).toMatchObject({
+        healthAfter: 1,
+        survivedLethal: true,
+      });
+    });
+
+    it('stays a draw when both lethal hits deal exactly equal raw damage', () => {
+      const mirror = withBalls(createWorld(1, [red, red]), [
+        { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 }, health: 15 },
+        { position: { x: 600, y: 500 }, velocity: { x: -red.speed, y: 0 }, health: 15 },
+      ]);
+      const { world, events } = run(mirror, 60);
+      expect(world.match).toMatchObject({ result: { kind: 'draw' }, reason: 'knockout' });
+      expect(events.filter((event) => event.type === 'ballDefeated')).toHaveLength(2);
+      expect(events.some((event) => event.type === 'damage' && event.survivedLethal)).toBe(false);
+    });
+
+    it('reports a survival even when the survivor was already on 1 health', () => {
+      const { world, events } = run(headOn(blue.contactDamage, 1), 60);
+      expect(world.match).toMatchObject({ result: { kind: 'win', winnerId: 'ball-1' } });
+      expect(damageTo(events, 'ball-1')).toMatchObject({
+        amount: 0,
+        healthAfter: 1,
+        survivedLethal: true,
+      });
+    });
+
+    it('leaves a lethal hit on only one side unchanged', () => {
+      // Red would die, blue would not: no tiebreak, blue takes its normal hit.
+      const { world, events } = run(headOn(blue.contactDamage, blue.maxHealth), 60);
+      expect(world.balls[1]?.health).toBe(blue.maxHealth - red.contactDamage);
+      expect(damageTo(events, 'ball-1')?.survivedLethal).toBe(false);
+    });
   });
 });

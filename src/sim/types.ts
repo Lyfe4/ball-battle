@@ -129,6 +129,12 @@ export interface DamageEvent {
    * bounce, over its definition speed, clamped to [MIN_IMPACT_MULTIPLIER, MAX_IMPACT_MULTIPLIER].
    */
   readonly multiplier: number;
+  /**
+   * True when this hit would have been lethal but the target survived on 1 health because it dealt
+   * the larger raw damage in a mutual lethal exchange (ADR 0002). `amount` and `healthAfter`
+   * describe what actually happened.
+   */
+  readonly survivedLethal: boolean;
 }
 
 export interface BallDefeatedEvent {
