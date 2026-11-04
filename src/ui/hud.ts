@@ -16,6 +16,11 @@ export interface Hud {
    * result and its buttons wait for showResult, so the knockout sequence plays first.
    */
   update(world: WorldState, seed: number, showResult: boolean): void;
+  /**
+   * Series mode: rows are labelled You / Bot instead of A / B, and Replay / New match are hidden
+   * (the series panel offers its own buttons). Takes effect at the next setMatch / update.
+   */
+  setSeriesMode(on: boolean): void;
 }
 
 interface BallRow {
@@ -26,6 +31,7 @@ interface BallRow {
 
 /** Slot labels, so mirror matches (two identical balls) are still told apart. */
 const SIDES = ['A', 'B'];
+const SERIES_SIDES = ['You', 'Bot'];
 
 /**
  * Builds the match HUD inside `root` with plain DOM: one row per ball (side, name, health), the
@@ -56,8 +62,12 @@ export function createHud(
   buttons.append(replay, newMatch);
 
   root.append(list, result, buttons, seedLine);
+  let seriesMode = false;
 
   return {
+    setSeriesMode(on) {
+      seriesMode = on;
+    },
     setMatch(world) {
       list.replaceChildren();
       rows.clear();
@@ -73,7 +83,11 @@ export function createHud(
 
         const name = element('span', 'hud-ball-name');
         name.append(
-          element('span', 'hud-ball-side', SIDES[index] ?? String(index + 1)),
+          element(
+            'span',
+            'hud-ball-side',
+            (seriesMode ? SERIES_SIDES : SIDES)[index] ?? String(index + 1),
+          ),
           definition?.name ?? ball.id,
         );
         const health = element('span', 'hud-ball-health');
@@ -101,7 +115,7 @@ export function createHud(
       setText(seedLine, `Seed ${seed}`);
       const finished = world.match.status === 'finished' && showResult;
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
-      buttons.hidden = !finished;
+      buttons.hidden = !finished || seriesMode;
     },
   };
 }
