@@ -66,6 +66,7 @@ export const theme = {
     archer: '#164e63',
     storm: '#1e3a8a',
     frost: '#0c4a6e',
+    thorns: '#14532d',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',

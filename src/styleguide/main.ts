@@ -128,8 +128,17 @@ const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
+    'Thorns: a ring of spikes to the edge; fewer, fatter spikes at small size',
+    [
+      { label: 'idle', id: 'thorns' },
+      { label: 'hit flash', id: 'thorns', flash: 0.6 },
+      { label: 'mirror B', id: 'thorns', repeat: true },
+      { label: 'defeated', id: 'thorns', defeated: true },
+    ],
+  ],
+  [
     'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
-    ['brawler', 'speedster', 'vampire', 'archer', 'storm', 'frost'].map((id): Tile => ({
+    ['brawler', 'speedster', 'vampire', 'archer', 'storm', 'frost', 'thorns'].map((id): Tile => ({
       label: id,
       id,
       statuses: ['shocked'],
@@ -225,6 +234,7 @@ function phoneArena(): HTMLElement {
     { x: 200, y: 720 },
     { x: 500, y: 760 },
     { x: 800, y: 700 },
+    { x: 500, y: 470 },
   ];
   const world = createWorld(4, BALLS);
   const balls = world.balls.map((ball, index) => ({
