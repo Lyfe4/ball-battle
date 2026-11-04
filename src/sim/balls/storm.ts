@@ -16,7 +16,7 @@ export const COOLDOWN_TICKS = 130;
 export const WARNING_TICKS = 48;
 export const ZONE_RADIUS = 170;
 /** Per hit. Identity rule: the biggest single ability hit in the roster. */
-export const ZONE_DAMAGE = 26;
+export const ZONE_DAMAGE = 28;
 /** The zone lands up to this far from the target's position when it was called. */
 export const MAX_OFFSET = 60;
 
@@ -51,7 +51,7 @@ export const storm = defineBall<StormState>({
   color: '#93c5fd',
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
-  maxHealth: 68,
+  maxHealth: 74,
   contactDamage: 13,
   initialAbilityState: { nextStrikeTick: FIRST_STRIKE_DELAY_TICKS },
   hooks: {

@@ -77,7 +77,7 @@ export const archer = defineBall<ArcherState>({
   color: '#22d3ee',
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 44,
+  maxHealth: 50,
   contactDamage: 6,
   initialAbilityState: { nextShotTick: FIRST_SHOT_DELAY_TICKS },
   hooks: {

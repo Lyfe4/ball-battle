@@ -17,7 +17,7 @@ export const vampire = defineBall({
   color: '#a855f7',
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 66,
+  maxHealth: 60,
   contactDamage: 22,
   initialAbilityState: {},
   hooks: {
