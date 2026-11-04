@@ -91,6 +91,37 @@ and a lightning bolt, driven by the `zoneStruck` event in the render layer. The 
 shape is random, but its seed comes from the zone id, so a replay looks identical. The
 randomness lives only in the renderer and never touches the sim.
 
+### 8. The Storm and its counters
+
+The Storm is the first zone user. Every 130 ticks (about 2.2 s, the first on tick 60) it marks a
+zone of radius 170 around the nearest enemy's **current** position, off by a seeded random amount
+of up to 60 units (uniform in a disk, from `ctx.random`). The zone strikes 48 ticks (0.8 s) later
+for 26 damage, the biggest single ability hit in the roster. Otherwise its stats are moderate:
+radius 50, speed 720, health 68, contact damage 13.
+
+The warning time is the main balance lever, and it doesn't work the obvious way. With a 0.6 s
+warning, speed decided everything: fast balls walked out of almost every zone and slow ones
+almost never did (Speedster vs Storm about 86/14 while the Storm crushed the Vampire). With a
+longer warning every ball escapes more often, which narrows the gap between fast and slow
+targets. Damage then moved from contact into the zone, so the ability still provides at least
+40% of the Storm's damage (45% measured). Measured zone hit rates: Brawler 17%, Vampire 21%,
+Archer 12%, Speedster 10%.
+
+Lowering the Speedster's health also fixed Speedster vs Storm, but it moved Vampire vs Speedster
+from 58/42 to 68/32, breaking the near-even trio ADR 0005 describes, so it was reverted. The
+other four balls are unchanged, and their matchups with each other are exactly as before.
+
+The resulting counters are deliberate and soft (`pnpm balance`, 500 seeds per slot order):
+
+- **Speedster beats Storm** (about 67/33): it outruns the warning.
+- **Storm beats Brawler** (about 63/37) and **Vampire** (about 63/37): big, slower targets are
+  easier to catch in a zone.
+- **Archer edges the Storm** (about 60/40): it out-damages it from range, and it is small and
+  quick enough to dodge often.
+
+Every ball wins 40-60% overall (Storm 49.5%). Turning one of these into a hard counter (worse than
+20/80), or removing one, is a design decision, not a tuning step.
+
 ## Consequences
 
 - Positive: area and delayed effects are plain data like everything else, reproducible from a

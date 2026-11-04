@@ -17,10 +17,13 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Speedster | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
 | Vampire   | Heals for 40% of the damage it deals.                                            |
 | Archer    | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
+| Storm     | Calls down lightning on its enemy every 2 s; the strike lands 0.8 s later.       |
 
 Counters are part of the design, but stay soft (no matchup worse than 20/80): the **Speedster
 beats the Archer** by closing the distance, and the **Archer beats the Brawler and the Vampire**,
-which are bigger and slower targets. The other three are close to even with each other.
+which are bigger and slower targets. The **Storm beats the Brawler and the Vampire** too, for
+the same reason, while the **Speedster beats the Storm** by outrunning its warnings and the
+**Archer edges it** at range. Brawler, Speedster and Vampire are close to even with each other.
 
 ## Running it
 
@@ -71,18 +74,21 @@ The rules, in brief:
 5. **Balls are data.** Each ball is a definition file (plain data plus optional hooks) in
    `src/sim/balls/`.
 6. **The sim reports, it doesn't listen.** Each tick returns events (collision, damage, heal,
-   ability triggered, defeat, match end) for effects, sound and replays; nothing feeds back in.
+   ability triggered, projectiles, zones, defeat, match end) for effects, sound and replays;
+   nothing feeds back in.
 7. **Abilities return actions.** Hooks get a read-only view and return plain-data actions
-   (damage, heal, change velocity, update own state); the sim applies them in a fixed order.
+   (damage, heal, change velocity, update own state, fire a projectile, mark a zone); the sim
+   applies them in a fixed order.
 
 Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-deterministic-simulation.md)
 , [ADR 0002: Combat core](docs/decisions/0002-combat-core.md)
 , [ADR 0003: Ability system](docs/decisions/0003-ability-system.md)
 , [ADR 0004: Wall-bounce variance](docs/decisions/0004-wall-bounce-variance.md)
-and [ADR 0005: Projectiles](docs/decisions/0005-projectiles.md).
+, [ADR 0005: Projectiles](docs/decisions/0005-projectiles.md)
+and [ADR 0006: Hazard zones](docs/decisions/0006-hazard-zones.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 26.16 kB JS (10.12 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
+Production bundle: 30.75 kB JS (11.43 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
