@@ -73,7 +73,7 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   change when real balls are rebalanced. Test-only balls with hooks are declared in the test.
 - Balance targets (`pnpm balance`): every ball wins 40-60% overall, no matchup worse than 20/80 (soft counters are fine),
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
-  (failure) for ±5% contact damage, since the measurement has ±2-3 points of noise,
+  (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match. Re-check after any stat or ability change.
   Ball identity rules are pinned in `src/sim/balls/balls.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).

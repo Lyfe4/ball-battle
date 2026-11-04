@@ -10,13 +10,6 @@ export interface BallTotals {
   contactDamage: number;
   abilityDamage: number;
   healed: number;
-  /**
-   * Contact hits that were not clamped by the target's remaining health (no killing blows or
-   * tiebreak survivals), and their total damage: the effective per-hit damage, used to check that
-   * a ±5% stat change survives rounding.
-   */
-  unclampedHits: number;
-  unclampedHitDamage: number;
 }
 
 export interface PairResult {
@@ -32,8 +25,6 @@ const emptyTotals = (): BallTotals => ({
   contactDamage: 0,
   abilityDamage: 0,
   healed: 0,
-  unclampedHits: 0,
-  unclampedHitDamage: 0,
 });
 
 function addEvents(totals: BallTotals, ballId: string, events: readonly SimEvent[]): void {
@@ -43,10 +34,6 @@ function addEvents(totals: BallTotals, ballId: string, events: readonly SimEvent
         totals.abilityDamage += event.amount;
       } else {
         totals.contactDamage += event.amount;
-        if (event.healthAfter > 0 && !event.survivedLethal) {
-          totals.unclampedHits++;
-          totals.unclampedHitDamage += event.amount;
-        }
       }
     }
     if (event.type === 'healed' && event.ballId === ballId) totals.healed += event.amount;
@@ -120,9 +107,14 @@ export function playPair(
   return result;
 }
 
-/** A copy of the definition with its contact damage scaled, for sensitivity runs. */
-export function withContactDamage(definition: BallDefinition, factor: number): BallDefinition {
-  return { ...definition, contactDamage: definition.contactDamage * factor };
+/**
+ * A copy of the definition with its max health scaled, for sensitivity runs. Rounded, because
+ * health is a whole number everywhere in the sim; the caller reports the effective change.
+ * Health is used rather than damage so every damage source (contact, arrows, zones) is nudged by
+ * the same amount.
+ */
+export function withMaxHealth(definition: BallDefinition, factor: number): BallDefinition {
+  return { ...definition, maxHealth: Math.round(definition.maxHealth * factor) };
 }
 
 export function median(values: readonly number[]): number {
@@ -131,8 +123,4 @@ export function median(values: readonly number[]): number {
   return sorted.length % 2 === 1
     ? (sorted[middle] ?? 0)
     : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-}
-
-export function averageHit(totals: BallTotals): number {
-  return totals.unclampedHits === 0 ? 0 : totals.unclampedHitDamage / totals.unclampedHits;
 }

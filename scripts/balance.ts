@@ -4,10 +4,9 @@
 import { BALLS } from '../src/sim/balls/index.ts';
 import type { BallDefinition } from '../src/sim/types.ts';
 import {
-  averageHit,
   median,
   playPair,
-  withContactDamage,
+  withMaxHealth,
   type BallTotals,
   type PairResult,
 } from './balance-stats.ts';
@@ -23,7 +22,7 @@ const TARGETS = {
   drawRate: 0.05,
   medianSeconds: [12, 30],
   /**
-   * Largest win-rate swing, in points, from a ±5% change to one ball's contact damage. Above
+   * Largest win-rate swing, in points, from a ±5% change to one ball's max health. Above
    * `warn` is worth a look; above `fail` is a miss. The gap allows for ±2-3 points of noise.
    */
   sensitivity: { warn: 15, fail: 20 },
@@ -58,8 +57,6 @@ const ballTotals = new Map<string, BallTotals & { games: number; wins: number }>
       contactDamage: 0,
       abilityDamage: 0,
       healed: 0,
-      unclampedHits: 0,
-      unclampedHitDamage: 0,
       games: 0,
       wins: 0,
     },
@@ -84,7 +81,7 @@ function record(ball: BallDefinition, result: PairResult, index: 0 | 1): void {
 
 console.log(`BallBattle balance: ${seeds} seeds per slot order (seeds 0-${seeds - 1})\n`);
 console.log(
-  `  ${'Matchup'.padEnd(24)} ${'Wins'.padEnd(15)}  Draw   Median  Sensitivity (±5% damage)`,
+  `  ${'Matchup'.padEnd(24)} ${'Wins'.padEnd(15)}  Draw   Median  Sensitivity (±5% health)`,
 );
 const sensitivityLines: string[] = [];
 
@@ -99,17 +96,17 @@ BALLS.forEach((x, i) => {
     const xRate = base.wins[0] / base.games;
     worstShare = Math.min(worstShare, xRate, base.wins[1] / base.games);
 
-    // Nudge each ball's contact damage by ±5% on the same seeds and see how far x's win rate moves.
+    // Nudge each ball's max health by ±5% on the same seeds and see how far x's win rate moves.
     let swing = 0;
     const details: string[] = [];
     for (const [index, ball] of [[0, x] as const, [1, y] as const]) {
       for (const factor of SENSITIVITY_FACTORS) {
-        const nudged = withContactDamage(ball, factor);
+        const nudged = withMaxHealth(ball, factor);
         const run =
           index === 0 ? playPair(nudged, y, seeds, BALLS) : playPair(x, nudged, seeds, BALLS);
         const delta = run.wins[0] / run.games - xRate;
         swing = Math.max(swing, Math.abs(delta));
-        const effective = averageHit(run.totals[index]) / averageHit(base.totals[index]) - 1;
+        const effective = nudged.maxHealth / ball.maxHealth - 1;
         details.push(
           `${ball.name} ${signedPct(factor - 1)} (effective ${signedPct(effective)}): ${x.name} ${signedPct(delta)}`,
         );
@@ -167,7 +164,7 @@ console.log(
   `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
 );
 console.log(
-  `  ${grade(worstSensitivity, TARGETS.sensitivity.warn, TARGETS.sensitivity.fail)} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% damage (worst ${worstSensitivity.toFixed(1)} pts)`,
+  `  ${grade(worstSensitivity, TARGETS.sensitivity.warn, TARGETS.sensitivity.fail)} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
 );
 console.log(`  ${check(healingOk)} Vampire heals at least 25% of max health per match`);
 console.log(`\n  (${((performance.now() - started) / 1000).toFixed(0)} s)`);
