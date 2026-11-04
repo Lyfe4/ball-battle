@@ -5,8 +5,11 @@ import { DT } from '../constants.ts';
 import type { BallDefinition } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
+import { berserker } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
+import { quake } from './quake.ts';
+import { sniper } from './sniper.ts';
 import { BALLS } from './index.ts';
 import { MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm } from './storm.ts';
@@ -43,6 +46,9 @@ describe('the ball roster', () => {
       frost: frost.speed,
       thorns: thorns.speed,
       venom: venom.speed,
+      berserker: berserker.speed,
+      sniper: sniper.speed,
+      quake: quake.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {

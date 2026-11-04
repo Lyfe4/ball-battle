@@ -1,6 +1,7 @@
 // The intended counter map (ADR 0009, docs/vision.md): for every pair of balls, which side should
 // be favoured, or whether it should be even. `pnpm balance` checks each pair against its band.
 // A new ball must add one entry per existing ball; a test checks the map covers every pair.
+import { BATCH_TWO_ENTRIES } from './counter-map-batch-2.ts';
 import { FIRST_ENTRIES } from './counter-map-first.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
@@ -40,7 +41,7 @@ const EDGE_EPSILON = 1e-9;
 export const HARD_WORST_MATCHUP = 0.25;
 
 /** Every pair of balls exactly once, with its intended result and why (a test checks coverage). */
-export const COUNTER_MAP: readonly CounterEntry[] = FIRST_ENTRIES;
+export const COUNTER_MAP: readonly CounterEntry[] = [...FIRST_ENTRIES, ...BATCH_TWO_ENTRIES];
 
 /**
  * Balls deliberately even against everyone but one known counter, the one exception to "every

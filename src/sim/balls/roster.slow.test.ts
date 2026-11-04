@@ -8,9 +8,12 @@ import { step } from '../step.ts';
 import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer, ARROW_DAMAGE } from './archer.ts';
+import { berserker, RAGE_DAMAGE } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
+import { quake, ZONE_DAMAGE as SHOCKWAVE_DAMAGE } from './quake.ts';
+import { SHOT_DAMAGE, sniper } from './sniper.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE } from './storm.ts';
 import { reflectFor, thorns } from './thorns.ts';
@@ -183,9 +186,18 @@ describe('the ball roster (slow)', () => {
         archer: ARROW_DAMAGE,
         storm: ZONE_DAMAGE,
         frost: 0,
-        // Reflection of the hardest contact hit in the roster.
-        thorns: reflectFor(Math.max(...BALLS.map((ball) => ball.contactDamage))),
+        // Reflection of the hardest contact hit in the roster, a raging Berserker's included.
+        thorns: reflectFor(
+          Math.max(
+            ...BALLS.map((ball) => ball.contactDamage),
+            berserker.contactDamage + RAGE_DAMAGE,
+          ),
+        ),
         venom: POISON_DAMAGE,
+        // Its rage is contact damage, not an ability hit.
+        berserker: 0,
+        sniper: SHOT_DAMAGE,
+        quake: SHOCKWAVE_DAMAGE,
       };
       expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
       for (const ball of others(storm.id)) {
@@ -211,10 +223,36 @@ describe('the ball roster (slow)', () => {
       expect(abilityShare(venom, others(venom.id))).toBeGreaterThanOrEqual(0.5);
     });
 
+    it('Berserker has the most health', () => {
+      for (const ball of others(berserker.id)) {
+        expect(berserker.maxHealth).toBeGreaterThan(ball.maxHealth);
+      }
+    });
+
+    it(
+      'Sniper gets at least half its damage from its shots',
+      { timeout: ROSTER_TIMEOUT_MS },
+      () => {
+        // Measured about 60% (ADR 0015).
+        expect(abilityShare(sniper, others(sniper.id))).toBeGreaterThanOrEqual(0.5);
+      },
+    );
+
+    it(
+      'Quake gets at least 30% of its damage from its shockwaves',
+      { timeout: ROSTER_TIMEOUT_MS },
+      () => {
+        // Measured about 40% (ADR 0015).
+        expect(abilityShare(quake, others(quake.id))).toBeGreaterThanOrEqual(0.3);
+      },
+    );
+
     it('Brawler hits hardest and has no ability', () => {
       for (const ball of others(brawler.id)) {
         expect(brawler.contactDamage).toBeGreaterThan(ball.contactDamage);
       }
+      // Even a Berserker at the edge of defeat hits softer.
+      expect(brawler.contactDamage).toBeGreaterThan(berserker.contactDamage + RAGE_DAMAGE);
       expect(Object.keys(brawler.hooks)).toStrictEqual([]);
       expect(brawler.initialAbilityState).toStrictEqual({});
     });

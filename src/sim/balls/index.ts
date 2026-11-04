@@ -1,8 +1,11 @@
 import { indexDefinitions } from '../definitions.ts';
 import type { BallDefinition } from '../types.ts';
 import { archer } from './archer.ts';
+import { berserker } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
+import { quake } from './quake.ts';
+import { sniper } from './sniper.ts';
 import { speedster } from './speedster.ts';
 import { storm } from './storm.ts';
 import { thorns } from './thorns.ts';
@@ -19,6 +22,9 @@ export const BALLS: readonly BallDefinition[] = [
   frost,
   thorns,
   venom,
+  berserker,
+  sniper,
+  quake,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);
