@@ -29,8 +29,9 @@ export const COUNTER_BANDS = {
 export const HARD_WORST_MATCHUP = 0.25;
 
 /**
- * Two soft triangles, Speedster > Archer > Vampire > Speedster and Brawler > Speedster > Storm >
- * Brawler; every other pair is even. Every ball has a favoured and an unfavoured matchup.
+ * One soft triangle from the balls' mechanics (Speedster > Archer > Vampire > Speedster), the
+ * Storm's place (favoured against the Vampire, unfavoured against the Speedster, even with the
+ * Archer), and the Brawler as the safe pick, even against everyone (docs/vision.md).
  */
 export const COUNTER_MAP: readonly CounterEntry[] = [
   {
@@ -52,10 +53,10 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
     reason: 'Outlasts the burst by healing off every exchange.',
   },
   {
-    x: 'brawler',
-    y: 'speedster',
+    x: 'storm',
+    y: 'vampire',
     intended: 'x',
-    reason: 'Every Brawler hit lands at full weight; the Speedster needs bounces to match one.',
+    reason: 'Lightning is ranged damage, which lifesteal cannot answer.',
   },
   {
     x: 'speedster',
@@ -64,36 +65,42 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
     reason: 'The fastest target outruns the most warnings.',
   },
   {
-    x: 'storm',
-    y: 'brawler',
-    intended: 'x',
-    reason: 'No ability and below-average speed: the Brawler walks into zones.',
-  },
-  {
-    x: 'brawler',
-    y: 'vampire',
-    intended: 'even',
-    reason: 'Burst against sustain: the biggest hits are also the biggest heals.',
-  },
-  {
-    x: 'brawler',
-    y: 'archer',
-    intended: 'even',
-    reason: 'The Archer kites; the Brawler ends it in two clean hits once it connects.',
-  },
-  {
-    x: 'vampire',
-    y: 'storm',
-    intended: 'even',
-    reason: 'Lightning out-damages lifesteal at range; the Vampire heals it back up close.',
-  },
-  {
     x: 'archer',
     y: 'storm',
     intended: 'even',
     reason: 'Two ranged balls: arrows hit more often, a strike hits harder.',
   },
+  {
+    x: 'brawler',
+    y: 'speedster',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'brawler',
+    y: 'vampire',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'brawler',
+    y: 'archer',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'brawler',
+    y: 'storm',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
 ];
+
+/**
+ * Balls deliberately even against everyone, the one exception to "every ball has a favoured and
+ * an unfavoured matchup" (docs/vision.md). Adding one is a design decision.
+ */
+export const SAFE_PICKS: readonly string[] = ['brawler'];
 
 export type CounterVerdict = 'ok' | 'warn' | 'miss';
 

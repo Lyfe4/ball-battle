@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../src/sim/balls/index.ts';
-import { checkCounter, COUNTER_MAP, counterFor, type CounterEntry } from './counter-map.ts';
+import {
+  checkCounter,
+  COUNTER_MAP,
+  counterFor,
+  SAFE_PICKS,
+  type CounterEntry,
+} from './counter-map.ts';
 
 const favoured: CounterEntry = { x: 'a', y: 'b', intended: 'x', reason: '' };
 const even: CounterEntry = { x: 'a', y: 'b', intended: 'even', reason: '' };
@@ -18,14 +24,23 @@ describe('the counter map', () => {
     }
   });
 
-  it('gives every ball a favoured and an unfavoured matchup (docs/vision.md)', () => {
-    for (const { id } of BALLS) {
+  it('gives every ball a favoured and an unfavoured matchup, except the safe picks', () => {
+    for (const { id } of BALLS.filter((ball) => !SAFE_PICKS.includes(ball.id))) {
       const sides = COUNTER_MAP.filter((entry) => entry.intended !== 'even').map((entry) => {
         const winner = entry.intended === 'x' ? entry.x : entry.y;
         return entry.x === id || entry.y === id ? (winner === id ? 'favoured' : 'unfavoured') : '';
       });
       expect(sides, id).toContain('favoured');
       expect(sides, id).toContain('unfavoured');
+    }
+  });
+
+  it('keeps every safe pick even against everyone (docs/vision.md)', () => {
+    expect(SAFE_PICKS).toStrictEqual(['brawler']);
+    for (const id of SAFE_PICKS) {
+      const own = COUNTER_MAP.filter((entry) => entry.x === id || entry.y === id);
+      expect(own).toHaveLength(BALLS.length - 1);
+      for (const entry of own) expect(entry.intended, `${entry.x} vs ${entry.y}`).toBe('even');
     }
   });
 });

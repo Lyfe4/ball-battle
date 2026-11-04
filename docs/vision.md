@@ -30,7 +30,8 @@ These are where the targets in `pnpm balance` are heading. The counter map and t
 are checked today (see Decisions); the rest waits for the round structure.
 
 - Every ball has **at least one matchup around 60% or better** and **at least one around 40% or
-  worse**, so each has something to fear and something to hunt.
+  worse**, so each has something to fear and something to hunt. **One exception: the Brawler**
+  is the deliberate safe pick, even against everyone (see Decisions).
 - **No matchup worse than about 25/75** (today's limit is 20/80).
 - **Every ball wins 40-60% overall** (unchanged).
 
@@ -51,9 +52,16 @@ blind picks. See Decisions below.
 
 ### Counter map (2026-11-04)
 
-- Two soft triangles: **Speedster > Archer > Vampire > Speedster** and **Brawler > Speedster >
-  Storm > Brawler**. Every other pair is even. The map is data in `scripts/counter-map.ts`; the
-  reasoning and results are in ADR 0009.
+- One soft triangle, which comes from the balls' mechanics: **Speedster > Archer > Vampire >
+  Speedster**. Plus **Storm > Vampire** (ranged damage denies lifesteal, as the Archer's does)
+  and **Speedster > Storm** (it outruns the warnings). Archer vs Storm is even.
+- **The Brawler is the safe pick: even (45-55%) against every ball.** It is the one exception to
+  "every ball has a favoured and an unfavoured matchup": a blind pick that never loses the guess
+  badly and never wins it big. The counter-map test lists it as an explicit exception.
+- The map is data in `scripts/counter-map.ts`; the reasoning and results are in ADR 0009.
+- Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
+  Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
+  mechanics favours it against one ball more than another.
 - Bands, checked by `pnpm balance`: the favoured side wins **58-70%**, an even pair **45-55%**
   for both sides, and **no matchup is worse than 25/75**, on top of every existing target.
 
