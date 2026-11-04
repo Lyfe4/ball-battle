@@ -195,20 +195,20 @@ canvas {
   outline-offset: 2px;
 }
 
-/* Playback speed: a small segmented toggle under the match status. */
-.speed-toggle {
+/* Segmented toggles: playback speed under the match status, the mode choice above the picker. */
+.segmented {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-small);
 }
 
-.speed-toggle-label {
+.segmented-label {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
 }
 
-.speed-toggle-button {
+.segmented-button {
   min-width: var(--tap-target);
   min-height: var(--tap-target);
   border: 1px solid var(--color-border);
@@ -220,13 +220,13 @@ canvas {
   cursor: pointer;
 }
 
-.speed-toggle-button[aria-pressed='true'] {
+.segmented-button[aria-pressed='true'] {
   border-color: var(--color-accent);
   box-shadow: inset 0 0 0 1px var(--color-accent);
   font-weight: 600;
 }
 
-.speed-toggle-button:focus-visible {
+.segmented-button:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
@@ -403,4 +403,164 @@ canvas {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   line-height: 1.3;
+}
+
+/* The mode choice spans the HUD; its two buttons share the width. */
+.mode-toggle .segmented-button {
+  flex: 1;
+  padding: 0 var(--space-small);
+}
+
+.mode-toggle .segmented-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Best of 3: the lineup builder and the scoreboard. */
+.lineup,
+.series {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.lineup-heading,
+.series-heading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lineup-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.lineup-slots,
+.series-rounds {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineup-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: 0 0 0 var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.lineup-slot-number {
+  min-width: 1em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineup-slot-icon {
+  flex: none;
+}
+
+.lineup-slot-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineup-slot-empty {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.lineup-slot-button {
+  flex: none;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 0;
+  border-left: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lineup-slot-button:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.lineup-slot-button:disabled {
+  color: var(--color-border);
+  cursor: default;
+}
+
+.lineup-slot-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.lineup-actions {
+  display: flex;
+  gap: var(--space-small);
+}
+
+.hud-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.picker-card[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.picker-card-note:empty {
+  display: none;
+}
+
+.picker-card-note {
+  color: var(--color-focus);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+.series-score {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.series-round {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.series-status {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.series-status:empty {
+  display: none;
 }
