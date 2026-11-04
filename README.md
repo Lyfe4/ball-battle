@@ -41,16 +41,17 @@ Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42`: share or reloa
 the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a fresh
 random one.
 
-| Script           | What it does                                                                    |
-| ---------------- | ------------------------------------------------------------------------------- |
-| `pnpm dev`       | Vite dev server                                                                 |
-| `pnpm build`     | Typecheck and build to `dist/`                                                  |
-| `pnpm preview`   | Serve `dist/` with the production security headers, to check the CSP            |
-| `pnpm test`      | Run the tests once (`pnpm test:watch` to watch)                                 |
-| `pnpm lint`      | ESLint                                                                          |
-| `pnpm typecheck` | `tsc -b` across all tsconfig projects                                           |
-| `pnpm format`    | Prettier (`pnpm format:check` to only check)                                    |
-| `pnpm balance`   | Matchup matrix, ability impact and sensitivity (N seeds per order, default 500) |
+| Script           | What it does                                                                 |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`       | Vite dev server                                                              |
+| `pnpm build`     | Typecheck and build to `dist/`                                               |
+| `pnpm preview`   | Serve `dist/` with the production security headers, to check the CSP         |
+| `pnpm test`      | Run the fast tests once (`pnpm test:watch` to watch)                         |
+| `pnpm test:slow` | Roster-wide tests that play every matchup (a separate CI job)                |
+| `pnpm lint`      | ESLint                                                                       |
+| `pnpm typecheck` | `tsc -b` across all tsconfig projects                                        |
+| `pnpm format`    | Prettier (`pnpm format:check` to only check)                                 |
+| `pnpm balance`   | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
 
 ## Architecture
 

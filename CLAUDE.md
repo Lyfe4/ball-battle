@@ -17,15 +17,21 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 - `pnpm preview`: serve `dist/` on http://localhost:4199 with the production security headers
   from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps
   them in step). Check the console for CSP errors after any change that loads something new.
-- `pnpm test`: run Vitest once (`pnpm test:watch` to watch)
+- `pnpm test`: run the fast unit suite once (`pnpm test:watch` to watch)
+- `pnpm test:slow`: the slow suite (`*.slow.test.ts`): roster-wide tests that play every matchup for
+  whole matches (determinism, the measured pass-through margin, identity rules). Run it after
+  changing any ball or the combat rules. Roster-wide tests that play whole matches go here.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
 - `pnpm format` / `pnpm format:check`: Prettier
-- `pnpm balance [seeds]`: play every matchup (both slot orders, seeds 0..N-1) headlessly and print
-  the matchup matrix and whether the balance targets are met. Run it after changing any ball's
-  stats, ability or the combat rules. Not part of CI.
+- `pnpm balance [seeds] [--ball <id>] [--serial]`: play every matchup (both slot orders, seeds
+  0..N-1) headlessly across all CPU cores and print the matchup matrix and whether the balance
+  targets are met. Run it after changing any ball's stats, ability or the combat rules.
+  `--ball <id>` plays only that ball's matchups and mirror (for a new ball); `--serial` runs on one
+  thread and gives byte-identical output. The elapsed time goes to stderr. Not part of CI.
 
-CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
+CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job and `test:slow` in
+another. All must pass.
 
 ## Architecture rules
 
@@ -93,9 +99,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match. Re-check after any stat or ability change.
-  Ball identity rules are pinned in `src/sim/balls/balls.test.ts`; breaking one is a design
+  Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
-- The pass-through property test in `src/sim/balls/balls.test.ts` (closing speed below 0.6 of the
+- The pass-through property test in `src/sim/balls/roster.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.
 - A behaviour test should be shown to fail with the behaviour disabled before it is trusted.
