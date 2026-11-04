@@ -55,26 +55,28 @@ every time the wall bounced it back.
 On a new contact each ball deals damage to the other simultaneously. Health floors at 0. When
 both hits would be lethal, the tiebreak in 4b applies.
 
-### 4a. Damage scales with impact
+### 4a. Damage scales with how directly a ball hits
 
 A flat `contactDamage` exchanged on every hit makes the winner a pure function of the stats:
 both balls take one hit per collision, so whichever needs fewer hits always loses, and at the
 time limit the health fractions compare the same way after any number of hits. The seed would
 only change how long a match takes, never who wins.
 
-So each ball's hit is scaled by how hard it drove into the other:
+So each ball's hit is scaled by how directly it drove into the other (revised by ADR 0008; this
+originally scaled by approach speed over definition speed, up to 2×):
 
 ```
-multiplier = clamp(approachSpeed / definition.speed, 0.25, 2)
+multiplier = clamp(approachSpeed / |velocity|, 0.25, 1)
 damage     = max(1, round(contactDamage × multiplier))
 ```
 
-`approachSpeed` is the ball's velocity along the collision normal towards the other ball,
-measured **before** the impulse, so the bounce itself never changes the damage. A ball charging
-head-on at its normal speed deals exactly `contactDamage`; a glancing or stationary ball deals a
-quarter; the cap stops fast rebounds from one-shotting. Rounding keeps health whole and readable,
-and `Math.round` is exact, so this stays deterministic. The multiplier is reported on each
-`damage` event so the renderer can show heavy hits differently.
+`approachSpeed` is the ball's velocity along the collision normal towards the other ball, and
+`|velocity|` its own speed, both measured **before** the impulse, so the bounce itself never
+changes the damage. Their ratio is the cosine of the approach angle: a head-on hit deals exactly
+`contactDamage`, a 60° hit half, and a glancing, retreating or stationary ball a quarter. Speed
+itself no longer matters (every ball keeps its own cruise speed, ADR 0008). Rounding keeps health
+whole and readable, and `Math.round` is exact, so this stays deterministic. The multiplier is
+reported on each `damage` event so the renderer can show heavy hits differently.
 
 ### 4b. Lethal-exchange tiebreak
 
