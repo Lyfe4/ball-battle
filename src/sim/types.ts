@@ -1,5 +1,5 @@
 import type {
-  HealBlockedEvent,
+  HealReducedEvent,
   StatusAppliedEvent,
   StatusExpiredEvent,
   StatusKind,
@@ -427,7 +427,7 @@ export type SimEvent =
   | MatchEndedEvent
   | StatusAppliedEvent
   | StatusExpiredEvent
-  | HealBlockedEvent;
+  | HealReducedEvent;
 
 export interface StepResult {
   readonly world: WorldState;

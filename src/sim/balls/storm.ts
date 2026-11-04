@@ -18,8 +18,9 @@ export const ZONE_RADIUS = 170;
 /** Per hit. Identity rule: the biggest single ability hit in the roster. */
 export const ZONE_DAMAGE = 28;
 /**
- * Every ball a strike hits is shocked for this long (1.5 s): heals restore nothing (ADR 0009). Only
- * the Vampire heals, so this is what makes the Storm its counter.
+ * Every ball a strike hits, and every ball that touches the Storm, is shocked for this long: its
+ * heals are cut by SHOCK_HEAL_REDUCTION (ADR 0009). Only the Vampire heals, so this is what makes
+ * the Storm its counter.
  */
 export const SHOCK_TICKS = 90;
 /** The zone lands up to this far from the target's position when it was called. */
@@ -45,15 +46,14 @@ export function randomOffset(random: () => number, radius: number): Vec2 {
 
 /**
  * Calls down lightning: every COOLDOWN_TICKS it marks a zone around the nearest enemy's current
- * position, off by a random amount, which strikes WARNING_TICKS later (ADR 0006) and shocks every
- * ball it hits for SHOCK_TICKS (ADR 0009). The sim clamps
- * the zone into the arena. The next strike is stored as an absolute tick, so the hook does nothing
- * at all in between.
+ * position, off by a random amount, which strikes WARNING_TICKS later (ADR 0006). The strike, and
+ * touching the Storm, shock for SHOCK_TICKS (ADR 0009). The sim clamps the zone into the arena.
+ * The next strike is stored as an absolute tick, so onTick does nothing at all in between.
  */
 export const storm = defineBall<StormState>({
   id: 'storm',
   name: 'Storm',
-  description: 'Calls down lightning where its enemy stands every 2 s. Shocked balls can’t heal.',
+  description: 'Calls down lightning where its enemy stands every 2 s. Shocked balls heal less.',
   color: '#93c5fd',
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
@@ -61,6 +61,11 @@ export const storm = defineBall<StormState>({
   contactDamage: 13,
   initialAbilityState: { nextStrikeTick: FIRST_STRIKE_DELAY_TICKS },
   hooks: {
+    // Touching the Storm shocks too (ADR 0009). onHitBall runs before onDamageDealt, so a
+    // Vampire's lifesteal from this very exchange is already reduced.
+    onHitBall: ({ other }) => [
+      { kind: 'applyStatus', targetId: other.id, status: 'shocked', durationTicks: SHOCK_TICKS },
+    ],
     onTick: ({ world, self, random }) => {
       if (world.tick < self.abilityState.nextStrikeTick) return [];
       const target = nearestEnemy(self, world.balls);

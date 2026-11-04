@@ -74,6 +74,25 @@ describe('Storm', () => {
     expect(shockedOn).toHaveLength(SHOCK_TICKS);
   });
 
+  it('shocks a ball that touches it, from the contact tick, for SHOCK_TICKS', () => {
+    // Head-on, well before the first strike is even called.
+    const charge = withBalls(createWorld(1, [storm, blue]), [
+      { position: { x: 380, y: 500 }, velocity: { x: storm.speed, y: 0 } },
+      { position: { x: 640, y: 500 }, velocity: { x: 0, y: 0 } },
+    ]);
+    let contactTick: number | undefined;
+    const { world } = play(charge, 40, (after) => {
+      contactTick ??= after.balls[1]?.statuses.length === 1 ? after.tick : undefined;
+    });
+    const hit = play(charge, 40).events.find((event) => event.type === 'collision');
+    expect(hit?.tick).toBeLessThan(FIRST_STRIKE_DELAY_TICKS);
+    expect(contactTick).toBe(hit?.tick);
+    expect(world.balls[1]?.statuses).toStrictEqual([
+      { kind: 'shocked', sourceId: 'ball-0', expiresTick: (hit?.tick ?? 0) + SHOCK_TICKS },
+    ]);
+    expect(world.balls[0]?.statuses).toStrictEqual([]);
+  });
+
   it('marks a zone near the target that strikes after the warning', () => {
     const { events } = play(standoff(), FIRST_STRIKE_DELAY_TICKS + COOLDOWN_TICKS * 20);
     const zones = spawned(events);

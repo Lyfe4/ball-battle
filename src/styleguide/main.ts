@@ -118,7 +118,7 @@ const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Shocked (ADR 0009): a dashed ring just outside the edge; it cannot heal',
+    'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
     ['brawler', 'speedster', 'vampire', 'archer', 'storm'].map((id): Tile => ({
       label: id,
       id,

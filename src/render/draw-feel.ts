@@ -164,8 +164,8 @@ export function drawStatuses(
   ctx.restore();
 }
 
-/** A heal a status blocked: a dim ring that shrinks in towards the edge as it fades. */
-export function drawBlockedHeal(
+/** A heal a status reduced: a dim ring that shrinks in towards the edge as it fades. */
+export function drawReducedHeal(
   ctx: CanvasRenderingContext2D,
   ball: BallState,
   strength: number,
@@ -173,13 +173,13 @@ export function drawBlockedHeal(
   if (strength <= 0) return;
   ctx.save();
   ctx.globalAlpha = strength;
-  ctx.strokeStyle = theme.healBlockedRing;
-  ctx.lineWidth = theme.healBlockedWidth;
+  ctx.strokeStyle = theme.healReducedRing;
+  ctx.lineWidth = theme.healReducedWidth;
   ctx.beginPath();
   ctx.arc(
     ball.position.x,
     ball.position.y,
-    ball.radius + strength * theme.healBlockedShrink,
+    ball.radius + strength * theme.healReducedShrink,
     0,
     Math.PI * 2,
   );

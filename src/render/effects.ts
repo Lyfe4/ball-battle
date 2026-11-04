@@ -75,8 +75,8 @@ export interface Effects {
   flash(ballId: string, nowMs: number): number;
   /** Heal pulse strength for a ball, from 1 (just healed) down to 0. */
   heal(ballId: string, nowMs: number): number;
-  /** Blocked-heal pulse strength for a ball, from 1 (just blocked) down to 0. */
-  healBlocked(ballId: string, nowMs: number): number;
+  /** Reduced-heal pulse strength for a ball, from 1 (just reduced) down to 0. */
+  healReduced(ballId: string, nowMs: number): number;
   sparks(nowMs: number): readonly Spark[];
   strikes(nowMs: number): readonly Strike[];
   squash(ballId: string, nowMs: number): Squash | undefined;
@@ -120,9 +120,9 @@ export function createEffects(): Effects {
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
-  const blockedStarts = new Map<string, number>();
-  const healBlocked = (ballId: string, nowMs: number): number =>
-    fade(blockedStarts.get(ballId), nowMs, theme.healBlockedMs);
+  const reducedStarts = new Map<string, number>();
+  const healReduced = (ballId: string, nowMs: number): number =>
+    fade(reducedStarts.get(ballId), nowMs, theme.healReducedMs);
   const heal = (ballId: string, nowMs: number): number =>
     fade(healStarts.get(ballId), nowMs, HEAL_MS);
   const squashActive = (nowMs: number): boolean =>
@@ -156,7 +156,7 @@ export function createEffects(): Effects {
           ghosts.set(event.targetId, { from, startMs: nowMs });
         }
         if (event.type === 'healed') healStarts.set(event.ballId, nowMs);
-        if (event.type === 'healBlocked') blockedStarts.set(event.ballId, nowMs);
+        if (event.type === 'healReduced') reducedStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit') sparkStarts.push({ point: event.point, start: nowMs });
         if (event.type === 'zoneStruck') {
           const { zoneId, position, radius } = event;
@@ -186,7 +186,7 @@ export function createEffects(): Effects {
     },
     flash,
     heal,
-    healBlocked,
+    healReduced,
     sparks(nowMs) {
       // Drop finished sparks so the list never grows over a long match.
       sparkStarts = sparkStarts.filter(({ start }) => fade(start, nowMs, SPARK_MS) > 0);
@@ -243,7 +243,7 @@ export function createEffects(): Effects {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
         [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
-        [...blockedStarts.keys()].some((ballId) => healBlocked(ballId, nowMs) > 0) ||
+        [...reducedStarts.keys()].some((ballId) => healReduced(ballId, nowMs) > 0) ||
         sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0) ||
         strikeStarts.some(({ start }) => fade(start, nowMs, STRIKE_MS) > 0) ||
         particles.some((particle) => particleAt(particle, nowMs) !== undefined) ||
@@ -258,7 +258,7 @@ export function createEffects(): Effects {
     reset() {
       flashStarts.clear();
       healStarts.clear();
-      blockedStarts.clear();
+      reducedStarts.clear();
       squashes.clear();
       ghosts.clear();
       sparkStarts = [];

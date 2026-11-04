@@ -4,6 +4,7 @@ import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
+import { shockedHeal } from '../status.ts';
 import { LIFESTEAL, lifestealFor, vampire } from './vampire.ts';
 
 const lookup = indexDefinitions([vampire, blue]);
@@ -79,24 +80,30 @@ describe('Vampire', () => {
     );
   });
 
-  it('heals nothing while shocked, reporting the blocked lifesteal instead', () => {
+  it('heals less while shocked, reporting the lifesteal it lost', () => {
     const start = 40;
     const shocked = withBalls(headOn(start), [
       { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 1000 }] },
     ]);
     const { world, events } = play(shocked, 30);
     const taken = events.find((event) => event.type === 'damage' && event.targetId === 'ball-0');
-    expect(events.some((event) => event.type === 'healed')).toBe(false);
+    const full = lifestealFor(vampire.contactDamage);
+    const restored = shockedHeal(full);
     expect(events).toContainEqual(
       expect.objectContaining({
-        type: 'healBlocked',
+        type: 'healReduced',
         ballId: 'ball-0',
         sourceId: 'ball-0',
-        amount: lifestealFor(vampire.contactDamage),
+        lost: full - restored,
         status: 'shocked',
       }),
     );
-    expect(world.balls[0]?.health).toBe(start - (taken?.type === 'damage' ? taken.amount : 0));
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'healed', ballId: 'ball-0', amount: restored }),
+    );
+    expect(world.balls[0]?.health).toBe(
+      start - (taken?.type === 'damage' ? taken.amount : 0) + restored,
+    );
   });
 
   it('heals again once the shock has expired', () => {
@@ -105,7 +112,7 @@ describe('Vampire', () => {
       { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 5 }] },
     ]);
     const { events } = play(shocked, 30);
-    expect(events.some((event) => event.type === 'healBlocked')).toBe(false);
+    expect(events.some((event) => event.type === 'healReduced')).toBe(false);
     expect(events).toContainEqual(expect.objectContaining({ type: 'healed', ballId: 'ball-0' }));
   });
 

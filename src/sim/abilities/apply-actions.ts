@@ -1,7 +1,7 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
-import { hasStatus, withStatus } from '../status.ts';
+import { hasStatus, shockedHeal, withStatus } from '../status.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import type {
   AbilityAction,
@@ -92,21 +92,26 @@ export function applyActions(
       case 'heal':
         update(action.targetId, (target) => {
           const { maxHealth } = getDefinition(definitions, target.definitionId);
-          const healthAfter = Math.min(maxHealth, target.health + Math.max(0, action.amount));
+          const requested = Math.max(0, action.amount);
+          const fullAmount = Math.min(maxHealth, target.health + requested) - target.health;
+          if (fullAmount <= 0) return undefined;
+          // Shocked (ADR 0009): the heal is reduced, and says by how much before `healed`.
+          const shocked = hasStatus(target, 'shocked');
+          const healthAfter = shocked
+            ? Math.min(maxHealth, target.health + shockedHeal(requested))
+            : target.health + fullAmount;
           const amount = healthAfter - target.health;
-          if (amount <= 0) return undefined;
-          // Shocked (ADR 0009): the heal restores nothing, and says so instead of `healed`.
-          if (hasStatus(target, 'shocked')) {
+          if (shocked && fullAmount > amount) {
             events.push({
-              type: 'healBlocked',
+              type: 'healReduced',
               tick,
               ballId: target.id,
               sourceId: ownerId,
-              amount,
+              lost: fullAmount - amount,
               status: 'shocked',
             });
-            return undefined;
           }
+          if (amount <= 0) return undefined;
           events.push({
             type: 'healed',
             tick,

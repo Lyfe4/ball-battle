@@ -74,21 +74,29 @@ describe('battle feel effects', () => {
     expect(effects.knockouts(theme.shardMs * 2)).toHaveLength(1);
   });
 
-  it('pulses a blocked heal, not a heal, then fades it', () => {
+  it('pulses a reduced heal alongside the heal it still made, then fades it', () => {
     const effects = createEffects();
-    const blocked: SimEvent = {
-      type: 'healBlocked',
+    const reduced: SimEvent = {
+      type: 'healReduced',
       tick: 40,
       ballId: 'ball-0',
       sourceId: 'ball-0',
-      amount: 9,
+      lost: 5,
       status: 'shocked',
     };
-    effects.apply([blocked], 0);
-    expect(effects.healBlocked('ball-0', 0)).toBe(1);
-    expect(effects.heal('ball-0', 0)).toBe(0);
-    expect(effects.isActive(theme.healBlockedMs - 1)).toBe(true);
-    expect(effects.healBlocked('ball-0', theme.healBlockedMs)).toBe(0);
+    const healed: SimEvent = {
+      type: 'healed',
+      tick: 40,
+      ballId: 'ball-0',
+      sourceId: 'ball-0',
+      amount: 4,
+      healthAfter: 30,
+    };
+    effects.apply([reduced, healed], 0);
+    expect(effects.healReduced('ball-0', 0)).toBe(1);
+    expect(effects.heal('ball-0', 0)).toBe(1);
+    expect(effects.isActive(theme.healReducedMs - 1)).toBe(true);
+    expect(effects.healReduced('ball-0', theme.healReducedMs)).toBe(0);
   });
 
   it('shows a time-limit result at once', () => {

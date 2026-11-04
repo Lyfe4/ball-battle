@@ -43,15 +43,23 @@ export interface StatusExpiredEvent {
   readonly status: StatusKind;
 }
 
-/** A heal that restored nothing because of a status. Takes the place of a `healed` event. */
-export interface HealBlockedEvent {
-  readonly type: 'healBlocked';
+/** A heal a status reduced. Comes just before the `healed` event of what it still restored. */
+export interface HealReducedEvent {
+  readonly type: 'healReduced';
   readonly tick: number;
   readonly ballId: string;
   readonly sourceId: string;
-  /** What the heal would have restored. */
-  readonly amount: number;
+  /** Health the status took away from the heal. */
+  readonly lost: number;
   readonly status: StatusKind;
+}
+
+/** Share of every heal a shocked ball loses (ADR 0009). The Storm's lever against the Vampire. */
+export const SHOCK_HEAL_REDUCTION = 0.5;
+
+/** What a heal of `amount` restores to a shocked ball, before the max-health cap. Whole numbers. */
+export function shockedHeal(amount: number): number {
+  return Math.round(amount * (1 - SHOCK_HEAL_REDUCTION));
 }
 
 /**

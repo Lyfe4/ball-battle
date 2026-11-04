@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { applyActions } from './abilities/apply-actions.ts';
 import { defineBall } from './define-ball.ts';
 import { indexDefinitions } from './definitions.ts';
-import { expireStatuses, hasStatus, withStatus } from './status.ts';
+import {
+  expireStatuses,
+  hasStatus,
+  SHOCK_HEAL_REDUCTION,
+  shockedHeal,
+  withStatus,
+} from './status.ts';
 import { step } from './step.ts';
 import { blue, red, withBalls } from './test-support.ts';
 import type { AbilityAction, BallState, SimEvent, WorldState } from './types.ts';
@@ -95,22 +101,44 @@ describe('status effects', () => {
 describe('shocked', () => {
   const hurt = withBalls(world, [{}, { health: 40 }]).balls;
 
-  it('blocks heals: health unchanged, healBlocked instead of healed', () => {
+  it('reduces heals by SHOCK_HEAL_REDUCTION, reporting what was lost before healed', () => {
     const shocked = apply(hurt, [
       { kind: 'applyStatus', targetId: 'ball-1', status: 'shocked', durationTicks: 10 },
     ]).balls;
     const { balls, events } = apply(shocked, [{ kind: 'heal', targetId: 'ball-1', amount: 12 }]);
-    expect(target(balls).health).toBe(40);
+    const restored = shockedHeal(12);
+    expect(restored).toBe(Math.round(12 * (1 - SHOCK_HEAL_REDUCTION)));
+    expect(restored).toBeLessThan(12);
+    expect(target(balls).health).toBe(40 + restored);
     expect(events).toStrictEqual([
       {
-        type: 'healBlocked',
+        type: 'healReduced',
         tick: 5,
         ballId: 'ball-1',
         sourceId: 'ball-0',
-        amount: 12,
+        lost: 12 - restored,
         status: 'shocked',
       },
+      {
+        type: 'healed',
+        tick: 5,
+        ballId: 'ball-1',
+        sourceId: 'ball-0',
+        amount: restored,
+        healthAfter: 40 + restored,
+      },
     ]);
+  });
+
+  it('counts only what the max-health cap would have allowed as lost', () => {
+    // 3 below max: a full heal would restore 3; shocked, it restores min(3, reduced 12).
+    const nearlyFull = withBalls(world, [{}, { health: blue.maxHealth - 3 }]).balls;
+    const shocked = apply(nearlyFull, [
+      { kind: 'applyStatus', targetId: 'ball-1', status: 'shocked', durationTicks: 10 },
+    ]).balls;
+    const { events } = apply(shocked, [{ kind: 'heal', targetId: 'ball-1', amount: 12 }]);
+    expect(events.map((event) => event.type)).toStrictEqual(['healed']);
+    expect(events[0]).toMatchObject({ amount: 3, healthAfter: blue.maxHealth });
   });
 
   it('reports nothing for a heal that would restore nothing anyway', () => {
