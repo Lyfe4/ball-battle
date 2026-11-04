@@ -2,6 +2,7 @@
 // section per ball design; a new ball adds its section here.
 import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
 import { BALLS } from '../sim/balls/index.ts';
+import { CHARGE_TICKS } from '../sim/balls/sniper.ts';
 import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
 import type { StatusKind } from '../sim/status.ts';
 import type { AbilityState, BallState, Vec2 } from '../sim/types.ts';
@@ -17,6 +18,8 @@ export interface Tile {
   readonly toward?: Vec2;
   readonly repeat?: boolean;
   readonly defeated?: boolean;
+  /** Health as a share of max (the Berserker's cracks); full by default. */
+  readonly health?: number;
   readonly heal?: number;
   readonly flash?: number;
   /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
@@ -29,6 +32,12 @@ export const charged = (key: string, cooldown: number, charge: number): AbilityS
 });
 
 export const right: Vec2 = { x: 1, y: 0 };
+
+/** A Sniper locked on along `aim`, `charge` of the way to its shot (the laser shows in the tile). */
+const locked = (aim: Vec2, charge: number): AbilityState => ({
+  nextChargeTick: 0,
+  charge: { fireTick: TICK + Math.round((1 - charge) * CHARGE_TICKS), aim: { x: aim.x, y: aim.y } },
+});
 const upRight: Vec2 = { x: 0.8, y: -0.6 };
 const downLeft: Vec2 = { x: -0.6, y: 0.8 };
 
@@ -137,6 +146,36 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
+    'Berserker: cracks run in from the edge, more and heavier as its health drops',
+    [
+      ...[1, 0.75, 0.5, 0.25, 0.05].map((health): Tile => ({
+        label: `${health * 100}% health`,
+        id: 'berserker',
+        health,
+      })),
+      { label: 'mirror B, 50%', id: 'berserker', health: 0.5, repeat: true },
+    ],
+  ],
+  [
+    'Sniper: a scope crosshair; while locked, its centre turns red and a laser runs to the wall',
+    [
+      { label: 'idle', id: 'sniper' },
+      { label: 'just locked', id: 'sniper', abilityState: locked(right, 0) },
+      { label: 'about to fire', id: 'sniper', abilityState: locked(right, 1) },
+      { label: 'locked down-left', id: 'sniper', abilityState: locked(downLeft, 0.5) },
+      { label: 'mirror B', id: 'sniper', repeat: true },
+    ],
+  ],
+  [
+    'Quake: rock strata broken by a fault line; its shockwaves are clean rings (below)',
+    [
+      { label: 'idle', id: 'quake' },
+      { label: 'hit flash', id: 'quake', flash: 0.6 },
+      { label: 'mirror B', id: 'quake', repeat: true },
+      { label: 'defeated', id: 'quake', defeated: true },
+    ],
+  ],
+  [
     'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
     BALLS.map(({ id }): Tile => ({
       label: id,
@@ -180,6 +219,8 @@ export function arenaAbilityState(ball: BallState): BallState['abilityState'] {
       return charged('nextShotTick', ARCHER_COOLDOWN, 0.6);
     case 'storm':
       return charged('nextStrikeTick', STORM_COOLDOWN, 0.6);
+    case 'sniper':
+      return locked(downLeft, 0.6);
     default:
       return ball.abilityState;
   }
