@@ -50,15 +50,39 @@ describe('checkCounter', () => {
     expect(checkCounter(favoured, 0.64, 0.35)).toBe('ok');
     expect(checkCounter(favoured, 0.59, 0.4)).toBe('warn');
     expect(checkCounter(favoured, 0.69, 0.3)).toBe('warn');
-    expect(checkCounter(favoured, 0.57, 0.42)).toBe('miss');
-    expect(checkCounter(favoured, 0.72, 0.28)).toBe('miss');
     expect(checkCounter({ ...favoured, intended: 'y' }, 0.35, 0.64)).toBe('ok');
   });
 
-  it('needs both sides of an even pair in 45-55%', () => {
+  it('counts the band edges themselves as in band', () => {
+    expect(checkCounter(favoured, 0.58, 0.42)).toBe('warn');
+    expect(checkCounter(favoured, 0.7, 0.3)).toBe('warn');
+    expect(checkCounter(even, 0.45, 0.55)).toBe('warn');
+  });
+
+  it('calls a favoured result up to 2 points outside its band NEAR, and further out MISS', () => {
+    // Below the band (58%).
+    expect(checkCounter(favoured, 0.575, 0.42)).toBe('near');
+    expect(checkCounter(favoured, 0.56, 0.44)).toBe('near');
+    expect(checkCounter(favoured, 0.5599, 0.44)).toBe('miss');
+    // Above it (70%).
+    expect(checkCounter(favoured, 0.72, 0.28)).toBe('near');
+    expect(checkCounter(favoured, 0.7201, 0.27)).toBe('miss');
+  });
+
+  it('treats a rate exactly 2 points out as NEAR despite floating-point rounding', () => {
+    // 280/500 = 0.56 and 360/500 = 0.72, computed the way pnpm balance computes rates.
+    expect(checkCounter(favoured, 280 / 500, 220 / 500)).toBe('near');
+    expect(checkCounter(favoured, 360 / 500, 140 / 500)).toBe('near');
+    expect(checkCounter(even, 215 / 500, 285 / 500)).toBe('near');
+  });
+
+  it('needs both sides of an even pair in 45-55%, the worse side deciding', () => {
     expect(checkCounter(even, 0.5, 0.49)).toBe('ok');
     expect(checkCounter(even, 0.53, 0.46)).toBe('warn');
-    expect(checkCounter(even, 0.56, 0.43)).toBe('miss');
-    expect(checkCounter(even, 0.45, 0.44)).toBe('miss');
+    expect(checkCounter(even, 0.56, 0.43)).toBe('near');
+    expect(checkCounter(even, 0.432, 0.566)).toBe('near');
+    expect(checkCounter(even, 0.5701, 0.4299)).toBe('miss');
+    expect(checkCounter(even, 0.45, 0.4299)).toBe('miss');
+    expect(checkCounter(even, 0.5, 0.44)).toBe('near');
   });
 });

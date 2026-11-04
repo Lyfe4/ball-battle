@@ -125,10 +125,14 @@ let counterMapOk = true;
 const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
   ok: 'ok  ',
   warn: 'WARN',
+  near: 'NEAR',
   miss: 'MISS',
 };
 
-/** One counter-map line for a pair, and whether it stays in band (a warning still passes). */
+/**
+ * One counter-map line for a pair. Only MISS fails the target: WARN (in band, near an edge) and
+ * NEAR (just outside, within the noise allowance) pass.
+ */
 function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): string {
   const entry = counterFor(x.id, y.id);
   if (entry === undefined) {
@@ -198,7 +202,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN within ${COUNTER_BANDS.warnWithin * 100} pts of an edge)`,
+  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN in band within ${COUNTER_BANDS.warnWithin * 100} pts of an edge; NEAR outside by at most ${COUNTER_BANDS.nearWithin * 100} pts, passes)`,
 );
 console.log(counterLines.join('\n'));
 

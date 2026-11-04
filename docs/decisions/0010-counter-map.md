@@ -116,3 +116,20 @@ the best-of-3 round structure; no sim change).
   the Archer alone.
 - Supersedes the counters in ADR 0008 "Retune and counters" (and, through it, ADR 0005 §6 and
   ADR 0006 §8).
+
+## Addendum: near-misses pass (2026-11-04)
+
+The two known near-misses above were accepted as noise, but `pnpm balance` still reported them as
+`MISS`, so the counter-map target failed on every run and a real miss would not stand out. The
+allowance is now part of the check (`scripts/counter-map.ts`):
+
+| Verdict | Meaning                                                | Target |
+| ------- | ------------------------------------------------------ | ------ |
+| `ok`    | In band, more than 2 points from both edges            | passes |
+| `WARN`  | In band, within 2 points of an edge                    | passes |
+| `NEAR`  | Outside the band by at most 2 points (the noise range) | passes |
+| `MISS`  | Outside the band by more than 2 points                 | fails  |
+
+For an even pair the worse side decides. A rate exactly 2 points out counts as `NEAR` (rates are
+ratios of counts, so the comparison allows for floating-point rounding). Vampire vs Speedster
+(57.5) and Brawler vs Archer (43.2) now show `NEAR`, and the counter-map target passes.
