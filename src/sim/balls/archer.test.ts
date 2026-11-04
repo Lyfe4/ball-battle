@@ -11,6 +11,7 @@ import {
   ARROW_SPEED,
   COOLDOWN_TICKS,
   FIRST_SHOT_DELAY_TICKS,
+  leadTarget,
   nextShotTickOf,
 } from './archer.ts';
 
@@ -55,7 +56,7 @@ describe('Archer', () => {
     expect(events.filter((event) => event.type === 'abilityTriggered')).toHaveLength(4);
   });
 
-  it('aims at the enemy’s current position, within the spread', () => {
+  it('aims at a still enemy’s position, within the spread', () => {
     const { events } = play(standoff(), FIRST_SHOT_DELAY_TICKS + COOLDOWN_TICKS * 20);
     const shots = fired(events);
     expect(shots).toHaveLength(21);
@@ -118,5 +119,32 @@ describe('Archer', () => {
     expect(world.tick).toBe(MATCH_TIME_LIMIT_TICKS);
     expect(most).toBeGreaterThan(0);
     expect(most).toBeLessThanOrEqual(bound);
+  });
+
+  describe('leadTarget', () => {
+    it('aims at a still target where it is', () => {
+      expect(leadTarget({ x: 0, y: 0 }, { x: 300, y: 400 }, { x: 0, y: 0 }, 1000)).toStrictEqual({
+        x: 300,
+        y: 400,
+      });
+    });
+
+    it('aims where a moving target will be when the arrow arrives', () => {
+      // Target 600 to the right, moving up at 400 u/s; arrow at 1000 u/s. The meeting point is
+      // where 1000·t equals the distance to (600, 400·t): t = 600 / sqrt(1000² − 400²).
+      const aim = leadTarget({ x: 0, y: 0 }, { x: 600, y: 0 }, { x: 0, y: 400 }, 1000);
+      const t = 600 / Math.sqrt(1000 * 1000 - 400 * 400);
+      expect(aim.x).toBeCloseTo(600, 9);
+      expect(aim.y).toBeCloseTo(400 * t, 9);
+      expect(Math.sqrt(aim.x * aim.x + aim.y * aim.y)).toBeCloseTo(1000 * t, 9);
+    });
+
+    it('falls back to the current position when the arrow can never catch up', () => {
+      // Target running directly away faster than the arrow.
+      expect(leadTarget({ x: 0, y: 0 }, { x: 500, y: 0 }, { x: 2000, y: 0 }, 1000)).toStrictEqual({
+        x: 500,
+        y: 0,
+      });
+    });
   });
 });
