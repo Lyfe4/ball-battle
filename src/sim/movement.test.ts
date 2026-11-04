@@ -31,8 +31,12 @@ describe('moveBall bounces', () => {
     expect(moveBall(ballMoving(60, 500, perTick(-20), 0), SIZE).bounces).toBe(1);
   });
 
-  it('counts a corner hit as two bounces', () => {
-    expect(moveBall(ballMoving(940, 940, perTick(20), perTick(20)), SIZE).bounces).toBe(2);
+  it('counts a corner hit as two bounces, one per axis', () => {
+    const corner = moveBall(ballMoving(940, 940, perTick(20), perTick(20)), SIZE);
+    expect(corner.bounces).toBe(2);
+    expect([corner.bouncesX, corner.bouncesY]).toStrictEqual([1, 1]);
+    const side = moveBall(ballMoving(940, 500, perTick(20), perTick(5)), SIZE);
+    expect([side.bouncesX, side.bouncesY]).toStrictEqual([1, 0]);
   });
 
   it('counts every wall crossed by a very fast ball', () => {

@@ -63,7 +63,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   phase(tickInvocations(balls));
 
   const movements = balls.map((ball) =>
-    isAlive(ball) ? moveBall(ball, size) : { ball, bounces: 0 },
+    isAlive(ball) ? moveBall(ball, size) : { ball, bounces: 0, bouncesX: 0, bouncesY: 0 },
   );
   balls = movements.map((movement) => movement.ball);
   phase(wallHitInvocations(new Map(movements.map(({ ball, bounces }) => [ball.id, bounces]))));

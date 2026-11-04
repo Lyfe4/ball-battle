@@ -50,6 +50,9 @@ export interface Movement {
   readonly ball: BallState;
   /** Wall hits this tick, both axes together; a corner hit counts as 2. */
   readonly bounces: number;
+  /** Wall hits on each axis, so callers know which walls the ball is now moving away from. */
+  readonly bouncesX: number;
+  readonly bouncesY: number;
 }
 
 /** Moves a ball one tick along its velocity, bouncing off the arena walls. */
@@ -71,5 +74,7 @@ export function moveBall(ball: BallState, arenaSize: number): Movement {
       velocity: vec2(x.velocity, y.velocity),
     },
     bounces: x.bounces + y.bounces,
+    bouncesX: x.bounces,
+    bouncesY: y.bounces,
   };
 }
