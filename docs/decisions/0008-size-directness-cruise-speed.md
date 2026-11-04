@@ -109,4 +109,21 @@ of the `(rA + rB) / DT` detection limit, alongside the measured property test.
 
 ## Retune and counters
 
-To be filled in by the retune.
+With the old stats under the new rules, every target already passed except the overall win-rate
+range: the Vampire won 61.9% (lifesteal on a smaller body outlasted everyone) and the Storm 37.9%.
+The retune changed three numbers: Vampire health 66 → 60, Storm health 68 → 74 and zone damage
+26 → 28, and Archer health 44 → 50 (it grew from radius 38 to 50, so it is easier to hit). The
+Brawler and Speedster are unchanged, and the Speedster's stack bonus did not need raising.
+
+The field is flatter than before (`pnpm balance`, 500 seeds per slot order): every ball wins
+47.8-53.3% overall, the worst matchup is 32.8/67.2 (was 22.5/77.5), the worst ±5% health swing
+is 7.3 points (was 10.5) and the worst closing speed is 0.373 of the pass-through limit (was
+0.504). The remaining counters, all soft:
+
+- **Speedster beats Archer** (about 67/33): it still closes the distance fastest.
+- **Vampire beats Speedster** (about 60/40): lifesteal outlasts the Speedster's burst now that
+  speed no longer adds contact damage.
+- **Speedster edges Storm** (about 58/42): it outruns more warnings than anyone.
+- **Archer edges Brawler and Vampire** (about 57/43 each).
+
+These replace the counters recorded in ADR 0005 §6 and ADR 0006 §8.

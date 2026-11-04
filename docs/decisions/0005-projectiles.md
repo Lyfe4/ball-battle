@@ -75,6 +75,9 @@ reason `wall` or `lifetime`).
 
 ### 6. The Archer and its counters (intended design)
 
+_Superseded: the numbers and counters below are from before ADR 0008 (uniform size, directness
+damage, cruise speed); see its "Retune and counters" section for the current ones._
+
 The Archer is the first projectile user: lowest contact damage, modest health, an arrow every
 2 seconds. It leads its aim, shooting where its target will be if it keeps moving in a straight
 line (a quadratic intercept, solved with arithmetic and `Math.sqrt`); it can't foresee wall

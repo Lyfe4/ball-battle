@@ -62,8 +62,8 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
 
 The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0002-combat-core.md`, `docs/decisions/0003-ability-system.md`,
-`docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md` and
-`docs/decisions/0006-hazard-zones.md`.
+`docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md`,
+`docs/decisions/0006-hazard-zones.md` and `docs/decisions/0008-size-directness-cruise-speed.md`.
 
 ## Conventions
 

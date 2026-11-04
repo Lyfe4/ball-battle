@@ -93,6 +93,9 @@ randomness lives only in the renderer and never touches the sim.
 
 ### 8. The Storm and its counters
 
+_Superseded: the stats and counters below are from before ADR 0008 (uniform size, directness
+damage, cruise speed); see its "Retune and counters" section for the current ones._
+
 The Storm is the first zone user. Every 130 ticks (about 2.2 s, the first on tick 60) it marks a
 zone of radius 170 around the nearest enemy's **current** position, off by a seeded random amount
 of up to 60 units (uniform in a disk, from `ctx.random`). The zone strikes 48 ticks (0.8 s) later
