@@ -9,9 +9,20 @@ export const HEAL_MS = 450;
 /** How long a projectile hit spark lasts, in real milliseconds. */
 export const SPARK_MS = 250;
 
+/** How long a zone strike's flash and bolt last, in real milliseconds. */
+export const STRIKE_MS = 350;
+
 /** A spark where a projectile hit, with its strength from 1 (just hit) down to 0. */
 export interface Spark {
   readonly point: Vec2;
+  readonly strength: number;
+}
+
+/** A zone that just struck, with its strength from 1 (just struck) down to 0. */
+export interface Strike {
+  readonly zoneId: string;
+  readonly position: Vec2;
+  readonly radius: number;
   readonly strength: number;
 }
 
@@ -28,6 +39,8 @@ export interface Effects {
   heal(ballId: string, nowMs: number): number;
   /** Projectile hit sparks still visible. */
   sparks(nowMs: number): readonly Spark[];
+  /** Zone strikes still visible. */
+  strikes(nowMs: number): readonly Strike[];
   /** True while any effect is still visible, so the caller knows to keep redrawing. */
   isActive(nowMs: number): boolean;
   reset(): void;
@@ -43,6 +56,7 @@ export function createEffects(): Effects {
   const flashStarts = new Map<string, number>();
   const healStarts = new Map<string, number>();
   let sparkStarts: { readonly point: Vec2; readonly start: number }[] = [];
+  let strikeStarts: (Omit<Strike, 'strength'> & { readonly start: number })[] = [];
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
@@ -55,6 +69,10 @@ export function createEffects(): Effects {
         if (event.type === 'damage') flashStarts.set(event.targetId, nowMs);
         if (event.type === 'healed') healStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit') sparkStarts.push({ point: event.point, start: nowMs });
+        if (event.type === 'zoneStruck') {
+          const { zoneId, position, radius } = event;
+          strikeStarts.push({ zoneId, position, radius, start: nowMs });
+        }
       }
     },
     flash,
@@ -67,17 +85,27 @@ export function createEffects(): Effects {
         strength: fade(start, nowMs, SPARK_MS),
       }));
     },
+    strikes(nowMs) {
+      // Drop finished strikes so the list never grows over a long match.
+      strikeStarts = strikeStarts.filter(({ start }) => fade(start, nowMs, STRIKE_MS) > 0);
+      return strikeStarts.map(({ start, ...strike }) => ({
+        ...strike,
+        strength: fade(start, nowMs, STRIKE_MS),
+      }));
+    },
     isActive(nowMs) {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
         [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
-        sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0)
+        sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0) ||
+        strikeStarts.some(({ start }) => fade(start, nowMs, STRIKE_MS) > 0)
       );
     },
     reset() {
       flashStarts.clear();
       healStarts.clear();
       sparkStarts = [];
+      strikeStarts = [];
     },
   };
 }

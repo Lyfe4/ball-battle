@@ -1,4 +1,4 @@
-import type { BallState } from '../sim/types.ts';
+import type { BallState, DefinitionLookup } from '../sim/types.ts';
 import { theme } from './theme.ts';
 
 /** Mixes a `#rrggbb` colour towards white by `amount` (0 = unchanged, 1 = white). */
@@ -29,4 +29,19 @@ export function isRepeatOfEarlierBall(balls: readonly BallState[], index: number
 /** The colour to draw a ball in: its definition's colour, lightened for a repeat. */
 export function ballColor(baseColor: string, isRepeat: boolean): string {
   return isRepeat ? lighten(baseColor, theme.repeatLighten) : baseColor;
+}
+
+/**
+ * The colour of the ball with `ballId`, as it is drawn (lighter for a repeat), for things it owns
+ * such as projectiles and zones. Falls back to the theme's unknown colour so a bad id is visible.
+ */
+export function ownerColor(
+  balls: readonly BallState[],
+  definitions: DefinitionLookup,
+  ballId: string,
+): string {
+  const index = balls.findIndex((ball) => ball.id === ballId);
+  const owner = balls[index];
+  const base = owner === undefined ? undefined : definitions.get(owner.definitionId)?.color;
+  return ballColor(base ?? theme.unknownBall, isRepeatOfEarlierBall(balls, index));
 }

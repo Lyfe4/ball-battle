@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DamageEvent } from '../sim/types.ts';
-import { createEffects, FLASH_MS, HEAL_MS, SPARK_MS } from './effects.ts';
+import { createEffects, FLASH_MS, HEAL_MS, SPARK_MS, STRIKE_MS } from './effects.ts';
 
 const hit: DamageEvent = {
   type: 'damage',
@@ -92,5 +92,32 @@ describe('effects', () => {
     expect(effects.isActive(SPARK_MS - 1)).toBe(true);
     expect(effects.sparks(SPARK_MS)).toStrictEqual([]);
     expect(effects.isActive(SPARK_MS)).toBe(false);
+  });
+
+  it('shows a strike for every zone that struck, hit or miss, then drops it', () => {
+    const effects = createEffects();
+    const struck = (zoneId: string, hitIds: readonly string[]) =>
+      ({
+        type: 'zoneStruck',
+        tick: 50,
+        zoneId,
+        ownerId: 'ball-0',
+        position: { x: 200, y: 300 },
+        radius: 170,
+        hitIds,
+      }) as const;
+    effects.apply([struck('zone-0', ['ball-1']), struck('zone-1', [])], 0);
+    expect(effects.strikes(0)).toStrictEqual([
+      { zoneId: 'zone-0', position: { x: 200, y: 300 }, radius: 170, strength: 1 },
+      { zoneId: 'zone-1', position: { x: 200, y: 300 }, radius: 170, strength: 1 },
+    ]);
+    expect(effects.strikes(STRIKE_MS / 2)[0]?.strength).toBeCloseTo(0.5, 9);
+    expect(effects.isActive(STRIKE_MS - 1)).toBe(true);
+    expect(effects.strikes(STRIKE_MS)).toStrictEqual([]);
+    expect(effects.isActive(STRIKE_MS)).toBe(false);
+
+    effects.apply([struck('zone-2', [])], 0);
+    effects.reset();
+    expect(effects.strikes(0)).toStrictEqual([]);
   });
 });

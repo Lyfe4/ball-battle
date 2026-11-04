@@ -1,5 +1,6 @@
-import { COOLDOWN_TICKS, nextShotTickOf } from '../sim/balls/archer.ts';
+import { COOLDOWN_TICKS as ARCHER_COOLDOWN, nextShotTickOf } from '../sim/balls/archer.ts';
 import { MAX_STACKS, stacksOf } from '../sim/balls/speedster.ts';
+import { COOLDOWN_TICKS as STORM_COOLDOWN, nextStrikeTickOf } from '../sim/balls/storm.ts';
 import type { BallState } from '../sim/types.ts';
 import { theme } from './theme.ts';
 
@@ -29,6 +30,11 @@ function drawPips(
  * A ring around the ball that fills clockwise from the top as `fraction` goes from 0 to 1, e.g. a
  * cooldown recharging. Trig is fine here: only src/sim must avoid it (ADR 0001).
  */
+/** How far a cooldown that ends on `nextTick` has recharged by `tick`, from 0 to 1. */
+function recharged(nextTick: number, tick: number, cooldown: number): number {
+  return Math.min(1, Math.max(0, 1 - (nextTick - tick) / cooldown));
+}
+
 function drawChargeArc(ctx: CanvasRenderingContext2D, ball: BallState, fraction: number): void {
   const { x, y } = ball.position;
   const radius = ball.radius + theme.chargeArcGap;
@@ -61,7 +67,15 @@ export const ABILITY_OVERLAYS: ReadonlyMap<string, OverlayDrawer> = new Map([
     (ctx, ball, tick) => {
       const next = nextShotTickOf(ball);
       if (next === undefined) return;
-      drawChargeArc(ctx, ball, Math.min(1, Math.max(0, 1 - (next - tick) / COOLDOWN_TICKS)));
+      drawChargeArc(ctx, ball, recharged(next, tick, ARCHER_COOLDOWN));
+    },
+  ],
+  [
+    'storm',
+    (ctx, ball, tick) => {
+      const next = nextStrikeTickOf(ball);
+      if (next === undefined) return;
+      drawChargeArc(ctx, ball, recharged(next, tick, STORM_COOLDOWN));
     },
   ],
 ]);

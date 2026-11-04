@@ -1,5 +1,5 @@
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
-import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
+import { ownerColor } from './ball-colors.ts';
 import type { Spark } from './effects.ts';
 import { theme } from './theme.ts';
 
@@ -10,13 +10,7 @@ export function drawProjectiles(
   definitions: DefinitionLookup,
 ): void {
   for (const projectile of world.projectiles) {
-    const ownerIndex = world.balls.findIndex((ball) => ball.id === projectile.ownerId);
-    const owner = world.balls[ownerIndex];
-    const base = owner === undefined ? undefined : definitions.get(owner.definitionId)?.color;
-    const color = ballColor(
-      base ?? theme.unknownBall,
-      isRepeatOfEarlierBall(world.balls, ownerIndex),
-    );
+    const color = ownerColor(world.balls, definitions, projectile.ownerId);
 
     const { x, y } = projectile.position;
     const speed = Math.hypot(projectile.velocity.x, projectile.velocity.y);

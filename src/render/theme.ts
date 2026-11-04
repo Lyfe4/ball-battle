@@ -45,6 +45,25 @@ export const theme = {
   sparkInner: 10,
   sparkOuter: 46,
   sparkWidth: 5,
+  /**
+   * Hazard zones (e.g. the Storm's), drawn under the balls in the owner's colour: a faint area,
+   * an inner disk that grows to the edge as the strike nears, and a pulsing outline.
+   */
+  zoneAreaAlpha: 0.08,
+  zoneFillAlpha: 0.3,
+  zoneOutlineWidth: 4,
+  zonePulsePeriodTicks: 12,
+  zonePulseMinAlpha: 0.35,
+  zonePulseMaxAlpha: 0.95,
+  /** A zone going off: a flash over its area and a lightning bolt from the top of the arena. */
+  strikeFlash: '#ffffff',
+  strikeFlashMaxAlpha: 0.6,
+  boltColor: '#f0f9ff',
+  boltGlow: '#93c5fd',
+  boltGlowBlur: 18,
+  boltWidth: 7,
+  boltSegments: 9,
+  boltJitter: 45,
 
   healthBarHeight: 12,
   healthBarGap: 10,

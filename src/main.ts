@@ -70,6 +70,7 @@ function render(nowMs: number): void {
     flash: (ballId) => effects.flash(ballId, nowMs),
     heal: (ballId) => effects.heal(ballId, nowMs),
     sparks: effects.sparks(nowMs),
+    strikes: effects.strikes(nowMs),
   });
   hud.update(world, seed);
 }

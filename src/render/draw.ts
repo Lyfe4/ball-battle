@@ -1,10 +1,11 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ABILITY_OVERLAYS } from './ability-overlays.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
-import type { Spark } from './effects.ts';
+import type { Spark, Strike } from './effects.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
 import { drawProjectiles, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
+import { drawStrikes, drawZones } from './zones.ts';
 
 /** Render-only inputs that are not sim state, such as effect strengths. */
 export interface FrameEffects {
@@ -14,6 +15,8 @@ export interface FrameEffects {
   readonly heal: (ballId: string) => number;
   /** Recent projectile hits. */
   readonly sparks: readonly Spark[];
+  /** Zones that just struck. */
+  readonly strikes: readonly Strike[];
 }
 
 /**
@@ -38,6 +41,8 @@ export function drawWorld(
   ctx.setTransform(scale, 0, 0, scale, border * scale, border * scale);
 
   drawArena(ctx, size);
+  // Pending zones go under the balls, so a warning never hides a ball.
+  drawZones(ctx, world, definitions);
   world.balls.forEach((ball, index) => {
     const isRepeat = isRepeatOfEarlierBall(world.balls, index);
     const color = ballColor(
@@ -52,6 +57,7 @@ export function drawWorld(
   });
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
+  drawStrikes(ctx, effects.strikes);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
