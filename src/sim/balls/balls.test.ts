@@ -73,6 +73,8 @@ describe('the ball roster', () => {
     }
     // A safety margin below the real limit (1.0). It was 0.5 (2x) until step 3b, when a faster
     // Vampire and Archer pushed the worst observed case to about 0.504; 0.6 still leaves 1.67x.
+    // Do not loosen this again. If a ball pushes past 0.6, implement swept ball-to-ball collision
+    // (like the projectile sweep, ADR 0005) instead of raising the margin.
     expect(worst).toBeLessThan(0.6);
   });
 

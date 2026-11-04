@@ -77,6 +77,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   Vampire heals at least 25% of max health per match. Re-check after any stat or ability change.
   Ball identity rules are pinned in `src/sim/balls/balls.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
+- The pass-through property test in `src/sim/balls/balls.test.ts` (closing speed below 0.6 of the
+  `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
+  swept ball-to-ball collision instead.
 - A behaviour test should be shown to fail with the behaviour disabled before it is trusted.
 - World coordinates are in world units (`ARENA_SIZE` = 1000), never pixels. The renderer maps
   world units to the screen.
