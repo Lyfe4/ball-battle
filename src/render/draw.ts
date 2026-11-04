@@ -1,5 +1,7 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { ABILITY_OVERLAYS } from './ability-overlays.ts';
+import { BALL_DESIGNS } from './ball-designs/index.ts';
+import { aimHeading, velocityHeading } from './ball-designs/state.ts';
+import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import type { Spark, Strike } from './effects.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
@@ -49,11 +51,10 @@ export function drawWorld(
       definitions.get(ball.definitionId)?.color ?? theme.unknownBall,
       isRepeat,
     );
-    drawBall(ctx, ball, color, effects.flash(ball.id), isRepeat);
-    if (ball.health > 0) {
-      ABILITY_OVERLAYS.get(ball.definitionId)?.(ctx, ball, world.tick);
-      drawHealPulse(ctx, ball, effects.heal(ball.id));
-    }
+    const design = BALL_DESIGNS.get(ball.definitionId);
+    const heal = effects.heal(ball.id);
+    drawBall(ctx, world, ball, { color, isRepeat, flash: effects.flash(ball.id), heal, design });
+    if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
   });
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
@@ -78,14 +79,37 @@ function drawArena(ctx: CanvasRenderingContext2D, size: number): void {
   ctx.strokeRect(-half, -half, size + theme.arenaBorderWidth, size + theme.arenaBorderWidth);
 }
 
-function drawBall(
+export interface BallLook {
+  /** Base colour as drawn (lighter for a repeat). */
+  readonly color: string;
+  readonly isRepeat: boolean;
+  /** Damage flash strength, 0 to 1. */
+  readonly flash: number;
+  /** Heal effect strength, 0 to 1. */
+  readonly heal: number;
+  readonly design: BallDesign | undefined;
+}
+
+/** Which way a design faces, in the world it is drawn in. */
+function headingFor(design: BallDesign, ball: BallState, world: WorldState) {
+  if (design.facing === 'velocity') return velocityHeading(ball.velocity);
+  if (design.facing === 'aim') return aimHeading(ball, world.balls);
+  return undefined;
+}
+
+/**
+ * One ball: its body, its design's markings, the damage flash, the outline and, for a repeat, a
+ * ring just inside the edge. Also used by the dev style guide, so it shows exactly what the game
+ * draws.
+ */
+export function drawBall(
   ctx: CanvasRenderingContext2D,
+  world: WorldState,
   ball: BallState,
-  color: string,
-  flash: number,
-  isRepeat: boolean,
+  look: BallLook,
 ): void {
   const { x, y } = ball.position;
+  const { color, flash, isRepeat, design } = look;
   ctx.save();
   if (ball.health <= 0) ctx.globalAlpha = theme.defeatedAlpha;
 
@@ -93,6 +117,26 @@ function drawBall(
   ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
+  if (design !== undefined) {
+    const heading = headingFor(design, ball, world);
+    ctx.save();
+    ctx.translate(x, y);
+    if (heading !== undefined) ctx.rotate(Math.atan2(heading.y, heading.x));
+    design.draw(ctx, {
+      ball,
+      radius: ball.radius,
+      base: color,
+      accent: theme.ballAccents[ball.definitionId] ?? theme.defaultAccent,
+      tick: world.tick,
+      heading,
+      heal: ball.health > 0 ? look.heal : 0,
+    });
+    ctx.restore();
+  }
+  // The design leaves its own path behind (paths are not part of save/restore), so the flash and
+  // outline rebuild the body's.
+  ctx.beginPath();
+  ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
   if (flash > 0) {
     ctx.save();
     ctx.globalAlpha *= flash * theme.flashMaxAlpha;

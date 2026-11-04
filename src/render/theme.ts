@@ -26,16 +26,30 @@ export const theme = {
   healRing: '#4ade80',
   healRingWidth: 6,
   healRingGrowth: 28,
-  /** Ability pips (e.g. Speedster stacks), drawn across the middle of the ball. */
-  pipRadius: 7,
-  pipSpacing: 15,
-  pipFilled: '#111827',
-  pipEmpty: 'rgba(17, 24, 39, 0.25)',
-  /** Charging arc around a ball with a cooldown (e.g. the Archer), filling as it recharges. */
-  chargeArcGap: 7,
-  chargeArcWidth: 5,
-  chargeArcEmpty: 'rgba(255, 255, 255, 0.12)',
-  chargeArcFilled: 'rgba(255, 255, 255, 0.75)',
+  /**
+   * Ball designs (src/render/ball-designs): flat shapes in the ball's own colour plus one accent
+   * per ball, keyed by definition id. White is only for small highlights.
+   */
+  ballAccents: {
+    brawler: '#7f1d1d',
+    speedster: '#1c1917',
+    vampire: '#1e1029',
+    archer: '#164e63',
+    storm: '#1e3a8a',
+  } as Readonly<Record<string, string>>,
+  /** Accent for a ball without its own entry. */
+  defaultAccent: '#111827',
+  /** Line weight of design markings, as a fraction of the ball's radius, so it holds at any size. */
+  markLine: 0.09,
+  /** Small highlights: the Vampire's fangs, the Storm's bolt. */
+  highlight: '#ffffff',
+  /** The Vampire's collar edge flushes this colour when it heals. */
+  vampireHeal: '#e11d48',
+  /** The Storm's bolt brightens from this alpha as it charges, then flickers near the strike. */
+  stormBoltMinAlpha: 0.25,
+  stormFlickerFrom: 0.85,
+  stormFlickerTicks: 3,
+  stormFlickerDim: 0.45,
   /** Projectiles are drawn as a short streak behind a round head, in the owner's colour. */
   projectileTrail: 30,
   projectileTrailWidth: 4,
