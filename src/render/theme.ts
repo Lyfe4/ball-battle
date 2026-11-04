@@ -12,6 +12,13 @@ export const theme = {
   unknownBall: '#ff00ff',
   /** Defeated balls stay on the field, faded. */
   defeatedAlpha: 0.25,
+  /**
+   * A ball whose kind already appeared earlier in the match (ball B in a mirror match) is drawn
+   * lighter, with a ring, so the two can be told apart. The HUD uses the same shade.
+   */
+  repeatLighten: 0.45,
+  repeatRing: '#ffffff',
+  repeatRingWidth: 4,
   /** Overlay colour for the damage flash; its opacity follows the flash strength. */
   flash: '#ffffff',
   flashMaxAlpha: 0.85,

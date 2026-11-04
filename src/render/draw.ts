@@ -1,5 +1,6 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ABILITY_OVERLAYS } from './ability-overlays.ts';
+import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
 import { theme } from './theme.ts';
 
@@ -33,14 +34,18 @@ export function drawWorld(
   ctx.setTransform(scale, 0, 0, scale, border * scale, border * scale);
 
   drawArena(ctx, size);
-  for (const ball of world.balls) {
-    const color = definitions.get(ball.definitionId)?.color ?? theme.unknownBall;
-    drawBall(ctx, ball, color, effects.flash(ball.id));
+  world.balls.forEach((ball, index) => {
+    const isRepeat = isRepeatOfEarlierBall(world.balls, index);
+    const color = ballColor(
+      definitions.get(ball.definitionId)?.color ?? theme.unknownBall,
+      isRepeat,
+    );
+    drawBall(ctx, ball, color, effects.flash(ball.id), isRepeat);
     if (ball.health > 0) {
       ABILITY_OVERLAYS.get(ball.definitionId)?.(ctx, ball);
       drawHealPulse(ctx, ball, effects.heal(ball.id));
     }
-  }
+  });
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
@@ -66,6 +71,7 @@ function drawBall(
   ball: BallState,
   color: string,
   flash: number,
+  isRepeat: boolean,
 ): void {
   const { x, y } = ball.position;
   ctx.save();
@@ -85,6 +91,14 @@ function drawBall(
   ctx.strokeStyle = theme.ballOutline;
   ctx.lineWidth = theme.ballOutlineWidth;
   ctx.stroke();
+  if (isRepeat) {
+    // Just inside the edge, so it never overlaps a neighbouring ball or the wall.
+    ctx.beginPath();
+    ctx.arc(x, y, ball.radius - theme.repeatRingWidth, 0, Math.PI * 2);
+    ctx.strokeStyle = theme.repeatRing;
+    ctx.lineWidth = theme.repeatRingWidth;
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

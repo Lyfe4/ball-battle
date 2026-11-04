@@ -1,3 +1,4 @@
+import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import { describeResult } from './result-text.ts';
@@ -59,7 +60,12 @@ export function createHud(
       world.balls.forEach((ball, index) => {
         const definition = definitions.get(ball.definitionId);
         const item = element('li', 'hud-ball');
-        item.style.setProperty('--ball-color', definition?.color ?? 'currentColor');
+        // Same shade as the canvas, so a mirror match's B row matches the lighter ball B.
+        const color =
+          definition === undefined
+            ? 'currentColor'
+            : ballColor(definition.color, isRepeatOfEarlierBall(world.balls, index));
+        item.style.setProperty('--ball-color', color);
 
         const name = element('span', 'hud-ball-name');
         name.append(
