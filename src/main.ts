@@ -1,12 +1,14 @@
 import './style.css';
 import { parseMatchup, writeMatchParams, type Matchup } from './app/matchup.ts';
-import { advanceFrame, startPlayback, type Playback } from './app/playback.ts';
+import { advanceFrame, interpolationAlpha, startPlayback, type Playback } from './app/playback.ts';
 import { isClockBusy } from './app/presentation-clock.ts';
 import { generateSeed, parseSeed } from './app/seed.ts';
+import { loadSpeed, saveSpeed, scaleFrame, type PlaybackSpeed } from './app/speed.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
+import { interpolateWorld } from './render/interpolate.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
@@ -15,6 +17,7 @@ import { step } from './sim/step.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
 import { createPicker } from './ui/picker.ts';
+import { createSpeedToggle } from './ui/speed-toggle.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.getElementById(id);
@@ -36,6 +39,7 @@ const canvas = getElement('arena', HTMLCanvasElement);
 const container = getElement('arena-container', HTMLDivElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const pickerForm = getElement('picker', HTMLFormElement);
+const speedRoot = getElement('hud-speed', HTMLDivElement);
 const ctx = getContext2d(canvas);
 
 const effects = createEffects();
@@ -48,6 +52,9 @@ let seed = parseSeed(params.get('seed')) ?? generateSeed();
 let playback: Playback = startPlayback(createMatchWorld(matchup, seed), theme.introMs);
 let lastFrameMs: number | undefined;
 let canvasView = { canvasPixels: 0, cssPixels: 0 };
+// Remembered per viewer. Reading localStorage itself can throw, hence the getter.
+const storage = () => window.localStorage;
+let speed: PlaybackSpeed = loadSpeed(storage);
 
 function createMatchWorld(next: Matchup, nextSeed: number) {
   return createWorld(nextSeed, [
@@ -75,11 +82,20 @@ const picker = createPicker(pickerForm, BALLS, (chosen) => {
   startMatch(chosen, generateSeed());
 });
 
-/** Draws the current world with every effect at the current effect time. */
+createSpeedToggle(speedRoot, speed, (next) => {
+  speed = next;
+  saveSpeed(storage, next);
+});
+
+/**
+ * Draws the world between the last two ticks (so motion is smooth at any refresh rate) with every
+ * effect at the current effect time. The HUD shows the sim's own latest world.
+ */
 function render(): void {
   const { world, effectMs: now } = playback;
   const reduced = reducedMotionQuery.matches;
-  drawWorld(ctx, world, BALL_LOOKUP, canvasView, {
+  const drawn = interpolateWorld(playback.previous, world, interpolationAlpha(playback));
+  drawWorld(ctx, drawn, BALL_LOOKUP, canvasView, {
     flash: (ballId) => effects.flash(ballId, now),
     heal: (ballId) => effects.heal(ballId, now),
     sparks: effects.sparks(now),
@@ -134,7 +150,7 @@ function frame(nowMs: number): void {
     const wasBusy = isClockBusy(playback.clock);
     const outcome = advanceFrame(
       playback,
-      nowMs - lastFrameMs,
+      scaleFrame(nowMs - lastFrameMs, speed),
       (world) => step(world, BALL_LOOKUP),
       ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
     );
@@ -143,10 +159,14 @@ function frame(nowMs: number): void {
       effects.apply(result.events, playback.effectMs);
       effects.bounced(wallBounces(previous, result.world), playback.effectMs);
     }
-    // Keep drawing while the intro, a hit-stop or slow-mo runs, and after the match ends while
-    // effects (the knockout sequence, the final flash) play out.
+    // Draw every frame while the match runs (balls move between ticks), while the intro, a
+    // hit-stop or slow-mo runs, and after the match ends while effects (the knockout sequence,
+    // the final flash) play out.
+    const running = playback.world.match.status === 'running';
     const busy = wasBusy || isClockBusy(playback.clock);
-    if (outcome.ticks.length > 0 || busy || effects.isActive(playback.effectMs)) render();
+    if (running || outcome.ticks.length > 0 || busy || effects.isActive(playback.effectMs)) {
+      render();
+    }
   }
   lastFrameMs = nowMs;
   requestAnimationFrame(frame);
