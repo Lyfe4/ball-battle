@@ -3,6 +3,7 @@ import { DT, MATCH_TIME_LIMIT_TICKS } from '../constants.ts';
 import { step } from '../step.ts';
 import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
+import { archer } from './archer.ts';
 import { brawler } from './brawler.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
@@ -89,6 +90,29 @@ describe('the ball roster', () => {
     it('Vampire steals at least 40% of the damage it deals', () => {
       expect(LIFESTEAL).toBeGreaterThanOrEqual(0.4);
       expect(vampire.hooks.onDamageDealt).toBeDefined();
+    });
+
+    it('Archer has the lowest contact damage', () => {
+      for (const ball of others(archer.id)) {
+        expect(archer.contactDamage).toBeLessThan(ball.contactDamage);
+      }
+    });
+
+    it('Archer gets at least half its damage from its arrows', () => {
+      let ability = 0;
+      let total = 0;
+      for (const opponent of others(archer.id)) {
+        for (let seed = 0; seed < 20; seed++) {
+          const { events } = play(createWorld(seed, [archer, opponent]), MATCH_TIME_LIMIT_TICKS);
+          for (const event of events) {
+            if (event.type !== 'damage' || event.sourceId !== 'ball-0') continue;
+            total += event.amount;
+            if (event.cause === 'ability') ability += event.amount;
+          }
+        }
+      }
+      expect(total).toBeGreaterThan(0);
+      expect(ability / total).toBeGreaterThanOrEqual(0.5);
     });
 
     it('Brawler hits hardest and has no ability', () => {
