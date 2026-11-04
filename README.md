@@ -61,7 +61,7 @@ src/
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
   ui/       plain-DOM picker and HUD: health, result, Replay / New match
-  app/      browser-side helpers: fixed-step clock, seed and matchup parsing
+  app/      browser-side helpers: fixed-step and presentation clocks, seed and matchup parsing
   main.ts   wires it together with a requestAnimationFrame loop
 ```
 
@@ -90,10 +90,11 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0004: Wall-bounce variance](docs/decisions/0004-wall-bounce-variance.md)
 , [ADR 0005: Projectiles](docs/decisions/0005-projectiles.md)
 , [ADR 0006: Hazard zones](docs/decisions/0006-hazard-zones.md)
+, [ADR 0007: Presentation clock and battle feel](docs/decisions/0007-presentation-clock.md)
 and [ADR 0008: Uniform size, directness, cruise speed](docs/decisions/0008-size-directness-cruise-speed.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 35.36 kB JS (13.04 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
+Production bundle: 44.96 kB JS (16.24 kB gzipped), 3.43 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

@@ -45,8 +45,9 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
    same read-only rule.
 5. **`src/main.ts` wires it together** with a `requestAnimationFrame` loop that uses an
    accumulator to run the fixed timestep independently of display refresh rate. Browser-side
-   helpers that are not sim or rendering (the fixed-step clock, seed and matchup parsing) live in
-   `src/app/` as small pure functions with tests; keep `main.ts` to wiring.
+   helpers that are not sim or rendering (the fixed-step clock, the presentation clock and frame
+   driver, seed and matchup parsing) live in `src/app/` as small pure functions with tests; keep
+   `main.ts` to wiring.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`, created with
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus
    optional hooks. Runtime state (`BallState`) is kept separate from the definition.
@@ -61,11 +62,15 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
    `WorldState` (they can hold functions); pass the same lookup every tick. Events are output
    only and never feed back into the sim: anything the sim must remember (health, contacts,
    match state) lives in `WorldState`. A finished match is returned unchanged with no events.
+9. **Battle feel bends presentation time, never sim time** (ADR 0007). Hit-stop, slow-mo and the
+   intro change when ticks run, never which ticks run. Effects run on effect time, are driven by
+   sim events, and respect `prefers-reduced-motion`. `src/sim` must not change for feel work.
 
 The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0002-combat-core.md`, `docs/decisions/0003-ability-system.md`,
 `docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md`,
-`docs/decisions/0006-hazard-zones.md` and `docs/decisions/0008-size-directness-cruise-speed.md`.
+`docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md` and
+`docs/decisions/0008-size-directness-cruise-speed.md`.
 
 ## Conventions
 
