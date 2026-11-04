@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { PairContact } from './collision.ts';
-import { applyContactDamage, directnessMultiplier, impactDamage, pairKey } from './combat.ts';
+import {
+  applyContactDamage,
+  contactDamageOf,
+  directnessMultiplier,
+  impactDamage,
+  pairKey,
+} from './combat.ts';
 import { MIN_IMPACT_MULTIPLIER } from './constants.ts';
+import { defineBall } from './define-ball.ts';
+import { indexDefinitions } from './definitions.ts';
 import { step } from './step.ts';
 import { blue, red, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
 import type { DamageEvent, SimEvent, WorldState } from './types.ts';
@@ -232,5 +240,54 @@ describe('contact damage', () => {
       expect(toBlue?.multiplier).toBeGreaterThan(MIN_IMPACT_MULTIPLIER);
       expect(toBlue?.multiplier).toBeLessThan(1);
     });
+  });
+});
+
+describe('contactDamageOf (ADR 0015)', () => {
+  // Red, but its hits grow by every point of health it is missing.
+  const rager = defineBall({
+    ...red,
+    id: 'rager',
+    contactDamageOf: (self, stats) => stats.contactDamage + (stats.maxHealth - self.health),
+  });
+  const lookup = indexDefinitions([rager, blue]);
+
+  function exchange(ragerHealth: number) {
+    const world = withBalls(createWorld(1, [rager, blue]), [
+      { position: { x: 400, y: 500 }, velocity: { x: red.speed, y: 0 }, health: ragerHealth },
+      { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
+    ]);
+    const events: SimEvent[] = [];
+    let current = world;
+    for (let i = 0; i < 60; i++) {
+      const result = step(current, lookup);
+      current = result.world;
+      events.push(...result.events);
+    }
+    return events;
+  }
+
+  it('replaces contactDamage with what the ball deals in its current state', () => {
+    expect(damageTo(exchange(red.maxHealth), 'ball-1')[0]?.amount).toBe(red.contactDamage);
+    // 10 health missing before the exchange: 10 more damage. Blue's hit in the same exchange
+    // does not count, because both hits are worked out from health before it.
+    expect(damageTo(exchange(red.maxHealth - 10), 'ball-1')[0]?.amount).toBe(
+      red.contactDamage + 10,
+    );
+  });
+
+  it('decides the lethal-exchange tiebreak by the damage it returns', () => {
+    // Rager on 2 health hits for 15 + 73 = 88: the larger raw hit, so it survives on 1 and blue,
+    // whose 85 health the hit is lethal to, is knocked out.
+    const events = exchange(2);
+    expect(damageTo(events, 'ball-0')[0]).toMatchObject({ survivedLethal: true, healthAfter: 1 });
+    expect(damageTo(events, 'ball-1')[0]).toMatchObject({ healthAfter: 0 });
+  });
+
+  it('throws for a value that is not a finite, non-negative number', () => {
+    const broken = { ...rager, contactDamageOf: () => Number.NaN };
+    const [ball] = createWorld(1, [broken, blue]).balls;
+    if (ball === undefined) throw new Error('expected a ball');
+    expect(() => contactDamageOf(ball, broken)).toThrow(/invalid contact damage/);
   });
 });

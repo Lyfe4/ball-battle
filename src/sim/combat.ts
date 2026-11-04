@@ -3,6 +3,7 @@ import { CONTACT_SLOP, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
 import type {
   BallDefeatedEvent,
+  BallDefinition,
   BallState,
   DamageEvent,
   DefinitionLookup,
@@ -62,6 +63,19 @@ export function impactDamage(contactDamage: number, multiplier: number): number 
   return contactDamage > 0 ? Math.max(1, Math.round(contactDamage * multiplier)) : 0;
 }
 
+/**
+ * The base contact damage a ball deals in its current state: its definition's `contactDamageOf`
+ * if it declares one, otherwise its `contactDamage` (ADR 0015). Throws for a non-finite or
+ * negative value, which only a bug can produce.
+ */
+export function contactDamageOf(ball: BallState, definition: BallDefinition): number {
+  const damage = definition.contactDamageOf?.(ball, definition) ?? definition.contactDamage;
+  if (!Number.isFinite(damage) || damage < 0) {
+    throw new Error(`Ball "${ball.id}" has an invalid contact damage (${String(damage)})`);
+  }
+  return damage;
+}
+
 export interface DamageResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
@@ -93,7 +107,12 @@ export function applyContactDamage(
   const pendingHit = (target: BallState, source: BallState, directness: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
     const multiplier = directnessMultiplier(directness);
-    return { target, source, raw: impactDamage(definition.contactDamage, multiplier), multiplier };
+    return {
+      target,
+      source,
+      raw: impactDamage(contactDamageOf(source, definition), multiplier),
+      multiplier,
+    };
   };
 
   const apply = ({ target, source, raw, multiplier }: PendingHit, survives: boolean): BallState => {

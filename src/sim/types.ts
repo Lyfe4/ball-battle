@@ -68,6 +68,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    * ball's velocity to this speed (ADR 0008). Defaults to `speed`.
    */
   readonly cruiseSpeed?: (state: S, stats: BallStats) => number;
+  /**
+   * Base contact damage in the ball's current state, for an ability that changes how hard it hits
+   * (the Berserker's rage). A pure query, not a hook, read from the ball as it was before the
+   * exchange; directness still scales it (ADR 0008, 0015). Defaults to `contactDamage`.
+   */
+  readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
 }
 
 /** A ball as its own hooks see it: its ability state has the definition's type. */
