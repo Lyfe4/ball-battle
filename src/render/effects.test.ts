@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DamageEvent } from '../sim/types.ts';
 import { createEffects, FLASH_MS, HEAL_MS, SPARK_MS, STRIKE_MS } from './effects.ts';
+import { theme } from './theme.ts';
 
 const hit: DamageEvent = {
   type: 'damage',
@@ -29,7 +30,10 @@ describe('effects', () => {
     expect(effects.isActive(0)).toBe(false);
     effects.apply([hit], 0);
     expect(effects.isActive(FLASH_MS - 1)).toBe(true);
-    expect(effects.isActive(FLASH_MS)).toBe(false);
+    // The health ghost outlasts the flash: it holds, then drains.
+    const ghostEnd = theme.ghostHoldMs + theme.ghostDrainMs;
+    expect(effects.isActive(ghostEnd - 1)).toBe(true);
+    expect(effects.isActive(ghostEnd)).toBe(false);
   });
 
   it('restarts the flash on a new hit and ignores other events', () => {

@@ -78,11 +78,64 @@ export const theme = {
   strikeFlash: '#ffffff',
   strikeFlashMaxAlpha: 0.6,
   boltColor: '#f0f9ff',
-  boltGlow: '#93c5fd',
-  boltGlowBlur: 18,
   boltWidth: 7,
   boltSegments: 9,
   boltJitter: 45,
+
+  /**
+   * Battle feel (ADR 0007). Durations are effect-time milliseconds unless they say real; sizes are
+   * world units. Damage thresholds are per ball per tick (a Speedster's hit plus its stack bonus
+   * counts as one impact). Measured over 100 seeds per matchup: under a third of non-knockout hits
+   * are heavy in any matchup (most in Storm mirrors, where every lightning hit is), none in Archer
+   * or Vampire mirrors.
+   */
+  heavyHitDamage: 26,
+  /** Damage that counts as a full-strength impact for particles and squash. */
+  fullImpactDamage: 28,
+  hitStopMinMs: 45,
+  hitStopMaxMs: 80,
+  knockoutHitStopMs: 110,
+  /**
+   * Screen shake on knockouts only, small and capped. Shaking on big hits too fired on up to 44%
+   * of hits in a Storm mirror, which read as busy.
+   */
+  shakeKnockoutOffset: 7,
+  shakeMs: 240,
+  shakeHz: 26,
+  /** Squash along the impact normal, recovering over squashMs. Wall bounces squash less. */
+  squashImpact: 0.14,
+  squashWall: 0.06,
+  squashMs: 150,
+  /** The part of a health bar just lost: holds, then drains down to the new health. */
+  healthGhost: 'rgba(255, 255, 255, 0.7)',
+  ghostHoldMs: 300,
+  ghostDrainMs: 450,
+  /** Impact particles: a few dots, more for a harder hit, never more than particleCap alive. */
+  particleColor: '#fde68a',
+  particleMin: 2,
+  particleMax: 6,
+  particleSpeed: 380,
+  particleRadius: 5,
+  particleMs: 360,
+  particleCap: 40,
+  /** Knockout: brief slow-mo (real ms), the loser breaks into shards, the winner pulses. */
+  knockoutSlowMoScale: 0.35,
+  knockoutSlowMoRealMs: 500,
+  shardCount: 7,
+  shardSpeed: 240,
+  shardMs: 750,
+  winnerRing: '#ffffff',
+  winnerRingWidth: 5,
+  winnerRingGrowth: 36,
+  winnerPulses: 2,
+  winnerPulseMs: 900,
+  /** The result text appears this long after a knockout, once the sequence has played. */
+  resultDelayMs: 950,
+  /** Match intro (real ms, under 1.5 s): each ball pops in, then a short hold before the first tick. */
+  introMs: 1100,
+  introPopMs: 420,
+  introStaggerMs: 160,
+  introOvershoot: 0.12,
 
   healthBarHeight: 12,
   healthBarGap: 10,

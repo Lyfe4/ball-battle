@@ -3,7 +3,7 @@
 // size, so designs can be reviewed without playing matches.
 import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import { ballColor } from '../render/ball-colors.ts';
-import { drawBall, drawWorld } from '../render/draw.ts';
+import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { theme } from '../render/theme.ts';
 import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
@@ -196,12 +196,7 @@ function phoneArena(): HTMLElement {
             : ball.abilityState,
   }));
   const view = { canvasPixels: canvas.width, cssPixels: cssSize };
-  drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, view, {
-    flash: () => 0,
-    heal: () => 0,
-    sparks: [],
-    strikes: [],
-  });
+  drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, view, NO_EFFECTS);
   const figure = document.createElement('figure');
   const caption = document.createElement('figcaption');
   caption.textContent = 'In the arena at phone width (340 px canvas)';

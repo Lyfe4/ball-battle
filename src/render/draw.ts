@@ -1,10 +1,17 @@
-import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
+import type { BallState, DefinitionLookup, Vec2, WorldState } from '../sim/types.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/state.ts';
 import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
-import type { Spark, Strike } from './effects.ts';
-import { healthBarRect, healthColor } from './health-bar.ts';
+import {
+  drawHealthBar,
+  drawKnockouts,
+  drawParticles,
+  drawWinnerRing,
+  withBallTransform,
+} from './draw-feel.ts';
+import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
+import type { Dot } from './particles.ts';
 import { drawProjectiles, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
@@ -25,7 +32,33 @@ export interface FrameEffects {
   readonly sparks: readonly Spark[];
   /** Zones that just struck. */
   readonly strikes: readonly Strike[];
+  /** Screen shake offset, world units. */
+  readonly shake: Vec2;
+  readonly squash: (ballId: string) => Squash | undefined;
+  /** Health the bar's ghost segment reaches down from (equal to health when there is none). */
+  readonly ghost: (ballId: string, health: number) => number;
+  readonly particles: readonly Dot[];
+  /** Balls breaking apart; their bodies are replaced by shards. */
+  readonly knockouts: readonly Knockout[];
+  readonly winner: WinnerRing | undefined;
+  /** Intro scale and opacity for the ball at an index. */
+  readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
 }
+
+/** A frame with no effects at all, for static pictures (the style guide). */
+export const NO_EFFECTS: FrameEffects = {
+  flash: () => 0,
+  heal: () => 0,
+  sparks: [],
+  strikes: [],
+  shake: { x: 0, y: 0 },
+  squash: () => undefined,
+  ghost: (_ballId, health) => health,
+  particles: [],
+  knockouts: [],
+  winner: undefined,
+  intro: () => ({ scale: 1, alpha: 1 }),
+};
 
 /**
  * Draws one frame. Reads the world and never writes to it. Everything is drawn in world units
@@ -48,12 +81,15 @@ export function drawWorld(
   // setTransform replaces any previous transform, so frames never accumulate scaling.
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvasPixels, canvasPixels);
-  ctx.setTransform(scale, 0, 0, scale, border * scale, border * scale);
+  const { shake } = effects;
+  ctx.setTransform(scale, 0, 0, scale, (border + shake.x) * scale, (border + shake.y) * scale);
 
   drawArena(ctx, size);
   // Pending zones go under the balls, so a warning never hides a ball.
   drawZones(ctx, world, definitions);
+  const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
+    if (breaking.has(ball.id)) return;
     const isRepeat = isRepeatOfEarlierBall(world.balls, index);
     const color = ballColor(
       definitions.get(ball.definitionId)?.color ?? theme.unknownBall,
@@ -61,24 +97,30 @@ export function drawWorld(
     );
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
-    drawBall(ctx, world, ball, {
-      color,
-      isRepeat,
-      flash: effects.flash(ball.id),
-      heal,
-      design,
-      cssPixelsPerUnit,
+    withBallTransform(ctx, ball, effects.squash(ball.id), effects.intro(index), () => {
+      drawBall(ctx, world, ball, {
+        color,
+        isRepeat,
+        flash: effects.flash(ball.id),
+        heal,
+        design,
+        cssPixelsPerUnit,
+      });
     });
     if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
   });
+  drawKnockouts(ctx, world, definitions, effects.knockouts);
+  drawWinnerRing(ctx, world, effects.winner);
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
   drawStrikes(ctx, effects.strikes);
+  drawParticles(ctx, effects.particles);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
     if (ball.health > 0 && maxHealth !== undefined) {
-      drawHealthBar(ctx, ball, ball.health / maxHealth, size);
+      const ghost = effects.ghost(ball.id, ball.health);
+      drawHealthBar(ctx, ball, ball.health / maxHealth, ghost / maxHealth, size);
     }
   }
 }
@@ -198,17 +240,4 @@ function drawHealPulse(ctx: CanvasRenderingContext2D, ball: BallState, strength:
   ctx.lineWidth = theme.healRingWidth;
   ctx.stroke();
   ctx.restore();
-}
-
-function drawHealthBar(
-  ctx: CanvasRenderingContext2D,
-  ball: BallState,
-  fraction: number,
-  arenaSize: number,
-): void {
-  const rect = healthBarRect(ball, arenaSize);
-  ctx.fillStyle = theme.healthTrack;
-  ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-  ctx.fillStyle = healthColor(fraction);
-  ctx.fillRect(rect.x, rect.y, rect.width * Math.min(1, Math.max(0, fraction)), rect.height);
 }

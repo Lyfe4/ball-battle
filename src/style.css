@@ -9,6 +9,7 @@
   --color-focus: #93c5fd;
   --color-health-track: #0b0d12;
   --color-health-fill: #22c55e;
+  --color-health-ghost: rgba(255, 255, 255, 0.7);
 
   --space-gutter: 16px;
   --space-gap: 12px;
@@ -133,9 +134,22 @@ canvas {
   overflow: hidden;
 }
 
+.hud-health-track {
+  position: relative;
+}
+
 .hud-health-fill {
+  position: relative;
   height: 100%;
   background: var(--ball-color, var(--color-health-fill));
+}
+
+/* Health just lost: sits behind the fill and catches up after a short hold. */
+.hud-health-ghost {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-health-ghost);
+  transition: width 450ms ease-out 300ms;
 }
 
 .hud-result {

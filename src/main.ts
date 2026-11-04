@@ -1,10 +1,14 @@
 import './style.css';
-import { advanceClock } from './app/fixed-step.ts';
 import { parseMatchup, writeMatchParams, type Matchup } from './app/matchup.ts';
+import { advanceFrame, startPlayback, type Playback } from './app/playback.ts';
+import { isClockBusy } from './app/presentation-clock.ts';
 import { generateSeed, parseSeed } from './app/seed.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
+import { feelOf, wallBounces } from './render/impact.ts';
+import { introLook } from './render/motion.ts';
+import { theme } from './render/theme.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import { step } from './sim/step.ts';
@@ -36,12 +40,12 @@ const ctx = getContext2d(canvas);
 
 const effects = createEffects();
 const ballIds = BALLS.map((ball) => ball.id);
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const params = new URL(window.location.href).searchParams;
 let matchup = parseMatchup(params, ballIds);
 let seed = parseSeed(params.get('seed')) ?? generateSeed();
-let world = createMatchWorld(matchup, seed);
-let accumulatorMs = 0;
+let playback: Playback = startPlayback(createMatchWorld(matchup, seed), theme.introMs);
 let lastFrameMs: number | undefined;
 let canvasView = { canvasPixels: 0, cssPixels: 0 };
 
@@ -51,6 +55,12 @@ function createMatchWorld(next: Matchup, nextSeed: number) {
     getDefinition(BALL_LOOKUP, next.b),
   ]);
 }
+
+function applyReducedMotion(): void {
+  effects.setReducedMotion(reducedMotionQuery.matches);
+}
+applyReducedMotion();
+reducedMotionQuery.addEventListener('change', applyReducedMotion);
 
 const hud = createHud(hudRoot, BALL_LOOKUP, {
   onReplay: () => {
@@ -65,14 +75,24 @@ const picker = createPicker(pickerForm, BALLS, (chosen) => {
   startMatch(chosen, generateSeed());
 });
 
-function render(nowMs: number): void {
+/** Draws the current world with every effect at the current effect time. */
+function render(): void {
+  const { world, effectMs: now } = playback;
+  const reduced = reducedMotionQuery.matches;
   drawWorld(ctx, world, BALL_LOOKUP, canvasView, {
-    flash: (ballId) => effects.flash(ballId, nowMs),
-    heal: (ballId) => effects.heal(ballId, nowMs),
-    sparks: effects.sparks(nowMs),
-    strikes: effects.strikes(nowMs),
+    flash: (ballId) => effects.flash(ballId, now),
+    heal: (ballId) => effects.heal(ballId, now),
+    sparks: effects.sparks(now),
+    strikes: effects.strikes(now),
+    shake: effects.shake(now),
+    squash: (ballId) => effects.squash(ballId, now),
+    ghost: (ballId, health) => effects.ghost(ballId, health, now),
+    particles: effects.particles(now),
+    knockouts: effects.knockouts(now),
+    winner: effects.winner(now),
+    intro: (index) => introLook(index, now, reduced),
   });
-  hud.update(world, seed);
+  hud.update(world, seed, effects.resultVisible(now));
 }
 
 /**
@@ -82,35 +102,41 @@ function render(nowMs: number): void {
 function startMatch(nextMatchup: Matchup, nextSeed: number): void {
   matchup = nextMatchup;
   seed = nextSeed;
-  world = createMatchWorld(matchup, seed);
-  hud.setMatch(world);
+  playback = startPlayback(createMatchWorld(matchup, seed), theme.introMs);
+  hud.setMatch(playback.world);
   picker.show(matchup);
   effects.reset();
-  accumulatorMs = 0;
   lastFrameMs = undefined;
 
   const url = new URL(window.location.href);
   writeMatchParams(url.searchParams, matchup, seed);
   window.history.replaceState(null, '', url);
-  render(performance.now());
+  render();
 }
 
 fitCanvasToContainer(canvas, container, (size) => {
   canvasView = { canvasPixels: size.pixels, cssPixels: size.cssPixels };
-  render(performance.now());
+  render();
 });
 
 function frame(nowMs: number): void {
   if (lastFrameMs !== undefined) {
-    const advance = advanceClock(accumulatorMs, nowMs - lastFrameMs);
-    accumulatorMs = advance.accumulatorMs;
-    for (let i = 0; i < advance.ticks; i++) {
-      const result = step(world, BALL_LOOKUP);
-      world = result.world;
-      effects.apply(result.events, nowMs);
+    const wasBusy = isClockBusy(playback.clock);
+    const outcome = advanceFrame(
+      playback,
+      nowMs - lastFrameMs,
+      (world) => step(world, BALL_LOOKUP),
+      ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
+    );
+    playback = outcome.playback;
+    for (const { previous, result } of outcome.ticks) {
+      effects.apply(result.events, playback.effectMs);
+      effects.bounced(wallBounces(previous, result.world), playback.effectMs);
     }
-    // Keep drawing after the match ends while effects (like the final hit's flash) fade out.
-    if (advance.ticks > 0 || effects.isActive(nowMs)) render(nowMs);
+    // Keep drawing while the intro, a hit-stop or slow-mo runs, and after the match ends while
+    // effects (the knockout sequence, the final flash) play out.
+    const busy = wasBusy || isClockBusy(playback.clock);
+    if (outcome.ticks.length > 0 || busy || effects.isActive(playback.effectMs)) render();
   }
   lastFrameMs = nowMs;
   requestAnimationFrame(frame);

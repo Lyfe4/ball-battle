@@ -61,8 +61,6 @@ export function drawStrikes(ctx: CanvasRenderingContext2D, strikes: readonly Str
     ctx.lineWidth = theme.boltWidth;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.shadowColor = theme.boltGlow;
-    ctx.shadowBlur = theme.boltGlowBlur;
     ctx.beginPath();
     points.forEach((point, index) => {
       if (index === 0) ctx.moveTo(point.x, point.y);
