@@ -8,8 +8,10 @@ import type { BallState } from './types.ts';
  * - shocked: heals are reduced (ADR 0009).
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
+ * - staggered: can't aim. A ball that aims (the Archer, Storm and Sniper) holds its next attack
+ *   until the stagger ends, and a Sniper's locked aim breaks (ADR 0016).
  */
-export type StatusKind = 'shocked' | 'slowed' | 'poisoned';
+export type StatusKind = 'shocked' | 'slowed' | 'poisoned' | 'staggered';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -23,6 +25,30 @@ export interface StatusState {
    * ticks) runs from here and a refresh can neither reset nor speed up its rhythm.
    */
   readonly sinceTick: number;
+}
+
+/** Throws unless `durationTicks` is a whole number of at least 1; only a bug can produce one. */
+export function assertStatusDuration(
+  kind: StatusKind,
+  durationTicks: number,
+  sourceId: string,
+): void {
+  if (!Number.isInteger(durationTicks) || durationTicks < 1) {
+    throw new Error(`"${sourceId}" tried to apply ${kind} for an invalid ${durationTicks} ticks`);
+  }
+}
+
+/**
+ * How long a status lasts on a ball that resists it (ADR 0016): the requested duration times the
+ * share it keeps, rounded to whole ticks but never below 1. A share of 0 means immune, and returns
+ * 0: the status is not applied at all. No share (undefined) is the full duration.
+ */
+export function resistedDuration(durationTicks: number, keeps: number | undefined): number {
+  if (keeps === undefined) return durationTicks;
+  if (!Number.isFinite(keeps) || keeps < 0 || keeps > 1) {
+    throw new Error(`A status resistance must be a share from 0 to 1, got ${keeps}`);
+  }
+  return keeps === 0 ? 0 : Math.max(1, Math.round(durationTicks * keeps));
 }
 
 /** A status to apply, as carried by an action or a zone. */
@@ -106,9 +132,7 @@ export function withStatus(
   tick: number,
 ): { readonly ball: BallState; readonly event: StatusAppliedEvent } {
   const { kind, durationTicks } = request;
-  if (!Number.isInteger(durationTicks) || durationTicks < 1) {
-    throw new Error(`"${sourceId}" tried to apply ${kind} for an invalid ${durationTicks} ticks`);
-  }
+  assertStatusDuration(kind, durationTicks, sourceId);
   const existing = ball.statuses.find((status) => status.kind === kind);
   const expiresTick = Math.max(existing?.expiresTick ?? 0, tick + durationTicks);
   const sinceTick = existing?.sinceTick ?? tick;

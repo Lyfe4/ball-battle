@@ -74,6 +74,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    * exchange; directness still scales it (ADR 0008, 0015). Defaults to `contactDamage`.
    */
   readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
+  /**
+   * Share of a status's duration this ball keeps, per kind (ADR 0016): 0.8 wears it off 20% sooner,
+   * 0 makes the ball immune. Kinds not listed last their full duration. Plain data, read when the
+   * status is applied, so it works the same for actions and zones.
+   */
+  readonly statusResistance?: Readonly<Partial<Record<StatusKind, number>>>;
 }
 
 /** A ball as its own hooks see it: its ability state has the definition's type. */

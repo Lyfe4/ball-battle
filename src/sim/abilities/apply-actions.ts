@@ -1,7 +1,13 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
-import { hasStatus, shockedHeal, withStatus } from '../status.ts';
+import {
+  assertStatusDuration,
+  hasStatus,
+  resistedDuration,
+  shockedHeal,
+  withStatus,
+} from '../status.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import type {
   AbilityAction,
@@ -153,7 +159,12 @@ export function applyActions(
         break;
       case 'applyStatus':
         update(action.targetId, (target) => {
-          const request = { kind: action.status, durationTicks: action.durationTicks };
+          assertStatusDuration(action.status, action.durationTicks, ownerId);
+          // A ball that resists a kind keeps it for less time, or never gets it (ADR 0016).
+          const keeps = getDefinition(definitions, target.definitionId).statusResistance;
+          const durationTicks = resistedDuration(action.durationTicks, keeps?.[action.status]);
+          if (durationTicks === 0) return undefined;
+          const request = { kind: action.status, durationTicks };
           const applied = withStatus(target, request, ownerId, tick);
           events.push(applied.event);
           return applied.ball;
