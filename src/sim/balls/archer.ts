@@ -8,11 +8,11 @@ export type ArcherState = Readonly<{ nextShotTick: number }>;
 /** The first shot comes on this tick, so a match doesn't open with an instant hit. */
 export const FIRST_SHOT_DELAY_TICKS = 30;
 /** Ticks between shots. */
-export const COOLDOWN_TICKS = 90;
+export const COOLDOWN_TICKS = 120;
 /** World units per second. */
 export const ARROW_SPEED = 1500;
 export const ARROW_RADIUS = 6;
-export const ARROW_DAMAGE = 10;
+export const ARROW_DAMAGE = 11;
 /** Long enough to cross the arena several times; walls normally end an arrow much sooner. */
 export const ARROW_LIFETIME_TICKS = 180;
 /**
@@ -88,11 +88,11 @@ function nearestEnemy(self: Readonly<{ id: string; position: Vec2 }>, balls: rea
 export const archer = defineBall<ArcherState>({
   id: 'archer',
   name: 'Archer',
-  description: 'Weak up close, but shoots an arrow at where its enemy is heading every 1.5 s.',
+  description: 'Weak up close, but shoots an arrow at where its enemy is heading every 2 s.',
   color: '#22d3ee',
-  radius: 46,
-  speed: 620,
-  maxHealth: 56,
+  radius: 38,
+  speed: 780,
+  maxHealth: 44,
   contactDamage: 6,
   initialAbilityState: { nextShotTick: FIRST_SHOT_DELAY_TICKS },
   hooks: {

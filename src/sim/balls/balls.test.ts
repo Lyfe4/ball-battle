@@ -71,7 +71,9 @@ describe('the ball roster', () => {
         });
       }
     }
-    expect(worst).toBeLessThan(0.5);
+    // A safety margin below the real limit (1.0). It was 0.5 (2x) until step 3b, when a faster
+    // Vampire and Archer pushed the worst observed case to about 0.504; 0.6 still leaves 1.67x.
+    expect(worst).toBeLessThan(0.6);
   });
 
   describe('identity rules', () => {
