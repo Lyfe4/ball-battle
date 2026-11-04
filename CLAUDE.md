@@ -57,7 +57,8 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
    match state) lives in `WorldState`. A finished match is returned unchanged with no events.
 
 The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
-`docs/decisions/0002-combat-core.md` and `docs/decisions/0003-ability-system.md`.
+`docs/decisions/0002-combat-core.md`, `docs/decisions/0003-ability-system.md` and
+`docs/decisions/0004-wall-bounce-variance.md`.
 
 ## Conventions
 
@@ -70,7 +71,10 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   its fixture balls `red` and `blue`, which have no abilities and fixed stats, so core tests don't
   change when real balls are rebalanced. Test-only balls with hooks are declared in the test.
 - Balance targets (`pnpm balance`): every ball wins 40-60% overall, no matchup worse than 25/75,
-  draws under 5%, median match 15-30 s. Re-check after any stat or ability change.
+  draws under 5%, median match 15-30 s, win rates move at most ~15 points for ±5% contact damage,
+  Vampire heals at least 25% of max health per match. Re-check after any stat or ability change.
+  Ball identity rules are pinned in `src/sim/balls/balls.test.ts`; breaking one is a design
+  decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
 - A behaviour test should be shown to fail with the behaviour disabled before it is trusted.
 - World coordinates are in world units (`ARENA_SIZE` = 1000), never pixels. The renderer maps
   world units to the screen.

@@ -11,11 +11,11 @@ framework.
 Pick two balls and watch them fight. They collide elastically and deal damage scaled by how hard
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball      | Ability                                                                  |
-| --------- | ------------------------------------------------------------------------ |
-| Brawler   | None. The baseline every other ball is balanced against.                 |
-| Speedster | Each wall bounce adds a stack of speed and damage; a hit cashes them in. |
-| Vampire   | Heals for part of every hit it lands.                                    |
+| Ball      | Ability                                                                         |
+| --------- | ------------------------------------------------------------------------------- |
+| Brawler   | None. Hits the hardest; the baseline every other ball is balanced against.      |
+| Speedster | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in. |
+| Vampire   | Heals for 40% of the damage it deals.                                           |
 
 ## Running it
 
@@ -30,15 +30,15 @@ Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42`: share or reloa
 the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a fresh
 random one.
 
-| Script           | What it does                                             |
-| ---------------- | -------------------------------------------------------- |
-| `pnpm dev`       | Vite dev server                                          |
-| `pnpm build`     | Typecheck and build to `dist/`                           |
-| `pnpm test`      | Run the tests once (`pnpm test:watch` to watch)          |
-| `pnpm lint`      | ESLint                                                   |
-| `pnpm typecheck` | `tsc -b` across all tsconfig projects                    |
-| `pnpm format`    | Prettier (`pnpm format:check` to only check)             |
-| `pnpm balance`   | Matchup matrix over N seeds per slot order (default 500) |
+| Script           | What it does                                                                    |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `pnpm dev`       | Vite dev server                                                                 |
+| `pnpm build`     | Typecheck and build to `dist/`                                                  |
+| `pnpm test`      | Run the tests once (`pnpm test:watch` to watch)                                 |
+| `pnpm lint`      | ESLint                                                                          |
+| `pnpm typecheck` | `tsc -b` across all tsconfig projects                                           |
+| `pnpm format`    | Prettier (`pnpm format:check` to only check)                                    |
+| `pnpm balance`   | Matchup matrix, ability impact and sensitivity (N seeds per order, default 500) |
 
 ## Architecture
 
@@ -72,10 +72,11 @@ The rules, in brief:
 
 Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-deterministic-simulation.md)
 , [ADR 0002: Combat core](docs/decisions/0002-combat-core.md)
-and [ADR 0003: Ability system](docs/decisions/0003-ability-system.md).
+, [ADR 0003: Ability system](docs/decisions/0003-ability-system.md)
+and [ADR 0004: Wall-bounce variance](docs/decisions/0004-wall-bounce-variance.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 19.05 kB JS (7.65 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
+Production bundle: 20.33 kB JS (8.12 kB gzipped), 3.24 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
