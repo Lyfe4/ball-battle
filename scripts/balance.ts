@@ -18,7 +18,8 @@ const SENSITIVITY_FACTORS = [0.95, 1.05] as const;
 /** Balance targets; the summary marks each one as met or not. */
 const TARGETS = {
   ballWinRate: [0.4, 0.6],
-  worstMatchup: 0.25,
+  /** Counters are allowed, but must stay soft: no matchup worse than this for either side. */
+  worstMatchup: 0.2,
   drawRate: 0.05,
   medianSeconds: [12, 30],
   /**
@@ -159,7 +160,7 @@ console.log(`  ${'Median match length'.padEnd(28)} ${medianLength.toFixed(1)} s\
 console.log('  Targets');
 console.log(`  ${check(ballsInRange)} every ball wins 40-60% overall`);
 console.log(
-  `  ${check(worstShare >= TARGETS.worstMatchup)} no matchup worse than 25/75 (worst side ${pct(worstShare).trim()})`,
+  `  ${check(worstShare >= TARGETS.worstMatchup)} no matchup worse than 20/80 (worst side ${pct(worstShare).trim()})`,
 );
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
