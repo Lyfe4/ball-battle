@@ -109,6 +109,9 @@ of the `(rA + rB) / DT` detection limit, alongside the measured property test.
 
 ## Retune and counters
 
+_Superseded: the counters below are replaced by the counter map in ADR 0010 (the stats here were
+retuned there too)._
+
 With the old stats under the new rules, every target already passed except the overall win-rate
 range: the Vampire won 61.9% (lifesteal on a smaller body outlasted everyone) and the Storm 37.9%.
 The retune changed three numbers: Vampire health 66 → 60, Storm health 68 → 74 and zone damage
