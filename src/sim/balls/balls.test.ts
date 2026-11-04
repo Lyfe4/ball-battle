@@ -6,6 +6,7 @@ import type { BallDefinition } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
 import { brawler } from './brawler.ts';
+import { frost } from './frost.ts';
 import { BALLS } from './index.ts';
 import { MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm } from './storm.ts';
@@ -36,6 +37,8 @@ describe('the ball roster', () => {
       vampire: vampire.speed,
       archer: archer.speed,
       storm: storm.speed,
+      // Slowed only ever lowers a ball's speed.
+      frost: frost.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {

@@ -41,7 +41,9 @@ export const HARD_WORST_MATCHUP = 0.25;
 /**
  * One soft triangle from the balls' mechanics (Speedster > Archer > Vampire > Speedster), the
  * Storm's place (favoured against the Vampire, unfavoured against the Speedster, even with the
- * Archer), and the Brawler as the safe pick, even against everyone (docs/vision.md).
+ * Archer), and the Brawler as the safe pick, even against everyone (docs/vision.md). Frost
+ * (ADR 0012) has one favoured and one unfavoured matchup from its mechanics and is even against
+ * the rest.
  */
 export const COUNTER_MAP: readonly CounterEntry[] = [
   {
@@ -103,6 +105,37 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
     y: 'storm',
     intended: 'even',
     reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'frost',
+    y: 'speedster',
+    intended: 'x',
+    reason:
+      'Slowed cuts both Speedster weapons: its speed and the wall bounces that build its stacks.',
+  },
+  {
+    x: 'storm',
+    y: 'frost',
+    intended: 'x',
+    reason: 'The slowest ball is the least likely to leave a lightning warning in time.',
+  },
+  {
+    x: 'brawler',
+    y: 'frost',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'frost',
+    y: 'vampire',
+    intended: 'even',
+    reason: 'Slowing does not change a contact trade, and Frost never stops the healing.',
+  },
+  {
+    x: 'frost',
+    y: 'archer',
+    intended: 'even',
+    reason: 'Arrows land on a slow target, but Frost wins the contacts it gets.',
   },
 ];
 

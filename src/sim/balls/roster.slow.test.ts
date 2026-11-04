@@ -8,6 +8,7 @@ import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.t
 import { createWorld } from '../world.ts';
 import { archer, ARROW_DAMAGE } from './archer.ts';
 import { brawler } from './brawler.ts';
+import { frost } from './frost.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE } from './storm.ts';
@@ -178,11 +179,16 @@ describe('the ball roster (slow)', () => {
         vampire: 0,
         archer: ARROW_DAMAGE,
         storm: ZONE_DAMAGE,
+        frost: 0,
       };
       expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
       for (const ball of others(storm.id)) {
         expect(ZONE_DAMAGE).toBeGreaterThan(biggestHit[ball.id] ?? Infinity);
       }
+    });
+
+    it('Frost has the lowest base speed', () => {
+      for (const ball of others(frost.id)) expect(frost.speed).toBeLessThan(ball.speed);
     });
 
     it('Brawler hits hardest and has no ability', () => {
