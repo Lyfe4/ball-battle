@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Lyfe4/ball-battle/actions/workflows/ci.yml/badge.svg)](https://github.com/Lyfe4/ball-battle/actions/workflows/ci.yml)
 
+**Play it: [battle-ball.netlify.app](https://battle-ball.netlify.app/)**
+
 A browser auto-battler. Balls with different abilities bounce around a square arena until one
 wins. There is no player control: you pick the balls and watch.
 
@@ -42,6 +44,7 @@ random one.
 | ---------------- | ------------------------------------------------------------------------------- |
 | `pnpm dev`       | Vite dev server                                                                 |
 | `pnpm build`     | Typecheck and build to `dist/`                                                  |
+| `pnpm preview`   | Serve `dist/` with the production security headers, to check the CSP            |
 | `pnpm test`      | Run the tests once (`pnpm test:watch` to watch)                                 |
 | `pnpm lint`      | ESLint                                                                          |
 | `pnpm typecheck` | `tsc -b` across all tsconfig projects                                           |

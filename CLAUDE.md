@@ -11,6 +11,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 
 - `pnpm dev`: start the Vite dev server
 - `pnpm build`: typecheck and build to `dist/`
+- `pnpm preview`: serve `dist/` on http://localhost:4199 with the production security headers
+  from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps
+  them in step). Check the console for CSP errors after any change that loads something new.
 - `pnpm test`: run Vitest once (`pnpm test:watch` to watch)
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
