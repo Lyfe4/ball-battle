@@ -7,6 +7,7 @@ import { speedster } from './speedster.ts';
 import { storm } from './storm.ts';
 import { thorns } from './thorns.ts';
 import { vampire } from './vampire.ts';
+import { venom } from './venom.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
 export const BALLS: readonly BallDefinition[] = [
@@ -17,6 +18,7 @@ export const BALLS: readonly BallDefinition[] = [
   storm,
   frost,
   thorns,
+  venom,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);

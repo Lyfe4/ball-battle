@@ -3,6 +3,7 @@
 // (pnpm test:slow, its own CI job) and the main test run stays fast.
 import { describe, expect, it } from 'vitest';
 import { DT, MATCH_TIME_LIMIT_TICKS, STANDARD_BALL_RADIUS } from '../constants.ts';
+import { POISON_DAMAGE } from '../status.ts';
 import { step } from '../step.ts';
 import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
@@ -14,6 +15,7 @@ import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE } from './storm.ts';
 import { reflectFor, thorns } from './thorns.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
+import { venom } from './venom.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -183,6 +185,7 @@ describe('the ball roster (slow)', () => {
         frost: 0,
         // Reflection of the hardest contact hit in the roster.
         thorns: reflectFor(Math.max(...BALLS.map((ball) => ball.contactDamage))),
+        venom: POISON_DAMAGE,
       };
       expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
       for (const ball of others(storm.id)) {
@@ -202,6 +205,11 @@ describe('the ball roster (slow)', () => {
         expect(abilityShare(thorns, others(thorns.id))).toBeGreaterThanOrEqual(0.15);
       },
     );
+
+    it('Venom gets most of its damage from poison', { timeout: ROSTER_TIMEOUT_MS }, () => {
+      // Poison is its only ability damage. Measured about 65% (ADR 0014).
+      expect(abilityShare(venom, others(venom.id))).toBeGreaterThanOrEqual(0.5);
+    });
 
     it('Brawler hits hardest and has no ability', () => {
       for (const ball of others(brawler.id)) {

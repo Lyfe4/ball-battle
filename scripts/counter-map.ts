@@ -44,7 +44,7 @@ export const HARD_WORST_MATCHUP = 0.25;
  * Archer), and the Brawler as the safe pick, even against everyone but Thorns, its one designed counter
  * (docs/vision.md, ADR 0013). Frost
  * (ADR 0012) has one favoured and one unfavoured matchup from its mechanics and is even against
- * the rest.
+ * the rest. Venom (ADR 0014) is favoured against Thorns and unfavoured against the Vampire.
  */
 export const COUNTER_MAP: readonly CounterEntry[] = [
   {
@@ -173,6 +173,48 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
     y: 'frost',
     intended: 'even',
     reason: 'Two contact balls: the Frost hits hard into the spikes, but slows Thorns.',
+  },
+  {
+    x: 'venom',
+    y: 'thorns',
+    intended: 'x',
+    reason: 'Poison never touches the spikes, and its light hits leave little to reflect.',
+  },
+  {
+    x: 'vampire',
+    y: 'venom',
+    intended: 'x',
+    reason: 'Lifesteal out-heals the poison: every trade heals back what the poison chipped.',
+  },
+  {
+    x: 'brawler',
+    y: 'venom',
+    intended: 'even',
+    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+  },
+  {
+    x: 'venom',
+    y: 'speedster',
+    intended: 'even',
+    reason: 'Poison works between the Speedster bursts, but Venom’s own hits are light.',
+  },
+  {
+    x: 'venom',
+    y: 'archer',
+    intended: 'even',
+    reason: 'Arrows chip Venom from range, but every contact poisons the fragile Archer.',
+  },
+  {
+    x: 'venom',
+    y: 'storm',
+    intended: 'even',
+    reason: 'Lightning outdamages poison per hit, but every Storm contact is poisoned too.',
+  },
+  {
+    x: 'venom',
+    y: 'frost',
+    intended: 'even',
+    reason: 'Long fights feed the poison, but the Frost hits hard and slows Venom.',
   },
 ];
 
