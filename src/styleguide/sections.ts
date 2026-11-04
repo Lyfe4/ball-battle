@@ -205,6 +205,21 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
       { label: 'all three', id: 'storm', statuses: ['shocked', 'slowed', 'poisoned'] },
     ],
   ],
+  [
+    'Staggered (ADR 0016): a broken ring of pale-stone arcs; it can’t aim',
+    [
+      ...['archer', 'storm', 'sniper', 'brawler'].map((id): Tile => ({
+        label: id,
+        id,
+        statuses: ['staggered'],
+      })),
+      {
+        label: 'all four',
+        id: 'sniper',
+        statuses: ['shocked', 'slowed', 'poisoned', 'staggered'],
+      },
+    ],
+  ],
 ];
 
 /**

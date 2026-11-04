@@ -61,6 +61,14 @@ export const theme = {
   poisonRingWidth: 5,
   poisonRingAlpha: 0.8,
   poisonDotGap: 11,
+  /**
+   * A staggered ball (ADR 0016): a broken ring of a few pale-stone arcs, the Quake's colour family,
+   * like a dazed halo. Still. Outermost when a ball has several statuses.
+   */
+  staggerRing: '#e7e5e4',
+  staggerRingWidth: 4,
+  staggerRingAlpha: 0.8,
+  staggerArcs: 4,
   /** Each further status ring sits this much further out than the one inside it. */
   statusRingSpacing: 9,
   /**
