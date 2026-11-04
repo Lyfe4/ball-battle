@@ -25,6 +25,12 @@ export interface Contact {
    * so the bounce itself never changes it. Negative means moving away. Order matches the pair.
    */
   readonly approachSpeeds: readonly [number, number];
+  /**
+   * How directly each ball was moving at the other before the impulse: its approach speed over its
+   * own speed, i.e. the cosine of the angle between its heading and the line between the centres.
+   * 1 is head-on, below 0 is moving away, and 0 for a ball standing still. ADR 0008.
+   */
+  readonly directness: readonly [number, number];
 }
 
 export interface PairResolution {
@@ -123,6 +129,8 @@ export function resolvePair(
   const approachA = a.velocity.x * normal.x + a.velocity.y * normal.y;
   const approachB = -(b.velocity.x * normal.x + b.velocity.y * normal.y);
   const closingSpeed = -(approachA + approachB);
+  const speedA = Math.sqrt(a.velocity.x * a.velocity.x + a.velocity.y * a.velocity.y);
+  const speedB = Math.sqrt(b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y);
   // Only push apart balls that are moving towards each other; separating balls keep going.
   const impulse = closingSpeed < 0 ? (-2 * closingSpeed) / (inverseA + inverseB) : 0;
 
@@ -134,6 +142,7 @@ export function resolvePair(
       normal,
       impulse,
       approachSpeeds: [approachA, approachB],
+      directness: [speedA === 0 ? 0 : approachA / speedA, speedB === 0 ? 0 : approachB / speedB],
     },
   };
 }

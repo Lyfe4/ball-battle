@@ -273,9 +273,9 @@ export interface DamageEvent {
   readonly amount: number;
   readonly healthAfter: number;
   /**
-   * Impact strength the damage was scaled by: the source's speed towards the target before the
-   * bounce, over its definition speed, clamped to [MIN_IMPACT_MULTIPLIER, MAX_IMPACT_MULTIPLIER].
-   * Always 1 for ability damage.
+   * How directly the source hit, which the damage was scaled by: the cosine of its approach angle
+   * before the bounce, clamped to [MIN_IMPACT_MULTIPLIER, 1] (ADR 0008). Always 1 for ability
+   * damage.
    */
   readonly multiplier: number;
   /**

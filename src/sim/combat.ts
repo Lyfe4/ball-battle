@@ -1,5 +1,5 @@
 import type { PairContact } from './collision.ts';
-import { CONTACT_SLOP, MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
+import { CONTACT_SLOP, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
 import type {
   BallDefeatedEvent,
@@ -45,13 +45,13 @@ export function nextContacts(
     .sort();
 }
 
-/** How hard a ball hit, relative to its own definition speed. */
-export function impactMultiplier(approachSpeed: number, baseSpeed: number): number {
-  if (baseSpeed <= 0) return MIN_IMPACT_MULTIPLIER;
-  return Math.min(
-    MAX_IMPACT_MULTIPLIER,
-    Math.max(MIN_IMPACT_MULTIPLIER, approachSpeed / baseSpeed),
-  );
+/**
+ * How much of its contact damage a ball deals, from how directly it hit (the cosine of its
+ * approach angle, see Contact.directness): full head-on, less for a glancing hit, and the minimum
+ * for a ball moving away or standing still. Speed does not matter (ADR 0008).
+ */
+export function directnessMultiplier(directness: number): number {
+  return Math.min(1, Math.max(MIN_IMPACT_MULTIPLIER, directness));
 }
 
 /**
@@ -76,8 +76,8 @@ interface PendingHit {
 }
 
 /**
- * Applies contact damage for each new contact. Each ball's hit is scaled by how hard it drove
- * into the other before the bounce. Within a pair both hits are worked out from health before the
+ * Applies contact damage for each new contact. Each ball's hit is scaled by how directly it was
+ * moving at the other before the bounce. Within a pair both hits are worked out from health before the
  * exchange. If both hits would be lethal, the ball that dealt the larger raw damage survives on
  * 1 health; equal raw damage knocks both out (ADR 0002, lethal-exchange tiebreak).
  */
@@ -90,9 +90,9 @@ export function applyContactDamage(
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   const damage: DamageEvent[] = [];
 
-  const pendingHit = (target: BallState, source: BallState, approachSpeed: number): PendingHit => {
+  const pendingHit = (target: BallState, source: BallState, directness: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
-    const multiplier = impactMultiplier(approachSpeed, definition.speed);
+    const multiplier = directnessMultiplier(directness);
     return { target, source, raw: impactDamage(definition.contactDamage, multiplier), multiplier };
   };
 
@@ -116,12 +116,12 @@ export function applyContactDamage(
     return { ...target, health: healthAfter };
   };
 
-  for (const { ballIds, approachSpeeds } of newContacts) {
+  for (const { ballIds, directness } of newContacts) {
     const a = byId.get(ballIds[0]);
     const b = byId.get(ballIds[1]);
     if (a === undefined || b === undefined) continue;
-    const toA = pendingHit(a, b, approachSpeeds[1]);
-    const toB = pendingHit(b, a, approachSpeeds[0]);
+    const toA = pendingHit(a, b, directness[1]);
+    const toB = pendingHit(b, a, directness[0]);
     const mutualLethal = isAlive(a) && isAlive(b) && toA.raw >= a.health && toB.raw >= b.health;
     byId.set(a.id, apply(toA, mutualLethal && toB.raw > toA.raw));
     byId.set(b.id, apply(toB, mutualLethal && toA.raw > toB.raw));

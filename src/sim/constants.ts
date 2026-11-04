@@ -19,12 +19,11 @@ export const MATCH_TIME_LIMIT_SECONDS = 60;
 export const MATCH_TIME_LIMIT_TICKS = MATCH_TIME_LIMIT_SECONDS * TICK_RATE;
 
 /**
- * Contact damage scales with how hard the attacker drove into the target: its speed towards the
- * target, before the bounce, divided by its definition speed. Clamped so glancing or standing hits
- * still hurt a little and very fast hits can't one-shot (ADR 0002).
+ * Contact damage scales with how directly the attacker hit: the cosine of its approach angle,
+ * clamped to [MIN_IMPACT_MULTIPLIER, 1], so a glancing, retreating or standing ball still hurts a
+ * little (ADR 0002, ADR 0008).
  */
 export const MIN_IMPACT_MULTIPLIER = 0.25;
-export const MAX_IMPACT_MULTIPLIER = 2;
 
 /**
  * Every current ball's radius in world units (ADR 0008). Balls differ by stats and abilities, not

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { impactDamage, impactMultiplier, pairKey } from './combat.ts';
-import { MAX_IMPACT_MULTIPLIER, MIN_IMPACT_MULTIPLIER } from './constants.ts';
+import type { PairContact } from './collision.ts';
+import { applyContactDamage, directnessMultiplier, impactDamage, pairKey } from './combat.ts';
+import { MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { step } from './step.ts';
 import { blue, red, run, testDefinitions, testLookup, withBalls } from './test-support.ts';
 import type { DamageEvent, SimEvent, WorldState } from './types.ts';
@@ -130,13 +131,55 @@ describe('contact damage', () => {
     expect(damageTo(events, 'ball-0')[0]?.amount).toBe(1);
   });
 
-  describe('impact scaling', () => {
-    it('scales by approach speed over definition speed, clamped', () => {
-      expect(impactMultiplier(red.speed, red.speed)).toBe(1);
-      expect(impactMultiplier(red.speed / 2, red.speed)).toBe(0.5);
-      expect(impactMultiplier(0, red.speed)).toBe(MIN_IMPACT_MULTIPLIER);
-      expect(impactMultiplier(-100, red.speed)).toBe(MIN_IMPACT_MULTIPLIER);
-      expect(impactMultiplier(red.speed * 10, red.speed)).toBe(MAX_IMPACT_MULTIPLIER);
+  describe('directness scaling', () => {
+    /** A contact between ball-0 and ball-1 with the given directness for each. */
+    const contact = (directness: readonly [number, number]): PairContact => ({
+      ballIds: ['ball-0', 'ball-1'],
+      point: { x: 500, y: 500 },
+      normal: { x: 1, y: 0 },
+      impulse: 0,
+      approachSpeeds: [0, 0],
+      directness,
+    });
+
+    it('scales by directness, clamped to the minimum and to 1', () => {
+      expect(directnessMultiplier(1)).toBe(1);
+      expect(directnessMultiplier(0.5)).toBe(0.5);
+      expect(directnessMultiplier(0)).toBe(MIN_IMPACT_MULTIPLIER);
+      expect(directnessMultiplier(-1)).toBe(MIN_IMPACT_MULTIPLIER);
+      expect(directnessMultiplier(1 + 1e-12)).toBe(1);
+    });
+
+    it('deals the same head-on damage at any speed', () => {
+      for (const speed of [red.speed / 4, red.speed, red.speed * 2]) {
+        const charge = withBalls(base, [
+          { position: { x: 400, y: 500 }, velocity: { x: speed, y: 0 } },
+          { position: { x: 600, y: 500 }, velocity: { x: 0, y: 0 } },
+        ]);
+        const { events } = run(charge, 120);
+        expect(damageTo(events, 'ball-1')[0]).toMatchObject({
+          amount: red.contactDamage,
+          multiplier: 1,
+        });
+      }
+    });
+
+    it('deals half damage for a hit at 60°', () => {
+      const { damage } = applyContactDamage(base.balls, [contact([0.5, 1])], testLookup, 1);
+      expect(damage.find((event) => event.targetId === 'ball-1')).toMatchObject({
+        amount: impactDamage(red.contactDamage, 0.5),
+        multiplier: 0.5,
+      });
+    });
+
+    it('keeps the lethal tiebreak: the more direct hitter survives a mutual knockout', () => {
+      // Both on 1 health. Red hits head-on (raw = full damage), blue glances (raw = minimum).
+      const low = withBalls(base, [{ health: 1 }, { health: 1 }]).balls;
+      const { balls, damage } = applyContactDamage(low, [contact([1, 0.3])], testLookup, 1);
+      expect(balls.map((ball) => ball.health)).toStrictEqual([1, 0]);
+      expect(damage.find((event) => event.targetId === 'ball-0')).toMatchObject({
+        survivedLethal: true,
+      });
     });
 
     it('rounds damage to whole numbers with a minimum of 1', () => {

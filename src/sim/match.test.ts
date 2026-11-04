@@ -130,12 +130,10 @@ describe('match end', () => {
       ]);
     });
 
-    it('compares raw damage, so the side that hit harder this time survives', () => {
-      // Blue arrives at half speed, so its hit drops to round(17 * 0.5) = 9; red's stays 15.
-      const world = withBalls(headOn(9, red.contactDamage), [
-        {},
-        { velocity: { x: -blue.speed / 2, y: 0 } },
-      ]);
+    it('compares raw damage, so the side that hit more directly this time survives', () => {
+      // Blue stands still, so its hit drops to the minimum, round(17 * 0.25) = 4; red's head-on
+      // hit stays 15. Both are lethal.
+      const world = withBalls(headOn(4, red.contactDamage), [{}, { velocity: { x: 0, y: 0 } }]);
       const result = run(world, 60);
       expect(result.world.match).toMatchObject({ result: { kind: 'win', winnerId: 'ball-0' } });
       expect(damageTo(result.events, 'ball-0')).toMatchObject({

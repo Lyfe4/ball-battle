@@ -159,6 +159,27 @@ describe('ball collisions', () => {
     expect(resolution?.a.velocity).toStrictEqual({ x: -100, y: 0 });
   });
 
+  it('reports how directly each ball was heading at the other, before the impulse', () => {
+    const [a, b] = base.balls;
+    if (a === undefined || b === undefined) throw new Error('expected two balls');
+    // Normal along +x. A moves at 60° to it (cos 60° = 0.5); B stands still.
+    const resolution = resolvePair(
+      { ...a, position: { x: 500, y: 500 }, velocity: { x: 300, y: 300 * Math.sqrt(3) } },
+      { ...b, position: { x: 600, y: 500 }, velocity: { x: 0, y: 0 } },
+      base.arena.size,
+    );
+    expect(resolution?.contact.directness[0]).toBeCloseTo(0.5, 12);
+    expect(resolution?.contact.directness[1]).toBe(0);
+
+    // Head-on at any speed is 1; moving straight away is -1.
+    const away = resolvePair(
+      { ...a, position: { x: 500, y: 500 }, velocity: { x: 7, y: 0 } },
+      { ...b, position: { x: 600, y: 500 }, velocity: { x: 900, y: 0 } },
+      base.arena.size,
+    );
+    expect(away?.contact.directness).toStrictEqual([1, -1]);
+  });
+
   it('still catches fast head-on hits below the discrete-detection limit', () => {
     // Detection is discrete (ADR 0002): balls can pass through each other once their relative
     // movement per tick exceeds the sum of their radii. 2000 units/s each way is well inside it.
