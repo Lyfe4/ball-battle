@@ -114,3 +114,18 @@ Recorded here when the autorun report that first listed them was retired.
 - **Particles only for contact and arrow hits**; lightning already has its flash and bolt.
 - The reduced-heal ring and shocked indicator (ADR 0009) follow the same style: flat, one colour,
   in effect time.
+
+## Addendum: interpolation and playback speed (2026-11-05)
+
+- **Interpolation.** Measured at about 90 Hz, 27% of frames ran no tick and repeated the last
+  picture, so ticks were held for one or two frames unevenly (judder; worse at 144 and 165 Hz).
+  The renderer now draws `interpolateWorld(previous, world, alpha)` (`src/render/interpolate.ts`):
+  ball and projectile positions blended between the last two ticks by the banked share of the
+  next tick (`interpolationAlpha`), everything else from the latest tick. `Playback.previous` is
+  the world before the latest tick and starts equal to the first world, so a new match, Replay or
+  New match never smears. A finished match and a hit-stop draw the latest tick exactly. This
+  resolves the "rendering shows the latest tick" consequence in ADR 0001.
+- **Playback speed.** A 1× / 2× toggle scales each frame's real time before the presentation
+  clock (`src/app/speed.ts`), so ticks, intro, hit-stops, slow-mo and effects all run at the same
+  multiple, and the tick sequence is unchanged (the playback replay test runs at 2× too). Remembered
+  per viewer in `localStorage`, behind try/catch; not part of the URL.

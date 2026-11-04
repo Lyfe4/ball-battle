@@ -54,6 +54,11 @@ Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42`: share or reloa
 the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a fresh
 random one.
 
+The **Speed 1× / 2×** toggle under the match status plays everything twice as fast (the fight,
+hit-stops and effects alike) without changing the result; your choice is remembered in this
+browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
+displays.
+
 | Script           | What it does                                                                 |
 | ---------------- | ---------------------------------------------------------------------------- |
 | `pnpm dev`       | Vite dev server                                                              |
