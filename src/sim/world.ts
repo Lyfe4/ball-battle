@@ -57,6 +57,7 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
       radius,
       health: definition.maxHealth,
       abilityState: definition.initialAbilityState,
+      statuses: [],
     };
   });
 

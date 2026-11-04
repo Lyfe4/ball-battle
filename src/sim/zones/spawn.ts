@@ -1,3 +1,4 @@
+import type { StatusRequest } from '../status.ts';
 import type { BallState, SimEvent, Vec2, ZoneState } from '../types.ts';
 
 export interface ZoneRequest {
@@ -5,6 +6,7 @@ export interface ZoneRequest {
   readonly radius: number;
   readonly damage: number;
   readonly delayTicks: number;
+  readonly status?: StatusRequest;
 }
 
 export interface ZoneSpawnResult {
@@ -26,7 +28,9 @@ function assertValid(owner: BallState, request: ZoneRequest, arenaSize: number):
     Number.isFinite(damage) &&
     damage >= 0 &&
     Number.isInteger(delayTicks) &&
-    delayTicks >= 1;
+    delayTicks >= 1 &&
+    (request.status === undefined ||
+      (Number.isInteger(request.status.durationTicks) && request.status.durationTicks >= 1));
   if (!valid) {
     throw new Error(`An ability of "${owner.id}" tried to spawn an invalid zone`);
   }
@@ -57,6 +61,7 @@ export function spawnZone(
     damage: request.damage,
     spawnTick: tick,
     strikeTick: tick + request.delayTicks,
+    ...(request.status === undefined ? {} : { status: request.status }),
   };
   return {
     zone,

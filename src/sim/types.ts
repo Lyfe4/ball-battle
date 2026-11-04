@@ -1,3 +1,12 @@
+import type {
+  HealBlockedEvent,
+  StatusAppliedEvent,
+  StatusExpiredEvent,
+  StatusKind,
+  StatusRequest,
+  StatusState,
+} from './status.ts';
+
 /** A 2D vector in world units. */
 export interface Vec2 {
   readonly x: number;
@@ -138,6 +147,18 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly radius: number;
       readonly damage: number;
       readonly delayTicks: number;
+      /** Applied to every ball the strike hits, after its damage (ADR 0009). */
+      readonly status?: StatusRequest;
+    }
+  /**
+   * Puts a status on a ball for `durationTicks` (a whole number, at least 1). Re-applying a kind
+   * the ball already has refreshes its expiry, never stacks (ADR 0009).
+   */
+  | {
+      readonly kind: 'applyStatus';
+      readonly targetId: string;
+      readonly status: StatusKind;
+      readonly durationTicks: number;
     };
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
@@ -170,6 +191,8 @@ export interface BallState {
   readonly health: number;
   /** Starts as the definition's initialAbilityState; changed only by its own hooks. */
   readonly abilityState: AbilityState;
+  /** Status effects on this ball (ADR 0009): at most one per kind, created only by actions. */
+  readonly statuses: readonly StatusState[];
 }
 
 /**
@@ -209,6 +232,8 @@ export interface ZoneState {
   readonly spawnTick: number;
   /** It strikes on exactly this tick, always later than spawnTick. */
   readonly strikeTick: number;
+  /** Applied to every ball the strike hits, after its damage (ADR 0009). */
+  readonly status?: StatusRequest;
 }
 
 /**
@@ -399,7 +424,10 @@ export type SimEvent =
   | ZoneSpawnedEvent
   | ZoneStruckEvent
   | BallDefeatedEvent
-  | MatchEndedEvent;
+  | MatchEndedEvent
+  | StatusAppliedEvent
+  | StatusExpiredEvent
+  | HealBlockedEvent;
 
 export interface StepResult {
   readonly world: WorldState;

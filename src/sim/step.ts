@@ -14,6 +14,7 @@ import { getDefinition } from './definitions.ts';
 import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
 import { resolveProjectiles } from './projectiles/resolve.ts';
+import { expireStatuses } from './status.ts';
 import { resolveZones } from './zones/resolve.ts';
 import type {
   BallState,
@@ -30,29 +31,33 @@ import type {
  * new world and never mutates the input, so callers can keep earlier states for comparison or
  * replay. `definitions` must be the same lookup every tick of a match.
  *
- * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008); events come out in the same order:
+ * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009); events come out in the same
+ * order:
  *  1. A finished match is returned as is, with no events.
- *  2. onTick hooks, then their actions.
- *  3. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
+ *  2. Statuses whose expiry tick is this tick are removed (ADR 0009), so every hook below already
+ *     sees them gone.
+ *  3. onTick hooks, then their actions.
+ *  4. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
  *     (ADR 0004), which advances the world RNG.
- *  4. onWallHit hooks for balls that bounced, then their actions.
- *  5. Ball collisions: separation and elastic impulse (momentum-conserving physics).
- *  6. Contact damage for new contacts (scaled by directness, lethal tiebreak).
- *  7. onHitBall hooks for both balls of each new contact, then their actions.
- *  8. Projectiles move and resolve: swept against each ball's motion this tick, the nearest hit
- *     before a wall deals ability damage (ADR 0005). Projectiles spawned in steps 2-7 already
+ *  5. onWallHit hooks for balls that bounced, then their actions.
+ *  6. Ball collisions: separation and elastic impulse (momentum-conserving physics).
+ *  7. Contact damage for new contacts (scaled by directness, lethal tiebreak).
+ *  8. onHitBall hooks for both balls of each new contact, then their actions.
+ *  9. Projectiles move and resolve: swept against each ball's motion this tick, the nearest hit
+ *     before a wall deals ability damage (ADR 0005). Projectiles spawned in steps 3-8 already
  *     move this tick.
- *  9. Zones whose strike tick is this tick strike: each deals ability damage to every live ball
- *     other than its owner that overlaps it now, then is removed (ADR 0006). A zone always
- *     strikes at least one tick after it was spawned.
- * 10. onDamageDealt hooks for every damage event so far this tick (contact, projectile and zone),
+ * 10. Zones whose strike tick is this tick strike: each deals ability damage to every live ball
+ *     other than its owner that overlaps it now, then applies its status (if any) to the balls it
+ *     hit, then is removed (ADR 0006, 0009). A zone always strikes at least one tick after it was
+ *     spawned.
+ * 11. onDamageDealt hooks for every damage event so far this tick (contact, projectile and zone),
  *     then their actions. Damage from these actions does not fire onDamageDealt again;
  *     projectiles they spawn start moving next tick.
- * 11. ballDefeated for balls that went from alive to 0 health this tick.
- * 12. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
+ * 12. ballDefeated for balls that went from alive to 0 health this tick.
+ * 13. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
  *     direction (ADR 0008). Last, so it reads ability state after every hook of the tick; it
  *     emits no events.
- * 13. Contacts are updated and the match end is decided.
+ * 14. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
   if (world.match.status === 'finished') {
@@ -66,7 +71,9 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const tick = world.tick + 1;
   const { size } = world.arena;
   const events: SimEvent[] = [];
-  let balls: readonly BallState[] = world.balls;
+  const expiry = expireStatuses(world.balls, tick);
+  let balls: readonly BallState[] = expiry.balls;
+  events.push(...expiry.events);
   let { rngState, projectiles, nextProjectileId, zones, nextZoneId } = world;
 
   const phase = (invocations: readonly Invocation[]): void => {

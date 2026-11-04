@@ -1,6 +1,7 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
+import { hasStatus, withStatus } from '../status.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import type {
   AbilityAction,
@@ -94,6 +95,18 @@ export function applyActions(
           const healthAfter = Math.min(maxHealth, target.health + Math.max(0, action.amount));
           const amount = healthAfter - target.health;
           if (amount <= 0) return undefined;
+          // Shocked (ADR 0009): the heal restores nothing, and says so instead of `healed`.
+          if (hasStatus(target, 'shocked')) {
+            events.push({
+              type: 'healBlocked',
+              tick,
+              ballId: target.id,
+              sourceId: ownerId,
+              amount,
+              status: 'shocked',
+            });
+            return undefined;
+          }
           events.push({
             type: 'healed',
             tick,
@@ -131,6 +144,14 @@ export function applyActions(
           zones.push(spawned.zone);
           events.push(spawned.event);
           return undefined;
+        });
+        break;
+      case 'applyStatus':
+        update(action.targetId, (target) => {
+          const request = { kind: action.status, durationTicks: action.durationTicks };
+          const applied = withStatus(target, request, ownerId, tick);
+          events.push(applied.event);
+          return applied.ball;
         });
         break;
       default: {

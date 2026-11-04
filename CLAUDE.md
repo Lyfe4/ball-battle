@@ -82,11 +82,14 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
-- Within a tick: onTick, move (with a seeded turn on wall bounces, ADR 0004), onWallHit, collide,
-  contact damage (new contacts only, scaled by directness, ADR 0008), onHitBall, projectiles move
-  and resolve (ADR 0005), zones due this tick strike (ADR 0006), onDamageDealt, defeat, cruise
-  speed (ADR 0008), match end. Events are emitted in that order. Every hook in a phase sees the
+- Within a tick: statuses due this tick expire (ADR 0009), onTick, move (with a seeded turn on wall
+  bounces, ADR 0004), onWallHit, collide, contact damage (new contacts only, scaled by directness,
+  ADR 0008), onHitBall, projectiles move and resolve (ADR 0005), zones due this tick strike and
+  apply their status (ADR 0006, 0009), onDamageDealt, defeat, cruise speed (ADR 0008), match end. Events are emitted in that order. Every hook in a phase sees the
   same snapshot; actions are applied afterwards. The full order is documented on `step`.
+- Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
+  or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
+  A new kind extends `StatusKind` in `src/sim/status.ts`.
 - Every ball keeps its own speed: the tick ends by rescaling each live ball's velocity to its
   cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
   declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.

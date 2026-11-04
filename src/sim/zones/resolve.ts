@@ -1,4 +1,4 @@
-import { dealAbilityDamage } from '../abilities/apply-actions.ts';
+import { applyActions, dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { isAlive } from '../combat.ts';
 import type { BallState, DefinitionLookup, SimEvent, ZoneState } from '../types.ts';
 
@@ -20,7 +20,8 @@ function overlaps(zone: ZoneState, ball: BallState): boolean {
  * Strikes every zone whose strike tick is `tick` (ADR 0006). Each one deals its damage to every
  * live ball other than its owner that overlaps it now, then is removed; the rest are kept as they
  * are. Zones strike in spawn order and each strike is applied before the next, so a ball brought
- * to 0 health by one zone is not hit by the next.
+ * to 0 health by one zone is not hit by the next. A zone with a status applies it to each ball it
+ * hit, right after that ball's damage (ADR 0009); a ball the strike defeated gets none.
  */
 export function resolveZones(
   zones: readonly ZoneState[],
@@ -54,6 +55,27 @@ export function resolveZones(
       if (result.damage === undefined) continue;
       hitIds.push(ball.id);
       damage.push(result.damage);
+      if (zone.status !== undefined) {
+        // Through an applyStatus action, like the damage: statuses only ever come from actions.
+        const applied = applyActions(
+          { balls: current, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
+          zone.ownerId,
+          [
+            {
+              kind: 'applyStatus',
+              targetId: ball.id,
+              status: zone.status.kind,
+              durationTicks: zone.status.durationTicks,
+            },
+          ],
+          definitions,
+          tick,
+          // An applyStatus action never uses the arena size.
+          Infinity,
+        );
+        current = applied.balls;
+        damage.push(...applied.events);
+      }
     }
     events.push(
       {

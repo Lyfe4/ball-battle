@@ -4,6 +4,7 @@ import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, deepFreeze, red, withBalls } from '../test-support.ts';
 import type { BallState, SimEvent, Vec2, WorldState, ZoneStruckEvent } from '../types.ts';
+import type { StatusRequest } from '../status.ts';
 import { createWorld } from '../world.ts';
 
 interface PlannedZone {
@@ -12,6 +13,7 @@ interface PlannedZone {
   readonly radius?: number;
   readonly damage?: number;
   readonly delayTicks?: number;
+  readonly status?: StatusRequest;
 }
 
 const DELAY = 30;
@@ -39,6 +41,7 @@ function zoner(plan: readonly PlannedZone[]) {
             radius: zone.radius ?? 150,
             damage: zone.damage ?? DAMAGE,
             delayTicks: zone.delayTicks ?? DELAY,
+            ...(zone.status === undefined ? {} : { status: zone.status }),
           })),
       onDamageDealt: ({ self, cause, amount }) => [
         {
@@ -146,6 +149,45 @@ describe('zones', () => {
       red.maxHealth - DAMAGE,
       blue.maxHealth - DAMAGE,
       red.maxHealth,
+    ]);
+  });
+
+  it('applies its status to every ball it hit, after the damage, and to no one else', () => {
+    // As above: owner at the centre, two enemies inside, one outside, plus one inside that the
+    // strike defeats, which gets no status.
+    const status = { kind: 'shocked', durationTicks: 40 } as const;
+    const { world, lookup } = arena(
+      [{ tick: spawnTick, position: centre, status }],
+      [
+        { position: centre },
+        { position: { x: 500 + 150 + red.radius - 1, y: 500 } },
+        { position: { x: 500, y: 500 - 150 - blue.radius + 30 } },
+        { position: { x: 500 - 150 - red.radius - 1, y: 500 }, health: DAMAGE },
+      ],
+    );
+    const shiftedLast = withBalls(world, [{}, {}, {}, { position: { x: 500, y: 650 } }]);
+    const { world: after, events } = play(shiftedLast, lookup, strikeTick);
+    const expiresTick = strikeTick + status.durationTicks;
+    expect(after.balls.map((ball) => ball.statuses)).toStrictEqual([
+      [],
+      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick }],
+      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick }],
+      [],
+    ]);
+    const order = events.flatMap((event) => {
+      if (event.type === 'damage') return [`damage:${event.targetId}`];
+      if (event.type === 'statusApplied') return [`status:${event.ballId}`];
+      return event.type === 'zoneStruck' || event.type === 'ballDefeated' ? [event.type] : [];
+    });
+    // Each hit's status right after its damage; the ball the strike defeated gets none.
+    expect(order).toStrictEqual([
+      'zoneStruck',
+      'damage:ball-1',
+      'status:ball-1',
+      'damage:ball-2',
+      'status:ball-2',
+      'damage:ball-3',
+      'ballDefeated',
     ]);
   });
 
