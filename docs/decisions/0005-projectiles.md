@@ -73,6 +73,29 @@ Projectiles spawned in phases 2–7 move in the same tick they appear. Projectil
 damage actually dealt; followed by that hit's `damage` event) and `projectileExpired` (id, owner,
 reason `wall` or `lifetime`).
 
+### 6. The Archer and its counters (intended design)
+
+The Archer is the first projectile user: lowest contact damage, modest health, an arrow every
+2 seconds. It leads its aim, shooting where its target will be if it keeps moving in a straight
+line (a quadratic intercept, solved with arithmetic and `Math.sqrt`); it can't foresee wall
+bounces.
+
+Aiming at the target's current position was tried first. The Speedster closed in and won almost
+every fight (about 91/9), and no stat change fixed that without the Archer crushing the slower
+balls: its best and worst matchups were always 50-60 points apart. Leading the aim narrowed that
+to about 45, and the balance targets now allow soft counters (no matchup worse than 20/80).
+
+The resulting counters are deliberate:
+
+- **Speedster beats Archer** (about 77/23): it closes the distance faster than arrows can stop it.
+- **Archer beats Brawler** (about 68/32) and **Vampire** (about 63/37): big, slower targets are
+  easy to hit before they arrive. The Vampire was made faster (760, still below the Speedster) so
+  this counter stays soft.
+- Brawler, Speedster and Vampire stay within about 42-58 of each other.
+
+Every ball still wins 40-60% overall. A future change that turns one of these into a hard
+counter (worse than 20/80), or removes one, is a design decision, not a tuning step.
+
 ## Consequences
 
 - Positive: projectiles are data like everything else in the world, reproducible from a seed and
