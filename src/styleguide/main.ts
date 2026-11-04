@@ -183,7 +183,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
   if (tile.shocked === true) {
     const shocked = {
       ...ball,
-      statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: TICK + 1 }],
+      statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: TICK + 1, sinceTick: TICK }],
     } as const;
     drawStatuses(ctx, shocked, TICK, false);
   }

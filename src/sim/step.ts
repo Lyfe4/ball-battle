@@ -15,6 +15,7 @@ import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
 import { resolveProjectiles } from './projectiles/resolve.ts';
 import { expireStatuses } from './status.ts';
+import { resolvePoison } from './status-effects.ts';
 import { resolveZones } from './zones/resolve.ts';
 import type {
   BallState,
@@ -31,8 +32,8 @@ import type {
  * new world and never mutates the input, so callers can keep earlier states for comparison or
  * replay. `definitions` must be the same lookup every tick of a match.
  *
- * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009); events come out in the same
- * order:
+ * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009, 0012); events come out in the
+ * same order:
  *  1. A finished match is returned as is, with no events.
  *  2. Statuses whose expiry tick is this tick are removed (ADR 0009), so every hook below already
  *     sees them gone.
@@ -50,14 +51,16 @@ import type {
  *     other than its owner that overlaps it now, then applies its status (if any) to the balls it
  *     hit, then is removed (ADR 0006, 0009). A zone always strikes at least one tick after it was
  *     spawned.
- * 11. onDamageDealt hooks for every damage event so far this tick (contact, projectile and zone),
- *     then their actions. Damage from these actions does not fire onDamageDealt again;
+ * 11. Poison ticks: every poisoned ball whose poison is due takes its source's ability damage
+ *     (ADR 0012).
+ * 12. onDamageDealt hooks for every damage event so far this tick (contact, projectile, zone and
+ *     poison), then their actions. Damage from these actions does not fire onDamageDealt again;
  *     projectiles they spawn start moving next tick.
- * 12. ballDefeated for balls that went from alive to 0 health this tick.
- * 13. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
- *     direction (ADR 0008). Last, so it reads ability state after every hook of the tick; it
- *     emits no events.
- * 14. Contacts are updated and the match end is decided.
+ * 13. ballDefeated for balls that went from alive to 0 health this tick.
+ * 14. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
+ *     direction (ADR 0008); slowed balls go slower (ADR 0012). Last, so it reads ability state
+ *     and statuses after every hook of the tick; it emits no events.
+ * 15. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
   if (world.match.status === 'finished') {
@@ -139,9 +142,13 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   zones = strikes.zones;
   events.push(...strikes.events);
 
-  phase(
-    damageDealtInvocations(events.filter((event): event is DamageEvent => event.type === 'damage')),
-  );
+  const poison = resolvePoison(balls, definitions, tick);
+  balls = poison.balls;
+  events.push(...poison.damage);
+
+  const damageSoFar = (): DamageEvent[] =>
+    events.filter((event): event is DamageEvent => event.type === 'damage');
+  phase(damageDealtInvocations(damageSoFar()));
 
   events.push(...defeatsThisTick(world.balls, balls, events, tick));
 

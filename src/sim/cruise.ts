@@ -1,15 +1,17 @@
 import { isAlive } from './combat.ts';
 import { getDefinition } from './definitions.ts';
+import { hasStatus, slowedSpeed } from './status.ts';
 import type { BallDefinition, BallState, DefinitionLookup } from './types.ts';
 import { scale } from './vec2.ts';
 
 /**
  * The speed a ball travels at in its current ability state: its definition's `cruiseSpeed` if it
- * declares one, otherwise its definition speed. Throws for a non-finite or non-positive speed,
- * which only a bug can produce.
+ * declares one, otherwise its definition speed, reduced while it is slowed (ADR 0012). Throws for a
+ * non-finite or non-positive speed, which only a bug can produce.
  */
 export function cruiseSpeedOf(ball: BallState, definition: BallDefinition): number {
-  const speed = definition.cruiseSpeed?.(ball.abilityState, definition) ?? definition.speed;
+  const own = definition.cruiseSpeed?.(ball.abilityState, definition) ?? definition.speed;
+  const speed = hasStatus(ball, 'slowed') ? slowedSpeed(own) : own;
   if (!Number.isFinite(speed) || speed <= 0) {
     throw new Error(`Ball "${ball.id}" has an invalid cruise speed (${String(speed)})`);
   }

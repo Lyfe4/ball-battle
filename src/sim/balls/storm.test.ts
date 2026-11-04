@@ -67,6 +67,7 @@ describe('Storm', () => {
         kind: 'shocked',
         sourceId: 'ball-0',
         expiresTick: strikeTick + SHOCK_TICKS,
+        sinceTick: strikeTick,
       });
       shockedOn.push(world.tick);
     });
@@ -88,7 +89,12 @@ describe('Storm', () => {
     expect(hit?.tick).toBeLessThan(FIRST_STRIKE_DELAY_TICKS);
     expect(contactTick).toBe(hit?.tick);
     expect(world.balls[1]?.statuses).toStrictEqual([
-      { kind: 'shocked', sourceId: 'ball-0', expiresTick: (hit?.tick ?? 0) + SHOCK_TICKS },
+      {
+        kind: 'shocked',
+        sourceId: 'ball-0',
+        expiresTick: (hit?.tick ?? 0) + SHOCK_TICKS,
+        sinceTick: hit?.tick,
+      },
     ]);
     expect(world.balls[0]?.statuses).toStrictEqual([]);
   });

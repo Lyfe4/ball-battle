@@ -83,7 +83,7 @@ describe('Vampire', () => {
   it('heals less while shocked, reporting the lifesteal it lost', () => {
     const start = 40;
     const shocked = withBalls(headOn(start), [
-      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 1000 }] },
+      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 1000, sinceTick: 0 }] },
     ]);
     const { world, events } = play(shocked, 30);
     const taken = events.find((event) => event.type === 'damage' && event.targetId === 'ball-0');
@@ -109,7 +109,7 @@ describe('Vampire', () => {
   it('heals again once the shock has expired', () => {
     // Expires on tick 5, well before the hit.
     const shocked = withBalls(headOn(40), [
-      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 5 }] },
+      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 5, sinceTick: 0 }] },
     ]);
     const { events } = play(shocked, 30);
     expect(events.some((event) => event.type === 'healReduced')).toBe(false);

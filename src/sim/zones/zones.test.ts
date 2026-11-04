@@ -170,8 +170,8 @@ describe('zones', () => {
     const expiresTick = strikeTick + status.durationTicks;
     expect(after.balls.map((ball) => ball.statuses)).toStrictEqual([
       [],
-      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick }],
-      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick }],
+      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
+      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
       [],
     ]);
     const order = events.flatMap((event) => {

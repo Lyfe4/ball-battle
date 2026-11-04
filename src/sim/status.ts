@@ -3,10 +3,13 @@
 import type { BallState } from './types.ts';
 
 /**
- * Every kind of status. An open union: a new kind ('slowed', 'poisoned') is added here and in the
- * code that reads it, without touching balls that never apply it.
+ * Every kind of status. An open union: a new kind is added here and in the code that reads it,
+ * without touching balls that never apply it.
+ * - shocked: heals are reduced (ADR 0009).
+ * - slowed: cruise speed is reduced (ADR 0012).
+ * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
  */
-export type StatusKind = 'shocked';
+export type StatusKind = 'shocked' | 'slowed' | 'poisoned';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -15,6 +18,11 @@ export interface StatusState {
   readonly sourceId: string;
   /** Removed at the start of this tick; active on every tick before it. */
   readonly expiresTick: number;
+  /**
+   * The tick it was first applied. A refresh keeps it, so anything on a fixed cadence (poison
+   * ticks) runs from here and a refresh can neither reset nor speed up its rhythm.
+   */
+  readonly sinceTick: number;
 }
 
 /** A status to apply, as carried by an action or a zone. */
@@ -62,21 +70,34 @@ export function shockedHeal(amount: number): number {
   return Math.round(amount * (1 - SHOCK_HEAL_REDUCTION));
 }
 
-/**
- * Kinds compared as plain strings: while StatusKind has a single member, comparing two of them
- * directly is always true as far as the type checker knows.
- */
-const sameKind = (a: string, b: string): boolean => a === b;
+/** Share of its cruise speed a slowed ball loses (ADR 0012). The Frost's lever. */
+export const SLOW_FACTOR = 0.3;
+
+/** A slowed ball's cruise speed. */
+export function slowedSpeed(speed: number): number {
+  return speed * (1 - SLOW_FACTOR);
+}
+
+/** Ability damage each poison tick deals (ADR 0012). The Venom's lever. */
+export const POISON_DAMAGE = 2;
+/** Ticks between poison ticks, counted from when the poison was first applied. */
+export const POISON_INTERVAL_TICKS = 30;
+
+/** True when a poison first applied on `sinceTick` ticks on `tick`: every interval after it. */
+export function isPoisonTick(sinceTick: number, tick: number): boolean {
+  const elapsed = tick - sinceTick;
+  return elapsed > 0 && elapsed % POISON_INTERVAL_TICKS === 0;
+}
 
 /** True if the ball has a status of this kind. Expired statuses are already removed by `step`. */
 export function hasStatus(ball: BallState, kind: StatusKind): boolean {
-  return ball.statuses.some((status) => sameKind(status.kind, kind));
+  return ball.statuses.some((status) => status.kind === kind);
 }
 
 /**
  * The ball with `request` applied by `sourceId` on `tick`. A kind it already has is refreshed,
  * never stacked: its expiry becomes the later of the two, so a refresh never shortens it, and the
- * newest source is recorded. Throws for a duration that is not a whole number of at least 1.
+ * newest source is recorded; the tick it was first applied is kept. Throws for a duration that is not a whole number of at least 1.
  */
 export function withStatus(
   ball: BallState,
@@ -88,13 +109,14 @@ export function withStatus(
   if (!Number.isInteger(durationTicks) || durationTicks < 1) {
     throw new Error(`"${sourceId}" tried to apply ${kind} for an invalid ${durationTicks} ticks`);
   }
-  const existing = ball.statuses.find((status) => sameKind(status.kind, kind));
+  const existing = ball.statuses.find((status) => status.kind === kind);
   const expiresTick = Math.max(existing?.expiresTick ?? 0, tick + durationTicks);
-  const status: StatusState = { kind, sourceId, expiresTick };
+  const sinceTick = existing?.sinceTick ?? tick;
+  const status: StatusState = { kind, sourceId, expiresTick, sinceTick };
   return {
     ball: {
       ...ball,
-      statuses: [...ball.statuses.filter((other) => !sameKind(other.kind, kind)), status],
+      statuses: [...ball.statuses.filter((other) => other.kind !== kind), status],
     },
     event: {
       type: 'statusApplied',

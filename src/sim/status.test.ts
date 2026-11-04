@@ -41,7 +41,7 @@ describe('status effects', () => {
       { kind: 'applyStatus', targetId: 'ball-1', status: 'shocked', durationTicks: 10 },
     ]);
     expect(target(balls).statuses).toStrictEqual([
-      { kind: 'shocked', sourceId: 'ball-0', expiresTick: 15 },
+      { kind: 'shocked', sourceId: 'ball-0', expiresTick: 15, sinceTick: 5 },
     ]);
     expect(events).toStrictEqual([
       {
@@ -56,17 +56,17 @@ describe('status effects', () => {
     ]);
   });
 
-  it('refreshes rather than stacks: one entry, the later expiry, the latest source', () => {
+  it('refreshes rather than stacks: one entry, the later expiry, the latest source, the first tick', () => {
     const once = withStatus(target(world.balls), shock, 'ball-0', 5).ball;
     const longer = withStatus(once, { ...shock, durationTicks: 20 }, 'ball-2', 8);
     expect(longer.ball.statuses).toStrictEqual([
-      { kind: 'shocked', sourceId: 'ball-2', expiresTick: 28 },
+      { kind: 'shocked', sourceId: 'ball-2', expiresTick: 28, sinceTick: 5 },
     ]);
     expect(longer.event.refreshed).toBe(true);
     // A shorter re-application never shortens it.
     const shorter = withStatus(longer.ball, { ...shock, durationTicks: 1 }, 'ball-0', 9).ball;
     expect(shorter.statuses).toStrictEqual([
-      { kind: 'shocked', sourceId: 'ball-0', expiresTick: 28 },
+      { kind: 'shocked', sourceId: 'ball-0', expiresTick: 28, sinceTick: 5 },
     ]);
   });
 
