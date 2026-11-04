@@ -3,6 +3,7 @@
 // size, so designs can be reviewed without playing matches.
 import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import { ballColor } from '../render/ball-colors.ts';
+import { drawStatuses } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { theme } from '../render/theme.ts';
 import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
@@ -26,6 +27,8 @@ interface Tile {
   readonly defeated?: boolean;
   readonly heal?: number;
   readonly flash?: number;
+  /** Shocked (ADR 0009): drawn with the status ring, as in a match. */
+  readonly shocked?: boolean;
 }
 
 /** Ability state for a cooldown ball `charge` of the way to its next shot or strike. */
@@ -114,6 +117,14 @@ const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
       },
     ],
   ],
+  [
+    'Shocked (ADR 0009): a dashed ring just outside the edge; it cannot heal',
+    ['brawler', 'speedster', 'vampire', 'archer', 'storm'].map((id): Tile => ({
+      label: id,
+      id,
+      shocked: true,
+    })),
+  ],
 ];
 
 /** A world holding the tile's ball at the origin and an enemy far off in its `toward` direction. */
@@ -151,7 +162,8 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
  * picks by on-screen size, as in a match.
  */
 function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
-  const cssSize = Math.ceil(radiusPx * 2 + 12);
+  // Room for the status ring outside the edge when there is one.
+  const cssSize = Math.ceil(radiusPx * 2 + (tile.shocked === true ? 28 : 12));
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
   const definition = getDefinition(BALL_LOOKUP, tile.id);
@@ -168,6 +180,13 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     cssPixelsPerUnit: radiusPx / ball.radius,
     ...(detail === undefined ? {} : { detail }),
   });
+  if (tile.shocked === true) {
+    const shocked = {
+      ...ball,
+      statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: TICK + 1 }],
+    } as const;
+    drawStatuses(ctx, shocked, TICK, false);
+  }
   return canvas;
 }
 

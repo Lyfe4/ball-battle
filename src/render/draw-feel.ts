@@ -1,5 +1,6 @@
 // Drawing for battle feel (ADR 0007): squash and intro transforms, the health bar's ghost,
 // particles, knockout shards and the winner's ring. Reads state and effect values only.
+import { hasStatus } from '../sim/status.ts';
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import type { Knockout, Squash, WinnerRing } from './effects.ts';
@@ -128,6 +129,57 @@ export function drawWinnerRing(
     ball.position.x,
     ball.position.y,
     ball.radius + theme.winnerRingWidth + ring.growth,
+    0,
+    Math.PI * 2,
+  );
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * Status effects on a ball (ADR 0009), read from its state. Shocked: a thin dashed ring just
+ * outside the edge, in a pale storm blue, whose dashes step along with the sim tick for a faint
+ * crackle (still with reduced motion).
+ */
+export function drawStatuses(
+  ctx: CanvasRenderingContext2D,
+  ball: BallState,
+  tick: number,
+  reducedMotion: boolean,
+): void {
+  if (!hasStatus(ball, 'shocked')) return;
+  const dash = theme.shockDash;
+  const period = dash.reduce((sum, length) => sum + length, 0);
+  const step = reducedMotion ? 0 : Math.floor(tick / theme.shockStepTicks);
+  ctx.save();
+  ctx.globalAlpha = theme.shockRingAlpha;
+  ctx.strokeStyle = theme.shockRing;
+  ctx.lineWidth = theme.shockRingWidth;
+  ctx.setLineDash([...dash]);
+  // Half a dash period per step: the gaps jump, which reads as crackle rather than spin.
+  ctx.lineDashOffset = (step * period) / 2;
+  ctx.beginPath();
+  ctx.arc(ball.position.x, ball.position.y, ball.radius + theme.shockRingGap, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A heal a status blocked: a dim ring that shrinks in towards the edge as it fades. */
+export function drawBlockedHeal(
+  ctx: CanvasRenderingContext2D,
+  ball: BallState,
+  strength: number,
+): void {
+  if (strength <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.strokeStyle = theme.healBlockedRing;
+  ctx.lineWidth = theme.healBlockedWidth;
+  ctx.beginPath();
+  ctx.arc(
+    ball.position.x,
+    ball.position.y,
+    ball.radius + strength * theme.healBlockedShrink,
     0,
     Math.PI * 2,
   );

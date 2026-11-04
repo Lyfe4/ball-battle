@@ -26,6 +26,21 @@ export const theme = {
   healRing: '#4ade80',
   healRingWidth: 6,
   healRingGrowth: 28,
+  /** A heal a status blocked (ADR 0009): a dim ring that shrinks in, the opposite of a heal. */
+  healBlockedRing: '#94a3b8',
+  healBlockedWidth: 4,
+  healBlockedShrink: 14,
+  healBlockedMs: 320,
+  /**
+   * A shocked ball (ADR 0009): a thin dashed ring just outside its edge, in a pale storm blue. The
+   * dashes step along every few sim ticks for a faint crackle, and hold still with reduced motion.
+   */
+  shockRing: '#bfdbfe',
+  shockRingWidth: 3,
+  shockRingAlpha: 0.7,
+  shockRingGap: 7,
+  shockDash: [9, 7] as readonly number[],
+  shockStepTicks: 4,
   /**
    * Ball designs (src/render/ball-designs): flat shapes in the ball's own colour plus one accent
    * per ball, keyed by definition id. White is only for small highlights.

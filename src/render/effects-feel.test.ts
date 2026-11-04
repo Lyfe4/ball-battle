@@ -74,6 +74,23 @@ describe('battle feel effects', () => {
     expect(effects.knockouts(theme.shardMs * 2)).toHaveLength(1);
   });
 
+  it('pulses a blocked heal, not a heal, then fades it', () => {
+    const effects = createEffects();
+    const blocked: SimEvent = {
+      type: 'healBlocked',
+      tick: 40,
+      ballId: 'ball-0',
+      sourceId: 'ball-0',
+      amount: 9,
+      status: 'shocked',
+    };
+    effects.apply([blocked], 0);
+    expect(effects.healBlocked('ball-0', 0)).toBe(1);
+    expect(effects.heal('ball-0', 0)).toBe(0);
+    expect(effects.isActive(theme.healBlockedMs - 1)).toBe(true);
+    expect(effects.healBlocked('ball-0', theme.healBlockedMs)).toBe(0);
+  });
+
   it('shows a time-limit result at once', () => {
     const effects = createEffects();
     effects.apply(

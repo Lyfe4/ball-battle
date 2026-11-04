@@ -4,9 +4,11 @@ import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/sta
 import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import {
+  drawBlockedHeal,
   drawHealthBar,
   drawKnockouts,
   drawParticles,
+  drawStatuses,
   drawWinnerRing,
   withBallTransform,
 } from './draw-feel.ts';
@@ -43,6 +45,10 @@ export interface FrameEffects {
   readonly winner: WinnerRing | undefined;
   /** Intro scale and opacity for the ball at an index. */
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
+  /** Blocked-heal pulse strength for a ball, 0 to 1. */
+  readonly healBlocked: (ballId: string) => number;
+  /** Holds animated details (the shock ring's crackle) still. */
+  readonly reducedMotion: boolean;
 }
 
 /** A frame with no effects at all, for static pictures (the style guide). */
@@ -58,6 +64,8 @@ export const NO_EFFECTS: FrameEffects = {
   knockouts: [],
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
+  healBlocked: () => 0,
+  reducedMotion: false,
 };
 
 /**
@@ -108,6 +116,10 @@ export function drawWorld(
       });
     });
     if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
+    if (ball.health > 0) {
+      drawBlockedHeal(ctx, ball, effects.healBlocked(ball.id));
+      drawStatuses(ctx, ball, world.tick, effects.reducedMotion);
+    }
   });
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);

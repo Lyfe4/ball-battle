@@ -91,6 +91,8 @@ function render(): void {
     knockouts: effects.knockouts(now),
     winner: effects.winner(now),
     intro: (index) => introLook(index, now, reduced),
+    healBlocked: (ballId) => effects.healBlocked(ballId, now),
+    reducedMotion: reduced,
   });
   hud.update(world, seed, effects.resultVisible(now));
 }
