@@ -20,26 +20,49 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Vampire   | Heals for 40% of the damage it deals.                                            |
 | Archer    | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
 | Storm     | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
-| Frost     | Slowest and sturdiest. Every hit slows its enemy for 3 s.                        |
+| Frost     | Slowest and sturdy. Every hit slows its enemy for 3 s; poison wears off it fast. |
 | Thorns    | Spiked: every contact hit it takes hurts the attacker back by 35%.               |
 | Venom     | Light hits that poison its enemy for over 4 s, chipping away between contacts.   |
-| Berserker | The most health, and it hits harder the more of it it has lost.                  |
+| Berserker | The most health, hits harder the more it has lost, and can't be slowed.          |
 | Sniper    | Locks onto its enemy with a laser, then fires one heavy shot down the line.      |
-| Quake     | Every wall it hits sends out a shockwave a moment later.                         |
+| Quake     | Every wall it hits sends out a shockwave that stops its enemy aiming for 3.5 s.  |
 
 Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
-on how directly it lands, not how fast. Counters are part of the design, soft (favoured, never
-decided) and each with a mechanical reason: the **Speedster beats the Archer** by closing the
-distance, the **Archer beats the Vampire** from range, the **Vampire beats the Speedster** by
-outlasting its burst, the **Storm beats the Vampire** by shocking it so it heals less, and the
-**Speedster beats the Storm** by outrunning its warnings. The **Frost beats the Speedster** by
-slowing it, and the **Storm beats the Frost**, which is too slow to leave its warnings. **Thorns beats the Brawler**, whose hard
-hits bounce back the most, and the **Archer and Storm beat Thorns**, since ranged attacks never
-touch its spikes. **Venom** and the **Sniper** beat Thorns too (poison and shots never touch the
-spikes), and the **Vampire** out-heals Venom's poison. The **Berserker** soaks the Speedster's burst
-but feeds the Vampire's lifesteal; the **Speedster** leaves the Sniper's locked line before the
-shot, but can't outrun the **Quake**'s short warning, and the **Frost** slows the Quake off the
-walls it needs. The **Brawler** is the safe pick, even against everyone except Thorns. The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md)).
+on how directly it lands, not how fast.
+
+### Counters
+
+Picks matter: most pairs lean one way. A counter is _favoured_ (it wins roughly 58-70% of the
+time), never decided, and each one comes from something you can watch happen:
+
+- **Speedster beats Archer**: it closes the distance faster than arrows can stop it.
+- **Archer beats Vampire**: arrows chip it from range, and the Vampire only heals off its own hits.
+- **Vampire beats Speedster**: it heals off every exchange and outlasts the burst.
+- **Storm beats Vampire**: lightning and its touch shock the Vampire, so it heals less.
+- **Speedster beats Storm**: the fastest ball outruns the lightning warnings.
+- **Frost beats Speedster**: slowed, it loses its speed and the wall bounces that build it up.
+- **Storm beats Frost**: the slowest ball can't leave a lightning warning in time.
+- **Thorns beats Brawler**: the hardest hitter hurts itself the most on the spikes.
+- **Archer, Storm, Venom and Sniper beat Thorns**: arrows, lightning, poison and shots never touch
+  the spikes, so nothing is reflected.
+- **Vampire beats Venom**: lifesteal heals back what the poison chipped away.
+- **Berserker beats Speedster**: its huge health soaks the burst, and every wound makes it hit
+  harder.
+- **Vampire beats Berserker**: the biggest health pool gives lifesteal the most to drink.
+- **Speedster beats Sniper**: it is off the locked line before the shot.
+- **Quake beats Speedster**: the shockwave's warning is too short to outrun.
+- **Frost beats Quake**: slowed, the Quake reaches the walls less often, and every shockwave needs
+  a wall.
+- **Venom beats Berserker**: poison numbs its rage.
+- **Berserker beats Frost**: its rage burns off the cold, so it can never be slowed.
+- **Frost beats Venom**: the cold wears poison off sooner, and the Frost hits Venom hard.
+- **Archer beats Frost**: leading arrows land most often on the slowest ball.
+- **Quake beats Archer, Storm and Sniper**: a shockwave staggers whatever it hits, and a staggered
+  ball can't aim, so it loses its next arrow, strike or shot.
+
+The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
+The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
+[ADR 0016](docs/decisions/0016-counter-density.md)).
 
 ## Running it
 
@@ -117,7 +140,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0012: Slowed, poisoned, onDamageTaken](docs/decisions/0012-slowed-poisoned-damage-taken.md)
 , [ADR 0013: Thorns, the Brawler's counter](docs/decisions/0013-thorns-brawler-counter.md)
 , [ADR 0014: Venom, Thorns' counter](docs/decisions/0014-venom-thorns-counter.md)
-and [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md).
+, [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md)
+and [ADR 0016: Counter density](docs/decisions/0016-counter-density.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 60.30 kB JS (20.86 kB gzipped), 5.14 kB CSS. First version baseline: 5.05 kB

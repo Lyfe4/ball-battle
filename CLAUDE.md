@@ -79,7 +79,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
 `docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md`,
 `docs/decisions/0012-slowed-poisoned-damage-taken.md`, `docs/decisions/0013-thorns-brawler-counter.md`,
-`docs/decisions/0014-venom-thorns-counter.md` and `docs/decisions/0015-berserker-sniper-quake.md`.
+`docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md` and
+`docs/decisions/0016-counter-density.md`.
 
 ## Conventions
 
@@ -94,7 +95,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   same snapshot; actions are applied afterwards. The full order is documented on `step`.
 - Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
   or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
-  A new kind extends `StatusKind` in `src/sim/status.ts`.
+  A new kind extends `StatusKind` in `src/sim/status.ts`. A ball that shrugs a status off declares
+  `statusResistance` (the share of the duration it keeps, 0 for immune; ADR 0016) rather than
+  checking for it in hooks.
 - Every ball keeps its own speed: the tick ends by rescaling each live ball's velocity to its
   cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
   declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.

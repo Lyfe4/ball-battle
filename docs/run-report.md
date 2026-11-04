@@ -137,3 +137,99 @@ Two proposals, **not built** (the brief asked for proposals only):
 - The diagnosis ran in the app's own browser pane (about 90 Hz). I could not measure your
   display; the table above covers the common rates. When the pane was hidden, `requestAnimationFrame`
   stopped, so the after-measurement is a single 300-frame run.
+
+## Stage 2: counter density
+
+### Plan
+
+Measure before promoting: for every leaning pair, find out whether a mechanic specific to that
+pair explains it (ablation, then per-opponent hit rates and damage rates). Promote only real
+mechanisms. Where none exists, prototype small pair-specific interactions in a throwaway harness
+(roster variants played in parallel worker threads), measure each on its own pair, then build the
+ones that land, tune strength with as few stats as possible, and confirm with `pnpm balance 500`.
+
+### What was found
+
+- **None of the four suggested leans had a pair-specific mechanism**, so none was promoted on its
+  own. Quake vs Venom (55.7): shockwaves hit 13% of the time against every ball, Venom included;
+  the lean is a small damage-per-second edge stretched by Venom's long fights. Berserker vs Archer
+  (54.9): its health pool, and rage helps it _less_ than average there. Berserker vs Venom (55.1)
+  and Archer vs Sniper (53.6): nothing specific either.
+- **One measured mechanism did exist:** leading arrows land most often on the slowest ball (75%
+  against the Frost, 65% against the Speedster), as ADR 0012 already noted.
+
+### What was built (ADR 0016)
+
+| Mechanic                                                            | Counter it creates | Result |
+| ------------------------------------------------------------------- | ------------------ | ------ |
+| Poison numbs rage: a poisoned Berserker keeps 20% of its rage bonus | Venom > Berserker  | 60.2%  |
+| `statusResistance` field; the Berserker can't be slowed             | Berserker > Frost  | 58.3%  |
+| The Frost keeps 80% of a poison's duration (8 ticks become 6)       | Frost > Venom      | 67.0%  |
+| A new `staggered` status from Quake shockwaves (3.5 s): can't aim   | Quake > Archer     | 61.3%  |
+|                                                                     | Quake > Storm      | 57.5%  |
+|                                                                     | Quake > Sniper     | 66.1%  |
+| (existing) arrows land on the slowest ball, Frost health 82 → 80    | Archer > Frost     | 57.6%  |
+
+Stat changes, each tuning a counter's strength: Quake health 72 → 71, Frost health 82 → 80,
+`POISON_NUMB` 0.8. Each mechanic only touches its own pairs. Tests cover each interaction and
+the resistance rounding, and each new test was shown to fail with its mechanic disabled (six
+mutants, all caught). The staggered status has its own ring (broken pale-stone arcs), in the style
+guide.
+
+`pnpm balance 500`: **every target passes**. Per ball 46.7-53.0% (Quake highest), worst side
+31.3%, draws 0.6%, median 18.3 s, worst ±5% sensitivity 13.7 points (unchanged). The Brawler is
+still even against all but Thorns.
+
+### Counter counts (favoured / unfavoured)
+
+| Ball      | Before | After | 2/2? |
+| --------- | ------ | ----- | ---- |
+| Speedster | 3 / 4  | 3 / 4 | yes  |
+| Vampire   | 3 / 2  | 3 / 2 | yes  |
+| Archer    | 2 / 1  | 3 / 2 | yes  |
+| Storm     | 3 / 1  | 3 / 2 | yes  |
+| Frost     | 2 / 1  | 3 / 3 | yes  |
+| Venom     | 1 / 1  | 2 / 2 | yes  |
+| Berserker | 1 / 1  | 2 / 2 | yes  |
+| Sniper    | 1 / 1  | 1 / 2 | no   |
+| Quake     | 1 / 1  | 4 / 1 | no   |
+| Thorns    | 1 / 4  | 1 / 4 | no   |
+
+**Still short, and why:** the Sniper has no second prey (its shot hits 13-18% against every ball,
+and no ball holds a line better than another); the Quake has no second predator (only the Frost
+exploits its need for walls); Thorns' spikes only punish contact, and its other contact-heavy
+opponent, the Berserker, feeds its rage on every reflection. **The Speedster hub is unchanged at
+7**: the only clean lever (a longer Quake warning) weakened the stagger and broke four Quake pairs.
+Details in ADR 0016 §7.
+
+The README's counters section now lists every counter in plain language.
+
+### Decisions made on your behalf
+
+- **Interaction mechanics instead of promoting leans.** Alternative: promote the four leans with
+  stat nudges. Rejected because none had a pair-specific mechanism, which the hard rules forbid.
+- **Archer > Frost is mapped as a counter** after the Frost lost 2 health. Its mechanism (arrows
+  land on the slowest ball) was measured and recorded in ADR 0012, but it only reaches the band
+  because the Frost got less sturdy. Alternative: keep the Frost at 82, which left Berserker > Frost
+  at 55.7, a MISS. This is the one call I'm least sure about; see below.
+- **Stagger is 3.5 s** because shockwaves land about once every 9 s; at 1 s it did nothing.
+- **Sniper shots don't stagger** (measured: shots hit too rarely to matter, and it would have
+  added Sniper-vs-aimer relationships without reaching any band).
+- **The Berserker's and Quake's picker descriptions changed** to mention the new rules ("can't be
+  slowed", "stops its enemy aiming").
+
+### Questions for you
+
+- Are you happy with **interaction rules** (poison numbs rage, rage ignores the cold, shockwaves
+  stagger aimers) as the way to make counters? They are readable, but each is one more rule to
+  learn. The alternative for the remaining gaps is new balls designed as prey/predators for the
+  Sniper, Quake and Thorns.
+- The Quake is now the strongest ball (53.0%) with four favoured matchups. Fine, or should the
+  next balance pass trim it?
+
+### Unsure about
+
+- Three of the seven new counters sit in WARN or NEAR (Berserker > Frost 58.3, Archer > Frost 57.6,
+  Quake > Storm 57.5), and the existing Frost > Quake fell from 58.4 to 57.1 (NEAR). They pass, but
+  they are soft.
+- Archer > Frost (see above): a real mechanism, but tipped into the band by a stat change.

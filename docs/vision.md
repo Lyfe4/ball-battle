@@ -71,6 +71,11 @@ blind picks. See Decisions below.
   Speedster, Vampire > Berserker; Speedster > Sniper, Sniper > Thorns; Quake > Speedster,
   Frost > Quake. Ranged and ability damage beating Thorns is one theme (Archer, Storm, Venom,
   Sniper); telegraphed attacks losing to the Speedster and instant ones beating it is another.
+- **Counter density** (2026-11-05, ADR 0016): pair-specific interactions add Venom > Berserker
+  (poison numbs rage), Berserker > Frost (it can't be slowed), Frost > Venom (the cold shortens
+  poison), Archer > Frost (arrows land on the slowest ball) and Quake > Archer, Storm and Sniper
+  (shockwaves stagger, and a staggered ball can't aim). Every ball but the Brawler, Thorns, the
+  Sniper and the Quake now has at least two favoured and two unfavoured matchups.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
