@@ -79,6 +79,36 @@ describe('Vampire', () => {
     );
   });
 
+  it('heals nothing while shocked, reporting the blocked lifesteal instead', () => {
+    const start = 40;
+    const shocked = withBalls(headOn(start), [
+      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 1000 }] },
+    ]);
+    const { world, events } = play(shocked, 30);
+    const taken = events.find((event) => event.type === 'damage' && event.targetId === 'ball-0');
+    expect(events.some((event) => event.type === 'healed')).toBe(false);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: 'healBlocked',
+        ballId: 'ball-0',
+        sourceId: 'ball-0',
+        amount: lifestealFor(vampire.contactDamage),
+        status: 'shocked',
+      }),
+    );
+    expect(world.balls[0]?.health).toBe(start - (taken?.type === 'damage' ? taken.amount : 0));
+  });
+
+  it('heals again once the shock has expired', () => {
+    // Expires on tick 5, well before the hit.
+    const shocked = withBalls(headOn(40), [
+      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 5 }] },
+    ]);
+    const { events } = play(shocked, 30);
+    expect(events.some((event) => event.type === 'healBlocked')).toBe(false);
+    expect(events).toContainEqual(expect.objectContaining({ type: 'healed', ballId: 'ball-0' }));
+  });
+
   it('does not heal when it deals no damage', () => {
     // Nobody touches anybody.
     const apart = withBalls(createWorld(1, [vampire, blue]), [

@@ -11,6 +11,7 @@ import {
   MAX_OFFSET,
   nextStrikeTickOf,
   randomOffset,
+  SHOCK_TICKS,
   storm,
   WARNING_TICKS,
   ZONE_DAMAGE,
@@ -53,6 +54,24 @@ describe('Storm', () => {
     ]);
     // Nothing between strikes being called: one ability event per call.
     expect(events.filter((event) => event.type === 'abilityTriggered')).toHaveLength(4);
+  });
+
+  it('shocks every ball its strike hits for SHOCK_TICKS, never itself', () => {
+    const strikeTick = FIRST_STRIKE_DELAY_TICKS + WARNING_TICKS;
+    const shockedOn: number[] = [];
+    play(standoff(), strikeTick + SHOCK_TICKS + 5, (world) => {
+      expect(world.balls[0]?.statuses).toStrictEqual([]);
+      const [status] = world.balls[1]?.statuses ?? [];
+      if (status === undefined) return;
+      expect(status).toStrictEqual({
+        kind: 'shocked',
+        sourceId: 'ball-0',
+        expiresTick: strikeTick + SHOCK_TICKS,
+      });
+      shockedOn.push(world.tick);
+    });
+    expect(shockedOn[0]).toBe(strikeTick);
+    expect(shockedOn).toHaveLength(SHOCK_TICKS);
   });
 
   it('marks a zone near the target that strikes after the warning', () => {
