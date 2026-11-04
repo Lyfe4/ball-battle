@@ -13,6 +13,7 @@ import { getDefinition } from './definitions.ts';
 import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
 import { resolveProjectiles } from './projectiles/resolve.ts';
+import { resolveZones } from './zones/resolve.ts';
 import type {
   BallState,
   CollisionEvent,
@@ -28,7 +29,7 @@ import type {
  * new world and never mutates the input, so callers can keep earlier states for comparison or
  * replay. `definitions` must be the same lookup every tick of a match.
  *
- * Order within a tick (ADR 0003, 0004, 0005); events come out in the same order:
+ * Order within a tick (ADR 0003, 0004, 0005, 0006); events come out in the same order:
  *  1. A finished match is returned as is, with no events.
  *  2. onTick hooks, then their actions.
  *  3. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
@@ -40,11 +41,14 @@ import type {
  *  8. Projectiles move and resolve: swept against each ball's motion this tick, the nearest hit
  *     before a wall deals ability damage (ADR 0005). Projectiles spawned in steps 2-7 already
  *     move this tick.
- *  9. onDamageDealt hooks for every damage event so far this tick, contact and projectile, then
- *     their actions. Damage from these actions does not fire onDamageDealt again; projectiles
- *     they spawn start moving next tick.
- * 10. ballDefeated for balls that went from alive to 0 health this tick.
- * 11. Contacts are updated and the match end is decided.
+ *  9. Zones whose strike tick is this tick strike: each deals ability damage to every live ball
+ *     other than its owner that overlaps it now, then is removed (ADR 0006). A zone always
+ *     strikes at least one tick after it was spawned.
+ * 10. onDamageDealt hooks for every damage event so far this tick (contact, projectile and zone),
+ *     then their actions. Damage from these actions does not fire onDamageDealt again;
+ *     projectiles they spawn start moving next tick.
+ * 11. ballDefeated for balls that went from alive to 0 health this tick.
+ * 12. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
   if (world.match.status === 'finished') {
@@ -118,6 +122,11 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   balls = flight.balls;
   projectiles = flight.projectiles;
   events.push(...flight.events);
+
+  const strikes = resolveZones(zones, balls, definitions, tick);
+  balls = strikes.balls;
+  zones = strikes.zones;
+  events.push(...strikes.events);
 
   phase(
     damageDealtInvocations(events.filter((event): event is DamageEvent => event.type === 'damage')),

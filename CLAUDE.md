@@ -58,15 +58,16 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build`. All must pass.
 
 The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0002-combat-core.md`, `docs/decisions/0003-ability-system.md`,
-`docs/decisions/0004-wall-bounce-variance.md` and `docs/decisions/0005-projectiles.md`.
+`docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md` and
+`docs/decisions/0006-hazard-zones.md`.
 
 ## Conventions
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
 - Within a tick: onTick, move (with a seeded turn on wall bounces, ADR 0004), onWallHit, collide,
-  contact damage (new contacts only), onHitBall, projectiles move and resolve (ADR 0005),
-  onDamageDealt, defeat, match end. Events are emitted in that order. Every hook in a phase sees
+  contact damage (new contacts only), onHitBall, projectiles move and resolve (ADR 0005), zones
+  due this tick strike (ADR 0006), onDamageDealt, defeat, match end. Events are emitted in that order. Every hook in a phase sees
   the same snapshot; actions are applied afterwards. The full order is documented on `step`.
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
   its fixture balls `red` and `blue`, which have no abilities and fixed stats, so core tests don't
