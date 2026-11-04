@@ -9,7 +9,8 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 
 ## Commands
 
-- `pnpm dev`: start the Vite dev server
+- `pnpm dev`: start the Vite dev server on http://localhost:5199. `/styleguide.html` shows every
+  ball design in each ability state, large and at phone size (dev only, not in the build)
 - `pnpm build`: typecheck and build to `dist/`
 - `pnpm preview`: serve `dist/` on http://localhost:4199 with the production security headers
   from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps
