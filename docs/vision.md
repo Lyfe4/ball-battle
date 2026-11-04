@@ -26,8 +26,8 @@ the Vampire." That only works if matchups lean:
 
 ## Future balance targets for this mode
 
-These are where the targets in `pnpm balance` should move once the round structure exists. They
-are not enforced today.
+These are where the targets in `pnpm balance` are heading. The counter map and the 25/75 limit
+are checked today (see Decisions); the rest waits for the round structure.
 
 - Every ball has **at least one matchup around 60% or better** and **at least one around 40% or
   worse**, so each has something to fear and something to hunt.
@@ -35,7 +35,7 @@ are not enforced today.
 - **Every ball wins 40-60% overall** (unchanged).
 
 Draws matter more in a best-of-3: a round needs a winner, and mirror matches will be common with
-blind picks. See `docs/counters.md` for the current proposal.
+blind picks. See Decisions below.
 
 ## Planned order
 
@@ -46,3 +46,29 @@ blind picks. See `docs/counters.md` for the current proposal.
    makes cheap.
 3. **Progression and unlocks.** Unlocks add **variety, not power**: a new ball is a new option in
    the guessing game, never a stronger version of an old one.
+
+## Decisions
+
+### Counter map (2026-11-04)
+
+- Two soft triangles: **Speedster > Archer > Vampire > Speedster** and **Brawler > Speedster >
+  Storm > Brawler**. Every other pair is even. The map is data in `scripts/counter-map.ts`; the
+  reasoning and results are in ADR 0009.
+- Bands, checked by `pnpm balance`: the favoured side wins **58-70%**, an even pair **45-55%**
+  for both sides, and **no matchup is worse than 25/75**, on top of every existing target.
+
+### Mirror draws (2026-11-04)
+
+Mirrors draw far more than other pairs (500 seeds: Speedster 17%, Archer 5%, Brawler 4.6%,
+Storm 3.4%, Vampire 2.4%; non-mirrors 0-0.6%). Causes: two Speedster stack bonuses (ability
+damage, outside the lethal tiebreak) finishing both balls in one tick, mirrored cooldowns firing
+on the same tick, and equal raw contact damage.
+
+- **Decision: replay a drawn round with a new seed** (option B), derived from the round seed and
+  the attempt number so a server can regenerate and verify it. A cap (about 3 attempts) and a
+  final fallback are decided with the round structure.
+- It is **implemented with the best-of-3 round structure**, not before. **No sim change** for
+  draws now: the lethal tiebreak and cooldown timing stay as they are.
+- Rejected for now: a wider sim tiebreak for every same-tick mutual knockout (would resolve
+  80-95% of mirror draws but changes the sim), and seeded cooldown offsets (only fixes the Archer
+  and Storm pattern).
