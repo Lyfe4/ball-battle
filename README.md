@@ -15,12 +15,13 @@ they hit; the match ends by knockout or at a 60-second time limit.
 
 | Ball      | Ability                                                                          |
 | --------- | -------------------------------------------------------------------------------- |
-| Brawler   | None. Hits the hardest. The safe pick: even against every ball.                  |
+| Brawler   | None. Hits the hardest. The safe pick: even against every ball but Thorns.       |
 | Speedster | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
 | Vampire   | Heals for 40% of the damage it deals.                                            |
 | Archer    | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
 | Storm     | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
 | Frost     | Slowest and sturdiest. Every hit slows its enemy for 3 s.                        |
+| Thorns    | Spiked: every contact hit it takes hurts the attacker back by 35%.               |
 
 Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast. Counters are part of the design, soft (favoured, never
@@ -28,8 +29,9 @@ decided) and each with a mechanical reason: the **Speedster beats the Archer** b
 distance, the **Archer beats the Vampire** from range, the **Vampire beats the Speedster** by
 outlasting its burst, the **Storm beats the Vampire** by shocking it so it heals less, and the
 **Speedster beats the Storm** by outrunning its warnings. The **Frost beats the Speedster** by
-slowing it, and the **Storm beats the Frost**, which is too slow to leave its warnings. The **Brawler** is the safe pick, even
-against everyone. The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md)).
+slowing it, and the **Storm beats the Frost**, which is too slow to leave its warnings. **Thorns beats the Brawler**, whose hard
+hits bounce back the most, and the **Archer and Storm beat Thorns**, since ranged attacks never
+touch its spikes. The **Brawler** is the safe pick, even against everyone except Thorns. The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md)).
 
 ## Running it
 
@@ -99,7 +101,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0009: Status effects](docs/decisions/0009-status-effects.md)
 , [ADR 0010: Counter map](docs/decisions/0010-counter-map.md)
 , [ADR 0011: Roster scaling](docs/decisions/0011-roster-scaling.md)
-and [ADR 0012: Slowed, poisoned, onDamageTaken](docs/decisions/0012-slowed-poisoned-damage-taken.md).
+, [ADR 0012: Slowed, poisoned, onDamageTaken](docs/decisions/0012-slowed-poisoned-damage-taken.md)
+and [ADR 0013: Thorns, the Brawler's counter](docs/decisions/0013-thorns-brawler-counter.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 50.71 kB JS (18.07 kB gzipped), 5.14 kB CSS. First version baseline: 5.05 kB

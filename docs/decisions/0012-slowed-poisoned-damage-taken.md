@@ -113,7 +113,7 @@ Both were built and tuned against the same rules and did not fit; they stay out 
 - **Thorns vs Storm and Archer.** Reflection scales with the attacker's hit, so a Thorns even with
   the Brawler and Vampire has to be fragile (health 50), and then lightning and arrows, which
   are never reflected, beat it 65/35 and 73/27. Reflecting on-hit bonuses as well fixed the
-  Brawler and Vampire pairs but not the ranged ones. Its redesign is a separate decision.
+  Brawler and Vampire pairs but not the ranged ones. Its redesign as the Brawler's counter is ADR 0013.
 
 ## Consequences
 

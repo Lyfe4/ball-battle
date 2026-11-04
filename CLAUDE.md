@@ -77,8 +77,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md`,
 `docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md`,
 `docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
-`docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md` and
-`docs/decisions/0012-slowed-poisoned-damage-taken.md`.
+`docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md`,
+`docs/decisions/0012-slowed-poisoned-damage-taken.md` and `docs/decisions/0013-thorns-brawler-counter.md`.
 
 ## Conventions
 
@@ -110,7 +110,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   lists the known near-misses). Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair, and each
   favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
-  counter is, never whether it exists. The Brawler is the only safe pick (even against all).
+  counter is, never whether it exists. The Brawler is the only safe pick: even against all
+  except Thorns, its one designed counter (ADR 0013).
   Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
 - The pass-through property test in `src/sim/balls/roster.slow.test.ts` (closing speed below 0.6 of the
