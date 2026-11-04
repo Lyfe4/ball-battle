@@ -1,7 +1,7 @@
 import { rotateByHalfTan } from '../bounce-variance.ts';
-import { isAlive } from '../combat.ts';
 import { defineBall } from '../define-ball.ts';
 import type { BallState, Vec2 } from '../types.ts';
+import { nearestEnemy } from './targeting.ts';
 
 export type ArcherState = Readonly<{ nextShotTick: number }>;
 
@@ -61,22 +61,6 @@ export function leadTarget(
   }
   if (t === undefined) return target;
   return { x: target.x + targetVelocity.x * t, y: target.y + targetVelocity.y * t };
-}
-
-function nearestEnemy(self: Readonly<{ id: string; position: Vec2 }>, balls: readonly BallState[]) {
-  let nearest: BallState | undefined;
-  let nearestDistance = Infinity;
-  for (const ball of balls) {
-    if (ball.id === self.id || !isAlive(ball)) continue;
-    const dx = ball.position.x - self.position.x;
-    const dy = ball.position.y - self.position.y;
-    const distance = dx * dx + dy * dy;
-    if (distance < nearestDistance) {
-      nearest = ball;
-      nearestDistance = distance;
-    }
-  }
-  return nearest;
 }
 
 /**
