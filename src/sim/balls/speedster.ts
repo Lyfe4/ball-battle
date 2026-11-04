@@ -9,7 +9,7 @@ export const MAX_STACKS = 5;
 /** Extra speed per stack, as a fraction of base speed. */
 export const SPEED_PER_STACK = 0.08;
 /** Extra damage per stack, dealt on top of the contact hit when it hits a ball. */
-export const DAMAGE_PER_STACK = 1;
+export const DAMAGE_PER_STACK = 2;
 
 /** Speed the Speedster travels at with `stacks` stacks. */
 export function speedForStacks(baseSpeed: number, stacks: number): number {
@@ -38,10 +38,10 @@ export const speedster = defineBall<SpeedsterState>({
   name: 'Speedster',
   description: 'Gains speed and damage off every wall bounce, then cashes it in on a hit.',
   color: '#facc15',
-  radius: 44,
-  speed: 640,
-  maxHealth: 58,
-  contactDamage: 13,
+  radius: 52,
+  speed: 800,
+  maxHealth: 70,
+  contactDamage: 14,
   initialAbilityState: { stacks: 0 },
   hooks: {
     onWallHit: ({ self, stats, bounces }) => {

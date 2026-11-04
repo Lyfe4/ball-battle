@@ -1,7 +1,7 @@
 import { defineBall } from '../define-ball.ts';
 
 /** Fraction of the damage it deals that the Vampire heals. */
-export const LIFESTEAL = 0.35;
+export const LIFESTEAL = 0.4;
 
 /** Health healed for dealing `amount` damage. Rounded so health stays whole. */
 export function lifestealFor(amount: number): number {
@@ -12,11 +12,11 @@ export function lifestealFor(amount: number): number {
 export const vampire = defineBall({
   id: 'vampire',
   name: 'Vampire',
-  description: 'Heals for 35% of the damage it deals.',
+  description: 'Heals for 40% of the damage it deals.',
   color: '#a855f7',
   radius: 60,
-  speed: 700,
-  maxHealth: 57,
+  speed: 660,
+  maxHealth: 64,
   contactDamage: 21,
   initialAbilityState: {},
   hooks: {
