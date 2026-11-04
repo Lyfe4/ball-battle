@@ -141,7 +141,8 @@ export function drawWinnerRing(
  * edge, one per status, each further out than the last:
  * - shocked: dashed, pale storm blue; the dashes step with the sim tick for a faint crackle (still
  *   with reduced motion);
- * - slowed: solid, pale ice, with short frost ticks pointing outwards; always still.
+ * - slowed: solid, pale ice, with short frost ticks pointing outwards; always still;
+ * - poisoned: a ring of round pale-lime dots, like drops; always still.
  */
 export function drawStatuses(
   ctx: CanvasRenderingContext2D,
@@ -154,7 +155,11 @@ export function drawStatuses(
     drawShockRing(ctx, ball, radius, reducedMotion ? 0 : Math.floor(tick / theme.shockStepTicks));
     radius += theme.statusRingSpacing;
   }
-  if (hasStatus(ball, 'slowed')) drawSlowRing(ctx, ball, radius);
+  if (hasStatus(ball, 'slowed')) {
+    drawSlowRing(ctx, ball, radius);
+    radius += theme.statusRingSpacing;
+  }
+  if (hasStatus(ball, 'poisoned')) drawPoisonRing(ctx, ball, radius);
 }
 
 function drawShockRing(
@@ -194,6 +199,22 @@ function drawSlowRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: nu
     ctx.moveTo(x + dx * radius, y + dy * radius);
     ctx.lineTo(x + dx * (radius + theme.slowTickLength), y + dy * (radius + theme.slowTickLength));
   }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPoisonRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: number): void {
+  ctx.save();
+  ctx.globalAlpha = theme.poisonRingAlpha;
+  ctx.strokeStyle = theme.poisonRing;
+  ctx.lineWidth = theme.poisonRingWidth;
+  // Zero-length dashes with round caps are dots. The gap is stretched so the dots space evenly.
+  const circumference = Math.PI * 2 * radius;
+  const dots = Math.max(1, Math.round(circumference / theme.poisonDotGap));
+  ctx.lineCap = 'round';
+  ctx.setLineDash([0, circumference / dots]);
+  ctx.beginPath();
+  ctx.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 }

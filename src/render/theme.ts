@@ -53,6 +53,14 @@ export const theme = {
   slowRingAlpha: 0.75,
   slowTicks: 12,
   slowTickLength: 7,
+  /**
+   * A poisoned ball (ADR 0012, 0014): a still ring of round dots in pale lime, like drops. Outside
+   * the shock and slow rings when a ball has more than one.
+   */
+  poisonRing: '#d9f99d',
+  poisonRingWidth: 5,
+  poisonRingAlpha: 0.8,
+  poisonDotGap: 11,
   /** Each further status ring sits this much further out than the one inside it. */
   statusRingSpacing: 9,
   /**
@@ -67,6 +75,7 @@ export const theme = {
     storm: '#1e3a8a',
     frost: '#0c4a6e',
     thorns: '#14532d',
+    venom: '#1a2e05',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
