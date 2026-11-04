@@ -58,7 +58,7 @@ another. All must pass.
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus
    optional hooks. Runtime state (`BallState`) is kept separate from the definition.
 7. **Abilities are hooks that return actions** (ADR 0003). Hooks (`onTick`, `onWallHit`,
-   `onHitBall`, `onDamageDealt`) get a read-only context and return `AbilityAction`s; `step`
+   `onHitBall`, `onDamageDealt`, `onDamageTaken`) get a read-only context and return `AbilityAction`s; `step`
    applies them. Hooks never mutate anything and never use `Math.random`: randomness comes from
    `ctx.random()`. A ball's own ability state is typed per definition and declared as
    `type XState = Readonly<{ ... }>` (an interface won't satisfy the serialisable index signature).
@@ -77,7 +77,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md`,
 `docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md`,
 `docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
-`docs/decisions/0010-counter-map.md` and `docs/decisions/0011-roster-scaling.md`.
+`docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md` and
+`docs/decisions/0012-slowed-poisoned-damage-taken.md`.
 
 ## Conventions
 
@@ -86,7 +87,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 - Within a tick: statuses due this tick expire (ADR 0009), onTick, move (with a seeded turn on wall
   bounces, ADR 0004), onWallHit, collide, contact damage (new contacts only, scaled by directness,
   ADR 0008), onHitBall, projectiles move and resolve (ADR 0005), zones due this tick strike and
-  apply their status (ADR 0006, 0009), onDamageDealt, defeat, cruise speed (ADR 0008), match end. Events are emitted in that order. Every hook in a phase sees the
+  apply their status (ADR 0006, 0009), poison ticks (ADR 0012), onDamageDealt, onDamageTaken
+  (ADR 0012; damage from its actions fires no further hooks), defeat, cruise speed (ADR 0008,
+  reduced while slowed), match end. Events are emitted in that order. Every hook in a phase sees the
   same snapshot; actions are applied afterwards. The full order is documented on `step`.
 - Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
   or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
