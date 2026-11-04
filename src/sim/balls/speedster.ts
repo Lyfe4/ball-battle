@@ -1,3 +1,4 @@
+import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { scale } from '../vec2.ts';
@@ -38,7 +39,7 @@ export const speedster = defineBall<SpeedsterState>({
   name: 'Speedster',
   description: 'Gains speed and damage off every wall bounce, then cashes it in on a hit.',
   color: '#facc15',
-  radius: 52,
+  radius: STANDARD_BALL_RADIUS,
   speed: 800,
   maxHealth: 70,
   contactDamage: 14,

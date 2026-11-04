@@ -25,3 +25,9 @@ export const MATCH_TIME_LIMIT_TICKS = MATCH_TIME_LIMIT_SECONDS * TICK_RATE;
  */
 export const MIN_IMPACT_MULTIPLIER = 0.25;
 export const MAX_IMPACT_MULTIPLIER = 2;
+
+/**
+ * Every current ball's radius in world units (ADR 0008). Balls differ by stats and abilities, not
+ * size; a future size-themed ball must be listed as an exception in the roster's identity tests.
+ */
+export const STANDARD_BALL_RADIUS = 50;

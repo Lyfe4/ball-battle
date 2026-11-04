@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DT, MATCH_TIME_LIMIT_TICKS } from '../constants.ts';
+import { DT, MATCH_TIME_LIMIT_TICKS, STANDARD_BALL_RADIUS } from '../constants.ts';
 import { step } from '../step.ts';
 import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
@@ -132,6 +132,14 @@ describe('the ball roster', () => {
     // What makes each ball itself. Balance tuning must keep these true; if a change needs to break
     // one, that is a design decision, not a tuning step.
     const others = (id: string) => BALLS.filter((ball) => ball.id !== id);
+
+    it('every ball is the standard size, apart from explicitly listed exceptions', () => {
+      // A size-themed ball (a Titan, a Tiny) is a design decision: list it here with its radius.
+      const RADIUS_EXCEPTIONS: Readonly<Record<string, number>> = {};
+      for (const ball of BALLS) {
+        expect(ball.radius).toBe(RADIUS_EXCEPTIONS[ball.id] ?? STANDARD_BALL_RADIUS);
+      }
+    });
 
     it('Speedster is the fastest ball at base speed', () => {
       for (const ball of others(speedster.id)) expect(speedster.speed).toBeGreaterThan(ball.speed);

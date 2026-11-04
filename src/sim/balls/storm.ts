@@ -1,3 +1,4 @@
+import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestEnemy } from './targeting.ts';
@@ -48,7 +49,7 @@ export const storm = defineBall<StormState>({
   name: 'Storm',
   description: 'Calls down lightning where its enemy is standing every 2 s. Keep moving.',
   color: '#93c5fd',
-  radius: 50,
+  radius: STANDARD_BALL_RADIUS,
   speed: 720,
   maxHealth: 68,
   contactDamage: 13,

@@ -1,3 +1,4 @@
+import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { rotateByHalfTan } from '../bounce-variance.ts';
 import { defineBall } from '../define-ball.ts';
 import type { BallState, Vec2 } from '../types.ts';
@@ -74,7 +75,7 @@ export const archer = defineBall<ArcherState>({
   name: 'Archer',
   description: 'Weak up close, but shoots an arrow at where its enemy is heading every 2 s.',
   color: '#22d3ee',
-  radius: 38,
+  radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 44,
   contactDamage: 6,

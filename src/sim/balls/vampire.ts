@@ -1,3 +1,4 @@
+import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 
 /** Fraction of the damage it deals that the Vampire heals. */
@@ -14,7 +15,7 @@ export const vampire = defineBall({
   name: 'Vampire',
   description: 'Heals for 40% of the damage it deals.',
   color: '#a855f7',
-  radius: 60,
+  radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 66,
   contactDamage: 22,
