@@ -1,5 +1,6 @@
 import {
   damageDealtInvocations,
+  damageTakenInvocations,
   hitBallInvocations,
   runPhase,
   tickInvocations,
@@ -56,11 +57,14 @@ import type {
  * 12. onDamageDealt hooks for every damage event so far this tick (contact, projectile, zone and
  *     poison), then their actions. Damage from these actions does not fire onDamageDealt again;
  *     projectiles they spawn start moving next tick.
- * 13. ballDefeated for balls that went from alive to 0 health this tick.
- * 14. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
+ * 13. onDamageTaken hooks for every damage event so far this tick, including damage from step 12's
+ *     actions, then their actions (ADR 0012). Damage from these actions fires neither
+ *     onDamageDealt nor onDamageTaken, so nothing can chain or loop.
+ * 14. ballDefeated for balls that went from alive to 0 health this tick.
+ * 15. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
  *     direction (ADR 0008); slowed balls go slower (ADR 0012). Last, so it reads ability state
  *     and statuses after every hook of the tick; it emits no events.
- * 15. Contacts are updated and the match end is decided.
+ * 16. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
   if (world.match.status === 'finished') {
@@ -149,6 +153,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const damageSoFar = (): DamageEvent[] =>
     events.filter((event): event is DamageEvent => event.type === 'damage');
   phase(damageDealtInvocations(damageSoFar()));
+  // Collected once, before the phase runs: damage its own actions deal is never fed back.
+  phase(damageTakenInvocations(damageSoFar()));
 
   events.push(...defeatsThisTick(world.balls, balls, events, tick));
 

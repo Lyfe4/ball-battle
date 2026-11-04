@@ -31,6 +31,7 @@ const HOOK_CODES: Readonly<Record<HookName, number>> = {
   onWallHit: 2,
   onHitBall: 3,
   onDamageDealt: 4,
+  onDamageTaken: 5,
 };
 
 export interface PhaseResult extends Scene {
@@ -153,6 +154,27 @@ export function damageDealtInvocations(damage: readonly DamageEvent[]): Invocati
           : definition.hooks.onDamageDealt?.({
               ...base,
               target,
+              amount: event.amount,
+              cause: event.cause,
+            });
+      },
+    }));
+}
+
+/** One call per damage event, for the ball that took it (ADR 0012). */
+export function damageTakenInvocations(damage: readonly DamageEvent[]): Invocation[] {
+  return damage
+    .filter((event) => event.amount > 0)
+    .map((event) => ({
+      ballId: event.targetId,
+      hook: 'onDamageTaken',
+      call: (definition, base, snapshot) => {
+        const attacker = snapshot.find((ball) => ball.id === event.sourceId);
+        return attacker === undefined
+          ? undefined
+          : definition.hooks.onDamageTaken?.({
+              ...base,
+              attacker,
               amount: event.amount,
               cause: event.cause,
             });

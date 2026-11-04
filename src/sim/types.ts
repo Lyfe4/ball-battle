@@ -75,7 +75,7 @@ export type BallView<S extends AbilityState> = Omit<BallState, 'abilityState'> &
   readonly abilityState: S;
 };
 
-export type HookName = 'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt';
+export type HookName = 'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken';
 
 export type DamageCause = 'contact' | 'ability';
 
@@ -105,6 +105,14 @@ export interface HitBallContext<S extends AbilityState = AbilityState> extends H
 
 export interface DamageDealtContext<S extends AbilityState = AbilityState> extends HookContext<S> {
   readonly target: BallState;
+  /** Health actually removed. */
+  readonly amount: number;
+  readonly cause: DamageCause;
+}
+
+export interface DamageTakenContext<S extends AbilityState = AbilityState> extends HookContext<S> {
+  /** The ball that dealt the damage. */
+  readonly attacker: BallState;
   /** Health actually removed. */
   readonly amount: number;
   readonly cause: DamageCause;
@@ -176,6 +184,11 @@ export interface BallHooks<S extends AbilityState = AbilityState> {
   readonly onHitBall?: (context: HitBallContext<S>) => Actions<S>;
   /** After damage resolves, once per damage instance this ball dealt. */
   readonly onDamageDealt?: (context: DamageDealtContext<S>) => Actions<S>;
+  /**
+   * After onDamageDealt, once per damage instance this ball took (ADR 0012). Damage its actions
+   * deal never fires onDamageDealt or onDamageTaken again, so effects can't chain or loop.
+   */
+  readonly onDamageTaken?: (context: DamageTakenContext<S>) => Actions<S>;
 }
 
 /** One ball in a running match. Plain serialisable data; refers to its definition by id. */
