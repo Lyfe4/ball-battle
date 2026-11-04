@@ -14,6 +14,18 @@ export function streakCount(stacks: number): number {
   return Math.max(0, Math.floor(stacks));
 }
 
+/** Speedster streaks at small size: none, one for 1-2 stacks, two for 3 or more. */
+export function simpleStreakCount(stacks: number): number {
+  const count = streakCount(stacks);
+  if (count === 0) return 0;
+  return count <= 2 ? 1 : 2;
+}
+
+/** True when a ball this many CSS pixels in radius should use its simplified design. */
+export function useSimpleDesign(radiusCssPx: number): boolean {
+  return radiusCssPx < theme.simpleDesignBelowPx;
+}
+
 /**
  * Brightness of the Storm's bolt, 0 to 1: rises with the charge, then flickers in the last stretch
  * before a strike, stepped by sim tick so a replay flickers the same way.

@@ -43,7 +43,7 @@ let seed = parseSeed(params.get('seed')) ?? generateSeed();
 let world = createMatchWorld(matchup, seed);
 let accumulatorMs = 0;
 let lastFrameMs: number | undefined;
-let canvasPixels = 0;
+let canvasView = { canvasPixels: 0, cssPixels: 0 };
 
 function createMatchWorld(next: Matchup, nextSeed: number) {
   return createWorld(nextSeed, [
@@ -66,7 +66,7 @@ const picker = createPicker(pickerForm, BALLS, (chosen) => {
 });
 
 function render(nowMs: number): void {
-  drawWorld(ctx, world, BALL_LOOKUP, canvasPixels, {
+  drawWorld(ctx, world, BALL_LOOKUP, canvasView, {
     flash: (ballId) => effects.flash(ballId, nowMs),
     heal: (ballId) => effects.heal(ballId, nowMs),
     sparks: effects.sparks(nowMs),
@@ -96,7 +96,7 @@ function startMatch(nextMatchup: Matchup, nextSeed: number): void {
 }
 
 fitCanvasToContainer(canvas, container, (size) => {
-  canvasPixels = size.pixels;
+  canvasView = { canvasPixels: size.pixels, cssPixels: size.cssPixels };
   render(performance.now());
 });
 

@@ -18,7 +18,7 @@ export const theme = {
    */
   repeatLighten: 0.45,
   repeatRing: '#ffffff',
-  repeatRingWidth: 4,
+  repeatRingWidth: 3,
   /** Overlay colour for the damage flash; its opacity follows the flash strength. */
   flash: '#ffffff',
   flashMaxAlpha: 0.85,
@@ -41,6 +41,11 @@ export const theme = {
   defaultAccent: '#111827',
   /** Line weight of design markings, as a fraction of the ball's radius, so it holds at any size. */
   markLine: 0.09,
+  /**
+   * Below this radius on screen, in CSS pixels, designs draw their simplified version: fine detail
+   * dropped, main shape thicker. About a phone-sized arena; desktop balls stay above it.
+   */
+  simpleDesignBelowPx: 24,
   /** Small highlights: the Vampire's fangs, the Storm's bolt. */
   highlight: '#ffffff',
   /** The Vampire's collar edge flushes this colour when it heals. */

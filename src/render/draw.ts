@@ -1,6 +1,6 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
-import { aimHeading, velocityHeading } from './ball-designs/state.ts';
+import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/state.ts';
 import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import type { Spark, Strike } from './effects.ts';
@@ -8,6 +8,12 @@ import { healthBarRect, healthColor } from './health-bar.ts';
 import { drawProjectiles, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
+
+/** How big the canvas is: its backing store, and how large it appears on screen. */
+export interface CanvasView {
+  readonly canvasPixels: number;
+  readonly cssPixels: number;
+}
 
 /** Render-only inputs that are not sim state, such as effect strengths. */
 export interface FrameEffects {
@@ -29,13 +35,15 @@ export function drawWorld(
   ctx: CanvasRenderingContext2D,
   world: WorldState,
   definitions: DefinitionLookup,
-  canvasPixels: number,
+  view: CanvasView,
   effects: FrameEffects,
 ): void {
   const { size } = world.arena;
+  const { canvasPixels } = view;
   // The border sits outside the arena so balls touching a wall touch the border, not overlap it.
   const border = theme.arenaBorderWidth;
   const scale = canvasPixels / (size + border * 2);
+  const cssPixelsPerUnit = view.cssPixels / (size + border * 2);
 
   // setTransform replaces any previous transform, so frames never accumulate scaling.
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -53,7 +61,14 @@ export function drawWorld(
     );
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
-    drawBall(ctx, world, ball, { color, isRepeat, flash: effects.flash(ball.id), heal, design });
+    drawBall(ctx, world, ball, {
+      color,
+      isRepeat,
+      flash: effects.flash(ball.id),
+      heal,
+      design,
+      cssPixelsPerUnit,
+    });
     if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
   });
   drawProjectiles(ctx, world, definitions);
@@ -88,6 +103,10 @@ export interface BallLook {
   /** Heal effect strength, 0 to 1. */
   readonly heal: number;
   readonly design: BallDesign | undefined;
+  /** How many CSS pixels one world unit covers, to pick the design's detail level. */
+  readonly cssPixelsPerUnit: number;
+  /** Forces a detail level (the style guide shows both); otherwise chosen by on-screen size. */
+  readonly detail?: 'full' | 'simple';
 }
 
 /** Which way a design faces, in the world it is drawn in. */
@@ -130,6 +149,10 @@ export function drawBall(
       tick: world.tick,
       heading,
       heal: ball.health > 0 ? look.heal : 0,
+      simple:
+        look.detail === undefined
+          ? useSimpleDesign(ball.radius * look.cssPixelsPerUnit)
+          : look.detail === 'simple',
     });
     ctx.restore();
   }

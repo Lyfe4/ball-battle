@@ -4,7 +4,15 @@ import { red, withBalls } from '../../sim/test-support.ts';
 import { createWorld } from '../../sim/world.ts';
 import { theme } from '../theme.ts';
 import { BALL_DESIGNS } from './index.ts';
-import { aimHeading, chargeFraction, stormFlicker, streakCount, velocityHeading } from './state.ts';
+import {
+  aimHeading,
+  chargeFraction,
+  simpleStreakCount,
+  stormFlicker,
+  streakCount,
+  useSimpleDesign,
+  velocityHeading,
+} from './state.ts';
 
 describe('ball designs', () => {
   it('has a design and an accent for every ball in the roster', () => {
@@ -33,6 +41,19 @@ describe('ball designs', () => {
     expect([0, 1, 2, 3, 4, 5].map(streakCount)).toStrictEqual([0, 1, 2, 3, 4, 5]);
     expect(streakCount(-1)).toBe(0);
     expect(streakCount(2.7)).toBe(2);
+  });
+
+  it('collapses Speedster streaks to at most two at small size', () => {
+    expect([0, 1, 2, 3, 4, 5].map(simpleStreakCount)).toStrictEqual([0, 1, 1, 2, 2, 2]);
+  });
+
+  it('simplifies designs only below the on-screen size threshold', () => {
+    expect(useSimpleDesign(theme.simpleDesignBelowPx - 0.5)).toBe(true);
+    expect(useSimpleDesign(theme.simpleDesignBelowPx)).toBe(false);
+    // A phone arena (about 340 CSS px) shows a 50-unit ball at about 17 px: simplified.
+    expect(useSimpleDesign(50 * (340 / 1016))).toBe(true);
+    // A desktop arena (about 720 CSS px) shows even the smallest ball (38 units) in full.
+    expect(useSimpleDesign(38 * (720 / 1016))).toBe(false);
   });
 
   describe('stormFlicker', () => {

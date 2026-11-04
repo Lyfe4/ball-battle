@@ -12,7 +12,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import type { AbilityState, BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 
-const LARGE_RADIUS_PX = 64;
+const LARGE_RADIUS_PX = 56;
 const SMALL_RADIUS_PX = 15;
 const TICK = 600;
 
@@ -146,7 +146,11 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
   return { canvas, ctx };
 }
 
-function drawTile(tile: Tile, radiusPx: number): HTMLCanvasElement {
+/**
+ * One ball on its own canvas. `detail` forces full or simplified markings; without it the design
+ * picks by on-screen size, as in a match.
+ */
+function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
   const cssSize = Math.ceil(radiusPx * 2 + 12);
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
@@ -161,6 +165,8 @@ function drawTile(tile: Tile, radiusPx: number): HTMLCanvasElement {
     flash: tile.flash ?? 0,
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
+    cssPixelsPerUnit: radiusPx / ball.radius,
+    ...(detail === undefined ? {} : { detail }),
   });
   return canvas;
 }
@@ -189,7 +195,8 @@ function phoneArena(): HTMLElement {
             ? charged('nextStrikeTick', STORM_COOLDOWN, 0.6)
             : ball.abilityState,
   }));
-  drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, canvas.width, {
+  const view = { canvasPixels: canvas.width, cssPixels: cssSize };
+  drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, view, {
     flash: () => 0,
     heal: () => 0,
     sparks: [],
@@ -212,7 +219,11 @@ function render(root: HTMLElement): void {
       const figure = document.createElement('figure');
       const sizes = document.createElement('div');
       sizes.className = 'sizes';
-      sizes.append(drawTile(tile, LARGE_RADIUS_PX), drawTile(tile, SMALL_RADIUS_PX));
+      sizes.append(
+        drawTile(tile, LARGE_RADIUS_PX, 'full'),
+        drawTile(tile, LARGE_RADIUS_PX, 'simple'),
+        drawTile(tile, SMALL_RADIUS_PX),
+      );
       const caption = document.createElement('figcaption');
       caption.textContent = tile.label;
       figure.append(sizes, caption);

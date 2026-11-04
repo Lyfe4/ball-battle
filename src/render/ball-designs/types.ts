@@ -44,6 +44,11 @@ export interface DesignView {
   readonly heading: Vec2 | undefined;
   /** Heal effect strength, 1 just healed down to 0. */
   readonly heal: number;
+  /**
+   * True when the ball is small on screen (see useSimpleDesign): drop fine detail and thicken the
+   * main shape so it still reads at phone size.
+   */
+  readonly simple: boolean;
 }
 
 /**

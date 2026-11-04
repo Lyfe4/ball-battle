@@ -12,19 +12,44 @@ const FULL_DRAW = 0.62;
 
 /**
  * A bow facing its target with an arrow nocked. As the next shot charges, the string and arrow
- * pull back from slack to a full draw; the shot releases it.
+ * pull back from slack to a full draw; the shot releases it. At small size the string and
+ * fletching are dropped and the bow and arrow drawn heavier; the arrow still pulls back.
  */
 export const archerDesign: BallDesign = {
   facing: 'aim',
   showsHeal: false,
-  draw(p, { ball, radius: r, accent, tick }) {
+  draw(p, { ball, radius: r, accent, tick, simple }) {
     const line = r * theme.markLine;
+    p.strokeStyle = accent;
+    p.lineCap = 'round';
+
     const next = nextShotTickOf(ball);
     const charge = next === undefined ? 0 : chargeFraction(next, tick, COOLDOWN_TICKS);
     const tipX = (BOW_CENTRE + BOW_RADIUS * Math.cos(BOW_SWEEP)) * r;
     const tipY = BOW_RADIUS * Math.sin(BOW_SWEEP) * r;
     const nockX = tipX - FULL_DRAW * charge * r;
     const headX = (BOW_CENTRE + BOW_RADIUS + 0.04) * r;
+
+    if (simple) {
+      // A bow alone read as a bracket at phone size; a thick arrow through it reads as a bow.
+      p.fillStyle = accent;
+      p.lineWidth = line * 1.8;
+      p.beginPath();
+      p.moveTo(nockX, 0);
+      p.lineTo(headX - 0.12 * r, 0);
+      p.stroke();
+      p.beginPath();
+      p.moveTo(headX + 0.14 * r, 0);
+      p.lineTo(headX - 0.16 * r, -0.17 * r);
+      p.lineTo(headX - 0.16 * r, 0.17 * r);
+      p.closePath();
+      p.fill();
+      p.lineWidth = line * 2.6;
+      p.beginPath();
+      p.arc(BOW_CENTRE * r, 0, BOW_RADIUS * r, -BOW_SWEEP, BOW_SWEEP);
+      p.stroke();
+      return;
+    }
 
     p.strokeStyle = accent;
     p.fillStyle = accent;

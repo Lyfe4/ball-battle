@@ -22,7 +22,8 @@ const BOLT: readonly (readonly [number, number])[] = [
 
 /**
  * A flat storm cloud with a small bolt beneath. The bolt brightens as the next strike charges and
- * flickers just before it is called.
+ * flickers just before it is called. It already reads at phone size, so it has one drawing for
+ * every size.
  */
 export const stormDesign: BallDesign = {
   facing: 'none',

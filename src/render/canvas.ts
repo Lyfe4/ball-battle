@@ -3,6 +3,8 @@ import { theme } from './theme.ts';
 /** Size of the square canvas backing store, in device pixels. */
 export interface CanvasSize {
   readonly pixels: number;
+  /** The same size in CSS pixels, i.e. as large as it looks on screen. */
+  readonly cssPixels: number;
 }
 
 /**
@@ -29,7 +31,7 @@ export function fitCanvasToContainer(
       canvas.width = pixels;
       canvas.height = pixels;
     }
-    onResize({ pixels });
+    onResize({ pixels, cssPixels: cssSize });
   };
 
   const resizeObserver = new ResizeObserver(([entry]) => {
