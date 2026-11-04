@@ -7,6 +7,8 @@ import { BALL_DESIGNS } from './index.ts';
 import {
   aimHeading,
   chargeFraction,
+  crackCount,
+  simpleCrackCount,
   simpleStreakCount,
   stormFlicker,
   streakCount,
@@ -88,6 +90,25 @@ describe('ball designs', () => {
       if (self === undefined || enemy === undefined) throw new Error('expected two balls');
       expect(aimHeading(self, world.balls)).toStrictEqual({ x: 0, y: 1 });
       expect(aimHeading(self, [self, { ...enemy, health: 0 }])).toBeUndefined();
+    });
+  });
+
+  describe('crackCount', () => {
+    it('shows one crack at full health and every crack at none, one more per step lost', () => {
+      expect(crackCount(1, 6)).toBe(1);
+      expect(crackCount(0.8, 6)).toBe(2);
+      expect(crackCount(0.5, 6)).toBe(3);
+      expect(crackCount(0.2, 6)).toBe(5);
+      expect(crackCount(0, 6)).toBe(6);
+    });
+
+    it('clamps health outside 0 to 1', () => {
+      expect(crackCount(1.5, 6)).toBe(1);
+      expect(crackCount(-1, 6)).toBe(6);
+    });
+
+    it('shows at most three at small size', () => {
+      expect([1, 0.6, 0.3, 0].map(simpleCrackCount)).toStrictEqual([1, 2, 3, 3]);
     });
   });
 });

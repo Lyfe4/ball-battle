@@ -14,7 +14,7 @@ import {
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
-import { drawProjectiles, drawSparks } from './projectiles.ts';
+import { drawAimLines, drawProjectiles, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 
@@ -95,6 +95,7 @@ export function drawWorld(
   drawArena(ctx, size);
   // Pending zones go under the balls, so a warning never hides a ball.
   drawZones(ctx, world, definitions);
+  drawAimLines(ctx, world);
   const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
     if (breaking.has(ball.id)) return;
@@ -125,7 +126,7 @@ export function drawWorld(
   drawWinnerRing(ctx, world, effects.winner);
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
-  drawStrikes(ctx, effects.strikes);
+  drawStrikes(ctx, world, effects.strikes);
   drawParticles(ctx, effects.particles);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {

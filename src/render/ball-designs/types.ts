@@ -61,4 +61,9 @@ export interface BallDesign {
   readonly facing: 'none' | 'velocity' | 'aim';
   /** True if the design shows healing itself, so the generic heal ring is not drawn. */
   readonly showsHeal: boolean;
+  /**
+   * How the ball's zones look when they strike: a lightning bolt (the default) or a clean
+   * shockwave ring that sweeps out to the zone's edge.
+   */
+  readonly strike?: 'bolt' | 'shockwave';
 }

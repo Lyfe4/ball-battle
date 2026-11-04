@@ -1,4 +1,5 @@
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import { aimLineOf, laserAlpha } from './aim-line.ts';
 import { ownerColor } from './ball-colors.ts';
 import type { Spark } from './effects.ts';
 import { theme } from './theme.ts';
@@ -53,4 +54,22 @@ export function drawSparks(ctx: CanvasRenderingContext2D, sparks: readonly Spark
     }
   }
   ctx.restore();
+}
+
+/** Every locked aim in the world, as a thin laser line. Drawn under the balls. */
+export function drawAimLines(ctx: CanvasRenderingContext2D, world: WorldState): void {
+  for (const ball of world.balls) {
+    const line = aimLineOf(ball, world.tick, world.arena.size);
+    if (line === undefined) continue;
+    ctx.save();
+    ctx.globalAlpha = laserAlpha(line.progress);
+    ctx.strokeStyle = theme.sniperLaser;
+    ctx.lineWidth = theme.laserWidth;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(line.from.x, line.from.y);
+    ctx.lineTo(line.to.x, line.to.y);
+    ctx.stroke();
+    ctx.restore();
+  }
 }

@@ -21,6 +21,20 @@ export function simpleStreakCount(stacks: number): number {
   return count <= 2 ? 1 : 2;
 }
 
+/**
+ * Berserker cracks for a health share from 1 (full) to 0: one at full health, one more for every
+ * equal step of health lost, up to `max` at 0. Out-of-range shares are clamped.
+ */
+export function crackCount(share: number, max: number): number {
+  const lost = 1 - Math.min(1, Math.max(0, share));
+  return Math.min(max, 1 + Math.floor(lost * (max - 1) + 1e-9));
+}
+
+/** Berserker cracks at small size: one, two below two thirds health, three below one third. */
+export function simpleCrackCount(share: number): number {
+  return Math.min(3, crackCount(share, 4));
+}
+
 /** True when a ball this many CSS pixels in radius should use its simplified design. */
 export function useSimpleDesign(radiusCssPx: number): boolean {
   return radiusCssPx < theme.simpleDesignBelowPx;

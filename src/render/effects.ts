@@ -33,6 +33,8 @@ export interface Spark {
 /** A zone that just struck, with its strength from 1 (just struck) down to 0. */
 export interface Strike {
   readonly zoneId: string;
+  /** The ball whose zone it was, so its design can choose how the strike looks. */
+  readonly ownerId: string;
   readonly position: Vec2;
   readonly radius: number;
   readonly strength: number;
@@ -159,8 +161,8 @@ export function createEffects(): Effects {
         if (event.type === 'healReduced') reducedStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit') sparkStarts.push({ point: event.point, start: nowMs });
         if (event.type === 'zoneStruck') {
-          const { zoneId, position, radius } = event;
-          strikeStarts.push({ zoneId, position, radius, start: nowMs });
+          const { zoneId, ownerId, position, radius } = event;
+          strikeStarts.push({ zoneId, ownerId, position, radius, start: nowMs });
         }
         if (event.type === 'ballDefeated') {
           const seed = burstSeed(event.tick, event.ballId);

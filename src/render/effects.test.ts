@@ -112,8 +112,20 @@ describe('effects', () => {
       }) as const;
     effects.apply([struck('zone-0', ['ball-1']), struck('zone-1', [])], 0);
     expect(effects.strikes(0)).toStrictEqual([
-      { zoneId: 'zone-0', position: { x: 200, y: 300 }, radius: 170, strength: 1 },
-      { zoneId: 'zone-1', position: { x: 200, y: 300 }, radius: 170, strength: 1 },
+      {
+        zoneId: 'zone-0',
+        ownerId: 'ball-0',
+        position: { x: 200, y: 300 },
+        radius: 170,
+        strength: 1,
+      },
+      {
+        zoneId: 'zone-1',
+        ownerId: 'ball-0',
+        position: { x: 200, y: 300 },
+        radius: 170,
+        strength: 1,
+      },
     ]);
     expect(effects.strikes(STRIKE_MS / 2)[0]?.strength).toBeCloseTo(0.5, 9);
     expect(effects.isActive(STRIKE_MS - 1)).toBe(true);

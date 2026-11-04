@@ -76,6 +76,9 @@ export const theme = {
     frost: '#0c4a6e',
     thorns: '#14532d',
     venom: '#1a2e05',
+    berserker: '#431407',
+    sniper: '#1e1b4b',
+    quake: '#292524',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -95,6 +98,21 @@ export const theme = {
   stormFlickerFrom: 0.85,
   stormFlickerTicks: 3,
   stormFlickerDim: 0.45,
+  /**
+   * The Sniper's locked aim: a thin laser line from its edge to the wall, brightening as the shot
+   * nears. The same red lights the centre of its scope.
+   */
+  sniperLaser: '#f87171',
+  laserWidth: 3,
+  laserMinAlpha: 0.25,
+  laserMaxAlpha: 0.85,
+  /**
+   * A shockwave (the Quake's zones): a clean ring that sweeps from part-way out to the zone's
+   * edge as it fades, instead of a flash and a bolt.
+   */
+  shockwaveRing: '#e7e5e4',
+  shockwaveWidth: 9,
+  shockwaveStart: 0.35,
   /** Projectiles are drawn as a short streak behind a round head, in the owner's colour. */
   projectileTrail: 30,
   projectileTrailWidth: 4,

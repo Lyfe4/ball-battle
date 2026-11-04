@@ -1,5 +1,6 @@
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ownerColor } from './ball-colors.ts';
+import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { boltPoints, strikeProgress } from './zone-geometry.ts';
 import type { Strike } from './effects.ts';
 import { theme } from './theme.ts';
@@ -45,9 +46,42 @@ export function drawZones(
   }
 }
 
-/** Zones that just struck: a fading flash over the area and a lightning bolt down to its centre. */
-export function drawStrikes(ctx: CanvasRenderingContext2D, strikes: readonly Strike[]): void {
-  for (const { zoneId, position, radius, strength } of strikes) {
+/** A clean ring that sweeps out from part-way to the zone's edge as it fades. */
+function drawShockwave(
+  ctx: CanvasRenderingContext2D,
+  position: Strike['position'],
+  radius: number,
+  strength: number,
+): void {
+  const start = theme.shockwaveStart;
+  const ring = radius * (start + (1 - start) * (1 - strength)) - theme.shockwaveWidth / 2;
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.strokeStyle = theme.shockwaveRing;
+  ctx.lineWidth = theme.shockwaveWidth;
+  ctx.beginPath();
+  ctx.arc(position.x, position.y, Math.max(0, ring), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * Zones that just struck, in the style of their owner's design: by default a fading flash over the
+ * area and a lightning bolt down to its centre; a shockwave is a clean ring sweeping out to the
+ * zone's edge.
+ */
+export function drawStrikes(
+  ctx: CanvasRenderingContext2D,
+  world: WorldState,
+  strikes: readonly Strike[],
+): void {
+  for (const { zoneId, ownerId, position, radius, strength } of strikes) {
+    const owner = world.balls.find((ball) => ball.id === ownerId);
+    const style = owner === undefined ? undefined : BALL_DESIGNS.get(owner.definitionId)?.strike;
+    if (style === 'shockwave') {
+      drawShockwave(ctx, position, radius, strength);
+      continue;
+    }
     ctx.save();
     ctx.globalAlpha = strength * theme.strikeFlashMaxAlpha;
     ctx.fillStyle = theme.strikeFlash;
