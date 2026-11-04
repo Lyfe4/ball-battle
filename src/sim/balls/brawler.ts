@@ -8,7 +8,7 @@ export const brawler = defineBall({
   description: 'No tricks. Hits hard and takes a beating.',
   color: '#ef4444',
   radius: STANDARD_BALL_RADIUS,
-  speed: 740,
+  speed: 770,
   maxHealth: 64,
   contactDamage: 26,
   initialAbilityState: {},

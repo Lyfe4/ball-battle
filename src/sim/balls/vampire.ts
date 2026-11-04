@@ -16,7 +16,7 @@ export const vampire = defineBall({
   description: 'Heals for 40% of the damage it deals.',
   color: '#a855f7',
   radius: STANDARD_BALL_RADIUS,
-  speed: 760,
+  speed: 750,
   maxHealth: 60,
   contactDamage: 22,
   initialAbilityState: {},

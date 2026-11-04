@@ -56,7 +56,7 @@ export const storm = defineBall<StormState>({
   description: 'Calls down lightning where its enemy stands every 2 s. Shocked balls heal less.',
   color: '#93c5fd',
   radius: STANDARD_BALL_RADIUS,
-  speed: 720,
+  speed: 780,
   maxHealth: 74,
   contactDamage: 13,
   initialAbilityState: { nextStrikeTick: FIRST_STRIKE_DELAY_TICKS },
