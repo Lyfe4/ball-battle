@@ -1,7 +1,9 @@
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ABILITY_OVERLAYS } from './ability-overlays.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
+import type { Spark } from './effects.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
+import { drawProjectiles, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
 
 /** Render-only inputs that are not sim state, such as effect strengths. */
@@ -10,6 +12,8 @@ export interface FrameEffects {
   readonly flash: (ballId: string) => number;
   /** Heal pulse strength for a ball, 0 to 1. */
   readonly heal: (ballId: string) => number;
+  /** Recent projectile hits. */
+  readonly sparks: readonly Spark[];
 }
 
 /**
@@ -42,10 +46,12 @@ export function drawWorld(
     );
     drawBall(ctx, ball, color, effects.flash(ball.id), isRepeat);
     if (ball.health > 0) {
-      ABILITY_OVERLAYS.get(ball.definitionId)?.(ctx, ball);
+      ABILITY_OVERLAYS.get(ball.definitionId)?.(ctx, ball, world.tick);
       drawHealPulse(ctx, ball, effects.heal(ball.id));
     }
   });
+  drawProjectiles(ctx, world, definitions);
+  drawSparks(ctx, effects.sparks);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;

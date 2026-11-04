@@ -31,6 +31,20 @@ export const theme = {
   pipSpacing: 15,
   pipFilled: '#111827',
   pipEmpty: 'rgba(17, 24, 39, 0.25)',
+  /** Charging arc around a ball with a cooldown (e.g. the Archer), filling as it recharges. */
+  chargeArcGap: 7,
+  chargeArcWidth: 5,
+  chargeArcEmpty: 'rgba(255, 255, 255, 0.12)',
+  chargeArcFilled: 'rgba(255, 255, 255, 0.75)',
+  /** Projectiles are drawn as a short streak behind a round head, in the owner's colour. */
+  projectileTrail: 30,
+  projectileTrailWidth: 4,
+  /** Burst of short rays where a projectile hits. */
+  sparkColor: '#f59e0b',
+  sparkRays: 8,
+  sparkInner: 10,
+  sparkOuter: 46,
+  sparkWidth: 5,
 
   healthBarHeight: 12,
   healthBarGap: 10,

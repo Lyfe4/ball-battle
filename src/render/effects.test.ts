@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DamageEvent } from '../sim/types.ts';
-import { createEffects, FLASH_MS, HEAL_MS } from './effects.ts';
+import { createEffects, FLASH_MS, HEAL_MS, SPARK_MS } from './effects.ts';
 
 const hit: DamageEvent = {
   type: 'damage',
@@ -69,5 +69,28 @@ describe('effects', () => {
     expect(effects.isActive(HEAL_MS - 1)).toBe(true);
     expect(effects.heal('ball-0', HEAL_MS)).toBe(0);
     expect(effects.isActive(HEAL_MS)).toBe(false);
+  });
+
+  it('shows a spark where a projectile hit, then drops it', () => {
+    const effects = createEffects();
+    effects.apply(
+      [
+        {
+          type: 'projectileHit',
+          tick: 5,
+          projectileId: 'projectile-0',
+          ownerId: 'ball-0',
+          targetId: 'ball-1',
+          point: { x: 300, y: 400 },
+          amount: 10,
+        },
+      ],
+      0,
+    );
+    expect(effects.sparks(0)).toStrictEqual([{ point: { x: 300, y: 400 }, strength: 1 }]);
+    expect(effects.sparks(SPARK_MS / 2)[0]?.strength).toBeCloseTo(0.5, 9);
+    expect(effects.isActive(SPARK_MS - 1)).toBe(true);
+    expect(effects.sparks(SPARK_MS)).toStrictEqual([]);
+    expect(effects.isActive(SPARK_MS)).toBe(false);
   });
 });

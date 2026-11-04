@@ -1,10 +1,19 @@
-import type { SimEvent } from '../sim/types.ts';
+import type { SimEvent, Vec2 } from '../sim/types.ts';
 
 /** How long a damage flash lasts, in real milliseconds. */
 export const FLASH_MS = 200;
 
 /** How long a heal pulse lasts, in real milliseconds. */
 export const HEAL_MS = 450;
+
+/** How long a projectile hit spark lasts, in real milliseconds. */
+export const SPARK_MS = 250;
+
+/** A spark where a projectile hit, with its strength from 1 (just hit) down to 0. */
+export interface Spark {
+  readonly point: Vec2;
+  readonly strength: number;
+}
 
 /**
  * Short-lived visual effects driven by sim events. Lives entirely in the render layer: it reads
@@ -17,6 +26,8 @@ export interface Effects {
   flash(ballId: string, nowMs: number): number;
   /** Heal pulse strength for a ball, from 1 (just healed) down to 0. */
   heal(ballId: string, nowMs: number): number;
+  /** Projectile hit sparks still visible. */
+  sparks(nowMs: number): readonly Spark[];
   /** True while any effect is still visible, so the caller knows to keep redrawing. */
   isActive(nowMs: number): boolean;
   reset(): void;
@@ -31,6 +42,7 @@ function fade(start: number | undefined, nowMs: number, durationMs: number): num
 export function createEffects(): Effects {
   const flashStarts = new Map<string, number>();
   const healStarts = new Map<string, number>();
+  let sparkStarts: { readonly point: Vec2; readonly start: number }[] = [];
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
@@ -42,19 +54,30 @@ export function createEffects(): Effects {
       for (const event of events) {
         if (event.type === 'damage') flashStarts.set(event.targetId, nowMs);
         if (event.type === 'healed') healStarts.set(event.ballId, nowMs);
+        if (event.type === 'projectileHit') sparkStarts.push({ point: event.point, start: nowMs });
       }
     },
     flash,
     heal,
+    sparks(nowMs) {
+      // Drop finished sparks so the list never grows over a long match.
+      sparkStarts = sparkStarts.filter(({ start }) => fade(start, nowMs, SPARK_MS) > 0);
+      return sparkStarts.map(({ point, start }) => ({
+        point,
+        strength: fade(start, nowMs, SPARK_MS),
+      }));
+    },
     isActive(nowMs) {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
-        [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0)
+        [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
+        sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0)
       );
     },
     reset() {
       flashStarts.clear();
       healStarts.clear();
+      sparkStarts = [];
     },
   };
 }

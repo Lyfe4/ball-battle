@@ -69,6 +69,7 @@ function render(nowMs: number): void {
   drawWorld(ctx, world, BALL_LOOKUP, canvasPixels, {
     flash: (ballId) => effects.flash(ballId, nowMs),
     heal: (ballId) => effects.heal(ballId, nowMs),
+    sparks: effects.sparks(nowMs),
   });
   hud.update(world, seed);
 }
