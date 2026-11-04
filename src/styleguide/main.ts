@@ -6,156 +6,15 @@ import { ballColor } from '../render/ball-colors.ts';
 import { drawStatuses } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { theme } from '../render/theme.ts';
-import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
-import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
+import { ARENA_SIZE } from '../sim/constants.ts';
 import { getDefinition } from '../sim/definitions.ts';
-import type { StatusKind } from '../sim/status.ts';
-import type { AbilityState, BallState, Vec2, WorldState } from '../sim/types.ts';
+import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
+import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 
 const LARGE_RADIUS_PX = 56;
 const SMALL_RADIUS_PX = 15;
-const TICK = 600;
-
-interface Tile {
-  readonly label: string;
-  readonly id: string;
-  readonly abilityState?: AbilityState;
-  /** Where the ball is heading (Speedster) or where its enemy is (Archer). */
-  readonly toward?: Vec2;
-  readonly repeat?: boolean;
-  readonly defeated?: boolean;
-  readonly heal?: number;
-  readonly flash?: number;
-  /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
-  readonly statuses?: readonly StatusKind[];
-}
-
-/** Ability state for a cooldown ball `charge` of the way to its next shot or strike. */
-const charged = (key: string, cooldown: number, charge: number): AbilityState => ({
-  [key]: TICK + Math.round((1 - charge) * cooldown),
-});
-
-const right: Vec2 = { x: 1, y: 0 };
-const upRight: Vec2 = { x: 0.8, y: -0.6 };
-const downLeft: Vec2 = { x: -0.6, y: 0.8 };
-
-const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
-  [
-    'Brawler: hits hard, no tricks',
-    [
-      { label: 'idle', id: 'brawler' },
-      { label: 'hit flash', id: 'brawler', flash: 0.6 },
-      { label: 'mirror B', id: 'brawler', repeat: true },
-      { label: 'defeated', id: 'brawler', defeated: true },
-    ],
-  ],
-  [
-    'Speedster: one streak per stack, facing its travel',
-    [
-      ...[0, 1, 2, 3, 4, 5].map((stacks): Tile => ({
-        label: `${stacks} stacks`,
-        id: 'speedster',
-        abilityState: { stacks },
-        toward: upRight,
-      })),
-      {
-        label: 'mirror B, 3',
-        id: 'speedster',
-        abilityState: { stacks: 3 },
-        toward: right,
-        repeat: true,
-      },
-    ],
-  ],
-  [
-    'Vampire: collar and fangs; the collar edge flushes when it heals',
-    [
-      { label: 'idle', id: 'vampire' },
-      { label: 'healing', id: 'vampire', heal: 1 },
-      { label: 'heal fading', id: 'vampire', heal: 0.4 },
-      { label: 'mirror B', id: 'vampire', repeat: true },
-    ],
-  ],
-  [
-    'Archer: bow faces its target and draws back as the shot charges',
-    [
-      ...[0, 0.5, 1].map((charge): Tile => ({
-        label: `charge ${charge * 100}%`,
-        id: 'archer',
-        abilityState: charged('nextShotTick', ARCHER_COOLDOWN, charge),
-        toward: right,
-      })),
-      {
-        label: 'aiming down-left, 70%',
-        id: 'archer',
-        abilityState: charged('nextShotTick', ARCHER_COOLDOWN, 0.7),
-        toward: downLeft,
-      },
-      {
-        label: 'mirror B, 50%',
-        id: 'archer',
-        abilityState: charged('nextShotTick', ARCHER_COOLDOWN, 0.5),
-        toward: right,
-        repeat: true,
-      },
-    ],
-  ],
-  [
-    'Storm: the bolt brightens as the strike charges, then flickers',
-    [
-      ...[0, 0.5, 0.85, 1].map((charge): Tile => ({
-        label: `charge ${charge * 100}%`,
-        id: 'storm',
-        abilityState: charged('nextStrikeTick', STORM_COOLDOWN, charge),
-      })),
-      {
-        label: 'mirror B, 50%',
-        id: 'storm',
-        abilityState: charged('nextStrikeTick', STORM_COOLDOWN, 0.5),
-        repeat: true,
-      },
-    ],
-  ],
-  [
-    'Frost: a faceted ice crystal; the facets drop at small size',
-    [
-      { label: 'idle', id: 'frost' },
-      { label: 'hit flash', id: 'frost', flash: 0.6 },
-      { label: 'mirror B', id: 'frost', repeat: true },
-      { label: 'defeated', id: 'frost', defeated: true },
-    ],
-  ],
-  [
-    'Thorns: a ring of spikes to the edge; fewer, fatter spikes at small size',
-    [
-      { label: 'idle', id: 'thorns' },
-      { label: 'hit flash', id: 'thorns', flash: 0.6 },
-      { label: 'mirror B', id: 'thorns', repeat: true },
-      { label: 'defeated', id: 'thorns', defeated: true },
-    ],
-  ],
-  [
-    'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
-    ['brawler', 'speedster', 'vampire', 'archer', 'storm', 'frost', 'thorns'].map((id): Tile => ({
-      label: id,
-      id,
-      statuses: ['shocked'],
-    })),
-  ],
-  [
-    'Slowed (ADR 0012): a still ice ring with frost ticks; it cruises slower',
-    [
-      ...['brawler', 'speedster', 'vampire', 'archer', 'storm'].map((id): Tile => ({
-        label: id,
-        id,
-        statuses: ['slowed'],
-      })),
-      { label: 'shocked + slowed', id: 'vampire', statuses: ['shocked', 'slowed'] },
-    ],
-  ],
-];
 
 /** A world holding the tile's ball at the origin and an enemy far off in its `toward` direction. */
 function tileWorld(tile: Tile): { world: WorldState; ball: BallState } {
@@ -227,27 +86,18 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
 function phoneArena(): HTMLElement {
   const cssSize = 340;
   const { canvas, ctx } = canvasFor(cssSize);
-  const spots: readonly Vec2[] = [
-    { x: 180, y: 200 },
-    { x: 500, y: 180 },
-    { x: 820, y: 220 },
-    { x: 200, y: 720 },
-    { x: 500, y: 760 },
-    { x: 800, y: 700 },
-    { x: 500, y: 470 },
-  ];
+  // A grid of four columns, as many rows as the roster needs.
+  const columns = 4;
+  const rows = Math.ceil(BALLS.length / columns);
+  const spot = (index: number): Vec2 => ({
+    x: ((index % columns) + 0.5) * (ARENA_SIZE / columns),
+    y: (Math.floor(index / columns) + 0.5) * (ARENA_SIZE / rows),
+  });
   const world = createWorld(4, BALLS);
   const balls = world.balls.map((ball, index) => ({
     ...ball,
-    position: spots[index] ?? ball.position,
-    abilityState:
-      ball.definitionId === 'speedster'
-        ? { stacks: 3 }
-        : ball.definitionId === 'archer'
-          ? charged('nextShotTick', ARCHER_COOLDOWN, 0.6)
-          : ball.definitionId === 'storm'
-            ? charged('nextStrikeTick', STORM_COOLDOWN, 0.6)
-            : ball.abilityState,
+    position: spot(index),
+    abilityState: arenaAbilityState(ball),
   }));
   const view = { canvasPixels: canvas.width, cssPixels: cssSize };
   drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, view, NO_EFFECTS);
