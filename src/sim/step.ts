@@ -6,6 +6,7 @@ import {
   wallHitInvocations,
   type Invocation,
 } from './abilities/run-hooks.ts';
+import { applyBounceVariance } from './bounce-variance.ts';
 import { resolveCollisions } from './collision.ts';
 import { applyContactDamage, defeatsThisTick, isAlive, nextContacts, pairKey } from './combat.ts';
 import { getDefinition } from './definitions.ts';
@@ -26,10 +27,11 @@ import type {
  * new world and never mutates the input, so callers can keep earlier states for comparison or
  * replay. `definitions` must be the same lookup every tick of a match.
  *
- * Order within a tick (ADR 0003); events come out in the same order:
+ * Order within a tick (ADR 0003, ADR 0004); events come out in the same order:
  *  1. A finished match is returned as is, with no events.
  *  2. onTick hooks, then their actions.
- *  3. Live balls move and bounce off walls.
+ *  3. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
+ *     (ADR 0004), which advances the world RNG.
  *  4. onWallHit hooks for balls that bounced, then their actions.
  *  5. Ball collisions: separation and impulse.
  *  6. Contact damage for new contacts (impact scaling, lethal tiebreak).
@@ -52,10 +54,11 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const { size } = world.arena;
   const events: SimEvent[] = [];
   let balls: readonly BallState[] = world.balls;
+  let { rngState } = world;
 
   const phase = (invocations: readonly Invocation[]): void => {
     if (invocations.length === 0) return;
-    const result = runPhase({ ...world, tick, balls }, invocations, definitions);
+    const result = runPhase({ ...world, tick, balls, rngState }, invocations, definitions);
     balls = result.balls;
     events.push(...result.events);
   };
@@ -65,7 +68,9 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const movements = balls.map((ball) =>
     isAlive(ball) ? moveBall(ball, size) : { ball, bounces: 0, bouncesX: 0, bouncesY: 0 },
   );
-  balls = movements.map((movement) => movement.ball);
+  const variance = applyBounceVariance(movements, rngState);
+  balls = variance.balls;
+  rngState = variance.rngState;
   phase(wallHitInvocations(new Map(movements.map(({ ball, bounces }) => [ball.id, bounces]))));
 
   const collisions = resolveCollisions(balls, size, isAlive);
@@ -109,6 +114,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
       ...world,
       tick,
       balls,
+      rngState,
       contacts: nextContacts(balls, world.contacts, collidedKeys),
       match,
     },

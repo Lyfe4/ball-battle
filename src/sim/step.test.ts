@@ -58,10 +58,16 @@ describe('step', () => {
       { position: { x: max - 1, y: 500 }, velocity: { x: 600, y: 0 } },
       { position: { x: 200, y: 200 }, velocity: { x: 0, y: 0 } },
     ]);
-    const [ball] = step(world, testLookup).world.balls;
-    // Travels 10 units: 1 to reach the wall, 9 back.
+    const next = step(world, testLookup).world;
+    const [ball] = next.balls;
+    // Travels 10 units: 1 to reach the wall, 9 back. The bounce turn (ADR 0004) changes only the
+    // velocity's direction, never the position or the speed.
     expect(ball?.position.x).toBeCloseTo(max - 9, 9);
-    expect(ball?.velocity).toStrictEqual({ x: -600, y: 0 });
+    expect(ball?.velocity.x).toBeLessThan(0);
+    const vx = ball?.velocity.x ?? 0;
+    const vy = ball?.velocity.y ?? 0;
+    expect(Math.sqrt(vx * vx + vy * vy)).toBeCloseTo(600, 9);
+    expect(next.rngState).not.toBe(world.rngState);
   });
 
   it('does not mutate the input world', () => {

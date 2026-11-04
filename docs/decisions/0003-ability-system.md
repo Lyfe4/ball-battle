@@ -48,7 +48,7 @@ Full tick order:
 
 1. Finished match: return unchanged.
 2. `onTick` → apply actions.
-3. Move and bounce off walls.
+3. Move and bounce off walls; each ball that bounced gets a small seeded turn (ADR 0004).
 4. `onWallHit` → apply.
 5. Ball collisions (separation and impulse).
 6. Contact damage for new contacts (impact scaling and lethal tiebreak, ADR 0002).

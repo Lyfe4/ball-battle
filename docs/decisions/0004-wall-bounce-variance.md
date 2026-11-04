@@ -48,9 +48,11 @@ natural.
 - **Once per tick, after movement, before `onWallHit`.** A corner hit (two bounces in one tick)
   rotates once. Running before `onWallHit` means abilities see the final direction.
 - **Never back into the wall.** If the rotated velocity would point back towards a wall the ball
-  just bounced off, the rotation is mirrored (`-t`). If both directions would, which can only
-  happen on a near-parallel graze into a corner, the bounce is left unrotated. Only the velocity
-  changes, never the position, so balls stay inside the arena.
+  just bounced off, the rotation is mirrored (`-t`). A turn can only flip an axis whose component
+  is smaller than `|v|·sin(8°)`, and both components can't be that small at once, so one of the
+  two directions always works for a moving ball; leaving the bounce unturned is only a guard for
+  a zero velocity. Only the velocity changes, never the position, so balls stay inside the
+  arena.
 
 ## Consequences
 

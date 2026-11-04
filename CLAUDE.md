@@ -63,7 +63,7 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
-- Within a tick: onTick, move, onWallHit, collide, contact damage (new contacts only), onHitBall,
+- Within a tick: onTick, move (with a seeded turn on wall bounces, ADR 0004), onWallHit, collide, contact damage (new contacts only), onHitBall,
   onDamageDealt, defeat, match end. Events are emitted in that order. Every hook in a phase sees
   the same snapshot; actions are applied afterwards. The full order is documented on `step`.
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
