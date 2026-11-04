@@ -59,18 +59,20 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const { size } = world.arena;
   const events: SimEvent[] = [];
   let balls: readonly BallState[] = world.balls;
-  let { rngState, projectiles, nextProjectileId } = world;
+  let { rngState, projectiles, nextProjectileId, zones, nextZoneId } = world;
 
   const phase = (invocations: readonly Invocation[]): void => {
     if (invocations.length === 0) return;
     const result = runPhase(
-      { ...world, tick, balls, rngState, projectiles, nextProjectileId },
+      { ...world, tick, balls, rngState, projectiles, nextProjectileId, zones, nextZoneId },
       invocations,
       definitions,
     );
     balls = result.balls;
     projectiles = result.projectiles;
     nextProjectileId = result.nextProjectileId;
+    zones = result.zones;
+    nextZoneId = result.nextZoneId;
     events.push(...result.events);
   };
 
@@ -136,6 +138,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
       rngState,
       projectiles,
       nextProjectileId,
+      zones,
+      nextZoneId,
       contacts: nextContacts(balls, world.contacts, collidedKeys),
       match,
     },

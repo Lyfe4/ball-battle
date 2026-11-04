@@ -1,13 +1,16 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
+import { spawnZone } from '../zones/spawn.ts';
 import type {
   AbilityAction,
   BallState,
+  DamageEvent,
   DefinitionLookup,
   ProjectileState,
   SimEvent,
   Vec2,
+  ZoneState,
 } from '../types.ts';
 import { scale } from '../vec2.ts';
 
@@ -16,6 +19,8 @@ export interface Scene {
   readonly balls: readonly BallState[];
   readonly projectiles: readonly ProjectileState[];
   readonly nextProjectileId: number;
+  readonly zones: readonly ZoneState[];
+  readonly nextZoneId: number;
 }
 
 export interface ActionResult extends Scene {
@@ -46,6 +51,8 @@ export function applyActions(
   const next = [...scene.balls];
   const projectiles = [...scene.projectiles];
   let { nextProjectileId } = scene;
+  const zones = [...scene.zones];
+  let { nextZoneId } = scene;
   const events: SimEvent[] = [];
 
   const indexOf = (id: string): number => {
@@ -124,6 +131,15 @@ export function applyActions(
           return undefined;
         });
         break;
+      case 'spawnZone':
+        update(ownerId, (self) => {
+          const spawned = spawnZone(self, action, `zone-${nextZoneId}`, arenaSize, tick);
+          nextZoneId++;
+          zones.push(spawned.zone);
+          events.push(spawned.event);
+          return undefined;
+        });
+        break;
       default: {
         // Adding an action kind without handling it here is a compile error.
         const unhandled: never = action;
@@ -131,5 +147,31 @@ export function applyActions(
       }
     }
   }
-  return { balls: next, projectiles, nextProjectileId, events };
+  return { balls: next, projectiles, nextProjectileId, zones, nextZoneId, events };
+}
+
+/**
+ * Ability damage from `ownerId` to one ball, through the same path as the `damage` action. Used
+ * by projectile hits and zone strikes. `damage` is the event, or undefined if nothing was removed
+ * (the target was already defeated, or the amount was 0).
+ */
+export function dealAbilityDamage(
+  balls: readonly BallState[],
+  ownerId: string,
+  targetId: string,
+  amount: number,
+  definitions: DefinitionLookup,
+  tick: number,
+): { readonly balls: readonly BallState[]; readonly damage: DamageEvent | undefined } {
+  const result = applyActions(
+    { balls, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
+    ownerId,
+    [{ kind: 'damage', targetId, amount }],
+    definitions,
+    tick,
+    // A damage action never uses the arena size.
+    Infinity,
+  );
+  const damage = result.events.find((event) => event.type === 'damage');
+  return { balls: result.balls, damage };
 }

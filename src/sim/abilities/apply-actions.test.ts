@@ -17,7 +17,7 @@ function apply(
   tick: number,
 ) {
   return applyActions(
-    { balls, projectiles: [], nextProjectileId: 0 },
+    { balls, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
     ownerId,
     actions,
     lookup,
@@ -157,7 +157,7 @@ describe('applyActions', () => {
 
     it('spawns just outside the owner, heading along its velocity, with the next id', () => {
       const result = applyActions(
-        { balls: [placed], projectiles: [], nextProjectileId: 4 },
+        { balls: [placed], projectiles: [], nextProjectileId: 4, zones: [], nextZoneId: 0 },
         placed.id,
         [arrow],
         definitions,
@@ -192,7 +192,7 @@ describe('applyActions', () => {
     it('fires into an adjacent wall as fired then expired, without adding a projectile', () => {
       const againstWall = { ...shooter, position: { x: 1000 - red.radius, y: 500 } };
       const result = applyActions(
-        { balls: [againstWall], projectiles: [], nextProjectileId: 0 },
+        { balls: [againstWall], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
         againstWall.id,
         [arrow],
         definitions,
@@ -211,7 +211,7 @@ describe('applyActions', () => {
     it('does nothing for a defeated owner and rejects invalid projectiles', () => {
       const dead = { ...placed, health: 0 };
       const none = applyActions(
-        { balls: [dead], projectiles: [], nextProjectileId: 0 },
+        { balls: [dead], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
         dead.id,
         [arrow],
         definitions,
@@ -228,7 +228,7 @@ describe('applyActions', () => {
       ]) {
         expect(() =>
           applyActions(
-            { balls: [placed], projectiles: [], nextProjectileId: 0 },
+            { balls: [placed], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
             placed.id,
             [bad],
             definitions,

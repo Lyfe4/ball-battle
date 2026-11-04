@@ -69,5 +69,7 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
     match: { status: 'running' },
     projectiles: [],
     nextProjectileId: 0,
+    zones: [],
+    nextZoneId: 0,
   };
 }

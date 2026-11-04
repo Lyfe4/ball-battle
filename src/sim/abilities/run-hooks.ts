@@ -80,6 +80,8 @@ export function runPhase(
     balls: snapshot,
     projectiles: world.projectiles,
     nextProjectileId: world.nextProjectileId,
+    zones: world.zones,
+    nextZoneId: world.nextZoneId,
   };
   const events: SimEvent[] = [];
   for (const { ballId, hook, actions } of collected) {
@@ -92,6 +94,8 @@ export function runPhase(
     balls: scene.balls,
     projectiles: scene.projectiles,
     nextProjectileId: scene.nextProjectileId,
+    zones: scene.zones,
+    nextZoneId: scene.nextZoneId,
     events,
   };
 }

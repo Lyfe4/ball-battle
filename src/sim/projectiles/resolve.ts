@@ -1,4 +1,4 @@
-import { applyActions } from '../abilities/apply-actions.ts';
+import { dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { isAlive } from '../combat.ts';
 import { DT } from '../constants.ts';
 import type { BallState, DefinitionLookup, ProjectileState, SimEvent, Vec2 } from '../types.ts';
@@ -51,26 +51,23 @@ export function resolveProjectiles(
     const base = { tick, projectileId: projectile.id, ownerId: projectile.ownerId };
 
     if (nearest !== undefined && (wallS === undefined || nearest.s <= wallS)) {
-      const result = applyActions(
-        { balls: current, projectiles: [], nextProjectileId: 0 },
+      const { balls: afterHit, damage } = dealAbilityDamage(
+        current,
         projectile.ownerId,
-        [{ kind: 'damage', targetId: nearest.ball.id, amount: projectile.damage }],
+        nearest.ball.id,
+        projectile.damage,
         definitions,
         tick,
-        arenaSize,
       );
-      current = result.balls;
-      const dealt = result.events.find((event) => event.type === 'damage');
-      events.push(
-        {
-          type: 'projectileHit',
-          ...base,
-          targetId: nearest.ball.id,
-          point: addScaled(projectile.position, travel, nearest.s),
-          amount: dealt?.type === 'damage' ? dealt.amount : 0,
-        },
-        ...result.events,
-      );
+      current = afterHit;
+      events.push({
+        type: 'projectileHit',
+        ...base,
+        targetId: nearest.ball.id,
+        point: addScaled(projectile.position, travel, nearest.s),
+        amount: damage?.amount ?? 0,
+      });
+      if (damage !== undefined) events.push(damage);
     } else if (wallS !== undefined) {
       events.push({ type: 'projectileExpired', ...base, reason: 'wall' });
     } else if (projectile.ticksLeft <= 1) {
