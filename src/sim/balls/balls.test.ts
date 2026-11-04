@@ -3,7 +3,10 @@ import { DT, MATCH_TIME_LIMIT_TICKS } from '../constants.ts';
 import { step } from '../step.ts';
 import type { BallDefinition, BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
+import { brawler } from './brawler.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
+import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
+import { LIFESTEAL, vampire } from './vampire.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -68,5 +71,32 @@ describe('the ball roster', () => {
       }
     }
     expect(worst).toBeLessThan(0.5);
+  });
+
+  describe('identity rules', () => {
+    // What makes each ball itself. Balance tuning must keep these true; if a change needs to break
+    // one, that is a design decision, not a tuning step.
+    const others = (id: string) => BALLS.filter((ball) => ball.id !== id);
+
+    it('Speedster is the fastest ball at base speed', () => {
+      for (const ball of others(speedster.id)) expect(speedster.speed).toBeGreaterThan(ball.speed);
+    });
+
+    it('Speedster’s bonus at max stacks is at least half its contact damage', () => {
+      expect(MAX_STACKS * DAMAGE_PER_STACK).toBeGreaterThanOrEqual(speedster.contactDamage / 2);
+    });
+
+    it('Vampire steals at least 40% of the damage it deals', () => {
+      expect(LIFESTEAL).toBeGreaterThanOrEqual(0.4);
+      expect(vampire.hooks.onDamageDealt).toBeDefined();
+    });
+
+    it('Brawler hits hardest and has no ability', () => {
+      for (const ball of others(brawler.id)) {
+        expect(brawler.contactDamage).toBeGreaterThan(ball.contactDamage);
+      }
+      expect(Object.keys(brawler.hooks)).toStrictEqual([]);
+      expect(brawler.initialAbilityState).toStrictEqual({});
+    });
   });
 });
