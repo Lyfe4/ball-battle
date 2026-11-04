@@ -18,8 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "balance": "node scripts/balance.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --project unit",
+    "test:slow": "vitest run --project slow",
+    "test:watch": "vitest --project unit",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { SECURITY_HEADERS } from './scripts/security-headers.ts';
 
 export default defineConfig({
@@ -20,7 +20,22 @@ export default defineConfig({
     headers: { ...SECURITY_HEADERS },
   },
   test: {
-    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
     environment: 'node',
+    // Two suites: "unit" (pnpm test) stays fast; "slow" (pnpm test:slow) holds the roster-wide
+    // tests that play every matchup for whole matches. CI runs both, as separate jobs.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+          exclude: [...configDefaults.exclude, '**/*.slow.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: { name: 'slow', include: ['src/**/*.slow.test.ts', 'scripts/**/*.slow.test.ts'] },
+      },
+    ],
   },
 });

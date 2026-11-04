@@ -35,3 +35,22 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  slow-tests:
+    name: Slow roster tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # Every matchup for whole matches: determinism, the measured pass-through margin and the
+      # identity rules. Kept out of the main job so pnpm test stays fast.
+      - run: pnpm test:slow
