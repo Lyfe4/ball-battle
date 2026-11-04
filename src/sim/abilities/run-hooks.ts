@@ -12,7 +12,7 @@ import type {
   SimEvent,
   WorldState,
 } from '../types.ts';
-import { applyActions } from './apply-actions.ts';
+import { applyActions, type Scene } from './apply-actions.ts';
 
 /** One hook call to make in a phase: which ball, which hook, and how to call it. */
 export interface Invocation {
@@ -33,8 +33,7 @@ const HOOK_CODES: Readonly<Record<HookName, number>> = {
   onDamageDealt: 4,
 };
 
-export interface PhaseResult {
-  readonly balls: readonly BallState[];
+export interface PhaseResult extends Scene {
   readonly events: readonly SimEvent[];
 }
 
@@ -77,15 +76,24 @@ export function runPhase(
     }
   }
 
-  let balls = snapshot;
+  let scene: Scene = {
+    balls: snapshot,
+    projectiles: world.projectiles,
+    nextProjectileId: world.nextProjectileId,
+  };
   const events: SimEvent[] = [];
   for (const { ballId, hook, actions } of collected) {
     events.push({ type: 'abilityTriggered', tick: world.tick, ballId, hook });
-    const result = applyActions(balls, ballId, actions, definitions, world.tick);
-    balls = result.balls;
+    const result = applyActions(scene, ballId, actions, definitions, world.tick, world.arena.size);
+    scene = result;
     events.push(...result.events);
   }
-  return { balls, events };
+  return {
+    balls: scene.balls,
+    projectiles: scene.projectiles,
+    nextProjectileId: scene.nextProjectileId,
+    events,
+  };
 }
 
 export function tickInvocations(balls: readonly BallState[]): Invocation[] {

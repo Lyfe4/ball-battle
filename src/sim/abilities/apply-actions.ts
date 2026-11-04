@@ -1,10 +1,24 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
-import type { AbilityAction, BallState, DefinitionLookup, SimEvent, Vec2 } from '../types.ts';
+import { spawnProjectile } from '../projectiles/spawn.ts';
+import type {
+  AbilityAction,
+  BallState,
+  DefinitionLookup,
+  ProjectileState,
+  SimEvent,
+  Vec2,
+} from '../types.ts';
 import { scale } from '../vec2.ts';
 
-export interface ActionResult {
+/** The parts of the world that actions can change. */
+export interface Scene {
   readonly balls: readonly BallState[];
+  readonly projectiles: readonly ProjectileState[];
+  readonly nextProjectileId: number;
+}
+
+export interface ActionResult extends Scene {
   readonly events: readonly SimEvent[];
 }
 
@@ -16,18 +30,22 @@ function assertFinite(velocity: Vec2, ownerId: string): Vec2 {
 }
 
 /**
- * Applies one hook's actions, in the order returned, on behalf of `ownerId`. Pure: returns new
- * balls and the events the actions produced. Actions on a defeated target do nothing (a heal never
- * revives); an unknown target id throws because only a bug can produce one.
+ * Applies one hook's actions, in the order returned, on behalf of `ownerId`. Pure: returns the
+ * changed scene and the events the actions produced. Actions on a defeated target or from a
+ * defeated owner do nothing (a heal never revives); an unknown target id throws because only a
+ * bug can produce one.
  */
 export function applyActions(
-  balls: readonly BallState[],
+  scene: Scene,
   ownerId: string,
   actions: readonly AbilityAction[],
   definitions: DefinitionLookup,
   tick: number,
+  arenaSize: number,
 ): ActionResult {
-  const next = [...balls];
+  const next = [...scene.balls];
+  const projectiles = [...scene.projectiles];
+  let { nextProjectileId } = scene;
   const events: SimEvent[] = [];
 
   const indexOf = (id: string): number => {
@@ -96,6 +114,16 @@ export function applyActions(
       case 'setAbilityState':
         update(ownerId, (self) => ({ ...self, abilityState: action.state }));
         break;
+      case 'spawnProjectile':
+        update(ownerId, (self) => {
+          const id = `projectile-${nextProjectileId}`;
+          nextProjectileId++;
+          const spawned = spawnProjectile(self, action, id, arenaSize, tick);
+          if (spawned.projectile !== undefined) projectiles.push(spawned.projectile);
+          events.push(...spawned.events);
+          return undefined;
+        });
+        break;
       default: {
         // Adding an action kind without handling it here is a compile error.
         const unhandled: never = action;
@@ -103,5 +131,5 @@ export function applyActions(
       }
     }
   }
-  return { balls: next, events };
+  return { balls: next, projectiles, nextProjectileId, events };
 }

@@ -108,7 +108,18 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
   /** Own ball only. */
   | { readonly kind: 'scaleVelocity'; readonly factor: number }
   /** Own ball only; replaces the whole state. */
-  | { readonly kind: 'setAbilityState'; readonly state: S };
+  | { readonly kind: 'setAbilityState'; readonly state: S }
+  /**
+   * Fires a projectile from just outside the hook owner's edge, in the direction of `velocity`
+   * (world units per second). See ADR 0005.
+   */
+  | {
+      readonly kind: 'spawnProjectile';
+      readonly velocity: Vec2;
+      readonly radius: number;
+      readonly damage: number;
+      readonly lifetimeTicks: number;
+    };
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 
@@ -143,6 +154,25 @@ export interface BallState {
 }
 
 /**
+ * Something a ball fired, flying in a straight line until it hits an enemy ball, reaches a wall or
+ * runs out of lifetime (ADR 0005). Plain serialisable data.
+ */
+export interface ProjectileState {
+  /** "projectile-<n>", from WorldState.nextProjectileId. */
+  readonly id: string;
+  /** The ball that fired it. It never hits its owner. */
+  readonly ownerId: string;
+  readonly position: Vec2;
+  /** World units per second. */
+  readonly velocity: Vec2;
+  readonly radius: number;
+  /** Ability damage dealt to the ball it hits. */
+  readonly damage: number;
+  /** Ticks until it expires, a safety net that keeps the projectile count bounded. */
+  readonly ticksLeft: number;
+}
+
+/**
  * The complete state of a match at one tick. Together with the ball definitions, this fully
  * determines every future tick, including the random number stream.
  */
@@ -157,6 +187,10 @@ export interface WorldState {
    */
   readonly contacts: readonly string[];
   readonly match: MatchState;
+  /** Projectiles in flight, in the order they were fired. */
+  readonly projectiles: readonly ProjectileState[];
+  /** The number the next projectile id will use; only ever increases. */
+  readonly nextProjectileId: number;
 }
 
 /**
@@ -234,6 +268,36 @@ export interface AbilityTriggeredEvent {
   readonly hook: HookName;
 }
 
+export interface ProjectileFiredEvent {
+  readonly type: 'projectileFired';
+  readonly tick: number;
+  readonly projectileId: string;
+  readonly ownerId: string;
+  readonly position: Vec2;
+  readonly velocity: Vec2;
+}
+
+/** Followed by the damage event for the same hit. */
+export interface ProjectileHitEvent {
+  readonly type: 'projectileHit';
+  readonly tick: number;
+  readonly projectileId: string;
+  readonly ownerId: string;
+  readonly targetId: string;
+  /** Where the projectile's centre was when it touched the ball. */
+  readonly point: Vec2;
+  /** Damage actually dealt (never more than the target had left). */
+  readonly amount: number;
+}
+
+export interface ProjectileExpiredEvent {
+  readonly type: 'projectileExpired';
+  readonly tick: number;
+  readonly projectileId: string;
+  readonly ownerId: string;
+  readonly reason: 'wall' | 'lifetime';
+}
+
 export interface BallDefeatedEvent {
   readonly type: 'ballDefeated';
   readonly tick: number;
@@ -251,14 +315,17 @@ export interface MatchEndedEvent {
 /**
  * What happened during one tick, as plain data. Output only: events are for rendering, sound and
  * replays, and never feed back into the simulation (ADR 0002). They come out in tick order (see
- * step.ts): onTick and onWallHit effects, collisions, contact damage, onHitBall and onDamageDealt
- * effects, defeats, match end.
+ * step.ts): onTick and onWallHit effects, collisions, contact damage, onHitBall effects, projectile
+ * hits and expiries, onDamageDealt effects, defeats, match end.
  */
 export type SimEvent =
   | CollisionEvent
   | DamageEvent
   | HealedEvent
   | AbilityTriggeredEvent
+  | ProjectileFiredEvent
+  | ProjectileHitEvent
+  | ProjectileExpiredEvent
   | BallDefeatedEvent
   | MatchEndedEvent;
 

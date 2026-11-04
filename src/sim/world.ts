@@ -60,5 +60,14 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
     };
   });
 
-  return { tick: 0, arena, balls, rngState, contacts: [], match: { status: 'running' } };
+  return {
+    tick: 0,
+    arena,
+    balls,
+    rngState,
+    contacts: [],
+    match: { status: 'running' },
+    projectiles: [],
+    nextProjectileId: 0,
+  };
 }
