@@ -1,6 +1,7 @@
 // The style guide's tiles: every ball in each ability state, then every status ring. One
 // section per ball design; a new ball adds its section here.
 import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
+import { BALLS } from '../sim/balls/index.ts';
 import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
 import type { StatusKind } from '../sim/status.ts';
 import type { AbilityState, BallState, Vec2 } from '../sim/types.ts';
@@ -127,8 +128,17 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
+    'Venom: a poison drop; the shine drops at small size',
+    [
+      { label: 'idle', id: 'venom' },
+      { label: 'hit flash', id: 'venom', flash: 0.6 },
+      { label: 'mirror B', id: 'venom', repeat: true },
+      { label: 'defeated', id: 'venom', defeated: true },
+    ],
+  ],
+  [
     'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
-    ['brawler', 'speedster', 'vampire', 'archer', 'storm', 'frost', 'thorns'].map((id): Tile => ({
+    BALLS.map(({ id }): Tile => ({
       label: id,
       id,
       statuses: ['shocked'],
@@ -143,6 +153,17 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
         statuses: ['slowed'],
       })),
       { label: 'shocked + slowed', id: 'vampire', statuses: ['shocked', 'slowed'] },
+    ],
+  ],
+  [
+    'Poisoned (ADR 0012, 0014): a still ring of dots, like drops; it takes poison ticks',
+    [
+      ...['brawler', 'speedster', 'vampire', 'thorns', 'frost'].map((id): Tile => ({
+        label: id,
+        id,
+        statuses: ['poisoned'],
+      })),
+      { label: 'all three', id: 'storm', statuses: ['shocked', 'slowed', 'poisoned'] },
     ],
   ],
 ];
