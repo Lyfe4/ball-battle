@@ -120,6 +120,14 @@ fitCanvasToContainer(canvas, container, (size) => {
 });
 
 function frame(nowMs: number): void {
+  // The match pauses while the ball picker is open, like a hidden tab: no time passes, so it
+  // carries on exactly where it stopped when the picker closes, whether or not a pick changed (a
+  // new pick only takes effect on Start match).
+  if (picker.isOpen()) {
+    lastFrameMs = undefined;
+    requestAnimationFrame(frame);
+    return;
+  }
   if (lastFrameMs !== undefined) {
     const wasBusy = isClockBusy(playback.clock);
     const outcome = advanceFrame(

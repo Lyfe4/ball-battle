@@ -7,6 +7,8 @@ import { gridMove } from './grid-nav.ts';
 export interface Picker {
   /** Shows a matchup in the slots, e.g. after loading one from the URL. */
   show(matchup: Matchup): void;
+  /** True while the ball dialog is open (the game pauses the match meanwhile). */
+  isOpen(): boolean;
 }
 
 type Slot = 'a' | 'b';
@@ -162,6 +164,7 @@ export function createPicker(
 
   render();
   return {
+    isOpen: () => dialog.open,
     show(matchup) {
       if (byId.has(matchup.a)) picks.a = matchup.a;
       if (byId.has(matchup.b)) picks.b = matchup.b;
