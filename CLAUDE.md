@@ -4,6 +4,8 @@ Browser auto-battler: balls with different abilities bounce around a square aren
 bars until one wins. No player control; you pick balls and watch. This is a portfolio piece, so
 code quality matters as much as features.
 
+Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`.
+
 Stack: TypeScript (strict), Vite, pnpm, Vitest, ESLint (flat config) + Prettier, Husky +
 lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 
