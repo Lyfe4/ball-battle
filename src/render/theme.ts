@@ -45,6 +45,17 @@ export const theme = {
   shockDash: [9, 7] as readonly number[],
   shockStepTicks: 4,
   /**
+   * A slowed ball (ADR 0012): a thin solid ring in pale ice, with short frost ticks pointing
+   * outwards. Still, like ice. Further out than the shock ring when a ball has both.
+   */
+  slowRing: '#e0f2fe',
+  slowRingWidth: 3,
+  slowRingAlpha: 0.75,
+  slowTicks: 12,
+  slowTickLength: 7,
+  /** Each further status ring sits this much further out than the one inside it. */
+  statusRingSpacing: 9,
+  /**
    * Ball designs (src/render/ball-designs): flat shapes in the ball's own colour plus one accent
    * per ball, keyed by definition id. White is only for small highlights.
    */
@@ -54,6 +65,7 @@ export const theme = {
     vampire: '#1e1029',
     archer: '#164e63',
     storm: '#1e3a8a',
+    frost: '#0c4a6e',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',

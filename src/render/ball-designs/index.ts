@@ -1,5 +1,6 @@
 import { archerDesign } from './archer.ts';
 import { brawlerDesign } from './brawler.ts';
+import { frostDesign } from './frost.ts';
 import { speedsterDesign } from './speedster.ts';
 import { stormDesign } from './storm.ts';
 import type { BallDesign } from './types.ts';
@@ -15,4 +16,5 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['vampire', vampireDesign],
   ['archer', archerDesign],
   ['storm', stormDesign],
+  ['frost', frostDesign],
 ]);

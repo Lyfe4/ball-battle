@@ -137,9 +137,11 @@ export function drawWinnerRing(
 }
 
 /**
- * Status effects on a ball (ADR 0009), read from its state. Shocked: a thin dashed ring just
- * outside the edge, in a pale storm blue, whose dashes step along with the sim tick for a faint
- * crackle (still with reduced motion).
+ * Status effects on a ball (ADR 0009, 0012), read from its state, as thin rings just outside the
+ * edge, one per status, each further out than the last:
+ * - shocked: dashed, pale storm blue; the dashes step with the sim tick for a faint crackle (still
+ *   with reduced motion);
+ * - slowed: solid, pale ice, with short frost ticks pointing outwards; always still.
  */
 export function drawStatuses(
   ctx: CanvasRenderingContext2D,
@@ -147,10 +149,22 @@ export function drawStatuses(
   tick: number,
   reducedMotion: boolean,
 ): void {
-  if (!hasStatus(ball, 'shocked')) return;
+  let radius = ball.radius + theme.shockRingGap;
+  if (hasStatus(ball, 'shocked')) {
+    drawShockRing(ctx, ball, radius, reducedMotion ? 0 : Math.floor(tick / theme.shockStepTicks));
+    radius += theme.statusRingSpacing;
+  }
+  if (hasStatus(ball, 'slowed')) drawSlowRing(ctx, ball, radius);
+}
+
+function drawShockRing(
+  ctx: CanvasRenderingContext2D,
+  ball: BallState,
+  radius: number,
+  step: number,
+): void {
   const dash = theme.shockDash;
   const period = dash.reduce((sum, length) => sum + length, 0);
-  const step = reducedMotion ? 0 : Math.floor(tick / theme.shockStepTicks);
   ctx.save();
   ctx.globalAlpha = theme.shockRingAlpha;
   ctx.strokeStyle = theme.shockRing;
@@ -159,7 +173,27 @@ export function drawStatuses(
   // Half a dash period per step: the gaps jump, which reads as crackle rather than spin.
   ctx.lineDashOffset = (step * period) / 2;
   ctx.beginPath();
-  ctx.arc(ball.position.x, ball.position.y, ball.radius + theme.shockRingGap, 0, Math.PI * 2);
+  ctx.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSlowRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: number): void {
+  const { x, y } = ball.position;
+  ctx.save();
+  ctx.globalAlpha = theme.slowRingAlpha;
+  ctx.strokeStyle = theme.slowRing;
+  ctx.lineWidth = theme.slowRingWidth;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  for (let index = 0; index < theme.slowTicks; index++) {
+    const angle = (index / theme.slowTicks) * Math.PI * 2;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    ctx.moveTo(x + dx * radius, y + dy * radius);
+    ctx.lineTo(x + dx * (radius + theme.slowTickLength), y + dy * (radius + theme.slowTickLength));
+  }
   ctx.stroke();
   ctx.restore();
 }

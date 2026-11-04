@@ -10,6 +10,7 @@ import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
 import { getDefinition } from '../sim/definitions.ts';
+import type { StatusKind } from '../sim/status.ts';
 import type { AbilityState, BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 
@@ -27,8 +28,8 @@ interface Tile {
   readonly defeated?: boolean;
   readonly heal?: number;
   readonly flash?: number;
-  /** Shocked (ADR 0009): drawn with the status ring, as in a match. */
-  readonly shocked?: boolean;
+  /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
+  readonly statuses?: readonly StatusKind[];
 }
 
 /** Ability state for a cooldown ball `charge` of the way to its next shot or strike. */
@@ -118,12 +119,32 @@ const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
+    'Frost: a faceted ice crystal; the facets drop at small size',
+    [
+      { label: 'idle', id: 'frost' },
+      { label: 'hit flash', id: 'frost', flash: 0.6 },
+      { label: 'mirror B', id: 'frost', repeat: true },
+      { label: 'defeated', id: 'frost', defeated: true },
+    ],
+  ],
+  [
     'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
-    ['brawler', 'speedster', 'vampire', 'archer', 'storm'].map((id): Tile => ({
+    ['brawler', 'speedster', 'vampire', 'archer', 'storm', 'frost'].map((id): Tile => ({
       label: id,
       id,
-      shocked: true,
+      statuses: ['shocked'],
     })),
+  ],
+  [
+    'Slowed (ADR 0012): a still ice ring with frost ticks; it cruises slower',
+    [
+      ...['brawler', 'speedster', 'vampire', 'archer', 'storm'].map((id): Tile => ({
+        label: id,
+        id,
+        statuses: ['slowed'],
+      })),
+      { label: 'shocked + slowed', id: 'vampire', statuses: ['shocked', 'slowed'] },
+    ],
   ],
 ];
 
@@ -162,8 +183,9 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
  * picks by on-screen size, as in a match.
  */
 function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
-  // Room for the status ring outside the edge when there is one.
-  const cssSize = Math.ceil(radiusPx * 2 + (tile.shocked === true ? 28 : 12));
+  // Room for the status rings outside the edge when there are any.
+  const rings = tile.statuses?.length ?? 0;
+  const cssSize = Math.ceil(radiusPx * 2 + (rings === 0 ? 12 : 16 + rings * 16));
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
   const definition = getDefinition(BALL_LOOKUP, tile.id);
@@ -180,17 +202,19 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     cssPixelsPerUnit: radiusPx / ball.radius,
     ...(detail === undefined ? {} : { detail }),
   });
-  if (tile.shocked === true) {
-    const shocked = {
-      ...ball,
-      statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: TICK + 1, sinceTick: TICK }],
-    } as const;
-    drawStatuses(ctx, shocked, TICK, false);
+  if (rings > 0) {
+    const statuses = (tile.statuses ?? []).map((kind) => ({
+      kind,
+      sourceId: 'ball-1',
+      expiresTick: TICK + 1,
+      sinceTick: TICK,
+    }));
+    drawStatuses(ctx, { ...ball, statuses }, TICK, false);
   }
   return canvas;
 }
 
-/** All five balls in a real arena at phone width, as a match would show them. */
+/** Every ball in a real arena at phone width, as a match would show them. */
 function phoneArena(): HTMLElement {
   const cssSize = 340;
   const { canvas, ctx } = canvasFor(cssSize);
@@ -198,8 +222,9 @@ function phoneArena(): HTMLElement {
     { x: 180, y: 200 },
     { x: 500, y: 180 },
     { x: 820, y: 220 },
-    { x: 320, y: 700 },
-    { x: 700, y: 720 },
+    { x: 200, y: 720 },
+    { x: 500, y: 760 },
+    { x: 800, y: 700 },
   ];
   const world = createWorld(4, BALLS);
   const balls = world.balls.map((ball, index) => ({
