@@ -11,6 +11,12 @@ the Brawler. A counter needs a mechanic that matters against one ball more than 
 the Storm against the Vampire that is the obvious one: lightning stops a target from healing for
 a while, and only the Vampire heals.
 
+_Revised the same day, before any release: a full heal block applied by lightning alone moved
+Storm vs Vampire only from 54.5% to about 56%, because lightning rarely lands just before the
+Vampire's contact heals. Also blocking on contact cancelled every lifesteal against the Storm
+(75.8/24.1, past the 25/75 limit). So shocked now reduces heals by a tunable share, and both
+lightning and touching the Storm apply it. §5-8 describe the revised rule._
+
 Frost (slows) and Venom (poisons) on the roadmap need the same thing: an effect that sits on a
 ball for a while and changes what happens to it. So this is a general system with one kind
 implemented, not a one-off flag for the Vampire.
@@ -70,33 +76,44 @@ Full tick order:
 13. Cruise speed (ADR 0008).
 14. Contacts and match end.
 
-### 5. Shocked: heals restore nothing
+### 5. Shocked: heals are reduced
 
-While a ball is shocked, `heal` actions on it restore nothing. Its health is unchanged and there
-is no `healed` event: that event keeps meaning "health actually restored". Instead the sim emits
-`healBlocked { ballId, sourceId, amount, status }`, where `amount` is what the heal would have
-restored, so the renderer, sound and balance stats can show a lifesteal that was denied. A heal
-that would have restored nothing anyway (full health) emits nothing, shocked or not.
+While a ball is shocked, every `heal` action on it restores `SHOCK_HEAL_REDUCTION` less (a single
+share in `src/sim/status.ts`): the restored amount is `round(heal × (1 − SHOCK_HEAL_REDUCTION))`,
+still capped at max health, so health stays whole.
+
+- The `healed` event keeps meaning "health actually restored" and reports the reduced amount; it
+  is omitted when nothing is restored.
+- Just before it, the sim emits `healReduced { ballId, sourceId, lost, status }`, where `lost` is
+  the health the status took away, so the renderer, sound and balance stats can show a lifesteal
+  that was cut.
+- A heal that would have restored nothing anyway (full health) emits nothing, shocked or not.
 
 ### 6. Events
 
-- `statusApplied { ballId, sourceId, status, expiresTick, refreshed }`, where the status lands
-  (in the hook phase that applied it, or right after the zone strike's damage).
+- `statusApplied { ballId, sourceId, status, expiresTick, refreshed }`, where the status lands (in
+  the hook phase that applied it, or right after the zone strike's damage).
 - `statusExpired { ballId, status }`, in the expiry phase.
-- `healBlocked`, in place of the `healed` event the heal would have produced.
+- `healReduced`, immediately before the `healed` event of the heal it reduced.
 
 ### 7. The Storm shocks
 
-Every Storm zone carries `shocked` for `SHOCK_TICKS` (90 ticks, 1.5 s, tunable in `storm.ts`).
-Every ball a strike hits is shocked; the owner and balls outside the zone are not. Against every
-ball except the Vampire this changes nothing, because nothing else heals.
+The Storm applies `shocked` for `SHOCK_TICKS` (tunable in `storm.ts`) in two ways:
+
+- **Lightning:** every Storm zone carries the status, so every ball a strike hits is shocked
+  (never the owner, never a ball outside the zone).
+- **Contact:** the Storm's `onHitBall` shocks the ball it touches, through an `applyStatus`
+  action. `onHitBall` runs before `onDamageDealt`, so the Vampire's lifesteal from that very
+  exchange is already reduced.
+
+Against every ball except the Vampire this changes nothing, because nothing else heals.
 
 ### 8. Rendering
 
 A shocked ball gets a thin dashed ring just outside its edge in a pale storm blue, read from
 `ball.statuses` (state, not an effect). The dashes step with the sim tick for a faint crackle and
-hold still under reduced motion (ADR 0007). A blocked heal shows a short dim pulse in place of
-the green heal ring.
+hold still under reduced motion (ADR 0007). A reduced heal still shows its heal effect for what
+it restored, plus a short dim grey ring that shrinks inward, so it reads as "healed, but less".
 
 ## Consequences
 
