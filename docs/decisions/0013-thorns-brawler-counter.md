@@ -60,7 +60,7 @@ by about 10 points, so the share is tuned to 0.35, between the two grid steps.
 | ------------------- | -------- | ----------- | ----- |
 | Thorns vs Brawler   | Thorns   | 68.1 / 31.3 | WARN  |
 | Archer vs Thorns    | Archer   | 64.7 / 35.2 | ok    |
-| Storm vs Thorns     | Storm    | 56.9 / 43.0 | NEAR  |
+| Storm vs Thorns     | Storm    | 56.9 / 42.7 | NEAR  |
 | Thorns vs Speedster | Even     | 53.9 / 45.6 | WARN  |
 | Thorns vs Vampire   | Even     | 48.0 / 50.6 | ok    |
 | Thorns vs Frost     | Even     | 48.1 / 50.1 | ok    |
@@ -81,5 +81,9 @@ below its band, inside the noise allowance.
   the counter comes from a mechanic anyone can see: the hardest hits bounce back hardest.
 - Positive: Thorns' unfavoured matchups come from the same mechanic (ranged attacks are never
   reflected), so its identity reads in both directions.
+- Negative: Thorns mirrors draw 11.2% of the time, second only to the Speedster mirror (17%):
+  both reflections land in the same tick, so two Thorns can knock each other out at once.
+  Mirrors are outside the draw target, and the mirror-draw decision in `docs/vision.md` (replay
+  with a derived seed) covers it.
 - Negative: the Brawler's overall win rate drops to 45.6%, the lowest it has been. It still sits
   inside 40-60%, but a future counter aimed at the Brawler would need care.
