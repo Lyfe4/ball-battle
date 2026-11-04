@@ -7,6 +7,9 @@ import type { CounterEntry } from './counter-map.ts';
  * the rest: the Berserker's health pool soaks the Speedster's burst but feeds the Vampire; the
  * Speedster outruns the Sniper's locked line, whose shots never touch Thorns' spikes; the Quake's
  * short warning can't be outrun by the Speedster, and the Frost's slow keeps it off the walls.
+ * ADR 0016 adds pair-specific interactions: poison numbs the Berserker's rage (Venom over it), the
+ * Berserker can't be slowed (it over the Frost), and the Quake's shockwaves stagger the balls that
+ * aim (it over the Archer, Storm and Sniper).
  */
 export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
@@ -48,14 +51,16 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'berserker',
     y: 'frost',
-    intended: 'even',
-    reason: 'The Frost hits hard and slows it, and every hit makes the Berserker hit back harder.',
+    intended: 'x',
+    reason:
+      'Rage burns off the cold: it can never be slowed, so the Frost’s one trick does nothing (ADR 0016).',
   },
   {
     x: 'berserker',
     y: 'venom',
-    intended: 'even',
-    reason: 'Poison wears it down between contacts, but every point lost makes its hits harder.',
+    intended: 'y',
+    reason:
+      'Poison numbs its rage, so it never hits hard while Venom keeps it poisoned (ADR 0016).',
   },
   {
     x: 'speedster',
@@ -138,14 +143,14 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'quake',
-    intended: 'even',
-    reason: 'Arrows chip it from range, but a shockwave hits the fragile Archer hard.',
+    intended: 'y',
+    reason: 'A shockwave staggers the Archer: it can’t aim, so it loses arrows (ADR 0016).',
   },
   {
     x: 'storm',
     y: 'quake',
-    intended: 'even',
-    reason: 'Both strike an area: lightning hits harder, shockwaves come more often.',
+    intended: 'y',
+    reason: 'A shockwave staggers the Storm: it can’t aim, so it calls less lightning (ADR 0016).',
   },
   {
     x: 'quake',
@@ -168,7 +173,8 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'sniper',
-    intended: 'even',
-    reason: 'The shot hits harder, but shockwaves come far more often.',
+    intended: 'x',
+    reason:
+      'A shockwave staggers the Sniper: its lock breaks without a shot, and it waits to aim again (ADR 0016).',
   },
 ];

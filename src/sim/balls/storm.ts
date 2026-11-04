@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestEnemy } from './targeting.ts';
 
@@ -49,6 +50,8 @@ export function randomOffset(random: () => number, radius: number): Vec2 {
  * position, off by a random amount, which strikes WARNING_TICKS later (ADR 0006). The strike, and
  * touching the Storm, shock for SHOCK_TICKS (ADR 0009). The sim clamps the zone into the arena.
  * The next strike is stored as an absolute tick, so onTick does nothing at all in between.
+ * Staggered (by a Quake's shockwave), it can't aim: a strike that comes due waits until the stagger
+ * ends (ADR 0016). A zone already called still strikes.
  */
 export const storm = defineBall<StormState>({
   id: 'storm',
@@ -67,7 +70,7 @@ export const storm = defineBall<StormState>({
       { kind: 'applyStatus', targetId: other.id, status: 'shocked', durationTicks: SHOCK_TICKS },
     ],
     onTick: ({ world, self, random }) => {
-      if (world.tick < self.abilityState.nextStrikeTick) return [];
+      if (world.tick < self.abilityState.nextStrikeTick || hasStatus(self, 'staggered')) return [];
       const target = nearestEnemy(self, world.balls);
       if (target === undefined) return [];
       const offset = randomOffset(random, MAX_OFFSET);

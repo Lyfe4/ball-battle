@@ -9,6 +9,7 @@ import type { CounterEntry } from './counter-map.ts';
  * (docs/vision.md, ADR 0013). Frost
  * (ADR 0012) has one favoured and one unfavoured matchup from its mechanics and is even against
  * the rest. Venom (ADR 0014) is favoured against Thorns and unfavoured against the Vampire.
+ * ADR 0016 adds the Archer over the Frost and the Frost over Venom.
  */
 export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
@@ -99,8 +100,9 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'archer',
-    intended: 'even',
-    reason: 'Arrows land on a slow target, but Frost wins the contacts it gets.',
+    intended: 'y',
+    reason:
+      'Leading arrows land most often on the slowest ball, and the Archer rarely touches it (ADR 0016).',
   },
   {
     x: 'thorns',
@@ -177,7 +179,8 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'frost',
-    intended: 'even',
-    reason: 'Long fights feed the poison, but the Frost hits hard and slows Venom.',
+    intended: 'y',
+    reason:
+      'The cold wears poison off the Frost sooner, and it hits Venom hard and slows it (ADR 0016).',
   },
 ];

@@ -1,6 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { rotateByHalfTan } from '../bounce-variance.ts';
 import { defineBall } from '../define-ball.ts';
+import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestEnemy } from './targeting.ts';
 
@@ -68,7 +69,8 @@ export function leadTarget(
  * A glass cannon: weak in contact, but every COOLDOWN_TICKS it shoots an arrow at the nearest
  * enemy, leading its aim to where the enemy will be when the arrow arrives, with a small random
  * spread. The next shot is stored as an absolute
- * tick, so the hook does nothing at all between shots.
+ * tick, so the hook does nothing at all between shots. Staggered (by a Quake's shockwave), it can't
+ * aim: a shot that comes due waits until the stagger ends (ADR 0016).
  */
 export const archer = defineBall<ArcherState>({
   id: 'archer',
@@ -82,7 +84,7 @@ export const archer = defineBall<ArcherState>({
   initialAbilityState: { nextShotTick: FIRST_SHOT_DELAY_TICKS },
   hooks: {
     onTick: ({ world, self, random }) => {
-      if (world.tick < self.abilityState.nextShotTick) return [];
+      if (world.tick < self.abilityState.nextShotTick || hasStatus(self, 'staggered')) return [];
       const target = nearestEnemy(self, world.balls);
       if (target === undefined) return [];
 
