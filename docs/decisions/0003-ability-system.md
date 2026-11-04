@@ -25,7 +25,7 @@ it wants to happen. Hooks never mutate anything; `step` applies the actions.
 | `damage`          | Removes health from a target (floors at 0, no lethal tiebreak) |
 | `heal`            | Restores health to a target, clamped to its `maxHealth`        |
 | `setVelocity`     | Replaces the hook owner's velocity                             |
-| `scaleVelocity`   | Multiplies the hook owner's velocity                           |
+| `scaleVelocity`   | Multiplies the hook owner's velocity (removed by ADR 0008)     |
 | `setAbilityState` | Replaces the hook owner's ability state                        |
 
 Actions on a defeated target are ignored, so a heal never revives. An unknown target id or a

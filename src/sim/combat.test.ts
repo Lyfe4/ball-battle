@@ -58,12 +58,13 @@ describe('contact damage', () => {
   });
 
   it('counts contact that lasts several ticks as one collision', () => {
-    // Overlapping and moving together: they stay touching for the whole run.
-    const together = withBalls(base, [
-      { position: { x: 300, y: 500 }, velocity: { x: 120, y: 0 } },
-      { position: { x: 370, y: 500 }, velocity: { x: 120, y: 0 } },
+    // Two equally fast balls, overlapping and moving together: once separated they stay touching
+    // (within the contact slop) for the whole run, which ends before the front one reaches a wall.
+    const pair = withBalls(createWorld(1, [red, red]), [
+      { position: { x: 200, y: 500 }, velocity: { x: red.speed, y: 0 } },
+      { position: { x: 270, y: 500 }, velocity: { x: red.speed, y: 0 } },
     ]);
-    const { world, events } = run(together, 120);
+    const { world, events } = run(pair, 30);
     expect(events.filter((event) => event.type === 'damage')).toHaveLength(2);
     expect(world.contacts).toStrictEqual([pairKey('ball-0', 'ball-1')]);
   });

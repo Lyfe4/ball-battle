@@ -1,7 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
-import type { BallState, Vec2 } from '../types.ts';
-import { scale } from '../vec2.ts';
+import type { BallState } from '../types.ts';
 
 export type SpeedsterState = Readonly<{ stacks: number }>;
 
@@ -23,16 +22,10 @@ export function stacksOf(ball: BallState): number {
   return typeof stacks === 'number' ? stacks : 0;
 }
 
-/** Same direction, new speed. A stationary ball stays stationary. */
-function withSpeed(velocity: Vec2, speed: number): Vec2 {
-  const length = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-  return length === 0 ? velocity : scale(velocity, speed / length);
-}
-
 /**
- * Every wall bounce adds a stack (a corner is two), up to MAX_STACKS, and sets its speed for that
- * many stacks. Hitting a ball cashes the stacks in as bonus damage, then resets stacks and speed.
- * The speed is set rather than multiplied, so collisions can never compound it past the cap.
+ * Every wall bounce adds a stack (a corner is two), up to MAX_STACKS. Hitting a ball cashes the
+ * stacks in as bonus damage and resets them. Its speed follows its stacks through `cruiseSpeed`
+ * (ADR 0008): the hooks only change stacks, so nothing can compound the speed past the cap.
  */
 export const speedster = defineBall<SpeedsterState>({
   id: 'speedster',
@@ -44,25 +37,19 @@ export const speedster = defineBall<SpeedsterState>({
   maxHealth: 70,
   contactDamage: 14,
   initialAbilityState: { stacks: 0 },
+  cruiseSpeed: (state, stats) => speedForStacks(stats.speed, state.stacks),
   hooks: {
-    onWallHit: ({ self, stats, bounces }) => {
+    onWallHit: ({ self, bounces }) => {
       const stacks = Math.min(MAX_STACKS, self.abilityState.stacks + bounces);
       if (stacks === self.abilityState.stacks) return [];
-      return [
-        { kind: 'setAbilityState', state: { stacks } },
-        {
-          kind: 'setVelocity',
-          velocity: withSpeed(self.velocity, speedForStacks(stats.speed, stacks)),
-        },
-      ];
+      return [{ kind: 'setAbilityState', state: { stacks } }];
     },
-    onHitBall: ({ self, stats, other }) => {
+    onHitBall: ({ self, other }) => {
       const { stacks } = self.abilityState;
       if (stacks === 0) return [];
       return [
         { kind: 'damage', targetId: other.id, amount: stacks * DAMAGE_PER_STACK },
         { kind: 'setAbilityState', state: { stacks: 0 } },
-        { kind: 'setVelocity', velocity: withSpeed(self.velocity, stats.speed) },
       ];
     },
   },

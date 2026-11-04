@@ -6,7 +6,7 @@ import { createWorld } from '../world.ts';
 import { archer, ARROW_DAMAGE } from './archer.ts';
 import { brawler } from './brawler.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
-import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
+import { DAMAGE_PER_STACK, MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE } from './storm.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
 
@@ -102,6 +102,23 @@ describe('the ball roster', () => {
     },
     ROSTER_TIMEOUT_MS,
   );
+
+  it('keeps the fastest possible closing speed under the pass-through margin, by construction', () => {
+    // ADR 0008: every ball cruises at a fixed speed, so two balls can close at most as fast as the
+    // sum of their highest cruise speeds. Listed per ball, so a speed buff fails here at once.
+    const topCruiseSpeed: Readonly<Record<string, number>> = {
+      brawler: brawler.speed,
+      speedster: speedForStacks(speedster.speed, MAX_STACKS),
+      vampire: vampire.speed,
+      archer: archer.speed,
+      storm: storm.speed,
+    };
+    expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
+    for (const [a, b] of matchups) {
+      const closing = (topCruiseSpeed[a.id] ?? Infinity) + (topCruiseSpeed[b.id] ?? Infinity);
+      expect(closing / ((a.radius + b.radius) / DT)).toBeLessThan(0.6);
+    }
+  });
 
   it(
     'never lets two balls close faster than the pass-through limit',

@@ -123,21 +123,22 @@ describe('ability hooks', () => {
   });
 
   it('applies actions in the order returned', () => {
+    // The last setVelocity wins. Speed returns to cruise at the end of the tick; direction stays.
     const forwards = probe({
       onTick: () => [
         { kind: 'setVelocity', velocity: { x: 100, y: 0 } },
-        { kind: 'scaleVelocity', factor: 2 },
+        { kind: 'setVelocity', velocity: { x: 0, y: 100 } },
       ],
     });
     const backwards = probe({
       onTick: () => [
-        { kind: 'scaleVelocity', factor: 2 },
+        { kind: 'setVelocity', velocity: { x: 0, y: 100 } },
         { kind: 'setVelocity', velocity: { x: 100, y: 0 } },
       ],
     });
     const start = { x: 300, y: 300, vx: 50, vy: 0 };
-    expect(play(setup(forwards, start), forwards, 1).world.balls[0]?.velocity.x).toBe(200);
-    expect(play(setup(backwards, start), backwards, 1).world.balls[0]?.velocity.x).toBe(100);
+    expect(play(setup(forwards, start), forwards, 1).world.balls[0]?.velocity.x).toBe(0);
+    expect(play(setup(backwards, start), backwards, 1).world.balls[0]?.velocity.y).toBe(0);
   });
 
   it('shows every hook in a phase the same snapshot', () => {
@@ -188,7 +189,7 @@ describe('ability hooks', () => {
     const { events } = play(setup(idle, { x: 300, y: 300, vx: 0, vy: 0 }), idle, 5);
     expect(events.filter((event) => event.type === 'abilityTriggered')).toStrictEqual([]);
 
-    const busy = probe({ onTick: () => [{ kind: 'scaleVelocity', factor: 1 }] });
+    const busy = probe({ onTick: () => [{ kind: 'setVelocity', velocity: { x: 0, y: 0 } }] });
     const result = play(setup(busy, { x: 300, y: 300, vx: 0, vy: 0 }), busy, 2);
     expect(result.events).toStrictEqual([
       { type: 'abilityTriggered', tick: 1, ballId: 'ball-0', hook: 'onTick' },

@@ -70,9 +70,15 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
 - Within a tick: onTick, move (with a seeded turn on wall bounces, ADR 0004), onWallHit, collide,
-  contact damage (new contacts only), onHitBall, projectiles move and resolve (ADR 0005), zones
-  due this tick strike (ADR 0006), onDamageDealt, defeat, match end. Events are emitted in that order. Every hook in a phase sees
-  the same snapshot; actions are applied afterwards. The full order is documented on `step`.
+  contact damage (new contacts only, scaled by directness, ADR 0008), onHitBall, projectiles move
+  and resolve (ADR 0005), zones due this tick strike (ADR 0006), onDamageDealt, defeat, cruise
+  speed (ADR 0008), match end. Events are emitted in that order. Every hook in a phase sees the
+  same snapshot; actions are applied afterwards. The full order is documented on `step`.
+- Every ball keeps its own speed: the tick ends by rescaling each live ball's velocity to its
+  cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
+  declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.
+- Every ball uses `STANDARD_BALL_RADIUS`; a different size is a design decision listed as an
+  explicit exception in the roster's identity tests (ADR 0008).
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
   its fixture balls `red` and `blue`, which have no abilities and fixed stats, so core tests don't
   change when real balls are rebalanced. Test-only balls with hooks are declared in the test.

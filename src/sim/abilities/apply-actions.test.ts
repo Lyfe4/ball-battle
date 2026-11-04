@@ -104,8 +104,7 @@ describe('applyActions', () => {
       world.balls,
       'ball-1',
       [
-        { kind: 'setVelocity', velocity: { x: 3, y: 4 } },
-        { kind: 'scaleVelocity', factor: 2 },
+        { kind: 'setVelocity', velocity: { x: 6, y: 8 } },
         { kind: 'setAbilityState', state: { charged: true } },
       ],
       definitions,
@@ -127,7 +126,13 @@ describe('applyActions', () => {
       ),
     ).toThrow(/unknown ball/);
     expect(() =>
-      apply(world.balls, 'ball-0', [{ kind: 'scaleVelocity', factor: Infinity }], definitions, 1),
+      apply(
+        world.balls,
+        'ball-0',
+        [{ kind: 'setVelocity', velocity: { x: Infinity, y: 0 } }],
+        definitions,
+        1,
+      ),
     ).toThrow(/non-finite/);
   });
 

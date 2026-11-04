@@ -53,6 +53,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
   readonly color: string;
   readonly initialAbilityState: S;
   readonly hooks: BallHooks<S>;
+  /**
+   * How fast the ball travels in a given ability state, for an ability that changes its speed
+   * (the Speedster's stacks). A pure query, not a hook. Every tick ends by rescaling each live
+   * ball's velocity to this speed (ADR 0008). Defaults to `speed`.
+   */
+  readonly cruiseSpeed?: (state: S, stats: BallStats) => number;
 }
 
 /** A ball as its own hooks see it: its ability state has the definition's type. */
@@ -103,10 +109,11 @@ export interface DamageDealtContext<S extends AbilityState = AbilityState> exten
 export type AbilityAction<S extends AbilityState = AbilityState> =
   | { readonly kind: 'damage'; readonly targetId: string; readonly amount: number }
   | { readonly kind: 'heal'; readonly targetId: string; readonly amount: number }
-  /** Own ball only. */
+  /**
+   * Own ball only. Its direction lasts; its magnitude only until the end of the tick, when the
+   * ball returns to its cruise speed (ADR 0008). Change speed through `cruiseSpeed` instead.
+   */
   | { readonly kind: 'setVelocity'; readonly velocity: Vec2 }
-  /** Own ball only. */
-  | { readonly kind: 'scaleVelocity'; readonly factor: number }
   /** Own ball only; replaces the whole state. */
   | { readonly kind: 'setAbilityState'; readonly state: S }
   /**

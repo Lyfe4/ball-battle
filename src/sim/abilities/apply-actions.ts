@@ -12,7 +12,6 @@ import type {
   Vec2,
   ZoneState,
 } from '../types.ts';
-import { scale } from '../vec2.ts';
 
 /** The parts of the world that actions can change. */
 export interface Scene {
@@ -110,12 +109,6 @@ export function applyActions(
         update(ownerId, (self) => ({
           ...self,
           velocity: assertFinite(action.velocity, ownerId),
-        }));
-        break;
-      case 'scaleVelocity':
-        update(ownerId, (self) => ({
-          ...self,
-          velocity: assertFinite(scale(self.velocity, action.factor), ownerId),
         }));
         break;
       case 'setAbilityState':
