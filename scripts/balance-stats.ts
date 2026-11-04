@@ -45,25 +45,28 @@ function playMatch(
   b: BallDefinition,
   seed: number,
   lookup: DefinitionLookup,
-): { winner: 0 | 1 | 'draw'; seconds: number; events: SimEvent[] } {
+  totals: readonly [BallTotals, BallTotals],
+): { winner: 0 | 1 | 'draw'; seconds: number } {
   let world: WorldState = createWorld(seed, [a, b]);
-  const events: SimEvent[] = [];
   // The time limit guarantees an end; the extra tick only guards against a sim bug looping forever.
   for (let i = 0; i <= MATCH_TIME_LIMIT_TICKS && world.match.status === 'running'; i++) {
     const result = step(world, lookup);
     world = result.world;
-    events.push(...result.events);
+    // Tallied tick by tick rather than collecting the whole match's events: same sums, far less
+    // memory traffic, which is what limits running many matches in parallel.
+    addEvents(totals[0], 'ball-0', result.events);
+    addEvents(totals[1], 'ball-1', result.events);
   }
   if (world.match.status !== 'finished') {
     throw new Error(`${a.id} vs ${b.id}, seed ${seed}: did not finish within the time limit`);
   }
   const { result, endTick } = world.match;
   const winner = result.kind === 'draw' ? 'draw' : result.winnerId === 'ball-0' ? 0 : 1;
-  return { winner, seconds: endTick / TICK_RATE, events };
+  return { winner, seconds: endTick / TICK_RATE };
 }
 
 /**
- * Plays `x` against `y` on seeds 0..seeds-1 in both slot orders, so any advantage from starting
+ * Plays `x` against `y` on seeds firstSeed..seeds-1 in both slot orders, so any advantage from starting
  * on one side cancels out. For a mirror match pass the same definition twice; slot order then
  * makes no difference, so it plays only once per seed.
  */
@@ -72,6 +75,7 @@ export function playPair(
   y: BallDefinition,
   seeds: number,
   roster: readonly BallDefinition[],
+  firstSeed = 0,
 ): PairResult {
   const lookup = indexDefinitions([
     ...roster.filter((ball) => ball.id !== x.id && ball.id !== y.id),
@@ -94,14 +98,15 @@ export function playPair(
         ] as const);
   const balls = [x, y] as const;
   for (const [first, second] of orders) {
-    for (let seed = 0; seed < seeds; seed++) {
-      const match = playMatch(balls[first], balls[second], seed, lookup);
+    for (let seed = firstSeed; seed < seeds; seed++) {
+      const match = playMatch(balls[first], balls[second], seed, lookup, [
+        result.totals[first],
+        result.totals[second],
+      ]);
       result.games++;
       result.lengths.push(match.seconds);
       if (match.winner === 'draw') result.draws++;
       else result.wins[match.winner === 0 ? first : second]++;
-      addEvents(result.totals[first], 'ball-0', match.events);
-      addEvents(result.totals[second], 'ball-1', match.events);
     }
   }
   return result;
@@ -123,4 +128,32 @@ export function median(values: readonly number[]): number {
   return sorted.length % 2 === 1
     ? (sorted[middle] ?? 0)
     : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
+/**
+ * Combines results for the same pair played on different seed ranges. Every field is a count, a
+ * whole-number sum or a list of lengths (only ever used through median), so the merged result is
+ * exactly what one run over all the seeds gives.
+ */
+export function mergePairResults(parts: readonly PairResult[]): PairResult {
+  const merged: PairResult = {
+    wins: [0, 0],
+    draws: 0,
+    games: 0,
+    lengths: [],
+    totals: [emptyTotals(), emptyTotals()],
+  };
+  for (const part of parts) {
+    merged.wins[0] += part.wins[0];
+    merged.wins[1] += part.wins[1];
+    merged.draws += part.draws;
+    merged.games += part.games;
+    merged.lengths.push(...part.lengths);
+    for (const index of [0, 1] as const) {
+      merged.totals[index].contactDamage += part.totals[index].contactDamage;
+      merged.totals[index].abilityDamage += part.totals[index].abilityDamage;
+      merged.totals[index].healed += part.totals[index].healed;
+    }
+  }
+  return merged;
 }
