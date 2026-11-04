@@ -9,6 +9,13 @@ import { BALLS } from '../src/sim/balls/index.ts';
 import type { BallDefinition } from '../src/sim/types.ts';
 import { parseBalanceArgs, USAGE } from './balance-args.ts';
 import { runJobs, type PairJob } from './balance-jobs.ts';
+import {
+  checkCounter,
+  COUNTER_BANDS,
+  counterFor,
+  HARD_WORST_MATCHUP,
+  type CounterVerdict,
+} from './counter-map.ts';
 import { median, withMaxHealth, type BallTotals, type PairResult } from './balance-stats.ts';
 
 const SENSITIVITY_FACTORS = [0.95, 1.05] as const;
@@ -112,6 +119,38 @@ console.log(
   `  ${'Matchup'.padEnd(24)} ${'Wins'.padEnd(15)}  Draw   Median  Sensitivity (±5% health)`,
 );
 const sensitivityLines: string[] = [];
+const counterLines: string[] = [];
+let counterMapOk = true;
+
+const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
+  ok: 'ok  ',
+  warn: 'WARN',
+  miss: 'MISS',
+};
+
+/** One counter-map line for a pair, and whether it stays in band (a warning still passes). */
+function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): string {
+  const entry = counterFor(x.id, y.id);
+  if (entry === undefined) {
+    counterMapOk = false;
+    return `  MISS ${`${x.name} vs ${y.name}`.padEnd(24)} not in the counter map`;
+  }
+  // Rates for the entry's own x and y, whichever order the matrix plays them in.
+  const xRate = base.wins[entry.x === x.id ? 0 : 1] / base.games;
+  const yRate = base.wins[entry.x === x.id ? 1 : 0] / base.games;
+  const verdict = checkCounter(entry, xRate, yRate);
+  if (verdict === 'miss') counterMapOk = false;
+  const name = (id: string) => BALLS.find((ball) => ball.id === id)?.name ?? id;
+  const intended =
+    entry.intended === 'even'
+      ? 'even'
+      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured`;
+  const rates =
+    entry.intended === 'even'
+      ? `${pct(xRate).trim()} / ${pct(yRate).trim()}`
+      : pct(entry.intended === 'x' ? xRate : yRate).trim();
+  return `  ${VERDICT_LABEL[verdict]} ${`${name(entry.x)} vs ${name(entry.y)}`.padEnd(24)} ${intended.padEnd(20)} ${rates}`;
+}
 
 for (const [x, y] of pairs) {
   const base = nextResult();
@@ -140,6 +179,7 @@ for (const [x, y] of pairs) {
     }
   }
   worstSensitivity = Math.max(worstSensitivity, swing * 100);
+  counterLines.push(counterLine(x, y, base));
   sensitivityLines.push(`  ${x.name} vs ${y.name}`, ...details.map((line) => `      ${line}`));
 
   console.log(
@@ -154,6 +194,13 @@ for (const ball of mirrors) {
     `  ${`${ball.name} vs ${ball.name}`.padEnd(24)} ${pct(mirror.wins[0], mirror.games)} / ${pct(mirror.wins[1], mirror.games)}  ${pct(mirror.draws, mirror.games)}  ${median(mirror.lengths).toFixed(1).padStart(5)} s`,
   );
 }
+
+const band = ([low, high]: readonly [number, number]) =>
+  `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
+console.log(
+  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN within ${COUNTER_BANDS.warnWithin * 100} pts of an edge)`,
+);
+console.log(counterLines.join('\n'));
 
 console.log('\n  Sensitivity detail: win-rate change for the first ball of each matchup');
 console.log(sensitivityLines.join('\n'));
@@ -186,6 +233,10 @@ console.log(`  ${check(ballsInRange)} ${who} 40-60% overall`);
 console.log(
   `  ${check(worstShare >= TARGETS.worstMatchup)} no matchup worse than 20/80 (worst side ${pct(worstShare).trim()})`,
 );
+console.log(
+  `  ${check(worstShare >= HARD_WORST_MATCHUP)} no matchup worse than 25/75 (hard limit, docs/vision.md)`,
+);
+console.log(`  ${check(counterMapOk)} every pair in its counter-map band`);
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
   `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
