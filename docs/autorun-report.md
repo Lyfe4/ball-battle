@@ -191,3 +191,63 @@ Unsure:
 Questions:
 
 3. Should the match pause while the ball dialog is open?
+
+## Stage 4: counter map and mirror draws proposal
+
+Plan: write `docs/counters.md` only. No stat, rule or target changes.
+
+Done: `docs/counters.md` with the current matrix, a proposed counter map, a proposed balance
+check, levers per pair, measured mirror draw rates with their causes, and three options for
+resolving draws.
+
+- **Counter map:** the existing triangle (Speedster > Archer > Vampire > Speedster) plus a
+  second one through the Brawler and Storm: **Brawler > Speedster > Storm > Brawler**. Vampire vs
+  Brawler, Archer vs Brawler, Vampire vs Storm and Archer vs Storm are even. Every ball gets one
+  or two favoured and one or two unfavoured matchups. Three matchups would have to move: Brawler
+  vs Speedster (51 → 58+), Storm vs Brawler (54 → 58+), Brawler vs Archer (43 → 45-55).
+- **Check:** a `COUNTER_MAP` next to the targets; favoured side 58-70%, even 45-55%, a warning
+  within 2 points of an edge (standard error is ±1.6 points at 500 seeds).
+- **Levers:** a shorter Storm warning (moves both Storm matchups the intended way, per ADR 0006's
+  measurements), a smaller Speedster bonus or more Brawler health for Brawler vs Speedster, and
+  Brawler health or Archer arrow damage for Brawler vs Archer.
+- **Mirror draws (500 seeds):** Brawler 4.6%, Speedster 17.0%, Vampire 2.4%, Archer 5.0%,
+  Storm 3.4% (non-mirrors 0.0-0.6%). None from the time limit. The causes I found: Speedster
+  stack bonuses (ability damage, outside the lethal tiebreak) finishing both balls on the same
+  tick (68 of 85 draws); Archer and Storm cooldowns starting on the same tick in a mirror, so
+  arrows and zones land together; equal raw contact damage for Brawler and Vampire.
+- **Options:** A, extend the tiebreak to every same-tick mutual knockout (more health at the
+  start of the tick survives on 1); it would resolve 81/85 Speedster and 80-95% of every mirror's
+  draws. B, replay a drawn round with a derived seed (no sim change; Speedster mirrors need a
+  second fight 17% of the time). C, desynchronise cooldowns with a seeded offset (fixes only the
+  Archer and Storm pattern). Recommended: A + B as a backstop.
+
+Decisions on your behalf:
+
+- Picked the second triangle over "Brawler > Vampire" for symmetry (it leaves no ball with two
+  counters and one favourable matchup). Both are in the doc.
+- The 58-70% favoured band: 58 is the low end of "around 60%"; 70 keeps 5 points of room under
+  the future 25/75 limit.
+- Measured draw causes and the effect of options A and B with throwaway scripts that only read
+  sim events; nothing was implemented.
+
+Unsure:
+
+- The second triangle's reasons are thinner than the first's: the Brawler has no ability, so
+  any counter it has comes from stats alone.
+- The suggested first tuning pass (Storm warning 48 → 45, Brawler health 64 → 66) is a starting
+  guess, not measured.
+
+Questions:
+
+4. Second triangle (Brawler > Speedster > Storm > Brawler) or Brawler > Vampire?
+5. Favoured 58-70% and even 45-55%: right bands?
+6. Mirror draws: A + B, or B alone (no sim change)?
+
+## All questions for you
+
+1. Shake on knockouts only, or on lightning hits too? (Stage 2)
+2. Keep hit-stops under reduced motion? (Stage 2)
+3. Pause the match while the ball dialog is open? (Stage 3)
+4. Second triangle or Brawler > Vampire? (Stage 4)
+5. Counter-map bands 58-70% / 45-55%? (Stage 4)
+6. Mirror draws: A + B, or B alone? (Stage 4)
