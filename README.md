@@ -64,6 +64,16 @@ The **Brawler** is the safe pick: even against everyone except Thorns. Every oth
 The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
 [ADR 0016](docs/decisions/0016-counter-density.md)).
 
+## Best of 3
+
+Switch to **Best of 3** to play a series against a bot: pick three different balls in order
+(round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
+takes the series. The bot's lineup stays hidden; each round reveals both balls as it starts. A
+drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
+series ends, the link holds both lineups and the series seed, e.g.
+`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5`, and replays it exactly
+([ADR 0017](docs/decisions/0017-best-of-3-series.md)).
+
 ## Running it
 
 Needs Node 24+ and pnpm 11 (`corepack enable` picks up the pinned version).
@@ -102,8 +112,9 @@ src/
   render/   draws sim state on a canvas; never changes it
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
-  ui/       plain-DOM picker and HUD: health, result, Replay / New match
-  app/      browser-side helpers: fixed-step and presentation clocks, seed and matchup parsing
+  sim/series.ts     best-of-3 rules and the bot, pure so a server can re-run a series
+  ui/       plain-DOM picker, lineup builder, scoreboard and HUD
+  app/      browser-side helpers: clocks, playback speed, seed, matchup and series links
   main.ts   wires it together with a requestAnimationFrame loop
 ```
 
@@ -141,10 +152,11 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0013: Thorns, the Brawler's counter](docs/decisions/0013-thorns-brawler-counter.md)
 , [ADR 0014: Venom, Thorns' counter](docs/decisions/0014-venom-thorns-counter.md)
 , [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md)
-and [ADR 0016: Counter density](docs/decisions/0016-counter-density.md).
+, [ADR 0016: Counter density](docs/decisions/0016-counter-density.md)
+and [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 60.30 kB JS (20.86 kB gzipped), 5.14 kB CSS. First version baseline: 5.05 kB
+Production bundle: 72.69 kB JS (24.98 kB gzipped), 7.88 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

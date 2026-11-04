@@ -1,7 +1,8 @@
 # Vision
 
-Where BallBattle is heading. Nothing here is implemented yet; it guides design and balance
-decisions so today's work doesn't paint the future into a corner.
+Where BallBattle is heading. It guides design and balance decisions so today's work doesn't paint
+the future into a corner. Step 1 of the planned order (best of 3 against a bot) is built
+(ADR 0017); the rest is not.
 
 ## Future mode: player vs player
 
@@ -42,7 +43,9 @@ blind picks. See Decisions below.
 ## Planned order
 
 1. **Round structure against a bot lineup, locally.** Pick 3 in order, the bot picks 3, play the
-   best of 3. No network.
+   best of 3. No network. **Done (2026-11-05, ADR 0017):** pure series logic in
+   `src/sim/series.ts` that a server can re-run, a replaceable random bot, the lineup builder and
+   scoreboard, and links that replay a whole series.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
    makes cheap.
@@ -90,10 +93,10 @@ damage, outside the lethal tiebreak) finishing both balls in one tick, mirrored 
 on the same tick, and equal raw contact damage.
 
 - **Decision: replay a drawn round with a new seed** (option B), derived from the round seed and
-  the attempt number so a server can regenerate and verify it. A cap (about 3 attempts) and a
-  final fallback are decided with the round structure.
-- It is **implemented with the best-of-3 round structure**, not before. **No sim change** for
-  draws now: the lethal tiebreak and cooldown timing stay as they are.
+  the attempt number so a server can regenerate and verify it. **Cap: 3 plays; if all three draw,
+  a coin flip seeded from the round seed decides the round, shown as sudden death** (ADR 0017).
+- **Implemented with the best-of-3 round structure** (ADR 0017). **No sim change** for draws:
+  the lethal tiebreak and cooldown timing stay as they are.
 - Rejected for now: a wider sim tiebreak for every same-tick mutual knockout (would resolve
   80-95% of mirror draws but changes the sim), and seeded cooldown offsets (only fixes the Archer
   and Storm pattern).

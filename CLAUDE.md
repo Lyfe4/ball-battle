@@ -4,7 +4,9 @@ Browser auto-battler: balls with different abilities bounce around a square aren
 bars until one wins. No player control; you pick balls and watch. This is a portfolio piece, so
 code quality matters as much as features.
 
-Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`.
+Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
+against a bot is built (ADR 0017): the rules are pure sim code in `src/sim/series.ts`, the same
+functions a server would run to verify a series, so keep them deterministic and DOM-free.
 
 Stack: TypeScript (strict), Vite, pnpm, Vitest, ESLint (flat config) + Prettier, Husky +
 lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
@@ -79,8 +81,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
 `docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md`,
 `docs/decisions/0012-slowed-poisoned-damage-taken.md`, `docs/decisions/0013-thorns-brawler-counter.md`,
-`docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md` and
-`docs/decisions/0016-counter-density.md`.
+`docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md`,
+`docs/decisions/0016-counter-density.md` and `docs/decisions/0017-best-of-3-series.md`.
 
 ## Conventions
 

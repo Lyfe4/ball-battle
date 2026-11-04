@@ -233,3 +233,77 @@ The README's counters section now lists every counter in plain language.
   Quake > Storm 57.5), and the existing Frost > Quake fell from 58.4 to 57.1 (NEAR). They pass, but
   they are soft.
 - Archer > Frost (see above): a real mechanism, but tipped into the band by a stat change.
+
+## Stage 3: best of 3 against a bot
+
+### Plan
+
+Pure series rules in `src/sim/series.ts` (a state machine of `nextMatch` / `recordOutcome`, plus a
+headless `playSeries` over the same two), seeds from `deriveSeed` with salts, a bot behind a
+`LineupBot` interface, a link format with safe fallbacks, then the UI: mode choice, lineup
+builder on the shared ball dialog, scoreboard, final screen. ADR 0017, vision step 1 marked done.
+
+### What was built
+
+- `src/sim/series.ts`: lineups of three different balls; round _i_ is A[i] vs B[i]; first to two,
+  so 2-0 stops; round seeds derived from the series seed and round number; a draw replays the round
+  on a seed derived from the round seed and the attempt number, up to 3 plays; three draws go to a
+  seeded coin flip shown as sudden death. `playSeries` is what a server would run.
+- `src/sim/bot.ts`: `LineupBot` with one implementation, `randomBot` (three different balls,
+  random order, seeded from the series seed).
+- `src/app/series-url.ts`: `?mode=bo3&la=…&lb=…&seed=N`. A full valid link replays the series;
+  anything invalid falls back to the lineup builder (prefilled with the player's lineup when that
+  part is valid).
+- `src/app/series-session.ts`: the browser's bookkeeping (each match recorded exactly once).
+- UI: a Quick match / Best of 3 choice (the speed toggle now uses the same segmented control),
+  `lineup-builder.ts` (three ordered slots with move up / down / remove, Choose balls opens the
+  shared `ball-dialog.ts`, extracted from the picker; taken balls show "In slot N"; Clear; Start
+  series), `series-panel.ts` (score, finished rounds, an `aria-live` status, Next round / Replay
+  round, then Rematch and New series). The HUD shows You / Bot and hides Replay / New match in a
+  series.
+- **Bug fix found on the way:** the frame on which a match result appears was never redrawn (the
+  950 ms result delay outlasts every effect, and the loop only drew while effects were active), so
+  the result text and its buttons could wait for an unrelated redraw. This predates the run; the
+  frame loop now also draws when the result appears.
+
+### Tests
+
+`series.test.ts` (seed derivation; 2-0 stop; round 3 at 1-1; draw replay on the next attempt seed;
+the 3-play cap and sudden death; no mutation; lineup validation; the bot's determinism and
+coverage; `playSeries` determinism; the match-by-match path equals `playSeries`; a real drawn
+Speedster mirror round replayed on a derived seed), `series-url.test.ts` (round trip; **a series
+replayed from its URL gives identical results**; case and spaces; seven kinds of invalid link;
+mode-only and quick-match cleanup), `series-session.test.ts`, `lineup-draft.test.ts`,
+`series-text.test.ts`. The 2-0 stop and draw-replay tests were shown to fail with the rule broken.
+
+Checked by hand in the browser: building a lineup (desktop and phone width), a full series from a
+link (`seed=5`, Frost/Quake/Venom vs Sniper/Archer/Storm: lost round 1, won 2 and 3, 2-1), which
+matches `playSeries` for the same link; switching back to Quick match; no console errors.
+
+### Decisions made on your behalf
+
+- **The player is always side A (left), the bot side B.**
+- **The bot's lineup is not in the URL until the series ends** (the address bar would give it
+  away). Alternative: write it from the start and accept that a curious player can read it.
+- **The full link stores both lineups explicitly**, not just the seed, so links survive a future
+  change to the bot.
+- **Rounds start with a Next round button**, not automatically, so the scoreboard can be read
+  and screen readers announce each result. Round 1 starts with Start series.
+- **Rematch keeps both lineups** (the bot's included) with a new seed; **New series** returns to
+  the builder with your last lineup kept.
+- **In best-of-3 mode before a series, the last quick match keeps playing behind the builder.**
+  Alternative: a blank arena.
+- **Sudden death is a seeded coin flip**, as you specified; the ADR records the alternatives.
+
+### Questions for you
+
+- Should rounds advance automatically after a few seconds (with the button as a skip)? It would
+  feel more like watching a series; I chose the button for readability and accessibility.
+- `src/main.ts` grew to about 300 lines of code (335 with comments). It is still wiring, but a
+  `series-controller` module would be the next split. Want that done?
+
+### Unsure about
+
+- Commas in the lineup show as `%2C` in the link (`URLSearchParams` encoding). It works and
+  round-trips; it's just less pretty.
+- The CSP check (`pnpm preview`) was not re-run: nothing new is loaded from the network.
