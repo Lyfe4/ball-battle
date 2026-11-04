@@ -35,6 +35,12 @@ has a favoured and an unfavoured matchup" (`docs/vision.md`); the counter-map te
 `SAFE_PICKS` and checks it stays even against everyone. Adding a second safe pick is a design
 decision.
 
+_Amended 2026-11-04 (ADR 0013): the Brawler is even against every ball **except Thorns**, its one
+designed counter. Reflection scales with the attacker's hit, so the hardest hitter hurts itself
+the most on the spikes, and a safe pick needs one known counter so it isn't a dominant blind pick.
+The test names it in `SAFE_PICK_COUNTERS` and checks that the counter is favoured and every other
+Brawler pair is even._
+
 ### 2. Bands and checks
 
 `pnpm balance` prints a counter-map section and checks each pair, on win rates over all games

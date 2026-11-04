@@ -31,7 +31,8 @@ are checked today (see Decisions); the rest waits for the round structure.
 
 - Every ball has **at least one matchup around 60% or better** and **at least one around 40% or
   worse**, so each has something to fear and something to hunt. **One exception: the Brawler**
-  is the deliberate safe pick, even against everyone (see Decisions).
+  is the deliberate safe pick, even against everyone except its one counter, Thorns (see
+  Decisions).
 - **No matchup worse than about 25/75** (today's limit is 20/80).
 - **Every ball wins 40-60% overall** (unchanged).
 
@@ -55,9 +56,14 @@ blind picks. See Decisions below.
 - One soft triangle, which comes from the balls' mechanics: **Speedster > Archer > Vampire >
   Speedster**. Plus **Storm > Vampire** (ranged damage denies lifesteal, as the Archer's does)
   and **Speedster > Storm** (it outruns the warnings). Archer vs Storm is even.
-- **The Brawler is the safe pick: even (45-55%) against every ball.** It is the one exception to
-  "every ball has a favoured and an unfavoured matchup": a blind pick that never loses the guess
-  badly and never wins it big. The counter-map test lists it as an explicit exception.
+- **The Brawler is the safe pick: even (45-55%) against every ball except Thorns.** It is the one
+  exception to "every ball has a favoured and an unfavoured matchup": a blind pick that never
+  loses the guess badly and never wins it big. The counter-map test lists it as an explicit
+  exception.
+- **Thorns is the Brawler's one designed counter** (2026-11-04, ADR 0013). Reflection scales with
+  the attacker's hit, so the hardest hitter hurts itself the most on the spikes. A safe pick also
+  needs one known counter, so that it isn't a dominant blind pick. The counter-map test names
+  Thorns explicitly as the Brawler's only non-even matchup.
 - The map is data in `scripts/counter-map.ts`; the reasoning and results are in ADR 0010. The
   Storm's edge over the Vampire comes from its shock (ADR 0009): shocked balls heal less.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >

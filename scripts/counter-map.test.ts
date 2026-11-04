@@ -4,6 +4,7 @@ import {
   checkCounter,
   COUNTER_MAP,
   counterFor,
+  SAFE_PICK_COUNTERS,
   SAFE_PICKS,
   type CounterEntry,
 } from './counter-map.ts';
@@ -35,12 +36,22 @@ describe('the counter map', () => {
     }
   });
 
-  it('keeps every safe pick even against everyone (docs/vision.md)', () => {
+  it('keeps every safe pick even against everyone but its one counter (docs/vision.md)', () => {
     expect(SAFE_PICKS).toStrictEqual(['brawler']);
+    expect(SAFE_PICK_COUNTERS).toStrictEqual({ brawler: 'thorns' });
     for (const id of SAFE_PICKS) {
       const own = COUNTER_MAP.filter((entry) => entry.x === id || entry.y === id);
       expect(own).toHaveLength(BALLS.length - 1);
-      for (const entry of own) expect(entry.intended, `${entry.x} vs ${entry.y}`).toBe('even');
+      for (const entry of own) {
+        const other = entry.x === id ? entry.y : entry.x;
+        if (other === SAFE_PICK_COUNTERS[id]) {
+          // The counter is favoured against the safe pick, never the other way round.
+          const favoured = entry.intended === 'x' ? entry.x : entry.intended === 'y' ? entry.y : '';
+          expect(favoured, `${entry.x} vs ${entry.y}`).toBe(other);
+        } else {
+          expect(entry.intended, `${entry.x} vs ${entry.y}`).toBe('even');
+        }
+      }
     }
   });
 });

@@ -41,7 +41,8 @@ export const HARD_WORST_MATCHUP = 0.25;
 /**
  * One soft triangle from the balls' mechanics (Speedster > Archer > Vampire > Speedster), the
  * Storm's place (favoured against the Vampire, unfavoured against the Speedster, even with the
- * Archer), and the Brawler as the safe pick, even against everyone (docs/vision.md). Frost
+ * Archer), and the Brawler as the safe pick, even against everyone but Thorns, its one designed counter
+ * (docs/vision.md, ADR 0013). Frost
  * (ADR 0012) has one favoured and one unfavoured matchup from its mechanics and is even against
  * the rest.
  */
@@ -137,13 +138,58 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
     intended: 'even',
     reason: 'Arrows land on a slow target, but Frost wins the contacts it gets.',
   },
+  {
+    x: 'thorns',
+    y: 'brawler',
+    intended: 'x',
+    reason: 'The hardest hitter hurts itself the most on the spikes.',
+  },
+  {
+    x: 'archer',
+    y: 'thorns',
+    intended: 'x',
+    reason: 'Arrows never touch the spikes, so they are never reflected.',
+  },
+  {
+    x: 'storm',
+    y: 'thorns',
+    intended: 'x',
+    reason: 'Lightning never touches the spikes, so it is never reflected.',
+  },
+  {
+    x: 'thorns',
+    y: 'speedster',
+    intended: 'even',
+    reason: 'Reflection answers its contact hits, but it hits softly and often.',
+  },
+  {
+    x: 'thorns',
+    y: 'vampire',
+    intended: 'even',
+    reason: 'Reflection hurts the Vampire, but lifesteal heals back part of every trade.',
+  },
+  {
+    x: 'thorns',
+    y: 'frost',
+    intended: 'even',
+    reason: 'Two contact balls: the Frost hits hard into the spikes, but slows Thorns.',
+  },
 ];
 
 /**
- * Balls deliberately even against everyone, the one exception to "every ball has a favoured and
- * an unfavoured matchup" (docs/vision.md). Adding one is a design decision.
+ * Balls deliberately even against everyone but one known counter, the one exception to "every
+ * ball has a favoured and an unfavoured matchup" (docs/vision.md). Adding one is a design
+ * decision.
  */
 export const SAFE_PICKS: readonly string[] = ['brawler'];
+
+/**
+ * Each safe pick's one designed counter, favoured against it (ADR 0013). Thorns beats the Brawler:
+ * reflection scales with the hit, so the hardest hitter hurts itself the most on the spikes. A
+ * safe pick needs one known counter so it isn't a dominant blind pick. Changing it is a design
+ * decision.
+ */
+export const SAFE_PICK_COUNTERS: Readonly<Record<string, string>> = { brawler: 'thorns' };
 
 /** From best to worst. Only `miss` fails the counter-map target. */
 export type CounterVerdict = 'ok' | 'warn' | 'near' | 'miss';

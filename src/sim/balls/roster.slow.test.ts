@@ -12,6 +12,7 @@ import { frost } from './frost.ts';
 import { BALL_LOOKUP, BALLS } from './index.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE } from './storm.ts';
+import { reflectFor, thorns } from './thorns.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
@@ -180,6 +181,8 @@ describe('the ball roster (slow)', () => {
         archer: ARROW_DAMAGE,
         storm: ZONE_DAMAGE,
         frost: 0,
+        // Reflection of the hardest contact hit in the roster.
+        thorns: reflectFor(Math.max(...BALLS.map((ball) => ball.contactDamage))),
       };
       expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
       for (const ball of others(storm.id)) {
@@ -190,6 +193,15 @@ describe('the ball roster (slow)', () => {
     it('Frost has the lowest base speed', () => {
       for (const ball of others(frost.id)) expect(frost.speed).toBeLessThan(ball.speed);
     });
+
+    it(
+      'Thorns gets a meaningful share of its damage from reflection',
+      { timeout: ROSTER_TIMEOUT_MS },
+      () => {
+        // Reflection is its only ability damage. Measured about 22% (ADR 0013).
+        expect(abilityShare(thorns, others(thorns.id))).toBeGreaterThanOrEqual(0.15);
+      },
+    );
 
     it('Brawler hits hardest and has no ability', () => {
       for (const ball of others(brawler.id)) {

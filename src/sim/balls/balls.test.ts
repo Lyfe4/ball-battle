@@ -10,6 +10,7 @@ import { frost } from './frost.ts';
 import { BALLS } from './index.ts';
 import { MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm } from './storm.ts';
+import { thorns } from './thorns.ts';
 import { vampire } from './vampire.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
@@ -39,6 +40,7 @@ describe('the ball roster', () => {
       storm: storm.speed,
       // Slowed only ever lowers a ball's speed.
       frost: frost.speed,
+      thorns: thorns.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {
