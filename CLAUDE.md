@@ -75,8 +75,9 @@ another. All must pass.
 The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0002-combat-core.md`, `docs/decisions/0003-ability-system.md`,
 `docs/decisions/0004-wall-bounce-variance.md`, `docs/decisions/0005-projectiles.md`,
-`docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md` and
-`docs/decisions/0008-size-directness-cruise-speed.md`.
+`docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md`,
+`docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
+`docs/decisions/0010-counter-map.md` and `docs/decisions/0011-roster-scaling.md`.
 
 ## Conventions
 
@@ -101,7 +102,12 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 - Balance targets (`pnpm balance`): every ball wins 40-60% overall, no matchup worse than 20/80 (soft counters are fine),
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
-  Vampire heals at least 25% of max health per match. Re-check after any stat or ability change.
+  Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
+  in its counter-map band (`scripts/counter-map.ts`: favoured side 58-70%, even 45-55%; ADR 0010
+  lists the known near-misses). Re-check after any stat or ability change.
+- Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair, and each
+  favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
+  counter is, never whether it exists. The Brawler is the only safe pick (even against all).
   Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
 - The pass-through property test in `src/sim/balls/roster.slow.test.ts` (closing speed below 0.6 of the

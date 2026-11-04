@@ -15,18 +15,19 @@ they hit; the match ends by knockout or at a 60-second time limit.
 
 | Ball      | Ability                                                                          |
 | --------- | -------------------------------------------------------------------------------- |
-| Brawler   | None. Hits the hardest; the baseline every other ball is balanced against.       |
+| Brawler   | None. Hits the hardest. The safe pick: even against every ball.                  |
 | Speedster | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
 | Vampire   | Heals for 40% of the damage it deals.                                            |
 | Archer    | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
-| Storm     | Calls down lightning on its enemy every 2 s; the strike lands 0.8 s later.       |
+| Storm     | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
 
 Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
-on how directly it lands, not how fast. Counters are part of the design, but stay soft (no
-matchup worse than 20/80): the **Speedster beats the Archer** by closing the distance, the
-**Vampire beats the Speedster** by outlasting its burst, the **Speedster edges the Storm** by
-outrunning its warnings, and the **Archer edges the Brawler and the Vampire**. Everything else is
-close to even.
+on how directly it lands, not how fast. Counters are part of the design, soft (favoured, never
+decided) and each with a mechanical reason: the **Speedster beats the Archer** by closing the
+distance, the **Archer beats the Vampire** from range, the **Vampire beats the Speedster** by
+outlasting its burst, the **Storm beats the Vampire** by shocking it so it heals less, and the
+**Speedster beats the Storm** by outrunning its warnings. The **Brawler** is the safe pick, even
+against everyone. The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md)).
 
 ## Running it
 
@@ -92,10 +93,13 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0005: Projectiles](docs/decisions/0005-projectiles.md)
 , [ADR 0006: Hazard zones](docs/decisions/0006-hazard-zones.md)
 , [ADR 0007: Presentation clock and battle feel](docs/decisions/0007-presentation-clock.md)
-and [ADR 0008: Uniform size, directness, cruise speed](docs/decisions/0008-size-directness-cruise-speed.md).
+, [ADR 0008: Uniform size, directness, cruise speed](docs/decisions/0008-size-directness-cruise-speed.md)
+, [ADR 0009: Status effects](docs/decisions/0009-status-effects.md)
+, [ADR 0010: Counter map](docs/decisions/0010-counter-map.md)
+and [ADR 0011: Roster scaling](docs/decisions/0011-roster-scaling.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 44.96 kB JS (16.24 kB gzipped), 3.43 kB CSS. First version baseline: 5.05 kB
+Production bundle: 50.71 kB JS (18.07 kB gzipped), 5.14 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

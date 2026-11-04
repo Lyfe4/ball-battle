@@ -92,3 +92,25 @@ setting is read live, so changing it mid-match takes effect at once.
   anything that wants "seconds of match" must read ticks, not the clock.
 - Effects keep their own small amount of state (per ball and per burst); every list is bounded
   and tested over whole matches.
+
+## Addendum: decisions made while building it (2026-11-04)
+
+Recorded here when the autorun report that first listed them was retired.
+
+- **Thresholds were measured, not guessed.** Hit-stop at 24 damage fired on 51% of
+  non-knockout hit ticks in a Brawler mirror, so it is 26 (Brawler mirror 22%, Storm mirror 32%,
+  Archer and Vampire mirrors 0%, over 100 seeds per matchup). Shake on big hits as well fired on
+  32-44% of hits in Storm matchups, so **shake is knockouts only**; confirmed after review.
+- **Hit-stops stay under reduced motion** (a pause is not movement), as does the health ghost's
+  drain; confirmed after review.
+- **Impacts are summed per ball per tick**, so a Speedster's hit plus its stack bonus is one
+  impact.
+- **Slow-mo scales sim time as well as effect time.** It only runs after a knockout ends the
+  match, so this changes nothing visible today; the replay test shows it is safe either way.
+- **A knocked-out ball is not drawn after it breaks apart** (it used to stay at 25% opacity). With
+  reduced motion it fades to 25% as before.
+- **The HUD's health ghost is a CSS transition** on real time, so unlike the canvas bars it does
+  not freeze during a hit-stop.
+- **Particles only for contact and arrow hits**; lightning already has its flash and bolt.
+- The reduced-heal ring and shocked indicator (ADR 0009) follow the same style: flat, one colour,
+  in effect time.
