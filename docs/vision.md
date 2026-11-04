@@ -64,8 +64,13 @@ blind picks. See Decisions below.
   the attacker's hit, so the hardest hitter hurts itself the most on the spikes. A safe pick also
   needs one known counter, so that it isn't a dominant blind pick. The counter-map test names
   Thorns explicitly as the Brawler's only non-even matchup.
-- The map is data in `scripts/counter-map.ts`; the reasoning and results are in ADR 0010. The
+- The map is data in `scripts/counter-map-*.ts`; the reasoning and results are in ADR 0010. The
   Storm's edge over the Vampire comes from its shock (ADR 0009): shocked balls heal less.
+- **Later balls** (ADR 0012-0015) each bring one favoured and one unfavoured matchup from their
+  mechanics: Frost > Speedster, Storm > Frost; Venom > Thorns, Vampire > Venom; Berserker >
+  Speedster, Vampire > Berserker; Speedster > Sniper, Sniper > Thorns; Quake > Speedster,
+  Frost > Quake. Ranged and ability damage beating Thorns is one theme (Archer, Storm, Venom,
+  Sniper); telegraphed attacks losing to the Speedster and instant ones beating it is another.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

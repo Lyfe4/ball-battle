@@ -78,7 +78,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0006-hazard-zones.md`, `docs/decisions/0007-presentation-clock.md`,
 `docs/decisions/0008-size-directness-cruise-speed.md`, `docs/decisions/0009-status-effects.md`,
 `docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md`,
-`docs/decisions/0012-slowed-poisoned-damage-taken.md` and `docs/decisions/0013-thorns-brawler-counter.md`.
+`docs/decisions/0012-slowed-poisoned-damage-taken.md`, `docs/decisions/0013-thorns-brawler-counter.md`,
+`docs/decisions/0014-venom-thorns-counter.md` and `docs/decisions/0015-berserker-sniper-quake.md`.
 
 ## Conventions
 
@@ -97,6 +98,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 - Every ball keeps its own speed: the tick ends by rescaling each live ball's velocity to its
   cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
   declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.
+- An ability that changes how hard a ball hits declares `contactDamageOf(self, stats)` (ADR 0015)
+  rather than adding a `damage` action on hit: contact damage goes through directness, the
+  lethal-exchange tiebreak and Thorns' reflection; an on-hit ability bonus skips all three.
 - Every ball uses `STANDARD_BALL_RADIUS`; a different size is a design decision listed as an
   explicit exception in the roster's identity tests (ADR 0008).
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
@@ -106,11 +110,13 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
-  in its counter-map band (`scripts/counter-map.ts`: favoured side 58-70%, even 45-55%; ADR 0010
-  lists the known near-misses). Re-check after any stat or ability change.
-- Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair, and each
+  in its counter-map band (`scripts/counter-map.ts`: favoured side 58-70%, even 45-55%, within 2
+  points outside a band passes as NEAR; ADR 0010). Re-check after any stat or ability change.
+- Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
+  `scripts/counter-map-*.ts` data file for its batch), and each
   favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
-  counter is, never whether it exists. The Brawler is the only safe pick: even against all
+  counter is, never whether it exists. Measure what a ball's mechanic moves before choosing its
+  counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler is the only safe pick: even against all
   except Thorns, its one designed counter (ADR 0013).
   Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
