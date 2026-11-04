@@ -58,7 +58,8 @@ blind picks. See Decisions below.
 - **The Brawler is the safe pick: even (45-55%) against every ball.** It is the one exception to
   "every ball has a favoured and an unfavoured matchup": a blind pick that never loses the guess
   badly and never wins it big. The counter-map test lists it as an explicit exception.
-- The map is data in `scripts/counter-map.ts`; the reasoning and results are in ADR 0009.
+- The map is data in `scripts/counter-map.ts`; the reasoning and results are in ADR 0010. The
+  Storm's edge over the Vampire comes from its shock (ADR 0009): shocked balls heal less.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
