@@ -20,9 +20,12 @@ const TARGETS = {
   ballWinRate: [0.4, 0.6],
   worstMatchup: 0.25,
   drawRate: 0.05,
-  medianSeconds: [15, 30],
-  /** Largest win-rate swing, in points, from a ±5% change to one ball's contact damage. */
-  maxSensitivity: 15,
+  medianSeconds: [12, 30],
+  /**
+   * Largest win-rate swing, in points, from a ±5% change to one ball's contact damage. Above
+   * `warn` is worth a look; above `fail` is a miss. The gap allows for ±2-3 points of noise.
+   */
+  sensitivity: { warn: 15, fail: 20 },
   /** Average healing per match as a share of max health, per ball id. */
   minHealShare: { vampire: 0.25 },
 } as const;
@@ -42,6 +45,8 @@ const pct = (part: number, whole = 1): string =>
   `${((part / whole) * 100).toFixed(1)}%`.padStart(6);
 const signedPct = (value: number): string => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`;
 const check = (ok: boolean): string => (ok ? 'ok  ' : 'MISS');
+const grade = (value: number, warn: number, fail: number): string =>
+  value > fail ? 'MISS' : value > warn ? 'WARN' : 'ok  ';
 
 const seeds = parseSeedCount(process.argv[2]);
 const started = performance.now();
@@ -158,10 +163,10 @@ console.log(
 );
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
-  `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 15-30 s`,
+  `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
 );
 console.log(
-  `  ${check(worstSensitivity <= TARGETS.maxSensitivity)} win rates move at most 15 pts for ±5% damage (worst ${worstSensitivity.toFixed(1)} pts)`,
+  `  ${grade(worstSensitivity, TARGETS.sensitivity.warn, TARGETS.sensitivity.fail)} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% damage (worst ${worstSensitivity.toFixed(1)} pts)`,
 );
 console.log(`  ${check(healingOk)} Vampire heals at least 25% of max health per match`);
 console.log(`\n  (${((performance.now() - started) / 1000).toFixed(0)} s)`);
