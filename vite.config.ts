@@ -47,6 +47,8 @@ export default defineConfig({
             enabled: true,
             provider: playwright(),
             headless: true,
+            // There is no page to see: a failure is a list of matches, not a screenshot.
+            screenshotFailures: false,
             // V8, SpiderMonkey and JavaScriptCore: every engine a player or a server might run.
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
