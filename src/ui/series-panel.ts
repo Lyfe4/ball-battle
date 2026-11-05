@@ -87,7 +87,7 @@ export function createSeriesPanel(
   const rematch = button('Rematch', 'hud-button', actions.onRematch);
   const newSeries = button('New series', 'hud-button hud-button-primary', actions.onNewSeries);
   buttons.append(next, rematch, newSeries);
-  const leave = button('Leave series', 'series-leave', actions.onLeave);
+  const leave = button('Leave series', 'text-link series-leave', actions.onLeave);
   root.append(heading, format, score, status, picks, buttons, rounds, leave);
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {

@@ -11,8 +11,7 @@
   display: grid;
   gap: 2px;
   padding: var(--space-small) var(--space-gap);
-  border-left: 3px solid var(--color-favoured);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  border-radius: var(--radius);
   background: var(--color-surface);
 }
 
@@ -72,15 +71,6 @@
   margin: 0;
   font-size: var(--font-size-small);
   text-align: center;
-}
-
-.home-source {
-  color: var(--color-text-muted);
-}
-
-.home-source:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 
 @media (min-aspect-ratio: 5/4) {

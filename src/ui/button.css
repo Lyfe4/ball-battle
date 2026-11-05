@@ -3,23 +3,36 @@
 .hud-button {
   flex: 1;
   min-height: var(--tap-target);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-raised);
   color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
 
 .hud-button-primary {
-  border-color: var(--color-accent);
   background: var(--color-accent);
   color: var(--color-accent-text);
 }
 
-.hud-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+/*
+ * A text link (Source on GitHub, More about…, Leave series): the focus colour, bolder, with a
+ * trailing chevron, so it reads as a link without an underline.
+ */
+.text-link {
+  border: 0;
+  background: none;
+  color: var(--color-focus);
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.text-link::after {
+  content: ' ›';
+  content: ' ›' / '';
 }
 
 .hud-button:disabled {

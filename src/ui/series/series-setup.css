@@ -22,7 +22,6 @@
   gap: 2px;
   min-height: var(--tap-target);
   padding: var(--space-gap);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -32,8 +31,7 @@
 }
 
 .rules-card[aria-pressed='true'] {
-  border-color: var(--color-accent);
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  background: var(--color-selected);
 }
 
 .rules-card-name {
@@ -65,7 +63,6 @@
   width: 100%;
   min-height: 4.75rem;
   padding: 6px 2px;
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -74,7 +71,7 @@
 }
 
 .lineup-tray-empty {
-  border-style: dashed;
+  background: var(--color-sunken);
   color: var(--color-text-muted);
   cursor: default;
 }
@@ -121,7 +118,6 @@
   justify-items: center;
   gap: 2px;
   padding: 6px 2px;
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -145,7 +141,6 @@
   gap: var(--space-small);
   min-height: var(--tap-target);
   padding-left: var(--space-small);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -193,25 +188,14 @@
   width: var(--tap-target);
   height: var(--tap-target);
   border: 0;
-  border-left: 1px solid var(--color-border);
-  background: transparent;
+  border-radius: var(--radius);
+  background: var(--color-raised);
   color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
 
-.order-move:last-child {
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
 .order-move:disabled {
-  color: var(--color-border);
+  opacity: 0.35;
   cursor: default;
-}
-
-.order-move:focus-visible,
-.lineup-tray-slot:focus-visible,
-.rules-card:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }

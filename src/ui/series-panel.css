@@ -21,21 +21,9 @@
   list-style: none;
 }
 
-/* Leaving a series is rare: a quiet text button, still a full tap target. */
+/* Leaving a series is rare: a quiet text link (.text-link), still a full tap target. */
 .series-leave {
   min-height: var(--tap-target);
-  border: 0;
-  background: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-small);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.series-leave:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 
 .series-score {

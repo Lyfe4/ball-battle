@@ -35,7 +35,7 @@ export function createBallInfo(balls: readonly BallDefinition[], link?: BallInfo
   counters.append(beatsLabel, ' ', beats, ' · ', losesLabel, ' ', loses);
   card.append(name, description, counters);
   let shown = '';
-  const more = element('a', 'ball-info-more');
+  const more = element('a', 'text-link ball-info-more');
   if (link !== undefined) {
     more.addEventListener('click', (event) => {
       // A modified click (new tab, new window) follows the href as a link does.

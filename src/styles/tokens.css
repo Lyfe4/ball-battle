@@ -8,12 +8,15 @@
   /* Palette */
   --palette-ink-950: #0b0d12;
   --palette-ink-900: #0f1117;
+  --palette-ink-850: #12151c;
   --palette-ink-800: #161a23;
+  --palette-ink-700: #1f2532;
   --palette-ink-600: #2d3446;
   --palette-grey-400: #8b93a7;
   --palette-grey-100: #e6e9f0;
   --palette-blue-500: #3b82f6;
   --palette-blue-300: #93c5fd;
+  --palette-blue-900: #1d3461;
   --palette-green-500: #22c55e;
   --palette-green-400: #4ade80;
   --palette-red-400: #f87171;
@@ -21,8 +24,14 @@
 
   /* Roles */
   --color-page: var(--palette-ink-900);
+  /*
+   * Layers are told apart by fill, never by lines: the page, then cards (surface), then what you
+   * press (raised); sunken for an empty place to fill, selected for the chosen option.
+   */
   --color-surface: var(--palette-ink-800);
-  --color-border: var(--palette-ink-600);
+  --color-raised: var(--palette-ink-700);
+  --color-sunken: var(--palette-ink-850);
+  --color-selected: var(--palette-blue-900);
   --color-text: var(--palette-grey-100);
   --color-text-muted: var(--palette-grey-400);
   --color-accent: var(--palette-blue-500);
@@ -47,4 +56,10 @@
   --font-size-tiny: 0.75rem;
   --font-size-display: 2rem;
   --font-family: system-ui, sans-serif;
+
+  /*
+   * Keyboard focus: a thick halo (3 px of page colour, then 3 px of focus colour) drawn with
+   * box-shadow, so it follows each control's rounded corners and stands out on any fill.
+   */
+  --focus-ring: 0 0 0 3px var(--color-page), 0 0 0 6px var(--color-focus);
 }

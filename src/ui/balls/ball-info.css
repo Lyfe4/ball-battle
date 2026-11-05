@@ -3,7 +3,6 @@
   display: grid;
   gap: 2px;
   padding: var(--space-small) var(--space-gap);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -35,11 +34,4 @@
 .ball-info-more {
   justify-self: start;
   padding-block: 2px;
-  color: var(--color-focus);
-  font-size: var(--font-size-small);
-}
-
-.ball-info-more:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }

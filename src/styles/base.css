@@ -21,6 +21,21 @@ canvas {
   display: block;
 }
 
+/* Controls are told apart by fill, never by a line (tokens.css): no browser default border. */
+button {
+  border: 0;
+}
+
+/*
+ * One focus style for every control, so it can't drift between components: the focus-ring halo,
+ * shown for keyboard focus only. Elements focused by script alone (tabindex -1: a screen's heading,
+ * the arena) take no ring.
+ */
+:where(button, a, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 [hidden] {
   display: none !important;
 }

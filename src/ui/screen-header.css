@@ -9,19 +9,13 @@
   flex: none;
   width: var(--tap-target);
   height: var(--tap-target);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-raised);
   color: var(--color-text);
   font: inherit;
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
-}
-
-.screen-back:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 
 .screen-title {

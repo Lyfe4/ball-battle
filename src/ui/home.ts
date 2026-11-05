@@ -79,7 +79,7 @@ export function createHome(
     }),
   );
 
-  const source = element('a', 'home-source', 'Source on GitHub');
+  const source = element('a', 'text-link home-source', 'Source on GitHub');
   source.href = SOURCE_URL;
   source.rel = 'noopener';
   const footer = element('p', 'home-footer');
