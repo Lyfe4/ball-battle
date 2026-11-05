@@ -1,0 +1,86 @@
+import { describe, expect, it } from 'vitest';
+import {
+  intendedGroup,
+  LOPSIDED_GAP,
+  lopsidedBalls,
+  measuredGroup,
+  summarise,
+  summaryLines,
+  summaryMarkdown,
+} from './balance-summary.ts';
+
+describe('measuredGroup', () => {
+  it('puts a rate outside the even band (45-55%) in strong or weak', () => {
+    expect(measuredGroup(0.62)).toBe('strong');
+    expect(measuredGroup(0.551)).toBe('strong');
+    expect(measuredGroup(0.55)).toBe('even');
+    expect(measuredGroup(0.45)).toBe('even');
+    expect(measuredGroup(0.449)).toBe('weak');
+  });
+});
+
+describe('intendedGroup', () => {
+  it('reads the counter map from either side', () => {
+    expect(intendedGroup('thorns', 'brawler')).toBe('strong');
+    expect(intendedGroup('brawler', 'thorns')).toBe('weak');
+    expect(intendedGroup('brawler', 'storm')).toBe('even');
+  });
+});
+
+describe('summarise', () => {
+  // Thorns is favoured over the Brawler by the map; the Brawler is even with the Storm.
+  const balls = [
+    { id: 'brawler', name: 'Brawler' },
+    { id: 'thorns', name: 'Thorns' },
+    { id: 'storm', name: 'Storm' },
+  ];
+  const pairs = [
+    { x: 'brawler', y: 'thorns', xRate: 0.38, yRate: 0.6 },
+    { x: 'brawler', y: 'storm', xRate: 0.5, yRate: 0.49 },
+    { x: 'thorns', y: 'storm', xRate: 0.3, yRate: 0.68 },
+  ];
+  const [brawler, thorns] = summarise(balls, () => 0.5, pairs);
+
+  it('reads each pair from both sides, grouped by the map and by the result', () => {
+    expect(brawler?.byMap.groups.weak).toStrictEqual({ count: 1, average: 0.38 });
+    expect(brawler?.byMap.groups.even).toStrictEqual({ count: 1, average: 0.5 });
+    expect(brawler?.byMap.groups.strong).toStrictEqual({ count: 0, average: undefined });
+    expect(brawler?.measured.groups.weak.count).toBe(1);
+    // Thorns: strong vs the Brawler by the map and the result; Storm is weak for it only measured.
+    expect(thorns?.byMap.groups.strong).toStrictEqual({ count: 1, average: 0.6 });
+    expect(thorns?.byMap.groups.weak.count).toBe(1);
+    expect(thorns?.measured.groups.strong.count).toBe(1);
+    expect(thorns?.measured.groups.weak).toStrictEqual({ count: 1, average: 0.3 });
+    expect(thorns?.measured.gap).toBe(0);
+  });
+
+  it(`warns when strong and weak differ by ${String(LOPSIDED_GAP)} or more`, () => {
+    const opponents = ['a', 'b', 'c', 'd', 'e'];
+    const lopsided = summarise(
+      [{ id: 'x', name: 'X' }],
+      () => 0.6,
+      opponents.map((y, index) => ({ x: 'x', y, xRate: index < 4 ? 0.65 : 0.4, yRate: 0.3 })),
+    );
+    expect(lopsided[0]?.measured.gap).toBe(3);
+    expect(lopsided[0]?.measured.lopsided).toBe(false);
+    const more = summarise(
+      [{ id: 'x', name: 'X' }],
+      () => 0.6,
+      opponents.map((y) => ({ x: 'x', y, xRate: 0.65, yRate: 0.3 })),
+    );
+    expect(more[0]?.measured.lopsided).toBe(true);
+    expect(lopsidedBalls(more).map((ball) => ball.id)).toStrictEqual(['x']);
+  });
+
+  it('prints a row per ball, and the same rows as a Markdown table', () => {
+    const summaries = summarise(balls, () => 0.5, pairs);
+    expect(summaryLines(summaries)).toHaveLength(1 + balls.length);
+    const markdown = summaryMarkdown(summaries, {
+      seeds: 500,
+      ruleset: 2,
+      command: 'pnpm balance:summary',
+    });
+    expect(markdown).toContain('| Thorns | 50.0% | 1 (60.0%) | 0 | 1 (30.0%) | 0 |');
+    expect(markdown).toContain('`pnpm balance:summary`');
+  });
+});
