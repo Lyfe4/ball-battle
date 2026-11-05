@@ -105,6 +105,14 @@ Plain DOM, as before:
   delay outlasts every effect, so the loop had stopped drawing), so a result could wait for an
   unrelated redraw. The frame loop now also draws when the result appears.
 
+## Addendum: links record their ruleset, and the bot's side is verified (2026-11-05)
+
+ADR 0022 adds a ruleset version to `SeriesSetup` and every link (`v=`), and an opponent descriptor
+(the bot and the seed it picked its lineup from). §5's "a complete, valid link replays the series
+exactly" now holds only under the ruleset it was played on: a link from another one opens a notice
+instead. "Valid" is decided by `verifySeries`, which also checks that side B is the lineup the bot
+picks. Rematch keeps the bot's lineup, so its link records the seed that lineup came from (`bs=`).
+
 ## Addendum: notes from the build (2026-11-05)
 
 - **Rounds start with a Next round button**, not automatically after a pause, so the scoreboard can

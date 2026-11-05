@@ -91,10 +91,18 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0016-counter-density.md`, `docs/decisions/0017-best-of-3-series.md` and
 `docs/decisions/0018-aimed-start.md` (the aimed start is measured in `docs/aiming-measurements.md`;
 the game does not use it), `docs/decisions/0019-draft-formats.md`,
-`docs/decisions/0020-screens.md` and `docs/decisions/0021-reveal-take-turns.md` (measured in
-`docs/reveal-measurements.md`).
+`docs/decisions/0020-screens.md`, `docs/decisions/0021-reveal-take-turns.md` (measured in
+`docs/reveal-measurements.md`) and `docs/decisions/0022-ruleset-version-and-verified-series.md`.
 
 ## Conventions
+
+- **Bump `RULESET_VERSION` (`src/sim/ruleset.ts`) in the same commit as any change that can change
+  a fight, a bot's choice or a series**: stats, abilities, combat rules, the counter map's sides,
+  the roster or its order, seeds and salts (ADR 0022). `ruleset.test.ts` fails until you do; add
+  the new fingerprint to its table and never edit an old one. Links from other rulesets show a
+  notice instead of replaying a different fight.
+- Whether a series setup is valid is decided by `verifySeries` (`src/sim/series-verify.ts`) alone:
+  `playSeries`, the browser's route and a future server all use it. Don't add a second check.
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.

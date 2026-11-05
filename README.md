@@ -82,9 +82,12 @@ balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
 takes the series. The bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
-series ends, the link holds both lineups and the series seed, e.g.
-`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5`, and replays it exactly
-([ADR 0017](docs/decisions/0017-best-of-3-series.md)).
+series ends, the link holds both lineups, the series seed and the ruleset, e.g.
+`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=1`, and replays it exactly
+([ADR 0017](docs/decisions/0017-best-of-3-series.md)). Before replaying, the page checks the link
+with the same rule a server would use: the bot's lineup and picks must be the ones it would
+choose, so an edited link opens the lineup instead
+([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
 Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-formats.md),
 [ADR 0021](docs/decisions/0021-reveal-take-turns.md)):
@@ -109,9 +112,12 @@ pnpm install
 pnpm dev
 ```
 
-Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42`: share or reload it to replay
-the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a fresh
-random one.
+Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42&v=1`: share or reload it to
+replay the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a
+fresh random one. `v` is the ruleset the fight was played under: balance changes bump it, and a
+link from another version says so and offers to play under today's rules rather than silently
+replaying a different fight
+([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
 The **Speed 1× / 2×** toggle under a match plays everything twice as fast (the fight,
 hit-stops and effects alike) without changing the result; your choice is remembered in this
@@ -138,7 +144,9 @@ src/
   render/   draws sim state on a canvas; never changes it
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
-  sim/series.ts     best-of-3 rules and the bot, pure so a server can re-run a series
+  sim/series.ts     best-of-3 rules, pure so a server can re-run a series
+  sim/series-verify.ts   whether a series setup is valid: the browser and a server use it
+  sim/ruleset.ts    the ruleset version every link records (bumped with any balance change)
   ui/       plain-DOM screens: home, ball grid and detail, setup steps, manual, scoreboard, HUD
   styles/   design tokens (a palette, then roles) and base styles; components' CSS sits beside them
   app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links
@@ -186,10 +194,11 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0018: Aimed start](docs/decisions/0018-aimed-start.md)
 , [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
 , [ADR 0020: Screens](docs/decisions/0020-screens.md)
-and [ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md).
+[ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md)
+and [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 104.75 kB JS (34.83 kB gzipped), 18.02 kB CSS. First version baseline: 5.05 kB
+Production bundle: 109.80 kB JS (36.81 kB gzipped), 16.78 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
