@@ -53,7 +53,7 @@ time), never decided, and each one comes from something you can watch happen:
 - **Quake beats Speedster**: the shockwave's warning is too short to outrun.
 - **Frost beats Quake**: slowed, the Quake reaches the walls less often, and every shockwave needs
   a wall.
-- **Venom beats Berserker**: poison numbs its rage.
+- **Venom beats Berserker**: poison numbs its rage (its cracks fade while it is poisoned).
 - **Berserker beats Frost**: its rage burns off the cold, so it can never be slowed.
 - **Frost beats Venom**: the cold wears poison off sooner, and the Frost hits Venom hard.
 - **Archer beats Frost**: leading arrows land most often on the slowest ball.

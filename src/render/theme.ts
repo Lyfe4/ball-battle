@@ -97,6 +97,11 @@ export const theme = {
    * dropped, main shape thicker. About a phone-sized arena; desktop balls stay above it.
    */
   simpleDesignBelowPx: 24,
+  /**
+   * The Berserker's cracks while it is poisoned (poison numbs its rage, ADR 0016): faded to this
+   * opacity, so the rage visibly goes quiet while the poison ring shows.
+   */
+  numbedRageAlpha: 0.3,
   /** Small highlights: the Vampire's fangs, the Storm's bolt. */
   highlight: '#ffffff',
   /** The Vampire's collar edge flushes this colour when it heals. */

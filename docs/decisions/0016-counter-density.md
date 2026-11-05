@@ -186,8 +186,8 @@ The run that built this ADR asked whether interaction rules are the way to keep 
 Answer: **about one counter-creating rule per ball, each visible on screen, and new balls rather
 than more rules for the remaining gaps** (CLAUDE.md, Conventions). The Berserker, Frost and Venom
 are already in two rules each and get no third. Of today's rules, the stagger and the slow and
-poison rings show on screen; a numbed rage does not (the Berserker's cracks don't change while it
-is poisoned), and an immune or resisted status shows only by its ring being absent or ending
+poison rings show on screen; a numbed rage did not at first; since 2026-11-05 the Berserker's cracks
+fade while it is poisoned, and an immune or resisted status shows only by its ring being absent or ending
 early. The picker descriptions of the Berserker and the Quake were updated to name their rules
 ("can't be slowed", "stops its enemy aiming"). Still open: the Quake is the strongest ball at
 53.0% with four favoured matchups; whether the next balance pass trims it is undecided.

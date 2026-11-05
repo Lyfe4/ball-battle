@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../../sim/balls/index.ts';
 import { red, withBalls } from '../../sim/test-support.ts';
+import type { StatusKind } from '../../sim/status.ts';
+import type { BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { theme } from '../theme.ts';
 import { BALL_DESIGNS } from './index.ts';
@@ -8,6 +10,7 @@ import {
   aimHeading,
   chargeFraction,
   crackCount,
+  rageMarkAlpha,
   simpleCrackCount,
   simpleStreakCount,
   stormFlicker,
@@ -110,5 +113,34 @@ describe('ball designs', () => {
     it('shows at most three at small size', () => {
       expect([1, 0.6, 0.3, 0].map(simpleCrackCount)).toStrictEqual([1, 2, 3, 3]);
     });
+  });
+});
+
+describe('rageMarkAlpha', () => {
+  const berserkerBall = (statuses: BallState['statuses']): BallState => ({
+    id: 'ball-0',
+    definitionId: 'berserker',
+    position: { x: 0, y: 0 },
+    velocity: { x: 1, y: 0 },
+    radius: 50,
+    health: 20,
+    abilityState: {},
+    statuses,
+  });
+  const status = (kind: StatusKind) => ({
+    kind,
+    sourceId: 'ball-1',
+    expiresTick: 10,
+    sinceTick: 0,
+  });
+
+  it('fades the cracks while poisoned (poison numbs rage), and only then', () => {
+    expect(rageMarkAlpha(berserkerBall([]))).toBe(1);
+    expect(rageMarkAlpha(berserkerBall([status('poisoned')]))).toBe(theme.numbedRageAlpha);
+    expect(rageMarkAlpha(berserkerBall([status('slowed'), status('poisoned')]))).toBe(
+      theme.numbedRageAlpha,
+    );
+    expect(rageMarkAlpha(berserkerBall([status('shocked')]))).toBe(1);
+    expect(theme.numbedRageAlpha).toBeLessThan(0.5);
   });
 });

@@ -64,7 +64,15 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
   const scale = (radiusPx / ball.radius) * (canvas.width / cssSize);
   ctx.setTransform(scale, 0, 0, scale, canvas.width / 2, canvas.height / 2);
   drawAimLines(ctx, world);
-  drawBall(ctx, world, ball, {
+  // The ball as the game sees it, statuses included (a design can react to one: the Berserker).
+  const statuses = (tile.statuses ?? []).map((kind) => ({
+    kind,
+    sourceId: 'ball-1',
+    expiresTick: TICK + 1,
+    sinceTick: TICK,
+  }));
+  const shown = { ...ball, statuses };
+  drawBall(ctx, world, shown, {
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
@@ -73,15 +81,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     cssPixelsPerUnit: radiusPx / ball.radius,
     ...(detail === undefined ? {} : { detail }),
   });
-  if (rings > 0) {
-    const statuses = (tile.statuses ?? []).map((kind) => ({
-      kind,
-      sourceId: 'ball-1',
-      expiresTick: TICK + 1,
-      sinceTick: TICK,
-    }));
-    drawStatuses(ctx, { ...ball, statuses }, TICK, false);
-  }
+  if (rings > 0) drawStatuses(ctx, shown, TICK, false);
   return canvas;
 }
 

@@ -1,5 +1,6 @@
 // Pure helpers that turn ability state into design state. No canvas, so they are unit tested.
 import { nearestEnemy } from '../../sim/balls/targeting.ts';
+import { hasStatus } from '../../sim/status.ts';
 import type { BallState, Vec2 } from '../../sim/types.ts';
 import { theme } from '../theme.ts';
 
@@ -33,6 +34,14 @@ export function crackCount(share: number, max: number): number {
 /** Berserker cracks at small size: one, two below two thirds health, three below one third. */
 export function simpleCrackCount(share: number): number {
   return Math.min(3, crackCount(share, 4));
+}
+
+/**
+ * Opacity of the Berserker's cracks: dimmed while it is poisoned, because poison numbs its rage
+ * (ADR 0016), so a viewer can see why it suddenly hits softly.
+ */
+export function rageMarkAlpha(ball: BallState): number {
+  return hasStatus(ball, 'poisoned') ? theme.numbedRageAlpha : 1;
 }
 
 /** True when a ball this many CSS pixels in radius should use its simplified design. */

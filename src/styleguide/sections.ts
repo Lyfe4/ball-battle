@@ -146,7 +146,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Berserker: cracks run in from the edge, more and heavier as its health drops',
+    'Berserker: cracks run in from the edge, more and heavier as its health drops; poisoned, they fade (rage numbed)',
     [
       ...[1, 0.75, 0.5, 0.25, 0.05].map((health): Tile => ({
         label: `${health * 100}% health`,
@@ -154,6 +154,12 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
         health,
       })),
       { label: 'mirror B, 50%', id: 'berserker', health: 0.5, repeat: true },
+      {
+        label: 'poisoned, 25%: rage numbed',
+        id: 'berserker',
+        health: 0.25,
+        statuses: ['poisoned'],
+      },
     ],
   ],
   [
