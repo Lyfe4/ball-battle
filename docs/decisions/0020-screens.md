@@ -134,3 +134,16 @@ is now a snowflake: six spokes with branches. The full-size crystal is unchanged
   and file references out of reasons. No behaviour changed.
 - Open: whether Reveal's order step should give the player information to act on (a sequential
   reveal); see ADR 0019's addendum.
+
+## Addendum: after review (2026-11-05)
+
+- **Frost is one snowflake at every size.** The full-size design is now the same flake as the small
+  one, finer (the game's mark weight, two pairs of branches per spoke), so Frost no longer has two
+  looks. `styleguide.html?only=frost` shows it at every size.
+- **Speed is a trait, not a bar.** Base speeds run from 720 to 800, so a Speed bar looked the same
+  for every ball. The manual shows a "Fastest ball" / "Slowest ball" chip for the roster's
+  extremes (from the definitions), and keeps bars for Health and Contact hit.
+- **The pickers' info card links to the manual entry** ("More about <ball>"), a real link opened
+  in the app so Back returns to the picks or the lineup tray as they were.
+- **A favicon** drawn from the Brawler's small design (SVG, with a 32 px PNG), checked by a test
+  against the Brawler's colours.
