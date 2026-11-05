@@ -3,7 +3,14 @@ import { LINEUP_SIZE, type Format, type Lineup } from '../../sim/series.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { element, setText } from '../dom.ts';
-import { addToDraft, completeLineup, removeFromDraft, type Draft } from '../lineup-draft.ts';
+import {
+  completeLineup,
+  draftCount,
+  draftOf,
+  removeFromDraft,
+  toggleInDraft,
+  type Draft,
+} from '../lineup-draft.ts';
 import { createScreenHeader } from '../screen-header.ts';
 
 export interface LineupStep {
@@ -28,9 +35,9 @@ const TRAY_ICON_PX = 36;
  * Picking three balls for a series, phone first and showing little (ADR 0025): a tray of three
  * slots on top (numbered where the order is set now, not in Reveal), the shared ball grid, and one
  * button to go on. A tap on a ball fills the next empty slot (the
- * order of taps is the order they play); a tap on a filled slot takes its ball out, and the balls
- * after it move up. Balls already in the tray show "In slot N" and can't be picked twice. The rules
- * of a draft are in lineup-draft.ts.
+ * order of taps is the order they play). A tap on a filled slot, or on that ball's tile in the grid
+ * (marked "Slot N ✕"), takes it out and leaves the slot empty for the next pick, so a swap keeps
+ * the order. The rules of a draft are in lineup-draft.ts.
  */
 export function createLineupStep(
   balls: readonly BallDefinition[],
@@ -68,8 +75,10 @@ export function createLineupStep(
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
-      update(addToDraft(draft, id));
-      if (completeLineup(draft) !== undefined) done.focus();
+      // In the tray already: the tap takes it out (as a tap on its slot does).
+      const adding = !draft.includes(id);
+      update(toggleInDraft(draft, id));
+      if (adding && completeLineup(draft) !== undefined) done.focus();
     },
   });
 
@@ -99,9 +108,23 @@ export function createLineupStep(
           : `Slot ${String(index + 1)}: ${ball.name}. Take out`,
       );
     });
+    const inTray = draft.flatMap((id, index) =>
+      id === undefined ? [] : [[id, index + 1] as const],
+    );
     grid.update({
-      pressed: draft,
-      unavailable: new Map(draft.map((id, index) => [id, `In slot ${String(index + 1)}`])),
+      pressed: inTray.map(([id]) => id),
+      notes: new Map(
+        inTray.map(([id, slot]) => [
+          id,
+          // Reveal sets no order here (no slot numbers), so its note is the ✕ alone.
+          format === 'reveal'
+            ? { shown: '✕', spoken: 'in your lineup, tap to take out' }
+            : {
+                shown: `Slot ${String(slot)} ✕`,
+                spoken: `in slot ${String(slot)}, tap to take out`,
+              },
+        ]),
+      ),
     });
     const complete = completeLineup(draft) !== undefined;
     done.disabled = !complete;
@@ -111,7 +134,7 @@ export function createLineupStep(
         ? format === 'reveal'
           ? 'Reveal lineups'
           : 'Start series'
-        : `Pick ${String(LINEUP_SIZE - draft.length)} more`,
+        : `Pick ${String(LINEUP_SIZE - draftCount(draft))} more`,
     );
   }
 
@@ -121,7 +144,7 @@ export function createLineupStep(
       format = nextFormat;
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
       tray.classList.toggle('lineup-tray-unordered', format === 'reveal');
-      update(nextDraft.filter((id) => byId.has(id)).reduce<Draft>(addToDraft, []));
+      update(draftOf(nextDraft, (id) => byId.has(id)));
       header.focus();
     },
     draft: () => draft,
