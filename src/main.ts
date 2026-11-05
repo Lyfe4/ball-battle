@@ -1,7 +1,8 @@
 import './style.css';
-import { parseMatchup, writeMatchParams, type Matchup } from './app/matchup.ts';
-import { generateSeed, parseSeed } from './app/seed.ts';
-import { clearSeriesParams, parseSeriesParams } from './app/series-url.ts';
+import { DEFAULT_MATCHUP, writeMatchParams, type Matchup } from './app/matchup.ts';
+import { parseRoute, type Route } from './app/route.ts';
+import { generateSeed } from './app/seed.ts';
+import { clearSeriesParams, writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createSeriesController } from './series-controller.ts';
@@ -33,12 +34,12 @@ const seriesRoot = getElement('series', HTMLElement);
 
 const ballIds = BALLS.map((ball) => ball.id);
 
-const params = new URL(window.location.href).searchParams;
-const seriesLink = parseSeriesParams(params, ballIds);
+const currentRoute = (): Route => parseRoute(new URL(window.location.href).searchParams, ballIds);
+const initialRoute = currentRoute();
 type Mode = 'quick' | 'series';
-let mode: Mode = seriesLink === undefined ? 'quick' : 'series';
-let matchup = parseMatchup(params, ballIds);
-let seed = parseSeed(params.get('seed')) ?? generateSeed();
+let mode: Mode = initialRoute.screen === 'series' ? 'series' : 'quick';
+let matchup: Matchup = initialRoute.screen === 'match' ? initialRoute.matchup : DEFAULT_MATCHUP;
+let seed = (initialRoute.screen === 'match' ? initialRoute.seed : undefined) ?? generateSeed();
 // Remembered per viewer. Reading localStorage itself can throw, hence the getter.
 const storage = () => window.localStorage;
 let speed: PlaybackSpeed = loadSpeed(storage);
@@ -118,10 +119,18 @@ function showWorld(world: WorldState, shownSeed: number): void {
   arena.show(world);
 }
 
+/** Rewrites the URL of the screen on show (a new seed, a format), adding no history entry. */
 function replaceUrl(write: (params: URLSearchParams) => void): void {
   const url = new URL(window.location.href);
   write(url.searchParams);
   window.history.replaceState(null, '', url);
+}
+
+/** Moves to another screen: a history entry, so Back returns. The same URL again adds nothing. */
+function pushUrl(write: (params: URLSearchParams) => void): void {
+  const url = new URL(window.location.href);
+  write(url.searchParams);
+  if (url.href !== window.location.href) window.history.pushState(null, '', url);
 }
 
 /** Which controls show for the mode: the picker, the lineup builder or the scoreboard. */
@@ -132,6 +141,14 @@ function showControls(): void {
 }
 
 function setMode(next: Mode): void {
+  pushUrl((url) => {
+    if (next === 'series') writeSeriesModeParams(url);
+    else clearSeriesParams(url);
+  });
+  showMode(next);
+}
+
+function showMode(next: Mode): void {
   mode = next;
   modeToggle.select(next);
   series.leave();
@@ -157,7 +174,26 @@ function startMatch(nextMatchup: Matchup, nextSeed: number): void {
   showWorld(createMatchWorld(matchup, nextSeed), nextSeed);
 }
 
+/** Opens the screen a URL asks for: on load (for a series), and on Back and Forward. */
+function showRoute(route: Route): void {
+  series.leave();
+  mode = route.screen === 'series' ? 'series' : 'quick';
+  modeToggle.select(mode);
+  if (route.screen === 'match') {
+    showControls();
+    startMatch(route.matchup, route.seed ?? generateSeed());
+  } else if (route.link.setup !== undefined) {
+    series.start(route.link.setup, true);
+  } else {
+    series.showBuilder(route.link.lineup, route.link.format);
+  }
+}
+
+window.addEventListener('popstate', () => {
+  showRoute(currentRoute());
+});
+
+// The link's match, or a quick match behind the series setup, is on the arena from the start.
 startMatch(matchup, seed);
-if (seriesLink?.setup !== undefined) series.start(seriesLink.setup, true);
-else if (mode === 'series') series.showBuilder(seriesLink?.lineup, seriesLink?.format);
+if (initialRoute.screen === 'series') showRoute(initialRoute);
 else showControls();
