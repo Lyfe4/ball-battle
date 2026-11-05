@@ -12,7 +12,7 @@ export {
 
 /**
  * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`).
- * Favoured: the favoured side wins 58-70%. Even: both sides win 45-55%. One pair at 500 seeds has
+ * Favoured: the favoured side wins 62-72% (ADR 0028; 58-70% before). Even: both sides win 45-55%. One pair at 500 seeds has
  * about ±1.6 points of standard error, so:
  * - a result inside the band but within `warnWithin` of an edge is flagged (WARN, passes);
  * - a result outside the band by at most `nearWithin` is a near-miss (NEAR, passes): the noise
@@ -20,7 +20,7 @@ export {
  * - anything further out is a miss (MISS, fails the counter-map target).
  */
 export const COUNTER_BANDS = {
-  favoured: [0.58, 0.7],
+  favoured: [0.62, 0.72],
   even: [0.45, 0.55],
   warnWithin: 0.02,
   nearWithin: 0.02,
