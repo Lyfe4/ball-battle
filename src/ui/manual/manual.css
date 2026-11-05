@@ -1,0 +1,166 @@
+/* The ball manual: the roster, and one entry per ball with its stats and matchups. */
+.manual,
+.manual-index,
+.manual-entry {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.manual-steps {
+  display: flex;
+  gap: var(--space-small);
+}
+
+.ball-detail {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.ball-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+}
+
+.ball-detail-icon {
+  flex: none;
+}
+
+.ball-detail-description {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ball-detail-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--space-gap);
+  align-items: center;
+  margin: 0;
+  font-size: var(--font-size-small);
+}
+
+.ball-detail-stat {
+  color: var(--color-text-muted);
+}
+
+.ball-detail-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  margin: 0;
+}
+
+.ball-detail-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.ball-detail-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-text-muted);
+}
+
+.ball-detail-number {
+  min-width: 2.5em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ball-detail-heading {
+  margin: var(--space-small) 0 0;
+  font-size: 1rem;
+}
+
+.ball-detail-beats {
+  color: var(--color-favoured);
+}
+
+.ball-detail-loses {
+  color: var(--color-unfavoured);
+}
+
+.ball-detail-matchups,
+.ball-detail-even {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ball-detail-even {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ball-detail-row {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.ball-detail-opponent,
+.ball-detail-even-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small) 0 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ball-detail-even-button {
+  min-width: var(--tap-target);
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.ball-detail-opponent:focus-visible,
+.ball-detail-even-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ball-detail-reason,
+.ball-detail-none {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+/* The manual is for reading: no arena at any width, and a wider column on a wide screen. */
+.stage[data-screen='manual'] .arena-container {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage[data-screen='manual'] {
+    justify-content: center;
+  }
+
+  .stage[data-screen='manual'] .hud {
+    width: min(40rem, 100%);
+  }
+}
+
+.manual-steps > * {
+  flex: 1;
+}

@@ -14,6 +14,14 @@ import {
 export type Route =
   /** The front door: a demo match and the way in. A URL with nothing for any other screen. */
   | { readonly screen: 'home' }
+  /**
+   * The ball manual: the roster, or one ball's entry (`ball`), or the matchup chart (`chart`).
+   */
+  | {
+      readonly screen: 'manual';
+      readonly ball: string | undefined;
+      readonly chart: boolean;
+    }
   /** Choosing the two balls of a quick match, prefilled with these. */
   | { readonly screen: 'pick'; readonly matchup: Matchup }
   /** A quick match: these two balls, on this seed (a new one when the link has none). */
@@ -29,8 +37,21 @@ export type SeriesScreenStep = 'rules' | SeriesStep;
 
 export type Screen = Route['screen'];
 
-/** Names a screen that isn't a match or a series: `?view=pick`. */
+/** Names a screen that isn't a match or a series: `?view=pick`, `?view=manual`. */
 const VIEW = 'view';
+const BALL = 'ball';
+const TAB = 'tab';
+
+/** The ball manual: the roster, one ball's entry, or the matchup chart. Nothing else in the URL. */
+export function writeManualParams(
+  params: URLSearchParams,
+  page: { readonly ball?: string; readonly chart?: boolean } = {},
+): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  params.set(VIEW, 'manual');
+  if (page.ball !== undefined) params.set(BALL, page.ball);
+  else if (page.chart === true) params.set(TAB, 'chart');
+}
 
 /** The quick-match setup with these two balls: `?view=pick&a=&b=`, nothing else. */
 export function writePickParams(params: URLSearchParams, matchup: Matchup): void {
@@ -59,8 +80,15 @@ export function writeHomeParams(params: URLSearchParams): void {
 
 /** Reads the screen a URL asks for. Never throws: anything it can't use falls back. */
 export function parseRoute(params: URLSearchParams, validIds: readonly string[]): Route {
-  if (params.get(VIEW)?.trim().toLowerCase() === 'pick') {
-    return { screen: 'pick', matchup: parseMatchup(params, validIds) };
+  const view = params.get(VIEW)?.trim().toLowerCase();
+  if (view === 'pick') return { screen: 'pick', matchup: parseMatchup(params, validIds) };
+  if (view === 'manual') {
+    const ball = params.get(BALL)?.trim().toLowerCase();
+    return {
+      screen: 'manual',
+      ball: ball !== undefined && validIds.includes(ball) ? ball : undefined,
+      chart: params.get(TAB)?.trim().toLowerCase() === 'chart',
+    };
   }
   const link = parseSeriesParams(params, validIds);
   if (link !== undefined) {

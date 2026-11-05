@@ -1,0 +1,137 @@
+import type { Matchup } from '../../app/matchup.ts';
+import { drawBallIcon } from '../../render/ball-icon.ts';
+import type { BallDefinition } from '../../sim/types.ts';
+import { matchupsOf, statShares, type MatchupLine } from '../balls/matchups.ts';
+import { element, setText } from '../dom.ts';
+
+export interface BallDetail {
+  readonly element: HTMLElement;
+  show(id: string): void;
+}
+
+export interface BallDetailActions {
+  /** Another ball's entry (a matchup was tapped). */
+  readonly onOpen: (id: string) => void;
+  /** Try it: a quick match of this ball against `matchup.b`, set up and ready. */
+  readonly onTry: (matchup: Matchup) => void;
+}
+
+const HERO_PX = 96;
+const ROW_ICON_PX = 28;
+const EVEN_ICON_PX = 24;
+
+/**
+ * One ball's manual entry, phone first: the drawing large, its one line, three stat bars against
+ * the roster, then who it beats and loses to with the counter map's reason for each, and the balls
+ * it is even with. Every opponent is a button to that ball's entry, so the manual is browsed by its
+ * counters. Try it sets up a quick match against a ball it beats (or its counter, if it beats none).
+ */
+export function createBallDetail(
+  balls: readonly BallDefinition[],
+  actions: BallDetailActions,
+): BallDetail {
+  const byId = new Map(balls.map((ball) => [ball.id, ball]));
+  const roster = balls.map((ball) => ball.id);
+  const nameOf = (id: string) => byId.get(id)?.name ?? id;
+  const root = element('article', 'ball-detail');
+
+  const hero = element('div', 'ball-detail-hero');
+  const icon = element('canvas', 'ball-detail-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  const description = element('p', 'ball-detail-description');
+  hero.append(icon, description);
+
+  const stats = element('dl', 'ball-detail-stats');
+  const statRows = (['Health', 'Speed', 'Contact hit'] as const).map((label) => {
+    const term = element('dt', 'ball-detail-stat', label);
+    const value = element('dd', 'ball-detail-value');
+    const bar = element('span', 'ball-detail-bar');
+    bar.setAttribute('aria-hidden', 'true');
+    const fill = element('span', 'ball-detail-fill');
+    bar.append(fill);
+    const number = element('span', 'ball-detail-number');
+    value.append(bar, number);
+    stats.append(term, value);
+    return { fill, number };
+  });
+
+  const beatsHeading = element('h2', 'ball-detail-heading ball-detail-beats', 'Beats');
+  const beats = element('ul', 'ball-detail-matchups');
+  const losesHeading = element('h2', 'ball-detail-heading ball-detail-loses', 'Loses to');
+  const loses = element('ul', 'ball-detail-matchups');
+  const evenHeading = element('h2', 'ball-detail-heading', 'Even with');
+  const even = element('ul', 'ball-detail-even');
+
+  const tryIt = element('button', 'hud-button hud-button-primary');
+  tryIt.type = 'button';
+  let tryMatchup: Matchup | undefined;
+  tryIt.addEventListener('click', () => {
+    if (tryMatchup !== undefined) actions.onTry(tryMatchup);
+  });
+
+  root.append(hero, stats, beatsHeading, beats, losesHeading, loses, evenHeading, even, tryIt);
+
+  function opponentButton(id: string, iconPx: number, className: string): HTMLButtonElement {
+    const button = element('button', className);
+    button.type = 'button';
+    const ball = byId.get(id);
+    const canvas = element('canvas', 'ball-detail-row-icon');
+    canvas.setAttribute('aria-hidden', 'true');
+    if (ball !== undefined) drawBallIcon(canvas, ball, iconPx);
+    button.append(canvas);
+    button.addEventListener('click', () => {
+      actions.onOpen(id);
+    });
+    return button;
+  }
+
+  function matchupRows(lines: readonly MatchupLine[]): HTMLElement[] {
+    if (lines.length === 0) return [element('li', 'ball-detail-none', 'None in particular.')];
+    return lines.map((line) => {
+      const item = element('li', 'ball-detail-row');
+      const button = opponentButton(line.opponent, ROW_ICON_PX, 'ball-detail-opponent');
+      button.append(element('span', 'ball-detail-opponent-name', nameOf(line.opponent)));
+      item.append(button, element('p', 'ball-detail-reason', line.reason));
+      return item;
+    });
+  }
+
+  return {
+    element: root,
+    show(id) {
+      const ball = byId.get(id);
+      if (ball === undefined) return;
+      drawBallIcon(icon, ball, HERO_PX);
+      setText(description, ball.description);
+      const shares = statShares(ball, balls);
+      const values = [
+        [shares.health, ball.maxHealth],
+        [shares.speed, ball.speed],
+        [shares.hit, ball.contactDamage],
+      ] as const;
+      statRows.forEach((row, index) => {
+        const [share, value] = values[index] ?? [0, 0];
+        row.fill.style.width = `${String(Math.round(share * 100))}%`;
+        setText(row.number, String(value));
+      });
+      const lines = matchupsOf(id, roster);
+      beats.replaceChildren(...matchupRows(lines.beats));
+      loses.replaceChildren(...matchupRows(lines.losesTo));
+      even.replaceChildren(
+        ...lines.even.map((line) => {
+          const item = element('li', 'ball-detail-even-ball');
+          const button = opponentButton(line.opponent, EVEN_ICON_PX, 'ball-detail-even-button');
+          button.setAttribute('aria-label', nameOf(line.opponent));
+          button.title = nameOf(line.opponent);
+          item.append(button);
+          return item;
+        }),
+      );
+      evenHeading.hidden = lines.even.length === 0;
+      // Try it against a ball it beats, so the first match shows what it's good at.
+      const opponent = lines.beats[0]?.opponent ?? lines.losesTo[0]?.opponent ?? id;
+      tryMatchup = { a: id, b: opponent };
+      setText(tryIt, `Try it: ${ball.name} vs ${nameOf(opponent)}`);
+    },
+  };
+}

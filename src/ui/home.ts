@@ -5,6 +5,7 @@ import { element, setText } from './dom.ts';
 export interface HomeActions {
   readonly onPlay: () => void;
   readonly onSeries: () => void;
+  readonly onManual: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
 }
@@ -58,8 +59,11 @@ export function createHome(
   const series = element('button', 'hud-button', 'Best of 3 vs bot');
   series.type = 'button';
   series.addEventListener('click', actions.onSeries);
+  const manual = element('button', 'hud-button', 'Ball manual');
+  manual.type = 'button';
+  manual.addEventListener('click', actions.onManual);
   const more = element('div', 'home-more');
-  more.append(series);
+  more.append(series, manual);
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);

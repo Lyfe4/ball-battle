@@ -3,6 +3,7 @@ import { DEFAULT_MATCHUP, type Matchup } from './app/matchup.ts';
 import {
   parseRoute,
   writeHomeParams,
+  writeManualParams,
   writeMatchUrl,
   writePickParams,
   type Route,
@@ -21,6 +22,7 @@ import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
+import { createManual } from './ui/manual/manual.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -52,6 +54,7 @@ const TITLES: Readonly<Record<Screen, string>> = {
   pick: 'Quick match · BallBattle',
   match: 'Quick match · BallBattle',
   series: 'Best of 3 · BallBattle',
+  manual: 'Ball manual · BallBattle',
 };
 
 function createMatchWorld(next: Matchup, nextSeed: number) {
@@ -90,6 +93,32 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
   series: () => {
     navigation.push((url) => {
       writeSeriesModeParams(url);
+    });
+    showRoute(currentRoute());
+  },
+  manual: () => {
+    navigation.push((url) => {
+      writeManualParams(url);
+    });
+    showRoute(currentRoute());
+  },
+});
+
+const manual = createManual(getElement('manual', HTMLElement), BALLS, {
+  onBack: () => {
+    navigation.back(() => {
+      goHome('replace');
+    });
+  },
+  onOpen: (ball, how) => {
+    navigation[how]((url) => {
+      writeManualParams(url, { ball });
+    });
+    showRoute(currentRoute());
+  },
+  onTry: (chosen) => {
+    navigation.push((url) => {
+      writePickParams(url, chosen);
     });
     showRoute(currentRoute());
   },
@@ -170,7 +199,7 @@ function showWorld(world: WorldState, shownSeed: number): void {
 
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
 function isSetup(): boolean {
-  return screen === 'pick' || (screen === 'series' && !series.isPlaying());
+  return screen === 'pick' || screen === 'manual' || (screen === 'series' && !series.isPlaying());
 }
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
@@ -178,7 +207,9 @@ function showControls(): void {
   const setup = isSetup();
   stage.toggleAttribute('data-setup', setup);
   stage.toggleAttribute('data-home', screen === 'home');
+  stage.dataset['screen'] = screen;
   home.setVisible(screen === 'home');
+  manual.setVisible(screen === 'manual');
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
   hudRoot.hidden = setup || screen === 'home';
@@ -209,6 +240,13 @@ function showRoute(route: Route): void {
   if (route.screen === 'home') {
     showControls();
     home.open();
+    return;
+  }
+  if (route.screen === 'manual') {
+    showControls();
+    manual.show(route.ball);
+    const ball = BALL_LOOKUP.get(route.ball ?? '');
+    if (ball !== undefined) document.title = `${ball.name} · ${TITLES.manual}`;
     return;
   }
   if (route.screen === 'pick') {

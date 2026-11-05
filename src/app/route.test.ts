@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../sim/balls/index.ts';
-import { clearView, parseRoute, writeHomeParams, writeMatchUrl, writePickParams } from './route.ts';
+import {
+  clearView,
+  parseRoute,
+  writeHomeParams,
+  writeManualParams,
+  writeMatchUrl,
+  writePickParams,
+} from './route.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 const route = (query: string) => parseRoute(new URLSearchParams(query), ids);
@@ -75,5 +82,17 @@ describe('parseRoute', () => {
     });
     clearView(params);
     expect(parseRoute(params, ids)).toMatchObject({ screen: 'match', matchup: { a: 'frost' } });
+  });
+
+  it('opens the manual on the roster, a ball, or the chart, and ignores an unknown ball', () => {
+    expect(route('view=manual')).toStrictEqual({ screen: 'manual', ball: undefined, chart: false });
+    expect(route('view=manual&ball=Storm')).toMatchObject({ ball: 'storm', chart: false });
+    expect(route('view=manual&ball=nope')).toMatchObject({ ball: undefined });
+    expect(route('view=manual&tab=chart')).toMatchObject({ ball: undefined, chart: true });
+    const params = new URLSearchParams('a=storm&b=frost&seed=3');
+    writeManualParams(params, { ball: 'venom' });
+    expect(params.toString()).toBe('view=manual&ball=venom');
+    writeManualParams(params, { chart: true });
+    expect(params.toString()).toBe('view=manual&tab=chart');
   });
 });

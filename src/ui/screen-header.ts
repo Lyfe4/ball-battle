@@ -4,6 +4,8 @@ export interface ScreenHeader {
   readonly element: HTMLElement;
   /** Moves focus to the heading, so a screen reader announces the new screen. */
   focus(): void;
+  /** For a screen whose heading follows what it shows (the manual's ball). */
+  setTitle(title: string): void;
 }
 
 /**
@@ -27,6 +29,9 @@ export function createScreenHeader(
     element: header,
     focus: () => {
       heading.focus();
+    },
+    setTitle: (next) => {
+      heading.textContent = next;
     },
   };
 }

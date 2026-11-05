@@ -17,6 +17,7 @@ export interface HomeHost {
   /** Play: the quick-match setup, prefilled. */
   play(matchup: Matchup): void;
   series(): void;
+  manual(): void;
 }
 
 export interface HomeController {
@@ -50,6 +51,9 @@ export function createHomeController(
     },
     onSeries: () => {
       host.series();
+    },
+    onManual: () => {
+      host.manual();
     },
     onWatch: () => {
       waiting = false;
