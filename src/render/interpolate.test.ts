@@ -6,6 +6,8 @@ import { step } from '../sim/step.ts';
 import { deepFreeze, red, withBalls } from '../sim/test-support.ts';
 import type { ProjectileState, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
+import { advanceFrame, interpolationAlpha, startPlayback } from '../app/playback.ts';
+import type { MinionState } from '../sim/minions/types.ts';
 import { interpolateWorld } from './interpolate.ts';
 
 const shot = (id: string, x: number): ProjectileState => ({
@@ -82,6 +84,64 @@ describe('interpolateWorld', () => {
       0.5,
     );
     expect(drawn.projectiles[0]?.position).toStrictEqual({ x: 310, y: 500 });
+  });
+
+  it('blends a minion that existed on both ticks, and traces a new one back', () => {
+    const minion = (id: string, x: number): MinionState => ({
+      id,
+      ownerId: 'ball-0',
+      position: { x, y: 400 },
+      velocity: { x: 600, y: 0 },
+      radius: 26,
+      damage: 13,
+      ticksLeft: 300,
+    });
+    const { before, after } = pair();
+    const drawn = interpolateWorld(
+      deepFreeze({ ...before, minions: [minion('minion-0', 300)] }),
+      deepFreeze({ ...after, minions: [minion('minion-0', 310), minion('minion-1', 700)] }),
+      0.5,
+    );
+    expect(drawn.minions[0]?.position).toStrictEqual({ x: 305, y: 400 });
+    expect(drawn.minions[1]?.position.x).toBeCloseTo(700 - 600 * DT * 0.5, 9);
+  });
+
+  // The lag seen on phones with batch 3: minions were drawn at the latest tick while the balls
+  // glided between ticks, so on a 120 Hz screen a minion stood still every other frame (50% of
+  // frames; 33% at 90 Hz).
+  it('moves a minion on every frame of a 120 Hz screen, as smoothly as the balls', () => {
+    let playback = startPlayback(
+      createWorld(7, [
+        getDefinition(BALL_LOOKUP, 'necromancer'),
+        getDefinition(BALL_LOOKUP, 'archer'),
+      ]),
+      0,
+    );
+    let last: WorldState | undefined;
+    let frames = 0;
+    let still = 0;
+    for (let frame = 0; frame < 120 * 15 && playback.world.match.status === 'running'; frame++) {
+      playback = advanceFrame(
+        playback,
+        1000 / 120,
+        (world) => step(world, BALL_LOOKUP),
+        () => ({ hitStopMs: 0 }),
+      ).playback;
+      const drawn = interpolateWorld(
+        playback.previous,
+        playback.world,
+        interpolationAlpha(playback),
+      );
+      const now = drawn.minions[0];
+      const then = last?.minions.find((minion) => minion.id === now?.id);
+      if (now !== undefined && then !== undefined) {
+        frames += 1;
+        if (now.position.x === then.position.x && now.position.y === then.position.y) still += 1;
+      }
+      last = drawn;
+    }
+    expect(frames).toBeGreaterThan(200);
+    expect(still).toBe(0);
   });
 
   it('keeps every blended ball inside the arena over a whole match', () => {
