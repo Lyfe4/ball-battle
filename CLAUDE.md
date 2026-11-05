@@ -143,6 +143,9 @@ the game does not use it) and `docs/decisions/0019-draft-formats.md`.
 - World coordinates are in world units (`ARENA_SIZE` = 1000), never pixels. The renderer maps
   world units to the screen.
 - Colours and sizes for the renderer come from `src/render/theme.ts`, not inline literals.
+- **Phone first.** Every screen is designed for a phone (about 375 px wide) first: one clear job
+  per screen and as few controls as possible. Desktop adapts from the phone design, never the
+  other way round. Check every screen at 375×812 before calling it done.
 - Tests sit next to the code as `*.test.ts`.
 - Keep files under 300 lines (ESLint `max-lines`); split by responsibility before that.
 - Conventional Commits (`feat(sim): ...`, `chore: ...`), small and single-purpose. The commit body
