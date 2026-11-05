@@ -112,6 +112,13 @@ blind picks. See Decisions below.
 - **Rules versus new balls** (2026-11-05): counter-creating interaction rules are capped at about
   one per ball and must show on screen; the remaining gaps (a second prey for the Sniper, a second
   predator for the Quake, Thorns' 1 / 4) are for new balls to fill (ADR 0016 addendum).
+- **Batch 3** (2026-11-05, ADR 0026) fills them with new balls, not rules. The **Magnet**'s pull
+  forces a brawl: it beats the balls weak up close (Speedster, Archer, Storm, Venom, Sniper, Quake,
+  Necromancer) and Thorns beats it. The **Ghost** phases through contact hits: it beats the
+  Speedster and loses to every ball whose attack never needed contact (Archer, Storm, Sniper,
+  Quake, Necromancer). The **Necromancer**'s minions draw aimed attacks: it beats the Archer and
+  Sniper and loses to the Quake (a shockwave clears its minion) and the Berserker (every pop feeds
+  its rage). The Sniper and Thorns gain a second prey and the Quake a second predator.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

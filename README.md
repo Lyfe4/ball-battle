@@ -4,16 +4,18 @@
 
 **Play it: [battle-ball.netlify.app](https://battle-ball.netlify.app/)**
 
-A browser auto-battler. Balls with different abilities bounce around a square arena until one
-wins. There is no player control: you pick the balls and watch.
+A strategy game about building a lineup. Pick your balls, set their order and watch your plan
+fight it out: balls with different abilities bounce around a square arena until one wins. There is
+no control once a fight starts, so the decisions are all in the picking. Against a bot, a Best of 3
+asks you to build and order three balls and read what the other side will play.
 
 Built with TypeScript, Vite and plain Canvas 2D. No game engine, no physics library, no
 framework.
 
 ![Home, quick-match setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
 
-The home screen plays a demo match of one counter and says why it wins more often; **Play** sets
-that pair up with the favoured ball yours. Every screen is designed for a phone first and has a
+The home screen plays a demo match behind the pitch; **Play** sets up a quick match and **Best of
+3** a series against the bot. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
@@ -26,19 +28,22 @@ definitions and the counter map, so they never go stale.
 Pick two balls and watch them fight. They collide elastically and deal damage scaled by how hard
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball      | Ability                                                                          |
-| --------- | -------------------------------------------------------------------------------- |
-| Brawler   | None. Hits the hardest. The safe pick: even against every ball but Thorns.       |
-| Speedster | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
-| Vampire   | Heals for 40% of the damage it deals.                                            |
-| Archer    | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
-| Storm     | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
-| Frost     | Slowest and sturdy. Every hit slows its enemy for 3 s; poison wears off it fast. |
-| Thorns    | Spiked: every contact hit it takes hurts the attacker back by 35%.               |
-| Venom     | Light hits that poison its enemy for over 4 s, chipping away between contacts.   |
-| Berserker | The most health, hits harder the more it has lost, and can't be slowed.          |
-| Sniper    | Locks onto its enemy with a laser, then fires one heavy shot down the line.      |
-| Quake     | Every wall it hits sends out a shockwave that stops its enemy aiming for 3.5 s.  |
+| Ball        | Ability                                                                          |
+| ----------- | -------------------------------------------------------------------------------- |
+| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.       |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
+| Vampire     | Heals for 40% of the damage it deals.                                            |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
+| Storm       | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
+| Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s; poison wears off it fast. |
+| Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.               |
+| Venom       | Light hits that poison its enemy for over 4 s, chipping away between contacts.   |
+| Berserker   | The most health, hits harder the more it has lost, and can't be slowed.          |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.      |
+| Quake       | Every wall it hits sends out a shockwave that stops its enemy aiming for 3.5 s.  |
+| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.  |
+| Ghost       | Phases out every few seconds: contact hits pass through it, but shots don't.     |
+| Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.         |
 
 Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
@@ -72,10 +77,20 @@ time), never decided, and each one comes from something you can watch happen:
 - **Archer beats Frost**: leading arrows land most often on the slowest ball.
 - **Quake beats Archer, Storm and Sniper**: a shockwave staggers whatever it hits, and a staggered
   ball can't aim, so it loses its next arrow, strike or shot.
+- **Magnet beats the balls weak up close** (Speedster, Archer, Storm, Venom, Sniper, Quake,
+  Necromancer): its pull drags them into a brawl. **Thorns beats the Magnet**: it drags the spikes
+  into itself.
+- **Ghost beats Speedster**: the fastest ball runs through it most often, and its rush lands on
+  nothing. **Archer, Storm, Sniper, Quake and Necromancer beat the Ghost**: their attacks never
+  needed contact, so phasing never stops them.
+- **Necromancer beats Archer and Sniper**: a minion nearer than its owner draws the arrow or shot.
+  **Quake and Berserker beat the Necromancer**: a shockwave clears the minion and its owner, and
+  every minion pop feeds the Berserker's rage.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
 The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
-[ADR 0016](docs/decisions/0016-counter-density.md)).
+[ADR 0016](docs/decisions/0016-counter-density.md),
+[ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md)).
 
 ## Best of 3
 
@@ -87,7 +102,7 @@ and a series left with Back (easy to do by accident on a phone) can be resumed w
 bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
 series ends, the link holds both lineups, the series seed and the ruleset, e.g.
-`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=1`, and replays it exactly
+`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=2`, and replays it exactly
 ([ADR 0017](docs/decisions/0017-best-of-3-series.md)). Before replaying, the page checks the link
 with the same rule a server would use: the bot's lineup and picks must be the ones it would
 choose, so an edited link opens the lineup instead
@@ -116,7 +131,7 @@ pnpm install
 pnpm dev
 ```
 
-Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42&v=1`: share or reload it to
+Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42&v=2`: share or reload it to
 replay the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a
 fresh random one. `v` is the ruleset the fight was played under: balance changes bump it, and a
 link from another version says so and offers to play under today's rules rather than silently
@@ -172,7 +187,7 @@ The rules, in brief:
 1. **The simulation is pure and deterministic.** `src/sim` cannot touch the DOM, the clock,
    timers or `Math.random`. A separate `tsconfig.sim.json` without the DOM lib and ESLint rules
    enforce this; transcendental `Math` functions are banned too, because they can differ between
-   browsers. 132 recorded matches are checked on every push to come out bit-identical in Node,
+   browsers. 210 recorded matches are checked on every push to come out bit-identical in Node,
    Chromium, Firefox and WebKit
    ([ADR 0023](docs/decisions/0023-known-match-results-across-engines.md)).
 2. **Fixed timestep.** The sim runs at exactly 60 ticks per second regardless of frame rate. The
@@ -208,8 +223,12 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0018: Aimed start (removed)](docs/decisions/0018-aimed-start.md)
 , [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
 , [ADR 0020: Screens](docs/decisions/0020-screens.md)
-[ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md)
-and [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md).
+, [ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md)
+, [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md)
+, [ADR 0023: Known match results across engines](docs/decisions/0023-known-match-results-across-engines.md)
+, [ADR 0024: Player-facing text stays in definitions](docs/decisions/0024-player-facing-text-stays-in-definitions.md)
+, [ADR 0025: Show less, and Back](docs/decisions/0025-show-less-and-back.md)
+and [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 115.74 kB JS (38.89 kB gzipped), 20.56 kB CSS. First version baseline: 5.05 kB
