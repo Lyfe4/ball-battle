@@ -4,15 +4,21 @@
 // 0019) keep their meaning.
 import { parseMatchup, type Matchup } from './matchup.ts';
 import { parseSeed } from './seed.ts';
-import { parseSeriesParams, type SeriesLink } from './series-url.ts';
+import { parseSeriesParams, type SeriesLink, type SeriesStep } from './series-url.ts';
 
 export type Route =
   /** Choosing the two balls of a quick match, prefilled with these. */
   | { readonly screen: 'pick'; readonly matchup: Matchup }
   /** A quick match: these two balls, on this seed (a new one when the link has none). */
   | { readonly screen: 'match'; readonly matchup: Matchup; readonly seed: number | undefined }
-  /** Best of 3: a series to replay, or the setup, prefilled with what the link holds. */
-  | { readonly screen: 'series'; readonly link: SeriesLink };
+  /**
+   * Best of 3: a series to replay (`play`), or a step of setting one up (choosing the rules, the
+   * lineup, its order), prefilled with what the link holds.
+   */
+  | { readonly screen: 'series'; readonly link: SeriesLink; readonly step: SeriesScreenStep };
+
+/** Where a best-of-3 screen is: the rules first, then the steps a link can name. */
+export type SeriesScreenStep = 'rules' | SeriesStep;
 
 export type Screen = Route['screen'];
 
@@ -38,7 +44,11 @@ export function parseRoute(params: URLSearchParams, validIds: readonly string[])
     return { screen: 'pick', matchup: parseMatchup(params, validIds) };
   }
   const link = parseSeriesParams(params, validIds);
-  if (link !== undefined) return { screen: 'series', link };
+  if (link !== undefined) {
+    const step =
+      link.setup !== undefined ? 'play' : (link.step ?? (link.lineup ? 'lineup' : 'rules'));
+    return { screen: 'series', link, step };
+  }
   return {
     screen: 'match',
     matchup: parseMatchup(params, validIds),

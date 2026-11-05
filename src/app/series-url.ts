@@ -21,7 +21,16 @@ const KEYS = {
   seed: 'seed',
   format: 'fmt',
   picks: 'picks',
+  step: 'step',
 } as const;
+
+/**
+ * The best-of-3 setup step a URL is on, past the first (choosing the rules). Only a link that holds
+ * a whole series replays one; the others are steps of setting one up, and `play` and `order` fall
+ * back to the lineup after a reload, since the bot's lineup is never in the URL until the end.
+ */
+export type SeriesStep = 'lineup' | 'order' | 'play';
+const STEPS: readonly SeriesStep[] = ['lineup', 'order', 'play'];
 
 /** What a URL asks for in best-of-3 mode. */
 export interface SeriesLink {
@@ -31,6 +40,8 @@ export interface SeriesLink {
   readonly lineup?: Lineup;
   /** The draft format, when the link names a valid one: preselects it in the builder. */
   readonly format?: Format;
+  /** The setup step, when the link names one. */
+  readonly step?: SeriesStep;
 }
 
 const ids = (raw: string): string[] => raw.split(',').map((id) => id.trim().toLowerCase());
@@ -72,7 +83,12 @@ export function parseSeriesParams(
   const b = readLineup(params.get(KEYS.b), validIds);
   const seed = parseSeed(params.get(KEYS.seed));
   const format = readFormat(params.get(KEYS.format));
-  const named = format === undefined || format === 'blind' ? {} : { format };
+  const stepName = params.get(KEYS.step)?.trim().toLowerCase();
+  const step = STEPS.find((name) => name === stepName);
+  const named = {
+    ...(format === undefined || format === 'blind' ? {} : { format }),
+    ...(step === undefined ? {} : { step }),
+  };
   if (a !== undefined && b !== undefined && seed !== undefined && format !== undefined) {
     const picks = readPicks(params.get(KEYS.picks), a, b);
     const valid = picks !== undefined && (format === 'loser' || picks.length === 0);
@@ -88,6 +104,7 @@ export function parseSeriesParams(
 /** Writes a whole series into URL parameters, replacing any quick-match ones. */
 export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): void {
   writeSeriesModeParams(params, setup.format);
+  params.delete(KEYS.step);
   params.set(KEYS.a, setup.a.join(','));
   params.set(KEYS.b, setup.b.join(','));
   params.set(KEYS.seed, String(setup.seed));
@@ -101,10 +118,16 @@ export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): 
  * chosen format. The bot's lineup is not written until the series ends, so the address bar never
  * gives it away.
  */
-export function writeSeriesModeParams(params: URLSearchParams, format?: Format): void {
+export function writeSeriesModeParams(
+  params: URLSearchParams,
+  format?: Format,
+  step?: SeriesStep,
+): void {
   clearMatchParams(params);
+  params.delete(KEYS.step);
   params.set(KEYS.mode, SERIES_MODE);
   if (format !== undefined && format !== 'blind') params.set(KEYS.format, format);
+  if (step !== undefined) params.set(KEYS.step, step);
 }
 
 /** Removes every series parameter, for switching back to a quick match. */
@@ -114,6 +137,7 @@ export function clearSeriesParams(params: URLSearchParams): void {
   params.delete(KEYS.b);
   params.delete(KEYS.format);
   params.delete(KEYS.picks);
+  params.delete(KEYS.step);
 }
 
 function clearMatchParams(params: URLSearchParams): void {

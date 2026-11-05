@@ -18,6 +18,7 @@ describe('parseRoute', () => {
       link: {
         setup: { seed: 9, a: ['storm', 'frost', 'venom'], b: ['quake', 'thorns', 'archer'] },
       },
+      step: 'play',
     });
     expect(
       route('mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns'),
@@ -25,8 +26,11 @@ describe('parseRoute', () => {
     expect(route('mode=bo3&fmt=reveal')).toStrictEqual({
       screen: 'series',
       link: { format: 'reveal' },
+      step: 'rules',
     });
-    expect(route('mode=bo3')).toStrictEqual({ screen: 'series', link: {} });
+    expect(route('mode=bo3')).toStrictEqual({ screen: 'series', link: {}, step: 'rules' });
+    expect(route('mode=bo3&la=storm,frost,venom')).toMatchObject({ step: 'lineup' });
+    expect(route('mode=bo3&fmt=loser&step=lineup')).toMatchObject({ step: 'lineup' });
   });
 
   it('opens a match without a seed when the link has none or a bad one, so a fresh one is used', () => {
@@ -36,7 +40,11 @@ describe('parseRoute', () => {
 
   it('falls back instead of failing on a typo', () => {
     expect(route('a=nope&b=FROST')).toMatchObject({ matchup: { a: 'speedster', b: 'frost' } });
-    expect(route('mode=bo3&la=storm,storm,frost')).toStrictEqual({ screen: 'series', link: {} });
+    expect(route('mode=bo3&la=storm,storm,frost')).toStrictEqual({
+      screen: 'series',
+      link: {},
+      step: 'rules',
+    });
   });
 
   it('opens a quick match with the default balls on a bare URL', () => {

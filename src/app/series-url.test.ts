@@ -154,4 +154,17 @@ describe('series URL, draft formats', () => {
     }
     throw new Error('no seed found where the pick applies');
   });
+
+  it('names the setup step while a series is set up, and drops it in a whole series link', () => {
+    const params = new URLSearchParams('a=storm&b=frost&seed=4');
+    writeSeriesModeParams(params, 'reveal', 'order');
+    expect(params.toString()).toBe('mode=bo3&fmt=reveal&step=order');
+    expect(parseSeriesParams(params, ids)).toStrictEqual({ format: 'reveal', step: 'order' });
+    expect(parse('mode=bo3&step=nonsense')).toStrictEqual({});
+    writeSeriesParams(params, setup);
+    expect(params.get('step')).toBeNull();
+    clearSeriesParams(params);
+    expect(params.has('mode')).toBe(false);
+    expect(params.has('step')).toBe(false);
+  });
 });
