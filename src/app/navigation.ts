@@ -2,6 +2,8 @@
 // and Forward work and every screen has a URL. Each entry this page pushes carries its depth, so an
 // in-app Back button knows whether there is a screen of ours to go back to, or whether the visitor
 // arrived on this screen from a link (then Back goes to the screen's parent instead of leaving).
+// The browser's window is passed in (main.ts passes `window`), so the depth rules are tested with a
+// fake history.
 
 interface EntryState {
   readonly depth: number;
@@ -23,12 +25,26 @@ export interface Navigation {
   onChange(listener: () => void): void;
 }
 
-export function createNavigation(): Navigation {
-  let depth = depthOf(window.history.state);
-  window.history.replaceState({ depth } satisfies EntryState, '');
+/** The parts of the browser's window navigation uses. History state survives a reload. */
+export interface HistoryWindow {
+  readonly history: {
+    readonly state: unknown;
+    pushState(data: unknown, unused: string, url: URL): void;
+    replaceState(data: unknown, unused: string, url?: URL): void;
+    back(): void;
+  };
+  readonly location: { readonly href: string };
+  addEventListener(type: 'popstate', listener: (event: { readonly state: unknown }) => void): void;
+}
+
+export function createNavigation(win: HistoryWindow): Navigation {
+  const { history } = win;
+  // After a reload the entry keeps the depth it was pushed with.
+  let depth = depthOf(history.state);
+  history.replaceState({ depth } satisfies EntryState, '');
 
   function edit(write: (params: URLSearchParams) => void): URL {
-    const url = new URL(window.location.href);
+    const url = new URL(win.location.href);
     write(url.searchParams);
     return url;
   }
@@ -36,19 +52,19 @@ export function createNavigation(): Navigation {
   return {
     push(write) {
       const url = edit(write);
-      if (url.href === window.location.href) return;
+      if (url.href === win.location.href) return;
       depth += 1;
-      window.history.pushState({ depth } satisfies EntryState, '', url);
+      history.pushState({ depth } satisfies EntryState, '', url);
     },
     replace(write) {
-      window.history.replaceState({ depth } satisfies EntryState, '', edit(write));
+      history.replaceState({ depth } satisfies EntryState, '', edit(write));
     },
     back(toParent) {
-      if (depth > 0) window.history.back();
+      if (depth > 0) history.back();
       else toParent();
     },
     onChange(listener) {
-      window.addEventListener('popstate', (event) => {
+      win.addEventListener('popstate', (event) => {
         depth = depthOf(event.state);
         listener();
       });

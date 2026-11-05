@@ -4,7 +4,7 @@
 import type { Matchup } from './app/matchup.ts';
 import { writeMatchUrl, writePickParams } from './app/route.ts';
 import { generateSeed } from './app/seed.ts';
-import type { Navigation } from './navigation.ts';
+import type { Navigation } from './app/navigation.ts';
 import type { BallDefinition } from './sim/types.ts';
 import { element } from './ui/dom.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';

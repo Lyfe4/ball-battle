@@ -15,7 +15,7 @@ import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
-import { createNavigation } from './navigation.ts';
+import { createNavigation } from './app/navigation.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
@@ -38,7 +38,7 @@ const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 
-const navigation = createNavigation();
+const navigation = createNavigation(window);
 const currentRoute = (): Route =>
   parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();

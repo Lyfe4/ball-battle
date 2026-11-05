@@ -1,7 +1,7 @@
 // Best of 3's two halves wired to the page: setting a series up (series-setup.ts) and playing it
 // (series-controller.ts), with their moves between screens. main.ts hands over what they need.
 import { writeSeriesModeParams } from './app/series-url.ts';
-import type { Navigation } from './navigation.ts';
+import type { Navigation } from './app/navigation.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import { createSeriesController, type SeriesController } from './series-controller.ts';
 import { createSeriesSetup, type SeriesSetupFlow } from './series-setup.ts';
