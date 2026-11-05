@@ -244,4 +244,29 @@ describe('applyActions', () => {
       }
     });
   });
+
+  it('steers another ball toward a point, keeping its speed, and ignores a defeated one', () => {
+    const placed = withBalls(world, [
+      { position: { x: 500, y: 500 } },
+      { position: { x: 200, y: 500 }, velocity: { x: 0, y: -560 } },
+    ]);
+    const steer: AbilityAction = {
+      kind: 'steer',
+      targetId: 'ball-1',
+      toward: { x: 500, y: 500 },
+      share: 0.5,
+    };
+    const { balls } = apply(placed.balls, 'ball-0', [steer], definitions, 1);
+    const v = balls[1]?.velocity ?? { x: 0, y: 0 };
+    expect(Math.sqrt(v.x * v.x + v.y * v.y)).toBeCloseTo(560, 9);
+    expect(v.x).toBeGreaterThan(0);
+    const dead = withBalls(placed, [{}, { health: 0 }]);
+    expect(apply(dead.balls, 'ball-0', [steer], definitions, 1).balls[1]?.velocity).toStrictEqual({
+      x: 0,
+      y: -560,
+    });
+    expect(() => apply(placed.balls, 'ball-0', [{ ...steer, share: 2 }], definitions, 1)).toThrow(
+      /invalid share/,
+    );
+  });
 });

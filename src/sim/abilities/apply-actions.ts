@@ -8,6 +8,7 @@ import {
   shockedHeal,
   withStatus,
 } from '../status.ts';
+import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import type {
   AbilityAction,
@@ -133,6 +134,18 @@ export function applyActions(
         update(ownerId, (self) => ({
           ...self,
           velocity: assertFinite(action.velocity, ownerId),
+        }));
+        break;
+      case 'steer':
+        assertSteerShare(action.share, ownerId);
+        update(action.targetId, (target) => ({
+          ...target,
+          velocity: steerToward(
+            target.position,
+            target.velocity,
+            assertFinite(action.toward, ownerId),
+            action.share,
+          ),
         }));
         break;
       case 'setAbilityState':

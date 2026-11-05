@@ -143,6 +143,16 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
    * ball returns to its cruise speed (ADR 0008). Change speed through `cruiseSpeed` instead.
    */
   | { readonly kind: 'setVelocity'; readonly velocity: Vec2 }
+  /**
+   * Turns another ball's heading toward `toward` (a point) by `share` (0-1), keeping its speed
+   * (ADR 0026): the Magnet's pull. Changes direction only; cruise speed still rules how fast.
+   */
+  | {
+      readonly kind: 'steer';
+      readonly targetId: string;
+      readonly toward: Vec2;
+      readonly share: number;
+    }
   /** Own ball only; replaces the whole state. */
   | { readonly kind: 'setAbilityState'; readonly state: S }
   /**
