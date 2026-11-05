@@ -45,6 +45,11 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 - `pnpm golden`: rewrite the known match results (`src/golden/golden-matches.json`, ADR 0023)
   after a `RULESET_VERSION` bump. It refuses while the version is unchanged: results that move
   without a bump are a bug to find, not a record to update.
+- `pnpm balance:summary`: a full `pnpm balance` that also writes each ball's shape (win rate;
+  strong, even and weak matchups by the map and measured, with average win rates) to
+  `docs/balance-summary.md`. Regenerate and commit it after any change to a ball or the combat
+  rules. `pnpm balance` prints the same summary and warns (never fails) on a lopsided shape
+  (ADR 0027).
 - `pnpm balance:ci`: the reduced check CI runs: 150 seeds, no sensitivity runs, and a counter-map
   pair fails only when clearly outside its band (ADR 0011 addendum). A full `pnpm balance` still
   judges borderline pairs.
@@ -110,8 +115,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/reveal-measurements.md`), `docs/decisions/0022-ruleset-version-and-verified-series.md`,
 `docs/decisions/0023-known-match-results-across-engines.md`,
 `docs/decisions/0024-player-facing-text-stays-in-definitions.md`,
-`docs/decisions/0025-show-less-and-back.md` and
-`docs/decisions/0026-magnet-ghost-necromancer.md`.
+`docs/decisions/0025-show-less-and-back.md`,
+`docs/decisions/0026-magnet-ghost-necromancer.md` and `docs/decisions/0027-phone-play-fixes.md`.
 
 ## Workflow
 
@@ -194,6 +199,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   other way round. Check every screen at 375×812 before calling it done. The arena shows only
   when something is fighting; setup and reading screens, and a series between rounds, take the
   whole phone screen (ADR 0020, 0025).
+- **No dead ends** (ADR 0027). Every screen state offers at least one control that moves the
+  player forward (or the result screen's buttons). A series screen renders only the actions of
+  `seriesScreenOf`, and `no-dead-end.test.ts` walks every format, outcome order and pick, live and
+  from a link; a new state or format must pass it.
 - **Show less by default** (ADR 0025). Information appears when the player wants it (on a tap, a
   `<details>` expander or a "more" link); anything shown is concise; visuals and symbols (ball
   icons, vs layouts, highlights, ▲ ▼ =) beat sentences wherever they're clear. Any symbol must be
