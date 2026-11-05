@@ -17,7 +17,12 @@ export interface LineupBot {
   readonly id: string;
   /** Three different ids from `roster`, in order. The same seed always gives the same lineup. */
   pickLineup(seed: number, roster: readonly string[]): Lineup;
-  /** Reveal, then order: its order for its own lineup, once both lineups are revealed. */
+  /**
+   * Reveal, then order: its order for its own lineup, once both lineups are revealed. `opponent` is
+   * the opponent's lineup as revealed, not its secret order, and the result must not depend on its
+   * order. Against an opponent order it can't see, every order of its own gives the same counter-map
+   * odds (ADR 0019 addendum), so a uniformly random order is the best it can do.
+   */
   orderLineup(seed: number, own: Lineup, opponent: Lineup): Lineup;
   /**
    * Loser picks next: its ball for round `round` from `remaining`, knowing the winner's next ball

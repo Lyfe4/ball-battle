@@ -132,6 +132,25 @@ describe('the bot', () => {
     expect(orders.size).toBe(6);
   });
 
+  it('orders the same way whatever order the player’s lineup is in, so it never reads it', () => {
+    const own = randomBot.pickLineup(5, ids);
+    const opponent = ['brawler', 'storm', 'frost'] as const;
+    const orders = [
+      opponent,
+      [opponent[0], opponent[2], opponent[1]],
+      [opponent[1], opponent[0], opponent[2]],
+      [opponent[1], opponent[2], opponent[0]],
+      [opponent[2], opponent[0], opponent[1]],
+      [opponent[2], opponent[1], opponent[0]],
+    ] as const;
+    for (let seed = 0; seed < 40; seed++) {
+      const expected = randomBot.orderLineup(seed, own, opponent);
+      for (const order of orders) {
+        expect(randomBot.orderLineup(seed, own, order)).toStrictEqual(expected);
+      }
+    }
+  });
+
   it('picks a counter to the winner’s next ball whenever the counter map has one', () => {
     let checked = 0;
     for (const opponent of ids) {
