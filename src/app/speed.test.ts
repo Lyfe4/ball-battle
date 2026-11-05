@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { loadSpeed, parseSpeed, saveSpeed, scaleFrame, SPEED_STORAGE_KEY } from './speed.ts';
+import {
+  loadSpeed,
+  parseSpeed,
+  playbackSpeedFor,
+  saveSpeed,
+  scaleFrame,
+  SPEED_STORAGE_KEY,
+} from './speed.ts';
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));
@@ -51,5 +58,19 @@ describe('playback speed', () => {
 
   it('ignores a tampered stored value', () => {
     expect(loadSpeed(() => memoryStorage({ [SPEED_STORAGE_KEY]: '1000' }))).toBe(1);
+  });
+});
+
+describe('playbackSpeedFor', () => {
+  it('plays the home demo at normal speed whatever the viewer chose', () => {
+    expect(playbackSpeedFor('home', 2)).toBe(1);
+    expect(playbackSpeedFor('home', 1)).toBe(1);
+  });
+
+  it('plays every match the viewer watches at their chosen speed', () => {
+    for (const screen of ['match', 'series'] as const) {
+      expect(playbackSpeedFor(screen, 2)).toBe(2);
+      expect(playbackSpeedFor(screen, 1)).toBe(1);
+    }
   });
 });
