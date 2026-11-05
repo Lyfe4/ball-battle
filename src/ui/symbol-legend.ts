@@ -53,20 +53,20 @@ export function createSymbolLegend(): SymbolLegend {
   );
   panel.append(list, element('p', 'symbol-legend-note', 'Favoured is never certain.'));
 
-  const open = (expanded: boolean) => {
-    panel.hidden = !expanded;
-    toggle.setAttribute('aria-expanded', String(expanded));
-  };
-  toggle.addEventListener('click', () => {
-    open(toggle.getAttribute('aria-expanded') !== 'true');
-  });
-  panel.addEventListener('keydown', (event) => {
+  // While open, Escape closes it wherever focus is, and focus returns to the ?.
+  const onKey = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') return;
     open(false);
     toggle.focus();
-  });
-  toggle.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') open(false);
+  };
+  function open(expanded: boolean): void {
+    panel.hidden = !expanded;
+    toggle.setAttribute('aria-expanded', String(expanded));
+    if (expanded) document.addEventListener('keydown', onKey);
+    else document.removeEventListener('keydown', onKey);
+  }
+  toggle.addEventListener('click', () => {
+    open(toggle.getAttribute('aria-expanded') !== 'true');
   });
   return { toggle, panel };
 }
