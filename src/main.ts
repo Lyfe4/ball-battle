@@ -1,21 +1,21 @@
 import './style.css';
-import { DEFAULT_MATCHUP, type Matchup } from './app/matchup.ts';
+import { createNavigation } from './app/navigation.ts';
 import {
   parseRoute,
   writeHomeParams,
   writeManualParams,
-  writeMatchUrl,
   writePickParams,
   type Route,
   type Screen,
 } from './app/route.ts';
+import { createRouter } from './app/router.ts';
+import { initialAppState, seriesRound } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
-import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
+import { loadSpeed, saveSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
-import { createNavigation } from './app/navigation.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
@@ -42,12 +42,9 @@ const navigation = createNavigation(window);
 const currentRoute = (): Route =>
   parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();
-let screen: Screen = initialRoute.screen;
-let matchup: Matchup = 'matchup' in initialRoute ? initialRoute.matchup : DEFAULT_MATCHUP;
-let seed = (initialRoute.screen === 'match' ? initialRoute.seed : undefined) ?? generateSeed();
 // Remembered per viewer. Reading localStorage itself can throw, hence the getter.
 const storage = () => window.localStorage;
-let speed: PlaybackSpeed = loadSpeed(storage);
+const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
@@ -57,26 +54,23 @@ const TITLES: Readonly<Record<Screen, string>> = {
   manual: 'Ball manual · BallBattle',
 };
 
-function createMatchWorld(next: Matchup, nextSeed: number) {
-  return createWorld(nextSeed, [
-    getDefinition(BALL_LOOKUP, next.a),
-    getDefinition(BALL_LOOKUP, next.b),
-  ]);
-}
-
 const hud = createHud(hudRoot, BALL_LOOKUP, {
   onReplay: () => {
-    startMatch(matchup, seed);
+    quick.startMatch(state.matchup, state.seed);
   },
   onNewMatch: () => {
-    startMatch(matchup, generateSeed());
+    quick.startMatch(state.matchup, generateSeed());
   },
 });
 
 /** Writes another screen's URL (a new history entry, or in place of this one) and shows it. */
 function go(write: (params: URLSearchParams) => void, how: 'push' | 'replace' = 'push'): void {
   navigation[how](write);
-  showRoute(currentRoute());
+  showCurrentRoute();
+}
+
+function showCurrentRoute(): void {
+  router.show(currentRoute());
 }
 
 /** Moves to the home screen: a new history entry, or in place of this one (a parent fallback). */
@@ -89,12 +83,10 @@ const ballLink = createBallLink(go);
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
   showWorld,
   play: (chosen) => {
-    navigation.push((url) => {
+    // The setup opens with Start focused, ready for the pair just watched.
+    go((url) => {
       writePickParams(url, chosen);
     });
-    screen = 'pick';
-    home.leave();
-    showControls();
     quick.open(chosen, 'start');
   },
   series: () => {
@@ -122,15 +114,13 @@ const quick = createQuickController(
   getElement('quick-setup', HTMLElement),
   getElement('match-actions', HTMLDivElement),
   BALLS,
+  BALL_LOOKUP,
   {
     navigation,
-    showCurrentRoute: () => {
-      showRoute(currentRoute());
-    },
-    matchup: () => matchup,
-    goHome: (how) => {
-      goHome(how);
-    },
+    state,
+    showWorld,
+    showCurrentRoute,
+    goHome,
     started: () => {
       canvas.focus();
     },
@@ -145,11 +135,8 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
   {
     navigation,
     showWorld,
-    showCurrentRoute: () => {
-      showRoute(currentRoute());
-    },
+    showCurrentRoute,
     started: () => {
-      screen = 'series';
       canvas.focus();
     },
     layoutChanged: showControls,
@@ -160,46 +147,106 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
   },
 );
 
+const router = createRouter(
+  {
+    home: {
+      show: () => {
+        home.open();
+      },
+      leave: () => {
+        home.leave();
+      },
+    },
+    manual: {
+      show: (route) => {
+        manual.show(route.ball, route.chart);
+        const ball = BALL_LOOKUP.get(route.ball ?? '');
+        if (ball !== undefined) document.title = `${ball.name} · ${TITLES.manual}`;
+      },
+    },
+    pick: {
+      show: (route) => {
+        quick.open(route.matchup);
+      },
+    },
+    match: {
+      show: (route, from) => {
+        quick.showMatch(route, from);
+      },
+    },
+    series: {
+      show: (route) => {
+        if (route.step !== 'play') {
+          series.leave();
+          showControls();
+          seriesSetup.show(route.step, route.link);
+          return;
+        }
+        const round = seriesRound(route.link, series.isPlaying());
+        if (round === 'lineup') {
+          navigation.replace((url) => {
+            writeSeriesModeParams(url, route.link.format, 'lineup');
+          });
+          showCurrentRoute();
+        } else if (round !== 'carry on') {
+          series.start(round.replay, true);
+        }
+      },
+      leave: () => {
+        series.leave();
+      },
+    },
+  },
+  initialRoute.screen,
+  showControls,
+);
+
 const arena = createArena(
   canvas,
   getElement('arena-container', HTMLDivElement),
   BALL_LOOKUP,
-  createMatchWorld(matchup, seed),
+  createWorld(state.seed, [
+    getDefinition(BALL_LOOKUP, state.matchup.a),
+    getDefinition(BALL_LOOKUP, state.matchup.b),
+  ]),
   {
     // Nothing plays behind a setup screen, nor on home while the demo waits (reduced motion): it
     // holds the frame after its intro, so both balls show.
-    isPaused: () => isSetup() || (screen === 'home' && home.isWaiting() && arena.introOver()),
-    speed: () => speed,
+    isPaused: () =>
+      isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
+    speed: () => state.speed,
     afterTicks: (world) => {
       series.settle(world);
     },
     drawn: (world, resultShown) => {
-      hud.update(world, seed, resultShown);
+      hud.update(world, state.seed, resultShown);
       series.update(world, resultShown);
-      if (screen === 'home') home.drawn(resultShown);
+      if (router.current() === 'home') home.drawn(resultShown);
     },
   },
 );
 
-createSpeedToggle(speedRoot, speed, (next) => {
-  speed = next;
+createSpeedToggle(speedRoot, state.speed, (next) => {
+  state.speed = next;
   saveSpeed(storage, next);
 });
 
 /** Puts a new world on screen: playback, effects and the HUD start over. */
 function showWorld(world: WorldState, shownSeed: number): void {
-  seed = shownSeed;
+  state.seed = shownSeed;
   hud.setMatch(world);
   arena.show(world);
 }
 
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
 function isSetup(): boolean {
+  const screen = router.current();
   return screen === 'pick' || screen === 'manual' || (screen === 'series' && !series.isPlaying());
 }
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
 function showControls(): void {
+  const screen = router.current();
   const setup = isSetup();
   stage.toggleAttribute('data-setup', setup);
   stage.toggleAttribute('data-home', screen === 'home');
@@ -215,80 +262,8 @@ function showControls(): void {
   document.title = TITLES[screen];
 }
 
-/**
- * Starts (or restarts) a match. The matchup and seed are written to the URL, so reloading or
- * sharing the link replays the same match, and a link with an invalid id is corrected.
- */
-function startMatch(nextMatchup: Matchup, nextSeed: number): void {
-  matchup = nextMatchup;
-  navigation.replace((url) => {
-    writeMatchUrl(url, matchup, nextSeed);
-  });
-  showWorld(createMatchWorld(matchup, nextSeed), nextSeed);
-}
-
-/** Opens the screen a URL asks for: on load, after the app moves screens, and on Back and Forward. */
-function showRoute(route: Route): void {
-  const from = screen;
-  screen = route.screen;
-  if (route.screen !== 'home') home.leave();
-  if (route.screen !== 'series') series.leave();
-  if (route.screen === 'home') {
-    showControls();
-    home.open();
-    return;
-  }
-  if (route.screen === 'manual') {
-    showControls();
-    manual.show(route.ball, route.chart);
-    const ball = BALL_LOOKUP.get(route.ball ?? '');
-    if (ball !== undefined) document.title = `${ball.name} · ${TITLES.manual}`;
-    return;
-  }
-  if (route.screen === 'pick') {
-    showControls();
-    quick.open(route.matchup);
-    return;
-  }
-  if (route.screen === 'match') {
-    showControls();
-    // Back from the setup to the match it covered: carry on with it rather than restarting.
-    const same = route.matchup.a === matchup.a && route.matchup.b === matchup.b;
-    if (from === 'pick' && same && route.seed === seed) return;
-    startMatch(route.matchup, route.seed ?? generateSeed());
-    return;
-  }
-  if (route.step === 'play') {
-    if (route.link.setup !== undefined) {
-      series.start(route.link.setup, true);
-      return;
-    }
-    // Forward into a series the player left, or a reload mid-series: the bot's lineup is gone, so
-    // set up again from the lineup.
-    if (!series.isPlaying()) {
-      navigation.replace((url) => {
-        writeSeriesModeParams(url, route.link.format, 'lineup');
-      });
-      showRoute(currentRoute());
-    }
-    showControls();
-    return;
-  }
-  series.leave();
-  showControls();
-  seriesSetup.show(route.step, route.link);
-}
-
-navigation.onChange(() => {
-  showRoute(currentRoute());
-});
+navigation.onChange(showCurrentRoute);
 
 // Something is on the arena from the first frame: the link's match (its URL corrected if an id was
 // invalid), or a match behind a setup screen, which keeps its own URL; home puts on its demo.
-if (initialRoute.screen === 'match') {
-  startMatch(matchup, seed);
-  showControls();
-} else {
-  showWorld(createMatchWorld(matchup, seed), seed);
-  showRoute(initialRoute);
-}
+router.show(initialRoute);

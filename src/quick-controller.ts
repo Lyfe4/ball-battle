@@ -1,21 +1,27 @@
-// Quick-match wiring: the setup screen where the two balls are chosen, and the match screen's own
-// actions (Change balls, Home). main.ts owns the arena and the screens and hands this module what it
-// needs through `QuickHost`.
+// Quick-match wiring: the setup screen where the two balls are chosen, the match screen (starting a
+// match, or carrying on with it), and its own actions (Change balls, Home). main.ts owns the arena
+// and the screens and hands this module what it needs through `QuickHost`.
 import type { Matchup } from './app/matchup.ts';
-import { writeMatchUrl, writePickParams } from './app/route.ts';
-import { generateSeed } from './app/seed.ts';
 import type { Navigation } from './app/navigation.ts';
-import type { BallDefinition } from './sim/types.ts';
+import { writeMatchUrl, writePickParams, type Screen } from './app/route.ts';
+import type { RouteOf } from './app/router.ts';
+import { resumesMatch, type AppState } from './app/screen-rules.ts';
+import { generateSeed } from './app/seed.ts';
+import { getDefinition } from './sim/definitions.ts';
+import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
+import { createWorld } from './sim/world.ts';
 import { element } from './ui/dom.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import { createQuickSetup } from './ui/quick-setup.ts';
 
 export interface QuickHost {
   readonly navigation: Navigation;
+  /** The quick match last played or chosen, and the seed on screen. */
+  readonly state: AppState;
+  /** Puts a new match on screen. */
+  showWorld(world: WorldState, seed: number): void;
   /** Shows whatever screen the URL now names. */
   showCurrentRoute(): void;
-  /** The quick match last played or chosen. */
-  matchup(): Matchup;
   /** Home: a new history entry, or in place of this one when it is a Back fallback. */
   goHome(how?: 'push' | 'replace'): void;
   /** A match started: focus moves to the arena. */
@@ -27,15 +33,38 @@ export interface QuickController {
   /** Shows the setup screen, the match screen's actions, or neither. */
   setVisible(screen: 'pick' | 'match' | 'other'): void;
   open(matchup: Matchup, focus?: 'heading' | 'start'): void;
+  /**
+   * The match screen for a route: a new match, or (Back from the setup to the match it covered)
+   * the same one carrying on.
+   */
+  showMatch(route: RouteOf<'match'>, from: Screen): void;
+  /**
+   * Starts (or restarts) a match. The matchup and seed are written to the URL, so reloading or
+   * sharing the link replays the same match, and a link with an invalid id is corrected.
+   */
+  startMatch(matchup: Matchup, seed: number): void;
 }
 
 export function createQuickController(
   setupRoot: HTMLElement,
   actionsRoot: HTMLElement,
   balls: readonly BallDefinition[],
+  lookup: DefinitionLookup,
   host: QuickHost,
 ): QuickController {
-  const { navigation } = host;
+  const { navigation, state } = host;
+
+  function startMatch(matchup: Matchup, seed: number): void {
+    state.matchup = matchup;
+    navigation.replace((url) => {
+      writeMatchUrl(url, matchup, seed);
+    });
+    const world = createWorld(seed, [
+      getDefinition(lookup, matchup.a),
+      getDefinition(lookup, matchup.b),
+    ]);
+    host.showWorld(world, seed);
+  }
   const setup = createQuickSetup(setupRoot, balls, {
     onStart: (chosen) => {
       navigation.push((url) => {
@@ -62,7 +91,7 @@ export function createQuickController(
   changeBalls.type = 'button';
   changeBalls.addEventListener('click', () => {
     navigation.push((url) => {
-      writePickParams(url, host.matchup());
+      writePickParams(url, state.matchup);
     });
     host.showCurrentRoute();
   });
@@ -81,5 +110,10 @@ export function createQuickController(
     open(matchup, focus) {
       setup.open(matchup, focus);
     },
+    showMatch(route, from) {
+      if (resumesMatch(route, from, state)) return;
+      startMatch(route.matchup, route.seed ?? generateSeed());
+    },
+    startMatch,
   };
 }
