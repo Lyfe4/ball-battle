@@ -16,14 +16,14 @@ import { createQuickSetup } from './ui/quick-setup.ts';
 
 export interface QuickHost {
   readonly navigation: Navigation;
+  /** Moves to the screen `write` describes, by the Back rules (ADR 0025), and shows it. */
+  go(write: (params: URLSearchParams) => void): void;
   /** The quick match last played or chosen, and the seed on screen. */
   readonly state: AppState;
   /** Puts a new match on screen. */
   showWorld(world: WorldState, seed: number): void;
-  /** Shows whatever screen the URL now names. */
-  showCurrentRoute(): void;
-  /** Home: a new history entry, or in place of this one when it is a Back fallback. */
-  goHome(how?: 'push' | 'replace'): void;
+  /** Home, or home in place of this entry when it is a Back fallback. */
+  goHome(how?: 'go' | 'replace'): void;
   /** A match started: focus moves to the arena. */
   started(): void;
   readonly ballLink: BallInfoLink;
@@ -67,10 +67,9 @@ export function createQuickController(
   }
   const setup = createQuickSetup(setupRoot, balls, {
     onStart: (chosen) => {
-      navigation.push((url) => {
+      host.go((url) => {
         writeMatchUrl(url, chosen, generateSeed());
       });
-      host.showCurrentRoute();
       host.started();
     },
     onChange: (chosen) => {
@@ -89,11 +88,11 @@ export function createQuickController(
 
   const changeBalls = element('button', 'hud-button', 'Change balls');
   changeBalls.type = 'button';
+  // Back to the setup this match came from (a Back, not a second copy of it), ADR 0025.
   changeBalls.addEventListener('click', () => {
-    navigation.push((url) => {
+    host.go((url) => {
       writePickParams(url, state.matchup);
     });
-    host.showCurrentRoute();
   });
   const home = element('button', 'hud-button', 'Home');
   home.type = 'button';

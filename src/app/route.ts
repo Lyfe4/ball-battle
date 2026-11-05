@@ -99,8 +99,13 @@ export function writeHomeParams(params: URLSearchParams): void {
  * Reads the screen a URL asks for. Never throws: anything it can't use falls back. A series link is
  * replayed only if `verifySeries` (the same check a server runs, ADR 0022) accepts it; otherwise
  * it opens the lineup step, prefilled with what the link holds, like any other incomplete link.
+ * `verify` false skips that replay, for reading only which screen a URL is on (history-rules.ts).
  */
-export function parseRoute(params: URLSearchParams, definitions: DefinitionLookup): Route {
+export function parseRoute(
+  params: URLSearchParams,
+  definitions: DefinitionLookup,
+  verify = true,
+): Route {
   const validIds = [...definitions.keys()];
   const view = params.get(VIEW)?.trim().toLowerCase();
   if (view === 'pick') return { screen: 'pick', matchup: parseMatchup(params, validIds) };
@@ -118,7 +123,7 @@ export function parseRoute(params: URLSearchParams, definitions: DefinitionLooku
     if (made !== undefined && made !== RULESET_VERSION) {
       return { screen: 'outdated', kind: 'series', made };
     }
-    const link = replayable(parsed, definitions);
+    const link = verify ? replayable(parsed, definitions) : parsed;
     const step =
       link.setup !== undefined ? 'play' : (link.step ?? (link.lineup ? 'lineup' : 'rules'));
     return { screen: 'series', link, step };

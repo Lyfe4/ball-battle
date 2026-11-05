@@ -9,9 +9,11 @@ import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.t
 
 export interface SeriesScreensHost {
   readonly navigation: Navigation;
+  /** Moves to the screen `write` describes, by the Back rules (ADR 0025), and shows it. */
+  go(write: (params: URLSearchParams) => void): void;
+  /** Shows another screen in place of this entry (a Back fallback). */
+  replaceWith(write: (params: URLSearchParams) => void): void;
   showWorld(world: WorldState, seed: number): void;
-  /** Shows whatever screen the URL now names. */
-  showCurrentRoute(): void;
   /** A series started (the screen is now the series being played). */
   started(): void;
   layoutChanged(): void;
@@ -33,8 +35,8 @@ export function createSeriesScreens(
 ): SeriesScreens {
   const { navigation } = host;
   const setup = createSeriesSetup(roots.setup, balls, {
-    push: (write) => {
-      navigation.push(write);
+    move: (write) => {
+      navigation.go(write);
     },
     replace: (write) => {
       navigation.replace(write);
@@ -47,7 +49,9 @@ export function createSeriesScreens(
     },
     ballLink: host.ballLink,
     start: (series, firstPick) => {
-      navigation.push((url) => {
+      // From the round-1 answer this replaces it: the series is one entry, so Back can't reopen
+      // the answer (ADR 0025).
+      navigation.go((url) => {
         writeSeriesModeParams(url, series.format, 'play');
       });
       play.start(series, false, firstPick);
@@ -68,17 +72,16 @@ export function createSeriesScreens(
     },
     newSeries: (last) => {
       setup.keep(last);
-      navigation.push((url) => {
+      // Back to the lineup this series came from, when it did (ADR 0025).
+      host.go((url) => {
         writeSeriesModeParams(url, last.format, 'lineup');
       });
-      host.showCurrentRoute();
     },
     leave: () => {
       navigation.back(() => {
-        navigation.replace((url) => {
+        host.replaceWith((url) => {
           writeSeriesModeParams(url, undefined, 'lineup');
         });
-        host.showCurrentRoute();
       });
     },
   });

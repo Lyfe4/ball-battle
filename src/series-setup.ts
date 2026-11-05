@@ -1,6 +1,7 @@
 // Setting up a best-of-3 series (ADR 0017, 0019, 0021), one job per screen: the rules, the lineup
-// and, in reveal, the answer to the ball the bot shows first in round 1. Each step is a history entry
-// (`?mode=bo3&step=...`), so Back walks back through them. The bot's lineup lives here, in memory
+// and, in reveal, the answer to the ball the bot shows first in round 1. The rules and the lineup are
+// history entries (`?mode=bo3&step=...`), so Back walks back through them; the answer is part of the
+// series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here, in memory
 // only, until the series starts: it is never written to the URL before the series is decided.
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
@@ -24,7 +25,8 @@ const botOpponent = (seed: number): Opponent => ({
 export type SetupStep = 'rules' | 'lineup' | 'answer';
 
 export interface SeriesSetupHost {
-  push(write: (params: URLSearchParams) => void): void;
+  /** Moves to another step by the Back rules (a new entry here; the step is opened by the caller). */
+  move(write: (params: URLSearchParams) => void): void;
   replace(write: (params: URLSearchParams) => void): void;
   /** In-app Back: the previous screen, or `toParent` when the visitor arrived here from a link. */
   back(toParent: () => void): void;
@@ -69,7 +71,7 @@ export function createSeriesSetup(
     },
     onNext: (chosen) => {
       format = chosen;
-      host.push(to('lineup'));
+      host.move(to('lineup'));
       open('lineup');
     },
   });
@@ -94,7 +96,7 @@ export function createSeriesSetup(
       if (format === 'reveal') {
         // The same seeded choice the series makes when it starts, so the ball shown here plays.
         revealed = { seed, bot, own, shown: randomBot.showFirst(seed, bot) };
-        host.push(to('answer'));
+        host.move(to('answer'));
         open('answer');
         return;
       }

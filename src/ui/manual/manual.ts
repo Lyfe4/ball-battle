@@ -10,7 +10,7 @@ import { createBallDetail } from './ball-detail.ts';
 export interface ManualActions {
   readonly onBack: () => void;
   /** A ball's entry: from the roster, from a matchup, or from ‹ ›. */
-  readonly onOpen: (id: string, how: 'push' | 'replace') => void;
+  readonly onOpen: (id: string) => void;
   /** The index's tab: the roster or the matchup chart. */
   readonly onTab: (chart: boolean) => void;
   readonly onTry: (matchup: Matchup) => void;
@@ -46,7 +46,7 @@ export function createManual(
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
-      actions.onOpen(id, 'push');
+      actions.onOpen(id);
     },
   });
   const tabRoot = element('div', 'manual-tabs');
@@ -64,7 +64,7 @@ export function createManual(
     },
   );
   const chart = createMatchupChart(balls, (id) => {
-    actions.onOpen(id, 'push');
+    actions.onOpen(id);
   });
   index.append(tabRoot, intro, grid.element, chart.element);
 
@@ -79,13 +79,13 @@ export function createManual(
   const step = (by: -1 | 1) => () => {
     const at = roster.indexOf(current ?? '');
     const id = roster[(at + by + roster.length) % roster.length];
-    if (id !== undefined) actions.onOpen(id, 'replace');
+    if (id !== undefined) actions.onOpen(id);
   };
   previous.addEventListener('click', step(-1));
   next.addEventListener('click', step(1));
   const detail = createBallDetail(balls, {
     onOpen: (id) => {
-      actions.onOpen(id, 'push');
+      actions.onOpen(id);
     },
     onTry: actions.onTry,
   });

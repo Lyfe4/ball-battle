@@ -1,4 +1,5 @@
 import './style.css';
+import { screenKeyOf } from './app/history-rules.ts';
 import { createNavigation } from './app/navigation.ts';
 import {
   parseRoute,
@@ -39,7 +40,10 @@ const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 
-const navigation = createNavigation(window);
+// Which screen a URL is on, for the Back rules (ADR 0025); no series replay is needed for that.
+const navigation = createNavigation(window, (url) =>
+  screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false)),
+);
 const currentRoute = (): Route =>
   parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();
@@ -65,9 +69,17 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
-/** Writes another screen's URL (a new history entry, or in place of this one) and shows it. */
-function go(write: (params: URLSearchParams) => void, how: 'push' | 'replace' = 'push'): void {
-  navigation[how](write);
+/**
+ * Moves to the screen `write` describes by the Back rules (ADR 0025) and shows it: at once, or once
+ * the browser has gone back to it.
+ */
+function go(write: (params: URLSearchParams) => void): void {
+  if (navigation.go(write) !== 'return') showCurrentRoute();
+}
+
+/** Shows another screen in place of this entry: the parent a Back falls back to. */
+function replaceWith(write: (params: URLSearchParams) => void): void {
+  navigation.replace(write);
   showCurrentRoute();
 }
 
@@ -75,9 +87,10 @@ function showCurrentRoute(): void {
   router.show(currentRoute());
 }
 
-/** Moves to the home screen: a new history entry, or in place of this one (a parent fallback). */
-function goHome(how: 'push' | 'replace' = 'push'): void {
-  go(writeHomeParams, how);
+/** Moves to the home screen, or puts it in place of this entry (a parent fallback). */
+function goHome(how: 'go' | 'replace' = 'go'): void {
+  if (how === 'replace') replaceWith(writeHomeParams);
+  else go(writeHomeParams);
 }
 
 const ballLink = createBallLink(go);
@@ -125,9 +138,9 @@ const quick = createQuickController(
   BALL_LOOKUP,
   {
     navigation,
+    go,
     state,
     showWorld,
-    showCurrentRoute,
     goHome,
     started: () => {
       canvas.focus();
@@ -142,8 +155,9 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
   BALL_LOOKUP,
   {
     navigation,
+    go,
+    replaceWith,
     showWorld,
-    showCurrentRoute,
     started: () => {
       canvas.focus();
     },
