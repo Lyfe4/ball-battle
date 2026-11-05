@@ -67,8 +67,11 @@ export function createSeriesController(
   let session: SeriesSession | undefined;
   /** A replayed link's picks, used in order when a pick is due (both sides'). */
   let linkPicks: readonly string[] = [];
-  /** Reveal, then order: the series seed and the bot's lineup while the player orders theirs. */
-  let revealed: { readonly seed: number; readonly bot: Lineup } | undefined;
+  /**
+   * Reveal, then order: the series seed and both lineups as revealed, while the player orders
+   * theirs. The bot orders against the revealed lineup, never the player's secret order.
+   */
+  let revealed: { readonly seed: number; readonly bot: Lineup; readonly own: Lineup } | undefined;
 
   const builder = createLineupBuilder(roots.lineup, balls, {
     onStart: (lineup, format) => {
@@ -76,7 +79,7 @@ export function createSeriesController(
       const seed = generateSeed();
       const bot = randomBot.pickLineup(seed, ballIds);
       if (format === 'reveal') {
-        revealed = { seed, bot };
+        revealed = { seed, bot, own: lineup };
         builder.showOrdering(lineup, bot);
         return;
       }
@@ -84,9 +87,9 @@ export function createSeriesController(
     },
     onLockOrder: (lineup) => {
       if (revealed === undefined) return;
-      const { seed, bot } = revealed;
+      const { seed, bot, own } = revealed;
       revealed = undefined;
-      start({ seed, a: lineup, b: randomBot.orderLineup(seed, bot, lineup), format: 'reveal' });
+      start({ seed, a: lineup, b: randomBot.orderLineup(seed, bot, own), format: 'reveal' });
     },
     onFormat: (format) => {
       host.replaceUrl((url) => {
