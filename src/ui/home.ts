@@ -12,8 +12,8 @@ export interface HomeActions {
 
 export interface Home {
   setVisible(visible: boolean): void;
-  /** Says which demo match is on the arena, and why its first ball is favoured. */
-  showDemo(favoured: string, other: string, reason: string): void;
+  /** Says which demo match is on the arena. */
+  showDemo(a: string, b: string): void;
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
   /** Moves focus to Play: the one obvious first action. */
@@ -24,8 +24,9 @@ const STRIP_ICON_PX = 28;
 const SOURCE_URL = 'https://github.com/Lyfe4/ball-battle';
 
 /**
- * The front door, phone first: the live demo match on the arena above, then what is playing and
- * why, the name, one line on what the game is, a large Play, and Best of 3 beside it. On a wide
+ * The front door, phone first: the live demo match on the arena above, then which balls are
+ * playing, the name, the pitch (a strategy game about building a lineup; counters are for the
+ * manual to reveal, not the headline), a large Play, and Best of 3 and the manual beside it. On a wide
  * screen it sits beside the arena with the roster's drawings as a strip.
  */
 export function createHome(
@@ -40,17 +41,16 @@ export function createHome(
   const demo = element('section', 'home-demo');
   demo.setAttribute('aria-label', 'Demo match');
   const demoLine = element('p', 'home-demo-line');
-  const demoReason = element('p', 'home-demo-reason');
   const watch = element('button', 'hud-button home-watch', 'Watch the demo');
   watch.type = 'button';
   watch.addEventListener('click', actions.onWatch);
-  demo.append(demoLine, demoReason, watch);
+  demo.append(demoLine, watch);
 
   const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element(
     'p',
     'home-pitch',
-    'Pick two balls and watch them fight. You don’t steer: every ball has an ability, and each one beats some balls and loses to others.',
+    'Build a lineup of three balls, set your order, and watch your plan fight it out. Your choices set the odds; every fight plays out its own way.',
   );
 
   const play = element('button', 'hud-button hud-button-primary home-play', 'Play');
@@ -91,13 +91,9 @@ export function createHome(
     setVisible(visible) {
       root.hidden = !visible;
     },
-    showDemo(favoured, other, reason) {
+    showDemo(a, b) {
       const name = (id: string) => byId.get(id)?.name ?? id;
-      setText(
-        demoLine,
-        `Demo: ${name(favoured)} vs ${name(other)}. ${name(favoured)} is favoured.`,
-      );
-      setText(demoReason, reason);
+      setText(demoLine, `Demo match: ${name(a)} vs ${name(b)}`);
     },
     setWaiting(waiting) {
       watch.hidden = !waiting;

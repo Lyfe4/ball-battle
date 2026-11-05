@@ -1,5 +1,5 @@
-// The home screen's wiring: the demo matches on the arena behind the menu, one after another, each a
-// counter from the counter map; and where Play leads. main.ts owns the arena and hands this module
+// The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
+// pairs from the counter map, not announced as counters); and where Play leads. main.ts owns the arena and hands this module
 // what it needs through `HomeHost`.
 import { demoAt } from './app/demo.ts';
 import type { Matchup } from './app/matchup.ts';
@@ -70,13 +70,13 @@ export function createHomeController(
   /** Puts the current demo on the arena. Under reduced motion it holds its first frame. */
   function startDemo(): void {
     cancel();
-    const { matchup, reason } = demoAt(index);
+    const { matchup } = demoAt(index);
     const seed = generateSeed();
     host.showWorld(
       createWorld(seed, [getDefinition(lookup, matchup.a), getDefinition(lookup, matchup.b)]),
       seed,
     );
-    home.showDemo(matchup.a, matchup.b, reason);
+    home.showDemo(matchup.a, matchup.b);
   }
 
   return {

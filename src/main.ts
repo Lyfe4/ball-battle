@@ -50,7 +50,7 @@ const storage = () => window.localStorage;
 let speed: PlaybackSpeed = loadSpeed(storage);
 
 const TITLES: Readonly<Record<Screen, string>> = {
-  home: 'BallBattle: an auto-battler of counters',
+  home: 'BallBattle: build a lineup, watch it fight',
   pick: 'Quick match · BallBattle',
   match: 'Quick match · BallBattle',
   series: 'Best of 3 · BallBattle',

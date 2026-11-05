@@ -123,9 +123,9 @@ function preview(): HTMLCanvasElement {
   ctx.fillStyle = '#8b93a7';
   ctx.font = '400 30px system-ui, sans-serif';
   const lines = [
-    'Pick two balls. Watch them fight.',
-    'Every ball beats some balls',
-    'and loses to others.',
+    'Build a lineup of three balls,',
+    'set your order, and watch',
+    'your plan fight it out.',
   ];
   lines.forEach((line, i) => {
     ctx.fillText(line, x, 240 + i * 44);

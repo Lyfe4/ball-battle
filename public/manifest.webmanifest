@@ -1,7 +1,7 @@
 {
   "name": "BallBattle",
   "short_name": "BallBattle",
-  "description": "Pick two balls and watch them fight. Every ball beats some balls and loses to others.",
+  "description": "Build a lineup of three balls, set your order, and watch your plan fight it out. Your choices set the odds; every fight plays out its own way.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
