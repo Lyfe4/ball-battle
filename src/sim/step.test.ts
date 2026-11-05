@@ -7,10 +7,11 @@ import type { WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 
 /**
- * Time allowed for a test that plays 200 whole matches: about 2 s alone, but past Vitest's 5 s default
- * on a busy machine running the suite in parallel. Only the time limit; the seeds and checks stand.
+ * Seeds for the tests that play whole matches with the fixture balls. 30 keeps the unit suite fast
+ * (200 took about 4 s each and needed a raised timeout); the roster-wide versions of these
+ * properties play every real matchup in the slow suite.
  */
-const SLOW_TEST_MS = 20_000;
+const MATCH_SEEDS = 30;
 
 function expectInsideArena(world: WorldState): void {
   for (const ball of world.balls) {
@@ -37,15 +38,11 @@ describe('step', () => {
     );
   });
 
-  it(
-    'never lets balls leave the arena',
-    () => {
-      for (let seed = 0; seed < 200; seed++) {
-        run(createWorld(seed, testDefinitions), 5000, expectInsideArena);
-      }
-    },
-    SLOW_TEST_MS,
-  );
+  it('never lets balls leave the arena', () => {
+    for (let seed = 0; seed < MATCH_SEEDS; seed++) {
+      run(createWorld(seed, testDefinitions), 5000, expectInsideArena);
+    }
+  });
 
   it('keeps extremely fast balls inside the arena instead of tunnelling', () => {
     const base = createWorld(7, testDefinitions);
