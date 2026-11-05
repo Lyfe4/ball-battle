@@ -160,8 +160,8 @@ function strikesFigure(): HTMLElement {
   return figure;
 }
 
-function render(root: HTMLElement): void {
-  for (const [title, tiles] of SECTIONS) {
+function renderSections(root: HTMLElement, sections: typeof SECTIONS): void {
+  for (const [title, tiles] of sections) {
     const heading = document.createElement('h2');
     heading.textContent = title;
     const row = document.createElement('div');
@@ -182,6 +182,10 @@ function render(root: HTMLElement): void {
     }
     root.append(heading, row);
   }
+}
+
+function render(root: HTMLElement): void {
+  renderSections(root, SECTIONS);
   const strikes = document.createElement('h2');
   strikes.textContent = 'Strikes: lightning, then a shockwave sweeping out as it fades';
   root.append(strikes, strikesFigure());
@@ -199,9 +203,14 @@ function phoneArenaSection(): HTMLElement {
 const root = document.getElementById('guide');
 // styleguide.html?only=phone-arena shows the phone arena alone, to check designs at phone size and
 // pixel density without scrolling past every tile.
-// styleguide.html?only=ui shows the shared screen components.
+// styleguide.html?only=ui shows the shared screen components, and ?only=<ball id> that ball's
+// design section and the phone arena, to review one design at every size.
 const only = new URLSearchParams(window.location.search).get('only');
-if (root !== null && only === 'phone-arena') {
+const ballSections = SECTIONS.filter(([, tiles]) => tiles.every((tile) => tile.id === only));
+if (root !== null && ballSections.length > 0) {
+  renderSections(root, ballSections);
+  root.append(phoneArenaSection());
+} else if (root !== null && only === 'phone-arena') {
   root.append(phoneArenaSection());
 } else if (root !== null && only === 'ui') {
   root.append(uiPartsSection());
