@@ -50,7 +50,6 @@ function drawFangs(p: Painter, r: number, fang: typeof FANG | typeof SIMPLE_FANG
  */
 export const vampireDesign: BallDesign = {
   facing: 'none',
-  showsHeal: true,
   draw(p, { radius: r, accent, heal, simple }) {
     const collar = COLLAR_RADIUS * r;
     const tipX = Math.cos(TIP_ANGLE) * collar;

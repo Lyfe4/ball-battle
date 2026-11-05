@@ -22,18 +22,33 @@ export const theme = {
   /** Overlay colour for the damage flash; its opacity follows the flash strength. */
   flash: '#ffffff',
   flashMaxAlpha: 0.85,
-  /** Ring that grows and fades around a ball when it heals. */
-  healRing: '#4ade80',
-  healRingWidth: 6,
-  healRingGrowth: 28,
   /**
-   * A heal a status reduced (ADR 0009): a dim ring that shrinks in, the opposite of the heal ring
-   * that still shows for what was restored, so it reads as "healed, but less".
+   * Any heal, on any ball (ADR 0028): a green wash over the ball and a ring that swells out from
+   * its edge. Both scale with the heal as a share of max health, reaching full size at
+   * `healFullShare`, so small heals stay subtle and a heal a status cut reads as a smaller one.
    */
-  healReducedRing: '#94a3b8',
-  healReducedWidth: 4,
-  healReducedShrink: 14,
-  healReducedMs: 320,
+  healRing: '#4ade80',
+  healRingWidth: 7,
+  healRingGrowth: 34,
+  healWashAlpha: 0.3,
+  healFullShare: 0.15,
+  /** The smallest a heal pulse is drawn, as a share of full size, so even a 1-point heal shows. */
+  healMinSize: 0.3,
+  /**
+   * The rule cue (ADR 0028): a small four-point spark beside a ball the moment an interaction rule
+   * acts on it (a heal cut by shock, an aimed attack held by a stagger, rage numbed by poison).
+   * One shape and colour for every rule, so players learn "a rule just kicked in". Pale gold with a
+   * dark outline, so it reads on every ball colour and on the arena.
+   */
+  ruleCueFill: '#fef08a',
+  ruleCueOutline: '#1c1917',
+  /** Spark size as a share of the ball's radius, and its outline width in world units. */
+  ruleCueSize: 0.42,
+  ruleCueOutlineWidth: 5,
+  /** How far the spark's inner corners sit from its centre, as a share of its size. */
+  ruleCueWaist: 0.3,
+  /** The pop: grows to this scale, then settles to 1. */
+  ruleCuePop: 1.25,
   /**
    * A shocked ball (ADR 0009): a thin dashed ring just outside its edge, in a pale storm blue. The
    * dashes step along every few sim ticks for a faint crackle, and hold still with reduced motion.

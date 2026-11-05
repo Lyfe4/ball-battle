@@ -15,7 +15,6 @@ const STITCH_HALF = 0.09;
  */
 export const brawlerDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, base, accent, simple }) {
     const half = (simple ? SIMPLE_BAND : BAND) * r;
     p.save();

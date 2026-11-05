@@ -40,7 +40,6 @@ function drawStreaks(p: Painter, r: number, count: number, spacing: number): voi
  */
 export const speedsterDesign: BallDesign = {
   facing: 'velocity',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, simple }) {
     const line = r * theme.markLine;
     p.strokeStyle = accent;

@@ -4,7 +4,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, SimEvent } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { createEffects } from './effects.ts';
+import { createEffects, CUE_MS } from './effects.ts';
 import { wallBounces } from './impact.ts';
 import { theme } from './theme.ts';
 
@@ -74,7 +74,7 @@ describe('battle feel effects', () => {
     expect(effects.knockouts(theme.shardMs * 2)).toHaveLength(1);
   });
 
-  it('pulses a reduced heal alongside the heal it still made, then fades it', () => {
+  it('shows a heal a status cut as a smaller heal, and the rule cue beside it', () => {
     const effects = createEffects();
     const reduced: SimEvent = {
       type: 'healReduced',
@@ -84,6 +84,7 @@ describe('battle feel effects', () => {
       lost: 5,
       status: 'shocked',
     };
+    const cue: SimEvent = { type: 'ruleApplied', tick: 40, ballId: 'ball-0', rule: 'healCut' };
     const healed: SimEvent = {
       type: 'healed',
       tick: 40,
@@ -92,11 +93,29 @@ describe('battle feel effects', () => {
       amount: 4,
       healthAfter: 30,
     };
-    effects.apply([reduced, healed], 0);
-    expect(effects.healReduced('ball-0', 0)).toBe(1);
+    effects.apply([reduced, cue, healed], 0);
     expect(effects.heal('ball-0', 0)).toBe(1);
-    expect(effects.isActive(theme.healReducedMs - 1)).toBe(true);
-    expect(effects.healReduced('ball-0', theme.healReducedMs)).toBe(0);
+    // The pulse is sized by what was restored, not by what the heal would have been.
+    expect(effects.healAmount('ball-0')).toBe(4);
+    expect(effects.cue('ball-0', 0)).toBe(1);
+    expect(effects.isActive(CUE_MS - 1)).toBe(true);
+    expect(effects.cue('ball-0', CUE_MS)).toBe(0);
+  });
+
+  it('adds up heals in the same instant into one pulse, and starts afresh later', () => {
+    const effects = createEffects();
+    const healed = (amount: number): SimEvent => ({
+      type: 'healed',
+      tick: 40,
+      ballId: 'ball-0',
+      sourceId: 'ball-0',
+      amount,
+      healthAfter: 30,
+    });
+    effects.apply([healed(3), healed(2)], 0);
+    expect(effects.healAmount('ball-0')).toBe(5);
+    effects.apply([healed(4)], 100);
+    expect(effects.healAmount('ball-0')).toBe(4);
   });
 
   it('shows a time-limit result at once', () => {

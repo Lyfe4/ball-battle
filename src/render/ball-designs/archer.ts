@@ -17,7 +17,6 @@ const FULL_DRAW = 0.62;
  */
 export const archerDesign: BallDesign = {
   facing: 'aim',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, tick, simple }) {
     const line = r * theme.markLine;
     p.strokeStyle = accent;

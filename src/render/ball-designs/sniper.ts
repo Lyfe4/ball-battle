@@ -23,7 +23,6 @@ const DOT = 0.08;
  */
 export const sniperDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, simple }) {
     const scope = simple ? SIMPLE : FULL;
     p.strokeStyle = accent;

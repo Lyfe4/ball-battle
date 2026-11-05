@@ -20,7 +20,6 @@ const SHINE = [-0.13, 0.08, 0.075] as const;
  */
 export const venomDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, accent, simple }) {
     const drop = simple ? SIMPLE : FULL;
     const centre = drop.y * r;
