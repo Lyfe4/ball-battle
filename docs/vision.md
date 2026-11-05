@@ -109,6 +109,10 @@ blind picks. See Decisions below.
   poison), Archer > Frost (arrows land on the slowest ball) and Quake > Archer, Storm and Sniper
   (shockwaves stagger, and a staggered ball can't aim). Every ball but the Brawler, Thorns, the
   Sniper and the Quake now has at least two favoured and two unfavoured matchups.
+- **Counter pass** (2026-11-06, ADR 0028): favoured now means 62-72%. The two invisible rules
+  (rage can't be slowed, the cold shortens poison) are gone; every rule left shows a cue the moment
+  it acts, and phasing is one general rule. Abilities were strengthened to sharpen counters, and
+  pairs that sat between even and favoured were mapped by what they measure.
 - **Rules versus new balls** (2026-11-05): counter-creating interaction rules are capped at about
   one per ball and must show on screen; the remaining gaps (a second prey for the Sniper, a second
   predator for the Quake, Thorns' 1 / 4) are for new balls to fill (ADR 0016 addendum).

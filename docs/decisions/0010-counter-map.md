@@ -139,3 +139,8 @@ allowance is now part of the check (`scripts/counter-map.ts`):
 For an even pair the worse side decides. A rate exactly 2 points out counts as `NEAR` (rates are
 ratios of counts, so the comparison allows for floating-point rounding). Vampire vs Speedster
 (57.5) and Brawler vs Archer (43.2) now show `NEAR`, and the counter-map target passes.
+
+## Amended by ADR 0028 (2026-11-06)
+
+The favoured band is now **62-72%** (58-70% before), so a favoured pick feels favoured. The even
+band (45-55%), the 2-point NEAR allowance and the 25/75 hard limit are unchanged.

@@ -257,3 +257,12 @@ ADR 0017).
 - Negative: the Ghost loses to every ball with a ranged attack and is at the low end overall; a
   fourth kind of world object (minions) to keep in mind for multi-ball matches.
 - Every link from ruleset 1 now shows the outdated notice (ADR 0022).
+
+## Amended by ADR 0028 (2026-11-06)
+
+Phasing is now one general rule: **a phased ball can't be touched, gripped or aimed at.** Skulls
+pass through it like balls do, the Magnet's pull slips (the Magnet still turns toward it), and
+`nearestTarget` skips it, so an aimed attack waits for it to turn solid. What is already on its way
+(arrows and shots in flight, lightning and shockwaves already called, poison) still hits it. Hooks
+read it through `HookContext.isPhased`. A second minion at once was measured and rejected
+(Necromancer vs Archer 80-94% at every damage and summon rate tried).

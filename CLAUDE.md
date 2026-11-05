@@ -116,7 +116,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0023-known-match-results-across-engines.md`,
 `docs/decisions/0024-player-facing-text-stays-in-definitions.md`,
 `docs/decisions/0025-show-less-and-back.md`,
-`docs/decisions/0026-magnet-ghost-necromancer.md` and `docs/decisions/0027-phone-play-fixes.md`.
+`docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md` and
+`docs/decisions/0028-counter-pass.md`.
 
 ## Workflow
 
@@ -169,8 +170,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
-  in its counter-map band (`scripts/counter-map.ts`: favoured side 58-70%, even 45-55%, within 2
-  points outside a band passes as NEAR; ADR 0010). Re-check after any stat or ability change.
+  in its counter-map band (`scripts/counter-map.ts`: favoured side 62-72%, even 45-55%, within 2
+  points outside a band passes as NEAR; ADR 0010, 0028). Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
   `src/sim/counter-map-*.ts` data file for its batch; the bands are checked in
   `scripts/counter-map.ts`), and each
@@ -182,11 +183,12 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   and `ability-share.slow.test.ts` (measured); breaking one is a design decision, not a tuning
   step. Longer fights make matchups steeper (ADR 0004).
 - Interaction rules that exist to create a counter (one ball's effect meeting another ball's
-  mechanic, like "poison numbs rage" or "rage can't be slowed", ADR 0016) are limited to about one
-  per ball, and every such rule must be visible on screen (a status ring, a change in the ball's
-  design, or similar), so a viewer can tell why a ball won or lost. Fill counter gaps with new
-  balls rather than more rules. Today the Berserker, Frost and Venom are each in two such rules
-  (ADR 0016); don't add a third to any of them.
+  mechanic, like "poison numbs rage", ADR 0016) are limited to about one per ball, prefer a general
+  rule about a kind of ball ("shocked balls heal less", "a staggered ball can't aim", "a phased
+  ball can't be touched, gripped or aimed at") over a pair trick, and must be visible the moment
+  they act: return a `ruleApplied` action (or emit the event) so the arena shows the rule cue
+  (ADR 0028). Today there are three (`src/sim/rules.ts`): heal cut, aim held, rage numbed. Fill
+  counter gaps with new balls rather than more rules.
 - The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.

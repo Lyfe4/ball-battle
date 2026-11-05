@@ -28,69 +28,62 @@ definitions and the counter map, so they never go stale.
 Pick two balls and watch them fight. They collide elastically and deal damage scaled by how hard
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball        | Ability                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.       |
-| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.  |
-| Vampire     | Heals for 40% of the damage it deals.                                            |
-| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s. |
-| Storm       | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.     |
-| Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s; poison wears off it fast. |
-| Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.               |
-| Venom       | Light hits that poison its enemy for over 4 s, chipping away between contacts.   |
-| Berserker   | The most health, hits harder the more it has lost, and can't be slowed.          |
-| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.      |
-| Quake       | Every wall it hits sends out a shockwave that stops its enemy aiming for 3.5 s.  |
-| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.  |
-| Ghost       | Phases out every few seconds: contact hits pass through it, but shots don't.     |
-| Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.         |
+| Ball        | Ability                                                                            |
+| ----------- | ---------------------------------------------------------------------------------- |
+| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.         |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.    |
+| Vampire     | Heals for 45% of the damage it deals.                                              |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.   |
+| Storm       | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.       |
+| Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s.                             |
+| Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.                 |
+| Venom       | Light hits that poison its enemy for over 4 s, chipping away between contacts.     |
+| Berserker   | The most health, and hits harder the more it has lost. Poison numbs its rage.      |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.        |
+| Quake       | Every wall it hits sends out a shockwave that stops its enemy aiming for 4.5 s.    |
+| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.    |
+| Ghost       | Phases out every few seconds: hits, pulls and skulls pass through; none aim at it. |
+| Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.           |
 
 Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
 
-Picks matter: most pairs lean one way. A counter is _favoured_ (it wins roughly 58-70% of the
+Picks matter: most pairs lean one way. A counter is _favoured_ (it aims to win 62-72% of the
 time), never decided, and each one comes from something you can watch happen:
 
-- **Speedster is strong vs Archer**: it closes the distance faster than arrows can stop it.
-- **Archer is strong vs Vampire**: arrows chip it from range, and the Vampire only heals off its own hits.
-- **Vampire is strong vs Speedster**: it heals off every exchange and outlasts the burst.
-- **Storm is strong vs Vampire**: lightning and its touch shock the Vampire, so it heals less.
-- **Speedster is strong vs Storm**: the fastest ball outruns the lightning warnings.
-- **Frost is strong vs Speedster**: slowed, it loses its speed and the wall bounces that build it up.
-- **Storm is strong vs Frost**: the slowest ball can't leave a lightning warning in time.
-- **Thorns is strong vs Brawler**: the hardest hitter hurts itself the most on the spikes.
-- **Archer, Storm, Venom and Sniper are strong vs Thorns**: arrows, lightning, poison and shots never touch
-  the spikes, so nothing is reflected.
-- **Vampire is strong vs Venom**: lifesteal heals back what the poison chipped away.
-- **Berserker is strong vs Speedster**: its huge health soaks the burst, and every wound makes it hit
-  harder.
-- **Vampire is strong vs Berserker**: the biggest health pool gives lifesteal the most to drink.
-- **Speedster is strong vs Sniper**: it is off the locked line before the shot.
-- **Quake is strong vs Speedster**: the shockwave's warning is too short to outrun.
-- **Frost is strong vs Quake**: slowed, the Quake reaches the walls less often, and every shockwave needs
-  a wall.
-- **Venom is strong vs Berserker**: poison numbs its rage (its cracks fade while it is poisoned).
-- **Berserker is strong vs Frost**: its rage burns off the cold, so it can never be slowed.
-- **Frost is strong vs Venom**: the cold wears poison off sooner, and the Frost hits Venom hard.
-- **Archer is strong vs Frost**: leading arrows land most often on the slowest ball.
-- **Quake is strong vs Archer, Storm and Sniper**: a shockwave staggers whatever it hits, and a staggered
-  ball can't aim, so it loses its next arrow, strike or shot.
-- **Magnet is strong vs the balls weak up close** (Speedster, Archer, Storm, Venom, Sniper, Quake,
-  Necromancer): its pull drags them into a brawl. **Thorns is strong vs the Magnet**: it drags the spikes
-  into itself.
-- **Ghost is strong vs Speedster**: the fastest ball runs through it most often, and its rush lands on
-  nothing. **Archer, Storm, Sniper, Quake and Necromancer are strong vs the Ghost**: their attacks never
-  needed contact, so phasing never stops them.
-- **Necromancer is strong vs Archer and Sniper**: a minion nearer than its owner draws the arrow or shot.
-  **Quake and Berserker are strong vs the Necromancer**: a shockwave clears the minion and its owner, and
-  every minion pop feeds the Berserker's rage.
+- **Speedster is strong vs Archer, Storm and Sniper**: it closes on arrows, outruns lightning
+  warnings and is off the Sniper's locked line before the shot.
+- **Archer is strong vs Vampire, Frost, Thorns and Ghost**: arrows chip from range where lifesteal and
+  spikes can't answer, land most on the slowest ball, and are already flying when the Ghost turns solid.
+- **Storm is strong vs Vampire, Frost, Thorns and Necromancer**: its strike and touch shock the
+  Vampire so it heals less; the slow can't leave a warning; a strike clears the skull and its owner.
+- **Vampire is strong vs Venom, Berserker and Quake**: lifesteal heals back the chip of poison and
+  shockwaves, and the biggest health pool gives it the most to drink.
+- **Frost is strong vs Speedster and Quake**: slowed, they lose their speed and the walls they need.
+- **Thorns is strong vs Brawler and Magnet**: the hardest hits come back off the spikes.
+- **Venom and Sniper are strong vs Thorns**: poison and shots never touch the spikes.
+- **Venom is strong vs Berserker**: poison numbs its rage.
+- **Berserker is strong vs Speedster, Quake and Necromancer**: every wound, from a burst, a shockwave
+  or a skull, makes its hits harder.
+- **Quake is strong vs Archer and Sniper**: a shockwave staggers them, and a staggered ball can't aim.
+- **Magnet is strong vs the balls weak up close** (Speedster, Venom, Sniper, Quake, Necromancer):
+  its pull drags them into a brawl.
+- **Ghost is strong vs Speedster, Magnet and Necromancer**: a phased ball can't be touched, gripped or
+  aimed at, so rushes, pulls and skulls pass through it. **Sniper is strong vs the Ghost**: a shot
+  still hits it.
+- **Necromancer is strong vs Archer and Sniper**: a skull nearer than its owner draws the arrow or shot.
+
+Three rules between balls show a small spark beside the ball the moment they act: a shocked ball's
+heal is cut, a staggered ball's attack is held, a poisoned Berserker's rage is numbed. Every heal
+shows as a green pulse sized by the heal.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
 The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
 [ADR 0016](docs/decisions/0016-counter-density.md),
-[ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md)).
+[ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md),
+[ADR 0028](docs/decisions/0028-counter-pass.md)).
 
 ## Best of 3
 
@@ -229,10 +222,12 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0023: Known match results across engines](docs/decisions/0023-known-match-results-across-engines.md)
 , [ADR 0024: Player-facing text stays in definitions](docs/decisions/0024-player-facing-text-stays-in-definitions.md)
 , [ADR 0025: Show less, and Back](docs/decisions/0025-show-less-and-back.md)
-and [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md).
+, [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md)
+, [ADR 0027: Phone play fixes](docs/decisions/0027-phone-play-fixes.md)
+and [ADR 0028: The counter pass](docs/decisions/0028-counter-pass.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 132.56 kB JS (43.76 kB gzipped), 20.80 kB CSS. First version baseline: 5.05 kB
+Production bundle: 134.85 kB JS (44.66 kB gzipped), 20.84 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

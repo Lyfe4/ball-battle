@@ -191,3 +191,11 @@ fade while it is poisoned, and an immune or resisted status shows only by its ri
 early. The picker descriptions of the Berserker and the Quake were updated to name their rules
 ("can't be slowed", "stops its enemy aiming"). Still open: the Quake is the strongest ball at
 53.0% with four favoured matchups; whether the next balance pass trims it is undecided.
+
+## Amended by ADR 0028 (2026-11-06)
+
+Two of these rules are removed: **rage can't be slowed** (the Berserker's `slowed: 0`) and **the
+cold wears poison off the Frost** (`poisoned: 0.8`). Both showed only as an absence (a ring that
+never appears or ends early) and each was its ball's second rule. Berserker vs Frost and Frost vs
+Venom are even again. `statusResistance` stays in the engine, unused. Poison numbs rage and the
+stagger stay, and now show the rule cue the moment they act.
