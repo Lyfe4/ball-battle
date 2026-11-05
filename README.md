@@ -15,7 +15,9 @@ framework.
 The home screen plays a demo match of one counter and says why it wins more often; **Play** sets
 that pair up with the favoured ball yours. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
-([ADR 0020](docs/decisions/0020-screens.md)).
+([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
+once in a legend, details one tap away, and Back that undoes exactly one move
+([ADR 0025](docs/decisions/0025-show-less-and-back.md)).
 
 The **Ball manual** lists every ball with what it does and who it beats and loses to, each with
 the reason, and a **matchup chart** of the whole counter map. Both are read from the ball
@@ -80,7 +82,9 @@ The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map
 Choose **Best of 3** on the home screen to play a series against a bot: pick three different
 balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
-takes the series. The bot's lineup stays hidden; each round reveals both balls as it starts. A
+takes the series. A track shows every round at a glance, the winner ringed and the loser dimmed,
+and a series left with Back (easy to do by accident on a phone) can be resumed where it was. The
+bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
 series ends, the link holds both lineups, the series seed and the ruleset, e.g.
 `?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=1`, and replays it exactly
@@ -135,7 +139,7 @@ displays.
 | `pnpm preview`       | Serve `dist/` with the production security headers, to check the CSP         |
 | `pnpm test`          | Run the fast tests once (`pnpm test:watch` to watch)                         |
 | `pnpm test:slow`     | Roster-wide tests that play every matchup (a separate CI job)                |
-| `pnpm test:browsers` | The known match results in Chromium, Firefox and WebKit (a separate CI job)  |
+| `pnpm test:browsers` | Known match results and page flows in Chromium, Firefox, WebKit (own CI job) |
 | `pnpm golden`        | Record the known match results again after a ruleset bump                    |
 | `pnpm lint`          | ESLint                                                                       |
 | `pnpm typecheck`     | `tsc -b` across all tsconfig projects                                        |
@@ -208,7 +212,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 109.24 kB JS (36.63 kB gzipped), 17.01 kB CSS. First version baseline: 5.05 kB
+Production bundle: 115.74 kB JS (38.89 kB gzipped), 20.56 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

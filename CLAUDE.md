@@ -29,8 +29,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   measured pass-through margin, the measured identity rules). Run it after changing any ball or
   the combat rules. Roster-wide tests that play whole matches go here, in the file for their
   concern; their helpers are in `src/sim/balls/roster-support.ts`.
-- `pnpm test:browsers`: the known match results (`src/golden`, ADR 0023) in headless Chromium,
-  Firefox and WebKit through Vitest's Playwright provider. Needs the browsers once:
+- `pnpm test:browsers`: the known match results (`src/golden`, ADR 0023) and flows through the
+  real page (`src/**/*.browser.test.ts`, ADR 0025) in headless Chromium, Firefox and WebKit
+  through Vitest's Playwright provider. Needs the browsers once:
   `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
@@ -107,8 +108,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0020-screens.md`, `docs/decisions/0021-reveal-take-turns.md` (measured in
 `docs/reveal-measurements.md`), `docs/decisions/0022-ruleset-version-and-verified-series.md`,
-`docs/decisions/0023-known-match-results-across-engines.md` and
-`docs/decisions/0024-player-facing-text-stays-in-definitions.md`.
+`docs/decisions/0023-known-match-results-across-engines.md`,
+`docs/decisions/0024-player-facing-text-stays-in-definitions.md` and
+`docs/decisions/0025-show-less-and-back.md`.
 
 ## Conventions
 
@@ -177,7 +179,19 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - **Phone first.** Every screen is designed for a phone (about 375 px wide) first: one clear job
   per screen and as few controls as possible. Desktop adapts from the phone design, never the
   other way round. Check every screen at 375×812 before calling it done. The arena shows only
-  when something is fighting; setup and reading screens take the whole phone screen (ADR 0020).
+  when something is fighting; setup and reading screens, and a series between rounds, take the
+  whole phone screen (ADR 0020, 0025).
+- **Show less by default** (ADR 0025). Information appears when the player wants it (on a tap, a
+  `<details>` expander or a "more" link); anything shown is concise; visuals and symbols (ball
+  icons, vs layouts, highlights, ▲ ▼ =) beat sentences wherever they're clear. Any symbol must be
+  understandable without explanation or explained once in the symbol legend (`symbol-legend.ts`,
+  the `?` in a screen's header), and always has words in its accessible name. Marks come from
+  `src/ui/balls/marks.ts`.
+- **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
+  screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
+  replaces the entry, going to the screen this entry came from goes back to it, a series is one
+  entry. A new screen gets a key in `screenKeyOf` and a flow in `history-rules.test.ts`. Leaving
+  an undecided series holds it to resume; never drop it on Back.
 - Page colours, sizes and type come from roles in `src/styles/tokens.css`, never palette names or
   literals. A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
   order; create the file before adding its `@import` (the dev server caches a missing import).
