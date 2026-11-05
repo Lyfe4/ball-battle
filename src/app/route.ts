@@ -2,11 +2,18 @@
 // reading one is a pure function of its parameters, tested against every link shape the game has
 // ever written. Quick-match links (`?a=&b=&seed=`) and series links (`?mode=bo3...`, ADR 0017,
 // 0019) keep their meaning.
-import { parseMatchup, type Matchup } from './matchup.ts';
+import { parseMatchup, writeMatchParams, type Matchup } from './matchup.ts';
 import { parseSeed } from './seed.ts';
-import { parseSeriesParams, type SeriesLink, type SeriesStep } from './series-url.ts';
+import {
+  clearSeriesParams,
+  parseSeriesParams,
+  type SeriesLink,
+  type SeriesStep,
+} from './series-url.ts';
 
 export type Route =
+  /** The front door: a demo match and the way in. A URL with nothing for any other screen. */
+  | { readonly screen: 'home' }
   /** Choosing the two balls of a quick match, prefilled with these. */
   | { readonly screen: 'pick'; readonly matchup: Matchup }
   /** A quick match: these two balls, on this seed (a new one when the link has none). */
@@ -38,6 +45,18 @@ export function clearView(params: URLSearchParams): void {
   params.delete(VIEW);
 }
 
+/** A quick match: `?a=&b=&seed=`, replacing whatever screen the URL was on. */
+export function writeMatchUrl(params: URLSearchParams, matchup: Matchup, seed: number): void {
+  clearView(params);
+  clearSeriesParams(params);
+  writeMatchParams(params, matchup, seed);
+}
+
+/** The home screen: a URL with no parameters at all. */
+export function writeHomeParams(params: URLSearchParams): void {
+  for (const key of [...params.keys()]) params.delete(key);
+}
+
 /** Reads the screen a URL asks for. Never throws: anything it can't use falls back. */
 export function parseRoute(params: URLSearchParams, validIds: readonly string[]): Route {
   if (params.get(VIEW)?.trim().toLowerCase() === 'pick') {
@@ -49,6 +68,7 @@ export function parseRoute(params: URLSearchParams, validIds: readonly string[])
       link.setup !== undefined ? 'play' : (link.step ?? (link.lineup ? 'lineup' : 'rules'));
     return { screen: 'series', link, step };
   }
+  if (!['a', 'b', 'seed'].some((key) => params.has(key))) return { screen: 'home' };
   return {
     screen: 'match',
     matchup: parseMatchup(params, validIds),

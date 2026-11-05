@@ -17,8 +17,11 @@ export interface QuickSetupActions {
 
 export interface QuickSetup {
   setVisible(visible: boolean): void;
-  /** Fills both slots, makes A the slot a tap fills, and moves focus to the heading. */
-  open(matchup: Matchup): void;
+  /**
+   * Fills both slots and makes A the slot a tap fills. Focus goes to the heading, or to Start when
+   * the balls were chosen for the player (Play on the home screen).
+   */
+  open(matchup: Matchup, focus?: 'heading' | 'start'): void;
 }
 
 type Slot = 'a' | 'b';
@@ -133,13 +136,14 @@ export function createQuickSetup(
     setVisible(visible) {
       root.hidden = !visible;
     },
-    open(matchup) {
+    open(matchup, focus = 'heading') {
       if (byId.has(matchup.a)) picks.a = matchup.a;
       if (byId.has(matchup.b)) picks.b = matchup.b;
       active = 'a';
       info.show(picks.a);
       render();
-      header.focus();
+      if (focus === 'start') start.focus();
+      else header.focus();
     },
   };
 }

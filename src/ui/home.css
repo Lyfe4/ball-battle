@@ -1,0 +1,94 @@
+/*
+ * Home: under the demo arena on a phone, beside it on a wide screen. One large Play; everything
+ * else is visibly secondary.
+ */
+.home {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.home-demo {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-small) var(--space-gap);
+  border-left: 3px solid var(--color-favoured);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--color-surface);
+}
+
+.home-demo-line {
+  margin: 0;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+.home-demo-reason {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.home-watch {
+  margin-top: var(--space-small);
+}
+
+.home-title {
+  margin: 0;
+  font-size: var(--font-size-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.home-pitch {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.home-play {
+  min-height: calc(var(--tap-target) + 12px);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.home-more {
+  display: flex;
+  gap: var(--space-small);
+}
+
+/* The roster's drawings, on a wide screen only: on a phone the demo already shows two of them. */
+.home-strip {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-footer {
+  margin: 0;
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
+.home-source {
+  color: var(--color-text-muted);
+}
+
+.home-source:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage[data-home] .hud {
+    width: var(--setup-width);
+  }
+
+  .home-strip {
+    display: flex;
+  }
+}

@@ -32,6 +32,8 @@ export interface Arena {
   redraw(): void;
   /** The sim's latest world. */
   world(): WorldState;
+  /** True once the match's intro has played and both balls are fully drawn. */
+  introOver(): boolean;
 }
 
 /**
@@ -153,5 +155,6 @@ export function createArena(
     },
     redraw: render,
     world: () => playback.world,
+    introOver: () => playback.effectMs >= theme.introMs,
   };
 }
