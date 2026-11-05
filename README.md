@@ -231,7 +231,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 115.74 kB JS (38.89 kB gzipped), 20.56 kB CSS. First version baseline: 5.05 kB
+Production bundle: 131.14 kB JS (43.28 kB gzipped), 20.80 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
