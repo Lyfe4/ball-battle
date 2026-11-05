@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { BALLS } from '../src/sim/balls/index.ts';
 import {
   checkCounter,
+  ciAllowance,
+  COUNTER_BANDS,
   COUNTER_MAP,
   counterFor,
   SAFE_PICK_COUNTERS,
@@ -95,5 +97,19 @@ describe('checkCounter', () => {
     expect(checkCounter(even, 0.5701, 0.4299)).toBe('miss');
     expect(checkCounter(even, 0.45, 0.4299)).toBe('miss');
     expect(checkCounter(even, 0.5, 0.44)).toBe('near');
+  });
+
+  it('passes a wider miss as NEAR when given a larger allowance, as the CI check does', () => {
+    expect(checkCounter(favoured, 0.52, 0.48)).toBe('miss');
+    expect(checkCounter(favoured, 0.52, 0.48, 0.087)).toBe('near');
+    expect(checkCounter(favoured, 0.49, 0.51, 0.087)).toBe('miss');
+  });
+});
+
+describe('ciAllowance', () => {
+  it('is three standard errors of a pair over the sample, never under the full run’s 2 points', () => {
+    expect(ciAllowance(300)).toBeCloseTo(0.0866, 4);
+    expect(ciAllowance(200)).toBeCloseTo(0.1061, 4);
+    expect(ciAllowance(1_000_000)).toBe(COUNTER_BANDS.nearWithin);
   });
 });

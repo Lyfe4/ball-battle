@@ -124,17 +124,18 @@ hit-stops and effects alike) without changing the result; your choice is remembe
 browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
 displays.
 
-| Script           | What it does                                                                 |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `pnpm dev`       | Vite dev server                                                              |
-| `pnpm build`     | Typecheck and build to `dist/`                                               |
-| `pnpm preview`   | Serve `dist/` with the production security headers, to check the CSP         |
-| `pnpm test`      | Run the fast tests once (`pnpm test:watch` to watch)                         |
-| `pnpm test:slow` | Roster-wide tests that play every matchup (a separate CI job)                |
-| `pnpm lint`      | ESLint                                                                       |
-| `pnpm typecheck` | `tsc -b` across all tsconfig projects                                        |
-| `pnpm format`    | Prettier (`pnpm format:check` to only check)                                 |
-| `pnpm balance`   | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
+| Script            | What it does                                                                 |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`        | Vite dev server                                                              |
+| `pnpm build`      | Typecheck and build to `dist/`                                               |
+| `pnpm preview`    | Serve `dist/` with the production security headers, to check the CSP         |
+| `pnpm test`       | Run the fast tests once (`pnpm test:watch` to watch)                         |
+| `pnpm test:slow`  | Roster-wide tests that play every matchup (a separate CI job)                |
+| `pnpm lint`       | ESLint                                                                       |
+| `pnpm typecheck`  | `tsc -b` across all tsconfig projects                                        |
+| `pnpm format`     | Prettier (`pnpm format:check` to only check)                                 |
+| `pnpm balance`    | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
+| `pnpm balance:ci` | The reduced balance check CI runs: 150 seeds, fails only on a clear miss     |
 
 ## Architecture
 

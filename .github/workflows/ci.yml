@@ -54,3 +54,23 @@ jobs:
       # Every matchup for whole matches: determinism, the measured pass-through margin and the
       # identity rules. Kept out of the main job so pnpm test stays fast.
       - run: pnpm test:slow
+
+  balance:
+    name: Balance check (150 seeds)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # Every matchup on 150 seeds per slot order, without the sensitivity runs: fails only on a
+      # clear miss of a balance target or a counter-map band (ADR 0011). The seeds are fixed, so
+      # it can't flake. A full `pnpm balance` (500 seeds) still judges borderline pairs.
+      - run: pnpm balance:ci

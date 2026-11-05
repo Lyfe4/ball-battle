@@ -1,16 +1,20 @@
 // Plays every matchup headlessly with the real simulation and prints a balance matrix, ability
 // impact and win-rate sensitivity. Matchups run across all CPU cores; results are identical to a
 // serial run (--serial), because each job is deterministic and results are printed in job order.
-// Usage: pnpm balance [seeds] [--ball <id>] [--serial]
+// Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci]
 //   seeds   per slot order, default 500 (seeds 0..N-1, so results reproduce)
 //   --ball  only that ball's matchups and its mirror, for adding or tuning one ball
-// The elapsed time goes to stderr, so stdout can be diffed between runs.
+//   --ci    the reduced check CI runs (pnpm balance:ci): no sensitivity runs, and a counter-map
+//           allowance scaled to the sample, so only a clear miss fails
+// The elapsed time goes to stderr, so stdout can be diffed between runs. Exits with 1 when any
+// target is a MISS.
 import { BALLS } from '../src/sim/balls/index.ts';
 import type { BallDefinition } from '../src/sim/types.ts';
 import { parseBalanceArgs, USAGE } from './balance-args.ts';
 import { runJobs, type PairJob } from './balance-jobs.ts';
 import {
   checkCounter,
+  ciAllowance,
   COUNTER_BANDS,
   counterFor,
   HARD_WORST_MATCHUP,
@@ -52,7 +56,10 @@ if ('error' in options) {
   console.error(USAGE);
   process.exit(1);
 }
-const { seeds, ballId, serial } = options;
+const { seeds, ballId, serial, ci } = options;
+/** How far outside a counter-map band still passes (NEAR). */
+const nearWithin = ci ? ciAllowance(seeds * 2) : COUNTER_BANDS.nearWithin;
+const sensitivityFactors = ci ? [] : SENSITIVITY_FACTORS;
 const started = performance.now();
 
 // Every non-mirror pair once (x before y in roster order), or only the chosen ball's.
@@ -74,7 +81,7 @@ const jobs: PairJob[] = [];
 for (const [x, y] of pairs) {
   jobs.push(job(x.id, y.id));
   for (const index of [0, 1] as const) {
-    for (const factor of SENSITIVITY_FACTORS) {
+    for (const factor of sensitivityFactors) {
       jobs.push(index === 0 ? job(x.id, y.id, factor) : job(x.id, y.id, 1, factor));
     }
   }
@@ -112,6 +119,11 @@ function record(ball: BallDefinition, result: PairResult, index: 0 | 1): void {
 }
 
 console.log(`BallBattle balance: ${seeds} seeds per slot order (seeds 0-${seeds - 1})\n`);
+if (ci) {
+  console.log(
+    `  CI check: no sensitivity runs; a counter-map pair fails only ${(nearWithin * 100).toFixed(1)} pts or more outside its band.\n`,
+  );
+}
 if (ballId !== undefined) {
   console.log(`  Only ${ballId}'s matchups and mirror; targets are checked for ${ballId} only.\n`);
 }
@@ -142,7 +154,7 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
   // Rates for the entry's own x and y, whichever order the matrix plays them in.
   const xRate = base.wins[entry.x === x.id ? 0 : 1] / base.games;
   const yRate = base.wins[entry.x === x.id ? 1 : 0] / base.games;
-  const verdict = checkCounter(entry, xRate, yRate);
+  const verdict = checkCounter(entry, xRate, yRate, nearWithin);
   if (verdict === 'miss') counterMapOk = false;
   const name = (id: string) => BALLS.find((ball) => ball.id === id)?.name ?? id;
   const intended =
@@ -172,7 +184,7 @@ for (const [x, y] of pairs) {
   let swing = 0;
   const details: string[] = [];
   for (const ball of [x, y]) {
-    for (const factor of SENSITIVITY_FACTORS) {
+    for (const factor of sensitivityFactors) {
       const run = nextResult();
       const delta = run.wins[0] / run.games - xRate;
       swing = Math.max(swing, Math.abs(delta));
@@ -202,7 +214,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN in band within ${COUNTER_BANDS.warnWithin * 100} pts of an edge; NEAR outside by at most ${COUNTER_BANDS.nearWithin * 100} pts, passes)`,
+  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN in band within ${COUNTER_BANDS.warnWithin * 100} pts of an edge; NEAR outside by at most ${(nearWithin * 100).toFixed(1)} pts, passes)`,
 );
 console.log(counterLines.join('\n'));
 
@@ -245,12 +257,34 @@ console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
   `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
 );
-console.log(
-  `  ${grade(worstSensitivity, TARGETS.sensitivity.warn, TARGETS.sensitivity.fail)} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
+const sensitivityGrade = grade(
+  worstSensitivity,
+  TARGETS.sensitivity.warn,
+  TARGETS.sensitivity.fail,
 );
-if (focus.some((ball) => ball.id === 'vampire')) {
+console.log(
+  ci
+    ? '  --   win rates for ±5% health: not measured in the CI check'
+    : `  ${sensitivityGrade} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
+);
+const checksVampire = focus.some((ball) => ball.id === 'vampire');
+if (checksVampire) {
   console.log(`  ${check(healingOk)} Vampire heals at least 25% of max health per match`);
 }
 console.error(
   `\n  (${((performance.now() - started) / 1000).toFixed(0)} s, ${serial ? 'serial' : 'parallel'})`,
 );
+const missed = [
+  !ballsInRange,
+  worstShare < TARGETS.worstMatchup,
+  worstShare < HARD_WORST_MATCHUP,
+  !counterMapOk,
+  drawRate >= TARGETS.drawRate,
+  medianLength < TARGETS.medianSeconds[0] || medianLength > TARGETS.medianSeconds[1],
+  !ci && sensitivityGrade === 'MISS',
+  checksVampire && !healingOk,
+].some(Boolean);
+if (missed) {
+  console.error('  A target is a MISS.');
+  process.exitCode = 1;
+}

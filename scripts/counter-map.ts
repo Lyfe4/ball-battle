@@ -55,10 +55,14 @@ export type CounterVerdict = 'ok' | 'warn' | 'near' | 'miss';
 
 const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'near', 'miss'];
 
-function inBand(rate: number, [low, high]: readonly [number, number]): CounterVerdict {
+function inBand(
+  rate: number,
+  [low, high]: readonly [number, number],
+  nearWithin: number,
+): CounterVerdict {
   if (rate < low - EDGE_EPSILON || rate > high + EDGE_EPSILON) {
     const outside = rate < low ? low - rate : rate - high;
-    return outside <= COUNTER_BANDS.nearWithin + EDGE_EPSILON ? 'near' : 'miss';
+    return outside <= nearWithin + EDGE_EPSILON ? 'near' : 'miss';
   }
   const margin = COUNTER_BANDS.warnWithin;
   return rate < low + margin || rate > high - margin ? 'warn' : 'ok';
@@ -72,10 +76,28 @@ function worse(a: CounterVerdict, b: CounterVerdict): CounterVerdict {
 /**
  * Checks one pair's win rates (`xRate` for the entry's x, `yRate` for its y) against its band.
  * For an even pair both sides must be in the even band; the worse verdict counts. `near` and
- * `warn` pass; only `miss` fails.
+ * `warn` pass; only `miss` fails. `nearWithin` is how far outside a band still passes as NEAR:
+ * the 2 points ADR 0010 accepted for a full run, or `ciAllowance` for a smaller sample.
  */
-export function checkCounter(entry: CounterEntry, xRate: number, yRate: number): CounterVerdict {
-  if (entry.intended === 'x') return inBand(xRate, COUNTER_BANDS.favoured);
-  if (entry.intended === 'y') return inBand(yRate, COUNTER_BANDS.favoured);
-  return worse(inBand(xRate, COUNTER_BANDS.even), inBand(yRate, COUNTER_BANDS.even));
+export function checkCounter(
+  entry: CounterEntry,
+  xRate: number,
+  yRate: number,
+  nearWithin: number = COUNTER_BANDS.nearWithin,
+): CounterVerdict {
+  const check = (rate: number, band: readonly [number, number]) => inBand(rate, band, nearWithin);
+  if (entry.intended === 'x') return check(xRate, COUNTER_BANDS.favoured);
+  if (entry.intended === 'y') return check(yRate, COUNTER_BANDS.favoured);
+  return worse(check(xRate, COUNTER_BANDS.even), check(yRate, COUNTER_BANDS.even));
+}
+
+/**
+ * The NEAR allowance for a reduced run (`pnpm balance --ci`): three standard errors of a pair's
+ * win rate over `games` games (at most 0.5 / sqrt(games)), and never less than a full run's. A
+ * sample that small is noisy, so the CI check fails only on a clear miss; a pair it lets through
+ * near an edge is for a full `pnpm balance` to judge. The seeds are fixed, so the result is the
+ * same on every run: it can't flake, only miss a borderline pair.
+ */
+export function ciAllowance(games: number): number {
+  return Math.max(COUNTER_BANDS.nearWithin, (3 * 0.5) / Math.sqrt(games));
 }

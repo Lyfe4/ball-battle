@@ -9,6 +9,7 @@ describe('parseBalanceArgs', () => {
       seeds: DEFAULT_SEEDS,
       ballId: undefined,
       serial: false,
+      ci: false,
     });
   });
 
@@ -17,8 +18,10 @@ describe('parseBalanceArgs', () => {
       seeds: 200,
       ballId: 'storm',
       serial: true,
+      ci: false,
     });
     expect(parseBalanceArgs(['--ball=brawler'], ids)).toMatchObject({ ballId: 'brawler' });
+    expect(parseBalanceArgs(['150', '--ci'], ids)).toMatchObject({ seeds: 150, ci: true });
   });
 
   it.each([

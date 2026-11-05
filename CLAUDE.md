@@ -22,9 +22,11 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps
   them in step). Check the console for CSP errors after any change that loads something new.
 - `pnpm test`: run the fast unit suite once (`pnpm test:watch` to watch)
-- `pnpm test:slow`: the slow suite (`*.slow.test.ts`): roster-wide tests that play every matchup for
-  whole matches (determinism, the measured pass-through margin, identity rules). Run it after
-  changing any ball or the combat rules. Roster-wide tests that play whole matches go here.
+- `pnpm test:slow`: the slow suite (`*.slow.test.ts`, one file per concern so they run in
+  parallel): roster-wide tests that play every matchup for whole matches (determinism, the
+  measured pass-through margin, the measured identity rules). Run it after changing any ball or
+  the combat rules. Roster-wide tests that play whole matches go here, in the file for their
+  concern; their helpers are in `src/sim/balls/roster-support.ts`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
 - `pnpm format` / `pnpm format:check`: Prettier
@@ -32,10 +34,14 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   0..N-1) headlessly across all CPU cores and print the matchup matrix and whether the balance
   targets are met. Run it after changing any ball's stats, ability or the combat rules.
   `--ball <id>` plays only that ball's matchups and mirror (for a new ball); `--serial` runs on one
-  thread and gives byte-identical output. The elapsed time goes to stderr. Not part of CI.
+  thread and gives byte-identical output. The elapsed time goes to stderr. Exits with 1 on any
+  MISS.
+- `pnpm balance:ci`: the reduced check CI runs: 150 seeds, no sensitivity runs, and a counter-map
+  pair fails only when clearly outside its band (ADR 0011 addendum). A full `pnpm balance` still
+  judges borderline pairs.
 
-CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job and `test:slow` in
-another. All must pass.
+CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job, `test:slow` in a second
+and `balance:ci` in a third. All must pass.
 
 ## Architecture rules
 
@@ -142,15 +148,16 @@ the game does not use it), `docs/decisions/0019-draft-formats.md`,
   counter is, never whether it exists. Measure what a ball's mechanic moves before choosing its
   counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler is the only safe pick: even against all
   except Thorns, its one designed counter (ADR 0013).
-  Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
-  decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
+  Ball identity rules are pinned in `src/sim/balls/identity.test.ts` (read from the definitions)
+  and `ability-share.slow.test.ts` (measured); breaking one is a design decision, not a tuning
+  step. Longer fights make matchups steeper (ADR 0004).
 - Interaction rules that exist to create a counter (one ball's effect meeting another ball's
   mechanic, like "poison numbs rage" or "rage can't be slowed", ADR 0016) are limited to about one
   per ball, and every such rule must be visible on screen (a status ring, a change in the ball's
   design, or similar), so a viewer can tell why a ball won or lost. Fill counter gaps with new
   balls rather than more rules. Today the Berserker, Frost and Venom are each in two such rules
   (ADR 0016); don't add a third to any of them.
-- The pass-through property test in `src/sim/balls/roster.slow.test.ts` (closing speed below 0.6 of the
+- The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.
 - A behaviour test should be shown to fail with the behaviour disabled before it is trusted.

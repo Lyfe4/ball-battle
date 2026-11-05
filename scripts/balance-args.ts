@@ -2,7 +2,7 @@
 import { parseArgs } from 'node:util';
 
 export const DEFAULT_SEEDS = 500;
-export const USAGE = 'Usage: pnpm balance [seeds] [--ball <id>] [--serial]';
+export const USAGE = 'Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci]';
 
 export interface BalanceOptions {
   /** Seeds per slot order: seeds 0..seeds-1. */
@@ -11,6 +11,11 @@ export interface BalanceOptions {
   readonly ballId: string | undefined;
   /** Run every matchup on the main thread instead of across worker threads. */
   readonly serial: boolean;
+  /**
+   * The reduced check CI runs: no sensitivity runs, and a counter-map allowance scaled to the
+   * sample (`ciAllowance`), so only a clear miss fails.
+   */
+  readonly ci: boolean;
 }
 
 /** Parses the arguments after the script name, or returns an error message. */
@@ -23,7 +28,11 @@ export function parseBalanceArgs(
     parsed = parseArgs({
       args: [...args],
       allowPositionals: true,
-      options: { ball: { type: 'string' }, serial: { type: 'boolean', default: false } },
+      options: {
+        ball: { type: 'string' },
+        serial: { type: 'boolean', default: false },
+        ci: { type: 'boolean', default: false },
+      },
     });
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
@@ -45,5 +54,5 @@ export function parseBalanceArgs(
   if (ballId !== undefined && !ballIds.includes(ballId)) {
     return { error: `Unknown ball "${ballId}". Known balls: ${ballIds.join(', ')}.` };
   }
-  return { seeds, ballId, serial: values.serial };
+  return { seeds, ballId, serial: values.serial, ci: values.ci };
 }

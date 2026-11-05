@@ -69,3 +69,32 @@ empty band above the arena. The side-by-side layout stays centred.
   the picker works for 25 balls on a phone.
 - Negative: two test suites to remember (CI runs both). Balance speed is capped by the sim's
   allocation, not the hardware.
+
+## Addendum: the slow suite split by concern, and a balance check in CI (2026-11-05)
+
+An audit found the roster-wide checks growing badly. One file of 17 tests ran in series (Vitest
+parallelises by file) and took 70 s here, 80 s on the auditor's machine. The balance bands
+weren't in CI at all, so a stat change could push a pair out of its counter-map band and CI stayed
+green.
+
+- **One file per concern.** The suite is now split into `determinism`, `pass-through` and
+  `ability-share` slow files, with their helpers in `src/sim/balls/roster-support.ts`. The
+  identity rules that only read the definitions moved to the unit suite (`identity.test.ts`),
+  where they run in milliseconds.
+- **Pass-through plays each pair once.** It plays every pair (mirrors included) instead of every
+  ordered pair, alternating the slot order between seeds, so both orders are still covered.
+  Closing speed doesn't depend on the slot, and both samplings find the same worst case today
+  (0.373 of the limit).
+- The slow suite now takes 34 s here. It still grows with the square of the roster; the files run
+  in parallel.
+- **`pnpm balance:ci`**, its own CI job, plays 150 seeds per slot order without the sensitivity
+  runs (80% of a full run's cost). That's 20 s here. A counter-map pair fails only when it is
+  outside its band by more than three standard errors of the sample: 8.7 points at 300 games,
+  against a full run's 2 (`ciAllowance`). The other targets are checked as in a full run. The
+  seeds are fixed, so the check can't flake; it can only let a borderline pair through, which a
+  full run still judges. It passes on today's code and fails clearly when Vampire's lifesteal is
+  set to 0.
+- `pnpm balance` exits with 1 when any target is a MISS.
+- Not changed: the counter-map data stays in files by batch. The audit suggested one file per
+  ball. Each pair belongs to two balls, so a per-ball file still has to pick an owner, and the
+  test that every pair has exactly one entry already gives the safety.
