@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { nextMatch, recordOutcome, startSeries, type SeriesState } from '../sim/series.ts';
-import { betweenLine, finalLine, playingLine, roundLine, scoreLine } from './series-text.ts';
+import { FORMATS, nextMatch, recordOutcome, startSeries, type SeriesState } from '../sim/series.ts';
+import {
+  betweenLine,
+  botPicksLine,
+  finalLine,
+  FORMAT_HINTS,
+  FORMAT_NAMES,
+  pickLine,
+  playingLine,
+  roundLine,
+  scoreLine,
+} from './series-text.ts';
 
 const nameOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 const start = startSeries({
@@ -56,5 +66,25 @@ describe('series text', () => {
   it('announces the series result', () => {
     expect(finalLine(after('a', 'b', 'a'))).toBe('You win the series 2–1!');
     expect(finalLine(after('b', 'b'))).toBe('The bot wins the series 2–0.');
+  });
+});
+
+describe('draft format text', () => {
+  const names = (id: string) => id.toUpperCase();
+
+  it('names every format and explains it', () => {
+    for (const format of FORMATS) {
+      expect(FORMAT_NAMES[format].length).toBeGreaterThan(0);
+      expect(FORMAT_HINTS[format]).toMatch(/first to 2 wins/i);
+    }
+  });
+
+  it('tells the losing player what they pick against, and says when the bot picks', () => {
+    expect(pickLine(1, 'frost', names)).toBe(
+      'You lost round 1. The bot plays its FROST next: pick your ball to face it.',
+    );
+    expect(botPicksLine(1, 'vampire', names)).toBe(
+      'Next, round 2: your VAMPIRE. The bot lost round 1, so it picks its next ball knowing yours.',
+    );
   });
 });

@@ -1,11 +1,31 @@
-import { nextMatch, type NextMatch, type SeriesState } from '../sim/series.ts';
+import { drawBallIcon } from '../render/ball-icon.ts';
+import {
+  awaitingPick,
+  formatOf,
+  nextBallOf,
+  nextMatch,
+  remainingOf,
+  type NextMatch,
+  type SeriesState,
+} from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
-import { betweenLine, finalLine, playingLine, roundLine, scoreLine } from './series-text.ts';
+import {
+  betweenLine,
+  botPicksLine,
+  finalLine,
+  FORMAT_NAMES,
+  pickLine,
+  playingLine,
+  roundLine,
+  scoreLine,
+} from './series-text.ts';
 
 export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
   readonly onNext: () => void;
+  /** Loser picks next: the player picked `ball` for the coming round. */
+  readonly onPick: (ball: string) => void;
   /** Same lineups, new seed. */
   readonly onRematch: () => void;
   /** Back to the lineup builder. */
@@ -26,10 +46,14 @@ export interface SeriesPanel {
   update(view: SeriesView): void;
 }
 
+const PICK_ICON_PX = 28;
+
 /**
- * The best-of-3 scoreboard: the score, every finished round, and what is happening now. Between
- * plays it offers Next round (or Replay round after a draw), with the bot's next ball hidden;
- * at the end, the result with Rematch and New series. Plain DOM, all text through textContent.
+ * The best-of-3 scoreboard: the format, the score, every finished round, and what is happening
+ * now. Between plays it offers Next round (or Replay round after a draw), with the bot's next ball
+ * hidden. In loser-picks-next, when the player lost, it shows the bot's next ball and one button
+ * per ball the player has left instead. At the end, the result with Rematch and New series. Plain
+ * DOM, all text through textContent.
  */
 export function createSeriesPanel(
   root: HTMLElement,
@@ -44,18 +68,22 @@ export function createSeriesPanel(
   root.setAttribute('aria-labelledby', headingId);
   const heading = element('h2', 'series-heading', 'Best of 3');
   heading.id = headingId;
+  const format = element('p', 'series-format');
   const score = element('p', 'series-score');
   const rounds = element('ol', 'series-rounds');
-  // Announced when it changes: the round starting, a result, the series result.
+  // Announced when it changes: the round starting, a result, a pick due, the series result.
   const status = element('p', 'series-status');
   status.setAttribute('aria-live', 'polite');
+  const picks = element('div', 'series-picks');
+  picks.setAttribute('role', 'group');
+  picks.setAttribute('aria-label', 'Pick your next ball');
 
   const buttons = element('div', 'hud-actions');
   const next = button('Next round', 'hud-button hud-button-primary', actions.onNext);
   const rematch = button('Rematch', 'hud-button', actions.onRematch);
   const newSeries = button('New series', 'hud-button hud-button-primary', actions.onNewSeries);
   buttons.append(next, rematch, newSeries);
-  root.append(heading, score, rounds, status, buttons);
+  root.append(heading, format, score, rounds, status, picks, buttons);
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const node = element('button', className, text);
@@ -64,12 +92,34 @@ export function createSeriesPanel(
     return node;
   }
 
+  /** One button per ball the player may pick, rebuilt only when the choice changes. */
+  let shownChoices = '';
+  function showChoices(choices: readonly string[]): void {
+    const key = choices.join();
+    if (key === shownChoices) return;
+    shownChoices = key;
+    picks.replaceChildren(
+      ...choices.map((id) => {
+        const pick = button('', 'hud-button series-pick', () => {
+          actions.onPick(id);
+        });
+        const icon = element('canvas', 'series-pick-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        const ball = definitions.get(id);
+        if (ball !== undefined) drawBallIcon(icon, ball, PICK_ICON_PX);
+        pick.append(icon, element('span', '', `Play ${nameOf(id)}`));
+        return pick;
+      }),
+    );
+  }
+
   let shownRounds = -1;
   return {
     setVisible(visible) {
       root.hidden = !visible;
     },
     update({ state, current, settled }) {
+      setText(format, FORMAT_NAMES[formatOf(state.setup)]);
       setText(score, scoreLine(state));
       if (state.rounds.length !== shownRounds) {
         shownRounds = state.rounds.length;
@@ -79,14 +129,20 @@ export function createSeriesPanel(
       }
       const playing = current !== undefined && !settled;
       const upcoming = nextMatch(state);
+      const due = playing ? undefined : awaitingPick(state);
       const finished = state.winner !== undefined && !playing;
+      const roundsPlayed = state.rounds.length;
       let text = '';
       if (playing) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
+      else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
+      else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       setText(status, text);
 
-      const between = !playing && !finished && upcoming !== undefined;
+      picks.hidden = due !== 'a';
+      if (due === 'a') showChoices(remainingOf(state, 'a'));
+      const between = !playing && !finished && (upcoming !== undefined || due === 'b');
       setText(next, state.pending.length > 0 ? 'Replay round' : 'Next round');
       next.hidden = !between;
       rematch.hidden = !finished;

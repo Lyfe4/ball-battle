@@ -564,3 +564,67 @@ canvas {
 .series-status:empty {
   display: none;
 }
+
+/* Draft formats (ADR 0019): the rules choice above the lineup, the bot's revealed lineup while
+   ordering, and the scoreboard's format line and pick buttons. */
+.lineup-format .segmented {
+  flex-wrap: wrap;
+}
+
+.lineup-opponent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineup-opponent-ball {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  padding: 4px var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.series-format {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
+.series-picks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-small);
+}
+
+.series-pick-icon {
+  flex: none;
+}
+
+.lineup-format .segmented-button {
+  flex: 1 1 auto;
+  padding: 0 var(--space-small);
+  white-space: nowrap;
+}
+
+.lineup-opponent-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.series-pick {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  white-space: nowrap;
+}

@@ -5,6 +5,7 @@ import {
   nextMatch,
   outcomeOf,
   recordOutcome,
+  recordPick,
   startSeries,
   type NextMatch,
   type SeriesSetup,
@@ -36,8 +37,17 @@ export function settleCurrent(session: SeriesSession, world: WorldState): Series
   return { ...session, state, recorded: true };
 }
 
-/** Moves on to the next match (the next round, or a drawn round again) once one is recorded. */
+/**
+ * Moves on to the next match (the next round, or a drawn round again) once one is recorded. While
+ * a pick is due (loser picks next, ADR 0019) there is no current match until `pickInSession`.
+ */
 export function advanceSession(session: SeriesSession): SeriesSession {
   if (!session.recorded) return session;
   return { state: session.state, current: nextMatch(session.state), recorded: false };
+}
+
+/** Records the due pick and makes the match it decides the current one. */
+export function pickInSession(session: SeriesSession, ball: string): SeriesSession {
+  const state = recordPick(session.state, ball);
+  return { state, current: nextMatch(state), recorded: false };
 }

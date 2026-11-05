@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { matchWorld, playSeries, playToEnd, type SeriesSetup } from '../sim/series.ts';
+import {
+  awaitingPick,
+  matchWorld,
+  playSeries,
+  playToEnd,
+  remainingOf,
+  type SeriesSetup,
+} from '../sim/series.ts';
 import {
   advanceSession,
+  pickInSession,
   beginSession,
   settleCurrent,
   type SeriesSession,
@@ -44,5 +52,29 @@ describe('series session', () => {
       expect(++guard).toBeLessThan(20);
     }
     expect(session.state).toStrictEqual(playSeries(setup, BALL_LOOKUP));
+  });
+});
+
+describe('series session, loser picks next', () => {
+  const loser: SeriesSetup = { ...setup, format: 'loser' };
+
+  it('has no current match while a pick is due, and plays the picked ball after it', () => {
+    let session = beginSession(loser);
+    // Play round 1 to its end, whatever its result.
+    for (;;) {
+      const current = session.current;
+      if (current === undefined) throw new Error('expected a match');
+      session = settleCurrent(session, playToEnd(matchWorld(current, BALL_LOOKUP), BALL_LOOKUP));
+      session = advanceSession(session);
+      if (session.state.rounds.length > 0) break;
+    }
+    const due = awaitingPick(session.state);
+    if (due === undefined) throw new Error('expected a pick after round 1');
+    expect(session.current).toBeUndefined();
+    const ball = remainingOf(session.state, due).at(-1);
+    if (ball === undefined) throw new Error('expected a ball left');
+    const picked = pickInSession(session, ball);
+    expect(picked.current?.[due]).toBe(ball);
+    expect(picked.recorded).toBe(false);
   });
 });

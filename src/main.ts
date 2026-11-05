@@ -261,6 +261,6 @@ document.addEventListener('visibilitychange', () => {
 
 startMatch(matchup, seed);
 if (seriesLink?.setup !== undefined) series.start(seriesLink.setup, true);
-else if (mode === 'series') series.showBuilder(seriesLink?.lineup);
+else if (mode === 'series') series.showBuilder(seriesLink?.lineup, seriesLink?.format);
 else showControls();
 requestAnimationFrame(frame);

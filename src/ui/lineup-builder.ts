@@ -1,5 +1,5 @@
 import { drawBallIcon } from '../render/ball-icon.ts';
-import { LINEUP_SIZE, type Lineup } from '../sim/series.ts';
+import { FORMATS, LINEUP_SIZE, type Format, type Lineup } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createBallDialog } from './ball-dialog.ts';
 import { element, setText } from './dom.ts';
@@ -10,43 +10,85 @@ import {
   removeFromDraft,
   type Draft,
 } from './lineup-draft.ts';
+import { createSegmented } from './segmented.ts';
+import { FORMAT_HINTS, FORMAT_NAMES, FORMAT_SHORT_NAMES } from './series-text.ts';
 
 export interface LineupBuilder {
   /** Shows or hides the builder (it is only for best-of-3 mode, before a series). */
   setVisible(visible: boolean): void;
-  /** Replaces the lineup, e.g. one read from the URL or kept from the last series. */
-  show(draft: Draft): void;
+  /**
+   * Back to building: replaces the lineup when given (e.g. one read from the URL or kept from the
+   * last series), else keeps the one being built, and the format when given.
+   */
+  show(draft: Draft | undefined, format?: Format): void;
+  /** Reveal, then order: both lineups are shown and the player sets the order of theirs. */
+  showOrdering(own: Lineup, opponent: Lineup): void;
+  /** The chosen format. */
+  format(): Format;
   /** True while the ball dialog is open (the game pauses meanwhile). */
   isOpen(): boolean;
+}
+
+export interface LineupActions {
+  /** The lineup is complete and the player starts (or, in reveal-then-order, reveals). */
+  readonly onStart: (lineup: Lineup, format: Format) => void;
+  /** Reveal, then order: the player locked the order of their lineup. */
+  readonly onLockOrder: (lineup: Lineup) => void;
+  /** The format choice changed. */
+  readonly onFormat: (format: Format) => void;
 }
 
 const SLOT_ICON_PX = 32;
 
 /**
- * Building a lineup for a best-of-3 series: three ordered slots, filled by tapping balls in the
- * shared ball dialog (each tap fills the next empty slot; a ball already picked can't be picked
- * again). Each slot can move up or down or be removed, Clear empties all three, and Start series
- * is enabled once all three are filled. Plain DOM; the rules live in lineup-draft.ts.
+ * Building a lineup for a best-of-3 series: the draft format (ADR 0019), then three ordered slots,
+ * filled by tapping balls in the shared ball dialog (each tap fills the next empty slot; a ball
+ * already picked can't be picked again). Each slot can move up or down or be removed, Clear empties
+ * all three, and Start series is enabled once all three are filled. In reveal-then-order, Start
+ * reveals both lineups and the builder switches to ordering: the bot's lineup is shown, only the
+ * move buttons stay, and Lock order starts the series. Plain DOM; the rules live in
+ * lineup-draft.ts.
  */
 export function createLineupBuilder(
   root: HTMLElement,
   balls: readonly BallDefinition[],
-  onStart: (lineup: Lineup) => void,
+  actions: LineupActions,
+  initialFormat: Format = 'blind',
 ): LineupBuilder {
   root.replaceChildren();
   root.className = 'lineup';
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   let draft: Draft = [];
+  let format = initialFormat;
+  let ordering = false;
 
+  const formatRoot = element('div', 'lineup-format');
+  const formatChoice = createSegmented<Format>(
+    formatRoot,
+    'lineup-format',
+    'Rules',
+    FORMATS.map((value) => ({
+      value,
+      text: FORMAT_SHORT_NAMES[value],
+      label: FORMAT_NAMES[value],
+    })),
+    format,
+    (next) => {
+      format = next;
+      actions.onFormat(next);
+      update(draft);
+    },
+  );
   const headingId = 'lineup-heading';
   root.setAttribute('aria-labelledby', headingId);
   const heading = element('h2', 'lineup-heading', 'Your lineup');
   heading.id = headingId;
-  const hint = element(
-    'p',
-    'lineup-hint',
-    'Pick 3 different balls in order. Round 1 is your first against the bot’s first; first to 2 wins. The bot’s lineup stays hidden.',
-  );
+  const hint = element('p', 'lineup-hint');
+  const opponentLabel = element('p', 'lineup-opponent-label', 'The bot’s lineup');
+  opponentLabel.id = 'lineup-opponent-label';
+  const opponent = element('ul', 'lineup-opponent');
+  opponent.setAttribute('aria-labelledby', opponentLabel.id);
+  const ownLabel = element('p', 'lineup-opponent-label', 'Your order');
 
   const list = element('ol', 'lineup-slots');
   const slots = Array.from({ length: LINEUP_SIZE }, (_, index) => {
@@ -70,16 +112,29 @@ export function createLineupBuilder(
     return { icon, name, up, down, remove };
   });
 
-  const actions = element('div', 'lineup-actions');
+  const buttons = element('div', 'lineup-actions');
   const choose = element('button', 'hud-button', 'Choose balls');
   choose.type = 'button';
   choose.setAttribute('aria-haspopup', 'dialog');
   const clear = element('button', 'hud-button', 'Clear');
   clear.type = 'button';
-  actions.append(choose, clear);
+  buttons.append(choose, clear);
   const start = element('button', 'hud-button hud-button-primary', 'Start series');
   start.type = 'button';
-  root.append(heading, hint, list, actions, start);
+  const back = element('button', 'hud-button', 'Change lineup');
+  back.type = 'button';
+  root.append(
+    formatRoot,
+    heading,
+    hint,
+    opponentLabel,
+    opponent,
+    ownLabel,
+    list,
+    buttons,
+    start,
+    back,
+  );
 
   const dialog = createBallDialog(root, balls, 'lineup-dialog');
 
@@ -118,8 +173,30 @@ export function createLineupBuilder(
   });
   start.addEventListener('click', () => {
     const lineup = completeLineup(draft);
-    if (lineup !== undefined) onStart(lineup);
+    if (lineup === undefined) return;
+    if (ordering) actions.onLockOrder(lineup);
+    else actions.onStart(lineup, format);
   });
+  back.addEventListener('click', () => {
+    ordering = false;
+    update(draft);
+    choose.focus();
+  });
+
+  /** The bot's revealed lineup, shown while ordering (in roster order, so it gives nothing away). */
+  function showOpponent(ids: readonly string[]): void {
+    opponent.replaceChildren(
+      ...ids.map((id) => {
+        const ball = byId.get(id);
+        const item = element('li', 'lineup-opponent-ball');
+        const icon = element('canvas', 'lineup-slot-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        if (ball !== undefined) drawBallIcon(icon, ball, SLOT_ICON_PX);
+        item.append(icon, element('span', 'lineup-slot-name', ball?.name ?? id));
+        return item;
+      }),
+    );
+  }
 
   function update(next: Draft): void {
     draft = next;
@@ -134,11 +211,29 @@ export function createLineupBuilder(
       slot.up.disabled = ball === undefined || index === 0;
       slot.down.disabled = ball === undefined || index >= draft.length - 1;
       slot.remove.disabled = ball === undefined;
+      slot.remove.hidden = ordering;
       slot.up.setAttribute('aria-label', `Move ${label} up`);
       slot.down.setAttribute('aria-label', `Move ${label} down`);
       slot.remove.setAttribute('aria-label', `Remove ${label}`);
     });
     const complete = completeLineup(draft) !== undefined;
+    formatRoot.hidden = ordering;
+    buttons.hidden = ordering;
+    opponent.hidden = !ordering;
+    opponentLabel.hidden = !ordering;
+    ownLabel.hidden = !ordering;
+    back.hidden = !ordering;
+    setText(heading, ordering ? 'Set your order' : 'Your lineup');
+    setText(
+      hint,
+      ordering
+        ? 'Both lineups are revealed. Order yours; the bot orders its own in secret.'
+        : FORMAT_HINTS[format],
+    );
+    setText(
+      start,
+      ordering ? 'Lock order' : format === 'reveal' ? 'Reveal lineups' : 'Start series',
+    );
     start.disabled = !complete;
     choose.disabled = complete;
     clear.disabled = draft.length === 0;
@@ -155,9 +250,23 @@ export function createLineupBuilder(
     setVisible(visible) {
       root.hidden = !visible;
     },
-    show(next) {
-      update(next.filter((id) => byId.has(id)).reduce<Draft>(addToDraft, []));
+    show(next, nextFormat) {
+      ordering = false;
+      if (nextFormat !== undefined) {
+        format = nextFormat;
+        formatChoice.select(nextFormat);
+      }
+      const kept = next ?? draft;
+      update(kept.filter((id) => byId.has(id)).reduce<Draft>(addToDraft, []));
     },
+    showOrdering(own, revealed) {
+      ordering = true;
+      const roster = balls.map((ball) => ball.id);
+      showOpponent([...revealed].sort((x, y) => roster.indexOf(x) - roster.indexOf(y)));
+      update(own);
+      start.focus();
+    },
+    format: () => format,
     isOpen: () => dialog.isOpen(),
   };
 }
