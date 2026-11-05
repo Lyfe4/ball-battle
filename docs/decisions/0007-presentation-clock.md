@@ -129,3 +129,21 @@ Recorded here when the autorun report that first listed them was retired.
   clock (`src/app/speed.ts`), so ticks, intro, hit-stops, slow-mo and effects all run at the same
   multiple, and the tick sequence is unchanged (the playback replay test runs at 2× too). Remembered
   per viewer in `localStorage`, behind try/catch; not part of the URL.
+- **Choices made while building it** (from the retired run report): the speed toggle sits under
+  the HUD status, always visible, so it can change mid-match (there is no settings menu yet); a
+  shared link replays at the viewer's own speed rather than carrying `?speed=2`; the HUD's health
+  ghost is a CSS transition on real time, so at 2× it trails the canvas bars slightly (left as
+  is); a projectile that ended this tick is not drawn for the remaining fraction of a tick, since
+  the spark marks its hit.
+- **Measured refresh rates.** With the 60 Hz fixed step, the share of frames that repeat a
+  position is 0% at 60 Hz, 20% at 75, 33% at 90, 50% at 120, 58% at 144, 64% at 165 and 75% at
+  240; at 75, 90, 144 and 165 Hz ticks were held for an uneven number of frames, which is the
+  judder interpolation removed. After it, 4 of 300 frames at about 90 Hz repeated (the hit-stops).
+- **Still not comfortable to watch, honestly.** Interpolation removed the renderer's judder; what
+  remains is the speed itself (a ball crosses the arena in about 1.3 s and a hit lands about once
+  a second). Two proposals, not built: a faint motion trail (two or three ghost discs 1-3 ticks
+  back, 10-20% opacity, off under reduced motion), and a "slower balls, harder hits" retune
+  (cruise speeds × 0.75 with damage raised to keep the median near 18 s). The retune is a sim and
+  balance change: every seed replays differently, speed-dependent counters (the Speedster
+  outrunning the Storm and the Sniper, the Quake's warning, the Frost's slow) change shape, and
+  fewer, larger hits steepen the ±5% sensitivity (ADR 0004). It would need its own ADR.

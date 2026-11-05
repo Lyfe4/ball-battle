@@ -104,3 +104,15 @@ Plain DOM, as before:
 - Found while building it: the frame the result appears on was never redrawn (the result's 950 ms
   delay outlasts every effect, so the loop had stopped drawing), so a result could wait for an
   unrelated redraw. The frame loop now also draws when the result appears.
+
+## Addendum: notes from the build (2026-11-05)
+
+- **Rounds start with a Next round button**, not automatically after a pause, so the scoreboard can
+  be read and screen readers announce each result before the next round begins. Auto-advance with
+  the button as a skip is the alternative, still open.
+- **The full link stores both lineups**, not just the seed, so a link keeps replaying the same
+  series after the bot changes.
+- **The series wiring lives in `src/series-controller.ts`** (moved out of `main.ts`, which had grown
+  to 335 lines), so `main.ts` stays wiring for the arena and frame loop.
+- The CSP check (`pnpm preview`) was not re-run for this step: nothing new is loaded from the
+  network.

@@ -79,6 +79,9 @@ blind picks. See Decisions below.
   poison), Archer > Frost (arrows land on the slowest ball) and Quake > Archer, Storm and Sniper
   (shockwaves stagger, and a staggered ball can't aim). Every ball but the Brawler, Thorns, the
   Sniper and the Quake now has at least two favoured and two unfavoured matchups.
+- **Rules versus new balls** (2026-11-05): counter-creating interaction rules are capped at about
+  one per ball and must show on screen; the remaining gaps (a second prey for the Sniper, a second
+  predator for the Quake, Thorns' 1 / 4) are for new balls to fill (ADR 0016 addendum).
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
