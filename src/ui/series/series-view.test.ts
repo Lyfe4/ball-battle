@@ -51,6 +51,13 @@ describe('reveal', () => {
     ).toBe('Next, round 3: your vampire against the bot’s frost.');
   });
 
+  it('puts the bot’s other two under round 2 once it has shown its round-1 ball', () => {
+    const [round1, round2, round3] = trackOf(play(series('reveal'), 'thorns'), undefined);
+    expect(round1?.bot).toStrictEqual({ ball: 'thorns' });
+    expect(round2?.bot).toStrictEqual({ pool: ['speedster', 'frost'] });
+    expect(round3?.bot).toStrictEqual({});
+  });
+
   it('asks round 1 as an answer to the ball the bot showed', () => {
     const choice = pickChoiceOf(play(series('reveal'), 'thorns'));
     expect(choice?.kind).toBe('answer');

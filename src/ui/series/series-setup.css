@@ -1,4 +1,4 @@
-/* Best-of-3 setup steps: the rules cards, the lineup tray, and Reveal's round-1 answer. */
+/* Best-of-3 setup steps: the rules cards, the lineup tray and the Resume card. */
 .series-setup,
 .series-step {
   display: grid;
@@ -98,84 +98,6 @@
 
 .lineup-tray-empty .lineup-tray-name {
   font-weight: 400;
-}
-
-/* Reveal: the bot's three, in roster order. */
-.order-label {
-  margin: 0 0 calc(var(--space-gap) * -0.5);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  font-weight: 600;
-}
-
-.order-bot {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-small);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.order-bot-ball {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  padding: 6px 2px;
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.order-bot-name {
-  font-size: var(--font-size-small);
-  font-weight: 600;
-}
-
-.order-icon {
-  flex: none;
-}
-
-/* Reveal, round 1: the bot's shown ball is selected; the player's three are large answer buttons. */
-.order-bot-ball.answer-shown {
-  background: var(--color-selected);
-}
-
-.answer-shown-note {
-  color: var(--color-focus);
-  font-size: var(--font-size-tiny);
-  font-weight: 600;
-}
-
-.answer-choices {
-  display: grid;
-  gap: var(--space-small);
-}
-
-.answer-choice {
-  display: flex;
-  align-items: center;
-  gap: var(--space-gap);
-  min-height: calc(var(--tap-target) + 12px);
-  padding: var(--space-small) var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-raised);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-
-.answer-name {
-  flex: 1;
-}
-
-.answer-mark[data-lean='favoured'] {
-  color: var(--color-favoured);
-}
-
-.answer-mark[data-lean='unfavoured'] {
-  color: var(--color-unfavoured);
 }
 
 /* A series left with Back, to carry on with: the label and the score it stands at. */

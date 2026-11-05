@@ -291,8 +291,13 @@ function showControls(): void {
   outdated.setVisible(screen === 'outdated');
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
-  hudRoot.hidden = setup || screen === 'home';
-  speedRoot.hidden = setup || screen === 'home';
+  // Between series rounds and at the end the arena, health and speed make way for the round
+  // screen (ADR 0025): the track and the result say what they would.
+  const roundOver =
+    screen === 'series' && series.phase() !== undefined && series.phase() !== 'playing';
+  stage.toggleAttribute('data-round-over', roundOver);
+  hudRoot.hidden = setup || screen === 'home' || roundOver;
+  speedRoot.hidden = setup || screen === 'home' || roundOver;
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
   document.title = TITLES[screen];

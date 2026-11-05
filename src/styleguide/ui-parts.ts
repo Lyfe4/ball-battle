@@ -2,11 +2,17 @@
 // with the game's own code and stylesheet (styleguide.html?only=ui). It plays the part a component
 // catalogue would, without a new dependency.
 import '../style.css';
-import { BALLS } from '../sim/balls/index.ts';
+import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { createBallGrid } from '../ui/balls/ball-grid.ts';
 import { leanOf } from '../ui/balls/matchups.ts';
 import { createBallDetail } from '../ui/manual/ball-detail.ts';
 import { createMatchupChart } from '../ui/manual/matchup-chart.ts';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { recordOutcome, recordPick, startSeries } from '../sim/series.ts';
+import { createPickRows } from '../ui/series/pick-rows.ts';
+import { createSeriesTrack } from '../ui/series/series-track.ts';
+import { pickChoiceOf, trackOf } from '../ui/series/series-view.ts';
+import { createSymbolLegend } from '../ui/symbol-legend.ts';
 
 /** One labelled example, in a phone-width frame. */
 function example(label: string, ...content: HTMLElement[]): HTMLElement {
@@ -53,7 +59,30 @@ export function uiPartsSection(): HTMLElement {
   detail.show('storm');
   const chart = createMatchupChart(BALLS, () => undefined);
 
+  // A Reveal series after round 1, the player due to show first in round 2.
+  const reveal = ['thorns', 'archer', 'a'].reduce(
+    (state, step) => (step === 'a' ? recordOutcome(state, 'a') : recordPick(state, step)),
+    startSeries({
+      ruleset: RULESET_VERSION,
+      seed: 0,
+      a: ['brawler', 'archer', 'vampire'],
+      b: ['thorns', 'speedster', 'frost'],
+      opponent: { kind: 'player' },
+      format: 'reveal',
+    }),
+  );
+  const track = createSeriesTrack(BALL_LOOKUP);
+  track.update(reveal, trackOf(reveal, undefined));
+  const rows = createPickRows(BALL_LOOKUP, () => undefined);
+  const choice = pickChoiceOf(reveal);
+  if (choice !== undefined) rows.show(choice);
+  const legend = createSymbolLegend();
+  legend.panel.hidden = false;
+
   row.append(
+    example('Series track, Reveal after round 1', track.element),
+    example('Pick rows: show first, with the bot’s possible answers', rows.element),
+    example('Symbol legend, open', legend.panel),
     example('Ball grid, one chosen', plain.element),
     example('Ball grid, marked against Storm (quick match)', marked.element),
     example('Ball grid in a lineup: balls already in a slot', lineup.element),

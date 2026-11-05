@@ -50,7 +50,7 @@ describe('a Reveal series left with Back', () => {
     button('Reveal lineups').click();
     await settle();
     expect(step()).toBe('answer');
-    const answer = visible('.answer-choice')[0];
+    const answer = visible('.pick-row')[0];
     if (answer === undefined) throw new Error('No answer to pick');
     answer.click();
     await settle();
@@ -70,7 +70,7 @@ describe('a Reveal series left with Back', () => {
     window.dispatchEvent(new PopStateEvent('popstate', { state: entry }));
     await settle();
     expect(step()).toBe('lineup');
-    expect(visible('.answer-choice')).toHaveLength(0);
+    expect(visible('.answer-step .pick-row')).toHaveLength(0);
 
     // Resume carries on with the same round 1: the answer made before the Back.
     resume.click();

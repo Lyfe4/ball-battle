@@ -6,6 +6,7 @@
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
+import { indexDefinitions } from './sim/definitions.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
 import type { Format, Lineup, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
@@ -112,7 +113,7 @@ export function createSeriesSetup(
     },
   });
 
-  const answer = createAnswerStep(balls, {
+  const answer = createAnswerStep(indexDefinitions(balls), {
     onBack: () => {
       host.back(() => {
         host.replace(to('lineup'));

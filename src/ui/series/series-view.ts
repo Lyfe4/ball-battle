@@ -87,13 +87,17 @@ export function trackOf(state: SeriesState, current: NextMatch | undefined): Tra
         suddenDeath: false,
       };
     }
-    // Later rounds: in a blind series the player's own order is set; everything else is open.
+    // Later rounds: in a blind series the player's own order is set; everything else is open,
+    // except that in Reveal the bot's balls not yet in a column wait under the next round.
     const own = format === 'blind' ? remainingOf(state, 'a')[round - played] : undefined;
+    const nowBall = current?.round === played ? current.b : knownNextBall(state, 'b');
+    const waiting = remainingOf(state, 'b').filter((id) => id !== nowBall);
+    const pool = format === 'reveal' && round === played + 1 && nowBall !== undefined;
     return {
       round,
       when: 'later',
       you: { ...optional(own) },
-      bot: {},
+      bot: pool ? { pool: waiting } : {},
       draws: 0,
       suddenDeath: false,
     };

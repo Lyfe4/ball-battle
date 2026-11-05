@@ -86,3 +86,18 @@
     overflow-y: auto;
   }
 }
+
+/*
+ * A series between rounds or decided: the round screen takes the phone and the arena makes way
+ * (ADR 0025); beside it on a wide screen the finished round stays, dimmed.
+ */
+.stage[data-round-over] .arena-container {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage[data-round-over] .arena-container {
+    display: grid;
+    opacity: 0.3;
+  }
+}

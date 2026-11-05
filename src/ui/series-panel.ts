@@ -5,35 +5,35 @@ import {
   nextBallOf,
   nextMatch,
   remainingOf,
+  scoreOf,
   type NextMatch,
   type SeriesState,
 } from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
-import { leanOf, type Lean } from './balls/matchups.ts';
 import { element, setText } from './dom.ts';
+import { createPickRows } from './series/pick-rows.ts';
+import { createSeriesTrack } from './series/series-track.ts';
+import { pairingOf, pickChoiceOf, trackOf } from './series/series-view.ts';
 import {
   betweenLine,
   botPicksLine,
   finalLine,
-  FORMAT_NAMES,
   linkPickLine,
   pickLine,
-  revealShowLine,
   playingLine,
-  roundLine,
-  scoreLine,
+  revealShowLine,
 } from './series-text.ts';
 
 export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
   readonly onNext: () => void;
-  /** Loser picks next: the player picked `ball` for the coming round. */
+  /** The player picked `ball` for the coming round (loser picks next, a reveal turn). */
   readonly onPick: (ball: string) => void;
   /** Same lineups, new seed. */
   readonly onRematch: () => void;
   /** Back to the lineup builder. */
   readonly onNewSeries: () => void;
-  /** Leaves the series before it is decided. */
+  /** Leaves the series before it is decided (it is held, to resume). */
   readonly onLeave: () => void;
 }
 
@@ -47,21 +47,25 @@ export interface SeriesView {
   readonly linkPickDue: boolean;
 }
 
+/** Where the series is: a round being fought, the screen between rounds, or the result. */
+export type SeriesPhase = 'playing' | 'between' | 'finished';
+
 export interface SeriesPanel {
   setVisible(visible: boolean): void;
-  /** Cheap to call every frame: only changed text and buttons are touched. */
-  update(view: SeriesView): void;
+  /** Cheap to call every frame: only changed parts are touched. Returns the phase shown. */
+  update(view: SeriesView): SeriesPhase;
+  /** Focuses what the player does next: a pick, Play round, or New series. */
+  focusAction(): void;
 }
 
-const PICK_ICON_PX = 28;
-const MARKS: Readonly<Record<Lean, string>> = { favoured: '▲', unfavoured: '▼', even: '' };
+const PAIR_PX = 56;
 
 /**
- * The best-of-3 scoreboard: the format, the score, every finished round, and what is happening
- * now. Between plays it offers Next round (or Replay round after a draw), with the bot's next ball
- * hidden. In loser-picks-next, when the player lost, it shows the bot's next ball and one button
- * per ball the player has left instead. At the end, the result with Rematch and New series. Plain
- * DOM, all text through textContent.
+ * The best-of-3 screens, visual first (ADR 0025). While a round is fought: the track under the
+ * arena. Between rounds (the arena makes way): the track, then either "Your pick" with one row
+ * per option, or the next pairing large with Play round. At the end: who won, the score, every
+ * round on the track, Rematch and New series. The sentences of series-text.ts are kept for screen
+ * readers, in a live region.
  */
 export function createSeriesPanel(
   root: HTMLElement,
@@ -74,25 +78,47 @@ export function createSeriesPanel(
 
   const headingId = 'series-heading';
   root.setAttribute('aria-labelledby', headingId);
-  const heading = element('h2', 'series-heading', 'Best of 3');
+  const heading = element('h2', 'visually-hidden', 'Best of 3');
   heading.id = headingId;
-  const format = element('p', 'series-format');
-  const score = element('p', 'series-score');
-  const rounds = element('ol', 'series-rounds');
   // Announced when it changes: the round starting, a result, a pick due, the series result.
-  const status = element('p', 'series-status');
+  const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
-  const picks = element('div', 'series-picks');
-  picks.setAttribute('role', 'group');
-  picks.setAttribute('aria-label', 'Pick your next ball');
+
+  const result = element('p', 'series-result');
+  const track = createSeriesTrack(definitions);
+
+  const banner = element('p', 'series-banner', 'Your pick');
+  banner.setAttribute('aria-hidden', 'true');
+  const bannerFace = element('canvas', 'series-banner-icon');
+  const picks = createPickRows(definitions, actions.onPick);
+
+  const pairing = element('div', 'series-pairing');
+  pairing.setAttribute('aria-hidden', 'true');
+  const pairYou = element('span', 'series-pairing-ball');
+  const pairBot = element('span', 'series-pairing-ball');
+  pairing.append(pairYou, element('span', 'series-pairing-vs', 'vs'), pairBot);
 
   const buttons = element('div', 'hud-actions');
-  const next = button('Next round', 'hud-button hud-button-primary', actions.onNext);
+  const next = button('Play round', 'hud-button hud-button-primary', actions.onNext);
   const rematch = button('Rematch', 'hud-button', actions.onRematch);
   const newSeries = button('New series', 'hud-button hud-button-primary', actions.onNewSeries);
   buttons.append(next, rematch, newSeries);
+  const share = button('Copy link', 'text-link series-share', () => {
+    void copyLink();
+  });
   const leave = button('Leave series', 'text-link series-leave', actions.onLeave);
-  root.append(heading, format, score, status, picks, buttons, rounds, leave);
+  root.append(
+    heading,
+    status,
+    result,
+    track.element,
+    banner,
+    picks.element,
+    pairing,
+    buttons,
+    share,
+    leave,
+  );
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const node = element('button', className, text);
@@ -101,86 +127,116 @@ export function createSeriesPanel(
     return node;
   }
 
-  /**
-   * One button per ball the player may pick, marked ▲ / ▼ against each ball it may face: the bot's
-   * next ball in loser-picks-next, the two the bot can answer with in reveal. Rebuilt only when the
-   * choice changes.
-   */
-  let shownChoices = '';
-  function showChoices(choices: readonly string[], against: readonly string[]): void {
-    const key = `${choices.join()}>${against.join()}`;
-    if (key === shownChoices) return;
-    shownChoices = key;
-    picks.replaceChildren(
-      ...choices.map((id) => {
-        const pick = button('', 'hud-button series-pick', () => {
-          actions.onPick(id);
-        });
-        const icon = element('canvas', 'series-pick-icon');
-        icon.setAttribute('aria-hidden', 'true');
-        const ball = definitions.get(id);
-        if (ball !== undefined) drawBallIcon(icon, ball, PICK_ICON_PX);
-        const marks = against.map((other) => {
-          const lean = leanOf(id, other);
-          const mark = element('span', 'series-pick-mark', MARKS[lean] || '·');
-          mark.dataset['lean'] = lean;
-          mark.setAttribute('aria-hidden', 'true');
-          return mark;
-        });
-        pick.append(icon, element('span', '', `Play ${nameOf(id)}`), ...marks);
-        const words = against.map((other) => {
-          const lean = leanOf(id, other);
-          return `${lean === 'even' ? 'even with' : `${lean} against`} ${nameOf(other)}`;
-        });
-        pick.setAttribute('aria-label', `Play ${nameOf(id)}, ${words.join(', ')}`);
-        return pick;
-      }),
-    );
+  /** The finished series' link (already in the address bar) to the clipboard. */
+  async function copyLink(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setText(share, 'Link copied');
+    } catch {
+      // No clipboard (an insecure context, or refused): the address bar still holds the link.
+      setText(share, 'Copy the address bar to share');
+    }
   }
 
-  let shownRounds = -1;
+  let pairKey = '';
+  function showPairing(you: string | undefined, bot: string | undefined): void {
+    const key = `${you ?? '?'}>${bot ?? '?'}`;
+    if (key === pairKey) return;
+    pairKey = key;
+    const ball = (holder: HTMLElement, id: string | undefined, repeat = false) => {
+      const known = id === undefined ? undefined : definitions.get(id);
+      if (known === undefined) {
+        holder.replaceChildren(element('span', 'series-pairing-unknown', '?'));
+        return;
+      }
+      const canvas = element('canvas', '');
+      drawBallIcon(canvas, known, PAIR_PX, repeat);
+      holder.replaceChildren(canvas);
+    };
+    ball(pairYou, you);
+    // A mirror round: the bot's ball drawn lighter, as in the arena.
+    ball(pairBot, bot, bot !== undefined && bot === you);
+  }
+
+  let bannerBall = '';
+  let phase: SeriesPhase = 'playing';
   return {
     setVisible(visible) {
       root.hidden = !visible;
     },
+    focusAction() {
+      if (!picks.element.hidden) picks.focus();
+      else if (!next.hidden) next.focus();
+      else if (!newSeries.hidden) newSeries.focus();
+    },
     update({ state, current, settled, linkPickDue }) {
-      setText(format, FORMAT_NAMES[formatOf(state.setup)]);
-      setText(score, scoreLine(state));
-      if (state.rounds.length !== shownRounds) {
-        shownRounds = state.rounds.length;
-        rounds.replaceChildren(
-          ...state.rounds.map((record) => element('li', 'series-round', roundLine(record, nameOf))),
-        );
-      }
       const playing = current !== undefined && !settled;
-      const upcoming = nextMatch(state);
-      const due = playing || linkPickDue ? undefined : awaitingPick(state);
       const finished = state.winner !== undefined && !playing;
+      phase = playing ? 'playing' : finished ? 'finished' : 'between';
+      root.dataset['phase'] = phase;
+      track.update(state, trackOf(state, playing ? current : undefined));
+
+      const due = playing || linkPickDue ? undefined : awaitingPick(state);
+      const choice = due === 'a' ? pickChoiceOf(state) : undefined;
+      const upcoming = nextMatch(state);
       const roundsPlayed = state.rounds.length;
+
+      // The result headline, at the end only.
+      const { a, b } = scoreOf(state);
+      result.hidden = !finished;
+      result.dataset['winner'] = state.winner ?? '';
+      setText(result, state.winner === 'a' ? 'You win' : 'Bot wins');
+      result.setAttribute(
+        'aria-label',
+        `${state.winner === 'a' ? 'You win' : 'Bot wins'} ${String(a)}–${String(b)}`,
+      );
+
+      // Your pick: the banner names what is answered, the rows are the options.
+      banner.hidden = choice === undefined;
+      picks.element.hidden = choice === undefined;
+      if (choice !== undefined) {
+        picks.show(choice);
+        const face = choice.kind === 'answer' ? choice.options[0]?.faces[0] : undefined;
+        const bannerKey = `${choice.kind}:${face ?? ''}`;
+        if (bannerKey !== bannerBall) {
+          bannerBall = bannerKey;
+          const known = face === undefined ? undefined : definitions.get(face);
+          if (known !== undefined) drawBallIcon(bannerFace, known, 20);
+          banner.replaceChildren(
+            choice.kind === 'answer' ? 'Your pick: answer ' : 'Your pick: show first',
+            ...(known === undefined ? [] : [bannerFace]),
+          );
+        }
+      }
+
+      // Between rounds with nothing to decide: the next pairing, and one button to play it.
+      const pair = !playing && !finished && choice === undefined ? pairingOf(state) : undefined;
+      pairing.hidden = pair === undefined;
+      if (pair !== undefined) showPairing(pair.you, pair.bot);
+      next.hidden = pair === undefined;
+      setText(
+        next,
+        state.pending.length > 0 ? '↻ Replay round' : `Play round ${String(roundsPlayed + 1)}`,
+      );
+      rematch.hidden = !finished;
+      newSeries.hidden = !finished;
+      buttons.hidden = next.hidden && !finished;
+      share.hidden = !finished;
+      if (!finished) setText(share, 'Copy link');
+      leave.hidden = finished;
+
       const reveal = formatOf(state.setup) === 'reveal';
-      const botLeft = remainingOf(state, 'b');
       let text = '';
       if (playing) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
-      else if (due === 'a' && reveal) text = revealShowLine(roundsPlayed, botLeft, nameOf);
-      else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
+      else if (due === 'a' && reveal && choice?.kind === 'show') {
+        text = revealShowLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
+      } else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
       else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       else if (linkPickDue) text = linkPickLine(roundsPlayed);
       setText(status, text);
-
-      picks.hidden = due !== 'a';
-      if (due === 'a') {
-        showChoices(remainingOf(state, 'a'), reveal ? botLeft : [nextBallOf(state, 'b') ?? '']);
-      }
-      const between =
-        !playing && !finished && (upcoming !== undefined || due === 'b' || linkPickDue);
-      setText(next, state.pending.length > 0 ? 'Replay round' : 'Next round');
-      next.hidden = !between;
-      rematch.hidden = !finished;
-      newSeries.hidden = !finished;
-      buttons.hidden = !between && !finished;
-      leave.hidden = finished;
+      return phase;
     },
   };
 }

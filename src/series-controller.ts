@@ -20,7 +20,7 @@ import { randomBot } from './sim/bot.ts';
 import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
 import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
-import { createSeriesPanel } from './ui/series-panel.ts';
+import { createSeriesPanel, type SeriesPhase } from './ui/series-panel.ts';
 
 /** What the series needs from the page around it. */
 export interface SeriesHost {
@@ -51,6 +51,11 @@ export interface SeriesController {
   resume(): void;
   /** Leaves the series' screen but keeps it, undecided, so it can be resumed. */
   hold(): void;
+  /**
+   * Where the series on screen is: a round being fought, between rounds, or decided. Undefined
+   * when none is on screen. Between rounds and at the end the arena makes way (ADR 0025).
+   */
+  phase(): SeriesPhase | undefined;
   /** Shows or hides the scoreboard. */
   setVisible(visible: boolean): void;
   /**
@@ -77,6 +82,7 @@ export function createSeriesController(
   let shownAt = -1;
   /** True while the arena still holds the series' match. */
   const ours = () => host.worldsShown() === shownAt;
+  let phase: SeriesPhase = 'playing';
 
   const panel = createSeriesPanel(root, lookup, {
     onNext: () => {
@@ -128,6 +134,7 @@ export function createSeriesController(
     }
     session = started;
     onScreen = true;
+    phase = 'playing';
     writeAddress(started);
     host.layoutChanged();
     playCurrent();
@@ -135,6 +142,7 @@ export function createSeriesController(
 
   return {
     isPlaying: () => onScreen && session !== undefined,
+    phase: () => (onScreen && session !== undefined ? phase : undefined),
     hasSeries: () => session !== undefined,
     held: () =>
       session !== undefined && !onScreen && session.state.winner === undefined
@@ -170,7 +178,17 @@ export function createSeriesController(
       if (session === undefined || !onScreen) return;
       const settled = ours() ? world.match.status === 'finished' && resultShown : session.recorded;
       const linkPickDue = replayPickDue(session) !== undefined;
-      panel.update({ state: session.state, current: session.current, settled, linkPickDue });
+      const shown = panel.update({
+        state: session.state,
+        current: session.current,
+        settled,
+        linkPickDue,
+      });
+      if (shown === phase) return;
+      phase = shown;
+      host.layoutChanged();
+      // The round is over: focus moves to what the player does next.
+      if (phase !== 'playing') panel.focusAction();
     },
   };
 }

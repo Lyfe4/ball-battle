@@ -1,91 +1,217 @@
-/* The best-of-3 scoreboard. */
+/* The best-of-3 screens: the track, the pick, the next pairing and the result (ADR 0025). */
 .series {
   display: grid;
-  gap: var(--space-small);
-}
-
-.series-heading {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.series-rounds {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-gap);
 }
 
 /* Leaving a series is rare: a quiet text link (.text-link), still a full tap target. */
-.series-leave {
+.series-leave,
+.series-share {
+  justify-self: center;
   min-height: var(--tap-target);
 }
 
-.series-score {
+/* The track: the score over a grid of rounds, the player's ball over the bot's. */
+.series-track {
+  display: grid;
+  gap: var(--space-small);
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.series-track-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-gap);
   margin: 0;
-  font-size: 1.25rem;
+}
+
+.series-track-side {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.series-track-points {
+  font-size: 1.5rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: center;
 }
 
-.series-round {
+.series-track-grid {
+  display: grid;
+  grid-template-columns: auto repeat(var(--rounds, 3), minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  gap: 6px var(--space-small);
+}
+
+.series-track-label {
+  justify-self: start;
   color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: 1.35;
+  font-size: var(--font-size-tiny);
 }
 
-.series-status {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.35;
-  text-align: center;
-}
-
-.series-status:empty {
-  display: none;
-}
-
-.series-format {
-  margin: 0;
+.series-track-round {
+  padding: 1px 8px;
+  border-radius: var(--radius);
   color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  text-align: center;
+  font-size: var(--font-size-tiny);
+  font-weight: 700;
 }
 
-.series-picks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-small);
+.series-track-round[data-when='now'] {
+  background: var(--color-selected);
+  color: var(--color-text);
 }
 
-.series-pick-icon {
-  flex: none;
-}
-
-.series-pick {
+.series-track-cell {
   display: inline-flex;
-  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  gap: var(--space-small);
-  white-space: nowrap;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 50%;
 }
 
-.series-pick-mark[data-lean='favoured'] {
+.series-track-cell[data-result='won'] {
+  box-shadow: var(--ring-won);
+}
+
+.series-track-cell[data-result='lost'] {
+  opacity: var(--opacity-lost);
+}
+
+.series-track-pool {
+  gap: 2px;
+  border-radius: var(--radius);
+}
+
+.series-track-unknown,
+.series-pairing-unknown {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-raised);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.series-track-marks {
+  min-height: 1em;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-tiny);
+}
+
+/* "Your pick": the one moment the player acts, so it stands out (ADR 0025). */
+.series-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--space-small);
+  border-radius: var(--radius);
+  background: var(--color-selected);
+  font-weight: 700;
+}
+
+.pick-rows {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.pick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+  min-height: calc(var(--tap-target) + 12px);
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick-row-own,
+.pick-row-faces {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.pick-row-joiner {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 400;
+}
+
+.pick-row-face {
+  position: relative;
+}
+
+.pick-row-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--color-page);
+  font-size: var(--font-size-tiny);
+}
+
+.pick-row-badge[data-lean='favoured'] {
   color: var(--color-favoured);
 }
 
-.series-pick-mark[data-lean='unfavoured'] {
+.pick-row-badge[data-lean='unfavoured'] {
   color: var(--color-unfavoured);
 }
 
-.series-pick-mark[data-lean='even'] {
+.pick-row-badge[data-lean='even'] {
   color: var(--color-text-muted);
+}
+
+/* The next round when nothing is asked: the two balls large. */
+.series-pairing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-gap);
+  padding: var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.series-pairing .series-pairing-unknown {
+  width: 56px;
+  height: 56px;
+  font-size: 1.5rem;
+}
+
+.series-pairing-vs {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+/* The result, first and large: one word for who won, in the winner's colour of the track. */
+.series-result {
+  margin: 0;
+  font-size: var(--font-size-display);
+  font-weight: 800;
+  text-align: center;
+}
+
+.series-result[data-winner='a'] {
+  color: var(--color-won);
 }
