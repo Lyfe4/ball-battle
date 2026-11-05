@@ -16,10 +16,10 @@ export interface MatchupLine {
 }
 
 export interface Matchups {
-  /** Balls it is favoured against, in roster order. */
-  readonly beats: readonly MatchupLine[];
-  /** Balls favoured against it. */
-  readonly losesTo: readonly MatchupLine[];
+  /** Balls it is strong vs (favoured against), in roster order. Favoured is never certain. */
+  readonly strong: readonly MatchupLine[];
+  /** Balls it is weak vs (favoured against it). */
+  readonly weak: readonly MatchupLine[];
   /** Everyone else, the mirror excluded. */
   readonly even: readonly MatchupLine[];
 }
@@ -38,12 +38,12 @@ export function matchupLine(ball: string, opponent: string): MatchupLine {
   };
 }
 
-/** Every opponent of `ball` in `roster`, sorted into beats, loses to and even. */
+/** Every opponent of `ball` in `roster`, sorted into strong vs, weak vs and even. */
 export function matchupsOf(ball: string, roster: readonly string[]): Matchups {
   const lines = roster.filter((id) => id !== ball).map((id) => matchupLine(ball, id));
   return {
-    beats: lines.filter((line) => line.lean === 'favoured'),
-    losesTo: lines.filter((line) => line.lean === 'unfavoured'),
+    strong: lines.filter((line) => line.lean === 'favoured'),
+    weak: lines.filter((line) => line.lean === 'unfavoured'),
     even: lines.filter((line) => line.lean === 'even'),
   };
 }
