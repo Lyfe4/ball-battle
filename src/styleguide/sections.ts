@@ -182,6 +182,42 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
+    'Magnet: a horseshoe; its tips glow while it pulls (a dashed line runs to its enemy)',
+    [
+      { label: 'idle', id: 'magnet' },
+      {
+        label: 'pulling',
+        id: 'magnet',
+        abilityState: { nextPullTick: TICK + 100, pullUntilTick: TICK + 10 },
+      },
+      { label: 'mirror B', id: 'magnet', repeat: true },
+      { label: 'defeated', id: 'magnet', defeated: true },
+    ],
+  ],
+  [
+    'Ghost: a ghost’s face; see-through with a broken outline while phased',
+    [
+      { label: 'solid', id: 'ghost' },
+      { label: 'phased', id: 'ghost', abilityState: { phased: true, nextChangeTick: TICK + 10 } },
+      { label: 'mirror B', id: 'ghost', repeat: true },
+      {
+        label: 'phased, mirror B',
+        id: 'ghost',
+        repeat: true,
+        abilityState: { phased: true, nextChangeTick: TICK + 10 },
+      },
+    ],
+  ],
+  [
+    'Necromancer: a hood with glowing eyes; its minions are skulls ringed in its colour',
+    [
+      { label: 'idle', id: 'necromancer' },
+      { label: 'hit flash', id: 'necromancer', flash: 0.6 },
+      { label: 'mirror B', id: 'necromancer', repeat: true },
+      { label: 'defeated', id: 'necromancer', defeated: true },
+    ],
+  ],
+  [
     'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
     BALLS.map(({ id }): Tile => ({
       label: id,
@@ -242,6 +278,10 @@ export function arenaAbilityState(ball: BallState): BallState['abilityState'] {
       return charged('nextStrikeTick', STORM_COOLDOWN, 0.6);
     case 'sniper':
       return locked(downLeft, 0.6);
+    case 'magnet':
+      return { nextPullTick: TICK + 100, pullUntilTick: TICK + 10 };
+    case 'ghost':
+      return { phased: true, nextChangeTick: TICK + 10 };
     default:
       return ball.abilityState;
   }
