@@ -1,4 +1,4 @@
-/* Quick match setup: the two slots, the verdict, the info card, the grid and Start. */
+/* Quick match setup: the two slots with their marks, why behind one tap, the grid and Start. */
 .quick-setup {
   display: grid;
   gap: var(--space-gap);
@@ -10,14 +10,20 @@
   gap: var(--space-small);
 }
 
-.quick-slot {
+/* A slot and its ⓘ: two controls side by side, never one inside the other. */
+.quick-slot-holder {
+  position: relative;
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
   min-width: 0;
-  min-height: var(--tap-target);
-  padding: 6px var(--space-small);
+}
+
+.quick-slot {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 4.75rem;
+  padding: var(--space-small) 4px 6px;
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -30,25 +36,55 @@
   background: var(--color-selected);
 }
 
-.quick-slot-icon {
+/* The ball's drawing with its mark against the other slot on its shoulder. */
+.quick-slot-art {
+  position: relative;
   flex: none;
 }
 
-.quick-slot-text {
+.quick-slot-badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
   display: grid;
-  min-width: 0;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--color-page);
+  font-size: var(--font-size-tiny);
+  font-weight: 700;
 }
 
-.quick-slot-label {
+.quick-slot-badge[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.quick-slot-badge[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.quick-slot-badge[data-lean='even'] {
   color: var(--color-text-muted);
-  font-size: var(--font-size-tiny);
 }
 
 .quick-slot-name {
-  overflow: hidden;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.quick-slot-about {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  text-decoration: none;
 }
 
 .quick-vs {
@@ -58,34 +94,59 @@
   font-weight: 700;
 }
 
-.quick-verdict {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-small) var(--space-gap);
+/* Why the pair leans the way it does: the verdict as the summary, the reason one tap away. */
+.quick-why {
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
-.quick-verdict[data-lean='favoured'] {
-  border-left-color: var(--color-favoured);
+.quick-why-summary {
+  min-height: var(--tap-target);
+  padding: var(--space-small) var(--space-gap);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
 }
 
-.quick-verdict-headline {
-  margin: 0;
-  font-size: 1rem;
+.quick-why-summary::-webkit-details-marker {
+  display: none;
 }
 
-.quick-verdict-reason {
+/* A chevron that turns when the reason is open. */
+.quick-why-summary::after {
+  content: '›';
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  transition: transform 0.15s;
+}
+
+.quick-why[open] > .quick-why-summary::after {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-why-summary::after {
+    transition: none;
+  }
+}
+
+.quick-why-reason {
   margin: 0;
+  padding: 0 var(--space-gap) var(--space-small);
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   line-height: 1.35;
 }
 
-/* What the tiles' marks mean; the tiles' own labels say it to screen readers. */
+/* What the tiles' marks are against: the other slot's ball, drawn small. */
 .quick-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0 0 calc(var(--space-gap) * -0.5);
   color: var(--color-text-muted);
   font-size: var(--font-size-tiny);
-  white-space: pre;
 }

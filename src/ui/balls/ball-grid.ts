@@ -1,13 +1,12 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
+import { MARKS } from './marks.ts';
 import { element, setText } from '../dom.ts';
 import { gridMove } from '../grid-nav.ts';
 import type { Lean } from './matchups.ts';
 
 /** Drawing size on a tile, in CSS pixels: big enough that the designs carry the tile. */
 const TILE_ICON_PX = 56;
-
-const MARKS: Readonly<Record<Lean, string>> = { favoured: '▲', unfavoured: '▼', even: '' };
 
 export interface BallGridState {
   /** Tiles shown as chosen (aria-pressed). */
@@ -29,12 +28,10 @@ export interface BallGridOptions {
   /** Names the group for screen readers, e.g. "Balls". */
   readonly label: string;
   readonly onPick: (id: string) => void;
-  /** A tile got focus or the pointer: the info card follows it. */
-  readonly onLook?: (id: string) => void;
 }
 
 /**
- * Every ball as a tile: the real drawing, large, and the name, no description (the info card
+ * Every ball as a tile: the real drawing, large, and the name, no description (the manual
  * holds that), so the whole roster fits on a phone screen without scrolling or clipping. Tiles are
  * buttons in a group with roving focus: arrows, Home and End move, Enter or Space picks, Tab leaves
  * the grid in one step (ADR 0011). Shared by the quick-match setup, the lineup and the manual.
@@ -63,8 +60,6 @@ export function createBallGrid(
       if (tile.getAttribute('aria-disabled') === 'true') return;
       options.onPick(ball.id);
     });
-    tile.addEventListener('focus', () => options.onLook?.(ball.id));
-    tile.addEventListener('pointerenter', () => options.onLook?.(ball.id));
     return { tile, mark, note, ball };
   });
   grid.append(...tiles.map(({ tile }) => tile));
@@ -110,7 +105,8 @@ export function createBallGrid(
       else tile.setAttribute('aria-disabled', 'true');
       setText(note, reason ?? '');
       const lean = next.marks?.leans.get(ball.id) ?? 'even';
-      setText(mark, MARKS[lean]);
+      // Even is left blank in a grid, so the counters stand out (the legend says so).
+      setText(mark, lean === 'even' ? '' : MARKS[lean]);
       mark.dataset['lean'] = lean;
       const against =
         next.marks === undefined || lean === 'even'

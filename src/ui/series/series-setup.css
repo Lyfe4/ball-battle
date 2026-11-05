@@ -76,6 +76,10 @@
   cursor: default;
 }
 
+.lineup-tray-unordered .lineup-tray-number {
+  display: none;
+}
+
 .lineup-tray-number {
   position: absolute;
   top: 4px;

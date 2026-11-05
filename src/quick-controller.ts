@@ -11,7 +11,7 @@ import { getDefinition } from './sim/definitions.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { element } from './ui/dom.ts';
-import type { BallInfoLink } from './ui/balls/ball-info.ts';
+import type { BallInfoLink } from './ui/balls/ball-link.ts';
 import { createQuickSetup } from './ui/quick-setup.ts';
 
 export interface QuickHost {

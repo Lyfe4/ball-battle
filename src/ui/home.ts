@@ -47,11 +47,7 @@ export function createHome(
   demo.append(demoLine, watch);
 
   const title = element('h1', 'home-title', 'BallBattle');
-  const pitch = element(
-    'p',
-    'home-pitch',
-    'Build a lineup of three balls, set your order, and watch your plan fight it out. Your choices set the odds; every fight plays out its own way.',
-  );
+  const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
   const play = element('button', 'hud-button hud-button-primary home-play', 'Play');
   play.type = 'button';

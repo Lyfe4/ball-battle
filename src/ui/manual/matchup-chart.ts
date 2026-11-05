@@ -1,6 +1,7 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupLine, type Lean } from '../balls/matchups.ts';
+import { matchupLine } from '../balls/matchups.ts';
+import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { verdictOf } from '../balls/verdict.ts';
 import { element, setText } from '../dom.ts';
 import { gridMove } from '../grid-nav.ts';
@@ -10,12 +11,6 @@ export interface MatchupChart {
 }
 
 const HEADER_ICON_PX = 20;
-const MARKS: Readonly<Record<Lean, string>> = { favoured: '▲', unfavoured: '▼', even: '' };
-const WORDS: Readonly<Record<Lean, string>> = {
-  favoured: 'favoured against',
-  unfavoured: 'unfavoured against',
-  even: 'even with',
-};
 
 /**
  * The whole counter map at once, as a type chart: each row is a ball, each column an opponent, ▲
@@ -71,10 +66,10 @@ export function createMatchupChart(
         return;
       }
       const { lean } = matchupLine(ball.id, opponent.id);
-      const button = element('button', 'matchup-button', MARKS[lean]);
+      const button = element('button', 'matchup-button', lean === 'even' ? '' : MARKS[lean]);
       button.type = 'button';
       button.dataset['lean'] = lean;
-      button.setAttribute('aria-label', `${ball.name} ${WORDS[lean]} ${opponent.name}`);
+      button.setAttribute('aria-label', `${ball.name} ${LEAN_WORDS[lean]} ${opponent.name}`);
       button.addEventListener('focus', () => {
         select(row, col);
       });

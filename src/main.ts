@@ -166,7 +166,6 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     exitToHome: () => {
       goHome('replace');
     },
-    ballLink,
   },
 );
 
@@ -250,7 +249,7 @@ const arena = createArena(
       series.settle(world);
     },
     drawn: (world, resultShown) => {
-      hud.update(world, state.seed, resultShown);
+      hud.update(world, resultShown);
       series.update(world, resultShown);
       if (router.current() === 'home') home.drawn(resultShown);
     },

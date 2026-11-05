@@ -22,23 +22,15 @@ export const FORMAT_NAMES: Readonly<Record<Format, string>> = {
   loser: 'Loser picks next',
 };
 
-/** One line on how each format works, on its card in the rules step. */
+/** A few words on how each format plays, on its card in the rules step (ADR 0025: short). */
 export const FORMAT_LINES: Readonly<Record<Format, string>> = {
-  blind: 'Pick and order three balls without seeing the bot’s.',
-  reveal: 'Pick blind and see both lineups. Round 1 the bot shows its ball first; round 2 you do.',
-  loser: 'After each round the loser picks its next ball, seeing the winner’s.',
+  blind: 'Set your order. The bot’s stays hidden.',
+  reveal: 'See both lineups. Take turns showing first.',
+  loser: 'Lose a round, pick your next ball.',
 };
 
 /** The series rule every format shares, said once above the format cards. */
-export const SERIES_RULE =
-  'Three balls each against the bot, one round per pair. First to two wins.';
-
-/** What the lineup step asks for, by format: order matters unless the sides take turns (reveal). */
-export const LINEUP_HINTS: Readonly<Record<Format, string>> = {
-  blind: 'Tap three balls in the order they play. Tap a slot to take its ball out.',
-  reveal: 'Tap three balls. You choose which plays each round once both lineups are revealed.',
-  loser: 'Tap three balls in the order they play; a loss lets you pick again.',
-};
+export const SERIES_RULE = '3 balls each · first to 2 wins';
 
 /** A replayed link makes the next pick itself: the player only moves on. */
 export function linkPickLine(round: number): string {

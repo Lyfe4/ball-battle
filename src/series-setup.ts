@@ -9,7 +9,6 @@ import { randomBot } from './sim/bot.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
 import type { Format, Lineup, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
-import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
 import { createAnswerStep } from './ui/series/answer-step.ts';
@@ -35,8 +34,6 @@ export interface SeriesSetupHost {
   exit(): void;
   /** The setup is complete: play the series (in reveal, with the player's round-1 answer). */
   start(setup: SeriesSetup, firstPick?: string): void;
-  /** The lineup's info card links to each ball's manual entry. */
-  readonly ballLink: BallInfoLink;
   /** An undecided series left with Back, which the rules and lineup offer to resume. */
   held(): SeriesState | undefined;
   /** Carries on with the held series. */
@@ -92,7 +89,6 @@ export function createSeriesSetup(
     onChange: (tray) => {
       draft = tray;
     },
-    ballLink: host.ballLink,
     onDone: (own) => {
       draft = own;
       // The bot picks from the series seed, so the setup (and the link) fully decides the series.

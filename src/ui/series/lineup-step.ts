@@ -2,11 +2,9 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import { LINEUP_SIZE, type Format, type Lineup } from '../../sim/series.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
-import { createBallInfo, type BallInfoLink } from '../balls/ball-info.ts';
 import { element, setText } from '../dom.ts';
 import { addToDraft, completeLineup, removeFromDraft, type Draft } from '../lineup-draft.ts';
 import { createScreenHeader } from '../screen-header.ts';
-import { FORMAT_NAMES, LINEUP_HINTS } from '../series-text.ts';
 
 export interface LineupStep {
   readonly element: HTMLElement;
@@ -22,15 +20,14 @@ export interface LineupActions {
   readonly onDone: (lineup: Lineup) => void;
   /** The tray changed, so the setup keeps it if the player leaves for the manual and comes back. */
   readonly onChange: (draft: Draft) => void;
-  /** The info card's link to a ball's manual entry. */
-  readonly ballLink: BallInfoLink;
 }
 
 const TRAY_ICON_PX = 36;
 
 /**
- * Picking three balls for a series, phone first: a tray of three numbered slots on top, the info
- * card, the shared ball grid, and one button to go on. A tap on a ball fills the next empty slot (the
+ * Picking three balls for a series, phone first and showing little (ADR 0025): a tray of three
+ * slots on top (numbered where the order is set now, not in Reveal), the shared ball grid, and one
+ * button to go on. A tap on a ball fills the next empty slot (the
  * order of taps is the order they play); a tap on a filled slot takes its ball out, and the balls
  * after it move up. Balls already in the tray show "In slot N" and can't be picked twice. The rules
  * of a draft are in lineup-draft.ts.
@@ -42,7 +39,6 @@ export function createLineupStep(
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   const root = element('section', 'series-step lineup-step');
   const header = createScreenHeader('Your lineup', 'Back', actions.onBack);
-  const hint = element('p', 'series-step-hint');
   let draft: Draft = [];
   let format: Format = 'blind';
 
@@ -69,16 +65,11 @@ export function createLineupStep(
     return { button, icon, name };
   });
 
-  const info = createBallInfo(balls, actions.ballLink);
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
-      info.show(id);
       update(addToDraft(draft, id));
       if (completeLineup(draft) !== undefined) done.focus();
-    },
-    onLook: (id) => {
-      info.show(id);
     },
   });
 
@@ -90,7 +81,7 @@ export function createLineupStep(
   });
   const footer = element('div', 'screen-footer');
   footer.append(done);
-  root.append(header.element, hint, tray, info.element, grid.element, footer);
+  root.append(header.element, tray, grid.element, footer);
 
   function update(next: Draft): void {
     draft = next;
@@ -128,9 +119,9 @@ export function createLineupStep(
     element: root,
     open(nextFormat, nextDraft) {
       format = nextFormat;
-      setText(hint, `${FORMAT_NAMES[format]}. ${LINEUP_HINTS[format]}`);
+      // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
+      tray.classList.toggle('lineup-tray-unordered', format === 'reveal');
       update(nextDraft.filter((id) => byId.has(id)).reduce<Draft>(addToDraft, []));
-      info.show(draft[0] ?? balls[0]?.id ?? '');
       header.focus();
     },
     draft: () => draft,

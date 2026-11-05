@@ -31,11 +31,21 @@ button {
  * shown for keyboard focus only. Elements focused by script alone (tabindex -1: a screen's heading,
  * the arena) take no ring.
  */
-:where(button, a, [tabindex]:not([tabindex='-1'])):focus-visible {
+:where(button, a, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 
 [hidden] {
   display: none !important;
+}
+
+/* Read by screen readers, not shown: the words behind a symbol or a bar. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

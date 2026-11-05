@@ -43,6 +43,10 @@
   /* A matchup the counter map favours or doesn't, always shown with a symbol or word as well. */
   --color-favoured: var(--palette-green-400);
   --color-unfavoured: var(--palette-red-400);
+  /* A round's winner is ringed and its loser dimmed: the series track and the result. */
+  --color-won: var(--palette-green-400);
+  --ring-won: 0 0 0 2px var(--color-page), 0 0 0 4px var(--color-won);
+  --opacity-lost: 0.35;
 
   --space-gutter: 16px;
   --space-gap: 12px;

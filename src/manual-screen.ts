@@ -3,7 +3,7 @@
 // quick-match setup. main.ts hands over how to move.
 import { writeManualParams, writePickParams } from './app/route.ts';
 import type { BallDefinition } from './sim/types.ts';
-import type { BallInfoLink } from './ui/balls/ball-info.ts';
+import type { BallInfoLink } from './ui/balls/ball-link.ts';
 import { createManual, type Manual } from './ui/manual/manual.ts';
 
 export interface ManualHost {

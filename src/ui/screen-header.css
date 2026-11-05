@@ -1,6 +1,7 @@
 /* The top of a setup screen: Back and the heading, and the footer that keeps its main action in reach. */
 .screen-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-small);
 }
@@ -19,8 +20,94 @@
 }
 
 .screen-title {
+  flex: 1;
   margin: 0;
   font-size: 1.25rem;
+}
+
+/* The symbol legend's ?: round, quiet, a full tap target. */
+.symbol-legend-toggle {
+  flex: none;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: 50%;
+  background: var(--color-raised);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.symbol-legend-toggle[aria-expanded='true'] {
+  background: var(--color-selected);
+  color: var(--color-text);
+}
+
+/* The legend opens under the header, across its full width. */
+.symbol-legend {
+  flex-basis: 100%;
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: var(--font-size-small);
+}
+
+.symbol-legend-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.symbol-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.symbol-legend-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-weight: 700;
+}
+
+.symbol-legend-mark[data-swatch='favoured'] {
+  color: var(--color-favoured);
+}
+
+.symbol-legend-mark[data-swatch='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.symbol-legend-mark[data-swatch='even'] {
+  color: var(--color-text-muted);
+}
+
+/* The track's two looks for a played round, drawn as a small disc. */
+.symbol-legend-mark[data-swatch='won'],
+.symbol-legend-mark[data-swatch='lost'] {
+  width: 1rem;
+  height: 1rem;
+  margin-inline: 2px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.symbol-legend-mark[data-swatch='won'] {
+  box-shadow: var(--ring-won);
+}
+
+.symbol-legend-mark[data-swatch='lost'] {
+  opacity: var(--opacity-lost);
+}
+
+.symbol-legend-note {
+  margin: var(--space-small) 0 0;
+  color: var(--color-text-muted);
 }
 
 .screen-title:focus {

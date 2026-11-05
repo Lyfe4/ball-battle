@@ -35,14 +35,9 @@ export function createManual(
   root.replaceChildren();
   root.classList.add('manual');
   const roster = balls.map((ball) => ball.id);
-  const header = createScreenHeader('Ball manual', 'Back', actions.onBack);
+  const header = createScreenHeader('Ball manual', 'Back', actions.onBack, { legend: true });
 
   const index = element('section', 'manual-index');
-  const intro = element(
-    'p',
-    'series-step-hint',
-    'Every ball: what it does, and who it beats and loses to. A counter is favoured, never certain.',
-  );
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
@@ -66,7 +61,7 @@ export function createManual(
   const chart = createMatchupChart(balls, (id) => {
     actions.onOpen(id);
   });
-  index.append(tabRoot, intro, grid.element, chart.element);
+  index.append(tabRoot, grid.element, chart.element);
 
   const entry = element('section', 'manual-entry');
   const steps = element('div', 'manual-steps');

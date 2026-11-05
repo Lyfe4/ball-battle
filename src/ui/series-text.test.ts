@@ -6,7 +6,6 @@ import {
   botPicksLine,
   finalLine,
   FORMAT_LINES,
-  LINEUP_HINTS,
   FORMAT_NAMES,
   pickLine,
   revealShowLine,
@@ -77,11 +76,10 @@ describe('series text', () => {
 describe('draft format text', () => {
   const names = (id: string) => id.toUpperCase();
 
-  it('names every format and explains it', () => {
+  it('names every format and explains it in a few words (ADR 0025)', () => {
     for (const format of FORMATS) {
       expect(FORMAT_NAMES[format].length).toBeGreaterThan(0);
-      expect(FORMAT_LINES[format].length).toBeGreaterThan(0);
-      expect(LINEUP_HINTS[format]).toMatch(/three balls/i);
+      expect(FORMAT_LINES[format].split(' ').length).toBeLessThanOrEqual(7);
     }
   });
 

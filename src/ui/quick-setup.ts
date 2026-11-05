@@ -2,7 +2,8 @@ import type { Matchup } from '../app/matchup.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createBallGrid } from './balls/ball-grid.ts';
-import { createBallInfo, type BallInfoLink } from './balls/ball-info.ts';
+import type { BallInfoLink } from './balls/ball-link.ts';
+import { LEAN_WORDS, MARKS } from './balls/marks.ts';
 import { leanOf } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
@@ -13,7 +14,7 @@ export interface QuickSetupActions {
   /** The picks changed (so the URL can keep them across a reload). */
   readonly onChange: (matchup: Matchup) => void;
   readonly onBack: () => void;
-  /** The info card's link to a ball's manual entry. */
+  /** Each slot's ⓘ: the ball's manual entry. */
   readonly ballLink: BallInfoLink;
 }
 
@@ -28,13 +29,15 @@ export interface QuickSetup {
 
 type Slot = 'a' | 'b';
 const SLOT_ICON_PX = 32;
+const LEGEND_ICON_PX = 16;
 const SLOT_NAMES: Readonly<Record<Slot, string>> = { a: 'Ball A', b: 'Ball B' };
 
 /**
- * Choosing the two balls of a quick match, as a screen of its own (phone first): the two slots,
- * what the counter map says about the pair, the ball just looked at, every ball as a tile, and
- * Start. A tap fills the slot that is active; filling A moves on to B. Tiles are marked ▲ / ▼
- * against the ball in the other slot, so players learn counters while they pick.
+ * Choosing the two balls of a quick match, phone first and showing little (ADR 0025): the two
+ * slots, each marked ▲ / ▼ / = for how it fares against the other, why behind one tap, every ball
+ * as a tile, and Start. A tap fills the slot that is active; filling A moves on to B. Tiles are
+ * marked against the ball in the other slot, so players learn counters while they pick. A slot's ⓘ
+ * opens its ball's manual entry for everything else.
  */
 export function createQuickSetup(
   root: HTMLElement,
@@ -50,54 +53,65 @@ export function createQuickSetup(
   const picks: Record<Slot, string> = { a: first.id, b: first.id };
   let active: Slot = 'a';
 
-  const header = createScreenHeader('Quick match', 'Back', actions.onBack);
+  const header = createScreenHeader('Quick match', 'Back', actions.onBack, { legend: true });
 
   const slotRow = element('div', 'quick-slots');
   slotRow.setAttribute('role', 'group');
   slotRow.setAttribute('aria-label', 'Slot to fill');
   const slots = (['a', 'b'] as const).map((slot) => {
+    const holder = element('div', 'quick-slot-holder');
     const button = element('button', 'quick-slot');
     button.type = 'button';
+    const badge = element('span', 'quick-slot-badge');
     const icon = element('canvas', 'quick-slot-icon');
-    icon.setAttribute('aria-hidden', 'true');
+    const art = element('span', 'quick-slot-art');
+    art.setAttribute('aria-hidden', 'true');
+    art.append(icon, badge);
     const name = element('span', 'quick-slot-name');
-    const text = element('span', 'quick-slot-text');
-    text.append(element('span', 'quick-slot-label', SLOT_NAMES[slot]), name);
-    button.append(icon, text);
+    button.append(art, name);
     button.addEventListener('click', () => {
       active = slot;
       render();
       grid.focus(picks[slot]);
     });
-    return { slot, button, icon, name };
+    const about = element('a', 'quick-slot-about', 'ⓘ');
+    about.addEventListener('click', (event) => {
+      // A modified click (new tab, new window) follows the href as a link does.
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      actions.ballLink.open(picks[slot]);
+    });
+    holder.append(button, about);
+    return { slot, holder, button, icon, badge, name, about };
   });
   const [slotA, slotB] = slots;
   if (slotA === undefined || slotB === undefined) throw new Error('expected two slots');
-  slotRow.append(slotA.button, element('span', 'quick-vs', 'vs'), slotB.button);
+  slotRow.append(slotA.holder, element('span', 'quick-vs', 'vs'), slotB.holder);
 
-  const verdict = element('section', 'quick-verdict');
-  verdict.setAttribute('aria-live', 'polite');
-  const verdictHeadline = element('h2', 'quick-verdict-headline');
-  const verdictReason = element('p', 'quick-verdict-reason');
-  verdict.append(verdictHeadline, verdictReason);
+  // Why the counter map leans this way: one tap away, announced when the pair changes.
+  const why = element('details', 'quick-why');
+  const whySummary = element('summary', 'quick-why-summary');
+  whySummary.setAttribute('aria-live', 'polite');
+  const whyReason = element('p', 'quick-why-reason');
+  why.append(whySummary, whyReason);
 
-  const info = createBallInfo(balls, actions.ballLink);
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
       picks[active] = id;
-      info.show(id);
       if (active === 'a') active = 'b';
       render();
       actions.onChange({ ...picks });
     },
-    onLook: (id) => {
-      info.show(id);
-    },
   });
 
+  // What the tiles' marks are against: the ball in the other slot, as its drawing.
   const legend = element('p', 'quick-legend');
   legend.setAttribute('aria-hidden', 'true');
+  const legendIcon = element('canvas', 'quick-legend-icon');
+  legend.append(`${MARKS.favoured} ${MARKS.unfavoured} vs `, legendIcon);
 
   const start = element('button', 'hud-button hud-button-primary quick-start', 'Start match');
   start.type = 'button';
@@ -107,15 +121,25 @@ export function createQuickSetup(
   const footer = element('div', 'screen-footer');
   footer.append(start);
 
-  root.append(header.element, slotRow, verdict, info.element, legend, grid.element, footer);
+  root.append(header.element, slotRow, why, legend, grid.element, footer);
 
   function render(): void {
-    for (const { slot, button, icon, name } of slots) {
+    const { headline, reason } = verdictOf(picks.a, picks.b, nameOf);
+    for (const { slot, button, icon, badge, name, about } of slots) {
       const ball = byId.get(picks[slot]);
       if (ball === undefined) continue;
+      const other = picks[slot === 'a' ? 'b' : 'a'];
+      const lean = leanOf(ball.id, other);
       setText(name, ball.name);
+      setText(badge, MARKS[lean]);
+      badge.dataset['lean'] = lean;
       button.setAttribute('aria-pressed', String(slot === active));
-      button.setAttribute('aria-label', `${SLOT_NAMES[slot]}: ${ball.name}`);
+      button.setAttribute(
+        'aria-label',
+        `${SLOT_NAMES[slot]}: ${ball.name}, ${LEAN_WORDS[lean]} ${nameOf(other)}`,
+      );
+      about.href = actions.ballLink.href(ball.id);
+      about.setAttribute('aria-label', `About ${ball.name}`);
       // Ball B in a mirror match is drawn lighter, as in the arena and the HUD.
       drawBallIcon(icon, ball, SLOT_ICON_PX, slot === 'b' && picks.a === picks.b);
     }
@@ -127,11 +151,10 @@ export function createQuickSetup(
         leans: new Map(balls.map((ball) => [ball.id, leanOf(ball.id, other)])),
       },
     });
-    setText(legend, `▲ favoured  ▼ unfavoured against ${nameOf(other)}`);
-    const { headline, reason, leanOfA } = verdictOf(picks.a, picks.b, nameOf);
-    setText(verdictHeadline, headline);
-    setText(verdictReason, reason);
-    verdict.dataset['lean'] = leanOfA === 'even' ? 'even' : 'favoured';
+    const otherBall = byId.get(other);
+    if (otherBall !== undefined) drawBallIcon(legendIcon, otherBall, LEGEND_ICON_PX);
+    setText(whySummary, headline);
+    setText(whyReason, reason);
   }
 
   return {
@@ -142,7 +165,7 @@ export function createQuickSetup(
       if (byId.has(matchup.a)) picks.a = matchup.a;
       if (byId.has(matchup.b)) picks.b = matchup.b;
       active = 'a';
-      info.show(picks.a);
+      why.open = false;
       render();
       if (focus === 'start') start.focus();
       else header.focus();

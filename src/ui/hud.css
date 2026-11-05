@@ -18,6 +18,7 @@
 .hud-ball {
   display: grid;
   grid-template-columns: 1fr auto;
+  transition: opacity 0.3s;
   gap: 4px var(--space-small);
   align-items: baseline;
 }
@@ -78,14 +79,6 @@
   display: none;
 }
 
-.hud-seed {
-  margin: 0;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  font-variant-numeric: tabular-nums;
-}
-
 .hud-ball-side {
   display: inline-block;
   min-width: 1.5em;
@@ -99,4 +92,25 @@
 .match-actions {
   display: flex;
   gap: var(--space-small);
+}
+
+/* The outcome on the rows (ADR 0025): the winner says so, the loser fades. */
+.hud-ball[data-outcome='lost'] {
+  opacity: var(--opacity-lost);
+}
+
+.hud-ball-outcome {
+  color: var(--color-won);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.hud-ball[data-outcome='draw'] .hud-ball-outcome {
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-ball {
+    transition: none;
+  }
 }

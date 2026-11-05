@@ -1,4 +1,5 @@
 import { element } from './dom.ts';
+import { createSymbolLegend } from './symbol-legend.ts';
 
 export interface ScreenHeader {
   readonly element: HTMLElement;
@@ -8,14 +9,21 @@ export interface ScreenHeader {
   setTitle(title: string): void;
 }
 
+export interface ScreenHeaderOptions {
+  /** The screen shows symbols: a `?` opens the legend that explains them (ADR 0025). */
+  readonly legend?: boolean;
+}
+
 /**
- * The top of a setup screen: a Back button and the screen's heading. The heading takes focus when
- * the screen opens (tabindex -1: focusable by script, not in the tab order).
+ * The top of a screen: a Back button, the screen's heading and, where the screen shows symbols,
+ * the legend's `?`. The heading takes focus when the screen opens (tabindex -1: focusable by
+ * script, not in the tab order).
  */
 export function createScreenHeader(
   title: string,
   backLabel: string,
   onBack: () => void,
+  options: ScreenHeaderOptions = {},
 ): ScreenHeader {
   const header = element('header', 'screen-header');
   const back = element('button', 'screen-back', '‹');
@@ -25,6 +33,10 @@ export function createScreenHeader(
   const heading = element('h1', 'screen-title', title);
   heading.tabIndex = -1;
   header.append(back, heading);
+  if (options.legend === true) {
+    const legend = createSymbolLegend();
+    header.append(legend.toggle, legend.panel);
+  }
   return {
     element: header,
     focus: () => {
