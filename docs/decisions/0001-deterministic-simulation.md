@@ -57,5 +57,6 @@ unseeded randomness, and reading or mutating state from rendering code.
   smooth on 60 Hz displays; on 120 Hz+ displays motion can look slightly uneven. Interpolation can
   be added in the renderer later without touching the sim.
 - Determinism is verified by tests: identical seeds produce `toStrictEqual` worlds after 1000
-  ticks. Cross-engine determinism relies on the maths restrictions above and is not yet tested in
-  multiple browsers.
+  ticks. Cross-engine determinism rests on the maths restrictions above. It was untested at
+  first; since 2026-11-05 it is tested on every push (ADR 0023): 132 recorded matches come out
+  bit-identical in Node, Chromium, Firefox and WebKit.

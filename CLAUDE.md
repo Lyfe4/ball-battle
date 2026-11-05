@@ -106,7 +106,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0018-aimed-start.md` (measured in `docs/aiming-measurements.md`; removed, since
 aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0020-screens.md`, `docs/decisions/0021-reveal-take-turns.md` (measured in
-`docs/reveal-measurements.md`) and `docs/decisions/0022-ruleset-version-and-verified-series.md`.
+`docs/reveal-measurements.md`), `docs/decisions/0022-ruleset-version-and-verified-series.md`,
+`docs/decisions/0023-known-match-results-across-engines.md` and
+`docs/decisions/0024-player-facing-text-stays-in-definitions.md`.
 
 ## Conventions
 

@@ -128,18 +128,20 @@ hit-stops and effects alike) without changing the result; your choice is remembe
 browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
 displays.
 
-| Script            | What it does                                                                 |
-| ----------------- | ---------------------------------------------------------------------------- |
-| `pnpm dev`        | Vite dev server                                                              |
-| `pnpm build`      | Typecheck and build to `dist/`                                               |
-| `pnpm preview`    | Serve `dist/` with the production security headers, to check the CSP         |
-| `pnpm test`       | Run the fast tests once (`pnpm test:watch` to watch)                         |
-| `pnpm test:slow`  | Roster-wide tests that play every matchup (a separate CI job)                |
-| `pnpm lint`       | ESLint                                                                       |
-| `pnpm typecheck`  | `tsc -b` across all tsconfig projects                                        |
-| `pnpm format`     | Prettier (`pnpm format:check` to only check)                                 |
-| `pnpm balance`    | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
-| `pnpm balance:ci` | The reduced balance check CI runs: 150 seeds, fails only on a clear miss     |
+| Script               | What it does                                                                 |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`           | Vite dev server                                                              |
+| `pnpm build`         | Typecheck and build to `dist/`                                               |
+| `pnpm preview`       | Serve `dist/` with the production security headers, to check the CSP         |
+| `pnpm test`          | Run the fast tests once (`pnpm test:watch` to watch)                         |
+| `pnpm test:slow`     | Roster-wide tests that play every matchup (a separate CI job)                |
+| `pnpm test:browsers` | The known match results in Chromium, Firefox and WebKit (a separate CI job)  |
+| `pnpm golden`        | Record the known match results again after a ruleset bump                    |
+| `pnpm lint`          | ESLint                                                                       |
+| `pnpm typecheck`     | `tsc -b` across all tsconfig projects                                        |
+| `pnpm format`        | Prettier (`pnpm format:check` to only check)                                 |
+| `pnpm balance`       | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
+| `pnpm balance:ci`    | The reduced balance check CI runs: 150 seeds, fails only on a clear miss     |
 
 ## Architecture
 
@@ -152,6 +154,7 @@ src/
   sim/series.ts     best-of-3 rules, pure so a server can re-run a series
   sim/series-verify.ts   whether a series setup is valid: the browser and a server use it
   sim/ruleset.ts    the ruleset version every link records (bumped with any balance change)
+  golden/   known match results, checked in Node and in Chromium, Firefox and WebKit
   ui/       plain-DOM screens: home, ball grid and detail, setup steps, manual, scoreboard, HUD
   styles/   design tokens (a palette, then roles) and base styles; components' CSS sits beside them
   app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links
@@ -165,7 +168,9 @@ The rules, in brief:
 1. **The simulation is pure and deterministic.** `src/sim` cannot touch the DOM, the clock,
    timers or `Math.random`. A separate `tsconfig.sim.json` without the DOM lib and ESLint rules
    enforce this; transcendental `Math` functions are banned too, because they can differ between
-   browsers.
+   browsers. 132 recorded matches are checked on every push to come out bit-identical in Node,
+   Chromium, Firefox and WebKit
+   ([ADR 0023](docs/decisions/0023-known-match-results-across-engines.md)).
 2. **Fixed timestep.** The sim runs at exactly 60 ticks per second regardless of frame rate. The
    same balls and seed always produce the same match.
 3. **Seeded randomness** comes only from a mulberry32 PRNG whose state is part of the world.

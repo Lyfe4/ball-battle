@@ -35,8 +35,8 @@ version. A one-unit speed change fails it, and so does a counter-map side that o
 I chose behaviour over hashing the definitions' numbers because it also catches ability
 constants, the combat rules and the bot. Its cost is about 0.5 s in the unit suite.
 
-It is one hash, not a record per match. The golden file of known results and the runs in
-Firefox and WebKit that the audit also asked for (its H2) remain a separate step.
+It is one hash, not a record per match. The known results per match, and their runs in Firefox
+and WebKit, which the audit also asked for (its H2), are ADR 0023.
 
 ### 2. Links and setups record it
 
