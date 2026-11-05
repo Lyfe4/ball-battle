@@ -46,6 +46,11 @@ blind picks. See Decisions below.
    best of 3. No network. **Done (2026-11-05, ADR 0017):** pure series logic in
    `src/sim/series.ts` that a server can re-run, a replaceable random bot, the lineup builder and
    scoreboard, and links that replay a whole series.
+   - **Draft formats (2026-11-05, ADR 0019), to put the skill in picking:** _reveal, then order_
+     (both lineups revealed, then each side orders its own in secret) and _loser picks next_ (the
+     loser of a round picks its next ball after seeing the winner's next one; the winner keeps its
+     order), next to today's blind order. Both are playable against the bot so the better one can
+     be chosen by playing; which becomes the PvP default is open.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
    makes cheap.
@@ -53,6 +58,14 @@ blind picks. See Decisions below.
    the guessing game, never a stronger version of an old one.
 
 ## Decisions
+
+### Where the skill is (2026-11-05)
+
+- **In picking, not in aiming.** A chosen launch direction was measured and turned out to be a
+  second blind guess rather than a skill (`docs/aiming-measurements.md`, ADR 0018); bigger balls
+  did not change that and broke the counter map (`docs/bigger-balls-experiment.md`). The draft
+  formats of ADR 0019 move the skill into picks made with information: the opponent's lineup, or
+  the winner's next ball.
 
 ### Counter map (2026-11-04)
 

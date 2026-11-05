@@ -74,6 +74,16 @@ series ends, the link holds both lineups and the series seed, e.g.
 `?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5`, and replays it exactly
 ([ADR 0017](docs/decisions/0017-best-of-3-series.md)).
 
+Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-formats.md)):
+
+- **Blind**: as above, both orders set without seeing the other lineup.
+- **Reveal**: both lineups are revealed, then each side sets its order in secret.
+- **Loser picks**: after a round, the loser picks its next ball knowing the winner's next one; the
+  winner keeps its order. The bot counter-picks from the counter map when it loses.
+
+The link records the rules and every pick (`fmt=loser&picks=archer`), so these series replay
+exactly too.
+
 ## Running it
 
 Needs Node 24+ and pnpm 11 (`corepack enable` picks up the pinned version).
