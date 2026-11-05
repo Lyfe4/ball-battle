@@ -30,6 +30,15 @@ describe('matchups', () => {
     }
   });
 
+  it('words every reason for players: no decision-record or file references', () => {
+    for (const id of ids) {
+      const { beats, losesTo, even } = matchupsOf(id, ids);
+      for (const line of [...beats, ...losesTo, ...even]) {
+        expect(line.reason).not.toMatch(/ADR|\.ts\b|scripts\//);
+      }
+    }
+  });
+
   it('follows the map: the Brawler is even with everyone but Thorns, which beats it', () => {
     const brawler = matchupsOf('brawler', ids);
     expect(brawler.beats).toStrictEqual([]);

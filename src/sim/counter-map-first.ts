@@ -102,8 +102,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'frost',
     y: 'archer',
     intended: 'y',
-    reason:
-      'Leading arrows land most often on the slowest ball, and the Archer rarely touches it (ADR 0016).',
+    reason: 'Leading arrows land most often on the slowest ball, and the Archer rarely touches it.',
   },
   {
     x: 'thorns',
@@ -181,7 +180,6 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'frost',
     intended: 'y',
-    reason:
-      'The cold wears poison off the Frost sooner, and it hits Venom hard and slows it (ADR 0016).',
+    reason: 'The cold wears poison off the Frost sooner, and it hits Venom hard and slows it.',
   },
 ];

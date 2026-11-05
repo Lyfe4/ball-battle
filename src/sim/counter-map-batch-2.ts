@@ -54,14 +54,13 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     y: 'frost',
     intended: 'x',
     reason:
-      'Rage burns off the cold: it can never be slowed, so the Frost’s one trick does nothing (ADR 0016).',
+      'Rage burns off the cold: it can never be slowed, so the Frost’s one trick does nothing.',
   },
   {
     x: 'berserker',
     y: 'venom',
     intended: 'y',
-    reason:
-      'Poison numbs its rage, so it never hits hard while Venom keeps it poisoned (ADR 0016).',
+    reason: 'Poison numbs its rage, so it never hits hard while Venom keeps it poisoned.',
   },
   {
     x: 'speedster',
@@ -145,13 +144,13 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'quake',
     intended: 'y',
-    reason: 'A shockwave staggers the Archer: it can’t aim, so it loses arrows (ADR 0016).',
+    reason: 'A shockwave staggers the Archer: it can’t aim, so it loses arrows.',
   },
   {
     x: 'storm',
     y: 'quake',
     intended: 'y',
-    reason: 'A shockwave staggers the Storm: it can’t aim, so it calls less lightning (ADR 0016).',
+    reason: 'A shockwave staggers the Storm: it can’t aim, so it calls less lightning.',
   },
   {
     x: 'quake',
@@ -176,6 +175,6 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     y: 'sniper',
     intended: 'x',
     reason:
-      'A shockwave staggers the Sniper: its lock breaks without a shot, and it waits to aim again (ADR 0016).',
+      'A shockwave staggers the Sniper: its lock breaks without a shot, and it waits to aim again.',
   },
 ];
