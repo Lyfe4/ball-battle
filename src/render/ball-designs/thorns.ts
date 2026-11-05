@@ -34,7 +34,6 @@ function drawSpikes(p: Painter, r: number, spikes: Spikes): void {
  */
 export const thornsDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, accent, simple }) {
     p.fillStyle = accent;
     drawSpikes(p, r, simple ? SIMPLE : FULL);

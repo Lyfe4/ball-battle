@@ -107,8 +107,9 @@ describe('the bot’s answer preview', () => {
   });
 
   it('names one ball when the counter map ranks one answer best', () => {
-    // The Vampire beats the Speedster, so against a Vampire the bot avoids it.
-    expect(botAnswers(['speedster', 'frost'], 'vampire')).toStrictEqual(['frost']);
+    // The Vampire is favoured against the Venom and even with the Frost, so against a Vampire the
+    // bot answers with the Frost.
+    expect(botAnswers(['venom', 'frost'], 'vampire')).toStrictEqual(['frost']);
   });
 });
 

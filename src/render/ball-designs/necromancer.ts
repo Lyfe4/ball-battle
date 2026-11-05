@@ -14,7 +14,6 @@ const SIMPLE_EYES = { x: 0.2, y: 0.07, radius: 0.13 } as const;
  */
 export const necromancerDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, accent, simple }) {
     p.fillStyle = accent;
     p.beginPath();

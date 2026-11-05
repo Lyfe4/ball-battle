@@ -88,6 +88,7 @@ export function createArena(
     drawWorld(ctx, drawn, lookup, canvasView, {
       flash: (ballId) => effects.flash(ballId, now),
       heal: (ballId) => effects.heal(ballId, now),
+      healAmount: (ballId) => effects.healAmount(ballId),
       sparks: effects.sparks(now),
       strikes: effects.strikes(now),
       shake: effects.shake(now),
@@ -97,7 +98,7 @@ export function createArena(
       knockouts: effects.knockouts(now),
       winner: effects.winner(now),
       intro: (index) => introLook(index, now, reduced),
-      healReduced: (ballId) => effects.healReduced(ballId, now),
+      cue: (ballId) => effects.cue(ballId, now),
       reducedMotion: reduced,
     });
     host.drawn(world, effects.resultVisible(now));

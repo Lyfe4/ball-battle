@@ -112,6 +112,8 @@ describe('shocked', () => {
         lost: 12 - restored,
         status: 'shocked',
       },
+      // The heal cut is an interaction rule: the arena shows its cue (ADR 0028).
+      { type: 'ruleApplied', tick: 5, ballId: 'ball-1', rule: 'healCut' },
       {
         type: 'healed',
         tick: 5,

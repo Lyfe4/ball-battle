@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { heldAim } from '../rules.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
@@ -52,16 +53,18 @@ export const sniper = defineBall<SniperState>({
   color: '#818cf8',
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 76,
+  maxHealth: 78,
   contactDamage: 9,
   initialAbilityState: { nextChargeTick: FIRST_CHARGE_TICK, charge: null },
   hooks: {
-    onTick: ({ world, self }) => {
+    onTick: ({ world, self, isPhased }) => {
       const { charge, nextChargeTick } = self.abilityState;
       if (hasStatus(self, 'staggered')) {
-        if (charge === null) return [];
+        if (charge === null) return heldAim(world.tick, nextChargeTick);
+        // The lock breaks without a shot, and the arena shows why (ADR 0028).
         return [
-          { kind: 'setAbilityState', state: { nextChargeTick: world.tick + 1, charge: null } },
+          { kind: 'setAbilityState', state: { nextChargeTick: world.tick, charge: null } },
+          { kind: 'ruleApplied', rule: 'aimHeld' },
         ];
       }
       if (charge !== null) {
@@ -81,7 +84,7 @@ export const sniper = defineBall<SniperState>({
         ];
       }
       if (world.tick < nextChargeTick) return [];
-      const target = nearestTarget(self, world.balls, world.minions);
+      const target = nearestTarget(self, world.balls, world.minions, isPhased);
       if (target === undefined) return [];
       const dx = target.position.x - self.position.x;
       const dy = target.position.y - self.position.y;

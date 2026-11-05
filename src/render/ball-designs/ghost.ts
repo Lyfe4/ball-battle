@@ -14,7 +14,6 @@ const SIMPLE_MOUTH = { y: 0.32, radius: 0.13 } as const;
  */
 export const ghostDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, accent, simple }) {
     const eyes = simple ? SIMPLE_EYES : EYES;
     const mouth = simple ? SIMPLE_MOUTH : MOUTH;

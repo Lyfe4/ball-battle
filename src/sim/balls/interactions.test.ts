@@ -1,18 +1,21 @@
-// The pair-specific interactions of ADR 0016: poison numbs rage, rage can't be slowed, the cold
-// shortens poison, and shockwaves stagger the balls that aim.
+// The interaction rules (ADR 0016, 0028): poison numbs rage, shockwaves stagger the balls that aim,
+// and each shows its cue the moment it acts. Rage can no longer shrug off the cold, nor the cold
+// shorten poison (both removed by ADR 0028).
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { StatusAppliedEvent, StatusKind, StatusState } from '../status.ts';
+import type { RuleAppliedEvent } from '../rules.ts';
 import type { BallDefinition, DamageEvent, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
 import { berserker, POISON_NUMB, rageFor } from './berserker.ts';
-import { frost, POISON_KEPT } from './frost.ts';
+import { frost } from './frost.ts';
 import { quake, STAGGER_TICKS } from './quake.ts';
 import { chargeOf, FIRST_CHARGE_TICK, sniper } from './sniper.ts';
-import { storm } from './storm.ts';
+import { FIRST_STRIKE_DELAY_TICKS, storm } from './storm.ts';
+import { FIRST_SHOT_DELAY_TICKS } from './archer.ts';
 import { POISON_TICKS, venom } from './venom.ts';
 
 function play(
@@ -50,6 +53,9 @@ const status = (kind: StatusKind, expiresTick: number): StatusState => ({
   sinceTick: 0,
 });
 
+const cues = (events: readonly SimEvent[]): RuleAppliedEvent[] =>
+  events.filter((event): event is RuleAppliedEvent => event.type === 'ruleApplied');
+
 const applied = (events: readonly SimEvent[], kind: StatusKind): StatusAppliedEvent[] =>
   events.filter(
     (event): event is StatusAppliedEvent => event.type === 'statusApplied' && event.status === kind,
@@ -73,27 +79,32 @@ describe('poison numbs rage', () => {
       Math.round(berserker.contactDamage + rage * (1 - POISON_NUMB)),
     ]);
   });
+
+  it('shows the cue on the Berserker for a hit poison softens, and only then', () => {
+    const health = Math.round(berserker.maxHealth / 2);
+    const cuesFor = (statuses: readonly StatusState[]): RuleAppliedEvent[] =>
+      cues(
+        play(withBalls(headOn(berserker, blue, health), [{ statuses }]), [berserker, blue], 25)
+          .events,
+      );
+    expect(cuesFor([status('poisoned', 1000)])).toStrictEqual([
+      expect.objectContaining({ ballId: 'ball-0', rule: 'rageNumbed' }),
+    ]);
+    expect(cuesFor([])).toStrictEqual([]);
+  });
 });
 
-describe('status resistance', () => {
-  it('never slows the Berserker: the Frost’s touch lands nothing', () => {
-    const { world, events } = play(headOn(frost, berserker), [frost, berserker], 30);
-    expect(events.some((event) => event.type === 'collision')).toBe(true);
-    expect(applied(events, 'slowed')).toStrictEqual([]);
-    expect(world.balls[1]?.statuses).toStrictEqual([]);
+describe('no status resistance left (ADR 0028)', () => {
+  it('slows the Berserker like any ball the Frost touches', () => {
+    const { world } = play(headOn(frost, berserker), [frost, berserker], 30);
+    expect(world.balls[1]?.statuses.map(({ kind }) => kind)).toStrictEqual(['slowed']);
   });
 
-  it('still slows any other ball the Frost touches', () => {
-    expect(applied(play(headOn(frost, blue), [frost, blue], 30).events, 'slowed')).toHaveLength(1);
-  });
-
-  it('wears poison off the Frost sooner: it keeps POISON_KEPT of the duration', () => {
+  it('poisons the Frost for Venom’s full duration', () => {
     const { events } = play(headOn(venom, frost), [venom, frost], 30);
     const [poisoned] = applied(events, 'poisoned');
     expect(poisoned?.ballId).toBe('ball-1');
-    expect((poisoned?.expiresTick ?? 0) - (poisoned?.tick ?? 0)).toBe(
-      Math.round(POISON_TICKS * POISON_KEPT),
-    );
+    expect((poisoned?.expiresTick ?? 0) - (poisoned?.tick ?? 0)).toBe(POISON_TICKS);
   });
 });
 
@@ -136,6 +147,21 @@ describe('shockwaves stagger', () => {
     expect(held).toBeGreaterThanOrEqual(200);
   });
 
+  it.each([
+    ['Archer', archer, FIRST_SHOT_DELAY_TICKS],
+    ['Storm', storm, FIRST_STRIKE_DELAY_TICKS],
+    ['Sniper', sniper, FIRST_CHARGE_TICK],
+  ] as const)(
+    'shows the cue once, on the tick the %s’s attack is held',
+    (_name, definition, due) => {
+      const held = cues(play(aimer(definition, 200), [definition, blue], 199).events);
+      expect(held).toStrictEqual([
+        { type: 'ruleApplied', tick: due, ballId: 'ball-0', rule: 'aimHeld' },
+      ]);
+      expect(cues(play(aimer(definition, 0), [definition, blue], 150).events)).toStrictEqual([]);
+    },
+  );
+
   it('breaks a Sniper’s lock in progress without a shot', () => {
     // The lock starts on FIRST_CHARGE_TICK; stagger it a few ticks into the charge.
     const locked = play(aimer(sniper, 0), [sniper, blue], FIRST_CHARGE_TICK + 3).world;
@@ -146,6 +172,9 @@ describe('shockwaves stagger', () => {
     const staggered = withBalls(locked, [{ statuses: [status('staggered', locked.tick + 60)] }]);
     const { world, events } = play(staggered, [sniper, blue], 50);
     expect(events.some((event) => event.type === 'projectileFired')).toBe(false);
+    expect(cues(events)).toStrictEqual([
+      expect.objectContaining({ ballId: 'ball-0', rule: 'aimHeld' }),
+    ]);
     expect(world.balls[0] && chargeOf(world.balls[0])).toBeUndefined();
   });
 });

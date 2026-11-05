@@ -41,7 +41,6 @@ function clipSide(p: Painter, r: number, side: -1 | 1): void {
  */
 export const quakeDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   strike: 'shockwave',
   draw(p, { radius: r, accent, simple }) {
     const strata = simple ? SIMPLE_STRATA : STRATA;

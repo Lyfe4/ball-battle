@@ -16,7 +16,10 @@ import { theme } from './theme.ts';
 export const FLASH_MS = 200;
 
 /** How long a heal pulse lasts, in effect-time milliseconds. */
-export const HEAL_MS = 450;
+export const HEAL_MS = 520;
+
+/** How long a rule cue shows, in effect-time milliseconds (ADR 0028). */
+export const CUE_MS = 750;
 
 /** How long a projectile hit spark lasts, in effect-time milliseconds. */
 export const SPARK_MS = 250;
@@ -77,8 +80,13 @@ export interface Effects {
   flash(ballId: string, nowMs: number): number;
   /** Heal pulse strength for a ball, from 1 (just healed) down to 0. */
   heal(ballId: string, nowMs: number): number;
-  /** Reduced-heal pulse strength for a ball, from 1 (just reduced) down to 0. */
-  healReduced(ballId: string, nowMs: number): number;
+  /** Health restored by the ball's latest heal (0 when it has none), so the pulse scales with it. */
+  healAmount(ballId: string): number;
+  /**
+   * Rule cue strength for a ball, from 1 (an interaction rule just acted on it, ADR 0028) down to
+   * 0.
+   */
+  cue(ballId: string, nowMs: number): number;
   sparks(nowMs: number): readonly Spark[];
   strikes(nowMs: number): readonly Strike[];
   squash(ballId: string, nowMs: number): Squash | undefined;
@@ -110,6 +118,8 @@ export function createEffects(): Effects {
   let reduced = false;
   const flashStarts = new Map<string, number>();
   const healStarts = new Map<string, number>();
+  const healAmounts = new Map<string, number>();
+  const cueStarts = new Map<string, number>();
   const squashes = new Map<string, { normal: Vec2; amount: number; startMs: number }>();
   const ghosts = new Map<string, GhostEntry>();
   let sparkStarts: { readonly point: Vec2; readonly start: number }[] = [];
@@ -122,9 +132,7 @@ export function createEffects(): Effects {
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
-  const reducedStarts = new Map<string, number>();
-  const healReduced = (ballId: string, nowMs: number): number =>
-    fade(reducedStarts.get(ballId), nowMs, theme.healReducedMs);
+  const cue = (ballId: string, nowMs: number): number => fade(cueStarts.get(ballId), nowMs, CUE_MS);
   const heal = (ballId: string, nowMs: number): number =>
     fade(healStarts.get(ballId), nowMs, HEAL_MS);
   const squashActive = (nowMs: number): boolean =>
@@ -157,8 +165,14 @@ export function createEffects(): Effects {
           const from = ghostHealth(ghosts.get(event.targetId), before, nowMs);
           ghosts.set(event.targetId, { from, startMs: nowMs });
         }
-        if (event.type === 'healed') healStarts.set(event.ballId, nowMs);
-        if (event.type === 'healReduced') reducedStarts.set(event.ballId, nowMs);
+        if (event.type === 'healed') {
+          // Heals in the same instant add up, so one pulse shows the whole of them.
+          const same = healStarts.get(event.ballId) === nowMs;
+          const before = same ? (healAmounts.get(event.ballId) ?? 0) : 0;
+          healStarts.set(event.ballId, nowMs);
+          healAmounts.set(event.ballId, before + event.amount);
+        }
+        if (event.type === 'ruleApplied') cueStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit' || event.type === 'minionHit') {
           sparkStarts.push({ point: event.point, start: nowMs });
         }
@@ -194,7 +208,8 @@ export function createEffects(): Effects {
     },
     flash,
     heal,
-    healReduced,
+    healAmount: (ballId) => healAmounts.get(ballId) ?? 0,
+    cue,
     sparks(nowMs) {
       // Drop finished sparks so the list never grows over a long match.
       sparkStarts = sparkStarts.filter(({ start }) => fade(start, nowMs, SPARK_MS) > 0);
@@ -251,7 +266,7 @@ export function createEffects(): Effects {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
         [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
-        [...reducedStarts.keys()].some((ballId) => healReduced(ballId, nowMs) > 0) ||
+        [...cueStarts.keys()].some((ballId) => cue(ballId, nowMs) > 0) ||
         sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0) ||
         strikeStarts.some(({ start }) => fade(start, nowMs, STRIKE_MS) > 0) ||
         particles.some((particle) => particleAt(particle, nowMs) !== undefined) ||
@@ -266,7 +281,8 @@ export function createEffects(): Effects {
     reset() {
       flashStarts.clear();
       healStarts.clear();
-      reducedStarts.clear();
+      healAmounts.clear();
+      cueStarts.clear();
       squashes.clear();
       ghosts.clear();
       sparkStarts = [];

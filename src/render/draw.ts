@@ -4,7 +4,6 @@ import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/sta
 import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import {
-  drawReducedHeal,
   drawHealthBar,
   drawKnockouts,
   drawParticles,
@@ -14,6 +13,7 @@ import {
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
+import { drawHealPulse, drawRuleCue } from './draw-cues.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
@@ -31,6 +31,8 @@ export interface FrameEffects {
   readonly flash: (ballId: string) => number;
   /** Heal pulse strength for a ball, 0 to 1. */
   readonly heal: (ballId: string) => number;
+  /** Health its latest heal restored, which sizes the pulse. */
+  readonly healAmount: (ballId: string) => number;
   /** Recent projectile hits. */
   readonly sparks: readonly Spark[];
   /** Zones that just struck. */
@@ -46,9 +48,9 @@ export interface FrameEffects {
   readonly winner: WinnerRing | undefined;
   /** Intro scale and opacity for the ball at an index. */
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
-  /** Reduced-heal pulse strength for a ball, 0 to 1. */
-  readonly healReduced: (ballId: string) => number;
-  /** Holds animated details (the shock ring's crackle) still. */
+  /** Rule cue strength for a ball, 0 to 1 (ADR 0028). */
+  readonly cue: (ballId: string) => number;
+  /** Holds animated details (the shock ring's crackle, the cue's pop) still. */
   readonly reducedMotion: boolean;
 }
 
@@ -56,6 +58,7 @@ export interface FrameEffects {
 export const NO_EFFECTS: FrameEffects = {
   flash: () => 0,
   heal: () => 0,
+  healAmount: () => 0,
   sparks: [],
   strikes: [],
   shake: { x: 0, y: 0 },
@@ -65,7 +68,7 @@ export const NO_EFFECTS: FrameEffects = {
   knockouts: [],
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
-  healReduced: () => 0,
+  cue: () => 0,
   reducedMotion: false,
 };
 
@@ -121,9 +124,10 @@ export function drawWorld(
         phased,
       });
     });
-    if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
     if (ball.health > 0) {
-      drawReducedHeal(ctx, ball, effects.healReduced(ball.id));
+      const maxHealth = definition?.maxHealth ?? 1;
+      const pulse = { strength: heal, amount: effects.healAmount(ball.id), maxHealth };
+      drawHealPulse(ctx, ball, pulse, effects.reducedMotion);
       drawStatuses(ctx, ball, world.tick, effects.reducedMotion);
     }
   });
@@ -141,6 +145,10 @@ export function drawWorld(
       const ghost = effects.ghost(ball.id, ball.health);
       drawHealthBar(ctx, ball, ball.health / maxHealth, ghost / maxHealth, size);
     }
+  }
+  // Rule cues go on top of everything: they say why something just happened (ADR 0028).
+  for (const ball of world.balls) {
+    if (ball.health > 0) drawRuleCue(ctx, ball, effects.cue(ball.id), effects.reducedMotion, size);
   }
 }
 
@@ -257,20 +265,3 @@ export function drawBall(
 }
 
 /** A ring that grows outwards and fades as `strength` falls from 1 to 0. */
-function drawHealPulse(ctx: CanvasRenderingContext2D, ball: BallState, strength: number): void {
-  if (strength <= 0) return;
-  ctx.save();
-  ctx.globalAlpha = strength;
-  ctx.beginPath();
-  ctx.arc(
-    ball.position.x,
-    ball.position.y,
-    ball.radius + (1 - strength) * theme.healRingGrowth,
-    0,
-    Math.PI * 2,
-  );
-  ctx.strokeStyle = theme.healRing;
-  ctx.lineWidth = theme.healRingWidth;
-  ctx.stroke();
-  ctx.restore();
-}

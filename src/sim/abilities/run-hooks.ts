@@ -1,4 +1,4 @@
-import { isAlive } from '../combat.ts';
+import { isAlive, isPhased as phasedOf } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { createStream, deriveSeed } from '../rng.ts';
 import type {
@@ -59,6 +59,8 @@ export function runPhase(
   // A ball can get several calls of the same hook in one tick (one per contact or damage event),
   // so each call's random stream also includes how many calls that ball has had this phase.
   const callCounts = new Map<string, number>();
+  const isPhased = (ball: BallState): boolean =>
+    phasedOf(ball, getDefinition(definitions, ball.definitionId));
 
   for (const invocation of invocations) {
     const ballIndex = snapshot.findIndex((ball) => ball.id === invocation.ballId);
@@ -70,7 +72,7 @@ export function runPhase(
     const random = createStream(
       deriveSeed([world.rngState, world.tick, ballIndex, HOOK_CODES[invocation.hook], call]),
     );
-    const base: HookContext = { world, self, stats: definition, random };
+    const base: HookContext = { world, self, stats: definition, random, isPhased };
     const actions = invocation.call(definition, base, snapshot);
     if (actions !== undefined && actions.length > 0) {
       collected.push({ ballId: invocation.ballId, hook: invocation.hook, actions });

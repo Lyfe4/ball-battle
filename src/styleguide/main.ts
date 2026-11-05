@@ -5,6 +5,7 @@ import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import { ballColor } from '../render/ball-colors.ts';
 import { drawStatuses } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
+import { drawHealPulse, drawRuleCue } from '../render/draw-cues.ts';
 import { drawAimLines } from '../render/projectiles.ts';
 import { drawStrikes } from '../render/zones.ts';
 import { theme } from '../render/theme.ts';
@@ -57,7 +58,10 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
 function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
   // Room for the status rings outside the edge when there are any.
   const rings = tile.statuses?.length ?? 0;
-  const cssSize = Math.ceil(radiusPx * 2 + (rings === 0 ? 12 : 16 + rings * 16));
+  // Room for rings, a heal's swelling ring, and a rule cue beside the ball.
+  const extra = Math.max(rings === 0 ? 12 : 16 + rings * 16, tile.heal === undefined ? 0 : 44);
+  const cueRoom = tile.cue === undefined ? 0 : radiusPx * 1.6;
+  const cssSize = Math.ceil(radiusPx * 2 + extra + cueRoom);
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
   const definition = getDefinition(BALL_LOOKUP, tile.id);
@@ -84,7 +88,16 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     cssPixelsPerUnit: radiusPx / ball.radius,
     ...(detail === undefined ? {} : { detail }),
   });
+  if (tile.healShare !== undefined) {
+    const pulse = {
+      strength: tile.heal ?? 0,
+      amount: tile.healShare * definition.maxHealth,
+      maxHealth: definition.maxHealth,
+    };
+    drawHealPulse(ctx, shown, pulse, false);
+  }
   if (rings > 0) drawStatuses(ctx, shown, TICK, false);
+  if (tile.cue !== undefined) drawRuleCue(ctx, shown, tile.cue, false, Number.POSITIVE_INFINITY);
   return canvas;
 }
 
@@ -133,7 +146,19 @@ function phoneArena(): HTMLElement {
             ticksLeft: 1,
           },
         ];
-  drawWorld(ctx, { ...world, tick: TICK, balls, minions }, BALL_LOOKUP, view, NO_EFFECTS);
+  // A heal on the Vampire and the rule cue on the Archer and Berserker, to check both read at phone
+  // size (ADR 0028).
+  const idOf = (definitionId: string) =>
+    balls.find((ball) => ball.definitionId === definitionId)?.id;
+  const healed = idOf('vampire');
+  const cued = new Set([idOf('archer'), idOf('berserker')]);
+  const effects = {
+    ...NO_EFFECTS,
+    heal: (id: string) => (id === healed ? 0.7 : 0),
+    healAmount: (id: string) => (id === healed ? 9 : 0),
+    cue: (id: string) => (cued.has(id) ? 0.6 : 0),
+  };
+  drawWorld(ctx, { ...world, tick: TICK, balls, minions }, BALL_LOOKUP, view, effects);
   const figure = document.createElement('figure');
   const caption = document.createElement('figcaption');
   caption.textContent = 'In the arena at phone width (340 px canvas)';

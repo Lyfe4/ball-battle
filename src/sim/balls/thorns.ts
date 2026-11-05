@@ -23,7 +23,7 @@ export const thorns = defineBall({
   color: '#16a34a',
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
-  maxHealth: 75,
+  maxHealth: 77,
   contactDamage: 19,
   initialAbilityState: {},
   hooks: {

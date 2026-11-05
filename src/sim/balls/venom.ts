@@ -6,7 +6,7 @@ import { defineBall } from '../define-ball.ts';
  * damage every POISON_INTERVAL_TICKS (ADR 0012), eight ticks in all. Refreshed, never stacked, by
  * every new contact, so a Venom that keeps touching its enemy keeps it poisoned.
  */
-export const POISON_TICKS = 260;
+export const POISON_TICKS = 270;
 
 /**
  * Light contact hits that poison. Most of its damage is the poison, which keeps working between

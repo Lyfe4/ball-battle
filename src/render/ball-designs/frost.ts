@@ -44,7 +44,6 @@ const SIN_60 = 0.8660254037844386;
  */
 export const frostDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { radius: r, accent, simple }) {
     drawSnowflake(p, r, accent, simple ? SIMPLE : FULL);
   },

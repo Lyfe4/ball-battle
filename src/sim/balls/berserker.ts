@@ -7,7 +7,7 @@ import { hasStatus } from '../status.ts';
  * the Berserker has lost. Its base contact damage plus this stays below the Brawler's, so the
  * Brawler still hits hardest (an identity rule).
  */
-export const RAGE_DAMAGE = 8;
+export const RAGE_DAMAGE = 9;
 
 /** Share of the rage bonus poison takes away: poison numbs rage (ADR 0016). */
 export const POISON_NUMB = 0.8;
@@ -22,23 +22,29 @@ export function rageFor(health: number, maxHealth: number): number {
  * The biggest health pool in the roster, and the more of it it has lost, the harder it hits:
  * its contact damage grows with its missing health (ADR 0015). Rage hits are contact hits, so
  * directness scales them, Thorns reflects them and the lethal-exchange tiebreak counts them.
- * Poison numbs the rage (Venom's edge), and the rage burns off the cold: it can't be slowed (its
- * edge over the Frost), ADR 0016.
+ * Poison numbs the rage (Venom's edge, ADR 0016), shown with the rule cue on every hit it softens
+ * (ADR 0028).
  */
 export const berserker = defineBall({
   id: 'berserker',
   name: 'Berserker',
-  description: 'Huge health, hits harder the more it has lost, and can’t be slowed.',
+  description: 'Huge health, and hits harder the more it has lost. Poison numbs its rage.',
   color: '#f97316',
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 93,
   contactDamage: 16,
   initialAbilityState: {},
-  statusResistance: { slowed: 0 },
   contactDamageOf: (self, stats) => {
     const rage = rageFor(self.health, stats.maxHealth);
     return stats.contactDamage + (hasStatus(self, 'poisoned') ? rage * (1 - POISON_NUMB) : rage);
   },
-  hooks: {},
+  hooks: {
+    // Poison numbs rage (ADR 0016): the arena shows it on a poisoned hit while it has rage to numb
+    // (ADR 0028). Hooks see the ball after the exchange, so a first hit from full health shows it.
+    onHitBall: ({ self, stats }) =>
+      hasStatus(self, 'poisoned') && rageFor(self.health, stats.maxHealth) > 0
+        ? [{ kind: 'ruleApplied', rule: 'rageNumbed' }]
+        : [],
+  },
 });

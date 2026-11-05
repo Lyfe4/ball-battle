@@ -21,6 +21,10 @@ export interface Tile {
   /** Health as a share of max (the Berserker's cracks); full by default. */
   readonly health?: number;
   readonly heal?: number;
+  /** The heal's size as a share of max health (ADR 0028); 0.15 or more is a full-size pulse. */
+  readonly healShare?: number;
+  /** Rule cue strength (ADR 0028): 1 just shown, then fading. */
+  readonly cue?: number;
   readonly flash?: number;
   /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
   readonly statuses?: readonly StatusKind[];
@@ -70,11 +74,11 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Vampire: collar and fangs; the collar edge flushes when it heals',
+    'Vampire: collar and fangs; the collar edge flushes as the heal pulse shows',
     [
       { label: 'idle', id: 'vampire' },
-      { label: 'healing', id: 'vampire', heal: 1 },
-      { label: 'heal fading', id: 'vampire', heal: 0.4 },
+      { label: 'healing', id: 'vampire', heal: 0.8, healShare: 0.15 },
+      { label: 'heal fading', id: 'vampire', heal: 0.3, healShare: 0.15 },
       { label: 'mirror B', id: 'vampire', repeat: true },
     ],
   ],
@@ -215,6 +219,32 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
       { label: 'hit flash', id: 'necromancer', flash: 0.6 },
       { label: 'mirror B', id: 'necromancer', repeat: true },
       { label: 'defeated', id: 'necromancer', defeated: true },
+    ],
+  ],
+  [
+    'Heals (ADR 0028): a green wash and a swelling ring, sized by the heal; any ball',
+    [
+      { label: 'big heal', id: 'vampire', heal: 0.75, healShare: 0.15 },
+      { label: 'small heal', id: 'vampire', heal: 0.75, healShare: 0.03 },
+      {
+        label: 'shock-cut heal',
+        id: 'vampire',
+        heal: 0.75,
+        healShare: 0.075,
+        statuses: ['shocked'],
+        cue: 0.75,
+      },
+      { label: 'another ball', id: 'brawler', heal: 0.75, healShare: 0.1 },
+    ],
+  ],
+  [
+    'Rule cue (ADR 0028): one spark for every interaction rule, the moment it acts',
+    [
+      { label: 'pop', id: 'archer', statuses: ['staggered'], cue: 0.9 },
+      { label: 'settled', id: 'archer', statuses: ['staggered'], cue: 0.6 },
+      { label: 'fading', id: 'archer', statuses: ['staggered'], cue: 0.2 },
+      { label: 'numbed rage', id: 'berserker', health: 0.4, statuses: ['poisoned'], cue: 0.6 },
+      { label: 'on yellow', id: 'speedster', cue: 0.6 },
     ],
   ],
   [

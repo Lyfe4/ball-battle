@@ -53,7 +53,6 @@ const CRACKS: readonly (readonly (readonly [number, number])[])[] = [
  */
 export const berserkerDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, simple }) {
     const share = ball.health / berserker.maxHealth;
     const count = simple ? simpleCrackCount(share) : crackCount(share, CRACKS.length);

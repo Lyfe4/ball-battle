@@ -238,26 +238,3 @@ function drawPoisonRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: 
   ctx.stroke();
   ctx.restore();
 }
-
-/** A heal a status reduced: a dim ring that shrinks in towards the edge as it fades. */
-export function drawReducedHeal(
-  ctx: CanvasRenderingContext2D,
-  ball: BallState,
-  strength: number,
-): void {
-  if (strength <= 0) return;
-  ctx.save();
-  ctx.globalAlpha = strength;
-  ctx.strokeStyle = theme.healReducedRing;
-  ctx.lineWidth = theme.healReducedWidth;
-  ctx.beginPath();
-  ctx.arc(
-    ball.position.x,
-    ball.position.y,
-    ball.radius + strength * theme.healReducedShrink,
-    0,
-    Math.PI * 2,
-  );
-  ctx.stroke();
-  ctx.restore();
-}

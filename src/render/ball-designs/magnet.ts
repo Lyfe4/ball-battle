@@ -12,7 +12,6 @@ const SHOE = { bend: 0.42, centre: 0.06, legTop: -0.52, tip: 0.2 } as const;
  */
 export const magnetDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, tick, simple }) {
     const width = (simple ? theme.magnetShoeSimple : theme.magnetShoe) * r;
     const bend = SHOE.bend * r;

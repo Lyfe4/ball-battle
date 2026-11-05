@@ -27,7 +27,6 @@ const BOLT: readonly (readonly [number, number])[] = [
  */
 export const stormDesign: BallDesign = {
   facing: 'none',
-  showsHeal: false,
   draw(p, { ball, radius: r, accent, tick }) {
     p.fillStyle = accent;
     p.beginPath();

@@ -59,33 +59,33 @@ describe('the counter map', () => {
 });
 
 describe('checkCounter', () => {
-  it('checks the favoured side against 58-70%, warning near the edges', () => {
-    expect(checkCounter(favoured, 0.64, 0.35)).toBe('ok');
-    expect(checkCounter(favoured, 0.59, 0.4)).toBe('warn');
-    expect(checkCounter(favoured, 0.69, 0.3)).toBe('warn');
-    expect(checkCounter({ ...favoured, intended: 'y' }, 0.35, 0.64)).toBe('ok');
+  it('checks the favoured side against 62-72%, warning near the edges', () => {
+    expect(checkCounter(favoured, 0.67, 0.32)).toBe('ok');
+    expect(checkCounter(favoured, 0.63, 0.36)).toBe('warn');
+    expect(checkCounter(favoured, 0.71, 0.28)).toBe('warn');
+    expect(checkCounter({ ...favoured, intended: 'y' }, 0.32, 0.67)).toBe('ok');
   });
 
   it('counts the band edges themselves as in band', () => {
-    expect(checkCounter(favoured, 0.58, 0.42)).toBe('warn');
-    expect(checkCounter(favoured, 0.7, 0.3)).toBe('warn');
+    expect(checkCounter(favoured, 0.62, 0.38)).toBe('warn');
+    expect(checkCounter(favoured, 0.72, 0.28)).toBe('warn');
     expect(checkCounter(even, 0.45, 0.55)).toBe('warn');
   });
 
   it('calls a favoured result up to 2 points outside its band NEAR, and further out MISS', () => {
-    // Below the band (58%).
-    expect(checkCounter(favoured, 0.575, 0.42)).toBe('near');
-    expect(checkCounter(favoured, 0.56, 0.44)).toBe('near');
-    expect(checkCounter(favoured, 0.5599, 0.44)).toBe('miss');
-    // Above it (70%).
-    expect(checkCounter(favoured, 0.72, 0.28)).toBe('near');
-    expect(checkCounter(favoured, 0.7201, 0.27)).toBe('miss');
+    // Below the band (62%).
+    expect(checkCounter(favoured, 0.615, 0.38)).toBe('near');
+    expect(checkCounter(favoured, 0.6, 0.4)).toBe('near');
+    expect(checkCounter(favoured, 0.5999, 0.4)).toBe('miss');
+    // Above it (72%).
+    expect(checkCounter(favoured, 0.74, 0.26)).toBe('near');
+    expect(checkCounter(favoured, 0.7401, 0.27)).toBe('miss');
   });
 
   it('treats a rate exactly 2 points out as NEAR despite floating-point rounding', () => {
-    // 280/500 = 0.56 and 360/500 = 0.72, computed the way pnpm balance computes rates.
-    expect(checkCounter(favoured, 280 / 500, 220 / 500)).toBe('near');
-    expect(checkCounter(favoured, 360 / 500, 140 / 500)).toBe('near');
+    // 300/500 = 0.6 and 370/500 = 0.74, computed the way pnpm balance computes rates.
+    expect(checkCounter(favoured, 300 / 500, 200 / 500)).toBe('near');
+    expect(checkCounter(favoured, 370 / 500, 130 / 500)).toBe('near');
     expect(checkCounter(even, 215 / 500, 285 / 500)).toBe('near');
   });
 
@@ -100,9 +100,9 @@ describe('checkCounter', () => {
   });
 
   it('passes a wider miss as NEAR when given a larger allowance, as the CI check does', () => {
-    expect(checkCounter(favoured, 0.52, 0.48)).toBe('miss');
-    expect(checkCounter(favoured, 0.52, 0.48, 0.087)).toBe('near');
-    expect(checkCounter(favoured, 0.49, 0.51, 0.087)).toBe('miss');
+    expect(checkCounter(favoured, 0.56, 0.44)).toBe('miss');
+    expect(checkCounter(favoured, 0.56, 0.44, 0.087)).toBe('near');
+    expect(checkCounter(favoured, 0.53, 0.47, 0.087)).toBe('miss');
   });
 });
 

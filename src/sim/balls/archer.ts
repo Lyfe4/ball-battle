@@ -1,6 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { rotateByHalfTan } from '../bounce-variance.ts';
 import { defineBall } from '../define-ball.ts';
+import { heldAim } from '../rules.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
@@ -12,7 +13,7 @@ export const FIRST_SHOT_DELAY_TICKS = 30;
 /** Ticks between shots. */
 export const COOLDOWN_TICKS = 120;
 /** World units per second. */
-export const ARROW_SPEED = 1500;
+export const ARROW_SPEED = 1650;
 export const ARROW_RADIUS = 6;
 export const ARROW_DAMAGE = 11;
 /** Long enough to cross the arena several times; walls normally end an arrow much sooner. */
@@ -83,9 +84,11 @@ export const archer = defineBall<ArcherState>({
   contactDamage: 6,
   initialAbilityState: { nextShotTick: FIRST_SHOT_DELAY_TICKS },
   hooks: {
-    onTick: ({ world, self, random }) => {
-      if (world.tick < self.abilityState.nextShotTick || hasStatus(self, 'staggered')) return [];
-      const target = nearestTarget(self, world.balls, world.minions);
+    onTick: ({ world, self, random, isPhased }) => {
+      const due = self.abilityState.nextShotTick;
+      if (world.tick < due) return [];
+      if (hasStatus(self, 'staggered')) return heldAim(world.tick, due);
+      const target = nearestTarget(self, world.balls, world.minions, isPhased);
       if (target === undefined) return [];
 
       const aimAt = leadTarget(self.position, target.position, target.velocity, ARROW_SPEED);

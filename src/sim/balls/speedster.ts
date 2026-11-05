@@ -7,7 +7,7 @@ export type SpeedsterState = Readonly<{ stacks: number }>;
 /** Most stacks the Speedster can hold. */
 export const MAX_STACKS = 5;
 /** Extra speed per stack, as a fraction of base speed. */
-export const SPEED_PER_STACK = 0.08;
+export const SPEED_PER_STACK = 0.1;
 /** Extra damage per stack, dealt on top of the contact hit when it hits a ball. */
 export const DAMAGE_PER_STACK = 2;
 

@@ -8,9 +8,10 @@ import type { CounterEntry } from './counter-map.ts';
  * the rest: the Berserker's health pool soaks the Speedster's burst but feeds the Vampire; the
  * Speedster outruns the Sniper's locked line, whose shots never touch Thorns' spikes; the Quake's
  * short warning can't be outrun by the Speedster, and the Frost's slow keeps it off the walls.
- * ADR 0016 adds pair-specific interactions: poison numbs the Berserker's rage (Venom over it), the
- * Berserker can't be slowed (it over the Frost), and the Quake's shockwaves stagger the balls that
- * aim (it over the Archer, Storm and Sniper).
+ * ADR 0016 adds interactions: poison numbs the Berserker's rage (Venom over it) and the Quake's
+ * shockwaves stagger the balls that aim (it over the Archer and Sniper). ADR 0028 removed the
+ * Berserker's immunity to slow, softened the shockwaves (the Speedster and Storm pairs are even),
+ * and made the Berserker (rage fed by every shockwave) and the Vampire favoured over the Quake.
  */
 export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
@@ -52,9 +53,8 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'berserker',
     y: 'frost',
-    intended: 'x',
-    reason:
-      'Rage burns off the cold: it can never be slowed, so the Frost’s one trick does nothing.',
+    intended: 'even',
+    reason: 'The cold slows it like any ball, and its huge health outlasts the slow.',
   },
   {
     x: 'berserker',
@@ -119,8 +119,9 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'speedster',
-    intended: 'x',
-    reason: 'The warning is too short to outrun, so speed buys the Speedster nothing.',
+    intended: 'even',
+    reason:
+      'The warning is too short to outrun, but softer shockwaves no longer outweigh its burst.',
   },
   {
     x: 'frost',
@@ -137,8 +138,8 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Lifesteal cannot answer a shockwave, but the Vampire wins the contacts.',
+    intended: 'y',
+    reason: 'Lifesteal heals back what the softer shockwaves chip away, and it wins the contacts.',
   },
   {
     x: 'archer',
@@ -149,8 +150,8 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'storm',
     y: 'quake',
-    intended: 'y',
-    reason: 'A shockwave staggers the Storm: it can’t aim, so it calls less lightning.',
+    intended: 'even',
+    reason: 'A shockwave staggers the Storm, but heavier lightning makes up the strikes it loses.',
   },
   {
     x: 'quake',
@@ -167,8 +168,8 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'berserker',
-    intended: 'even',
-    reason: 'Shockwaves wound it from a distance, but every wound makes its hits harder.',
+    intended: 'y',
+    reason: 'Every shockwave is a wound, and every wound makes its hits harder.',
   },
   {
     x: 'quake',

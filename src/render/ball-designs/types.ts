@@ -59,8 +59,6 @@ export interface BallDesign {
   readonly draw: (painter: Painter, view: DesignView) => void;
   /** Where `heading` comes from: none, the ball's velocity, or its aim at the nearest enemy. */
   readonly facing: 'none' | 'velocity' | 'aim';
-  /** True if the design shows healing itself, so the generic heal ring is not drawn. */
-  readonly showsHeal: boolean;
   /**
    * How the ball's zones look when they strike: a lightning bolt (the default) or a clean
    * shockwave ring that sweeps out to the zone's edge.
