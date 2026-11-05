@@ -92,3 +92,34 @@ saying it picks knowing your next ball. The scoreboard names the format.
   to verify. Loser-picks-next offers only one pick per series with three-ball lineups.
 - Open: which format becomes the default, or whether both stay. A smarter bot (one that orders
   against a revealed lineup) would make reveal-then-order a stronger test of the player.
+
+## Addendum: the bot's order in reveal-then-order (2026-11-05)
+
+A smarter reveal bot was proposed: order its lineup against the player's revealed balls using the
+counter map, without seeing the player's order. It can't do better than a random order:
+
+- **The bot's order doesn't change its odds.** Against a player order it can't see, every bot order
+  gives the same series odds. Checked over all 27,225 pairs of lineups, with favoured 64%, even 50%
+  and unfavoured 36% per round: across the six bot orders, the expected odds (player order uniform)
+  and the worst case (the player's best order) differ by under 1e-15. The reason is structural:
+  the player's order alone decides which ball meets which, so every bot order leads to the same six
+  pairings, and a best of 3 with independent rounds doesn't care which round a pairing lands in.
+- **A uniformly random order is the equilibrium**, and a fixed "smart" order would be worse: the
+  same lineup would always be ordered the same way, so a player could learn it and counter it.
+- So `randomBot.orderLineup` stays as it is. What changed: a test that its order is the same for
+  every order of the player's lineup (shown to fail when the bot reads that order), and the series
+  controller now passes the player's lineup as it was revealed rather than the order the player
+  locked, so a future bot can't read the secret order even by mistake.
+- Rejected: simulating the coming rounds with the series seed to choose an order. The bot would be
+  using knowledge of the future the player doesn't have.
+
+**Implication: reveal-then-order has no real decision against this bot.** By the same symmetry,
+against a uniformly random orderer the player's own order can't change the player's odds either:
+only which three balls were picked matters, and those were picked blind. The ordering step only
+rewards reading an opponent who orders predictably, which a human might and this bot never does.
+
+**Open design question** (for the home, picker and manual plan): give the order step information
+to act on. For example a sequential reveal, where the bot shows its first ball before the player
+orders (the player can then lead with a counter, and the bot's remaining two still have to be
+guessed), or alternating placement round by round. Any change belongs in the series rules in
+`src/sim/series.ts`, where a server can verify it, and needs its own ADR.
