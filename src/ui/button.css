@@ -1,0 +1,28 @@
+/* Buttons: the shared button and its primary variant. */
+
+.hud-button {
+  flex: 1;
+  min-height: var(--tap-target);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.hud-button-primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.hud-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.hud-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

@@ -1,0 +1,171 @@
+/*
+ * Picker: two slot buttons (each opens the ball grid) and Start, on one row where there is room.
+ */
+.picker {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.picker-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-small);
+}
+
+/* Beside the arena the HUD is narrow, so the slots stack. */
+@media (min-aspect-ratio: 5/4) {
+  .picker-slots {
+    grid-template-columns: 1fr;
+  }
+}
+
+.picker-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: 4px var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker-slot-icon {
+  flex: none;
+}
+
+.picker-slot-text {
+  display: grid;
+  min-width: 0;
+}
+
+.picker-slot-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.picker-slot-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-start {
+  padding: 0 var(--space-gap);
+}
+
+.picker-slot:focus-visible,
+.picker-card:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The ball grid: a modal dialog, nearly full screen on phones, scrolling inside. */
+.picker-dialog {
+  width: min(44rem, 100vw - 2 * var(--space-gutter));
+  max-height: min(48rem, 100dvh - 2 * var(--space-gutter));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-page);
+  color: var(--color-text);
+}
+
+.picker-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom properties don't reach ::backdrop in every browser, so its colour is literal. */
+.picker-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.picker-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+  padding: var(--space-gap) var(--space-gutter);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.picker-dialog-title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.picker-dialog-close {
+  flex: none;
+  padding: 0 var(--space-gap);
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--space-small);
+  /* Lets the grid shrink inside the dialog's column and scroll, however many balls there are. */
+  min-height: 0;
+  padding: var(--space-gutter);
+  overflow-y: auto;
+}
+
+.picker-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker-card[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.picker-card-icon {
+  flex: none;
+}
+
+.picker-card-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.picker-card-name {
+  font-weight: 600;
+}
+
+.picker-card-description {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.3;
+}
+
+.picker-card[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.picker-card-note:empty {
+  display: none;
+}
+
+.picker-card-note {
+  color: var(--color-focus);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}

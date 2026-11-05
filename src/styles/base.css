@@ -1,0 +1,26 @@
+/* Element defaults shared by every screen. */
+
+:root {
+  color-scheme: dark;
+  font-family: var(--font-family);
+  color: var(--color-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--color-page);
+}
+
+canvas {
+  display: block;
+}
+
+[hidden] {
+  display: none !important;
+}

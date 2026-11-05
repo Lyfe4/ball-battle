@@ -1,0 +1,96 @@
+/* The match HUD: both balls' health, the result and its actions, the seed. */
+
+.hud-balls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .hud-balls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hud-ball {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px var(--space-small);
+  align-items: baseline;
+}
+
+.hud-ball-name {
+  font-weight: 600;
+  color: var(--ball-color);
+}
+
+.hud-ball-health {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-health-track {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-health-track);
+  overflow: hidden;
+}
+
+.hud-health-track {
+  position: relative;
+}
+
+.hud-health-fill {
+  position: relative;
+  height: 100%;
+  background: var(--ball-color, var(--color-health-fill));
+}
+
+/* Health just lost: sits behind the fill and catches up after a short hold. */
+.hud-health-ghost {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-health-ghost);
+  transition: width 450ms ease-out 300ms;
+}
+
+.hud-result {
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hud-result:empty {
+  display: none;
+}
+
+.hud-actions {
+  display: flex;
+  gap: var(--space-small);
+}
+
+.hud-actions[hidden] {
+  display: none;
+}
+
+.hud-seed {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-ball-side {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-right: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}

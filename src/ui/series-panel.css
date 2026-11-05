@@ -1,0 +1,53 @@
+/* The best-of-3 scoreboard. */
+
+.series-score {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.series-round {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.series-status {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.series-status:empty {
+  display: none;
+}
+
+.series-format {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
+.series-picks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-small);
+}
+
+.series-pick-icon {
+  flex: none;
+}
+
+.series-pick {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  white-space: nowrap;
+}

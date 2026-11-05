@@ -1,0 +1,41 @@
+/*
+ * Design tokens in two layers. The palette names raw values; the roles below say what each value is
+ * for. Components use roles only, never palette names or literals, so a restyle changes this file
+ * and nothing else. Canvas colours live in src/render/theme.ts; ball colours are part of each
+ * ball's identity, not the theme.
+ */
+:root {
+  /* Palette */
+  --palette-ink-950: #0b0d12;
+  --palette-ink-900: #0f1117;
+  --palette-ink-800: #161a23;
+  --palette-ink-600: #2d3446;
+  --palette-grey-400: #8b93a7;
+  --palette-grey-100: #e6e9f0;
+  --palette-blue-500: #3b82f6;
+  --palette-blue-300: #93c5fd;
+  --palette-green-500: #22c55e;
+  --palette-white: #ffffff;
+
+  /* Roles */
+  --color-page: var(--palette-ink-900);
+  --color-surface: var(--palette-ink-800);
+  --color-border: var(--palette-ink-600);
+  --color-text: var(--palette-grey-100);
+  --color-text-muted: var(--palette-grey-400);
+  --color-accent: var(--palette-blue-500);
+  --color-accent-text: var(--palette-white);
+  --color-focus: var(--palette-blue-300);
+  --color-health-track: var(--palette-ink-950);
+  --color-health-fill: var(--palette-green-500);
+  --color-health-ghost: rgba(255, 255, 255, 0.7);
+
+  --space-gutter: 16px;
+  --space-gap: 12px;
+  --space-small: 8px;
+  --radius: 8px;
+  --hud-width: 16rem;
+  --tap-target: 44px;
+  --font-size-small: 0.875rem;
+  --font-family: system-ui, sans-serif;
+}
