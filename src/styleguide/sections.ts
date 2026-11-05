@@ -119,7 +119,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Frost: a faceted ice crystal; the facets drop at small size',
+    'Frost: a snowflake, finer at full size and bolder at small size',
     [
       { label: 'idle', id: 'frost' },
       { label: 'hit flash', id: 'frost', flash: 0.6 },

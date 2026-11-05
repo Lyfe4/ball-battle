@@ -58,13 +58,27 @@ function view(simple: boolean): DesignView {
 }
 
 describe('Frost design', () => {
-  it('draws a snowflake of strokes at small size, not a filled hexagon that reads as a gem', () => {
-    const { painter, points, calls } = recorder();
-    frostDesign.draw(painter, view(true));
-    expect(calls.fill).toBe(0);
-    expect(calls.stroke).toBeGreaterThan(0);
-    // Six spokes, each a line out from the centre plus two branches: 18 segments of two points.
-    expect(points).toHaveLength(36);
+  it('draws a snowflake of strokes at every size, never a filled shape that reads as a gem', () => {
+    for (const simple of [true, false]) {
+      const { painter, calls } = recorder();
+      frostDesign.draw(painter, view(simple));
+      expect(calls.fill).toBe(0);
+      expect(calls.stroke).toBeGreaterThan(0);
+    }
+  });
+
+  it('is the same flake at both sizes, with more branches when there is room', () => {
+    const small = recorder();
+    frostDesign.draw(small.painter, view(true));
+    const full = recorder();
+    frostDesign.draw(full.painter, view(false));
+    // Six spokes, each a line out from the centre plus a pair of branches per branch point.
+    expect(small.points).toHaveLength(6 * (2 + 4));
+    expect(full.points).toHaveLength(6 * (2 + 8));
+    // The spokes reach the same tips at both sizes.
+    const tips = (points: { x: number; y: number }[]) =>
+      points.filter((_, i) => i % (points.length / 6) === 1).map(({ x, y }) => [x, y]);
+    expect(tips(full.points)).toStrictEqual(tips(small.points));
   });
 
   it('keeps every mark inside the ball, line weight included, at both sizes', () => {
