@@ -203,7 +203,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 109.80 kB JS (36.81 kB gzipped), 16.78 kB CSS. First version baseline: 5.05 kB
+Production bundle: 109.24 kB JS (36.63 kB gzipped), 17.01 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
