@@ -83,7 +83,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0010-counter-map.md`, `docs/decisions/0011-roster-scaling.md`,
 `docs/decisions/0012-slowed-poisoned-damage-taken.md`, `docs/decisions/0013-thorns-brawler-counter.md`,
 `docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md`,
-`docs/decisions/0016-counter-density.md` and `docs/decisions/0017-best-of-3-series.md`.
+`docs/decisions/0016-counter-density.md`, `docs/decisions/0017-best-of-3-series.md` and
+`docs/decisions/0018-aimed-start.md` (the aimed start is measured in `docs/aiming-measurements.md`;
+the game does not use it).
 
 ## Conventions
 
