@@ -184,10 +184,22 @@ function render(root: HTMLElement): void {
   const strikes = document.createElement('h2');
   strikes.textContent = 'Strikes: lightning, then a shockwave sweeping out as it fades';
   root.append(strikes, strikesFigure());
+  root.append(phoneArenaSection());
+}
+
+function phoneArenaSection(): HTMLElement {
+  const section = document.createElement('section');
   const heading = document.createElement('h2');
   heading.textContent = 'Phone arena';
-  root.append(heading, phoneArena());
+  section.append(heading, phoneArena());
+  return section;
 }
 
 const root = document.getElementById('guide');
-if (root !== null) render(root);
+// styleguide.html?only=phone-arena shows the phone arena alone, to check designs at phone size and
+// pixel density without scrolling past every tile.
+if (root !== null && new URLSearchParams(window.location.search).get('only') === 'phone-arena') {
+  root.append(phoneArenaSection());
+} else if (root !== null) {
+  render(root);
+}
