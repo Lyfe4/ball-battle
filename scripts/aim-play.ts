@@ -9,8 +9,11 @@ import type { Vec2, WorldState } from '../src/sim/types.ts';
 import { scale } from '../src/sim/vec2.ts';
 import { AIMED_STARTS, aimDirection, createWorld } from '../src/sim/world.ts';
 
-/** Directions tried, evenly spaced: 24 is every 15°. */
-export const DIRECTIONS = 24;
+/**
+ * Directions tried, evenly spaced: 24 is every 15°. The AIM_DIRECTIONS environment variable
+ * overrides it for a cheaper run (12 is every 30°); it must be even.
+ */
+export const DIRECTIONS = Number(process.env['AIM_DIRECTIONS'] ?? 24);
 /** Aim points sit this far from the ball, rounded to whole units (under 0.15° of error). */
 export const AIM_RADIUS = 240;
 
