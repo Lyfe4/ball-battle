@@ -15,8 +15,7 @@ import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createNavigation } from './navigation.ts';
 import { createQuickController } from './quick-controller.ts';
-import { createSeriesController } from './series-controller.ts';
-import { createSeriesSetup } from './series-setup.ts';
+import { createSeriesScreens } from './series-screens.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
@@ -115,51 +114,26 @@ const quick = createQuickController(
   },
 );
 
-const seriesSetup = createSeriesSetup(getElement('series-setup', HTMLElement), BALLS, {
-  push: (write) => {
-    navigation.push(write);
-  },
-  replace: (write) => {
-    navigation.replace(write);
-  },
-  back: (toParent) => {
-    navigation.back(toParent);
-  },
-  exit: () => {
-    goHome('replace');
-  },
-  start: (setup) => {
-    navigation.push((url) => {
-      writeSeriesModeParams(url, setup.format, 'play');
-    });
-    screen = 'series';
-    series.start(setup);
-    canvas.focus();
-  },
-});
-
-const series = createSeriesController(getElement('series', HTMLElement), BALL_LOOKUP, {
-  showWorld,
-  replaceUrl: (write) => {
-    navigation.replace(write);
-  },
-  layoutChanged: showControls,
-  newSeries: (last) => {
-    seriesSetup.keep(last);
-    navigation.push((url) => {
-      writeSeriesModeParams(url, last.format, 'lineup');
-    });
-    showRoute(currentRoute());
-  },
-  leave: () => {
-    navigation.back(() => {
-      navigation.replace((url) => {
-        writeSeriesModeParams(url, undefined, 'lineup');
-      });
+const { setup: seriesSetup, play: series } = createSeriesScreens(
+  { setup: getElement('series-setup', HTMLElement), play: getElement('series', HTMLElement) },
+  BALLS,
+  BALL_LOOKUP,
+  {
+    navigation,
+    showWorld,
+    showCurrentRoute: () => {
       showRoute(currentRoute());
-    });
+    },
+    started: () => {
+      screen = 'series';
+      canvas.focus();
+    },
+    layoutChanged: showControls,
+    exitToHome: () => {
+      goHome('replace');
+    },
   },
-});
+);
 
 const arena = createArena(
   canvas,
