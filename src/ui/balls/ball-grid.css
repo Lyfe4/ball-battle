@@ -1,6 +1,6 @@
 /*
  * The ball grid: every ball as a tile with its drawing and name. Four columns on a phone, so
- * eleven balls fit in three rows; wider screens fit more.
+ * fourteen balls fit in four rows; wider screens fit more.
  */
 .ball-grid {
   display: grid;
@@ -39,6 +39,10 @@
   font-size: var(--font-size-small);
   font-weight: 600;
   line-height: 1.2;
+}
+
+.ball-tile-name[data-long] {
+  font-size: var(--font-size-tiny);
 }
 
 .ball-tile-note {

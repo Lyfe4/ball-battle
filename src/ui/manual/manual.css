@@ -175,8 +175,20 @@
   white-space: nowrap;
 }
 
-/* The matchup chart: 12 columns of about 26 px fit a 343 px phone column. */
+/*
+ * The matchup chart: cells are 26 px, or less when the roster needs it, so every column (the
+ * header column plus one per ball, set as --chart-columns) fits the phone column without
+ * scrolling: 15 columns are about 21 px each at 375 px wide.
+ */
 .matchup-chart {
+  --chart-cell: min(
+    26px,
+    calc(
+      (100vw - 2 * var(--space-gutter) - 2px * (var(--chart-columns, 12) + 1)) /
+        var(--chart-columns, 12)
+    )
+  );
+
   display: grid;
   gap: var(--space-gap);
 }
@@ -202,8 +214,8 @@
 .matchup-row,
 .matchup-cell,
 .matchup-corner {
-  width: 26px;
-  height: 26px;
+  width: var(--chart-cell);
+  height: var(--chart-cell);
   padding: 0;
   text-align: center;
 }
@@ -223,8 +235,8 @@
 }
 
 .matchup-button {
-  width: 26px;
-  height: 26px;
+  width: var(--chart-cell);
+  height: var(--chart-cell);
   padding: 0;
   border: 0;
   border-radius: 4px;
