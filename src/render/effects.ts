@@ -159,7 +159,13 @@ export function createEffects(): Effects {
         }
         if (event.type === 'healed') healStarts.set(event.ballId, nowMs);
         if (event.type === 'healReduced') reducedStarts.set(event.ballId, nowMs);
-        if (event.type === 'projectileHit') sparkStarts.push({ point: event.point, start: nowMs });
+        if (event.type === 'projectileHit' || event.type === 'minionHit') {
+          sparkStarts.push({ point: event.point, start: nowMs });
+        }
+        // A minion shot or struck down crunches where it was (ADR 0026).
+        if (event.type === 'minionDestroyed' && event.reason !== 'lifetime') {
+          sparkStarts.push({ point: event.position, start: nowMs });
+        }
         if (event.type === 'zoneStruck') {
           const { zoneId, ownerId, position, radius } = event;
           strikeStarts.push({ zoneId, ownerId, position, radius, start: nowMs });

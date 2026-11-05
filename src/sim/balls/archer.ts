@@ -3,7 +3,7 @@ import { rotateByHalfTan } from '../bounce-variance.ts';
 import { defineBall } from '../define-ball.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
-import { nearestEnemy } from './targeting.ts';
+import { nearestTarget } from './targeting.ts';
 
 export type ArcherState = Readonly<{ nextShotTick: number }>;
 
@@ -85,7 +85,7 @@ export const archer = defineBall<ArcherState>({
   hooks: {
     onTick: ({ world, self, random }) => {
       if (world.tick < self.abilityState.nextShotTick || hasStatus(self, 'staggered')) return [];
-      const target = nearestEnemy(self, world.balls);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
 
       const aimAt = leadTarget(self.position, target.position, target.velocity, ARROW_SPEED);

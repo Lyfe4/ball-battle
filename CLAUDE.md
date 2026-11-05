@@ -109,8 +109,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0020-screens.md`, `docs/decisions/0021-reveal-take-turns.md` (measured in
 `docs/reveal-measurements.md`), `docs/decisions/0022-ruleset-version-and-verified-series.md`,
 `docs/decisions/0023-known-match-results-across-engines.md`,
-`docs/decisions/0024-player-facing-text-stays-in-definitions.md` and
-`docs/decisions/0025-show-less-and-back.md`.
+`docs/decisions/0024-player-facing-text-stays-in-definitions.md`,
+`docs/decisions/0025-show-less-and-back.md` and
+`docs/decisions/0026-magnet-ghost-necromancer.md`.
 
 ## Conventions
 
@@ -125,9 +126,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
 - Within a tick: statuses due this tick expire (ADR 0009), onTick, move (with a seeded turn on wall
-  bounces, ADR 0004), onWallHit, collide, contact damage (new contacts only, scaled by directness,
-  ADR 0008), onHitBall, projectiles move and resolve (ADR 0005), zones due this tick strike and
-  apply their status (ADR 0006, 0009), poison ticks (ADR 0012), onDamageDealt, onDamageTaken
+  bounces, ADR 0004), onWallHit, collide (a phased ball passes through, ADR 0026), contact damage
+  (new contacts only, scaled by directness, ADR 0008), onHitBall, minions move and pop (ADR 0026),
+  projectiles move and resolve (ADR 0005), zones due this tick strike, apply their status and
+  clear enemy minions (ADR 0006, 0009, 0026), poison ticks (ADR 0012), onDamageDealt, onDamageTaken
   (ADR 0012; damage from its actions fires no further hooks), defeat, cruise speed (ADR 0008,
   reduced while slowed), match end. Events are emitted in that order. Every hook in a phase sees the
   same snapshot; actions are applied afterwards. The full order is documented on `step`.
@@ -139,6 +141,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Every ball keeps its own speed: the tick ends by rescaling each live ball's velocity to its
   cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
   declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.
+- An ability that turns another ball uses the `steer` action (direction only, ADR 0026); a ball
+  that passes through others declares `phasedOf(self)`; summoned objects are minions
+  (`src/sim/minions/`), not balls. Aimed attacks pick their target with `nearestTarget`, which
+  includes enemy minions, so every aimed ball treats them alike.
 - An ability that changes how hard a ball hits declares `contactDamageOf(self, stats)` (ADR 0015)
   rather than adding a `damage` action on hit: contact damage goes through directness, the
   lethal-exchange tiebreak and Thorns' reflection; an on-hit ability bonus skips all three.

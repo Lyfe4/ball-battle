@@ -10,10 +10,18 @@ import {
 import { applyBounceVariance } from './bounce-variance.ts';
 import { resolveCollisions } from './collision.ts';
 import { applyCruiseSpeed } from './cruise.ts';
-import { applyContactDamage, defeatsThisTick, isAlive, nextContacts, pairKey } from './combat.ts';
+import {
+  applyContactDamage,
+  defeatsThisTick,
+  isAlive,
+  isPhased,
+  nextContacts,
+  pairKey,
+} from './combat.ts';
 import { getDefinition } from './definitions.ts';
 import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
+import { resolveMinions } from './minions/resolve.ts';
 import { resolveProjectiles } from './projectiles/resolve.ts';
 import { expireStatuses } from './status.ts';
 import { resolvePoison } from './status-effects.ts';
@@ -42,16 +50,22 @@ import type {
  *  4. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
  *     (ADR 0004), which advances the world RNG.
  *  5. onWallHit hooks for balls that bounced, then their actions.
- *  6. Ball collisions: separation and elastic impulse (momentum-conserving physics).
- *  7. Contact damage for new contacts (scaled by directness, lethal tiebreak).
- *  8. onHitBall hooks for both balls of each new contact, then their actions.
- *  9. Projectiles move and resolve: swept against each ball's motion this tick, the nearest hit
- *     before a wall deals ability damage (ADR 0005). Projectiles spawned in steps 3-8 already
+ *  6. Ball collisions: separation and elastic impulse (momentum-conserving physics). A pair with a
+ *     phased ball overlaps and passes through instead (ADR 0026).
+ *  7. Contact damage for new contacts (scaled by directness, lethal tiebreak); none for a pass
+ *     through a phased ball.
+ *  8. onHitBall hooks for both balls of each new contact, then their actions; for a pass through a
+ *     phased ball, only the phased ball's own hook (ADR 0026).
+ *  9. Minions move like balls (wall fold and seeded turn) and pop on the first enemy ball their
+ *     swept path touches, for ability damage (ADR 0026). Minions summoned in steps 3-8 already
  *     move this tick.
+ * 9b. Projectiles move and resolve: swept against each ball's (and minion's) motion this tick,
+ *     the nearest hit before a wall deals ability damage (ADR 0005), or destroys an enemy minion
+ *     that comes first. Projectiles spawned in steps 3-8 already move this tick.
  * 10. Zones whose strike tick is this tick strike: each deals ability damage to every live ball
  *     other than its owner that overlaps it now, then applies its status (if any) to the balls it
- *     hit, then is removed (ADR 0006, 0009). A zone always strikes at least one tick after it was
- *     spawned.
+ *     hit, destroys every enemy minion inside it, then is removed (ADR 0006, 0009, 0026). A zone
+ *     always strikes at least one tick after it was spawned.
  * 11. Poison ticks: every poisoned ball whose poison is due takes its source's ability damage
  *     (ADR 0012).
  * 12. onDamageDealt hooks for every damage event so far this tick (contact, projectile, zone and
@@ -81,12 +95,23 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const expiry = expireStatuses(world.balls, tick);
   let balls: readonly BallState[] = expiry.balls;
   events.push(...expiry.events);
-  let { rngState, projectiles, nextProjectileId, zones, nextZoneId } = world;
+  let { rngState, projectiles, nextProjectileId, zones, nextZoneId, minions, nextMinionId } = world;
 
   const phase = (invocations: readonly Invocation[]): void => {
     if (invocations.length === 0) return;
     const result = runPhase(
-      { ...world, tick, balls, rngState, projectiles, nextProjectileId, zones, nextZoneId },
+      {
+        ...world,
+        tick,
+        balls,
+        rngState,
+        projectiles,
+        nextProjectileId,
+        zones,
+        nextZoneId,
+        minions,
+        nextMinionId,
+      },
       invocations,
       definitions,
     );
@@ -95,6 +120,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
     nextProjectileId = result.nextProjectileId;
     zones = result.zones;
     nextZoneId = result.nextZoneId;
+    minions = result.minions;
+    nextMinionId = result.nextMinionId;
     events.push(...result.events);
   };
 
@@ -110,7 +137,14 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   rngState = variance.rngState;
   phase(wallHitInvocations(new Map(movements.map(({ ball, bounces }) => [ball.id, bounces]))));
 
-  const collisions = resolveCollisions(balls, size, isAlive);
+  const isPhasedBall = (ball: BallState): boolean =>
+    isPhased(ball, getDefinition(definitions, ball.definitionId));
+  const collisions = resolveCollisions(
+    balls,
+    size,
+    isAlive,
+    (a, b) => isPhasedBall(a) || isPhasedBall(b),
+  );
   balls = collisions.balls;
 
   // Pairs already in contact last tick are the same collision continuing: no new hit.
@@ -120,13 +154,14 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
     (_contact, index) => !previousContacts.has(collidedKeys[index] ?? ''),
   );
   events.push(
-    ...newContacts.map(({ ballIds, point, normal, impulse }): CollisionEvent => ({
+    ...newContacts.map(({ ballIds, point, normal, impulse, phased }): CollisionEvent => ({
       type: 'collision',
       tick,
       ballIds,
       point,
       normal,
       impulse,
+      ...(phased ? { phased } : {}),
     })),
   );
 
@@ -134,16 +169,43 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   balls = combat.balls;
   events.push(...combat.damage);
 
-  phase(hitBallInvocations(newContacts));
+  const phasedIds = new Set(balls.filter(isPhasedBall).map((ball) => ball.id));
+  phase(hitBallInvocations(newContacts, (id) => phasedIds.has(id)));
 
-  const flight = resolveProjectiles(projectiles, balls, startPositions, definitions, size, tick);
+  const minionStarts = new Map(minions.map((minion) => [minion.id, minion.position]));
+  const summoned = resolveMinions(
+    minions,
+    balls,
+    startPositions,
+    definitions,
+    size,
+    rngState,
+    tick,
+  );
+  balls = summoned.balls;
+  minions = summoned.minions;
+  rngState = summoned.rngState;
+  events.push(...summoned.events);
+
+  const flight = resolveProjectiles(
+    projectiles,
+    balls,
+    startPositions,
+    definitions,
+    size,
+    tick,
+    minions,
+    minionStarts,
+  );
   balls = flight.balls;
   projectiles = flight.projectiles;
+  minions = flight.minions;
   events.push(...flight.events);
 
-  const strikes = resolveZones(zones, balls, definitions, tick);
+  const strikes = resolveZones(zones, balls, definitions, tick, minions);
   balls = strikes.balls;
   zones = strikes.zones;
+  minions = strikes.minions;
   events.push(...strikes.events);
 
   const poison = resolvePoison(balls, definitions, tick);
@@ -175,6 +237,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
       nextProjectileId,
       zones,
       nextZoneId,
+      minions,
+      nextMinionId,
       contacts: nextContacts(balls, world.contacts, collidedKeys),
       match,
     },

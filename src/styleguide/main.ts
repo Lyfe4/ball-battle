@@ -8,6 +8,7 @@ import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { drawAimLines } from '../render/projectiles.ts';
 import { drawStrikes } from '../render/zones.ts';
 import { theme } from '../render/theme.ts';
+import { MINION_RADIUS } from '../sim/balls/necromancer.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { ARENA_SIZE } from '../sim/constants.ts';
 import { getDefinition } from '../sim/definitions.ts';
@@ -77,6 +78,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
+    phased: definition.phasedOf?.(shown) ?? false,
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
     cssPixelsPerUnit: radiusPx / ball.radius,
@@ -115,7 +117,23 @@ function phoneArena(): HTMLElement {
         : ball.health,
   }));
   const view = { canvasPixels: canvas.width, cssPixels: cssSize };
-  drawWorld(ctx, { ...world, tick: TICK, balls }, BALL_LOOKUP, view, NO_EFFECTS);
+  // A Necromancer's minion beside it, at the size the game uses, to check it reads at phone size.
+  const owner = balls.find((ball) => ball.definitionId === 'necromancer');
+  const minions =
+    owner === undefined
+      ? []
+      : [
+          {
+            id: 'minion-0',
+            ownerId: owner.id,
+            position: { x: owner.position.x + 110, y: owner.position.y },
+            velocity: { x: 1, y: 0 },
+            radius: MINION_RADIUS,
+            damage: 0,
+            ticksLeft: 1,
+          },
+        ];
+  drawWorld(ctx, { ...world, tick: TICK, balls, minions }, BALL_LOOKUP, view, NO_EFFECTS);
   const figure = document.createElement('figure');
   const caption = document.createElement('figcaption');
   caption.textContent = 'In the arena at phone width (340 px canvas)';

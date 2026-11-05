@@ -2,7 +2,7 @@ import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState } from '../types.ts';
-import { nearestEnemy } from './targeting.ts';
+import { nearestTarget } from './targeting.ts';
 
 /** A charge in progress: the shot fires on `fireTick`, along the unit vector `aim`. */
 export type SniperCharge = Readonly<{ fireTick: number; aim: Readonly<{ x: number; y: number }> }>;
@@ -81,7 +81,7 @@ export const sniper = defineBall<SniperState>({
         ];
       }
       if (world.tick < nextChargeTick) return [];
-      const target = nearestEnemy(self, world.balls);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
       const dx = target.position.x - self.position.x;
       const dy = target.position.y - self.position.y;

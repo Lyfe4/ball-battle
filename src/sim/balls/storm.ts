@@ -2,7 +2,7 @@ import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
-import { nearestEnemy } from './targeting.ts';
+import { nearestTarget } from './targeting.ts';
 
 export type StormState = Readonly<{ nextStrikeTick: number }>;
 
@@ -71,7 +71,7 @@ export const storm = defineBall<StormState>({
     ],
     onTick: ({ world, self, random }) => {
       if (world.tick < self.abilityState.nextStrikeTick || hasStatus(self, 'staggered')) return [];
-      const target = nearestEnemy(self, world.balls);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
       const offset = randomOffset(random, MAX_OFFSET);
       return [

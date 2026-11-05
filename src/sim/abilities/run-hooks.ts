@@ -83,6 +83,8 @@ export function runPhase(
     nextProjectileId: world.nextProjectileId,
     zones: world.zones,
     nextZoneId: world.nextZoneId,
+    minions: world.minions,
+    nextMinionId: world.nextMinionId,
   };
   const events: SimEvent[] = [];
   for (const { ballId, hook, actions } of collected) {
@@ -97,6 +99,8 @@ export function runPhase(
     nextProjectileId: scene.nextProjectileId,
     zones: scene.zones,
     nextZoneId: scene.nextZoneId,
+    minions: scene.minions,
+    nextMinionId: scene.nextMinionId,
     events,
   };
 }
@@ -119,24 +123,34 @@ export function wallHitInvocations(bounces: ReadonlyMap<string, number>): Invoca
     }));
 }
 
-/** Both balls of each new contact, in contact order. */
+/**
+ * Both balls of each new contact, in contact order. A pass through a phased ball (ADR 0026) is no
+ * hit for the other ball, so only the phased ball's own hook runs: on-touch effects (slow, poison,
+ * shock, a Speedster's cash-in) need contact.
+ */
 export function hitBallInvocations(
-  newContacts: readonly { readonly ballIds: readonly [string, string] }[],
+  newContacts: readonly {
+    readonly ballIds: readonly [string, string];
+    readonly phased: boolean;
+  }[],
+  isPhasedId: (ballId: string) => boolean = () => false,
 ): Invocation[] {
-  return newContacts.flatMap(({ ballIds: [idA, idB] }) =>
+  return newContacts.flatMap(({ ballIds: [idA, idB], phased }) =>
     (
       [
         [idA, idB],
         [idB, idA],
       ] as const
-    ).map(([ballId, otherId]): Invocation => ({
-      ballId,
-      hook: 'onHitBall',
-      call: (definition, base, snapshot) => {
-        const other = snapshot.find((ball) => ball.id === otherId);
-        return other === undefined ? undefined : definition.hooks.onHitBall?.({ ...base, other });
-      },
-    })),
+    )
+      .filter(([ballId]) => !phased || isPhasedId(ballId))
+      .map(([ballId, otherId]): Invocation => ({
+        ballId,
+        hook: 'onHitBall',
+        call: (definition, base, snapshot) => {
+          const other = snapshot.find((ball) => ball.id === otherId);
+          return other === undefined ? undefined : definition.hooks.onHitBall?.({ ...base, other });
+        },
+      })),
   );
 }
 

@@ -90,5 +90,7 @@ export function createWorld(seed: number, definitions: readonly BallDefinition[]
     nextProjectileId: 0,
     zones: [],
     nextZoneId: 0,
+    minions: [],
+    nextMinionId: 0,
   };
 }

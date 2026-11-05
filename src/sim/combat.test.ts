@@ -147,6 +147,7 @@ describe('contact damage', () => {
       point: { x: 500, y: 500 },
       normal: { x: 1, y: 0 },
       impulse: 0,
+      phased: false,
       approachSpeeds: [0, 0],
       directness,
     });

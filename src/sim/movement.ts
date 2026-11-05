@@ -46,8 +46,11 @@ function reflectAxis(position: number, velocity: number, min: number, max: numbe
   };
 }
 
-export interface Movement {
-  readonly ball: BallState;
+/** Anything that moves and bounces like a ball: a ball, or a minion (ADR 0026). */
+export type Body = Pick<BallState, 'id' | 'position' | 'velocity' | 'radius'>;
+
+export interface Movement<T extends Body = BallState> {
+  readonly ball: T;
   /** Wall hits this tick, both axes together; a corner hit counts as 2. */
   readonly bounces: number;
   /** Wall hits on each axis, so callers know which walls the ball is now moving away from. */
@@ -55,8 +58,8 @@ export interface Movement {
   readonly bouncesY: number;
 }
 
-/** Moves a ball one tick along its velocity, bouncing off the arena walls. */
-export function moveBall(ball: BallState, arenaSize: number): Movement {
+/** Moves a ball (or any body) one tick along its velocity, bouncing off the arena walls. */
+export function moveBall<T extends Body>(ball: T, arenaSize: number): Movement<T> {
   const { position, velocity, radius } = ball;
   if (!Number.isFinite(velocity.x) || !Number.isFinite(velocity.y)) {
     throw new Error(`Ball "${ball.id}" has a non-finite velocity`);

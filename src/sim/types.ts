@@ -1,3 +1,4 @@
+import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -75,6 +76,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
   /**
+   * True while the ball is phased (ADR 0026): it passes through other balls, and contact damage
+   * is dealt neither to it nor by it. Its own `onHitBall` still runs when it starts overlapping a
+   * ball. A pure query of its own state, like `cruiseSpeed`. Defaults to never phased.
+   */
+  readonly phasedOf?: (self: BallView<S>) => boolean;
+  /**
    * Share of a status's duration this ball keeps, per kind (ADR 0016): 0.8 wears it off 20% sooner,
    * 0 makes the ball immune. Kinds not listed last their full duration. Plain data, read when the
    * status is applied, so it works the same for actions and zones.
@@ -143,6 +150,16 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
    * ball returns to its cruise speed (ADR 0008). Change speed through `cruiseSpeed` instead.
    */
   | { readonly kind: 'setVelocity'; readonly velocity: Vec2 }
+  /**
+   * Turns another ball's heading toward `toward` (a point) by `share` (0-1), keeping its speed
+   * (ADR 0026): the Magnet's pull. Changes direction only; cruise speed still rules how fast.
+   */
+  | {
+      readonly kind: 'steer';
+      readonly targetId: string;
+      readonly toward: Vec2;
+      readonly share: number;
+    }
   /** Own ball only; replaces the whole state. */
   | { readonly kind: 'setAbilityState'; readonly state: S }
   /**
@@ -170,6 +187,11 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       /** Applied to every ball the strike hits, after its damage (ADR 0009). */
       readonly status?: StatusRequest;
     }
+  /**
+   * Summons a minion just outside the hook owner's edge, heading along `velocity`, unless the
+   * owner already has `maxAlive` (ADR 0026).
+   */
+  | ({ readonly kind: 'spawnMinion' } & MinionRequest)
   /**
    * Puts a status on a ball for `durationTicks` (a whole number, at least 1). Re-applying a kind
    * the ball already has refreshes its expiry, never stacks (ADR 0009).
@@ -284,6 +306,10 @@ export interface WorldState {
   readonly zones: readonly ZoneState[];
   /** The number the next zone id will use; only ever increases. */
   readonly nextZoneId: number;
+  /** Minions in play, in the order they were summoned (ADR 0026). */
+  readonly minions: readonly MinionState[];
+  /** The number the next minion id will use; only ever increases. */
+  readonly nextMinionId: number;
 }
 
 /**
@@ -318,6 +344,11 @@ export interface CollisionEvent {
   readonly normal: Vec2;
   /** Size of the impulse exchanged; 0 if the balls were already moving apart. */
   readonly impulse: number;
+  /**
+   * Present (and true) only when one ball was phased and they passed through each other
+   * (ADR 0026), so the events of every other collision are unchanged.
+   */
+  readonly phased?: true;
 }
 
 export interface DamageEvent {
@@ -388,7 +419,8 @@ export interface ProjectileExpiredEvent {
   readonly tick: number;
   readonly projectileId: string;
   readonly ownerId: string;
-  readonly reason: 'wall' | 'lifetime';
+  /** `minion`: it hit an enemy minion, which it destroyed (ADR 0026). */
+  readonly reason: 'wall' | 'lifetime' | 'minion';
 }
 
 /** A zone appeared; it will strike on `strikeTick`. */
@@ -452,7 +484,8 @@ export type SimEvent =
   | MatchEndedEvent
   | StatusAppliedEvent
   | StatusExpiredEvent
-  | HealReducedEvent;
+  | HealReducedEvent
+  | MinionEvent;
 
 export interface StepResult {
   readonly world: WorldState;

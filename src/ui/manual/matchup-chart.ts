@@ -10,14 +10,15 @@ export interface MatchupChart {
   readonly element: HTMLElement;
 }
 
-const HEADER_ICON_PX = 20;
+/** Fits the smallest cell a phone gets (about 21 px for 14 balls at 375 px wide). */
+const HEADER_ICON_PX = 18;
 
 /**
  * The whole counter map at once, as a type chart: each row is a ball, each column an opponent, ▲
  * where the row's ball is favoured and ▼ where it isn't; even pairs are left blank so the counters
  * stand out. Focusing or tapping a cell highlights its row and column and says why, under the
  * chart. Cells are buttons with roving focus (arrow keys, Home, End), so Tab passes the chart in
- * one step. 11 columns of 26 px fit a phone.
+ * one step. Cells shrink below 26 px when the roster needs it, so the whole chart fits a phone.
  */
 export function createMatchupChart(
   balls: readonly BallDefinition[],
@@ -25,6 +26,8 @@ export function createMatchupChart(
 ): MatchupChart {
   const nameOf = (id: string) => balls.find((ball) => ball.id === id)?.name ?? id;
   const root = element('section', 'matchup-chart');
+  // The header column plus one per ball; the CSS sizes cells so they all fit a phone.
+  root.style.setProperty('--chart-columns', String(balls.length + 1));
   const scroller = element('div', 'matchup-chart-scroll');
   const table = element('table', 'matchup-table');
   const caption = element('caption', 'matchup-caption', 'Rows: each ball. Columns: its opponent.');

@@ -2,6 +2,9 @@ import { archerDesign } from './archer.ts';
 import { berserkerDesign } from './berserker.ts';
 import { brawlerDesign } from './brawler.ts';
 import { frostDesign } from './frost.ts';
+import { ghostDesign } from './ghost.ts';
+import { magnetDesign } from './magnet.ts';
+import { necromancerDesign } from './necromancer.ts';
 import { quakeDesign } from './quake.ts';
 import { sniperDesign } from './sniper.ts';
 import { speedsterDesign } from './speedster.ts';
@@ -27,4 +30,7 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['berserker', berserkerDesign],
   ['sniper', sniperDesign],
   ['quake', quakeDesign],
+  ['magnet', magnetDesign],
+  ['ghost', ghostDesign],
+  ['necromancer', necromancerDesign],
 ]);

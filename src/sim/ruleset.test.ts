@@ -19,6 +19,7 @@ import { createWorld } from './world.ts';
  */
 const FINGERPRINTS: Readonly<Record<number, string>> = {
   1: '237d0e0229a64f3e5b59a563a6ba8a218e1f24201ac5571795de978bf5ca5023',
+  2: '232323a2abbf4b4363d4a5a5bc8e78a71dce6e758c42b2928892fadc0a52be4c',
 };
 
 function fingerprint(): string {

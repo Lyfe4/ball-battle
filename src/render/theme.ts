@@ -87,6 +87,9 @@ export const theme = {
     berserker: '#431407',
     sniper: '#1e1b4b',
     quake: '#292524',
+    magnet: '#4c0519',
+    ghost: '#2e1065',
+    necromancer: '#0f1a07',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -126,6 +129,45 @@ export const theme = {
   shockwaveRing: '#e7e5e4',
   shockwaveWidth: 9,
   shockwaveStart: 0.35,
+  /**
+   * The Magnet (ADR 0026): a horseshoe as thick as this share of r (heavier at phone size), with
+   * pale tips that glow while it pulls. The pull itself is a dashed line to its enemy.
+   */
+  magnetShoe: 0.24,
+  magnetShoeSimple: 0.32,
+  magnetTip: '#e5e7eb',
+  magnetPullTip: '#fde68a',
+  magnetPullLine: '#fda4af',
+  magnetPullWidth: 4,
+  magnetPullAlpha: 0.6,
+  magnetPullDash: [14, 12] as readonly number[],
+  /**
+   * A phased ball (the Ghost, ADR 0026) is drawn see-through, with a broken outline, so a viewer
+   * can see why hits pass through it. Its status rings and health bar stay solid.
+   */
+  phasedAlpha: 0.38,
+  phasedOutline: '#ede9fe',
+  phasedOutlineWidth: 4,
+  phasedDash: [10, 8] as readonly number[],
+  /** The Necromancer's eyes, glowing out of its hood. */
+  necromancerEyes: '#bef264',
+  /**
+   * Minions (ADR 0026): a bone-white skull ringed in the owner's colour, with dark eye sockets and
+   * nose. Fractions of the minion's radius. Below `minionSimpleBelowPx` of radius on screen (a
+   * phone) the teeth go, and the eyes and ring grow so the face still reads.
+   */
+  minionBone: '#e7e5e4',
+  minionSocket: '#1c1917',
+  minionRing: 0.14,
+  minionRingSimple: 0.22,
+  minionEye: { x: 0.36, y: -0.1, size: 0.22 },
+  minionEyeSimple: { x: 0.36, y: -0.14, size: 0.27 },
+  minionNose: { half: 0.12, top: 0.14, bottom: 0.32 },
+  minionJaw: 0.56,
+  minionJawHalf: 0.42,
+  minionTeethLine: 0.1,
+  minionTeethLineSimple: 0.14,
+  minionSimpleBelowPx: 12,
   /** Projectiles are drawn as a short streak behind a round head, in the owner's colour. */
   projectileTrail: 30,
   projectileTrailWidth: 4,

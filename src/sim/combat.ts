@@ -63,6 +63,11 @@ export function impactDamage(contactDamage: number, multiplier: number): number 
   return contactDamage > 0 ? Math.max(1, Math.round(contactDamage * multiplier)) : 0;
 }
 
+/** True while a ball's definition says it is phased (ADR 0026): it passes through other balls. */
+export function isPhased(ball: BallState, definition: BallDefinition): boolean {
+  return definition.phasedOf?.(ball) ?? false;
+}
+
 /**
  * The base contact damage a ball deals in its current state: its definition's `contactDamageOf`
  * if it declares one, otherwise its `contactDamage` (ADR 0015). Throws for a non-finite or
@@ -135,7 +140,9 @@ export function applyContactDamage(
     return { ...target, health: healthAfter };
   };
 
-  for (const { ballIds, directness } of newContacts) {
+  for (const { ballIds, directness, phased } of newContacts) {
+    // Passing through a phased ball deals no contact damage either way (ADR 0026).
+    if (phased) continue;
     const a = byId.get(ballIds[0]);
     const b = byId.get(ballIds[1]);
     if (a === undefined || b === undefined) continue;
