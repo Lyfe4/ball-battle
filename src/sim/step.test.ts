@@ -6,6 +6,12 @@ import { deepFreeze, red, run, testDefinitions, testLookup, withBalls } from './
 import type { WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 
+/**
+ * Time allowed for a test that plays 200 whole matches: about 2 s alone, but past Vitest's 5 s default
+ * on a busy machine running the suite in parallel. Only the time limit; the seeds and checks stand.
+ */
+const SLOW_TEST_MS = 20_000;
+
 function expectInsideArena(world: WorldState): void {
   for (const ball of world.balls) {
     const { x, y } = ball.position;
@@ -31,11 +37,15 @@ describe('step', () => {
     );
   });
 
-  it('never lets balls leave the arena', () => {
-    for (let seed = 0; seed < 200; seed++) {
-      run(createWorld(seed, testDefinitions), 5000, expectInsideArena);
-    }
-  });
+  it(
+    'never lets balls leave the arena',
+    () => {
+      for (let seed = 0; seed < 200; seed++) {
+        run(createWorld(seed, testDefinitions), 5000, expectInsideArena);
+      }
+    },
+    SLOW_TEST_MS,
+  );
 
   it('keeps extremely fast balls inside the arena instead of tunnelling', () => {
     const base = createWorld(7, testDefinitions);

@@ -5,6 +5,12 @@ import { blue, red, run, testDefinitions, testLookup, withBalls } from './test-s
 import type { DamageEvent, SimEvent, WorldState } from './types.ts';
 import { createWorld } from './world.ts';
 
+/**
+ * Time allowed for a test that plays 200 whole matches: about 2 s alone, but past Vitest's 5 s default
+ * on a busy machine running the suite in parallel. Only the time limit; the seeds and checks stand.
+ */
+const SLOW_TEST_MS = 20_000;
+
 const base = createWorld(1, testDefinitions);
 
 function headOn(redHealth: number, blueHealth: number): WorldState {
@@ -88,16 +94,20 @@ describe('match end', () => {
     expect(result.events).toStrictEqual([]);
   });
 
-  it('ends every match within the time limit', () => {
-    for (let seed = 0; seed < 200; seed++) {
-      const { world, events } = run(createWorld(seed, testDefinitions), MATCH_TIME_LIMIT_TICKS);
-      expect(world.match.status).toBe('finished');
-      expect(world.tick).toBeLessThanOrEqual(MATCH_TIME_LIMIT_TICKS);
-      const ended = events.filter((event) => event.type === 'matchEnded');
-      expect(ended).toHaveLength(1);
-      expect(events.at(-1)).toBe(ended[0]);
-    }
-  });
+  it(
+    'ends every match within the time limit',
+    () => {
+      for (let seed = 0; seed < 200; seed++) {
+        const { world, events } = run(createWorld(seed, testDefinitions), MATCH_TIME_LIMIT_TICKS);
+        expect(world.match.status).toBe('finished');
+        expect(world.tick).toBeLessThanOrEqual(MATCH_TIME_LIMIT_TICKS);
+        const ended = events.filter((event) => event.type === 'matchEnded');
+        expect(ended).toHaveLength(1);
+        expect(events.at(-1)).toBe(ended[0]);
+      }
+    },
+    SLOW_TEST_MS,
+  );
 
   describe('lethal-exchange tiebreak', () => {
     function damageTo(events: readonly SimEvent[], targetId: string): DamageEvent | undefined {
