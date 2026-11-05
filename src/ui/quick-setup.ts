@@ -2,7 +2,7 @@ import type { Matchup } from '../app/matchup.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createBallGrid } from './balls/ball-grid.ts';
-import { createBallInfo } from './balls/ball-info.ts';
+import { createBallInfo, type BallInfoLink } from './balls/ball-info.ts';
 import { leanOf } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
@@ -13,6 +13,8 @@ export interface QuickSetupActions {
   /** The picks changed (so the URL can keep them across a reload). */
   readonly onChange: (matchup: Matchup) => void;
   readonly onBack: () => void;
+  /** The info card's link to a ball's manual entry. */
+  readonly ballLink: BallInfoLink;
 }
 
 export interface QuickSetup {
@@ -79,7 +81,7 @@ export function createQuickSetup(
   const verdictReason = element('p', 'quick-verdict-reason');
   verdict.append(verdictHeadline, verdictReason);
 
-  const info = createBallInfo(balls);
+  const info = createBallInfo(balls, actions.ballLink);
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {

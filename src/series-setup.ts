@@ -7,6 +7,7 @@ import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
 import type { Format, Lineup, SeriesSetup } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
+import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
 import { createOrderStep } from './ui/series/order-step.ts';
@@ -23,6 +24,8 @@ export interface SeriesSetupHost {
   exit(): void;
   /** The setup is complete: play the series. */
   start(setup: SeriesSetup): void;
+  /** The lineup's info card links to each ball's manual entry. */
+  readonly ballLink: BallInfoLink;
 }
 
 export interface SeriesSetupFlow {
@@ -69,6 +72,10 @@ export function createSeriesSetup(
         open('rules');
       });
     },
+    onChange: (tray) => {
+      draft = tray;
+    },
+    ballLink: host.ballLink,
     onDone: (own) => {
       draft = own;
       // The bot picks from the series seed, so the setup (and the link) fully decides the series.

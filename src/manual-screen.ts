@@ -2,6 +2,7 @@
 // per ball), and Try it leads to the quick-match setup. main.ts hands over how to move.
 import { writeManualParams, writePickParams } from './app/route.ts';
 import type { BallDefinition } from './sim/types.ts';
+import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import { createManual, type Manual } from './ui/manual/manual.ts';
 
 export interface ManualHost {
@@ -36,4 +37,20 @@ export function createManualScreen(
       });
     },
   });
+}
+
+/** The pickers' info cards link to a ball's manual entry: a real link, opened in the app. */
+export function createBallLink(go: ManualHost['go']): BallInfoLink {
+  return {
+    href: (ball) => {
+      const url = new URL(window.location.href);
+      writeManualParams(url.searchParams, { ball });
+      return `${url.pathname}${url.search}`;
+    },
+    open: (ball) => {
+      go((url) => {
+        writeManualParams(url, { ball });
+      });
+    },
+  };
 }

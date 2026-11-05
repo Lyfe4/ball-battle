@@ -14,7 +14,7 @@ import { writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
-import { createManualScreen } from './manual-screen.ts';
+import { createBallLink, createManualScreen } from './manual-screen.ts';
 import { createNavigation } from './navigation.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
@@ -84,6 +84,8 @@ function goHome(how: 'push' | 'replace' = 'push'): void {
   go(writeHomeParams, how);
 }
 
+const ballLink = createBallLink(go);
+
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
   showWorld,
   play: (chosen) => {
@@ -132,6 +134,7 @@ const quick = createQuickController(
     started: () => {
       canvas.focus();
     },
+    ballLink,
   },
 );
 
@@ -153,6 +156,7 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     exitToHome: () => {
       goHome('replace');
     },
+    ballLink,
   },
 );
 

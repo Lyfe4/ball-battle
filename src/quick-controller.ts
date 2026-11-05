@@ -7,6 +7,7 @@ import { generateSeed } from './app/seed.ts';
 import type { Navigation } from './navigation.ts';
 import type { BallDefinition } from './sim/types.ts';
 import { element } from './ui/dom.ts';
+import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import { createQuickSetup } from './ui/quick-setup.ts';
 
 export interface QuickHost {
@@ -19,6 +20,7 @@ export interface QuickHost {
   goHome(how?: 'push' | 'replace'): void;
   /** A match started: focus moves to the arena. */
   started(): void;
+  readonly ballLink: BallInfoLink;
 }
 
 export interface QuickController {
@@ -47,6 +49,7 @@ export function createQuickController(
         writePickParams(url, chosen);
       });
     },
+    ballLink: host.ballLink,
     // Arriving on the setup from a link, Back goes to the home screen.
     onBack: () => {
       navigation.back(() => {

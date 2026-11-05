@@ -2,6 +2,7 @@
 // (series-controller.ts), with their moves between screens. main.ts hands over what they need.
 import { writeSeriesModeParams } from './app/series-url.ts';
 import type { Navigation } from './navigation.ts';
+import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import { createSeriesController, type SeriesController } from './series-controller.ts';
 import { createSeriesSetup, type SeriesSetupFlow } from './series-setup.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
@@ -16,6 +17,7 @@ export interface SeriesScreensHost {
   layoutChanged(): void;
   /** Home in place of this entry: the first step's Back, arriving from a link. */
   exitToHome(): void;
+  readonly ballLink: BallInfoLink;
 }
 
 export interface SeriesScreens {
@@ -43,6 +45,7 @@ export function createSeriesScreens(
     exit: () => {
       host.exitToHome();
     },
+    ballLink: host.ballLink,
     start: (series) => {
       navigation.push((url) => {
         writeSeriesModeParams(url, series.format, 'play');

@@ -8,12 +8,19 @@ export interface BallInfo {
   show(id: string): void;
 }
 
+export interface BallInfoLink {
+  /** The URL of a ball's manual entry, so the link also opens in a new tab. */
+  readonly href: (id: string) => string;
+  /** A plain click: open the entry in the app, so Back returns here. */
+  readonly open: (id: string) => void;
+}
+
 /**
  * A short card about one ball, under the picker's slots: its full one-line description (never
- * clipped) and its counters by name, from the counter map. The manual's detail adds stats and the
- * reasons.
+ * clipped) and its counters by name, from the counter map. With `link`, a small text link leads to
+ * the ball's manual entry, which adds stats and the reasons.
  */
-export function createBallInfo(balls: readonly BallDefinition[]): BallInfo {
+export function createBallInfo(balls: readonly BallDefinition[], link?: BallInfoLink): BallInfo {
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   const roster = balls.map((ball) => ball.id);
   const card = element('section', 'ball-info');
@@ -27,6 +34,19 @@ export function createBallInfo(balls: readonly BallDefinition[]): BallInfo {
   const loses = element('span', 'ball-info-list');
   counters.append(beatsLabel, ' ', beats, ' · ', losesLabel, ' ', loses);
   card.append(name, description, counters);
+  let shown = '';
+  const more = element('a', 'ball-info-more');
+  if (link !== undefined) {
+    more.addEventListener('click', (event) => {
+      // A modified click (new tab, new window) follows the href as a link does.
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      link.open(shown);
+    });
+    card.append(more);
+  }
 
   const names = (lines: readonly MatchupLine[]) =>
     lines.length === 0
@@ -43,6 +63,11 @@ export function createBallInfo(balls: readonly BallDefinition[]): BallInfo {
       setText(description, ball.description);
       setText(beats, names(favoured));
       setText(loses, names(losesTo));
+      shown = id;
+      if (link !== undefined) {
+        setText(more, `More about ${ball.name}`);
+        more.href = link.href(id);
+      }
     },
   };
 }

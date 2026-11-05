@@ -30,3 +30,16 @@
   color: var(--color-unfavoured);
   font-weight: 600;
 }
+
+/* The way to the ball's manual entry: a quiet text link, under the card's text. */
+.ball-info-more {
+  justify-self: start;
+  padding-block: 2px;
+  color: var(--color-focus);
+  font-size: var(--font-size-small);
+}
+
+.ball-info-more:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

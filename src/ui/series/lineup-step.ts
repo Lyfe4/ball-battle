@@ -2,7 +2,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import { LINEUP_SIZE, type Format, type Lineup } from '../../sim/series.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
-import { createBallInfo } from '../balls/ball-info.ts';
+import { createBallInfo, type BallInfoLink } from '../balls/ball-info.ts';
 import { element, setText } from '../dom.ts';
 import { addToDraft, completeLineup, removeFromDraft, type Draft } from '../lineup-draft.ts';
 import { createScreenHeader } from '../screen-header.ts';
@@ -20,6 +20,10 @@ export interface LineupActions {
   readonly onBack: () => void;
   /** Three balls are in the tray and the player goes on. */
   readonly onDone: (lineup: Lineup) => void;
+  /** The tray changed, so the setup keeps it if the player leaves for the manual and comes back. */
+  readonly onChange: (draft: Draft) => void;
+  /** The info card's link to a ball's manual entry. */
+  readonly ballLink: BallInfoLink;
 }
 
 const TRAY_ICON_PX = 36;
@@ -65,7 +69,7 @@ export function createLineupStep(
     return { button, icon, name };
   });
 
-  const info = createBallInfo(balls);
+  const info = createBallInfo(balls, actions.ballLink);
   const grid = createBallGrid(balls, {
     label: 'Balls',
     onPick: (id) => {
@@ -90,6 +94,7 @@ export function createLineupStep(
 
   function update(next: Draft): void {
     draft = next;
+    actions.onChange(draft);
     slots.forEach((slot, index) => {
       const ball = byId.get(draft[index] ?? '');
       setText(slot.name, ball?.name ?? 'Empty');
