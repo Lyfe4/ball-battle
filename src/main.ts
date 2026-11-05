@@ -14,6 +14,7 @@ import { writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
+import { createManualScreen } from './manual-screen.ts';
 import { createNavigation } from './navigation.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
@@ -22,7 +23,6 @@ import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
-import { createManual } from './ui/manual/manual.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -73,10 +73,15 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
+/** Writes another screen's URL (a new history entry, or in place of this one) and shows it. */
+function go(write: (params: URLSearchParams) => void, how: 'push' | 'replace' = 'push'): void {
+  navigation[how](write);
+  showRoute(currentRoute());
+}
+
 /** Moves to the home screen: a new history entry, or in place of this one (a parent fallback). */
 function goHome(how: 'push' | 'replace' = 'push'): void {
-  navigation[how](writeHomeParams);
-  showRoute(currentRoute());
+  go(writeHomeParams, how);
 }
 
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
@@ -91,36 +96,23 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
     quick.open(chosen, 'start');
   },
   series: () => {
-    navigation.push((url) => {
+    go((url) => {
       writeSeriesModeParams(url);
     });
-    showRoute(currentRoute());
   },
   manual: () => {
-    navigation.push((url) => {
+    go((url) => {
       writeManualParams(url);
     });
-    showRoute(currentRoute());
   },
 });
 
-const manual = createManual(getElement('manual', HTMLElement), BALLS, {
-  onBack: () => {
+const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
+  go,
+  back: () => {
     navigation.back(() => {
       goHome('replace');
     });
-  },
-  onOpen: (ball, how) => {
-    navigation[how]((url) => {
-      writeManualParams(url, { ball });
-    });
-    showRoute(currentRoute());
-  },
-  onTry: (chosen) => {
-    navigation.push((url) => {
-      writePickParams(url, chosen);
-    });
-    showRoute(currentRoute());
   },
 });
 
@@ -244,7 +236,7 @@ function showRoute(route: Route): void {
   }
   if (route.screen === 'manual') {
     showControls();
-    manual.show(route.ball);
+    manual.show(route.ball, route.chart);
     const ball = BALL_LOOKUP.get(route.ball ?? '');
     if (ball !== undefined) document.title = `${ball.name} · ${TITLES.manual}`;
     return;

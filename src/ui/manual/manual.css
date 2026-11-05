@@ -164,3 +164,120 @@
 .manual-steps > * {
   flex: 1;
 }
+
+/* The Balls / Matchup chart choice spans the column. */
+.manual-tabs .segmented {
+  justify-content: stretch;
+}
+
+.manual-tabs .segmented-button {
+  flex: 1;
+}
+
+.manual-tabs .segmented-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The matchup chart: 12 columns of about 26 px fit a 343 px phone column. */
+.matchup-chart {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.matchup-chart-scroll {
+  overflow-x: auto;
+}
+
+.matchup-table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  margin: 0 auto;
+}
+
+.matchup-caption {
+  padding-bottom: var(--space-small);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-tiny);
+  text-align: left;
+}
+
+.matchup-col,
+.matchup-row,
+.matchup-cell,
+.matchup-corner {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  text-align: center;
+}
+
+.matchup-col,
+.matchup-row {
+  border-radius: 4px;
+}
+
+.matchup-col.matchup-on,
+.matchup-on .matchup-row {
+  background: var(--color-border);
+}
+
+.matchup-icon {
+  margin: auto;
+}
+
+.matchup-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-tiny);
+  cursor: pointer;
+}
+
+.matchup-button[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.matchup-button[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.matchup-button.matchup-cross {
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.matchup-button:focus-visible,
+.matchup-button[tabindex='0'] {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+}
+
+.matchup-detail {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-small) var(--space-gap);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.matchup-detail-headline {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.matchup-detail-reason {
+  margin: 0 0 var(--space-small);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}

@@ -3,19 +3,23 @@ import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { element, setText } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
+import { createSegmented } from '../segmented.ts';
+import { createMatchupChart } from './matchup-chart.ts';
 import { createBallDetail } from './ball-detail.ts';
 
 export interface ManualActions {
   readonly onBack: () => void;
   /** A ball's entry: from the roster, from a matchup, or from ‹ ›. */
   readonly onOpen: (id: string, how: 'push' | 'replace') => void;
+  /** The index's tab: the roster or the matchup chart. */
+  readonly onTab: (chart: boolean) => void;
   readonly onTry: (matchup: Matchup) => void;
 }
 
 export interface Manual {
   setVisible(visible: boolean): void;
-  /** The roster, or one ball's entry; focus goes to the heading. */
-  show(ball: string | undefined): void;
+  /** The roster or the chart, or one ball's entry; focus goes to the heading. */
+  show(ball: string | undefined, chart: boolean): void;
 }
 
 /**
@@ -45,7 +49,24 @@ export function createManual(
       actions.onOpen(id, 'push');
     },
   });
-  index.append(intro, grid.element);
+  const tabRoot = element('div', 'manual-tabs');
+  const tabs = createSegmented<boolean>(
+    tabRoot,
+    'manual-tab',
+    'Show',
+    [
+      { value: false, text: 'Balls' },
+      { value: true, text: 'Matchup chart' },
+    ],
+    false,
+    (chart) => {
+      actions.onTab(chart);
+    },
+  );
+  const chart = createMatchupChart(balls, (id) => {
+    actions.onOpen(id, 'push');
+  });
+  index.append(tabRoot, intro, grid.element, chart.element);
 
   const entry = element('section', 'manual-entry');
   const steps = element('div', 'manual-steps');
@@ -76,8 +97,11 @@ export function createManual(
     setVisible(visible) {
       root.hidden = !visible;
     },
-    show(ball) {
+    show(ball, showChart) {
       current = ball;
+      tabs.select(showChart);
+      grid.element.hidden = showChart;
+      chart.element.hidden = !showChart;
       index.hidden = ball !== undefined;
       entry.hidden = ball === undefined;
       const name = balls.find((b) => b.id === ball)?.name;
