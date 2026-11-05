@@ -173,3 +173,15 @@
 .answer-mark[data-lean='unfavoured'] {
   color: var(--color-unfavoured);
 }
+
+/* A series left with Back, to carry on with: the label and the score it stands at. */
+.resume-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+}
+
+.resume-card-score {
+  font-variant-numeric: tabular-nums;
+}

@@ -31,7 +31,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
-          exclude: [...configDefaults.exclude, '**/*.slow.test.ts'],
+          exclude: [...configDefaults.exclude, '**/*.slow.test.ts', '**/*.browser.test.ts'],
         },
       },
       {
@@ -42,7 +42,8 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browsers',
-          include: ['src/golden/*.test.ts'],
+          // The known match results, and flows through the real page (`*.browser.test.ts`).
+          include: ['src/golden/*.test.ts', 'src/**/*.browser.test.ts'],
           browser: {
             enabled: true,
             provider: playwright(),

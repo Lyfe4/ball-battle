@@ -40,10 +40,10 @@ export function resumesMatch(route: RouteOf<'match'>, from: Screen, state: AppSt
 
 /**
  * What a series round's URL does: replay the series a link holds, carry on with the series being
- * played, or (Forward into a series the player left, or a reload mid-series: the bot's lineup was
- * never in the URL) set up again from the lineup.
+ * played or held (Forward, or Resume after a Back, ADR 0025), or set up again from the lineup (a
+ * reload mid-series: the bot's lineup was never in the URL, nor kept anywhere).
  */
-export function seriesRound(link: RouteOf<'series'>['link'], playing: boolean) {
+export function seriesRound(link: RouteOf<'series'>['link'], hasSeries: boolean) {
   if (link.setup !== undefined) return { replay: link.setup } as const;
-  return playing ? ('carry on' as const) : ('lineup' as const);
+  return hasSeries ? ('carry on' as const) : ('lineup' as const);
 }

@@ -158,6 +158,7 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     go,
     replaceWith,
     showWorld,
+    worldsShown: () => worldsShown,
     started: () => {
       canvas.focus();
     },
@@ -204,23 +205,26 @@ const router = createRouter(
     series: {
       show: (route) => {
         if (route.step !== 'play') {
-          series.leave();
+          // Back (or Leave) keeps an undecided series to resume, with every choice made.
+          series.hold();
           showControls();
           seriesSetup.show(route.step, route.link);
           return;
         }
-        const round = seriesRound(route.link, series.isPlaying());
-        if (round === 'lineup') {
+        const round = seriesRound(route.link, series.hasSeries());
+        if (round === 'carry on') {
+          series.resume();
+        } else if (round === 'lineup') {
           navigation.replace((url) => {
             writeSeriesModeParams(url, route.link.format, 'lineup');
           });
           showCurrentRoute();
-        } else if (round !== 'carry on') {
+        } else {
           series.start(round.replay, true);
         }
       },
       leave: () => {
-        series.leave();
+        series.hold();
       },
     },
   },
@@ -258,8 +262,12 @@ createSpeedToggle(speedRoot, state.speed, (next) => {
   saveSpeed(storage, next);
 });
 
+/** Every world put on the arena so far: a held series checks whether its match is still there. */
+let worldsShown = 0;
+
 /** Puts a new world on screen: playback, effects and the HUD start over. */
 function showWorld(world: WorldState, shownSeed: number): void {
+  worldsShown += 1;
   state.seed = shownSeed;
   hud.setMatch(world);
   arena.show(world);

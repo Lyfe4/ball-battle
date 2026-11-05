@@ -7,12 +7,13 @@ import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
-import type { Format, Lineup, Opponent, SeriesSetup } from './sim/series.ts';
+import type { Format, Lineup, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
 import { createAnswerStep } from './ui/series/answer-step.ts';
+import { createResumeCard } from './ui/series/resume-card.ts';
 import { createRulesStep } from './ui/series/rules-step.ts';
 
 /** The bot whose lineup was just picked from `seed`, so a verifier can pick it again. */
@@ -36,6 +37,10 @@ export interface SeriesSetupHost {
   start(setup: SeriesSetup, firstPick?: string): void;
   /** The lineup's info card links to each ball's manual entry. */
   readonly ballLink: BallInfoLink;
+  /** An undecided series left with Back, which the rules and lineup offer to resume. */
+  held(): SeriesState | undefined;
+  /** Carries on with the held series. */
+  resume(): void;
 }
 
 export interface SeriesSetupFlow {
@@ -143,8 +148,15 @@ export function createSeriesSetup(
   root.replaceChildren(...Object.values(steps));
   root.classList.add('series-setup');
 
+  const resume = createResumeCard(() => {
+    host.resume();
+  });
+
   function open(step: SetupStep): void {
     for (const [name, section] of Object.entries(steps)) section.hidden = name !== step;
+    // Under the step's header: the rules and the lineup offer a held series back.
+    steps[step].firstElementChild?.after(resume.element);
+    resume.show(step === 'answer' ? undefined : host.held());
     if (step === 'rules') {
       revealed = undefined;
       rules.open(format);

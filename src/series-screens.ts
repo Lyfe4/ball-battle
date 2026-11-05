@@ -14,6 +14,8 @@ export interface SeriesScreensHost {
   /** Shows another screen in place of this entry (a Back fallback). */
   replaceWith(write: (params: URLSearchParams) => void): void;
   showWorld(world: WorldState, seed: number): void;
+  /** Counts every world put on the arena (the series checks its match is still there). */
+  worldsShown(): number;
   /** A series started (the screen is now the series being played). */
   started(): void;
   layoutChanged(): void;
@@ -48,6 +50,13 @@ export function createSeriesScreens(
       host.exitToHome();
     },
     ballLink: host.ballLink,
+    held: () => play.held(),
+    resume: () => {
+      // The series' own entry again; the route carries on with the held series.
+      host.go((url) => {
+        writeSeriesModeParams(url, play.held()?.setup.format, 'play');
+      });
+    },
     start: (series, firstPick) => {
       // From the round-1 answer this replaces it: the series is one entry, so Back can't reopen
       // the answer (ADR 0025).
@@ -64,6 +73,7 @@ export function createSeriesScreens(
     showWorld: (world, seed) => {
       host.showWorld(world, seed);
     },
+    worldsShown: () => host.worldsShown(),
     replaceUrl: (write) => {
       navigation.replace(write);
     },
