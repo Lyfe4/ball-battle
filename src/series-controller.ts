@@ -7,13 +7,16 @@ import {
   advanceSession,
   beginSession,
   pickInSession,
+  rematchOf,
+  replayPickDue,
+  resolvePicks,
+  seriesAddress,
   settleCurrent,
   type SeriesSession,
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
-import { botPick, randomBot } from './sim/bot.ts';
-import { RULESET_VERSION } from './sim/ruleset.ts';
-import { awaitingPick, setupWithPicks, type SeriesSetup } from './sim/series.ts';
+import { randomBot } from './sim/bot.ts';
+import { awaitingPick, type SeriesSetup } from './sim/series.ts';
 import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createSeriesPanel } from './ui/series-panel.ts';
@@ -56,33 +59,21 @@ export function createSeriesController(
 ): SeriesController {
   /** The series being played; undefined when none is. */
   let session: SeriesSession | undefined;
-  /** A replayed link's picks, used in order when a pick is due (both sides'). */
-  let linkPicks: readonly string[] = [];
 
   const panel = createSeriesPanel(root, lookup, {
     onNext: () => {
       if (session === undefined) return;
-      session = resolvePicks(advanceSession(session));
+      session = resolvePicks(advanceSession(session), randomBot);
       playCurrent();
     },
     onPick: (ball) => {
       if (session === undefined || awaitingPick(session.state) !== 'a') return;
       // In reveal the bot answers the ball just shown; resolvePicks makes its pick.
-      session = resolvePicks(pickInSession(session, ball));
+      session = resolvePicks(pickInSession(session, ball), randomBot);
       playCurrent();
     },
     onRematch: () => {
-      if (session === undefined) return;
-      // Same lineups (the bot's still from its first lineup seed), a new series seed.
-      const { a, b, opponent, format } = session.state.setup;
-      start({
-        ruleset: RULESET_VERSION,
-        seed: generateSeed(),
-        a,
-        b,
-        opponent,
-        ...(format === undefined ? {} : { format }),
-      });
+      if (session !== undefined) start(rematchOf(session.state.setup, generateSeed()));
     },
     onNewSeries: () => {
       const last = session?.state.setup;
@@ -94,43 +85,28 @@ export function createSeriesController(
     },
   });
 
-  /**
-   * Makes every pick that doesn't need the player, in order: a replayed link's next picks (both
-   * sides'; the route only replays a link `verifySeries` accepted, so each is legal), and the bot's
-   * whenever it is due. Stops when the player is due or nothing is.
-   */
-  function resolvePicks(from: SeriesSession): SeriesSession {
-    let session = from;
-    for (;;) {
-      if (awaitingPick(session.state) === undefined) return session;
-      const fromLink = linkPicks[session.state.picks.length];
-      const pick = fromLink ?? botPick(randomBot, session.state);
-      if (pick === undefined) return session;
-      session = pickInSession(session, pick);
-    }
-  }
-
   /** Plays the series' current match: both balls are revealed as it starts. */
   function playCurrent(): void {
     const current = session?.current;
     if (current !== undefined) host.showWorld(matchWorld(current, lookup), current.seed);
   }
 
-  /**
-   * The link (both lineups, the seed, the format and the picks) is written once the series is
-   * decided, so the address bar never gives the bot's lineup away; a series opened from a link
-   * already shows it.
-   */
-  function start(setup: SeriesSetup, fromLink = false, firstPick?: string): void {
-    linkPicks = fromLink ? (setup.picks ?? []) : [];
-    session = resolvePicks(beginSession(setup));
-    if (firstPick !== undefined && awaitingPick(session.state) === 'a') {
-      session = resolvePicks(pickInSession(session, firstPick));
-    }
+  /** Writes what the address bar may show of the series now (seriesAddress). */
+  function writeAddress(playing: SeriesSession): void {
+    const address = seriesAddress(playing);
     host.replaceUrl((url) => {
-      if (fromLink) writeSeriesParams(url, setup);
-      else writeSeriesModeParams(url, setup.format, 'play');
+      if ('setup' in address) writeSeriesParams(url, address.setup);
+      else writeSeriesModeParams(url, address.format, 'play');
     });
+  }
+
+  function start(setup: SeriesSetup, fromLink = false, firstPick?: string): void {
+    let started = resolvePicks(beginSession(setup, fromLink), randomBot);
+    if (firstPick !== undefined && awaitingPick(started.state) === 'a') {
+      started = resolvePicks(pickInSession(started, firstPick), randomBot);
+    }
+    session = started;
+    writeAddress(started);
     host.layoutChanged();
     playCurrent();
   }
@@ -149,20 +125,12 @@ export function createSeriesController(
       const before = session;
       session = settleCurrent(session, world);
       // Decided: now the link can show both lineups and every pick.
-      const { winner } = session.state;
-      if (session !== before && winner !== undefined) {
-        const decided = setupWithPicks(session.state);
-        host.replaceUrl((url) => {
-          writeSeriesParams(url, decided);
-        });
-      }
+      if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },
     update(world, resultShown) {
       if (session === undefined) return;
       const settled = world.match.status === 'finished' && resultShown;
-      const due = awaitingPick(session.state);
-      const linkPick = linkPicks[session.state.picks.length];
-      const linkPickDue = due !== undefined && linkPick !== undefined;
+      const linkPickDue = replayPickDue(session) !== undefined;
       panel.update({ state: session.state, current: session.current, settled, linkPickDue });
     },
   };

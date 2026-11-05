@@ -1,12 +1,18 @@
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { awaitingPick, remainingOf, type SeriesSetup } from '../sim/series.ts';
-import { matchWorld, playSeries, playToEnd } from '../sim/series-verify.ts';
+import { randomBot } from '../sim/bot.ts';
+import { awaitingPick, remainingOf, setupWithPicks, type SeriesSetup } from '../sim/series.ts';
+import { playLikeTheGame } from '../sim/test-support.ts';
+import { matchWorld, playSeries, playToEnd, verifySeries } from '../sim/series-verify.ts';
 import {
   advanceSession,
   pickInSession,
   beginSession,
+  rematchOf,
+  replayPickDue,
+  resolvePicks,
+  seriesAddress,
   settleCurrent,
   type SeriesSession,
 } from './series-session.ts';
@@ -73,5 +79,88 @@ describe('series session, loser picks next', () => {
     const picked = pickInSession(session, ball);
     expect(picked.current?.[due]).toBe(ball);
     expect(picked.recorded).toBe(false);
+  });
+});
+
+describe('series session, picks and the address bar', () => {
+  const ids = [...BALL_LOOKUP.keys()];
+  const reveal: SeriesSetup = {
+    ruleset: RULESET_VERSION,
+    seed: 31,
+    a: ['frost', 'thorns', 'sniper'],
+    b: randomBot.pickLineup(31, ids),
+    opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: 31 },
+    format: 'reveal',
+  };
+  const decided = setupWithPicks(playLikeTheGame(reveal, BALL_LOOKUP));
+
+  it('makes the bot’s pick at once and stops when the player is due', () => {
+    const session = resolvePicks(beginSession(reveal), randomBot);
+    expect(session.state.picks).toStrictEqual([
+      { round: 0, side: 'b', ball: randomBot.showFirst(reveal.seed, reveal.b) },
+    ]);
+    expect(awaitingPick(session.state)).toBe('a');
+    expect(replayPickDue(session)).toBeUndefined();
+    expect(resolvePicks(session, randomBot)).toBe(session);
+  });
+
+  it('replays a link’s picks in order, both sides’, and plays it to the same end', () => {
+    let session = resolvePicks(beginSession(decided, true), randomBot);
+    // The link's first two picks (the bot's, then the player's answer) are made at once.
+    expect(session.state.picks.map((pick) => pick.ball)).toStrictEqual(decided.picks?.slice(0, 2));
+    let guard = 0;
+    while (session.current !== undefined) {
+      const end = playToEnd(matchWorld(session.current, BALL_LOOKUP), BALL_LOOKUP);
+      session = resolvePicks(advanceSession(settleCurrent(session, end)), randomBot);
+      expect(++guard).toBeLessThan(20);
+    }
+    expect(session.state).toStrictEqual(playSeries(decided, BALL_LOOKUP));
+  });
+
+  it('says when the link holds the due pick, so the player is not asked for it', () => {
+    const live = beginSession(decided);
+    const replay = beginSession(decided, true);
+    expect(replayPickDue(live)).toBeUndefined();
+    expect(replayPickDue(replay)).toBe(decided.picks?.[0]);
+  });
+
+  it('keeps the bot’s lineup out of the address bar until the series is decided', () => {
+    const live = resolvePicks(beginSession(reveal), randomBot);
+    expect(seriesAddress(live)).toStrictEqual({ format: 'reveal' });
+    expect(seriesAddress(beginSession(decided, true))).toStrictEqual({ setup: decided });
+    // Play it live as the game does, the player making the same picks as in `decided`.
+    const own = playLikeTheGame(reveal, BALL_LOOKUP)
+      .picks.filter((pick) => pick.side === 'a')
+      .map((pick) => pick.ball);
+    let session = live;
+    while (session.state.winner === undefined) {
+      expect(seriesAddress(session)).toStrictEqual({ format: 'reveal' });
+      const ball = own[0];
+      if (awaitingPick(session.state) === 'a' && ball !== undefined) {
+        own.shift();
+        session = resolvePicks(pickInSession(session, ball), randomBot);
+        continue;
+      }
+      if (session.current === undefined) throw new Error('expected a match');
+      const end = playToEnd(matchWorld(session.current, BALL_LOOKUP), BALL_LOOKUP);
+      session = resolvePicks(advanceSession(settleCurrent(session, end)), randomBot);
+    }
+    expect(session.state.winner).toBeDefined();
+    expect(seriesAddress(session)).toStrictEqual({ setup: decided });
+  });
+
+  it('rematches on a new seed with the same lineups, under today’s rules, the bot’s seed kept', () => {
+    const old = { ...decided, ruleset: 0 };
+    expect(rematchOf(old, 9)).toStrictEqual({
+      ruleset: RULESET_VERSION,
+      seed: 9,
+      a: reveal.a,
+      b: reveal.b,
+      opponent: reveal.opponent,
+      format: 'reveal',
+    });
+    expect(
+      verifySeries(setupWithPicks(playLikeTheGame(rematchOf(old, 9), BALL_LOOKUP)), BALL_LOOKUP).ok,
+    ).toBe(true);
   });
 });
