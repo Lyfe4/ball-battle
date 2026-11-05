@@ -10,7 +10,14 @@ import {
 import { applyBounceVariance } from './bounce-variance.ts';
 import { resolveCollisions } from './collision.ts';
 import { applyCruiseSpeed } from './cruise.ts';
-import { applyContactDamage, defeatsThisTick, isAlive, nextContacts, pairKey } from './combat.ts';
+import {
+  applyContactDamage,
+  defeatsThisTick,
+  isAlive,
+  isPhased,
+  nextContacts,
+  pairKey,
+} from './combat.ts';
 import { getDefinition } from './definitions.ts';
 import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
@@ -42,9 +49,12 @@ import type {
  *  4. Live balls move and bounce off walls; each ball that bounced gets a small seeded turn
  *     (ADR 0004), which advances the world RNG.
  *  5. onWallHit hooks for balls that bounced, then their actions.
- *  6. Ball collisions: separation and elastic impulse (momentum-conserving physics).
- *  7. Contact damage for new contacts (scaled by directness, lethal tiebreak).
- *  8. onHitBall hooks for both balls of each new contact, then their actions.
+ *  6. Ball collisions: separation and elastic impulse (momentum-conserving physics). A pair with a
+ *     phased ball overlaps and passes through instead (ADR 0026).
+ *  7. Contact damage for new contacts (scaled by directness, lethal tiebreak); none for a pass
+ *     through a phased ball.
+ *  8. onHitBall hooks for both balls of each new contact, then their actions; for a pass through a
+ *     phased ball, only the phased ball's own hook (ADR 0026).
  *  9. Projectiles move and resolve: swept against each ball's motion this tick, the nearest hit
  *     before a wall deals ability damage (ADR 0005). Projectiles spawned in steps 3-8 already
  *     move this tick.
@@ -110,7 +120,14 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   rngState = variance.rngState;
   phase(wallHitInvocations(new Map(movements.map(({ ball, bounces }) => [ball.id, bounces]))));
 
-  const collisions = resolveCollisions(balls, size, isAlive);
+  const isPhasedBall = (ball: BallState): boolean =>
+    isPhased(ball, getDefinition(definitions, ball.definitionId));
+  const collisions = resolveCollisions(
+    balls,
+    size,
+    isAlive,
+    (a, b) => isPhasedBall(a) || isPhasedBall(b),
+  );
   balls = collisions.balls;
 
   // Pairs already in contact last tick are the same collision continuing: no new hit.
@@ -120,13 +137,14 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
     (_contact, index) => !previousContacts.has(collidedKeys[index] ?? ''),
   );
   events.push(
-    ...newContacts.map(({ ballIds, point, normal, impulse }): CollisionEvent => ({
+    ...newContacts.map(({ ballIds, point, normal, impulse, phased }): CollisionEvent => ({
       type: 'collision',
       tick,
       ballIds,
       point,
       normal,
       impulse,
+      ...(phased ? { phased } : {}),
     })),
   );
 
@@ -134,7 +152,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   balls = combat.balls;
   events.push(...combat.damage);
 
-  phase(hitBallInvocations(newContacts));
+  const phasedIds = new Set(balls.filter(isPhasedBall).map((ball) => ball.id));
+  phase(hitBallInvocations(newContacts, (id) => phasedIds.has(id)));
 
   const flight = resolveProjectiles(projectiles, balls, startPositions, definitions, size, tick);
   balls = flight.balls;

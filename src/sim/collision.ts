@@ -149,6 +149,11 @@ export function resolvePair(
 
 export interface PairContact extends Contact {
   readonly ballIds: readonly [string, string];
+  /**
+   * True when one of the pair was phased (ADR 0026): the balls overlap and pass through each other,
+   * with no separation and no impulse, and no contact damage either way.
+   */
+  readonly phased: boolean;
 }
 
 export interface CollisionPass {
@@ -158,13 +163,34 @@ export interface CollisionPass {
 }
 
 /**
+ * The contact of two overlapping balls that pass through each other (ADR 0026): reported like a
+ * collision, but nothing moves and no impulse is exchanged.
+ */
+function passThrough(a: BallState, b: BallState): Contact {
+  const normal = directionBetween(a.position, b.position);
+  const approachA = a.velocity.x * normal.x + a.velocity.y * normal.y;
+  const approachB = -(b.velocity.x * normal.x + b.velocity.y * normal.y);
+  const speedA = Math.sqrt(a.velocity.x * a.velocity.x + a.velocity.y * a.velocity.y);
+  const speedB = Math.sqrt(b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y);
+  return {
+    point: addScaled(a.position, normal, a.radius),
+    normal,
+    impulse: 0,
+    approachSpeeds: [approachA, approachB],
+    directness: [speedA === 0 ? 0 : approachA / speedA, speedB === 0 ? 0 : approachB / speedB],
+  };
+}
+
+/**
  * Resolves every overlapping pair once, in array order (i < j) so the result is deterministic.
- * Balls for which `isActive` is false are skipped entirely.
+ * Balls for which `isActive` is false are skipped entirely. A pair for which `passesThrough` is
+ * true overlaps without being separated or bounced, and is reported with `phased` (ADR 0026).
  */
 export function resolveCollisions(
   balls: readonly BallState[],
   arenaSize: number,
   isActive: (ball: BallState) => boolean,
+  passesThrough: (a: BallState, b: BallState) => boolean = () => false,
 ): CollisionPass {
   const next = [...balls];
   const contacts: PairContact[] = [];
@@ -173,11 +199,17 @@ export function resolveCollisions(
       const a = next[i];
       const b = next[j];
       if (a === undefined || b === undefined || !isActive(a) || !isActive(b)) continue;
+      if (passesThrough(a, b)) {
+        if (overlaps(a.position, b.position, a.radius + b.radius)) {
+          contacts.push({ ballIds: [a.id, b.id], ...passThrough(a, b), phased: true });
+        }
+        continue;
+      }
       const resolution = resolvePair(a, b, arenaSize);
       if (resolution === undefined) continue;
       next[i] = resolution.a;
       next[j] = resolution.b;
-      contacts.push({ ballIds: [a.id, b.id], ...resolution.contact });
+      contacts.push({ ballIds: [a.id, b.id], ...resolution.contact, phased: false });
     }
   }
   return { balls: next, contacts };
