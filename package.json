@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "balance": "node scripts/balance.ts",
     "balance:ci": "node scripts/balance.ts 150 --ci",
+    "golden": "node scripts/golden.ts",
     "test": "vitest run --project unit",
     "test:slow": "vitest run --project slow",
     "test:watch": "vitest --project unit",

@@ -9,6 +9,7 @@
 // (the bot reads them), the roster or its order (the bot picks from it), seeds and salts.
 // `ruleset.test.ts` plays a fixed set of matches, bot choices and series and fails when their
 // fingerprint changes without a new version. Text-only changes (names, descriptions, reasons,
-// colours) need no bump.
+// colours) need no bump. After a bump, run `pnpm golden` to record the new known match results
+// (`src/golden/golden-matches.json`, ADR 0023).
 
 export const RULESET_VERSION = 1;

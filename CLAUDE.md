@@ -38,6 +38,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   `--ball <id>` plays only that ball's matchups and mirror (for a new ball); `--serial` runs on one
   thread and gives byte-identical output. The elapsed time goes to stderr. Exits with 1 on any
   MISS.
+- `pnpm golden`: rewrite the known match results (`src/golden/golden-matches.json`, ADR 0023)
+  after a `RULESET_VERSION` bump. It refuses while the version is unchanged: results that move
+  without a bump are a bug to find, not a record to update.
 - `pnpm balance:ci`: the reduced check CI runs: 150 seeds, no sensitivity runs, and a counter-map
   pair fails only when clearly outside its band (ADR 0011 addendum). A full `pnpm balance` still
   judges borderline pairs.
@@ -107,7 +110,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - **Bump `RULESET_VERSION` (`src/sim/ruleset.ts`) in the same commit as any change that can change
   a fight, a bot's choice or a series**: stats, abilities, combat rules, the counter map's sides,
   the roster or its order, seeds and salts (ADR 0022). `ruleset.test.ts` fails until you do; add
-  the new fingerprint to its table and never edit an old one. Links from other rulesets show a
+  the new fingerprint to its table and never edit an old one, then run `pnpm golden`. Links from other rulesets show a
   notice instead of replaying a different fight.
 - Whether a series setup is valid is decided by `verifySeries` (`src/sim/series-verify.ts`) alone:
   `playSeries`, the browser's route and a future server all use it. Don't add a second check.
