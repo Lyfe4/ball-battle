@@ -121,7 +121,7 @@ before the next one, so a corner can't chain.
 | Frost vs Quake         | Frost favoured     | Slowed, the Quake reaches the walls less often, and every shockwave needs a wall.  |
 | All other new pairs    | Even               | Including the Brawler (the safe pick) and the three new balls with each other.     |
 
-Each pair's reason is in `scripts/counter-map-batch-2.ts`.
+Each pair's reason is in `src/sim/counter-map-batch-2.ts` (moved from `scripts/` by ADR 0019).
 
 ### 6. Results
 

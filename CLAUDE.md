@@ -16,7 +16,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 
 - `pnpm dev`: start the Vite dev server on http://localhost:5199. `/styleguide.html` shows every
   ball design in each ability state, large and at phone size, and the shared UI parts (dev only,
-  not in the build); `?only=ui` shows just the UI parts, `?only=phone-arena` the phone arena
+  not in the build); `?only=ui` shows just the UI parts, `?only=phone-arena` the phone arena.
+  `/brand.html` (dev only) draws the icons and the link-preview image with the game's renderer;
+  save each canvas as the `public/` file it names and commit it
 - `pnpm build`: typecheck and build to `dist/`
 - `pnpm preview`: serve `dist/` on http://localhost:4199 with the production security headers
   from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps

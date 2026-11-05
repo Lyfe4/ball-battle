@@ -15,10 +15,12 @@ the future into a corner. Step 1 of the planned order (best of 3 against a bot) 
 
 Every round is still an ordinary deterministic match (ADR 0001): two balls and a seed.
 
-## The core fun: rock-paper-scissors guessing
+## The core fun: building a lineup
 
-The interesting decision is the guess: "they opened with a Speedster last time, so I'll lead with
-the Vampire." That only works if matchups lean:
+You build a lineup of three balls, set its order and watch the plan fight it out. Your choices set
+the odds; each fight still plays out its own way. The interesting decision is a read of the
+opponent: "they opened with a Speedster last time, so I'll lead with the Vampire." That only works
+if matchups lean:
 
 - Balls have **soft counters**: a counter is _favoured_, not guaranteed. Picks matter, but no
   pick is hopeless, and the fight still has to play out.

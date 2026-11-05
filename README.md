@@ -119,6 +119,10 @@ link from another version says so and offers to play under today's rules rather 
 replaying a different fight
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
+Two pages exist only under `pnpm dev`: `/styleguide.html` shows every ball design and the shared
+UI parts, and `/brand.html` draws the icons and the link-preview image with the game's own
+renderer.
+
 The **Speed 1× / 2×** toggle under a match plays everything twice as fast (the fight,
 hit-stops and effects alike) without changing the result; your choice is remembered in this
 browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
