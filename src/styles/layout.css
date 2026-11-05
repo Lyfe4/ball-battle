@@ -53,3 +53,36 @@
     width: var(--hud-width);
   }
 }
+
+/*
+ * Setup screens (data-screen on .stage): the arena only shows when something is fighting. On a
+ * phone a setup screen takes the whole screen and the page scrolls; beside the arena on a wide
+ * screen, the paused match stays, dimmed, and the panel widens for the ball grid.
+ */
+.stage[data-setup] {
+  height: auto;
+  min-height: 100dvh;
+  padding-bottom: 0;
+}
+
+.stage[data-setup] .arena-container {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage[data-setup] {
+    height: 100dvh;
+    align-items: flex-start;
+  }
+
+  .stage[data-setup] .arena-container {
+    display: grid;
+    opacity: 0.3;
+  }
+
+  .stage[data-setup] .hud {
+    width: var(--setup-width);
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}

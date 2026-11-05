@@ -40,6 +40,8 @@
   --space-small: 8px;
   --radius: 8px;
   --hud-width: 16rem;
+  /* The side panel on a wide screen during setup, wide enough for four ball tiles. */
+  --setup-width: 24rem;
   --tap-target: 44px;
   --font-size-small: 0.875rem;
   --font-size-tiny: 0.75rem;

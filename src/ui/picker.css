@@ -1,71 +1,4 @@
-/*
- * Picker: two slot buttons (each opens the ball grid) and Start, on one row where there is room.
- */
-.picker {
-  display: grid;
-  gap: var(--space-small);
-}
-
-.picker-slots {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-small);
-}
-
-/* Beside the arena the HUD is narrow, so the slots stack. */
-@media (min-aspect-ratio: 5/4) {
-  .picker-slots {
-    grid-template-columns: 1fr;
-  }
-}
-
-.picker-slot {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-  min-height: var(--tap-target);
-  padding: 4px var(--space-small);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.picker-slot-icon {
-  flex: none;
-}
-
-.picker-slot-text {
-  display: grid;
-  min-width: 0;
-}
-
-.picker-slot-label {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
-.picker-slot-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.picker-start {
-  padding: 0 var(--space-gap);
-}
-
-.picker-slot:focus-visible,
-.picker-card:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-/* The ball grid: a modal dialog, nearly full screen on phones, scrolling inside. */
+/* The ball dialog (ball-dialog.ts), still used by the lineup builder: a modal grid of every ball. */
 .picker-dialog {
   width: min(44rem, 100vw - 2 * var(--space-gutter));
   max-height: min(48rem, 100dvh - 2 * var(--space-gutter));
@@ -168,4 +101,9 @@
   color: var(--color-focus);
   font-size: var(--font-size-small);
   font-weight: 600;
+}
+
+.picker-card:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

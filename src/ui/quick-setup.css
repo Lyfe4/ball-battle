@@ -1,0 +1,99 @@
+/* Quick match setup: the two slots, the verdict, the info card, the grid and Start. */
+.quick-setup {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.quick-slots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.quick-slot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-width: 0;
+  min-height: var(--tap-target);
+  padding: 6px var(--space-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quick-slot[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.quick-slot:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.quick-slot-icon {
+  flex: none;
+}
+
+.quick-slot-text {
+  display: grid;
+  min-width: 0;
+}
+
+.quick-slot-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-tiny);
+}
+
+.quick-slot-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-vs {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.quick-verdict {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-small) var(--space-gap);
+  border-left: 3px solid var(--color-border);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--color-surface);
+}
+
+.quick-verdict[data-lean='favoured'] {
+  border-left-color: var(--color-favoured);
+}
+
+.quick-verdict-headline {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.quick-verdict-reason {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+/* What the tiles' marks mean; the tiles' own labels say it to screen readers. */
+.quick-legend {
+  margin: 0 0 calc(var(--space-gap) * -0.5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-tiny);
+  white-space: pre;
+}

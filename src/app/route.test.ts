@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../sim/balls/index.ts';
 import { DEFAULT_MATCHUP } from './matchup.ts';
-import { parseRoute } from './route.ts';
+import { clearView, parseRoute, writePickParams } from './route.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 const route = (query: string) => parseRoute(new URLSearchParams(query), ids);
@@ -41,5 +41,21 @@ describe('parseRoute', () => {
 
   it('opens a quick match with the default balls on a bare URL', () => {
     expect(route('')).toStrictEqual({ screen: 'match', matchup: DEFAULT_MATCHUP, seed: undefined });
+  });
+
+  it('opens the quick-match setup prefilled, and round-trips it', () => {
+    expect(route('view=pick&a=storm&b=vampire')).toStrictEqual({
+      screen: 'pick',
+      matchup: { a: 'storm', b: 'vampire' },
+    });
+    const params = new URLSearchParams('mode=bo3&seed=4&fmt=loser');
+    writePickParams(params, { a: 'frost', b: 'quake' });
+    expect(params.toString()).toBe('view=pick&a=frost&b=quake');
+    expect(parseRoute(params, ids)).toStrictEqual({
+      screen: 'pick',
+      matchup: { a: 'frost', b: 'quake' },
+    });
+    clearView(params);
+    expect(parseRoute(params, ids)).toMatchObject({ screen: 'match', seed: undefined });
   });
 });

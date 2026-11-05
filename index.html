@@ -7,13 +7,14 @@
     <title>BallBattle</title>
   </head>
   <body>
-    <main class="stage">
+    <main class="stage" id="stage">
       <div class="arena-container" id="arena-container">
-        <canvas id="arena" role="img" aria-label="Battle arena"></canvas>
+        <canvas id="arena" role="img" aria-label="Battle arena" tabindex="-1"></canvas>
       </div>
       <section class="hud" aria-label="Match">
+        <section id="quick-setup" aria-label="Quick match setup" hidden></section>
         <div class="mode-toggle" id="mode-toggle"></div>
-        <form id="picker" aria-label="Choose balls"></form>
+        <div class="match-actions" id="match-actions"></div>
         <section id="lineup" hidden></section>
         <section id="series" hidden></section>
         <div class="hud-status" id="hud-status"></div>

@@ -94,3 +94,9 @@
   font-size: var(--font-size-small);
   font-weight: 600;
 }
+
+/* The match screen's own actions (Change balls), full width like the HUD's buttons. */
+.match-actions {
+  display: flex;
+  gap: var(--space-small);
+}

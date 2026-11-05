@@ -1,48 +1,58 @@
 import './style.css';
 import { DEFAULT_MATCHUP, writeMatchParams, type Matchup } from './app/matchup.ts';
-import { parseRoute, type Route } from './app/route.ts';
+import { clearView, parseRoute, writePickParams, type Route, type Screen } from './app/route.ts';
 import { generateSeed } from './app/seed.ts';
 import { clearSeriesParams, writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
+import { createNavigation } from './navigation.ts';
 import { createSeriesController } from './series-controller.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
+import { element } from './ui/dom.ts';
 import { createHud } from './ui/hud.ts';
-import { createPicker } from './ui/picker.ts';
+import { createQuickSetup } from './ui/quick-setup.ts';
 import { createSegmented } from './ui/segmented.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
-  const element = document.getElementById(id);
-  if (!(element instanceof type)) {
+  const found = document.getElementById(id);
+  if (!(found instanceof type)) {
     throw new Error(`Expected #${id} to be a ${type.name}`);
   }
-  return element;
+  return found;
 }
 
+const stage = getElement('stage', HTMLElement);
 const canvas = getElement('arena', HTMLCanvasElement);
 const container = getElement('arena-container', HTMLDivElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
-const pickerForm = getElement('picker', HTMLFormElement);
+const quickSetupRoot = getElement('quick-setup', HTMLElement);
+const matchActions = getElement('match-actions', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 const modeRoot = getElement('mode-toggle', HTMLDivElement);
 const lineupRoot = getElement('lineup', HTMLElement);
 const seriesRoot = getElement('series', HTMLElement);
 
 const ballIds = BALLS.map((ball) => ball.id);
-
+const navigation = createNavigation();
 const currentRoute = (): Route => parseRoute(new URL(window.location.href).searchParams, ballIds);
 const initialRoute = currentRoute();
 type Mode = 'quick' | 'series';
-let mode: Mode = initialRoute.screen === 'series' ? 'series' : 'quick';
-let matchup: Matchup = initialRoute.screen === 'match' ? initialRoute.matchup : DEFAULT_MATCHUP;
+let screen: Screen = initialRoute.screen;
+let matchup: Matchup = initialRoute.screen === 'series' ? DEFAULT_MATCHUP : initialRoute.matchup;
 let seed = (initialRoute.screen === 'match' ? initialRoute.seed : undefined) ?? generateSeed();
 // Remembered per viewer. Reading localStorage itself can throw, hence the getter.
 const storage = () => window.localStorage;
 let speed: PlaybackSpeed = loadSpeed(storage);
+
+const TITLES: Readonly<Record<Screen, string>> = {
+  pick: 'Quick match · BallBattle',
+  match: 'BallBattle',
+  series: 'Best of 3 · BallBattle',
+};
 
 function createMatchWorld(next: Matchup, nextSeed: number) {
   return createWorld(nextSeed, [
@@ -60,9 +70,39 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
-const picker = createPicker(pickerForm, BALLS, (chosen) => {
-  startMatch(chosen, generateSeed());
+const quickSetup = createQuickSetup(quickSetupRoot, BALLS, {
+  onStart: (chosen) => {
+    navigation.push((url) => {
+      writeMatchUrl(url, chosen, generateSeed());
+    });
+    showRoute(currentRoute());
+    canvas.focus();
+  },
+  onChange: (chosen) => {
+    navigation.replace((url) => {
+      writePickParams(url, chosen);
+    });
+  },
+  // A visitor who arrived on the setup from a link goes back to a match of the balls shown.
+  onBack: () => {
+    navigation.back(() => {
+      navigation.replace((url) => {
+        writeMatchUrl(url, matchup, generateSeed());
+      });
+      showRoute(currentRoute());
+    });
+  },
 });
+
+const changeBalls = element('button', 'hud-button', 'Change balls');
+changeBalls.type = 'button';
+changeBalls.addEventListener('click', () => {
+  navigation.push((url) => {
+    writePickParams(url, matchup);
+  });
+  showRoute(currentRoute());
+});
+matchActions.append(changeBalls);
 
 const modeToggle = createSegmented<Mode>(
   modeRoot,
@@ -72,9 +112,13 @@ const modeToggle = createSegmented<Mode>(
     { value: 'quick', text: 'Quick match' },
     { value: 'series', text: 'Best of 3' },
   ],
-  mode,
+  screen === 'series' ? 'series' : 'quick',
   (next) => {
-    setMode(next);
+    navigation.push((url) => {
+      if (next === 'series') writeSeriesModeParams(url);
+      else writeMatchUrl(url, matchup, generateSeed());
+    });
+    showRoute(currentRoute());
   },
 );
 
@@ -84,7 +128,9 @@ const series = createSeriesController(
   BALL_LOOKUP,
   {
     showWorld,
-    replaceUrl,
+    replaceUrl: (write) => {
+      navigation.replace(write);
+    },
     layoutChanged: showControls,
     redraw: () => {
       hud.setMatch(arena.world());
@@ -94,9 +140,9 @@ const series = createSeriesController(
 );
 
 const arena = createArena(canvas, container, BALL_LOOKUP, createMatchWorld(matchup, seed), {
-  // The match pauses while the ball picker is open, whether or not a pick changed (a new pick only
-  // takes effect on Start match).
-  isPaused: () => picker.isOpen() || series.isOpen(),
+  // The match waits while it is covered: during the quick-match setup and while the lineup dialog
+  // is open. It carries on where it stopped.
+  isPaused: () => screen === 'pick' || series.isOpen(),
   speed: () => speed,
   afterTicks: (world) => {
     series.settle(world);
@@ -119,45 +165,24 @@ function showWorld(world: WorldState, shownSeed: number): void {
   arena.show(world);
 }
 
-/** Rewrites the URL of the screen on show (a new seed, a format), adding no history entry. */
-function replaceUrl(write: (params: URLSearchParams) => void): void {
-  const url = new URL(window.location.href);
-  write(url.searchParams);
-  window.history.replaceState(null, '', url);
+function writeMatchUrl(url: URLSearchParams, next: Matchup, nextSeed: number): void {
+  clearView(url);
+  clearSeriesParams(url);
+  writeMatchParams(url, next, nextSeed);
 }
 
-/** Moves to another screen: a history entry, so Back returns. The same URL again adds nothing. */
-function pushUrl(write: (params: URLSearchParams) => void): void {
-  const url = new URL(window.location.href);
-  write(url.searchParams);
-  if (url.href !== window.location.href) window.history.pushState(null, '', url);
-}
-
-/** Which controls show for the mode: the picker, the lineup builder or the scoreboard. */
+/** Which controls show on the screen: the setup alone, or the match with its controls. */
 function showControls(): void {
-  pickerForm.hidden = mode !== 'quick';
-  series.setVisible(mode === 'series');
+  const setup = screen === 'pick';
+  stage.toggleAttribute('data-setup', setup);
+  quickSetup.setVisible(setup);
+  modeRoot.hidden = setup;
+  hudRoot.hidden = setup;
+  speedRoot.hidden = setup;
+  matchActions.hidden = screen !== 'match';
+  series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
-}
-
-function setMode(next: Mode): void {
-  pushUrl((url) => {
-    if (next === 'series') writeSeriesModeParams(url);
-    else clearSeriesParams(url);
-  });
-  showMode(next);
-}
-
-function showMode(next: Mode): void {
-  mode = next;
-  modeToggle.select(next);
-  series.leave();
-  if (next === 'quick') {
-    showControls();
-    startMatch(matchup, generateSeed());
-  } else {
-    series.showBuilder(undefined);
-  }
+  document.title = TITLES[screen];
 }
 
 /**
@@ -166,34 +191,47 @@ function showMode(next: Mode): void {
  */
 function startMatch(nextMatchup: Matchup, nextSeed: number): void {
   matchup = nextMatchup;
-  picker.show(matchup);
-  replaceUrl((url) => {
-    clearSeriesParams(url);
-    writeMatchParams(url, matchup, nextSeed);
+  navigation.replace((url) => {
+    writeMatchUrl(url, matchup, nextSeed);
   });
   showWorld(createMatchWorld(matchup, nextSeed), nextSeed);
 }
 
-/** Opens the screen a URL asks for: on load (for a series), and on Back and Forward. */
+/** Opens the screen a URL asks for: on load, after the app moves screens, and on Back and Forward. */
 function showRoute(route: Route): void {
-  series.leave();
-  mode = route.screen === 'series' ? 'series' : 'quick';
-  modeToggle.select(mode);
-  if (route.screen === 'match') {
+  const from = screen;
+  screen = route.screen;
+  modeToggle.select(screen === 'series' ? 'series' : 'quick');
+  if (route.screen === 'pick') {
+    series.leave();
     showControls();
-    startMatch(route.matchup, route.seed ?? generateSeed());
-  } else if (route.link.setup !== undefined) {
-    series.start(route.link.setup, true);
-  } else {
-    series.showBuilder(route.link.lineup, route.link.format);
+    quickSetup.open(route.matchup);
+    return;
   }
+  if (route.screen === 'match') {
+    series.leave();
+    showControls();
+    // Back from the setup to the match it covered: carry on with it rather than restarting.
+    const same = route.matchup.a === matchup.a && route.matchup.b === matchup.b;
+    if (from === 'pick' && same && route.seed === seed) return;
+    startMatch(route.matchup, route.seed ?? generateSeed());
+    return;
+  }
+  series.leave();
+  if (route.link.setup !== undefined) series.start(route.link.setup, true);
+  else series.showBuilder(route.link.lineup, route.link.format);
 }
 
-window.addEventListener('popstate', () => {
+navigation.onChange(() => {
   showRoute(currentRoute());
 });
 
-// The link's match, or a quick match behind the series setup, is on the arena from the start.
-startMatch(matchup, seed);
-if (initialRoute.screen === 'series') showRoute(initialRoute);
-else showControls();
+// Something is on the arena from the first frame: the link's match (its URL corrected if an id was
+// invalid), or a quick match behind a setup screen, which keeps its own URL.
+if (initialRoute.screen === 'match') {
+  startMatch(matchup, seed);
+  showControls();
+} else {
+  showWorld(createMatchWorld(matchup, seed), seed);
+  showRoute(initialRoute);
+}

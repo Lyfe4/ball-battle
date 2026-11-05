@@ -1,0 +1,48 @@
+/* The top of a setup screen: Back and the heading, and the footer that keeps its main action in reach. */
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.screen-back {
+  flex: none;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.screen-back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.screen-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.screen-title:focus {
+  outline: none;
+}
+
+/* Sticks to the bottom of the screen while the content above scrolls, so Start is always reachable. */
+.screen-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: var(--space-small);
+  padding-block: var(--space-small) var(--space-gutter);
+  background: var(--color-page);
+}
+
+.screen-footer > * {
+  flex: 1;
+}

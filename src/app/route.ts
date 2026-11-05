@@ -7,6 +7,8 @@ import { parseSeed } from './seed.ts';
 import { parseSeriesParams, type SeriesLink } from './series-url.ts';
 
 export type Route =
+  /** Choosing the two balls of a quick match, prefilled with these. */
+  | { readonly screen: 'pick'; readonly matchup: Matchup }
   /** A quick match: these two balls, on this seed (a new one when the link has none). */
   | { readonly screen: 'match'; readonly matchup: Matchup; readonly seed: number | undefined }
   /** Best of 3: a series to replay, or the setup, prefilled with what the link holds. */
@@ -14,8 +16,27 @@ export type Route =
 
 export type Screen = Route['screen'];
 
+/** Names a screen that isn't a match or a series: `?view=pick`. */
+const VIEW = 'view';
+
+/** The quick-match setup with these two balls: `?view=pick&a=&b=`, nothing else. */
+export function writePickParams(params: URLSearchParams, matchup: Matchup): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  params.set(VIEW, 'pick');
+  params.set('a', matchup.a);
+  params.set('b', matchup.b);
+}
+
+/** Leaves a named screen, before writing a match or a series. */
+export function clearView(params: URLSearchParams): void {
+  params.delete(VIEW);
+}
+
 /** Reads the screen a URL asks for. Never throws: anything it can't use falls back. */
 export function parseRoute(params: URLSearchParams, validIds: readonly string[]): Route {
+  if (params.get(VIEW)?.trim().toLowerCase() === 'pick') {
+    return { screen: 'pick', matchup: parseMatchup(params, validIds) };
+  }
   const link = parseSeriesParams(params, validIds);
   if (link !== undefined) return { screen: 'series', link };
   return {
