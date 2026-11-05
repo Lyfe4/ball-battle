@@ -18,6 +18,16 @@ export const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+/**
+ * Paths that override a site-wide header. The link-preview image is fetched by other sites: a chat
+ * client that shows the preview by loading the image straight from this origin in its own page is
+ * refused it under `same-origin`. Only netlify.toml serves this (vite preview applies the site-wide
+ * set to every file).
+ */
+export const PATH_HEADERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  '/og-image.png': { 'Cross-Origin-Resource-Policy': 'cross-origin' },
+};
+
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Content-Security-Policy': CONTENT_SECURITY_POLICY,
   'X-Content-Type-Options': 'nosniff',
