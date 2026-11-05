@@ -1,5 +1,6 @@
 // The words of the best-of-3 scoreboard, as pure functions so they are tested without a DOM.
 import {
+  formatOf,
   LINEUP_SIZE,
   MAX_ATTEMPTS,
   scoreOf,
@@ -84,13 +85,16 @@ export function playingLine(match: NextMatch, nameOf: NameOf): string {
 
 /**
  * Between plays: what just happened and what comes next. The bot's next ball stays hidden until
- * the round starts.
+ * the round starts, except in Reveal, where both lineups are shown and the round's balls are known
+ * (round 3 is what each side has left).
  */
 export function betweenLine(state: SeriesState, next: NextMatch, nameOf: NameOf): string {
   if (state.pending.length > 0) {
     return `Round ${String(next.round + 1)} drew. It is replayed on a new seed (play ${String(next.attempt + 1)} of ${String(MAX_ATTEMPTS)}); a third draw goes to sudden death.`;
   }
-  return `Next, round ${String(next.round + 1)}: your ${nameOf(next.a)} against a hidden ball.`;
+  const against =
+    formatOf(state.setup) === 'reveal' ? `the bot’s ${nameOf(next.b)}` : 'a hidden ball';
+  return `Next, round ${String(next.round + 1)}: your ${nameOf(next.a)} against ${against}.`;
 }
 
 /** The series result. */
