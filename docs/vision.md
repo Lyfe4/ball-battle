@@ -51,6 +51,11 @@ blind picks. See Decisions below.
      loser of a round picks its next ball after seeing the winner's next one; the winner keeps its
      order), next to today's blind order. Both are playable against the bot so the better one can
      be chosen by playing; which becomes the PvP default is open.
+   - **Reveal takes turns (2026-11-05, ADR 0021).** Reveal-then-order turned out to give the
+     player's order no value against the bot (`docs/reveal-measurements.md`). Reveal now takes turns
+     showing first: round 1 the bot shows and the player answers, round 2 the player shows and the
+     bot answers with its best counter, round 3 is what is left. Good play is worth about 13 points
+     of series chance over bad play, and each side shows first once, so it suits PvP as it stands.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
    makes cheap.
@@ -65,7 +70,8 @@ blind picks. See Decisions below.
   second blind guess rather than a skill (`docs/aiming-measurements.md`, ADR 0018); bigger balls
   did not change that and broke the counter map (`docs/bigger-balls-experiment.md`). The draft
   formats of ADR 0019 move the skill into picks made with information: the opponent's lineup, or
-  the winner's next ball.
+  the winner's next ball. Reveal's first version still left no decision against the bot; it now
+  takes turns showing first (ADR 0021), measured in `docs/reveal-measurements.md`.
 
 ### Counter map (2026-11-04)
 

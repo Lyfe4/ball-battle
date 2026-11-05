@@ -1,6 +1,7 @@
 # 0019: Draft formats for best of 3
 
-- Status: Accepted (both formats are built to be played and compared; which one stays is open)
+- Status: Accepted (both formats are built to be played and compared; which one stays is open).
+  Reveal's rule (section 2) is replaced by ADR 0021.
 - Date: 2026-11-05
 - Amends: ADR 0017 (series setup, link, bot)
 

@@ -5,8 +5,8 @@ bars until one wins. No player control; you pick balls and watch. This is a port
 code quality matters as much as features.
 
 Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
-against a bot is built (ADR 0017), with three draft formats (blind, reveal-then-order,
-loser-picks-next; ADR 0019): the rules are pure sim code in `src/sim/series.ts`, the same functions
+against a bot is built (ADR 0017), with three draft formats (blind, reveal with turns showing
+first, loser-picks-next; ADR 0019, 0021): the rules are pure sim code in `src/sim/series.ts`, the same functions
 a server would run to verify a series, so keep them deterministic and DOM-free.
 
 Stack: TypeScript (strict), Vite, pnpm, Vitest, ESLint (flat config) + Prettier, Husky +
@@ -90,8 +90,9 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md`,
 `docs/decisions/0016-counter-density.md`, `docs/decisions/0017-best-of-3-series.md` and
 `docs/decisions/0018-aimed-start.md` (the aimed start is measured in `docs/aiming-measurements.md`;
-the game does not use it), `docs/decisions/0019-draft-formats.md` and
-`docs/decisions/0020-screens.md`.
+the game does not use it), `docs/decisions/0019-draft-formats.md`,
+`docs/decisions/0020-screens.md` and `docs/decisions/0021-reveal-take-turns.md` (measured in
+`docs/reveal-measurements.md`).
 
 ## Conventions
 

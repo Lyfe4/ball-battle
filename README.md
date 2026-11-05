@@ -86,15 +86,19 @@ series ends, the link holds both lineups and the series seed, e.g.
 `?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5`, and replays it exactly
 ([ADR 0017](docs/decisions/0017-best-of-3-series.md)).
 
-Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-formats.md)):
+Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-formats.md),
+[ADR 0021](docs/decisions/0021-reveal-take-turns.md)):
 
 - **Blind**: as above, both orders set without seeing the other lineup.
-- **Reveal**: both lineups are revealed, then each side sets its order in secret.
+- **Reveal**: both lineups are revealed, then the sides take turns showing first. Round 1 the bot
+  shows its ball and you answer; round 2 you show first and the bot answers with its best counter;
+  round 3 is what is left. Your choices are worth about 13 points of series chance
+  ([measurements](docs/reveal-measurements.md)).
 - **Loser picks**: after a round, the loser picks its next ball knowing the winner's next one; the
   winner keeps its order. The bot counter-picks from the counter map when it loses.
 
-The link records the rules and every pick (`fmt=loser&picks=archer`), so these series replay
-exactly too.
+The link records the rules and every pick (`fmt=loser&picks=archer`, or Reveal's four), so these
+series replay exactly too.
 
 ## Running it
 
@@ -181,7 +185,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md)
 , [ADR 0018: Aimed start](docs/decisions/0018-aimed-start.md)
 , [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
-and [ADR 0020: Screens](docs/decisions/0020-screens.md).
+, [ADR 0020: Screens](docs/decisions/0020-screens.md)
+and [ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 104.75 kB JS (34.83 kB gzipped), 18.02 kB CSS. First version baseline: 5.05 kB
