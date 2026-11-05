@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // Fast roster checks. The roster-wide tests that play whole matches (determinism, the measured
-// pass-through margin, the identity rules) are in roster.slow.test.ts (pnpm test:slow).
+// pass-through margin, the measured identity rules) are in the *.slow.test.ts files beside it
+// (pnpm test:slow).
 import { DT } from '../constants.ts';
 import type { BallDefinition } from '../types.ts';
 import { createWorld } from '../world.ts';
