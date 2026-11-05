@@ -126,6 +126,12 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
   except Thorns, its one designed counter (ADR 0013).
   Ball identity rules are pinned in `src/sim/balls/roster.slow.test.ts`; breaking one is a design
   decision, not a tuning step. Longer fights make matchups steeper (ADR 0004).
+- Interaction rules that exist to create a counter (one ball's effect meeting another ball's
+  mechanic, like "poison numbs rage" or "rage can't be slowed", ADR 0016) are limited to about one
+  per ball, and every such rule must be visible on screen (a status ring, a change in the ball's
+  design, or similar), so a viewer can tell why a ball won or lost. Fill counter gaps with new
+  balls rather than more rules. Today the Berserker, Frost and Venom are each in two such rules
+  (ADR 0016); don't add a third to any of them.
 - The pass-through property test in `src/sim/balls/roster.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.
