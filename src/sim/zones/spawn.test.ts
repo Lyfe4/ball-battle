@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyActions, type Scene } from '../abilities/apply-actions.ts';
+import { applyActions, sceneOf, type Scene } from '../abilities/apply-actions.ts';
 import { indexDefinitions } from '../definitions.ts';
 import { red } from '../test-support.ts';
 import type { AbilityAction, BallState } from '../types.ts';
@@ -24,7 +24,7 @@ const zone = (
 
 function spawn(actions: readonly AbilityAction[], scene: Partial<Scene> = {}, tick = 10) {
   return applyActions(
-    { balls: [owner], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0, ...scene },
+    { ...sceneOf([owner]), ...scene },
     owner.id,
     actions,
     definitions,

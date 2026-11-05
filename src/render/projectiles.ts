@@ -1,3 +1,5 @@
+import { isPulling } from '../sim/balls/magnet.ts';
+import { nearestEnemy } from '../sim/balls/targeting.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { aimLineOf, laserAlpha } from './aim-line.ts';
 import { ownerColor } from './ball-colors.ts';
@@ -69,6 +71,28 @@ export function drawAimLines(ctx: CanvasRenderingContext2D, world: WorldState): 
     ctx.beginPath();
     ctx.moveTo(line.from.x, line.from.y);
     ctx.lineTo(line.to.x, line.to.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/**
+ * Every Magnet's pull in progress (ADR 0026), as a dashed line from it to the ball it pulls: the
+ * nearest enemy ball, the same one `steer` turns. Drawn under the balls, like the laser.
+ */
+export function drawPullLines(ctx: CanvasRenderingContext2D, world: WorldState): void {
+  for (const ball of world.balls) {
+    if (ball.health <= 0 || !isPulling(ball, world.tick)) continue;
+    const target = nearestEnemy(ball, world.balls);
+    if (target === undefined) continue;
+    ctx.save();
+    ctx.globalAlpha = theme.magnetPullAlpha;
+    ctx.strokeStyle = theme.magnetPullLine;
+    ctx.lineWidth = theme.magnetPullWidth;
+    ctx.setLineDash([...theme.magnetPullDash]);
+    ctx.beginPath();
+    ctx.moveTo(ball.position.x, ball.position.y);
+    ctx.lineTo(target.position.x, target.position.y);
     ctx.stroke();
     ctx.restore();
   }

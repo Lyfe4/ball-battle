@@ -3,11 +3,14 @@ import { isAlive } from '../combat.ts';
 import { DT } from '../constants.ts';
 import type { BallState, DefinitionLookup, ProjectileState, SimEvent, Vec2 } from '../types.ts';
 import { addScaled, scale } from '../vec2.ts';
+import type { MinionState } from '../minions/types.ts';
 import { sweepHitTime, wallHitTime } from './sweep.ts';
 
 export interface ProjectileResult {
   readonly balls: readonly BallState[];
   readonly projectiles: readonly ProjectileState[];
+  /** Minions still in play: a projectile that reaches an enemy minion first destroys it. */
+  readonly minions: readonly MinionState[];
   readonly events: readonly SimEvent[];
 }
 
@@ -19,7 +22,9 @@ const subtract = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y });
  * ball is now). The nearest hit along the path wins if it comes before the wall; otherwise a wall
  * or an exhausted lifetime removes it. Projectiles resolve in creation order and each hit is
  * applied before the next is checked, so a ball brought to 0 health by one projectile is passed
- * through by the rest.
+ * through by the rest. Enemy minions are targets too (ADR 0026), swept on their motion this tick
+ * (from `minionStarts`): a projectile that reaches one first destroys it and is used up, which is
+ * how minions soak shots meant for their owner.
  */
 export function resolveProjectiles(
   projectiles: readonly ProjectileState[],
@@ -28,8 +33,11 @@ export function resolveProjectiles(
   definitions: DefinitionLookup,
   arenaSize: number,
   tick: number,
+  minions: readonly MinionState[] = [],
+  minionStarts: ReadonlyMap<string, Vec2> = new Map(),
 ): ProjectileResult {
   let current = balls;
+  let standing = minions;
   const remaining: ProjectileState[] = [];
   const events: SimEvent[] = [];
 
@@ -47,10 +55,42 @@ export function resolveProjectiles(
       );
       if (s !== undefined && (nearest === undefined || s < nearest.s)) nearest = { s, ball };
     }
+    let minionHit: { readonly s: number; readonly minion: MinionState } | undefined;
+    for (const minion of standing) {
+      if (minion.ownerId === projectile.ownerId) continue;
+      const minionStart = minionStarts.get(minion.id) ?? minion.position;
+      const s = sweepHitTime(
+        subtract(projectile.position, minionStart),
+        subtract(travel, subtract(minion.position, minionStart)),
+        minion.radius + projectile.radius,
+      );
+      if (s !== undefined && (minionHit === undefined || s < minionHit.s))
+        minionHit = { s, minion };
+    }
     const wallS = wallHitTime(projectile.position, travel, projectile.radius, arenaSize);
     const base = { tick, projectileId: projectile.id, ownerId: projectile.ownerId };
 
-    if (nearest !== undefined && (wallS === undefined || nearest.s <= wallS)) {
+    // A minion is hit if it comes strictly before any ball (a tie goes to the ball) and the wall.
+    const minionFirst =
+      minionHit !== undefined &&
+      (wallS === undefined || minionHit.s <= wallS) &&
+      (nearest === undefined || minionHit.s < nearest.s);
+    if (minionHit !== undefined && minionFirst) {
+      const destroyed = minionHit.minion;
+      standing = standing.filter((minion) => minion.id !== destroyed.id);
+      events.push(
+        { type: 'projectileExpired', ...base, reason: 'minion' },
+        {
+          type: 'minionDestroyed',
+          tick,
+          minionId: destroyed.id,
+          ownerId: destroyed.ownerId,
+          position: destroyed.position,
+          reason: 'projectile',
+          byId: projectile.ownerId,
+        },
+      );
+    } else if (nearest !== undefined && (wallS === undefined || nearest.s <= wallS)) {
       const { balls: afterHit, damage } = dealAbilityDamage(
         current,
         projectile.ownerId,
@@ -80,5 +120,5 @@ export function resolveProjectiles(
       });
     }
   }
-  return { balls: current, projectiles: remaining, events };
+  return { balls: current, projectiles: remaining, minions: standing, events };
 }

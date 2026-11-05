@@ -1,3 +1,4 @@
+import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -187,6 +188,11 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly status?: StatusRequest;
     }
   /**
+   * Summons a minion just outside the hook owner's edge, heading along `velocity`, unless the
+   * owner already has `maxAlive` (ADR 0026).
+   */
+  | ({ readonly kind: 'spawnMinion' } & MinionRequest)
+  /**
    * Puts a status on a ball for `durationTicks` (a whole number, at least 1). Re-applying a kind
    * the ball already has refreshes its expiry, never stacks (ADR 0009).
    */
@@ -300,6 +306,10 @@ export interface WorldState {
   readonly zones: readonly ZoneState[];
   /** The number the next zone id will use; only ever increases. */
   readonly nextZoneId: number;
+  /** Minions in play, in the order they were summoned (ADR 0026). */
+  readonly minions: readonly MinionState[];
+  /** The number the next minion id will use; only ever increases. */
+  readonly nextMinionId: number;
 }
 
 /**
@@ -409,7 +419,8 @@ export interface ProjectileExpiredEvent {
   readonly tick: number;
   readonly projectileId: string;
   readonly ownerId: string;
-  readonly reason: 'wall' | 'lifetime';
+  /** `minion`: it hit an enemy minion, which it destroyed (ADR 0026). */
+  readonly reason: 'wall' | 'lifetime' | 'minion';
 }
 
 /** A zone appeared; it will strike on `strikeTick`. */
@@ -473,7 +484,8 @@ export type SimEvent =
   | MatchEndedEvent
   | StatusAppliedEvent
   | StatusExpiredEvent
-  | HealReducedEvent;
+  | HealReducedEvent
+  | MinionEvent;
 
 export interface StepResult {
   readonly world: WorldState;

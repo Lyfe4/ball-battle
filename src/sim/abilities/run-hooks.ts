@@ -83,6 +83,8 @@ export function runPhase(
     nextProjectileId: world.nextProjectileId,
     zones: world.zones,
     nextZoneId: world.nextZoneId,
+    minions: world.minions,
+    nextMinionId: world.nextMinionId,
   };
   const events: SimEvent[] = [];
   for (const { ballId, hook, actions } of collected) {
@@ -97,6 +99,8 @@ export function runPhase(
     nextProjectileId: scene.nextProjectileId,
     zones: scene.zones,
     nextZoneId: scene.nextZoneId,
+    minions: scene.minions,
+    nextMinionId: scene.nextMinionId,
     events,
   };
 }

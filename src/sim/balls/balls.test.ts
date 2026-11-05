@@ -8,6 +8,9 @@ import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
 import { berserker } from './berserker.ts';
 import { brawler } from './brawler.ts';
+import { ghost } from './ghost.ts';
+import { magnet } from './magnet.ts';
+import { necromancer } from './necromancer.ts';
 import { frost } from './frost.ts';
 import { quake } from './quake.ts';
 import { sniper } from './sniper.ts';
@@ -50,6 +53,10 @@ describe('the ball roster', () => {
       berserker: berserker.speed,
       sniper: sniper.speed,
       quake: quake.speed,
+      // The pull only steers the enemy; it never changes either ball's speed (ADR 0026).
+      magnet: magnet.speed,
+      ghost: ghost.speed,
+      necromancer: necromancer.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {

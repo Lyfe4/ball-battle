@@ -1,5 +1,6 @@
 // Pure helpers that turn ability state into design state. No canvas, so they are unit tested.
-import { nearestEnemy } from '../../sim/balls/targeting.ts';
+import { nearestTarget } from '../../sim/balls/targeting.ts';
+import type { MinionState } from '../../sim/minions/types.ts';
 import { hasStatus } from '../../sim/status.ts';
 import type { BallState, Vec2 } from '../../sim/types.ts';
 import { theme } from '../theme.ts';
@@ -66,9 +67,16 @@ export function velocityHeading(velocity: Vec2): Vec2 | undefined {
   return length === 0 ? undefined : { x: velocity.x / length, y: velocity.y / length };
 }
 
-/** Unit vector towards the nearest live enemy, or undefined if there is none (or it overlaps). */
-export function aimHeading(self: BallState, balls: readonly BallState[]): Vec2 | undefined {
-  const target = nearestEnemy(self, balls);
+/**
+ * Unit vector towards what the ball's aimed attack would pick (the nearest enemy ball or minion,
+ * ADR 0026), or undefined if there is none (or it overlaps).
+ */
+export function aimHeading(
+  self: BallState,
+  balls: readonly BallState[],
+  minions: readonly MinionState[] = [],
+): Vec2 | undefined {
+  const target = nearestTarget(self, balls, minions);
   if (target === undefined) return undefined;
   return velocityHeading({
     x: target.position.x - self.position.x,

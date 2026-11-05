@@ -8,7 +8,10 @@ import { archer, ARROW_DAMAGE } from './archer.ts';
 import { berserker, RAGE_DAMAGE } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
+import { ghost, SPECTRAL_DAMAGE } from './ghost.ts';
 import { BALLS } from './index.ts';
+import { magnet } from './magnet.ts';
+import { MAX_MINIONS, MINION_DAMAGE, MINION_RADIUS, necromancer } from './necromancer.ts';
 import { ZONE_DAMAGE as SHOCKWAVE_DAMAGE } from './quake.ts';
 import { SHOT_DAMAGE } from './sniper.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
@@ -68,6 +71,10 @@ describe('the ball roster: identity rules', () => {
       berserker: 0,
       sniper: SHOT_DAMAGE,
       quake: SHOCKWAVE_DAMAGE,
+      // Its pull only steers; its hits are contact hits.
+      magnet: 0,
+      ghost: SPECTRAL_DAMAGE,
+      necromancer: MINION_DAMAGE,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {
@@ -94,4 +101,38 @@ describe('the ball roster: identity rules', () => {
     expect(Object.keys(brawler.hooks)).toStrictEqual([]);
     expect(brawler.initialAbilityState).toStrictEqual({});
   });
+
+  it('Magnet hits harder than every ball but the Brawler: its pull forces a brawl it can win', () => {
+    for (const ball of others(magnet.id).filter(({ id }) => id !== brawler.id)) {
+      expect(magnet.contactDamage).toBeGreaterThan(ball.contactDamage);
+    }
+  });
+
+  it('Ghost’s spectral hit is weaker than its own solid hit, and it is never always phased', () => {
+    expect(SPECTRAL_DAMAGE).toBeLessThan(ghost.contactDamage);
+    expect(ghost.phasedOf?.({ ...stateOf(ghost), abilityState: ghost.initialAbilityState })).toBe(
+      false,
+    );
+  });
+
+  it('Necromancer’s minions are small, few, and its only ability', () => {
+    expect(MINION_RADIUS).toBeLessThan(necromancer.radius);
+    expect(MAX_MINIONS).toBeGreaterThanOrEqual(1);
+    expect(MAX_MINIONS).toBeLessThanOrEqual(3);
+    expect(Object.keys(necromancer.hooks)).toStrictEqual(['onTick']);
+  });
 });
+
+/** A ball state for a definition, for asking its pure queries. */
+function stateOf(definition: (typeof BALLS)[number]) {
+  return {
+    id: 'ball-0',
+    definitionId: definition.id,
+    position: { x: 500, y: 500 },
+    velocity: { x: definition.speed, y: 0 },
+    radius: definition.radius,
+    health: definition.maxHealth,
+    abilityState: definition.initialAbilityState,
+    statuses: [],
+  };
+}

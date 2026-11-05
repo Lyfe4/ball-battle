@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { fakeWindow } from './fake-history.ts';
 import { moveFor, screenKeyOf, type ScreenKey } from './history-rules.ts';
 import { createNavigation } from './navigation.ts';
@@ -37,9 +38,8 @@ describe('screenKeyOf', () => {
     expect(key('?mode=bo3&fmt=reveal&step=lineup')).toBe('series-lineup');
     expect(key('?mode=bo3&fmt=reveal&step=answer')).toBe('series');
     expect(key('?mode=bo3&fmt=reveal&step=play')).toBe('series');
-    expect(key('?mode=bo3&la=brawler,archer,vampire&lb=frost,speedster,thorns&seed=1&v=1')).toBe(
-      'series',
-    );
+    const decided = `?mode=bo3&la=brawler,archer,vampire&lb=frost,speedster,thorns&seed=1&v=${String(RULESET_VERSION)}`;
+    expect(key(decided)).toBe('series');
   });
 
   it('puts the manual’s two tabs on one key and every ball’s entry on another', () => {

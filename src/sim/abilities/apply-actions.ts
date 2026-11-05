@@ -1,5 +1,7 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
+import { spawnMinion } from '../minions/spawn.ts';
+import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
 import {
   assertStatusDuration,
@@ -28,6 +30,21 @@ export interface Scene {
   readonly nextProjectileId: number;
   readonly zones: readonly ZoneState[];
   readonly nextZoneId: number;
+  readonly minions: readonly MinionState[];
+  readonly nextMinionId: number;
+}
+
+/** A scene of just these balls, with nothing in flight: for applying one-off actions. */
+export function sceneOf(balls: readonly BallState[]): Scene {
+  return {
+    balls,
+    projectiles: [],
+    nextProjectileId: 0,
+    zones: [],
+    nextZoneId: 0,
+    minions: [],
+    nextMinionId: 0,
+  };
 }
 
 export interface ActionResult extends Scene {
@@ -60,6 +77,8 @@ export function applyActions(
   let { nextProjectileId } = scene;
   const zones = [...scene.zones];
   let { nextZoneId } = scene;
+  const minions = [...scene.minions];
+  let { nextMinionId } = scene;
   const events: SimEvent[] = [];
 
   const indexOf = (id: string): number => {
@@ -170,6 +189,23 @@ export function applyActions(
           return undefined;
         });
         break;
+      case 'spawnMinion':
+        update(ownerId, (self) => {
+          const spawned = spawnMinion(
+            self,
+            action,
+            minions,
+            `minion-${nextMinionId}`,
+            arenaSize,
+            tick,
+          );
+          if (spawned === undefined) return undefined;
+          nextMinionId++;
+          minions.push(spawned.minion);
+          events.push(spawned.event);
+          return undefined;
+        });
+        break;
       case 'applyStatus':
         update(action.targetId, (target) => {
           assertStatusDuration(action.status, action.durationTicks, ownerId);
@@ -190,7 +226,16 @@ export function applyActions(
       }
     }
   }
-  return { balls: next, projectiles, nextProjectileId, zones, nextZoneId, events };
+  return {
+    balls: next,
+    projectiles,
+    nextProjectileId,
+    zones,
+    nextZoneId,
+    minions,
+    nextMinionId,
+    events,
+  };
 }
 
 /**
@@ -207,7 +252,7 @@ export function dealAbilityDamage(
   tick: number,
 ): { readonly balls: readonly BallState[]; readonly damage: DamageEvent | undefined } {
   const result = applyActions(
-    { balls, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
+    sceneOf(balls),
     ownerId,
     [{ kind: 'damage', targetId, amount }],
     definitions,

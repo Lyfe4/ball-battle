@@ -14,7 +14,8 @@ import {
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
-import { drawAimLines, drawProjectiles, drawSparks } from './projectiles.ts';
+import { drawMinions } from './minions.ts';
+import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 
@@ -96,6 +97,7 @@ export function drawWorld(
   // Pending zones go under the balls, so a warning never hides a ball.
   drawZones(ctx, world, definitions);
   drawAimLines(ctx, world);
+  drawPullLines(ctx, world);
   const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
     if (breaking.has(ball.id)) return;
@@ -104,8 +106,10 @@ export function drawWorld(
       definitions.get(ball.definitionId)?.color ?? theme.unknownBall,
       isRepeat,
     );
+    const definition = definitions.get(ball.definitionId);
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
+    const phased = definition?.phasedOf?.(ball) ?? false;
     withBallTransform(ctx, ball, effects.squash(ball.id), effects.intro(index), () => {
       drawBall(ctx, world, ball, {
         color,
@@ -114,6 +118,7 @@ export function drawWorld(
         heal,
         design,
         cssPixelsPerUnit,
+        phased,
       });
     });
     if (ball.health > 0 && design?.showsHeal !== true) drawHealPulse(ctx, ball, heal);
@@ -124,6 +129,7 @@ export function drawWorld(
   });
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);
+  drawMinions(ctx, world, definitions, cssPixelsPerUnit);
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
   drawStrikes(ctx, world, effects.strikes);
@@ -162,12 +168,14 @@ export interface BallLook {
   readonly cssPixelsPerUnit: number;
   /** Forces a detail level (the style guide shows both); otherwise chosen by on-screen size. */
   readonly detail?: 'full' | 'simple';
+  /** Phased (ADR 0026): drawn see-through with a broken outline, as hits pass through it. */
+  readonly phased?: boolean;
 }
 
 /** Which way a design faces, in the world it is drawn in. */
 function headingFor(design: BallDesign, ball: BallState, world: WorldState) {
   if (design.facing === 'velocity') return velocityHeading(ball.velocity);
-  if (design.facing === 'aim') return aimHeading(ball, world.balls);
+  if (design.facing === 'aim') return aimHeading(ball, world.balls, world.minions);
   return undefined;
 }
 
@@ -186,6 +194,7 @@ export function drawBall(
   const { color, flash, isRepeat, design } = look;
   ctx.save();
   if (ball.health <= 0) ctx.globalAlpha = theme.defeatedAlpha;
+  else if (look.phased === true) ctx.globalAlpha = theme.phasedAlpha;
 
   ctx.beginPath();
   ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
@@ -222,9 +231,20 @@ export function drawBall(
     ctx.fill();
     ctx.restore();
   }
-  ctx.strokeStyle = theme.ballOutline;
-  ctx.lineWidth = theme.ballOutlineWidth;
-  ctx.stroke();
+  if (look.phased === true && ball.health > 0) {
+    // A broken pale outline, fully opaque, so the see-through ball still has a clear edge.
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([...theme.phasedDash]);
+    ctx.strokeStyle = theme.phasedOutline;
+    ctx.lineWidth = theme.phasedOutlineWidth;
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    ctx.strokeStyle = theme.ballOutline;
+    ctx.lineWidth = theme.ballOutlineWidth;
+    ctx.stroke();
+  }
   if (isRepeat) {
     // Just inside the edge, so it never overlaps a neighbouring ball or the wall.
     ctx.beginPath();

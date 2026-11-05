@@ -4,6 +4,7 @@
 // (scripts/counter-map.ts). A new ball adds one entry per existing ball in the file for its batch;
 // a test checks the map covers every pair.
 import { BATCH_TWO_ENTRIES } from './counter-map-batch-2.ts';
+import { BATCH_THREE_ENTRIES } from './counter-map-batch-3.ts';
 import { FIRST_ENTRIES } from './counter-map-first.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
@@ -18,7 +19,11 @@ export interface CounterEntry {
 }
 
 /** Every pair of balls exactly once, with its intended result and why (a test checks coverage). */
-export const COUNTER_MAP: readonly CounterEntry[] = [...FIRST_ENTRIES, ...BATCH_TWO_ENTRIES];
+export const COUNTER_MAP: readonly CounterEntry[] = [
+  ...FIRST_ENTRIES,
+  ...BATCH_TWO_ENTRIES,
+  ...BATCH_THREE_ENTRIES,
+];
 
 /** The map entry for a pair, whichever order the pair comes in. */
 export function counterFor(a: string, b: string): CounterEntry | undefined {

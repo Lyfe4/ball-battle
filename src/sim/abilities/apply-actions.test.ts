@@ -3,7 +3,7 @@ import { indexDefinitions } from '../definitions.ts';
 import { blue, red, withBalls } from '../test-support.ts';
 import { createWorld } from '../world.ts';
 import type { AbilityAction, BallState, DefinitionLookup } from '../types.ts';
-import { applyActions } from './apply-actions.ts';
+import { applyActions, sceneOf } from './apply-actions.ts';
 
 const definitions = indexDefinitions([red, blue]);
 const world = createWorld(1, [red, blue]);
@@ -16,14 +16,7 @@ function apply(
   lookup: DefinitionLookup,
   tick: number,
 ) {
-  return applyActions(
-    { balls, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
-    ownerId,
-    actions,
-    lookup,
-    tick,
-    1000,
-  );
+  return applyActions(sceneOf(balls), ownerId, actions, lookup, tick, 1000);
 }
 
 describe('applyActions', () => {
@@ -162,7 +155,7 @@ describe('applyActions', () => {
 
     it('spawns just outside the owner, heading along its velocity, with the next id', () => {
       const result = applyActions(
-        { balls: [placed], projectiles: [], nextProjectileId: 4, zones: [], nextZoneId: 0 },
+        { ...sceneOf([placed]), nextProjectileId: 4 },
         placed.id,
         [arrow],
         definitions,
@@ -197,7 +190,7 @@ describe('applyActions', () => {
     it('fires into an adjacent wall as fired then expired, without adding a projectile', () => {
       const againstWall = { ...shooter, position: { x: 1000 - red.radius, y: 500 } };
       const result = applyActions(
-        { balls: [againstWall], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
+        sceneOf([againstWall]),
         againstWall.id,
         [arrow],
         definitions,
@@ -215,14 +208,7 @@ describe('applyActions', () => {
 
     it('does nothing for a defeated owner and rejects invalid projectiles', () => {
       const dead = { ...placed, health: 0 };
-      const none = applyActions(
-        { balls: [dead], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
-        dead.id,
-        [arrow],
-        definitions,
-        1,
-        1000,
-      );
+      const none = applyActions(sceneOf([dead]), dead.id, [arrow], definitions, 1, 1000);
       expect(none.projectiles).toStrictEqual([]);
       expect(none.events).toStrictEqual([]);
       for (const bad of [
@@ -232,14 +218,7 @@ describe('applyActions', () => {
         { ...arrow, lifetimeTicks: 1.5 },
       ]) {
         expect(() =>
-          applyActions(
-            { balls: [placed], projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
-            placed.id,
-            [bad],
-            definitions,
-            1,
-            1000,
-          ),
+          applyActions(sceneOf([placed]), placed.id, [bad], definitions, 1, 1000),
         ).toThrow(/invalid projectile/);
       }
     });

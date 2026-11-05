@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyActions } from './abilities/apply-actions.ts';
+import { applyActions, sceneOf } from './abilities/apply-actions.ts';
 import { defineBall } from './define-ball.ts';
 import { indexDefinitions } from './definitions.ts';
 import {
@@ -19,14 +19,7 @@ const world = createWorld(1, [red, blue]);
 const shock = { kind: 'shocked', durationTicks: 10 } as const;
 
 function apply(balls: readonly BallState[], actions: readonly AbilityAction[], tick = 5) {
-  return applyActions(
-    { balls, projectiles: [], nextProjectileId: 0, zones: [], nextZoneId: 0 },
-    'ball-0',
-    actions,
-    definitions,
-    tick,
-    1000,
-  );
+  return applyActions(sceneOf(balls), 'ball-0', actions, definitions, tick, 1000);
 }
 
 const target = (balls: readonly BallState[]): BallState => {

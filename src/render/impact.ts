@@ -49,7 +49,9 @@ export function impactsOf(events: readonly SimEvent[]): readonly Impact[] {
       contacts.set(a, { point: event.point, normal: { x: 0 - x, y: 0 - y } });
       contacts.set(b, { point: event.point, normal: event.normal });
     }
-    if (event.type === 'projectileHit') arrows.set(event.targetId, event.point);
+    if (event.type === 'projectileHit' || event.type === 'minionHit') {
+      arrows.set(event.targetId, event.point);
+    }
     if (event.type !== 'damage' || event.amount <= 0) continue;
     const entry = impacts.get(event.targetId) ?? { damage: 0 };
     entry.damage += event.amount;

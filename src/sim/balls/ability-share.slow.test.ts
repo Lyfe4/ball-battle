@@ -4,7 +4,9 @@
 // step.
 import { describe, expect, it } from 'vitest';
 import { archer } from './archer.ts';
+import { ghost } from './ghost.ts';
 import { BALLS } from './index.ts';
+import { necromancer } from './necromancer.ts';
 import { quake } from './quake.ts';
 import { damageDealt, ROSTER_TIMEOUT_MS } from './roster-support.ts';
 import { sniper } from './sniper.ts';
@@ -35,6 +37,10 @@ describe('the ball roster (slow): ability share', () => {
     ['Sniper gets at least half its damage from its shots', sniper, 0.5],
     // Measured about 40% (ADR 0015).
     ['Quake gets at least 30% of its damage from its shockwaves', quake, 0.3],
+    // Measured about 17% (ADR 0026): a pass is rarer than a contact, and weaker.
+    ['Ghost gets a meaningful share of its damage from spectral hits', ghost, 0.1],
+    // Measured about 46% (ADR 0026).
+    ['Necromancer gets at least a third of its damage from its minions', necromancer, 0.33],
   ])('%s', { timeout: ROSTER_TIMEOUT_MS }, (_rule, ball, least) => {
     expect(abilityShare(ball)).toBeGreaterThanOrEqual(least);
   });
