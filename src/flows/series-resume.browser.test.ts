@@ -3,35 +3,7 @@
 // can't be reached again, so leaving can't be used to retry round 1 on the same seed (ADR 0025).
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
-
-const settle = () => new Promise((resolve) => setTimeout(resolve, 150));
-
-/** Goes Back as a browser does, and waits for the page to show the screen it lands on. */
-async function back(): Promise<void> {
-  const landed = new Promise((resolve) => {
-    window.addEventListener('popstate', resolve, { once: true });
-  });
-  history.back();
-  await landed;
-  await settle();
-}
-
-function visible(selector: string): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>(selector)].filter(
-    (node) => node.closest('[hidden]') === null && !node.hidden,
-  );
-}
-
-function button(name: string): HTMLButtonElement {
-  const found = visible('button').find(
-    (node) =>
-      node.textContent.trim() === name ||
-      node.getAttribute('aria-label') === name ||
-      node.getAttribute('aria-label')?.startsWith(`${name},`) === true,
-  );
-  if (!(found instanceof HTMLButtonElement)) throw new Error(`No visible button "${name}"`);
-  return found;
-}
+import { back, button, settle, visible } from './page-support.ts';
 
 const step = () => new URL(location.href).searchParams.get('step');
 /** The names in the HUD's rows: the round being played, as "You X" and "Bot Y". */

@@ -159,3 +159,60 @@ export function pairingOf(state: SeriesState): Pairing | undefined {
     attempt: next?.attempt ?? 0,
   };
 }
+
+/** What the player can do next on a series screen: every screen but a fight offers one or more. */
+export type SeriesAction = 'pick' | 'play' | 'rematch' | 'newSeries';
+
+/** Where the series is: a round being fought, the screen between rounds, or the result. */
+export type SeriesPhase = 'playing' | 'between' | 'finished';
+
+export interface SeriesMoment {
+  readonly state: SeriesState;
+  /** The match on screen, if any. */
+  readonly current: NextMatch | undefined;
+  /** True once the match on screen has ended and its result is showing. */
+  readonly settled: boolean;
+  /**
+   * A replayed link holds the pick that is due: the state once the link's due picks are made (they
+   * are made when the next round is played). Undefined when no link pick is due.
+   */
+  readonly linkState: SeriesState | undefined;
+}
+
+export interface SeriesScreen {
+  readonly phase: SeriesPhase;
+  /** The pick the player makes now, if any. */
+  readonly choice: PickChoice | undefined;
+  /** The coming round, when Play round is how the player moves on. */
+  readonly pairing: Pairing | undefined;
+  /**
+   * The controls that move the player forward. Never empty outside a fight (no dead ends): a fight
+   * moves on by itself, every other screen offers a pick, Play round, or Rematch and New series.
+   */
+  readonly actions: readonly SeriesAction[];
+}
+
+/** What a series screen shows and offers at this moment; the panel renders exactly this. */
+export function seriesScreenOf({ state, current, settled, linkState }: SeriesMoment): SeriesScreen {
+  const playing = current !== undefined && !settled;
+  const finished = state.winner !== undefined && !playing;
+  const phase: SeriesPhase = playing ? 'playing' : finished ? 'finished' : 'between';
+  if (phase !== 'between') {
+    return {
+      phase,
+      choice: undefined,
+      pairing: undefined,
+      actions: finished ? ['rematch', 'newSeries'] : [],
+    };
+  }
+  // A link's due pick is the link's to make, so the player isn't asked for it: Play round makes it.
+  const choice = linkState === undefined ? pickChoiceOf(state) : undefined;
+  // The round Play round leads to: after the link's due picks, when it holds them.
+  const pairing = choice === undefined ? pairingOf(linkState ?? state) : undefined;
+  return {
+    phase,
+    choice,
+    pairing,
+    actions: choice !== undefined ? ['pick'] : pairing !== undefined ? ['play'] : [],
+  };
+}
