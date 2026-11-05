@@ -55,7 +55,8 @@ another. All must pass.
    accumulator to run the fixed timestep independently of display refresh rate. Browser-side
    helpers that are not sim or rendering (the fixed-step clock, the presentation clock and frame
    driver, seed and matchup parsing) live in `src/app/` as small pure functions with tests; keep
-   `main.ts` to wiring.
+   `main.ts` to wiring. The best-of-3 wiring (builder, scoreboard, session, link timing) is in
+   `src/series-controller.ts`; a new mode gets its own module like it.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`, created with
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus
    optional hooks. Runtime state (`BallState`) is kept separate from the definition.
