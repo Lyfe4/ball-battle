@@ -22,7 +22,7 @@ export interface QuickSetup {
   setVisible(visible: boolean): void;
   /**
    * Fills both slots and makes A the slot a tap fills. Focus goes to the heading, or to Start when
-   * the balls were chosen for the player (Play on the home screen).
+   * the balls were chosen for the player (Free play on the home screen).
    */
   open(matchup: Matchup, focus?: 'heading' | 'start'): void;
 }
@@ -53,7 +53,7 @@ export function createQuickSetup(
   const picks: Record<Slot, string> = { a: first.id, b: first.id };
   let active: Slot = 'a';
 
-  const header = createScreenHeader('Quick match', 'Back', actions.onBack, { legend: true });
+  const header = createScreenHeader('Free play', 'Back', actions.onBack, { legend: true });
 
   const slotRow = element('div', 'quick-slots');
   slotRow.setAttribute('role', 'group');

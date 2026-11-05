@@ -12,10 +12,10 @@ asks you to build and order three balls and read what the other side will play.
 Built with TypeScript, Vite and plain Canvas 2D. No game engine, no physics library, no
 framework.
 
-![Home, quick-match setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
+![Home, Free play setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
 
-The home screen plays a demo match behind the pitch; **Play** sets up a quick match and **Best of
-3** a series against the bot. Every screen is designed for a phone first and has a
+The home screen plays a demo match behind the pitch. Its main button, **Best of 3 vs bot**, is the
+game; **Free play** lets you choose both balls of one match, to try things out. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move

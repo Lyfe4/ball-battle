@@ -53,8 +53,8 @@ const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
-  pick: 'Quick match · BallBattle',
-  match: 'Quick match · BallBattle',
+  pick: 'Free play · BallBattle',
+  match: 'Free play · BallBattle',
   series: 'Best of 3 · BallBattle',
   manual: 'Ball manual · BallBattle',
   outdated: 'Link from another version · BallBattle',

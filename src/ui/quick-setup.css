@@ -1,4 +1,4 @@
-/* Quick match setup: the two slots with their marks, why behind one tap, the grid and Start. */
+/* Free play setup: the two slots with their marks, why behind one tap, the grid and Start. */
 .quick-setup {
   display: grid;
   gap: var(--space-gap);
