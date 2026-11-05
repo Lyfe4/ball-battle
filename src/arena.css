@@ -1,0 +1,16 @@
+/* The arena's own message: shown over the match when the simulation threw and the match stopped. */
+.arena-container > canvas,
+.arena-error {
+  grid-area: 1 / 1;
+}
+
+.arena-error {
+  max-width: 80%;
+  margin: 0;
+  padding: var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.4;
+}

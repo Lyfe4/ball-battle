@@ -13,6 +13,7 @@ import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
+import { element } from './ui/dom.ts';
 
 /** What the arena needs from the page around it. */
 export interface ArenaHost {
@@ -56,6 +57,19 @@ export function createArena(
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
   let canvasView = { canvasPixels: 0, cssPixels: 0 };
+  /**
+   * Set when a frame threw (the sim throws on purpose for impossible values): the match stops where
+   * it was and a message shows, until the next `show`. The loop itself keeps running.
+   */
+  let failed = false;
+  const failure = element(
+    'p',
+    'arena-error',
+    'Something went wrong in this match, so it stopped. Reload the page to try again.',
+  );
+  failure.setAttribute('role', 'alert');
+  failure.hidden = true;
+  container.append(failure);
 
   function applyReducedMotion(): void {
     effects.setReducedMotion(reducedMotionQuery.matches);
@@ -89,13 +103,29 @@ export function createArena(
     host.drawn(world, effects.resultVisible(now));
   }
 
+  /**
+   * One frame. Scheduled before anything can throw, so an error never stops the loop silently: it
+   * stops this match with a visible message, and the next match shown plays normally.
+   */
   function frame(nowMs: number): void {
+    requestAnimationFrame(frame);
+    if (failed) return;
+    try {
+      advance(nowMs);
+    } catch (error) {
+      failed = true;
+      lastFrameMs = undefined;
+      failure.hidden = false;
+      console.error('The match stopped: a frame threw.', error);
+    }
+  }
+
+  function advance(nowMs: number): void {
     // The match pauses while a dialog covers it, like a hidden tab: no time passes, so it carries
     // on exactly where it stopped. The loop asks rather than listening for the dialog's close
     // event, which did not fire in a background tab (ADR 0011).
     if (host.isPaused()) {
       lastFrameMs = undefined;
-      requestAnimationFrame(frame);
       return;
     }
     if (lastFrameMs !== undefined) {
@@ -131,7 +161,6 @@ export function createArena(
       }
     }
     lastFrameMs = nowMs;
-    requestAnimationFrame(frame);
   }
 
   // Browsers pause requestAnimationFrame in hidden tabs. Restart timing on return so the match
@@ -148,6 +177,8 @@ export function createArena(
 
   return {
     show(world) {
+      failed = false;
+      failure.hidden = true;
       playback = startPlayback(world, theme.introMs);
       effects.reset();
       lastFrameMs = undefined;

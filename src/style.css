@@ -6,6 +6,7 @@
 @import './styles/tokens.css';
 @import './styles/base.css';
 @import './styles/layout.css';
+@import './arena.css';
 @import './ui/button.css';
 @import './ui/segmented.css';
 @import './ui/hud.css';
