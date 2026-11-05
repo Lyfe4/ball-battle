@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../../sim/balls/index.ts';
-import { favouredOf, leanOf, matchupsOf, statShares } from './matchups.ts';
+import { favouredOf, leanOf, matchupsOf, speedTrait, statShares } from './matchups.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 
@@ -50,10 +50,17 @@ describe('matchups', () => {
   });
 
   it('scales stats against the roster’s best, so the best has a full bar', () => {
-    for (const key of ['health', 'speed', 'hit'] as const) {
+    for (const key of ['health', 'hit'] as const) {
       const shares = BALLS.map((ball) => statShares(ball, BALLS)[key]);
       expect(Math.max(...shares)).toBe(1);
       expect(Math.min(...shares)).toBeGreaterThan(0);
     }
+  });
+
+  it('names speed only for the fastest and the slowest ball', () => {
+    const traits = new Map(BALLS.map((ball) => [ball.id, speedTrait(ball, BALLS)]));
+    expect(traits.get('speedster')).toBe('Fastest ball');
+    expect(traits.get('frost')).toBe('Slowest ball');
+    expect([...traits.values()].filter((trait) => trait !== undefined)).toHaveLength(2);
   });
 });

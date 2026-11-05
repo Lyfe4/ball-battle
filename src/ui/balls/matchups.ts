@@ -58,8 +58,21 @@ export function favouredOf(a: string, b: string): string | undefined {
 export interface StatShares {
   /** Each stat as a share of the roster's highest, 0 to 1, for bars that compare balls. */
   readonly health: number;
-  readonly speed: number;
   readonly hit: number;
+}
+
+/**
+ * Speed as a trait, only where it defines a ball: the roster's fastest or slowest by base speed.
+ * The rest differ by a few percent, too little for a bar to show anything.
+ */
+export function speedTrait(
+  ball: BallDefinition,
+  roster: readonly BallDefinition[],
+): 'Fastest ball' | 'Slowest ball' | undefined {
+  const speeds = roster.map((b) => b.speed);
+  if (ball.speed === Math.max(...speeds)) return 'Fastest ball';
+  if (ball.speed === Math.min(...speeds)) return 'Slowest ball';
+  return undefined;
 }
 
 /** A ball's base stats against the roster's best. Abilities change them in a match; this doesn't. */
@@ -67,7 +80,6 @@ export function statShares(ball: BallDefinition, roster: readonly BallDefinition
   const most = (pick: (b: BallDefinition) => number) => Math.max(...roster.map(pick));
   return {
     health: ball.maxHealth / most((b) => b.maxHealth),
-    speed: ball.speed / most((b) => b.speed),
     hit: ball.contactDamage / most((b) => b.contactDamage),
   };
 }

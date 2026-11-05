@@ -1,7 +1,7 @@
 import type { Matchup } from '../../app/matchup.ts';
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupsOf, statShares, type MatchupLine } from '../balls/matchups.ts';
+import { matchupsOf, speedTrait, statShares, type MatchupLine } from '../balls/matchups.ts';
 import { element, setText } from '../dom.ts';
 
 export interface BallDetail {
@@ -39,10 +39,13 @@ export function createBallDetail(
   const icon = element('canvas', 'ball-detail-icon');
   icon.setAttribute('aria-hidden', 'true');
   const description = element('p', 'ball-detail-description');
-  hero.append(icon, description);
+  const trait = element('span', 'ball-detail-trait');
+  const text = element('div', 'ball-detail-text');
+  text.append(description, trait);
+  hero.append(icon, text);
 
   const stats = element('dl', 'ball-detail-stats');
-  const statRows = (['Health', 'Speed', 'Contact hit'] as const).map((label) => {
+  const statRows = (['Health', 'Contact hit'] as const).map((label) => {
     const term = element('dt', 'ball-detail-stat', label);
     const value = element('dd', 'ball-detail-value');
     const bar = element('span', 'ball-detail-bar');
@@ -106,9 +109,11 @@ export function createBallDetail(
       const shares = statShares(ball, balls);
       const values = [
         [shares.health, ball.maxHealth],
-        [shares.speed, ball.speed],
         [shares.hit, ball.contactDamage],
       ] as const;
+      const speed = speedTrait(ball, balls);
+      setText(trait, speed ?? '');
+      trait.hidden = speed === undefined;
       statRows.forEach((row, index) => {
         const [share, value] = values[index] ?? [0, 0];
         row.fill.style.width = `${String(Math.round(share * 100))}%`;
