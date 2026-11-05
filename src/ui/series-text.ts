@@ -22,21 +22,22 @@ export const FORMAT_NAMES: Readonly<Record<Format, string>> = {
   loser: 'Loser picks next',
 };
 
-/** Short names for the format buttons; FORMAT_NAMES is their accessible name. */
-export const FORMAT_SHORT_NAMES: Readonly<Record<Format, string>> = {
-  blind: 'Blind',
-  reveal: 'Reveal',
-  loser: 'Loser picks',
+/** One line on how each format works, on its card in the rules step. */
+export const FORMAT_LINES: Readonly<Record<Format, string>> = {
+  blind: 'Pick and order three balls without seeing the bot’s.',
+  reveal: 'Pick blind, see both lineups, then order yours in secret.',
+  loser: 'After each round the loser picks its next ball, seeing the winner’s.',
 };
 
-/** One line on how each format works, for the lineup builder. */
-export const FORMAT_HINTS: Readonly<Record<Format, string>> = {
-  blind:
-    'Pick 3 different balls in order. Round 1 is your first against the bot’s first; first to 2 wins. The bot’s lineup stays hidden.',
-  reveal:
-    'Pick 3 different balls. Then both lineups are revealed and each side sets its order in secret. First to 2 wins.',
-  loser:
-    'Pick 3 different balls in order. After each round the loser picks its next ball, knowing the winner’s; the winner keeps its order. First to 2 wins.',
+/** The series rule every format shares, said once above the format cards. */
+export const SERIES_RULE =
+  'Three balls each against the bot, one round per pair. First to two wins.';
+
+/** What the lineup step asks for, by format: order matters unless the lineups are revealed first. */
+export const LINEUP_HINTS: Readonly<Record<Format, string>> = {
+  blind: 'Tap three balls in the order they play. Tap a slot to take its ball out.',
+  reveal: 'Tap three balls. You set their order once both lineups are revealed.',
+  loser: 'Tap three balls in the order they play; a loss lets you pick again.',
 };
 
 /** Loser picks next, the player lost: what they are picking against. */

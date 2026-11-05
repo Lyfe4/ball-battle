@@ -13,6 +13,5 @@
 @import './ui/balls/ball-info.css';
 @import './ui/screen-header.css';
 @import './ui/quick-setup.css';
-@import './ui/picker.css';
-@import './ui/lineup-builder.css';
+@import './ui/series/series-setup.css';
 @import './ui/series-panel.css';

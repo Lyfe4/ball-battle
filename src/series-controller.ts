@@ -1,7 +1,7 @@
-// Best-of-3 wiring (ADR 0017, 0019): the lineup builder with its draft format, the scoreboard, the
-// series session, the bot's choices and when the link may show the bot's lineup. main.ts owns the
-// arena and the frame loop and hands this module what it needs through `SeriesHost`, so it stays
-// wiring only.
+// Playing a best-of-3 series (ADR 0017, 0019): the scoreboard, the series session, the bot's picks
+// and when the link may show the bot's lineup. Setting a series up is series-setup.ts. main.ts owns
+// the arena and the frame loop and hands this module what it needs through `SeriesHost`, so it
+// stays wiring only.
 import { generateSeed } from './app/seed.ts';
 import {
   advanceSession,
@@ -14,16 +14,12 @@ import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
 import { botPick, randomBot } from './sim/bot.ts';
 import {
   awaitingPick,
-  formatOf,
   matchWorld,
   remainingOf,
   setupWithPicks,
-  type Format,
-  type Lineup,
   type SeriesSetup,
 } from './sim/series.ts';
-import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
-import { createLineupBuilder } from './ui/lineup-builder.ts';
+import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createSeriesPanel } from './ui/series-panel.ts';
 
 /** What the series needs from the page around it. */
@@ -33,22 +29,20 @@ export interface SeriesHost {
   replaceUrl(write: (params: URLSearchParams) => void): void;
   /** Which controls show has changed (a series started or ended). */
   layoutChanged(): void;
-  /** Redraws the match already on screen. */
-  redraw(): void;
+  /** After a series: set up the next one, with this one's lineup and format kept. */
+  newSeries(last: SeriesSetup): void;
+  /** Leaves the series for its setup. */
+  leave(): void;
 }
 
 export interface SeriesController {
-  /** True while a series is being played (not while building a lineup). */
+  /** True while a series is being played. */
   isPlaying(): boolean;
-  /** True while the lineup dialog is open (the game pauses meanwhile). */
-  isOpen(): boolean;
-  /** Shows the builder or the scoreboard in best-of-3 mode, neither in quick mode. */
-  setVisible(seriesMode: boolean): void;
-  /** Best-of-3 mode before a series: the builder, optionally prefilled. */
-  showBuilder(lineup: Lineup | undefined, format?: Format): void;
+  /** Shows or hides the scoreboard. */
+  setVisible(visible: boolean): void;
   /** Starts a series. `fromLink` shows the full link at once and replays its picks. */
   start(setup: SeriesSetup, fromLink?: boolean): void;
-  /** Drops the series being played, e.g. on switching to quick mode. */
+  /** Drops the series being played (the player left it). */
   leave(): void;
   /** Records the match on screen once it has finished; safe to call every frame. */
   settle(world: WorldState): void;
@@ -57,48 +51,16 @@ export interface SeriesController {
 }
 
 export function createSeriesController(
-  roots: { readonly lineup: HTMLElement; readonly series: HTMLElement },
-  balls: readonly BallDefinition[],
+  root: HTMLElement,
   lookup: DefinitionLookup,
   host: SeriesHost,
 ): SeriesController {
-  const ballIds = balls.map((ball) => ball.id);
-  /** The series being played; undefined while building a lineup and in quick mode. */
+  /** The series being played; undefined when none is. */
   let session: SeriesSession | undefined;
   /** A replayed link's picks, used in order when a pick is due (both sides'). */
   let linkPicks: readonly string[] = [];
-  /**
-   * Reveal, then order: the series seed and both lineups as revealed, while the player orders
-   * theirs. The bot orders against the revealed lineup, never the player's secret order.
-   */
-  let revealed: { readonly seed: number; readonly bot: Lineup; readonly own: Lineup } | undefined;
 
-  const builder = createLineupBuilder(roots.lineup, balls, {
-    onStart: (lineup, format) => {
-      // The bot picks from the series seed, so the setup (and the link) fully decides the series.
-      const seed = generateSeed();
-      const bot = randomBot.pickLineup(seed, ballIds);
-      if (format === 'reveal') {
-        revealed = { seed, bot, own: lineup };
-        builder.showOrdering(lineup, bot);
-        return;
-      }
-      start({ seed, a: lineup, b: bot, ...(format === 'blind' ? {} : { format }) });
-    },
-    onLockOrder: (lineup) => {
-      if (revealed === undefined) return;
-      const { seed, bot, own } = revealed;
-      revealed = undefined;
-      start({ seed, a: lineup, b: randomBot.orderLineup(seed, bot, own), format: 'reveal' });
-    },
-    onFormat: (format) => {
-      host.replaceUrl((url) => {
-        writeSeriesModeParams(url, format);
-      });
-    },
-  });
-
-  const panel = createSeriesPanel(roots.series, lookup, {
+  const panel = createSeriesPanel(root, lookup, {
     onNext: () => {
       if (session === undefined) return;
       session = resolvePicks(advanceSession(session));
@@ -117,7 +79,10 @@ export function createSeriesController(
     onNewSeries: () => {
       const last = session?.state.setup;
       session = undefined;
-      showBuilder(last?.a, last === undefined ? undefined : formatOf(last));
+      if (last !== undefined) host.newSeries(last);
+    },
+    onLeave: () => {
+      host.leave();
     },
   });
 
@@ -144,20 +109,6 @@ export function createSeriesController(
   }
 
   /**
-   * The builder, with the quick match playing on behind it. The URL only says the mode and format,
-   * so it never shows a lineup before a series is decided.
-   */
-  function showBuilder(lineup: Lineup | undefined, format?: Format): void {
-    revealed = undefined;
-    builder.show(lineup, format);
-    host.layoutChanged();
-    host.replaceUrl((url) => {
-      writeSeriesModeParams(url, builder.format());
-    });
-    host.redraw();
-  }
-
-  /**
    * The link (both lineups, the seed, the format and the picks) is written once the series is
    * decided, so the address bar never gives the bot's lineup away; a series opened from a link
    * already shows it.
@@ -167,7 +118,7 @@ export function createSeriesController(
     session = beginSession(setup);
     host.replaceUrl((url) => {
       if (fromLink) writeSeriesParams(url, setup);
-      else writeSeriesModeParams(url, setup.format);
+      else writeSeriesModeParams(url, setup.format, 'play');
     });
     host.layoutChanged();
     playCurrent();
@@ -175,12 +126,9 @@ export function createSeriesController(
 
   return {
     isPlaying: () => session !== undefined,
-    isOpen: () => builder.isOpen(),
-    setVisible(seriesMode) {
-      builder.setVisible(seriesMode && session === undefined);
-      panel.setVisible(seriesMode && session !== undefined);
+    setVisible(visible) {
+      panel.setVisible(visible && session !== undefined);
     },
-    showBuilder,
     start,
     leave() {
       session = undefined;

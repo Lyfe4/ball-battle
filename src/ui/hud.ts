@@ -113,6 +113,8 @@ export function createHud(
         if (row.ghost.style.width !== percent) row.ghost.style.width = percent;
       }
       setText(seedLine, `Seed ${seed}`);
+      // A series has its own link and scoreboard; a round's seed is noise there.
+      seedLine.hidden = seriesMode;
       const finished = world.match.status === 'finished' && showResult;
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
       buttons.hidden = !finished || seriesMode;

@@ -4,7 +4,8 @@ import {
   betweenLine,
   botPicksLine,
   finalLine,
-  FORMAT_HINTS,
+  FORMAT_LINES,
+  LINEUP_HINTS,
   FORMAT_NAMES,
   pickLine,
   playingLine,
@@ -75,7 +76,8 @@ describe('draft format text', () => {
   it('names every format and explains it', () => {
     for (const format of FORMATS) {
       expect(FORMAT_NAMES[format].length).toBeGreaterThan(0);
-      expect(FORMAT_HINTS[format]).toMatch(/first to 2 wins/i);
+      expect(FORMAT_LINES[format].length).toBeGreaterThan(0);
+      expect(LINEUP_HINTS[format]).toMatch(/three balls/i);
     }
   });
 

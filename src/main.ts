@@ -7,6 +7,7 @@ import { loadSpeed, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createNavigation } from './navigation.ts';
 import { createSeriesController } from './series-controller.ts';
+import { createSeriesSetup } from './series-setup.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
@@ -33,7 +34,7 @@ const quickSetupRoot = getElement('quick-setup', HTMLElement);
 const matchActions = getElement('match-actions', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 const modeRoot = getElement('mode-toggle', HTMLDivElement);
-const lineupRoot = getElement('lineup', HTMLElement);
+const seriesSetupRoot = getElement('series-setup', HTMLElement);
 const seriesRoot = getElement('series', HTMLElement);
 
 const ballIds = BALLS.map((ball) => ball.id);
@@ -122,27 +123,59 @@ const modeToggle = createSegmented<Mode>(
   },
 );
 
-const series = createSeriesController(
-  { lineup: lineupRoot, series: seriesRoot },
-  BALLS,
-  BALL_LOOKUP,
-  {
-    showWorld,
-    replaceUrl: (write) => {
-      navigation.replace(write);
-    },
-    layoutChanged: showControls,
-    redraw: () => {
-      hud.setMatch(arena.world());
-      arena.redraw();
-    },
+const seriesSetup = createSeriesSetup(seriesSetupRoot, BALLS, {
+  push: (write) => {
+    navigation.push(write);
   },
-);
+  replace: (write) => {
+    navigation.replace(write);
+  },
+  back: (toParent) => {
+    navigation.back(toParent);
+  },
+  exit: () => {
+    navigation.replace((url) => {
+      writeMatchUrl(url, matchup, generateSeed());
+    });
+    showRoute(currentRoute());
+  },
+  start: (setup) => {
+    navigation.push((url) => {
+      writeSeriesModeParams(url, setup.format, 'play');
+    });
+    screen = 'series';
+    series.start(setup);
+    canvas.focus();
+  },
+});
+
+const series = createSeriesController(seriesRoot, BALL_LOOKUP, {
+  showWorld,
+  replaceUrl: (write) => {
+    navigation.replace(write);
+  },
+  layoutChanged: showControls,
+  newSeries: (last) => {
+    seriesSetup.keep(last);
+    navigation.push((url) => {
+      writeSeriesModeParams(url, last.format, 'lineup');
+    });
+    showRoute(currentRoute());
+  },
+  leave: () => {
+    navigation.back(() => {
+      navigation.replace((url) => {
+        writeSeriesModeParams(url, undefined, 'lineup');
+      });
+      showRoute(currentRoute());
+    });
+  },
+});
 
 const arena = createArena(canvas, container, BALL_LOOKUP, createMatchWorld(matchup, seed), {
   // The match waits while it is covered: during the quick-match setup and while the lineup dialog
   // is open. It carries on where it stopped.
-  isPaused: () => screen === 'pick' || series.isOpen(),
+  isPaused: isSetup,
   speed: () => speed,
   afterTicks: (world) => {
     series.settle(world);
@@ -171,15 +204,21 @@ function writeMatchUrl(url: URLSearchParams, next: Matchup, nextSeed: number): v
   writeMatchParams(url, next, nextSeed);
 }
 
-/** Which controls show on the screen: the setup alone, or the match with its controls. */
+/** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
+function isSetup(): boolean {
+  return screen === 'pick' || (screen === 'series' && !series.isPlaying());
+}
+
+/** Which controls show on the screen: a setup alone, or the match with its controls. */
 function showControls(): void {
-  const setup = screen === 'pick';
+  const setup = isSetup();
   stage.toggleAttribute('data-setup', setup);
-  quickSetup.setVisible(setup);
-  modeRoot.hidden = setup;
+  quickSetup.setVisible(screen === 'pick');
+  seriesSetup.setVisible(screen === 'series' && setup);
+  modeRoot.hidden = screen !== 'match';
+  matchActions.hidden = screen !== 'match';
   hudRoot.hidden = setup;
   speedRoot.hidden = setup;
-  matchActions.hidden = screen !== 'match';
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
   document.title = TITLES[screen];
@@ -217,9 +256,25 @@ function showRoute(route: Route): void {
     startMatch(route.matchup, route.seed ?? generateSeed());
     return;
   }
+  if (route.step === 'play') {
+    if (route.link.setup !== undefined) {
+      series.start(route.link.setup, true);
+      return;
+    }
+    // Forward into a series the player left, or a reload mid-series: the bot's lineup is gone, so
+    // set up again from the lineup.
+    if (!series.isPlaying()) {
+      navigation.replace((url) => {
+        writeSeriesModeParams(url, route.link.format, 'lineup');
+      });
+      showRoute(currentRoute());
+    }
+    showControls();
+    return;
+  }
   series.leave();
-  if (route.link.setup !== undefined) series.start(route.link.setup, true);
-  else series.showBuilder(route.link.lineup, route.link.format);
+  showControls();
+  seriesSetup.show(route.step, route.link);
 }
 
 navigation.onChange(() => {

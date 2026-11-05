@@ -1,4 +1,42 @@
 /* The best-of-3 scoreboard. */
+.series {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.series-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.series-rounds {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Leaving a series is rare: a quiet text button, still a full tap target. */
+.series-leave {
+  min-height: var(--tap-target);
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-small);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.series-leave:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 
 .series-score {
   margin: 0;
@@ -50,4 +88,12 @@
   justify-content: center;
   gap: var(--space-small);
   white-space: nowrap;
+}
+
+.series-pick-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.series-pick-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
 }

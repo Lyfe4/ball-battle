@@ -9,6 +9,7 @@ import {
   type SeriesState,
 } from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
+import { leanOf, type Lean } from './balls/matchups.ts';
 import { element, setText } from './dom.ts';
 import {
   betweenLine,
@@ -30,6 +31,8 @@ export interface SeriesActions {
   readonly onRematch: () => void;
   /** Back to the lineup builder. */
   readonly onNewSeries: () => void;
+  /** Leaves the series before it is decided. */
+  readonly onLeave: () => void;
 }
 
 export interface SeriesView {
@@ -47,6 +50,7 @@ export interface SeriesPanel {
 }
 
 const PICK_ICON_PX = 28;
+const MARKS: Readonly<Record<Lean, string>> = { favoured: '▲', unfavoured: '▼', even: '' };
 
 /**
  * The best-of-3 scoreboard: the format, the score, every finished round, and what is happening
@@ -83,7 +87,8 @@ export function createSeriesPanel(
   const rematch = button('Rematch', 'hud-button', actions.onRematch);
   const newSeries = button('New series', 'hud-button hud-button-primary', actions.onNewSeries);
   buttons.append(next, rematch, newSeries);
-  root.append(heading, format, score, rounds, status, picks, buttons);
+  const leave = button('Leave series', 'series-leave', actions.onLeave);
+  root.append(heading, format, score, status, picks, buttons, rounds, leave);
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const node = element('button', className, text);
@@ -92,10 +97,13 @@ export function createSeriesPanel(
     return node;
   }
 
-  /** One button per ball the player may pick, rebuilt only when the choice changes. */
+  /**
+   * One button per ball the player may pick, marked ▲ / ▼ against the bot's next ball (the reason
+   * the pick is a counter-pick), rebuilt only when the choice changes.
+   */
   let shownChoices = '';
-  function showChoices(choices: readonly string[]): void {
-    const key = choices.join();
+  function showChoices(choices: readonly string[], against: string): void {
+    const key = `${choices.join()}>${against}`;
     if (key === shownChoices) return;
     shownChoices = key;
     picks.replaceChildren(
@@ -107,7 +115,13 @@ export function createSeriesPanel(
         icon.setAttribute('aria-hidden', 'true');
         const ball = definitions.get(id);
         if (ball !== undefined) drawBallIcon(icon, ball, PICK_ICON_PX);
-        pick.append(icon, element('span', '', `Play ${nameOf(id)}`));
+        const lean = leanOf(id, against);
+        const mark = element('span', 'series-pick-mark', MARKS[lean]);
+        mark.dataset['lean'] = lean;
+        mark.setAttribute('aria-hidden', 'true');
+        pick.append(icon, element('span', '', `Play ${nameOf(id)}`), mark);
+        const word = lean === 'even' ? 'even with' : `${lean} against`;
+        pick.setAttribute('aria-label', `Play ${nameOf(id)}, ${word} ${nameOf(against)}`);
         return pick;
       }),
     );
@@ -141,13 +155,14 @@ export function createSeriesPanel(
       setText(status, text);
 
       picks.hidden = due !== 'a';
-      if (due === 'a') showChoices(remainingOf(state, 'a'));
+      if (due === 'a') showChoices(remainingOf(state, 'a'), nextBallOf(state, 'b') ?? '');
       const between = !playing && !finished && (upcoming !== undefined || due === 'b');
       setText(next, state.pending.length > 0 ? 'Replay round' : 'Next round');
       next.hidden = !between;
       rematch.hidden = !finished;
       newSeries.hidden = !finished;
       buttons.hidden = !between && !finished;
+      leave.hidden = finished;
     },
   };
 }
