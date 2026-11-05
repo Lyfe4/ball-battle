@@ -13,33 +13,35 @@ import {
   writeManualParams,
   writeMatchUrl,
   writePickParams,
+  writeTodaysRuleset,
 } from './route.ts';
 
 const route = (query: string) => parseRoute(new URLSearchParams(query), BALL_LOOKUP);
 
 describe('parseRoute', () => {
-  it('opens every link shape the game has written on the screen it was written from', () => {
-    expect(route('a=storm&b=frost&seed=42')).toStrictEqual({
+  it('opens every link shape the game writes on the screen it was written from', () => {
+    const v = `v=${String(RULESET_VERSION)}`;
+    expect(route(`a=storm&b=frost&seed=42&${v}`)).toStrictEqual({
       screen: 'match',
       matchup: { a: 'storm', b: 'frost' },
       seed: 42,
     });
-    expect(route('mode=bo3&la=storm,frost,venom&lb=quake,thorns,archer&seed=9')).toStrictEqual({
+    // A blind series against the bot, as the game writes it once decided.
+    const bot = randomBot.pickLineup(9, [...BALL_LOOKUP.keys()]);
+    const lb = bot.join(',');
+    expect(route(`mode=bo3&la=storm,frost,venom&lb=${lb}&seed=9&${v}`)).toStrictEqual({
       screen: 'series',
       link: {
         setup: {
-          ruleset: 0,
+          ruleset: RULESET_VERSION,
           seed: 9,
           a: ['storm', 'frost', 'venom'],
-          b: ['quake', 'thorns', 'archer'],
+          b: bot,
           opponent: { kind: 'bot', bot: 'random', lineupSeed: 9 },
         },
       },
       step: 'play',
     });
-    expect(
-      route('mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns'),
-    ).toMatchObject({ screen: 'series', link: { setup: { format: 'loser', picks: ['thorns'] } } });
     expect(route('mode=bo3&fmt=reveal')).toStrictEqual({
       screen: 'series',
       link: { format: 'reveal' },
@@ -48,6 +50,51 @@ describe('parseRoute', () => {
     expect(route('mode=bo3')).toStrictEqual({ screen: 'series', link: {}, step: 'rules' });
     expect(route('mode=bo3&la=storm,frost,venom')).toMatchObject({ step: 'lineup' });
     expect(route('mode=bo3&fmt=loser&step=lineup')).toMatchObject({ step: 'lineup' });
+  });
+
+  it('holds a replay link from another ruleset on the outdated screen (ADR 0022)', () => {
+    // Every replay link written before versions: unversioned, so made under ruleset 0.
+    expect(route('a=storm&b=frost&seed=42')).toStrictEqual({
+      screen: 'outdated',
+      kind: 'match',
+      made: 0,
+    });
+    expect(route('mode=bo3&la=storm,frost,venom&lb=quake,thorns,archer&seed=9')).toStrictEqual({
+      screen: 'outdated',
+      kind: 'series',
+      made: 0,
+    });
+    expect(
+      route('mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns'),
+    ).toMatchObject({ screen: 'outdated', kind: 'series' });
+    // From a newer page than this one, or with a version that isn't a number.
+    const newer = RULESET_VERSION + 1;
+    expect(route(`seed=4&v=${String(newer)}`)).toStrictEqual({
+      screen: 'outdated',
+      kind: 'match',
+      made: newer,
+    });
+    expect(route('a=storm&b=frost&seed=42&v=latest')).toMatchObject({ made: 0 });
+  });
+
+  it('plays an outdated link under today’s rules once asked to, and nothing else changes', () => {
+    const match = new URLSearchParams('a=storm&b=frost&seed=42');
+    writeTodaysRuleset(match);
+    expect(parseRoute(match, BALL_LOOKUP)).toStrictEqual({
+      screen: 'match',
+      matchup: { a: 'storm', b: 'frost' },
+      seed: 42,
+    });
+    // An old series the rules now refuse (this bot never picked that lineup) opens its lineup.
+    const series = new URLSearchParams(
+      'mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns',
+    );
+    writeTodaysRuleset(series);
+    expect(parseRoute(series, BALL_LOOKUP)).toStrictEqual({
+      screen: 'series',
+      link: { lineup: ['storm', 'frost', 'venom'], format: 'loser' },
+      step: 'lineup',
+    });
   });
 
   it('opens a match without a seed when the link has none or a bad one, so a fresh one is used', () => {
@@ -68,7 +115,10 @@ describe('parseRoute', () => {
     expect(route('')).toStrictEqual({ screen: 'home' });
     expect(route('utm_source=x')).toStrictEqual({ screen: 'home' });
     expect(route('a=storm')).toMatchObject({ screen: 'match', matchup: { a: 'storm' } });
-    expect(route('seed=4')).toMatchObject({ screen: 'match', seed: 4 });
+    expect(route(`seed=4&v=${String(RULESET_VERSION)}`)).toMatchObject({
+      screen: 'match',
+      seed: 4,
+    });
   });
 
   it('writes a match over any other screen, and home as a bare URL', () => {

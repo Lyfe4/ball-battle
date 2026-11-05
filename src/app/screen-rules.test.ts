@@ -73,6 +73,7 @@ describe('router', () => {
       pick: handler('pick'),
       match: handler('match'),
       series: handler('series'),
+      outdated: handler('outdated'),
     };
     return { log, handlers };
   }

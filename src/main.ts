@@ -16,6 +16,7 @@ import { loadSpeed, saveSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
+import { createOutdatedController } from './outdated-screen.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
@@ -52,6 +53,7 @@ const TITLES: Readonly<Record<Screen, string>> = {
   match: 'Quick match · BallBattle',
   series: 'Best of 3 · BallBattle',
   manual: 'Ball manual · BallBattle',
+  outdated: 'Link from another version · BallBattle',
 };
 
 const hud = createHud(hudRoot, BALL_LOOKUP, {
@@ -108,6 +110,12 @@ const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
       goHome('replace');
     });
   },
+});
+
+const outdated = createOutdatedController(getElement('outdated', HTMLElement), {
+  navigation,
+  showCurrentRoute,
+  goHome,
 });
 
 const quick = createQuickController(
@@ -167,6 +175,11 @@ const router = createRouter(
     pick: {
       show: (route) => {
         quick.open(route.matchup);
+      },
+    },
+    outdated: {
+      show: (route) => {
+        outdated.show(route);
       },
     },
     match: {
@@ -241,7 +254,8 @@ function showWorld(world: WorldState, shownSeed: number): void {
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
 function isSetup(): boolean {
   const screen = router.current();
-  return screen === 'pick' || screen === 'manual' || (screen === 'series' && !series.isPlaying());
+  if (screen === 'series') return !series.isPlaying();
+  return screen === 'pick' || screen === 'manual' || screen === 'outdated';
 }
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
@@ -253,6 +267,7 @@ function showControls(): void {
   stage.dataset['screen'] = screen;
   home.setVisible(screen === 'home');
   manual.setVisible(screen === 'manual');
+  outdated.setVisible(screen === 'outdated');
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
   hudRoot.hidden = setup || screen === 'home';

@@ -1,0 +1,21 @@
+/* A replay link from another version of the game: the notice and what the player can do with it. */
+.outdated {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.outdated-body {
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Nothing is fighting: no arena at any width, like the manual. */
+.stage[data-screen='outdated'] .arena-container {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .stage[data-screen='outdated'] {
+    justify-content: center;
+  }
+}
