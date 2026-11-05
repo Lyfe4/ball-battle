@@ -1,11 +1,27 @@
-// A best-of-3 series in the URL (ADR 0017): `?mode=bo3&la=a,b,c&lb=d,e,f&seed=N` holds both
-// lineups and the series seed, which is everything that decides it, so the link replays the series
-// exactly. A link with only `mode=bo3`, or with anything invalid, opens the lineup builder instead.
-import { isValidLineup, type Lineup, type SeriesSetup } from '../sim/series.ts';
+// A best-of-3 series in the URL (ADR 0017, 0019): `?mode=bo3&la=a,b,c&lb=d,e,f&seed=N` holds both
+// lineups and the series seed; `fmt=reveal` or `fmt=loser` names a draft format (none is blind), and
+// a loser-picks-next series adds `picks=x,y`, every pick in order. That is everything that decides a
+// series, so the link replays it exactly. A link with only `mode=bo3` (and perhaps `fmt`), or with
+// anything invalid, opens the lineup builder instead.
+import {
+  FORMATS,
+  isValidLineup,
+  LINEUP_SIZE,
+  type Format,
+  type Lineup,
+  type SeriesSetup,
+} from '../sim/series.ts';
 import { parseSeed } from './seed.ts';
 
 export const SERIES_MODE = 'bo3';
-const KEYS = { mode: 'mode', a: 'la', b: 'lb', seed: 'seed' } as const;
+const KEYS = {
+  mode: 'mode',
+  a: 'la',
+  b: 'lb',
+  seed: 'seed',
+  format: 'fmt',
+  picks: 'picks',
+} as const;
 
 /** What a URL asks for in best-of-3 mode. */
 export interface SeriesLink {
@@ -13,12 +29,34 @@ export interface SeriesLink {
   readonly setup?: SeriesSetup;
   /** The player's lineup alone, when it is valid but the rest is not: prefills the builder. */
   readonly lineup?: Lineup;
+  /** The draft format, when the link names a valid one: preselects it in the builder. */
+  readonly format?: Format;
 }
+
+const ids = (raw: string): string[] => raw.split(',').map((id) => id.trim().toLowerCase());
 
 function readLineup(raw: string | null, validIds: readonly string[]): Lineup | undefined {
   if (raw === null) return undefined;
-  const ids = raw.split(',').map((id) => id.trim().toLowerCase());
-  return isValidLineup(ids, validIds) ? ids : undefined;
+  const list = ids(raw);
+  return isValidLineup(list, validIds) ? list : undefined;
+}
+
+/** The format named in the link: blind when absent, undefined when unknown (invalid). */
+function readFormat(raw: string | null): Format | undefined {
+  if (raw === null || raw.trim() === '') return 'blind';
+  const name = raw.trim().toLowerCase();
+  return FORMATS.find((format) => format === name);
+}
+
+/**
+ * The picks of a loser-picks-next series: at most one per round after the first, each a ball from
+ * one of the two lineups. Whether each pick was legal is checked when the series replays.
+ */
+function readPicks(raw: string | null, a: Lineup, b: Lineup): string[] | undefined {
+  if (raw === null || raw.trim() === '') return [];
+  const list = ids(raw);
+  if (list.length > LINEUP_SIZE - 1) return undefined;
+  return list.every((id) => a.includes(id) || b.includes(id)) ? list : undefined;
 }
 
 /**
@@ -33,26 +71,40 @@ export function parseSeriesParams(
   const a = readLineup(params.get(KEYS.a), validIds);
   const b = readLineup(params.get(KEYS.b), validIds);
   const seed = parseSeed(params.get(KEYS.seed));
-  if (a !== undefined && b !== undefined && seed !== undefined) return { setup: { seed, a, b } };
-  return a === undefined ? {} : { lineup: a };
+  const format = readFormat(params.get(KEYS.format));
+  const named = format === undefined || format === 'blind' ? {} : { format };
+  if (a !== undefined && b !== undefined && seed !== undefined && format !== undefined) {
+    const picks = readPicks(params.get(KEYS.picks), a, b);
+    const valid = picks !== undefined && (format === 'loser' || picks.length === 0);
+    if (valid) {
+      const extra = format === 'blind' ? {} : { format };
+      const withPicks = format === 'loser' && picks.length > 0 ? { picks } : {};
+      return { setup: { seed, a, b, ...extra, ...withPicks } };
+    }
+  }
+  return a === undefined ? named : { lineup: a, ...named };
 }
 
 /** Writes a whole series into URL parameters, replacing any quick-match ones. */
 export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): void {
-  clearMatchParams(params);
-  params.set(KEYS.mode, SERIES_MODE);
+  writeSeriesModeParams(params, setup.format);
   params.set(KEYS.a, setup.a.join(','));
   params.set(KEYS.b, setup.b.join(','));
   params.set(KEYS.seed, String(setup.seed));
+  if (setup.picks !== undefined && setup.picks.length > 0) {
+    params.set(KEYS.picks, setup.picks.join(','));
+  }
 }
 
 /**
- * Best-of-3 mode with nothing decided yet (building a lineup, or a series in progress). The bot's
- * lineup is not written until the series ends, so the address bar never gives it away.
+ * Best-of-3 mode with nothing decided yet (building a lineup, or a series in progress), and the
+ * chosen format. The bot's lineup is not written until the series ends, so the address bar never
+ * gives it away.
  */
-export function writeSeriesModeParams(params: URLSearchParams): void {
+export function writeSeriesModeParams(params: URLSearchParams, format?: Format): void {
   clearMatchParams(params);
   params.set(KEYS.mode, SERIES_MODE);
+  if (format !== undefined && format !== 'blind') params.set(KEYS.format, format);
 }
 
 /** Removes every series parameter, for switching back to a quick match. */
@@ -60,6 +112,8 @@ export function clearSeriesParams(params: URLSearchParams): void {
   params.delete(KEYS.mode);
   params.delete(KEYS.a);
   params.delete(KEYS.b);
+  params.delete(KEYS.format);
+  params.delete(KEYS.picks);
 }
 
 function clearMatchParams(params: URLSearchParams): void {
@@ -68,4 +122,6 @@ function clearMatchParams(params: URLSearchParams): void {
   params.delete(KEYS.a);
   params.delete(KEYS.b);
   params.delete(KEYS.seed);
+  params.delete(KEYS.format);
+  params.delete(KEYS.picks);
 }
