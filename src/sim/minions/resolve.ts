@@ -1,6 +1,7 @@
 import { dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { BOUNCE_MAX_HALF_TAN, turnBounce } from '../bounce-variance.ts';
-import { isAlive } from '../combat.ts';
+import { isAlive, isPhased } from '../combat.ts';
+import { getDefinition } from '../definitions.ts';
 import { DT } from '../constants.ts';
 import { moveBall } from '../movement.ts';
 import { sweepHitTime } from '../projectiles/sweep.ts';
@@ -130,7 +131,15 @@ export function resolveMinions(
     }
     let nearest: { readonly s: number; readonly ball: BallState } | undefined;
     for (const ball of current) {
-      if (ball.id === minion.ownerId || !isAlive(ball)) continue;
+      // A phased ball passes through minions as it passes through balls: a pop is a touch
+      // (ADR 0026, 0028).
+      if (
+        ball.id === minion.ownerId ||
+        !isAlive(ball) ||
+        isPhased(ball, getDefinition(definitions, ball.definitionId))
+      ) {
+        continue;
+      }
       const s = hitTime(
         segments,
         minion.radius,

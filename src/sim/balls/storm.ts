@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { heldAim } from '../rules.ts';
 import { hasStatus } from '../status.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
@@ -17,7 +18,7 @@ export const COOLDOWN_TICKS = 130;
 export const WARNING_TICKS = 48;
 export const ZONE_RADIUS = 170;
 /** Per hit. Identity rule: the biggest single ability hit in the roster. */
-export const ZONE_DAMAGE = 28;
+export const ZONE_DAMAGE = 31;
 /**
  * Every ball a strike hits, and every ball that touches the Storm, is shocked for this long: its
  * heals are cut by SHOCK_HEAL_REDUCTION (ADR 0009). Only the Vampire heals, so this is what makes
@@ -60,7 +61,7 @@ export const storm = defineBall<StormState>({
   color: '#93c5fd',
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 74,
+  maxHealth: 73,
   contactDamage: 13,
   initialAbilityState: { nextStrikeTick: FIRST_STRIKE_DELAY_TICKS },
   hooks: {
@@ -69,9 +70,11 @@ export const storm = defineBall<StormState>({
     onHitBall: ({ other }) => [
       { kind: 'applyStatus', targetId: other.id, status: 'shocked', durationTicks: SHOCK_TICKS },
     ],
-    onTick: ({ world, self, random }) => {
-      if (world.tick < self.abilityState.nextStrikeTick || hasStatus(self, 'staggered')) return [];
-      const target = nearestTarget(self, world.balls, world.minions);
+    onTick: ({ world, self, random, isPhased }) => {
+      const due = self.abilityState.nextStrikeTick;
+      if (world.tick < due) return [];
+      if (hasStatus(self, 'staggered')) return heldAim(world.tick, due);
+      const target = nearestTarget(self, world.balls, world.minions, isPhased);
       if (target === undefined) return [];
       const offset = randomOffset(random, MAX_OFFSET);
       return [

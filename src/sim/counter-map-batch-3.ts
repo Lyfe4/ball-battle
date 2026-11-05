@@ -9,6 +9,9 @@ import type { CounterEntry } from './counter-map.ts';
  * The Ghost's phasing stops contact hits, so it beats the Speedster, whose whole game is contact,
  * and loses to every ball whose attacks never needed contact. Minions draw aimed attacks, so the
  * Necromancer beats the Archer and Sniper; an area strike clears its minion, so the Quake beats it.
+ * ADR 0028 made phasing one rule (a phased ball can't be touched, gripped or aimed at), so the
+ * Ghost is favoured over the Magnet and the Necromancer, and even with the Storm and the Quake;
+ * heavier lightning makes the Storm favoured over the Necromancer and even with the Magnet.
  */
 export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   // The Magnet.
@@ -33,14 +36,14 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'archer',
-    intended: 'x',
-    reason: 'The pull drags the Archer into contact, where it is weakest.',
+    intended: 'even',
+    reason: 'The pull drags it into contact, but faster arrows land first.',
   },
   {
     x: 'magnet',
     y: 'storm',
-    intended: 'x',
-    reason: 'The pull drags the Storm into contact, away from its lightning’s range.',
+    intended: 'even',
+    reason: 'The pull drags it into contact, but heavier lightning pays for the brawl.',
   },
   {
     x: 'magnet',
@@ -106,8 +109,8 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'storm',
     y: 'ghost',
-    intended: 'x',
-    reason: 'Lightning never needed contact, so phasing never stops it.',
+    intended: 'even',
+    reason: 'Lightning needs a target to call: it waits while the Ghost is phased.',
   },
   {
     x: 'ghost',
@@ -142,14 +145,15 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'ghost',
-    intended: 'x',
-    reason: 'Shockwaves never needed contact, so phasing never stops them.',
+    intended: 'even',
+    reason: 'Shockwaves still hit it phased, but softer ones no longer outweigh its passes.',
   },
   {
     x: 'magnet',
     y: 'ghost',
-    intended: 'even',
-    reason: 'The pull drags it in, but it phases through half the brawls.',
+    intended: 'y',
+    reason:
+      'A phased ball can’t be gripped: the pull slips, and the Magnet charges straight through it.',
   },
   // The Necromancer.
   {
@@ -179,8 +183,8 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'storm',
-    intended: 'even',
-    reason: 'A minion draws the lightning, but a strike often catches both.',
+    intended: 'y',
+    reason: 'A heavier strike clears the skull and catches the Necromancer with it.',
   },
   {
     x: 'necromancer',
@@ -215,8 +219,8 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'necromancer',
-    intended: 'x',
-    reason: 'A shockwave clears the minion and catches the Necromancer too.',
+    intended: 'even',
+    reason: 'A softer shockwave still clears the skull, but no longer wins the trade.',
   },
   {
     x: 'magnet',
@@ -227,7 +231,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'ghost',
-    intended: 'x',
-    reason: 'Minion pops never needed contact, so phasing never stops them.',
+    intended: 'y',
+    reason: 'Phased, it passes through the skulls: a pop needs a touch, like any hit.',
   },
 ];

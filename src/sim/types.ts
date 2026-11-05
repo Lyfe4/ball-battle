@@ -1,4 +1,5 @@
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
+import type { RuleAppliedEvent, RuleId } from './rules.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -110,6 +111,11 @@ export interface HookContext<S extends AbilityState = AbilityState> {
    * one ball's draws never affect another's (ADR 0003). Never use Math.random.
    */
   readonly random: () => number;
+  /**
+   * True while `ball` is phased (ADR 0026, 0028): it can't be touched, gripped or aimed at. Read from
+   * its definition's `phasedOf`, so a hook never needs the definitions itself.
+   */
+  readonly isPhased: (ball: BallState) => boolean;
 }
 
 export interface WallHitContext<S extends AbilityState = AbilityState> extends HookContext<S> {
@@ -201,7 +207,9 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly targetId: string;
       readonly status: StatusKind;
       readonly durationTicks: number;
-    };
+    }
+  /** Says an interaction rule just acted on this ball (ADR 0028). Changes nothing in the world. */
+  | { readonly kind: 'ruleApplied'; readonly rule: RuleId };
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 
@@ -485,6 +493,7 @@ export type SimEvent =
   | StatusAppliedEvent
   | StatusExpiredEvent
   | HealReducedEvent
+  | RuleAppliedEvent
   | MinionEvent;
 
 export interface StepResult {

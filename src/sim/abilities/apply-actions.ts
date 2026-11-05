@@ -136,6 +136,7 @@ export function applyActions(
               lost: fullAmount - amount,
               status: 'shocked',
             });
+            events.push({ type: 'ruleApplied', tick, ballId: target.id, rule: 'healCut' });
           }
           if (amount <= 0) return undefined;
           events.push({
@@ -218,6 +219,9 @@ export function applyActions(
           events.push(applied.event);
           return applied.ball;
         });
+        break;
+      case 'ruleApplied':
+        events.push({ type: 'ruleApplied', tick, ballId: ownerId, rule: action.rule });
         break;
       default: {
         // Adding an action kind without handling it here is a compile error.

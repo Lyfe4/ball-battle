@@ -1,5 +1,5 @@
 {
-  "ruleset": 2,
+  "ruleset": 3,
   "results": [
     {
       "a": "brawler",
@@ -7,7 +7,7 @@
       "seed": 0,
       "winner": "ball-1",
       "endTick": 1027,
-      "hash": "8e8f15c15e5783fe4d520724b87f275a7f3bd41dd23342783d7ef1b702cfc170"
+      "hash": "92c9c7ce85827fcee1a05a06df1f6afe9dadd35f51cdf699d8024bf3646dd358"
     },
     {
       "a": "brawler",
@@ -15,23 +15,23 @@
       "seed": 2654435761,
       "winner": "ball-0",
       "endTick": 1420,
-      "hash": "bdcedcec4953e96bf01b59c40d0e883282a1f8205e9871c4f6692aa95e0af5c5"
+      "hash": "998acb153fdf7642680d5e7433954fe13a119e9282e93c5479561a338c61b168"
     },
     {
       "a": "brawler",
       "b": "speedster",
       "seed": 1013904226,
       "winner": "ball-0",
-      "endTick": 1384,
-      "hash": "6e9b0f9db68346d0c5afbf0a1acbfa5bfab14e7ea8408d53c5c31d78ed895037"
+      "endTick": 805,
+      "hash": "c9885eea5251a96f0aef4f995e58f5077a0047b8c2524f31fc493060930fe3ea"
     },
     {
       "a": "brawler",
       "b": "speedster",
       "seed": 3668339987,
-      "winner": "ball-0",
-      "endTick": 849,
-      "hash": "bf8c1caa0af4a4786ef24e6622c0900fa881d460206f53f295a3a5c1e13ddf3c"
+      "winner": "ball-1",
+      "endTick": 1084,
+      "hash": "3683455c0427b4847a3c54b435761c2c64f00ba028c8aa9ff2120856b126a3db"
     },
     {
       "a": "brawler",
@@ -39,7 +39,7 @@
       "seed": 2027808452,
       "winner": "ball-0",
       "endTick": 783,
-      "hash": "a14ff2c92cd2af34d1a8a6050ea9ffbee5ec91173fa85a91b2f4f44cecf813ca"
+      "hash": "3e3355ee767a2ce017dd545e73ca79acd1679fe6a03d6ab72f0186ee6a455628"
     },
     {
       "a": "brawler",
@@ -47,15 +47,15 @@
       "seed": 387276917,
       "winner": "ball-1",
       "endTick": 1310,
-      "hash": "4f0ae0591a7e9fd600059495bb00986ab0a5d9948989d0dc6856d5438f33089a"
+      "hash": "5dd9d13a23eec715e25112b1ac7154197e88554628251262bb2b216d3f2af704"
     },
     {
       "a": "brawler",
       "b": "archer",
       "seed": 3041712678,
       "winner": "ball-1",
-      "endTick": 772,
-      "hash": "70bd6b6c125ee417f00feabcf87347c80af27bfb20217ff3f1cc29595fc37b47"
+      "endTick": 770,
+      "hash": "9355ef2429b31dd641bb355286b10d8d41023d82b4b37104fdf35f50b0b4542c"
     },
     {
       "a": "brawler",
@@ -63,7 +63,7 @@
       "seed": 1401181143,
       "winner": "ball-0",
       "endTick": 451,
-      "hash": "49e952cf692672c30b4193a73eb13e14ac80b6045852b4d946e46b9b56b9fac6"
+      "hash": "9b338ec3ae68123307c59bb8e92f0d6a6956edda21bfb2c4a7025a4ab48d0242"
     },
     {
       "a": "brawler",
@@ -71,7 +71,7 @@
       "seed": 4055616904,
       "winner": "ball-1",
       "endTick": 1276,
-      "hash": "866c9fcc530dc61605a6395d4ae201af7055fa31a6bd5d42b40ec2ba87b4e2bc"
+      "hash": "569ccb32aa9d3ec62b6f36b49beb04fe540d78b31679866c6ed1821b325b9a08"
     },
     {
       "a": "brawler",
@@ -79,7 +79,7 @@
       "seed": 2415085369,
       "winner": "ball-1",
       "endTick": 1408,
-      "hash": "d037c1f5f15b2097848bbd587dbc111ab8b1835d30e7955ee5cbaaa8f19526d8"
+      "hash": "2a98484ad7550a87f8882142b2c4940b43869c36b5512ddebd762d47a57d8778"
     },
     {
       "a": "brawler",
@@ -87,7 +87,7 @@
       "seed": 774553834,
       "winner": "ball-0",
       "endTick": 712,
-      "hash": "c826842fad225efbb2a4cc5c5453e7aba2c9c32e49e4d1203ea21b36638ea7fb"
+      "hash": "891f853bbfc637620d70fc3e41a7643e6a70cb741793f12d3bf7d67d038fc70e"
     },
     {
       "a": "brawler",
@@ -95,7 +95,7 @@
       "seed": 3428989595,
       "winner": "ball-0",
       "endTick": 2566,
-      "hash": "de434d6910d780a24c5dae207ce9da83d73d6a88fb0a6ab907dcb145e486da1e"
+      "hash": "0994f5a0a0c70cf48217481cbf722b31ebd27d683baea1a51813aee7169cfd0f"
     },
     {
       "a": "brawler",
@@ -103,15 +103,15 @@
       "seed": 1788458060,
       "winner": "ball-1",
       "endTick": 960,
-      "hash": "281241ede1e4f865d4598ca441b195a89ceb440182ed94dd762d0254cd04211d"
+      "hash": "0cc28005cf462d05d56c8833f17e494faf03b4ee954c12e48662f84bd36e555e"
     },
     {
       "a": "brawler",
       "b": "thorns",
       "seed": 147926525,
       "winner": "ball-1",
-      "endTick": 936,
-      "hash": "8ee3e87546e9c4ce87c3db7bffaa121b266fd95dbb43f9fd1bb675db4d69ad5e"
+      "endTick": 1164,
+      "hash": "a3d57c4bde2bcde92ae4d9a45bc8ec552b1fd1cc5a7ec4a29c430cad251b2fdc"
     },
     {
       "a": "brawler",
@@ -119,15 +119,15 @@
       "seed": 2802362286,
       "winner": "ball-0",
       "endTick": 1641,
-      "hash": "b36e13942adccecd47ee914b265c0d484af7f3ecb8e1dc7f57c1d89a17b53d8c"
+      "hash": "cc09c269200ea2170f239069655c06a9041c980a7a7b983e3028790ccf2471d8"
     },
     {
       "a": "brawler",
       "b": "venom",
       "seed": 1161830751,
       "winner": "ball-1",
-      "endTick": 1459,
-      "hash": "fb6612b898ed4fcad0e26784e23b4acad5e59799bf56232ee9bf8040199067e8"
+      "endTick": 1489,
+      "hash": "5383f4f6177e5fa35d89f592d2d7b3bb18530db560d0e999e019ec15bbc9cc46"
     },
     {
       "a": "brawler",
@@ -135,15 +135,15 @@
       "seed": 3816266512,
       "winner": "ball-1",
       "endTick": 2097,
-      "hash": "07b480f3c9b4f28ec5dff18f43b34222e77c21d7ca445b5b1fbebf5cf9741ce0"
+      "hash": "4b25f123ccaba9a970afc638d5556aa4f30dcd45adc5729cd00258f110ecd746"
     },
     {
       "a": "brawler",
       "b": "berserker",
       "seed": 2175734977,
-      "winner": "draw",
+      "winner": "ball-1",
       "endTick": 1109,
-      "hash": "78dcf67d1ae36de6a760cb1917851852e0a87159eb8bb97b757b58f6a4e79556"
+      "hash": "bdd1b5e2db7158bc65588e02d02b69f8fd3762b77309ae6467ef76c6531d4006"
     },
     {
       "a": "brawler",
@@ -151,7 +151,7 @@
       "seed": 535203442,
       "winner": "ball-1",
       "endTick": 580,
-      "hash": "e9313f4dd395878e1a39fc0b2a700036c7aed97cd30b1e2cf50458ca89086c33"
+      "hash": "70d1fc75ea306cecd36dea4d6a3d4e223520dd692cb5103598366bea681af500"
     },
     {
       "a": "brawler",
@@ -159,7 +159,7 @@
       "seed": 3189639203,
       "winner": "ball-0",
       "endTick": 671,
-      "hash": "4ce09fc50270f3d570534cf38604833538115ec3af6e9416d214110bf003628d"
+      "hash": "b4e34a98f8957af9e034e7f371c49cc72d7409b269649937c2045a7b681c902d"
     },
     {
       "a": "brawler",
@@ -167,7 +167,7 @@
       "seed": 1549107668,
       "winner": "ball-0",
       "endTick": 1054,
-      "hash": "9f1d98731e46f6c8e1011db10d60b7baa5232273820a6c9218b04854127a63df"
+      "hash": "30d46c841ba967351d258734cd6729b2d02f1ed01586efa8171bbb07896bb8f1"
     },
     {
       "a": "brawler",
@@ -175,7 +175,7 @@
       "seed": 4203543429,
       "winner": "ball-0",
       "endTick": 966,
-      "hash": "2cc48b95565c7e20ca15e6881ec9c0bb535f5e7d1d2e0ef7a72b522f3e51e90d"
+      "hash": "47899bc1a36015e8f6e1bc57794ebc2f959b966a1f67494713740528bc6a5fcb"
     },
     {
       "a": "brawler",
@@ -183,7 +183,7 @@
       "seed": 2563011894,
       "winner": "ball-1",
       "endTick": 237,
-      "hash": "2e894ef41ecbdf09eea77bd7a331eddbd4708c955e937c83baac7bb050eef09d"
+      "hash": "90f63acb2f0a483510486b4392ac7365d54c74dc97706c57cda8a72d64d44843"
     },
     {
       "a": "brawler",
@@ -191,7 +191,7 @@
       "seed": 922480359,
       "winner": "ball-0",
       "endTick": 702,
-      "hash": "14cdf384c58778f1384a9ba2ef0a786be53aa94d86ee3c2915e3decf894dcd38"
+      "hash": "eee695b68fe4c1987d39b091a8a065be8064bf7d1e114e2905a593f60d799a36"
     },
     {
       "a": "brawler",
@@ -199,7 +199,7 @@
       "seed": 3576916120,
       "winner": "ball-1",
       "endTick": 2142,
-      "hash": "3d2cb4ce07c0dfc94cd8ab605eacc8d6288128347801d3de8670b0b526625607"
+      "hash": "4fcd1391ed806a812e76eb3da3671ef6ea44c75e0cf80bd6d83f9bf8982e31b3"
     },
     {
       "a": "brawler",
@@ -207,7 +207,7 @@
       "seed": 1936384585,
       "winner": "ball-1",
       "endTick": 699,
-      "hash": "07374dae028e39ff32fe1a3b7289788269a70298dadaeeaa1a1afc576d373626"
+      "hash": "c8f2b5f5f20e22a883f7195d9bdfa6fa96df07999ae7c2fe8e15548b039f3f39"
     },
     {
       "a": "brawler",
@@ -215,7 +215,7 @@
       "seed": 295853050,
       "winner": "ball-1",
       "endTick": 1314,
-      "hash": "3785fa27e6f3185c4f5767726361987d77393fd7167aa4adbbd4845792d76356"
+      "hash": "e9dd842e9eac22789fb1af1793c2d8e1d2e326bdb1f78c11666cd50f304acd84"
     },
     {
       "a": "brawler",
@@ -223,223 +223,223 @@
       "seed": 2950288811,
       "winner": "ball-1",
       "endTick": 1217,
-      "hash": "8d56482447760a77be256570517e8bc3d2ab479ba80c1a740d0cd900e8f2b768"
+      "hash": "5409bb039802e1d599e6259328ea9aecfc2b1063801d36741d96970186b26d80"
     },
     {
       "a": "speedster",
       "b": "speedster",
       "seed": 1309757276,
       "winner": "ball-1",
-      "endTick": 1501,
-      "hash": "94e9b0accd88872d4be7883fc53167e093cd479130c01a8ad8ed89abd8fce6c4"
+      "endTick": 1023,
+      "hash": "48822ab9e070769a4010649d79135b255dd78fbfe053bb534a44b12bbf1e738a"
     },
     {
       "a": "speedster",
       "b": "speedster",
       "seed": 3964193037,
       "winner": "ball-1",
-      "endTick": 1275,
-      "hash": "74de9be4007baa131795ce07f0fa2de79951b46c77f569deef2951bdf2269b07"
+      "endTick": 655,
+      "hash": "224a7383b3b8ec9ddf8384c33c11487be2b43509b87d68234bbe9f17b5013fc7"
     },
     {
       "a": "speedster",
       "b": "vampire",
       "seed": 2323661502,
       "winner": "ball-1",
-      "endTick": 1114,
-      "hash": "140ed82b50be30fec1f2a5d3aafd769708015485f034fb9f8959fdf51c5d802b"
+      "endTick": 1073,
+      "hash": "0c8d01c8546dde71afed6918af3c7ecdfde066aa6a5314be58eda67c487d4de5"
     },
     {
       "a": "speedster",
       "b": "vampire",
       "seed": 683129967,
       "winner": "ball-1",
-      "endTick": 1139,
-      "hash": "dfdef8b73e8c21abc9849dcb4db73b7042dad0c374813b4c6fa7ca933d24fae3"
+      "endTick": 1458,
+      "hash": "a5066b84e817e72ad7735197393650eb81dca6e09283bf8708348b808d2c3901"
     },
     {
       "a": "speedster",
       "b": "archer",
       "seed": 3337565728,
-      "winner": "ball-1",
-      "endTick": 569,
-      "hash": "5fce54ddbaed5d6296d6857d3592c0a4a7bbb640378d037667cbe681c2cd9eb1"
+      "winner": "ball-0",
+      "endTick": 687,
+      "hash": "a444718503d6b22c6125a83a6be2c8c30b4c7b60077c53f4af7d6a1ab76995f9"
     },
     {
       "a": "speedster",
       "b": "archer",
       "seed": 1697034193,
       "winner": "ball-0",
-      "endTick": 1270,
-      "hash": "c4beb2b4f6367db7288ae550974e550c6c69069a9dbbd2a7463643111a64ff46"
+      "endTick": 889,
+      "hash": "c5be4e4042771ca2d302189a89555bb511ee9190eb2e0abcb6ac1eefaa9eb199"
     },
     {
       "a": "speedster",
       "b": "storm",
       "seed": 56502658,
       "winner": "ball-1",
-      "endTick": 628,
-      "hash": "70765ad8cdfe8bdaade2acb7211f8ca0f0c23751c492e62409f1579283ad2794"
+      "endTick": 888,
+      "hash": "0cdd11894db72a4dd0ed4f7f0d59ebf24258f6d2540be23b749a9cbe6f84bc56"
     },
     {
       "a": "speedster",
       "b": "storm",
       "seed": 2710938419,
-      "winner": "ball-0",
-      "endTick": 1118,
-      "hash": "af4d2b49cda81b9f9612aa56a0a3fb2bf86a67b92aa953b8df64b699a08cfee3"
+      "winner": "ball-1",
+      "endTick": 1013,
+      "hash": "9469bfe55f7968d40ce31226ca2b8e93f7815659a2bbd1a0dfc3edac335b25ad"
     },
     {
       "a": "speedster",
       "b": "frost",
       "seed": 1070406884,
       "winner": "ball-1",
-      "endTick": 660,
-      "hash": "6758fe173345ba1e60dc6eed2c7c155f5924fdd852a1de7b1036690338300dda"
+      "endTick": 1158,
+      "hash": "153a2376e66dcdb6330fa5ac44788e6a624b802799419f6e3b0749ad0fdbe03f"
     },
     {
       "a": "speedster",
       "b": "frost",
       "seed": 3724842645,
       "winner": "ball-1",
-      "endTick": 844,
-      "hash": "f0d246cc7af52de17b40bec3c1899c3803f96a68c5f9730730cf4fbb05fcd0a7"
+      "endTick": 1162,
+      "hash": "61ebac42eb9a5568cef4e1e6c4881209b8bbb76dc767fbcb912bfe9a2634da2e"
     },
     {
       "a": "speedster",
       "b": "thorns",
       "seed": 2084311110,
-      "winner": "ball-1",
-      "endTick": 954,
-      "hash": "0036129f71eb0860a927927193c3b00e8f6f0c8538018f60a7ddc617c3a58913"
+      "winner": "ball-0",
+      "endTick": 1053,
+      "hash": "4d3130a7f6e3cdcc55d09a7b340a5d9e40cf2fbd82fa038c52c121195a922d54"
     },
     {
       "a": "speedster",
       "b": "thorns",
       "seed": 443779575,
-      "winner": "ball-1",
-      "endTick": 1500,
-      "hash": "272061fbe64476f9b0615209c526994c6e145ff5f01ef080dfb66be55a784c68"
+      "winner": "ball-0",
+      "endTick": 1129,
+      "hash": "69a304f13eb4c329c9b609de52938ec5643a9ce31b56640c9cf99a5c004c00b2"
     },
     {
       "a": "speedster",
       "b": "venom",
       "seed": 3098215336,
       "winner": "ball-1",
-      "endTick": 1145,
-      "hash": "713093f09261e378319add0959c2b276a2d17e6297acce0473663d3592e6974e"
+      "endTick": 765,
+      "hash": "0e13453ea2fb157c96e83c0f5ec2719fbb6dfae6d8e81bf8c7e9c8448cc5d2fb"
     },
     {
       "a": "speedster",
       "b": "venom",
       "seed": 1457683801,
-      "winner": "ball-0",
-      "endTick": 786,
-      "hash": "cc602ea709bfed91efb85c6916b4e84d1fcf876294b96ee2445d9628c7ae24a6"
+      "winner": "ball-1",
+      "endTick": 1040,
+      "hash": "650356899f225d02595e1d4de193413a2fb5f917769f2cafe728aee1b75374b7"
     },
     {
       "a": "speedster",
       "b": "berserker",
       "seed": 4112119562,
       "winner": "ball-1",
-      "endTick": 1771,
-      "hash": "352f5abc4254e7dc8a9011b2b1944764788f9e72ebf6ef02fb400175432abed4"
+      "endTick": 1127,
+      "hash": "36d2f6942934682c799cef527221b5006fd82e7500d50b98b371c29f7f1175bf"
     },
     {
       "a": "speedster",
       "b": "berserker",
       "seed": 2471588027,
       "winner": "ball-1",
-      "endTick": 1555,
-      "hash": "8e91f59a63c831a52fee36b9db4c64488b5af832beeb6fb0cc8586fcb22a1eec"
+      "endTick": 1792,
+      "hash": "22fc77613996b4f0ea17cbb3bc79871d24518785a39723670a4b61396c2674b8"
     },
     {
       "a": "speedster",
       "b": "sniper",
       "seed": 831056492,
       "winner": "ball-0",
-      "endTick": 1503,
-      "hash": "44881c5003189a91491a0f0b992193fa20c28180670a31933654a29be6b72ea3"
+      "endTick": 1131,
+      "hash": "8e145e09bacfdc6d77875e9cb10d56666fe4066779d8a87901554227c975ab0f"
     },
     {
       "a": "speedster",
       "b": "sniper",
       "seed": 3485492253,
       "winner": "ball-0",
-      "endTick": 772,
-      "hash": "be4c676b0b3d976d17877cb0a74ff00c305f0c4091dd3e6ec53fbb7acd005ec8"
+      "endTick": 886,
+      "hash": "f3fbe6511d8acfee2ea4d2d38b1d8e1d6965b5d565d1be774deb25807bee0114"
     },
     {
       "a": "speedster",
       "b": "quake",
       "seed": 1844960718,
-      "winner": "ball-1",
-      "endTick": 948,
-      "hash": "c9d63d690aaec3eb0c75afc978898c1f0318e1cf56790ba6d181a05d97031242"
+      "winner": "ball-0",
+      "endTick": 825,
+      "hash": "b50310abaa161a77d969ed4f050d4a9397e559e0e99c2886b332c562b0b828e2"
     },
     {
       "a": "speedster",
       "b": "quake",
       "seed": 204429183,
       "winner": "ball-0",
-      "endTick": 1060,
-      "hash": "077b72fd083b361b231b69162bddca65cfd88653a304d2af9d12c728f4404247"
+      "endTick": 1004,
+      "hash": "d65fb680d2bf4220c70e3f3be0b9cc27567b47a09e24152bfd4d5141fd6c434f"
     },
     {
       "a": "speedster",
       "b": "magnet",
       "seed": 2858864944,
       "winner": "ball-1",
-      "endTick": 1149,
-      "hash": "dfc56a94b0010077c9ab76b460dfb0176c48ae1080e710e103cb512d2922c616"
+      "endTick": 1052,
+      "hash": "8890ee584d9496f5de42fac6d7d7c76474e50ac307d89c22d47a0b9c7b250bbd"
     },
     {
       "a": "speedster",
       "b": "magnet",
       "seed": 1218333409,
-      "winner": "ball-1",
-      "endTick": 456,
-      "hash": "6dfc9620c33b7e3773675e3a750dedfa505cdc081b0d180e506a96fdae657cb1"
+      "winner": "ball-0",
+      "endTick": 984,
+      "hash": "a91a5544df1c0993ad49797fa34759120e5fe8608c15aeb3fc4cfe90a941f293"
     },
     {
       "a": "speedster",
       "b": "ghost",
       "seed": 3872769170,
       "winner": "ball-0",
-      "endTick": 1369,
-      "hash": "99c9e2e2895a9a400ce012dfdcbf45f4c5385b2b57a260e5be72643c90319653"
+      "endTick": 932,
+      "hash": "d5afcb4969c407bcf64ccf06d7ef234f0381f89e3ab2605abc7ce87c19aab2ea"
     },
     {
       "a": "speedster",
       "b": "ghost",
       "seed": 2232237635,
-      "winner": "ball-1",
-      "endTick": 968,
-      "hash": "b7fd9ba86d622e26183d2bed29479a646a0c71c70b307b37841ad4ff4520ef6f"
+      "winner": "ball-0",
+      "endTick": 941,
+      "hash": "dd9f4293870867cf0af52067793639233a6c861d14b9d5a6ee8f283b9681fbb5"
     },
     {
       "a": "speedster",
       "b": "necromancer",
       "seed": 591706100,
       "winner": "ball-1",
-      "endTick": 1373,
-      "hash": "61663e0672712d478d5985f7055b270c6e0c37210fd54a8c4030c01a3aa51639"
+      "endTick": 975,
+      "hash": "f2598166c33214517f2ceee7249b4b40abe754bafec5480e0d71b9588f41d807"
     },
     {
       "a": "speedster",
       "b": "necromancer",
       "seed": 3246141861,
       "winner": "ball-1",
-      "endTick": 808,
-      "hash": "8dd20b2432aab39bfb9e6eff8a22103bb8a0358d15e3230f7215c44301ecd279"
+      "endTick": 1683,
+      "hash": "74bb614537ab0ee1398d9945a2b764bdf1f02e736d897f97eb379f0404a47f07"
     },
     {
       "a": "vampire",
       "b": "vampire",
       "seed": 1605610326,
       "winner": "ball-1",
-      "endTick": 1874,
-      "hash": "70424927fd67e548fdd5c7d19988997037020528212d46f96c799daab3089925"
+      "endTick": 1977,
+      "hash": "f510461311a8ae88280c0da1d6d24ffbaa7532be860d9bd155149cb37e8d815c"
     },
     {
       "a": "vampire",
@@ -447,23 +447,23 @@
       "seed": 4260046087,
       "winner": "ball-1",
       "endTick": 1172,
-      "hash": "84c0b12d771e52fe2f11fb81b23148b867a9aa78f9e6c95679a9ade528bef2f0"
+      "hash": "5b17ad625591ed12d395fef8a067c26cbd3d6191a87dffb2ff41e7f6195ded32"
     },
     {
       "a": "vampire",
       "b": "archer",
       "seed": 2619514552,
       "winner": "ball-1",
-      "endTick": 890,
-      "hash": "9b8006cdc4914bbb43556cca9472e9dc4c949234c9066ffe61fcf8b47a9758fd"
+      "endTick": 744,
+      "hash": "8dd47ff183152c6050dac480a8f210e80abcd5c5b0eafe36f68e955f8a3f4390"
     },
     {
       "a": "vampire",
       "b": "archer",
       "seed": 978983017,
       "winner": "ball-1",
-      "endTick": 1133,
-      "hash": "f7f7fed6937a6527ded8c7cc167b66c6643cfb399911247e2b7f5a1b33f71fe3"
+      "endTick": 1130,
+      "hash": "fd3c25068da923a783b1af92a24a3a8cbf0880d5c934be0c8c4b95878a25830a"
     },
     {
       "a": "vampire",
@@ -471,7 +471,7 @@
       "seed": 3633418778,
       "winner": "ball-0",
       "endTick": 1026,
-      "hash": "5b43079d92f01cd22365afb63768cdb6d066979ba9db3187b8141013893cea1b"
+      "hash": "85bf869fcec59611d5ef4a6bd17b388ea0927ae560879d3d68b269dc9bd1cb96"
     },
     {
       "a": "vampire",
@@ -479,7 +479,7 @@
       "seed": 1992887243,
       "winner": "ball-0",
       "endTick": 808,
-      "hash": "c640eda630cbe53906db83a3cdc4e81ff6a86d8ed2d54e41b6a1e12437d997f2"
+      "hash": "b4d61070711298688f31ae361aab5f062db13bfe8e4208c473bde6f3dd4997b8"
     },
     {
       "a": "vampire",
@@ -487,7 +487,7 @@
       "seed": 352355708,
       "winner": "ball-1",
       "endTick": 1623,
-      "hash": "9a4fc04441b1b91406d5744566972c55b5ae93a53eb9d933d8ea439629a0d56d"
+      "hash": "055baccf37a63e19e0b24f39b6b6066dc212a2600db13dda40861681b6389bfe"
     },
     {
       "a": "vampire",
@@ -495,7 +495,7 @@
       "seed": 3006791469,
       "winner": "ball-0",
       "endTick": 1156,
-      "hash": "215c5e9aeea9947e8b5aab367e457c7e861a3a4cd0b6bcbc2d8bb7da7027b92d"
+      "hash": "0e79f0fac8a5fc8ef782f6ee8c86c0f327690913f75789a840857247f79e93b0"
     },
     {
       "a": "vampire",
@@ -503,7 +503,7 @@
       "seed": 1366259934,
       "winner": "ball-0",
       "endTick": 1240,
-      "hash": "0fbc15b1cfe39c84ed60d8a0325b014e2eca7b4ee16abed242df537182af1e71"
+      "hash": "8f527d949d90888073b7e216fc3521446385cc2393986dabd8cf035be62a167a"
     },
     {
       "a": "vampire",
@@ -511,15 +511,15 @@
       "seed": 4020695695,
       "winner": "ball-1",
       "endTick": 1122,
-      "hash": "9f3207d170d561b5817460888012295a0cd58224e52d625a1d8acbbe50f474fb"
+      "hash": "10e9074cad0018712f78c652f54cc86229139c18dc403ca7480cae27d6e4cc22"
     },
     {
       "a": "vampire",
       "b": "venom",
       "seed": 2380164160,
       "winner": "ball-1",
-      "endTick": 946,
-      "hash": "12e4bf696380e19b9712cf75905a03ebc7e8a794453e3e5689e0a13d43b75522"
+      "endTick": 1899,
+      "hash": "67daeeb558c3c4a55f5f4007756f57d1c9c6e13b524bf2dd012e06f8d8413918"
     },
     {
       "a": "vampire",
@@ -527,7 +527,7 @@
       "seed": 739632625,
       "winner": "ball-1",
       "endTick": 1293,
-      "hash": "e8e448d9261173a56dfc60737bb71e2f05ca6079e49d71a33167f6e12f600771"
+      "hash": "89e5813455f3b2696fc47ac6212a615350e5a543a7978e1d3219c168909a0c7a"
     },
     {
       "a": "vampire",
@@ -535,7 +535,7 @@
       "seed": 3394068386,
       "winner": "ball-0",
       "endTick": 1411,
-      "hash": "60951989d6c712a1952f806ff06566a79402950733f0a86ef8e926c04e5379da"
+      "hash": "9dcfa1f0ab77891816e56b35da97306bdd36625720a8410dfadf15579f03f6b2"
     },
     {
       "a": "vampire",
@@ -543,7 +543,7 @@
       "seed": 1753536851,
       "winner": "ball-0",
       "endTick": 1879,
-      "hash": "b374673a20c9a24cb9c1abbae7f368511360e975ad237ce51b809e0c6f7f5d48"
+      "hash": "d533aec903f6a734eb2cc6d83e0c371fcdd910beda068b1acebdf0bf189bd66f"
     },
     {
       "a": "vampire",
@@ -551,7 +551,7 @@
       "seed": 113005316,
       "winner": "ball-1",
       "endTick": 571,
-      "hash": "bf0b123fc98bd4e04735b87e2e5e10278c69a3795785c324ea3a20c233ab469b"
+      "hash": "7262284f0810dcdaeda76d00dd5c19866bb1fce9208ccb669f3a6fcb496e35eb"
     },
     {
       "a": "vampire",
@@ -559,7 +559,7 @@
       "seed": 2767441077,
       "winner": "ball-0",
       "endTick": 668,
-      "hash": "b6c25d516fe0682489de8d99063b9bc35d1580c17de8d9ab40cfe3968659f943"
+      "hash": "ef461b43d668b0b86c1a0c1c99e7a9ef1f0080f2180ef18da6d990f2646ea7ae"
     },
     {
       "a": "vampire",
@@ -567,7 +567,7 @@
       "seed": 1126909542,
       "winner": "ball-1",
       "endTick": 756,
-      "hash": "d3db8da3b22104f6ec560d3b0263b6d39d67472363d27dd1787c7eef9d873569"
+      "hash": "f21e8a8e406dfdd8a28c8aeb969f9bde8a9bd463d0b17e39b79c53a99576bbd6"
     },
     {
       "a": "vampire",
@@ -575,7 +575,7 @@
       "seed": 3781345303,
       "winner": "ball-1",
       "endTick": 1152,
-      "hash": "17eae31c25a2fd8603383b70f77b77728b4446815edf1c74be1e1e788205cb2a"
+      "hash": "c682a47d4be36ac3b307467d16cf9d51b438b2e39211e08ff546d480e9584038"
     },
     {
       "a": "vampire",
@@ -583,7 +583,7 @@
       "seed": 2140813768,
       "winner": "ball-0",
       "endTick": 807,
-      "hash": "1ce07c44a849bce3b410ed9faf63d988f30ae98db1a8050ea0ab5215f6c91c94"
+      "hash": "56c343693bc98b96826f039c70c18aa459ed136bc6a29c6120acf0c2b0957fd1"
     },
     {
       "a": "vampire",
@@ -591,15 +591,15 @@
       "seed": 500282233,
       "winner": "ball-0",
       "endTick": 1763,
-      "hash": "67aa5f96110f548c115583a1fe4499b0c101d1533bbf5aaa590f960c39930fac"
+      "hash": "4c59c8acc90b2883e46833e5cd51a3143a382e30ace95cb59b9d7738d26e3ab2"
     },
     {
       "a": "vampire",
       "b": "ghost",
       "seed": 3154717994,
       "winner": "ball-1",
-      "endTick": 1893,
-      "hash": "b733fa2fd9078d27bc7828f6decd4c507bc0457392027da4c8be5b8d305c0b28"
+      "endTick": 1776,
+      "hash": "d8e4aebaa4d48925eebaf8a2c725540d1357f676e56a2e9890ae151dd55ffac2"
     },
     {
       "a": "vampire",
@@ -607,7 +607,7 @@
       "seed": 1514186459,
       "winner": "ball-0",
       "endTick": 1114,
-      "hash": "16122496801bf05138be36c1a10ed1b394b05b043dfc0b13f57b28783579c982"
+      "hash": "e0a649ad788b5df21ced8397a1c34e7e8f788a08ff1e27c9893344ad5db8a637"
     },
     {
       "a": "vampire",
@@ -615,7 +615,7 @@
       "seed": 4168622220,
       "winner": "ball-1",
       "endTick": 638,
-      "hash": "78c7b6983e4e557c213fd99ce97edfef30328345510ea7b2a874de4689352a11"
+      "hash": "4c0316875be8a9aed6f0b906b1d04d40532dd547fbef4f8c16f14039a2503dc2"
     },
     {
       "a": "vampire",
@@ -623,7 +623,7 @@
       "seed": 2528090685,
       "winner": "ball-1",
       "endTick": 1546,
-      "hash": "747582aff6aca312ae5d99dad1b5fe6bd83f15a9ac10a9187256af790642252e"
+      "hash": "b50ca887acb66db6d8a8dee40d82459be0b5b3431fc701cc7bfc0a5efe4cf29a"
     },
     {
       "a": "archer",
@@ -631,7 +631,7 @@
       "seed": 887559150,
       "winner": "ball-1",
       "endTick": 518,
-      "hash": "f5bb76dbf5a858de461b8f6678fabde2b451dc8e3276f16d69a71a47af2154c4"
+      "hash": "0aa3c3f2163bdaf65099eff357faf653876a18cf2f662217a8d309d46ea26a93"
     },
     {
       "a": "archer",
@@ -639,7 +639,7 @@
       "seed": 3541994911,
       "winner": "ball-0",
       "endTick": 490,
-      "hash": "f548d04ac05d3c45717eda65c39ac40e62ec0099a5b4f00ba5165a2393dbb584"
+      "hash": "ddea33194bdd12e2f6fed0949790c03fd6a8558ebde958e15761a470f63e7ed0"
     },
     {
       "a": "archer",
@@ -647,7 +647,7 @@
       "seed": 1901463376,
       "winner": "ball-1",
       "endTick": 1278,
-      "hash": "5bca3d7584f510f49cd22516be765ae8e829eb114e6d4e1fd289bb0500fa39a0"
+      "hash": "bf8a974591374b114a6bcae0f49649f7bcb0aa6388a80f69026145f003f89ec5"
     },
     {
       "a": "archer",
@@ -655,7 +655,7 @@
       "seed": 260931841,
       "winner": "ball-1",
       "endTick": 248,
-      "hash": "69d60168d1c5e907e81a721b42108108cc26372eae14e013515e1185f286bf9f"
+      "hash": "b2dab354b4e0a40c4710b3a0a654df79875397e2647eb9fc732fd330e205f2f6"
     },
     {
       "a": "archer",
@@ -663,15 +663,15 @@
       "seed": 2915367602,
       "winner": "ball-1",
       "endTick": 338,
-      "hash": "ce475b86667129fd40cdd485121934594a76a66860385142329647a8eab2231e"
+      "hash": "760b2a7ecf6225322ab1c074830a13dce5ec98965fa54615139758f671d85e30"
     },
     {
       "a": "archer",
       "b": "frost",
       "seed": 1274836067,
       "winner": "ball-0",
-      "endTick": 763,
-      "hash": "6df7d3a08194f26753cb51c09a00dce72cbb7ad5b006209b54a875d84067252e"
+      "endTick": 761,
+      "hash": "bf1b1c374428465f170217ae8faacbdfa06ff1a2a4480aa2b120f4b604fe659a"
     },
     {
       "a": "archer",
@@ -679,7 +679,7 @@
       "seed": 3929271828,
       "winner": "ball-1",
       "endTick": 735,
-      "hash": "3241ab7ca0c280a86a51a0bf6509de5670f0b52c3fe8a4643b1d007b9c616f5c"
+      "hash": "9e431baae61c94e50e88dd8b4950118bb960a1cec3d32e835c7ad46e22e17b66"
     },
     {
       "a": "archer",
@@ -687,7 +687,7 @@
       "seed": 2288740293,
       "winner": "ball-1",
       "endTick": 873,
-      "hash": "31a991e1597e390e0338766f5ec94af7324d9ebddd9f447ceb0a7e4b7f6a9544"
+      "hash": "976484f9a02cec6d550ad3f0205eb17c7fd70be68649f23672a3e9ece4904868"
     },
     {
       "a": "archer",
@@ -695,7 +695,7 @@
       "seed": 648208758,
       "winner": "ball-1",
       "endTick": 810,
-      "hash": "fa535e8abd511bdb9ce0876bb662ad85f244639cd64d5caba5660128a5665fe4"
+      "hash": "3c6683ce0bbfa9ffaf5da00092b103da5518154e8909e28693764cdb0f9300d0"
     },
     {
       "a": "archer",
@@ -703,15 +703,15 @@
       "seed": 3302644519,
       "winner": "ball-0",
       "endTick": 991,
-      "hash": "cc5d1c06632f061b5dcf388cf087976e41329a4c8e77e84dd729c497371a4719"
+      "hash": "2e764762c7a2ba13097c19dcaf503b3624ed7161e6136b99faf132b441e310f0"
     },
     {
       "a": "archer",
       "b": "berserker",
       "seed": 1662112984,
       "winner": "ball-0",
-      "endTick": 885,
-      "hash": "b5f2fc0fd7eb4d0df273ce45cb3eb8a0839a646c3fcce1f67cb0adfc27710a91"
+      "endTick": 883,
+      "hash": "c4b20431dd4b3204c1ade2f8a0d097e6312e3d415a52ae2554ad522eeaf6a1ea"
     },
     {
       "a": "archer",
@@ -719,23 +719,23 @@
       "seed": 21581449,
       "winner": "ball-1",
       "endTick": 654,
-      "hash": "964afa469536ac377ae740d205dbd4f5170dc43a85cd2b20eb47d6aa5cbb8636"
+      "hash": "676283c0575dfa26472459cc335e75e7e088bccddbb0f82e2ccf26bd273e014a"
     },
     {
       "a": "archer",
       "b": "sniper",
       "seed": 2676017210,
       "winner": "ball-0",
-      "endTick": 1009,
-      "hash": "cf6c7947a19cdcc84a26fc74758b6b032e67dc5d07bf02e38234784a1a0ac5c7"
+      "endTick": 875,
+      "hash": "d43d6e7a53fdef577258983b0a3c61823d9fd756d70c068920abaad59820700b"
     },
     {
       "a": "archer",
       "b": "sniper",
       "seed": 1035485675,
       "winner": "ball-0",
-      "endTick": 760,
-      "hash": "f7b9d722cbdeed15e2c93feadebb68f27f32eb9227d5ea9abbe16e7dfa7c24da"
+      "endTick": 759,
+      "hash": "d51a217fe790db52dba83845cb83bfedd61bc3210d310255f057b99a4a45a3a3"
     },
     {
       "a": "archer",
@@ -743,15 +743,15 @@
       "seed": 3689921436,
       "winner": "ball-1",
       "endTick": 650,
-      "hash": "9da3c6d08a3ef9c732fe00ef2cfbde09902a43ba2632a152b15fa40388b645fc"
+      "hash": "e63e26da40dd42b2a2d84c3ec342455d67d22b58a748581e1f69a862d27bff05"
     },
     {
       "a": "archer",
       "b": "quake",
       "seed": 2049389901,
       "winner": "ball-0",
-      "endTick": 1003,
-      "hash": "74cbf5d31d39b0c43958bc03bd4b3d24c0cbd2a93678fdfe4d90fa570b7aa400"
+      "endTick": 988,
+      "hash": "27d9d164da372fa9a262a935f6c0974ec98971fc59c41f29625474ef423ad001"
     },
     {
       "a": "archer",
@@ -759,23 +759,23 @@
       "seed": 408858366,
       "winner": "ball-1",
       "endTick": 860,
-      "hash": "bc9349945a05935f3d122805acae3b539cfd636bca79d377e7eb0a29038d04a2"
+      "hash": "407d97772da177eab203f2c5331bf6ec1d2689d1904892a278287196d9af7e8b"
     },
     {
       "a": "archer",
       "b": "magnet",
       "seed": 3063294127,
       "winner": "ball-0",
-      "endTick": 755,
-      "hash": "ca429ba62555e34ceb6fdc20e2d708907418b71717bb4dfaa20afe4fe1dcb7bd"
+      "endTick": 633,
+      "hash": "51400aa87ef0d2da0e83e7b1eb070110ba7ea1933baed329ba6c4f37e3bcb7b2"
     },
     {
       "a": "archer",
       "b": "ghost",
       "seed": 1422762592,
       "winner": "ball-0",
-      "endTick": 995,
-      "hash": "de324cacafa98ddb95a06862398efd60d437cdc23c63263a22f93fd6f5c328fc"
+      "endTick": 994,
+      "hash": "360486bdaca78ae0410585065d1f87bcf711db3878687614ad5c4b64fd0b0c71"
     },
     {
       "a": "archer",
@@ -783,7 +783,7 @@
       "seed": 4077198353,
       "winner": "ball-1",
       "endTick": 419,
-      "hash": "e2934f3762ac9a57bd8bddc3f76cb9bbd3848e1b3b686cc34378ced43d95db0d"
+      "hash": "a1ca76bb286ce0c4428a118c2971f31b3a0c24a316859b7d11acf240da3aa463"
     },
     {
       "a": "archer",
@@ -791,23 +791,23 @@
       "seed": 2436666818,
       "winner": "ball-1",
       "endTick": 489,
-      "hash": "45fba5c62292f9b007d78e64f1d6cd192c767420bbbcc4eddf54b8e8b0a56896"
+      "hash": "b4c134b1e5938caa0d62e5252b47289dddfbc64a678145e1810fbb69e9b01f62"
     },
     {
       "a": "archer",
       "b": "necromancer",
       "seed": 796135283,
       "winner": "ball-1",
-      "endTick": 983,
-      "hash": "d2a7bcc44432cb38ef6dfa7e124f61db65d8aafaa7b15e27aca55267c3da7950"
+      "endTick": 906,
+      "hash": "b30ca7a83302a2ffc50ca005625a50ce987f9cb94882a29e5ed908c439746cae"
     },
     {
       "a": "storm",
       "b": "storm",
       "seed": 3450571044,
       "winner": "ball-0",
-      "endTick": 1490,
-      "hash": "db03e0a47f4f6cceff8090a7e6257800dadf9fd1462a97c671be1cc4c46f4570"
+      "endTick": 1484,
+      "hash": "af07aa61feae35bff68380cd9f73e184abb6769264d54a46b486cb6ef4b0fd3f"
     },
     {
       "a": "storm",
@@ -815,15 +815,15 @@
       "seed": 1810039509,
       "winner": "ball-1",
       "endTick": 518,
-      "hash": "6415b6a432a14ce85cf912434a4242dae1820a31e45a841974304cdd786bb953"
+      "hash": "a8b4dd71619b09a3a006dcc28ad4699b3f14616945b54220bf4fe2d2fd6e823c"
     },
     {
       "a": "storm",
       "b": "frost",
       "seed": 169507974,
       "winner": "ball-0",
-      "endTick": 888,
-      "hash": "0d95ff73f792a0f5bf1f56234ef44eacd6fc63ac5ff1e2e42ab1efedb96f89e2"
+      "endTick": 637,
+      "hash": "6f586ec92a024ede83cfef64cdad188b47afb5c85b9b161c378156c26a0b9df5"
     },
     {
       "a": "storm",
@@ -831,15 +831,15 @@
       "seed": 2823943735,
       "winner": "ball-1",
       "endTick": 1306,
-      "hash": "05fa5d8db189624071e8fd17f9aced882ab5e0078edc8f0055a49a7e53f97d0f"
+      "hash": "4af52dd1414e01288dfe7d53496878fd54e268ac57c24bbe03100690e7a9c93b"
     },
     {
       "a": "storm",
       "b": "thorns",
       "seed": 1183412200,
       "winner": "ball-0",
-      "endTick": 1901,
-      "hash": "363be23c5d0f815399285f4de5698ee925f22eeaac82e74a373fb286f3a26399"
+      "endTick": 1378,
+      "hash": "ace957bbb7586df20009c3688836aaa24b11c5615611749febda30c870f04b09"
     },
     {
       "a": "storm",
@@ -847,7 +847,7 @@
       "seed": 3837847961,
       "winner": "ball-0",
       "endTick": 880,
-      "hash": "2e796c5262ec508f1bd522252fac3d32ab31acb6a3e91178946fc714c99ece63"
+      "hash": "940b090ec24333cbd9871f57b05974d805537ff6b638d4820890258ef8c6a329"
     },
     {
       "a": "storm",
@@ -855,23 +855,23 @@
       "seed": 2197316426,
       "winner": "ball-0",
       "endTick": 758,
-      "hash": "c036f18f27dce8a7b56fdc090d6fa9aa9af6c8ee56248332f5600ebdaca6a8ab"
+      "hash": "b3b9f33e10dfd3d3bab223edaf5e1d990a0bf029c82ca8271853180a516af06a"
     },
     {
       "a": "storm",
       "b": "venom",
       "seed": 556784891,
       "winner": "ball-0",
-      "endTick": 1217,
-      "hash": "43f04f0aed50a8718af2fcdcc807ae53c421c8d1c7c29fc065bb457b388c302d"
+      "endTick": 1148,
+      "hash": "2d71f4183d422c6a3499a68e40b2201a412f470f9febc60d0da0c0e8eabb8d4e"
     },
     {
       "a": "storm",
       "b": "berserker",
       "seed": 3211220652,
       "winner": "ball-0",
-      "endTick": 1248,
-      "hash": "9413b55dd31593251e16c7f42eb9082c663c640934226d45044d9ed7ef00adde"
+      "endTick": 1091,
+      "hash": "4f1564e4253b16ea76566eb4aa88a54468f744ad4f59570adcbab289996717a5"
     },
     {
       "a": "storm",
@@ -879,7 +879,7 @@
       "seed": 1570689117,
       "winner": "ball-1",
       "endTick": 797,
-      "hash": "27de65517851100a5417c4d5015a5d41b2d00b106b8d73b83daeeb6471437481"
+      "hash": "1ad8a5d22349c47a69ad6e7b26faaee01ce4e5041993fbe47bff6aebd52ac261"
     },
     {
       "a": "storm",
@@ -887,7 +887,7 @@
       "seed": 4225124878,
       "winner": "ball-0",
       "endTick": 1228,
-      "hash": "79703941753c7eab6524ec9354857ae254865a3b39066d9f1f1b6119d123ddf1"
+      "hash": "522c9daf275fcb7fb3f612540dddf74bbedc98fc395648e0137811d8254f88a8"
     },
     {
       "a": "storm",
@@ -895,7 +895,7 @@
       "seed": 2584593343,
       "winner": "ball-1",
       "endTick": 1555,
-      "hash": "145502391d3ef97c11195b24ad7903a8d40436520d667de689b60c199886c9dc"
+      "hash": "5ce56fbf7ba5d4fd3d5bff572a64e74e5c6927c09f508873b76889cfe2abe339"
     },
     {
       "a": "storm",
@@ -903,15 +903,15 @@
       "seed": 944061808,
       "winner": "ball-1",
       "endTick": 1014,
-      "hash": "7a43a84ef180b69e4e8bed6fd7470e669aa9528348d5a9f53f1ffefd0d7acb0e"
+      "hash": "3a3334c4af597b70caa1391a2f6e84db8d3f45557bd7bd7346ccc7bcd33f9b17"
     },
     {
       "a": "storm",
       "b": "quake",
       "seed": 3598497569,
       "winner": "ball-0",
-      "endTick": 1203,
-      "hash": "7232a705179212d1bbaf6f07b3e097efbcc605923183a3e2247952f8799de2aa"
+      "endTick": 714,
+      "hash": "4407701cc709b7e9dd051e6432289a7079c583d1c2c0fef55b176c9f4a56c31f"
     },
     {
       "a": "storm",
@@ -919,7 +919,7 @@
       "seed": 1957966034,
       "winner": "ball-0",
       "endTick": 1148,
-      "hash": "3e1e8ac0fbf41e3450ec6f8e84fb0c0e3eb8973bb81fdbe9d45a9867d5b818bf"
+      "hash": "66ce6615f4806a4372bc4928a6244691c7ea7b4bdc93ddb5f7361ce3efb7512a"
     },
     {
       "a": "storm",
@@ -927,31 +927,31 @@
       "seed": 317434499,
       "winner": "ball-1",
       "endTick": 1018,
-      "hash": "7741f79f9b71dd7e4c115a98873846b55c3da06dcf359f5db8da94e4adc1b8d7"
+      "hash": "0692c31b254e46174c62647cc903c3303409c64a4ea8ae038c0c1aeb8b8ac33d"
     },
     {
       "a": "storm",
       "b": "ghost",
       "seed": 2971870260,
-      "winner": "ball-1",
-      "endTick": 2956,
-      "hash": "098888f3e31867061094450fe5475dcc7ebcdf6b280cefc87ba1e6b12aa2cdda"
+      "winner": "ball-0",
+      "endTick": 2599,
+      "hash": "6c2cfcf045cbd0cfa4ca895d615e02793fd0bd69f8c3eab1bf70b8eccc0fd59f"
     },
     {
       "a": "storm",
       "b": "ghost",
       "seed": 1331338725,
       "winner": "ball-0",
-      "endTick": 1489,
-      "hash": "5c21bec06424b49c4d0718e5c20d62497ed7d654e442f829674aee378d2cdf7e"
+      "endTick": 809,
+      "hash": "855a5a2bdd6620c537bdf684d97e19afba4b3b79f38ce5cc375b8b93e943694b"
     },
     {
       "a": "storm",
       "b": "necromancer",
       "seed": 3985774486,
       "winner": "ball-0",
-      "endTick": 511,
-      "hash": "f62680abf234e68bb42058f118cee71e633d29c6b5d65a016a0433f4f62d007e"
+      "endTick": 368,
+      "hash": "9c6af5468bac275439d3d64b533e00513499b4e3718baf04a14acaad55d3fc6b"
     },
     {
       "a": "storm",
@@ -959,7 +959,7 @@
       "seed": 2345242951,
       "winner": "ball-0",
       "endTick": 663,
-      "hash": "17b376753ab5cb50349dabf3be033aa056bc0c650c39bb68e12876176a08a363"
+      "hash": "af0c74fe712c02cc5dcc917a227e82e988727e7e2f8bae0c7c7a1a02586d5b08"
     },
     {
       "a": "frost",
@@ -983,7 +983,7 @@
       "seed": 1718615642,
       "winner": "ball-0",
       "endTick": 1429,
-      "hash": "09a4e04ae90c4098ba21bb179799c68c47eb43d8c9bfcb4fea096e9f7af5b911"
+      "hash": "1cce296e6d2b64b83a7cc42d0451fb36e7476b657ec51b4bce66ffb34226f6fc"
     },
     {
       "a": "frost",
@@ -991,7 +991,7 @@
       "seed": 78084107,
       "winner": "ball-1",
       "endTick": 1492,
-      "hash": "fb8a1838b93c5823287bb40c86a331bb370260b2d45dadc51c16ab0de53041a9"
+      "hash": "4a5bdc02d3f3f751ac654b9e34695613815c5d053df282043ebe2cb1d080793b"
     },
     {
       "a": "frost",
@@ -999,31 +999,31 @@
       "seed": 2732519868,
       "winner": "ball-0",
       "endTick": 1929,
-      "hash": "895e57e80713135cc7ff6fae1098045e8efb10e93f2fcd9ad4ca90ece58491b9"
+      "hash": "bfd83c9c8f4164f0781ad048d8f8b7a307e6851758b2ffe6c5b96287100719f4"
     },
     {
       "a": "frost",
       "b": "venom",
       "seed": 1091988333,
-      "winner": "ball-0",
-      "endTick": 2205,
-      "hash": "e4667b16d4c6f31fbd119f7aa1cde227b799c97088ed1f3f2be057aa97bf300e"
+      "winner": "ball-1",
+      "endTick": 1734,
+      "hash": "f95f3826e53c941a327d7594ecdfbbf977e21ff64ed33cb9c9f6f27425ac47de"
     },
     {
       "a": "frost",
       "b": "berserker",
       "seed": 3746424094,
-      "winner": "ball-0",
-      "endTick": 987,
-      "hash": "23e2cdffb7136116df3335724104b40495855d1449d96e7a19924282b1d73408"
+      "winner": "ball-1",
+      "endTick": 2521,
+      "hash": "0c69f9645c0548fc5e8a398341f1eecc71b7ce3c86df430ef046bb3794a8f84e"
     },
     {
       "a": "frost",
       "b": "berserker",
       "seed": 2105892559,
-      "winner": "ball-1",
-      "endTick": 1644,
-      "hash": "61cef7e9a2023af62075ee2d51dbf1668df950eaaf1601b89453cdbdf64d31d7"
+      "winner": "ball-0",
+      "endTick": 1168,
+      "hash": "b4c2ecd116a803e51e0b2c2cdbebd3f466e2b8444f58bcea69b04eb760be021d"
     },
     {
       "a": "frost",
@@ -1031,7 +1031,7 @@
       "seed": 465361024,
       "winner": "ball-0",
       "endTick": 1479,
-      "hash": "c8ab7f7325309fe96a3e4487d2ca04691d79f2c371e8ac4cd85a98433a778353"
+      "hash": "df6a31b515a1df3deca7548570ae766d5364edc46eb7d441c196ed9eec8ce008"
     },
     {
       "a": "frost",
@@ -1039,7 +1039,7 @@
       "seed": 3119796785,
       "winner": "ball-0",
       "endTick": 980,
-      "hash": "3fbef5f8b2358fc87f6f7378c5480db88bf97416c476f1fe25b8a6c4fc1ff7f4"
+      "hash": "d75b7ea28a15a2c4f28b165ad67ecc7d35427dc3fa8e90be805e478856c2cbc8"
     },
     {
       "a": "frost",
@@ -1047,7 +1047,7 @@
       "seed": 1479265250,
       "winner": "ball-0",
       "endTick": 1146,
-      "hash": "19c05ed091ee7a30299ec3015eba7218a1380b3db02c8eaca9a3c93e321a16bf"
+      "hash": "8c42aea7e7e025ba01c040b7941cb492228f81ad7c85c78fd460b26d1993ffa8"
     },
     {
       "a": "frost",
@@ -1055,7 +1055,7 @@
       "seed": 4133701011,
       "winner": "ball-1",
       "endTick": 1244,
-      "hash": "e2c212a2bd684383aaff7caea504f2b4345158c0bddbf959e81a57f8a79f2710"
+      "hash": "a6f0fe08286ba8a67894454778bcd204018484c1d79e47967986fa612bbc0264"
     },
     {
       "a": "frost",
@@ -1079,7 +1079,7 @@
       "seed": 3507073702,
       "winner": "ball-1",
       "endTick": 1154,
-      "hash": "e35434db067ad262333e6b06cf72b84fe8d70840dd4227936ce56870557a90e1"
+      "hash": "9e030f8dd114aed1395ec33ab66d2c09efcc0301cdb5da85b3b6ad60f49c3f19"
     },
     {
       "a": "frost",
@@ -1087,7 +1087,7 @@
       "seed": 1866542167,
       "winner": "ball-0",
       "endTick": 644,
-      "hash": "a8e5149edf8192d5338af1ccb714828a415b5b5bc98727b0a5298bff842aed82"
+      "hash": "cb2f872572d1e12514ffe9b9b00deb0a5db921cdc86425027956f8610e910e1d"
     },
     {
       "a": "frost",
@@ -1109,9 +1109,9 @@
       "a": "thorns",
       "b": "thorns",
       "seed": 1239914858,
-      "winner": "ball-1",
-      "endTick": 1014,
-      "hash": "854cff16c1fa83fbd33e9efbb76dbf0238bca6384a84effba18588ba73ae356a"
+      "winner": "ball-0",
+      "endTick": 1335,
+      "hash": "3ced639338ce057306f4ddf82fdf30521d094a26d5cf2eefc61d522c0ad7ae1e"
     },
     {
       "a": "thorns",
@@ -1119,23 +1119,23 @@
       "seed": 3894350619,
       "winner": "ball-0",
       "endTick": 1258,
-      "hash": "3fe49b34182523ccb9132892f13e76f240878fbfee1daa1d78d547063409edc8"
+      "hash": "438b58cf2e2f4fb7ce82d5c03a1894034981fd79a643e5cfe1533b7136600696"
     },
     {
       "a": "thorns",
       "b": "venom",
       "seed": 2253819084,
       "winner": "ball-1",
-      "endTick": 1348,
-      "hash": "905ab5e93db0d7075066a93060ae9592714d4c68f473b333cdd857942018886a"
+      "endTick": 1378,
+      "hash": "3790d782a059e5fec1bcb31c8208efddc34df30106fe748bec54ead7ea0f6009"
     },
     {
       "a": "thorns",
       "b": "venom",
       "seed": 613287549,
       "winner": "ball-1",
-      "endTick": 1717,
-      "hash": "16a56566bbc2412a72cb948638d1232692f95f38016eddd27aa605e2a67960bd"
+      "endTick": 1747,
+      "hash": "d747d8ba77d29328865d40f51179e216159d9863e58cdf63c56837c207374a87"
     },
     {
       "a": "thorns",
@@ -1143,7 +1143,7 @@
       "seed": 3267723310,
       "winner": "ball-1",
       "endTick": 2605,
-      "hash": "b7b334808d6fa7016c21e1cd6938caec2282e8615c0a3b39d47a536a1ecac9b1"
+      "hash": "192e0062053ce578590d82d9a1e7e5c6b6d43be013f9127dfdc6a099eae273e7"
     },
     {
       "a": "thorns",
@@ -1151,7 +1151,7 @@
       "seed": 1627191775,
       "winner": "ball-1",
       "endTick": 1346,
-      "hash": "e949536c7aefe4a4b16de09524907dcd7a813c988764cfadfe8f4ac68bc9c1ee"
+      "hash": "879bfafa2dc53173c942dff937d8c1d47846ca5c6be439f82f507c4b8d4444a6"
     },
     {
       "a": "thorns",
@@ -1159,7 +1159,7 @@
       "seed": 4281627536,
       "winner": "ball-0",
       "endTick": 834,
-      "hash": "d159a436e8caa60fd62760bb91d61173bdb1eef0a698be78c14ca1958c8b0ac6"
+      "hash": "2d121ae0095ba76d7da35d1bde1b0fb11ee739e1e28c89b22a6c04c4b62b106e"
     },
     {
       "a": "thorns",
@@ -1167,7 +1167,7 @@
       "seed": 2641096001,
       "winner": "ball-0",
       "endTick": 912,
-      "hash": "81de1b04a7d625e9f8f18eacacefcd864e2bc0fb121e27292d2025d02aead986"
+      "hash": "dcdc431e67eae2cd6159decef1f6412cb1482e18d0f40e975448411a477bb387"
     },
     {
       "a": "thorns",
@@ -1175,15 +1175,15 @@
       "seed": 1000564466,
       "winner": "ball-1",
       "endTick": 729,
-      "hash": "8819d3904f055dfd5213d22aa5fe3db11d41673d56cac678525bd85388dc9aaa"
+      "hash": "1768be5f6ed1040099557e037c6fb33048484a17ba981494e2453a712c59d3e5"
     },
     {
       "a": "thorns",
       "b": "quake",
       "seed": 3655000227,
       "winner": "ball-1",
-      "endTick": 1540,
-      "hash": "e4b7abf38549abea66f4a623eecc2150f68cbefb18aeec1c61eafa17ce66af6d"
+      "endTick": 1614,
+      "hash": "1cc7bcfc10451d965d6101518601449ac8f9170806f8f3cbc96391fb077739ec"
     },
     {
       "a": "thorns",
@@ -1191,7 +1191,7 @@
       "seed": 2014468692,
       "winner": "ball-0",
       "endTick": 1050,
-      "hash": "e6d7340b9adbc0c0b4749049d08ac08a74f5bf24390080dfe6a3d4b6e5404c80"
+      "hash": "0478fa0a12c7dae1bbbae68df64d8ef7caa1aa00fd99e488c8ad013e6ef22dd5"
     },
     {
       "a": "thorns",
@@ -1199,7 +1199,7 @@
       "seed": 373937157,
       "winner": "ball-0",
       "endTick": 1517,
-      "hash": "9ebe13c9006122f7a289effc0211378b43f29ae39f93d7d648a7b106ae54227d"
+      "hash": "91723cb003dcdb74adb9863f20546a960b9853060608299c33de4018dc81aa4a"
     },
     {
       "a": "thorns",
@@ -1207,7 +1207,7 @@
       "seed": 3028372918,
       "winner": "ball-1",
       "endTick": 2525,
-      "hash": "95400ac9c681007ba717dd8df96819eb03557f77170b9bac44b10759312165e4"
+      "hash": "5d7f1f4d1a9d15a87fa126fd77a9318db0ab99712f0fe5a0bbedc2cf263b2ddf"
     },
     {
       "a": "thorns",
@@ -1215,7 +1215,7 @@
       "seed": 1387841383,
       "winner": "ball-0",
       "endTick": 1426,
-      "hash": "129d727a2a37bba9493fb254c1fea569663f9d571a219e8f2396208c1c437d95"
+      "hash": "79b6d3934b010b29bffb66178205a91909f77b1d4dee05dfb52072c8ee761350"
     },
     {
       "a": "thorns",
@@ -1223,7 +1223,7 @@
       "seed": 4042277144,
       "winner": "ball-1",
       "endTick": 1278,
-      "hash": "b1a7e0c6936d275d9bc22934225093a7b81268bd4386b7d982db38dada13664f"
+      "hash": "c556f2715cc0f46e4730846ea741411259062e162429922938f2e77d4fe79d35"
     },
     {
       "a": "thorns",
@@ -1231,7 +1231,7 @@
       "seed": 2401745609,
       "winner": "ball-0",
       "endTick": 1590,
-      "hash": "983b168b8dcacb5c9008b075f2dcf4a7fafad07a05996f8b14530832126bb905"
+      "hash": "73266ebd7a30bd0f5b6e1cb4a8816d8c8e9c7945e21e5cca677f0449a53d08a4"
     },
     {
       "a": "venom",
@@ -1239,7 +1239,7 @@
       "seed": 761214074,
       "winner": "ball-0",
       "endTick": 838,
-      "hash": "e263a5d4862b42238139ce7abdcd8cebcb7e6c787db8f3f2680db5281137ec2f"
+      "hash": "935c56d759e665c12af8dfe5af9493053b8a312a7c23b82d451be0bc3ce2c520"
     },
     {
       "a": "venom",
@@ -1247,7 +1247,7 @@
       "seed": 3415649835,
       "winner": "ball-0",
       "endTick": 1069,
-      "hash": "e1e9343e2ef7c3aeb899d38fb50ce7a1bae52257955812234f5bb3d4897d9bd7"
+      "hash": "aad54f8a24c562be22349e083ccc0c90ee98695a67b0cbfc76ff2c0bc6434a44"
     },
     {
       "a": "venom",
@@ -1255,7 +1255,7 @@
       "seed": 1775118300,
       "winner": "ball-1",
       "endTick": 1706,
-      "hash": "1fb89c20af2b21d2b6deca451103da88c72931fa297d2cdf8a73f0a8e2bcaa36"
+      "hash": "9bba8423ff05aebde3d5ac86e0a6139f732848295b10f8bd9efa61e9ba6485b6"
     },
     {
       "a": "venom",
@@ -1263,7 +1263,7 @@
       "seed": 134586765,
       "winner": "ball-0",
       "endTick": 1585,
-      "hash": "9f6846fdd1c23d0a2b0d1c4136bcf6af3359b932fe6f5ac87dfa2a8696a67c96"
+      "hash": "bc2751459aafea8a1776eb41ca2d9310f2694e003157a7f0ff48ccfc5f423ce5"
     },
     {
       "a": "venom",
@@ -1271,7 +1271,7 @@
       "seed": 2789022526,
       "winner": "ball-1",
       "endTick": 1893,
-      "hash": "6e2b6c7e9ae48915e61932b3e1f0bf81662dd7dbf7adad3e9624243e936d4baa"
+      "hash": "f034aab936401910498bab035f0a4a6989dbf665323befdc8bef0c268e5231d6"
     },
     {
       "a": "venom",
@@ -1279,7 +1279,7 @@
       "seed": 1148490991,
       "winner": "ball-1",
       "endTick": 787,
-      "hash": "b6c0d5b5edeca8e8c103acb2c3cf0515f1c7637c7f8970b073bad483e72c7334"
+      "hash": "488b693cff0bc21ba355f5515c00ddf79957060cf89ab6155c75f79c2c5ba586"
     },
     {
       "a": "venom",
@@ -1287,7 +1287,7 @@
       "seed": 3802926752,
       "winner": "ball-0",
       "endTick": 946,
-      "hash": "c103e3fdecabe2c7f0c25c4d76d610873618d3677030bb0113cae9374840597e"
+      "hash": "369f171ff9cb750cb32bdeb4f2db7cd4db464a8284efc1e023c53148f69b41ff"
     },
     {
       "a": "venom",
@@ -1295,7 +1295,7 @@
       "seed": 2162395217,
       "winner": "ball-1",
       "endTick": 1020,
-      "hash": "c36f1f980343daf42af2b57751c077662a60d2182a04bf754d56f6f259f0565c"
+      "hash": "d560c1dc391b6808bcb1f5e1193bc8ae697ea0fe7c34615824eba2fb6b84f54d"
     },
     {
       "a": "venom",
@@ -1303,7 +1303,7 @@
       "seed": 521863682,
       "winner": "ball-0",
       "endTick": 1633,
-      "hash": "46c528c075c4df03285145982079c922dd1506773e9697d077e7fc3c5f19c294"
+      "hash": "8d7ada4dc21b39fcad6f287e3fd526616b0f36816769400fe929e255fe17087e"
     },
     {
       "a": "venom",
@@ -1311,7 +1311,7 @@
       "seed": 3176299443,
       "winner": "ball-1",
       "endTick": 1266,
-      "hash": "a3eb309904c49799a01c860bcf23a94bb58ee3e70a89bf3d00456430809c0fd6"
+      "hash": "60ea5136900af5aa0b71314afa01b2825d13c5c1277ff6a0ca76a4febcae8965"
     },
     {
       "a": "venom",
@@ -1319,7 +1319,7 @@
       "seed": 1535767908,
       "winner": "ball-1",
       "endTick": 580,
-      "hash": "acaf66b9476becb6da91fc3e5dfa92372378ac27989ac195f07bcd40481bb11b"
+      "hash": "f9a40aeea6dfde9acc8e003822d99839e3784c4d2cb8fe5d44dd76e878055653"
     },
     {
       "a": "venom",
@@ -1327,7 +1327,7 @@
       "seed": 4190203669,
       "winner": "ball-1",
       "endTick": 1052,
-      "hash": "34346f8332a37d49dd56a8882337e9999d6efeda8aa4c5446289e6e94b41fe22"
+      "hash": "63344e0038404bdff1af8727dd3dce4823f5df7907f297b63d3e41f54f3876c4"
     },
     {
       "a": "venom",
@@ -1335,15 +1335,15 @@
       "seed": 2549672134,
       "winner": "ball-1",
       "endTick": 1040,
-      "hash": "02f720393a7ceda7071ac3b3c83a8d3f2040f42835cccb586098f2ce1125e780"
+      "hash": "6b77f6708ecca0879460724a59fa6bca42384f0510d3a5fe698ea739a905f670"
     },
     {
       "a": "venom",
       "b": "necromancer",
       "seed": 909140599,
       "winner": "ball-0",
-      "endTick": 1257,
-      "hash": "095ba1f8f8f8c2bf7f74ecdbd9b82a4325447ae381f1bf788a79c8c44d7834e3"
+      "endTick": 1233,
+      "hash": "0ba40393b45a0b93602719dae1846dc4b917d5e9122e703652548cee98501989"
     },
     {
       "a": "berserker",
@@ -1351,7 +1351,7 @@
       "seed": 3563576360,
       "winner": "ball-1",
       "endTick": 1170,
-      "hash": "69a17644cf353df2d9edeef6ac097deebcc0751c55edf36d101aa3e99c35c933"
+      "hash": "a0254b8a307fd8ebc40e4777cef437fe34f5161ff6209a1212c2da24324dc518"
     },
     {
       "a": "berserker",
@@ -1359,15 +1359,15 @@
       "seed": 1923044825,
       "winner": "ball-1",
       "endTick": 2786,
-      "hash": "019c070bd6750f6866b492f32227efadc2cc84a94d0fd6348133c8017ae5facb"
+      "hash": "b33426916cfc17e0603a57b69905705ed8737c473640da7de10cc332cf80858c"
     },
     {
       "a": "berserker",
       "b": "sniper",
       "seed": 282513290,
       "winner": "ball-0",
-      "endTick": 2057,
-      "hash": "327c92aa9cdb123d64a9764d0aa75dd6ebf580f4e14b202d2f22a1c65769419a"
+      "endTick": 2426,
+      "hash": "1d47d15642ce73b5af718a0c378a9c5bd9f3bbc5446b63894399c8460b81c9f2"
     },
     {
       "a": "berserker",
@@ -1375,7 +1375,7 @@
       "seed": 2936949051,
       "winner": "ball-0",
       "endTick": 1760,
-      "hash": "5fabbc8a315ccaa406c2e28fa4ce4b1e96ee07c04f50ce4f375fa7c7741fd2ea"
+      "hash": "115e4fb9541a4c738ebe1f9a54c79dde0bedad5544dad7a22f618e67cbc7aaf3"
     },
     {
       "a": "berserker",
@@ -1383,7 +1383,7 @@
       "seed": 1296417516,
       "winner": "ball-1",
       "endTick": 679,
-      "hash": "d33d35c25abed5765709e6b07060849a6ff4862dce8b01021b41d5c7dd22344d"
+      "hash": "53794381709567c16168b370ba8651da877807a5b2ecf54a05063838880895e0"
     },
     {
       "a": "berserker",
@@ -1391,7 +1391,7 @@
       "seed": 3950853277,
       "winner": "ball-0",
       "endTick": 2273,
-      "hash": "740be62c94102ea1a3efc0f77a608a290841df18d7ffae1b109755a7989f1182"
+      "hash": "e571f85a662cbb4d9b7775baa0667760bb537a6ccf25eede5309528cc53afd5c"
     },
     {
       "a": "berserker",
@@ -1399,7 +1399,7 @@
       "seed": 2310321742,
       "winner": "ball-1",
       "endTick": 2481,
-      "hash": "446f66acdaeaab8988adaa19a3da347bfbddd693cabb02a8aee001f17e2db41a"
+      "hash": "ef09c89365609a5ae8e5dde362a8178233b47746a483239d3fcf5f28b6061c11"
     },
     {
       "a": "berserker",
@@ -1407,7 +1407,7 @@
       "seed": 669790207,
       "winner": "ball-0",
       "endTick": 651,
-      "hash": "411a3cf09955cc8469458ed7b8237b77dc0d1b7cd99eeb8149216096c9e1e478"
+      "hash": "f965fa38ee952513e1183b190d5c9b41119e69444f3239ea9f029e1facd45a6c"
     },
     {
       "a": "berserker",
@@ -1415,31 +1415,31 @@
       "seed": 3324225968,
       "winner": "ball-1",
       "endTick": 2785,
-      "hash": "06822c9b3aa86361ef4e3ef9e93832c1079d6710ae4eff32976a8bc6e0e83f35"
+      "hash": "a1085f6cbfec652912b7b60484c5df914018c284b8fdb3cc5130f0761a43e701"
     },
     {
       "a": "berserker",
       "b": "ghost",
       "seed": 1683694433,
       "winner": "ball-0",
-      "endTick": 1989,
-      "hash": "a3097bfc23a11c9e7c2b5f4d5bd4bf7d22455ad34607b0d4e08bfc24cbc111ff"
+      "endTick": 1719,
+      "hash": "7732e96fb966ac6a72988a1558119c099275b48bc5bae27440f85eeb8880d460"
     },
     {
       "a": "berserker",
       "b": "necromancer",
       "seed": 43162898,
-      "winner": "ball-1",
-      "endTick": 1670,
-      "hash": "061839ce443f231e173478bb6e8b0c1892c1fbacc4cff8a1043ba9186b248bba"
+      "winner": "ball-0",
+      "endTick": 1450,
+      "hash": "70b740dbf580ef4daef50220316aac276382ddc5c29114bb9ed513942691a843"
     },
     {
       "a": "berserker",
       "b": "necromancer",
       "seed": 2697598659,
       "winner": "ball-0",
-      "endTick": 1865,
-      "hash": "98ab82fbe785f5099718203e4aaafc88993f2fa0aaff551ac475f0209b6e4824"
+      "endTick": 1511,
+      "hash": "06de655b266eba6b0849c674b81a3ab14437b19a88012d25032f9b681629be73"
     },
     {
       "a": "sniper",
@@ -1447,7 +1447,7 @@
       "seed": 1057067124,
       "winner": "ball-0",
       "endTick": 956,
-      "hash": "31b1b7d2ac6715bffc8eed855d7f48ef07e471ee4965e7c8d67bf5dc71c7eed2"
+      "hash": "e563ef07472982a06a9c83a216be4a400cf397c703ad510a9ea5c3dfa4dcaa76"
     },
     {
       "a": "sniper",
@@ -1455,23 +1455,23 @@
       "seed": 3711502885,
       "winner": "draw",
       "endTick": 2544,
-      "hash": "17515a4cf71da2d0fe51b2c7c6c4a312e394d166f7af8165be25a7cce313c68e"
+      "hash": "2f512eacfcadaccbfd95e0237493c00422a7733abc1df67c5c2a9fdf7f3e9fed"
     },
     {
       "a": "sniper",
       "b": "quake",
       "seed": 2070971350,
       "winner": "ball-0",
-      "endTick": 1209,
-      "hash": "2ecc54eb84c2ceae2cc5c22f0b9a7814637555c2fcf75c650c0b96d3fd9d70a1"
+      "endTick": 1519,
+      "hash": "419b538c1a1dfc2817ab3ba0fea5b2841b3f0c50a6e7f4caeec2667ac6a0846d"
     },
     {
       "a": "sniper",
       "b": "quake",
       "seed": 430439815,
       "winner": "ball-0",
-      "endTick": 1023,
-      "hash": "4152528ccfbd8bffd11014f6d2564536ebe216c4ef6eed1838903ebe37a53797"
+      "endTick": 1701,
+      "hash": "755ae16dc952844e3127bba8af524efd54a02deb694c90b3f0107831a6b2738f"
     },
     {
       "a": "sniper",
@@ -1479,7 +1479,7 @@
       "seed": 3084875576,
       "winner": "ball-1",
       "endTick": 229,
-      "hash": "8d1b55ab324dd33539b56b9e63ec88e35e37c34082270b50ee2b51e9ffd1debf"
+      "hash": "8e9bbdbeb59ef4b3f50f0a1dcaf9c789a652ff8008859c5ef96111ff59491fbe"
     },
     {
       "a": "sniper",
@@ -1487,15 +1487,15 @@
       "seed": 1444344041,
       "winner": "ball-0",
       "endTick": 544,
-      "hash": "5e03dd8129a3b62cb686eba99d4b680a5ce87dd51f5fa2d47bd618da39575ed3"
+      "hash": "0b4e93653305ad6df69663c983aa687ba3e282366933067a8adb3e8f00136246"
     },
     {
       "a": "sniper",
       "b": "ghost",
       "seed": 4098779802,
       "winner": "ball-0",
-      "endTick": 2171,
-      "hash": "18997bb5554dd93e948da34316ce9ceb04ad2379c9c8ca9b2d93b3ad2772f9a7"
+      "endTick": 2727,
+      "hash": "093cc21e89f9e6ca862984ec2833f1de3e65bccdf4d54bcaf88d2098dfee27d9"
     },
     {
       "a": "sniper",
@@ -1503,7 +1503,7 @@
       "seed": 2458248267,
       "winner": "ball-0",
       "endTick": 941,
-      "hash": "7751c07eee68103ac4db9b999019a2b0bb3d145a464161e2641377b4b9a7bb7f"
+      "hash": "95e8f0c07f5cd11c80bef6acdac716b303973387ddb5e5de82ba246ed6f55bd5"
     },
     {
       "a": "sniper",
@@ -1511,7 +1511,7 @@
       "seed": 817716732,
       "winner": "ball-1",
       "endTick": 901,
-      "hash": "09f7e71b8640e53853d4ea8be69fef9bd1aee9ad7218d64c7ed527e1e6c17025"
+      "hash": "6cc84d607f35235fb6641ad9d13a613edb15f16753be024dc24011203e95825b"
     },
     {
       "a": "sniper",
@@ -1519,7 +1519,7 @@
       "seed": 3472152493,
       "winner": "ball-1",
       "endTick": 983,
-      "hash": "6ff082e4bb0a5402dc94bb590d9a4fb4ddb8a37f5ba2cf9a15557187839ec45a"
+      "hash": "dd37eec623f1d59f6ff657b8ffc2c7d053d373fa509cee91d1016af664774304"
     },
     {
       "a": "quake",
@@ -1527,7 +1527,7 @@
       "seed": 1831620958,
       "winner": "ball-1",
       "endTick": 298,
-      "hash": "29de63700f01c105fb0654b8e19475987cb9ab85fbac709def37f4c537edc0e6"
+      "hash": "f0a3efe604fdcbd446d960e6e715ffd90672cfb10785168b92bfdadc39a51df1"
     },
     {
       "a": "quake",
@@ -1535,7 +1535,7 @@
       "seed": 191089423,
       "winner": "ball-1",
       "endTick": 867,
-      "hash": "ed259f7b734ec4bcf42f72c4378d37543b6dca7214f82819dca7caaf163c85e1"
+      "hash": "816577588d3400d39ba0273ee0b640ab919da847e2a2a55888739ab70544d2ec"
     },
     {
       "a": "quake",
@@ -1543,7 +1543,7 @@
       "seed": 2845525184,
       "winner": "ball-1",
       "endTick": 694,
-      "hash": "bf618f72c448e9149596e158aa628eceee509e449f0e8db6daf2bb008e8d59b5"
+      "hash": "4f7809d80d5b41b389546716ec5d373084915650c88da78fc2fe7a0a9ec330c0"
     },
     {
       "a": "quake",
@@ -1551,7 +1551,7 @@
       "seed": 1204993649,
       "winner": "ball-0",
       "endTick": 1398,
-      "hash": "382d0b2b06124a03006b6e68680272d1ac7518b588fb00dac7f2b832818aafd1"
+      "hash": "01d4761424e0880f06148d13c49c4d47019a653785c50411094c07cec61bdc80"
     },
     {
       "a": "quake",
@@ -1559,7 +1559,7 @@
       "seed": 3859429410,
       "winner": "ball-1",
       "endTick": 973,
-      "hash": "a2c6d6886d50f7d134173b6626c90fcaced6561c2a24abf89979798a346a9b64"
+      "hash": "7e4254ec37e5e9218b096542fdbdb0037ea77b32d8af4d7e79c0a59754ad0e58"
     },
     {
       "a": "quake",
@@ -1582,8 +1582,8 @@
       "b": "necromancer",
       "seed": 3232802101,
       "winner": "ball-0",
-      "endTick": 1344,
-      "hash": "72f7cc671516b8ab1758cca3935a219fd698cd25994b6a0c3631fed58835566d"
+      "endTick": 1422,
+      "hash": "9a08c63c05b0092ba8ea3d8956d7788270ec587aeff56ced66426b8b7654adf1"
     },
     {
       "a": "magnet",
@@ -1606,16 +1606,16 @@
       "b": "ghost",
       "seed": 2606174792,
       "winner": "ball-1",
-      "endTick": 1977,
-      "hash": "65a6c8fcd0e294a5b09260af9410bcd6a0a1f13347128e77125a2d39085e7b90"
+      "endTick": 1302,
+      "hash": "46b4ce423ab890ba1c07caa69a78974c40f14a8712b7d4d915bd7e2a82b38145"
     },
     {
       "a": "magnet",
       "b": "ghost",
       "seed": 965643257,
-      "winner": "ball-0",
-      "endTick": 2213,
-      "hash": "4db4556a0fe2d1926f5c4301efb8c2764c6be4a28a5b5f61c9ab83b41be462c2"
+      "winner": "ball-1",
+      "endTick": 2710,
+      "hash": "44eac9b5fa3dfe76e5eae71b207c82ad05df3022b82711c170fe82e755151ffb"
     },
     {
       "a": "magnet",
@@ -1638,8 +1638,8 @@
       "b": "ghost",
       "seed": 339015948,
       "winner": "ball-0",
-      "endTick": 1347,
-      "hash": "702b858ae070aa2e3bdc2c1c291cbe283b4427109840eba4df1d7f555e0c6e55"
+      "endTick": 1207,
+      "hash": "fa85bd30e1209ec1001be0ff65a905ce3e538735babde509739398e53a8fe682"
     },
     {
       "a": "ghost",
@@ -1647,7 +1647,7 @@
       "seed": 2993451709,
       "winner": "ball-0",
       "endTick": 2096,
-      "hash": "0113ef00b617399ea896e0cc040c142fb428d84b22b40c4b5e8434f93f2693a0"
+      "hash": "0b93eb3ed491656042bdf3ea59b0f6d58ef09d0a6f60c8da8d4614fbeec487de"
     },
     {
       "a": "ghost",
@@ -1655,15 +1655,15 @@
       "seed": 1352920174,
       "winner": "ball-0",
       "endTick": 1034,
-      "hash": "c92cdcb977647827f981ded6ae24bfc0db188138b592c94cf524f759deb31e79"
+      "hash": "9b797f34434f12ddc21a909223308bfad7f8ad167cf0253d883106b0ef382d5f"
     },
     {
       "a": "ghost",
       "b": "necromancer",
       "seed": 4007355935,
-      "winner": "ball-1",
-      "endTick": 1096,
-      "hash": "28208ce448793bafa5358b0cf78c21eafbdccdc0f8766d7aa12a747f24d92bc5"
+      "winner": "ball-0",
+      "endTick": 1093,
+      "hash": "aae42db4ef159bd3e94faa1547f99e709c0baf02d7a8d7a7748b67d5df1e0e02"
     },
     {
       "a": "necromancer",

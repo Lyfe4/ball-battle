@@ -10,7 +10,8 @@ import type { CounterEntry } from './counter-map.ts';
  * (docs/vision.md, ADR 0013). Frost
  * (ADR 0012) has one favoured and one unfavoured matchup from its mechanics and is even against
  * the rest. Venom (ADR 0014) is favoured against Thorns and unfavoured against the Vampire.
- * ADR 0016 adds the Archer over the Frost and the Frost over Venom.
+ * ADR 0016 adds the Archer over the Frost (and the Frost over Venom, even again since ADR 0028
+ * removed the cold's resistance to poison). ADR 0028 also makes the Vampire and Speedster even.
  */
 export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
@@ -28,8 +29,8 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'speedster',
-    intended: 'x',
-    reason: 'Outlasts the burst by healing off every exchange.',
+    intended: 'even',
+    reason: 'It heals off every exchange, and the faster stacks hit back as hard as it drinks.',
   },
   {
     x: 'storm',
@@ -179,7 +180,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'frost',
-    intended: 'y',
-    reason: 'The cold wears poison off the Frost sooner, and it hits Venom hard and slows it.',
+    intended: 'even',
+    reason: 'Poison wears it down between contacts, and every touch slows Venom in turn.',
   },
 ];

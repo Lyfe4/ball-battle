@@ -9,13 +9,17 @@ export const COOLDOWN_TICKS = 30;
 /** Warning before a shockwave strikes (0.2 s): too short for speed to get a ball out. */
 export const WARNING_TICKS = 12;
 export const ZONE_RADIUS = 180;
-/** Per hit; below the Storm's zone damage, which stays the biggest single ability hit. */
-export const ZONE_DAMAGE = 13;
 /**
- * Every ball a shockwave hits is staggered for this long (3.5 s): it can't aim, so an Archer, Storm
- * or Sniper loses its next attack until it ends (ADR 0016). Long, because shockwaves rarely hit.
+ * Per hit; below the Storm's zone damage, which stays the biggest single ability hit. Softer since
+ * ADR 0028 (13 before), so the shockwave's edge sits in the stagger, not in raw damage.
  */
-export const STAGGER_TICKS = 210;
+export const ZONE_DAMAGE = 12;
+/**
+ * Every ball a shockwave hits is staggered for this long (4.5 s): it can't aim, so an Archer, Storm
+ * or Sniper loses its next attack until it ends (ADR 0016, 3.5 s until ADR 0028). Long, because
+ * shockwaves rarely hit.
+ */
+export const STAGGER_TICKS = 270;
 
 /** The tick the Quake's next shockwave is ready on, read from any ball state (undefined for others). */
 export function readyTickOf(ball: BallState): number | undefined {
