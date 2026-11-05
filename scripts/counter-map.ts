@@ -1,19 +1,14 @@
-// The intended counter map (ADR 0009, docs/vision.md): for every pair of balls, which side should
-// be favoured, or whether it should be even. `pnpm balance` checks each pair against its band.
-// A new ball must add one entry per existing ball; a test checks the map covers every pair.
-import { BATCH_TWO_ENTRIES } from './counter-map-batch-2.ts';
-import { FIRST_ENTRIES } from './counter-map-first.ts';
+// Checks for the counter map (ADR 0010): the bands each pair's win rate must land in, and the
+// safe-pick rules. The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
+// re-exported here for the balance script and its tests.
+import type { CounterEntry } from '../src/sim/counter-map.ts';
 
-/** Which side of a pair should win more: the first ball, the second, or neither. */
-export type Intended = 'x' | 'y' | 'even';
-
-export interface CounterEntry {
-  readonly x: string;
-  readonly y: string;
-  readonly intended: Intended;
-  /** Why, in one line, from the two balls' identities. */
-  readonly reason: string;
-}
+export {
+  COUNTER_MAP,
+  counterFor,
+  type CounterEntry,
+  type Intended,
+} from '../src/sim/counter-map.ts';
 
 /**
  * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`).
@@ -40,9 +35,6 @@ const EDGE_EPSILON = 1e-9;
 /** Hard limit on top of the map: no side of any matchup wins less than this (docs/vision.md). */
 export const HARD_WORST_MATCHUP = 0.25;
 
-/** Every pair of balls exactly once, with its intended result and why (a test checks coverage). */
-export const COUNTER_MAP: readonly CounterEntry[] = [...FIRST_ENTRIES, ...BATCH_TWO_ENTRIES];
-
 /**
  * Balls deliberately even against everyone but one known counter, the one exception to "every
  * ball has a favoured and an unfavoured matchup" (docs/vision.md). Adding one is a design
@@ -62,13 +54,6 @@ export const SAFE_PICK_COUNTERS: Readonly<Record<string, string>> = { brawler: '
 export type CounterVerdict = 'ok' | 'warn' | 'near' | 'miss';
 
 const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'near', 'miss'];
-
-/** The map entry for a pair, whichever order the pair comes in. */
-export function counterFor(a: string, b: string): CounterEntry | undefined {
-  return COUNTER_MAP.find(
-    (entry) => (entry.x === a && entry.y === b) || (entry.x === b && entry.y === a),
-  );
-}
 
 function inBand(rate: number, [low, high]: readonly [number, number]): CounterVerdict {
   if (rate < low - EDGE_EPSILON || rate > high + EDGE_EPSILON) {

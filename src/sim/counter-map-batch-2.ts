@@ -1,5 +1,6 @@
 // Counter-map entries for batch 2: the Berserker, Sniper and Quake (ADR 0015), one per pair with
-// every earlier ball and each other. The map and its checks are in counter-map.ts.
+// every earlier ball and each other. The map is in counter-map.ts; its checks in
+// scripts/counter-map.ts.
 import type { CounterEntry } from './counter-map.ts';
 
 /**

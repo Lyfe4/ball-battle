@@ -1,5 +1,6 @@
 // Counter-map entries for the first eight balls (ADR 0010, 0012, 0013, 0014). The map and its
-// checks are in counter-map.ts; a new ball adds its entries in the file for its batch.
+// checks are in counter-map.ts (and scripts/counter-map.ts); a new ball adds its entries in the
+// file for its batch.
 import type { CounterEntry } from './counter-map.ts';
 
 /**

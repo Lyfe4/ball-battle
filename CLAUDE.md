@@ -121,7 +121,8 @@ the game does not use it).
   in its counter-map band (`scripts/counter-map.ts`: favoured side 58-70%, even 45-55%, within 2
   points outside a band passes as NEAR; ADR 0010). Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
-  `scripts/counter-map-*.ts` data file for its batch), and each
+  `src/sim/counter-map-*.ts` data file for its batch; the bands are checked in
+  `scripts/counter-map.ts`), and each
   favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
   counter is, never whether it exists. Measure what a ball's mechanic moves before choosing its
   counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler is the only safe pick: even against all
