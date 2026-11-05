@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>BallBattle brand images (dev only)</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #2a2f3a;
+        color: #e5e7eb;
+        font-family: system-ui, sans-serif;
+      }
+      #brand {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 6px;
+      }
+      a {
+        color: #93c5fd;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Brand images</h1>
+    <p>
+      Dev only. The icons and the link preview, drawn with the game's renderer. Save each as the
+      file it names into <code>public/</code>.
+    </p>
+    <div id="brand"></div>
+    <script type="module" src="/src/brand/main.ts"></script>
+  </body>
+</html>
