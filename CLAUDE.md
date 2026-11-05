@@ -29,6 +29,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   measured pass-through margin, the measured identity rules). Run it after changing any ball or
   the combat rules. Roster-wide tests that play whole matches go here, in the file for their
   concern; their helpers are in `src/sim/balls/roster-support.ts`.
+- `pnpm test:browsers`: the known match results (`src/golden`, ADR 0023) in headless Chromium,
+  Firefox and WebKit through Vitest's Playwright provider. Needs the browsers once:
+  `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
 - `pnpm format` / `pnpm format:check`: Prettier
@@ -45,8 +48,8 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   pair fails only when clearly outside its band (ADR 0011 addendum). A full `pnpm balance` still
   judges borderline pairs.
 
-CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job, `test:slow` in a second
-and `balance:ci` in a third. All must pass.
+CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job, `test:slow` in a second,
+`balance:ci` in a third and `test:browsers` in a fourth. All must pass.
 
 ## Architecture rules
 

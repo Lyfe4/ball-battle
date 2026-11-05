@@ -1,3 +1,4 @@
+import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
 import { SECURITY_HEADERS } from './scripts/security-headers.ts';
 
@@ -21,8 +22,9 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    // Two suites: "unit" (pnpm test) stays fast; "slow" (pnpm test:slow) holds the roster-wide
-    // tests that play every matchup for whole matches. CI runs both, as separate jobs.
+    // Three suites: "unit" (pnpm test) stays fast; "slow" (pnpm test:slow) holds the roster-wide
+    // tests that play every matchup for whole matches; "browsers" (pnpm test:browsers) runs the
+    // known match results in Chromium, Firefox and WebKit (ADR 0023). CI runs each as its own job.
     projects: [
       {
         extends: true,
@@ -35,6 +37,20 @@ export default defineConfig({
       {
         extends: true,
         test: { name: 'slow', include: ['src/**/*.slow.test.ts', 'scripts/**/*.slow.test.ts'] },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browsers',
+          include: ['src/golden/*.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            // V8, SpiderMonkey and JavaScriptCore: every engine a player or a server might run.
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
       },
     ],
   },
