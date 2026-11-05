@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The Brawler at small size (src/render/ball-designs/brawler.ts): its colour, its accent band
+       (half-height 0.34 r) and the game's ball outline (0.08 r). Kept in step by a test. -->
+  <defs>
+    <clipPath id="ball"><circle cx="16" cy="16" r="14.4" /></clipPath>
+  </defs>
+  <circle cx="16" cy="16" r="14.4" fill="#ef4444" />
+  <rect x="0" y="11.1" width="32" height="9.8" fill="#7f1d1d" clip-path="url(#ball)" />
+  <circle cx="16" cy="16" r="14.4" fill="none" stroke="rgba(0, 0, 0, 0.35)" stroke-width="1.2" />
+</svg>
