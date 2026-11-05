@@ -41,7 +41,8 @@ now). Everything after the launch plays out exactly as today.
 
 Scripts (measurement only, not part of CI): `scripts/aim-measure.ts` plays an experiment across all
 cores and writes raw counts; `scripts/aim-strategies.ts` builds the profiles;
-`scripts/aim-report.ts` prints the tables below. To reproduce:
+`scripts/aim-report.ts` prints the tables below. The scripts and the aimed start itself were removed
+on 2026-11-05 (ADR 0018); to reproduce, check out `f7eaf8b`, the last commit that has them, and run:
 
 ```bash
 node scripts/aim-measure.ts baseline --out aim/baseline.json

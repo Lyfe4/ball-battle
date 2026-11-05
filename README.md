@@ -192,7 +192,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md)
 , [ADR 0016: Counter density](docs/decisions/0016-counter-density.md)
 , [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md)
-, [ADR 0018: Aimed start](docs/decisions/0018-aimed-start.md)
+, [ADR 0018: Aimed start (removed)](docs/decisions/0018-aimed-start.md)
 , [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
 , [ADR 0020: Screens](docs/decisions/0020-screens.md)
 [ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md)

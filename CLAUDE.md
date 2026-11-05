@@ -95,8 +95,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0012-slowed-poisoned-damage-taken.md`, `docs/decisions/0013-thorns-brawler-counter.md`,
 `docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md`,
 `docs/decisions/0016-counter-density.md`, `docs/decisions/0017-best-of-3-series.md` and
-`docs/decisions/0018-aimed-start.md` (the aimed start is measured in `docs/aiming-measurements.md`;
-the game does not use it), `docs/decisions/0019-draft-formats.md`,
+`docs/decisions/0018-aimed-start.md` (measured in `docs/aiming-measurements.md`; removed, since
+aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0020-screens.md`, `docs/decisions/0021-reveal-take-turns.md` (measured in
 `docs/reveal-measurements.md`) and `docs/decisions/0022-ruleset-version-and-verified-series.md`.
 
