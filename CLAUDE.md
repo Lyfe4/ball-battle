@@ -113,6 +113,13 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0025-show-less-and-back.md` and
 `docs/decisions/0026-magnet-ghost-necromancer.md`.
 
+## Workflow
+
+- Work on a branch and open a pull request; never commit to `main` directly. Once every CI check on
+  the pull request passes, merge it yourself with a merge commit (keep the individual commits, no
+  squash), then delete the branch. If a check fails, fix it on the branch first: never merge a red
+  pull request.
+
 ## Conventions
 
 - **Bump `RULESET_VERSION` (`src/sim/ruleset.ts`) in the same commit as any change that can change
