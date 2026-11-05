@@ -3,6 +3,8 @@
 // when ticks run, never which ticks run. The intro, hit-stops, slow-mo and every effect run on the
 // same scaled time, so the whole show speeds up together.
 
+import type { Screen } from './route.ts';
+
 export const PLAYBACK_SPEEDS = [1, 2] as const;
 export type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number];
 
@@ -39,4 +41,12 @@ export function saveSpeed(storage: () => Pick<Storage, 'setItem'>, speed: Playba
   } catch {
     // Not remembered this time; the toggle still works for this visit.
   }
+}
+
+/**
+ * The speed the arena plays at on `screen`: the viewer's choice for the matches they watch, but
+ * always normal speed for the home screen's demo, which is a first impression, not their match.
+ */
+export function playbackSpeedFor(screen: Screen, chosen: PlaybackSpeed): PlaybackSpeed {
+  return screen === 'home' ? 1 : chosen;
 }

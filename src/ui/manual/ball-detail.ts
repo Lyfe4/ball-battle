@@ -22,9 +22,9 @@ const EVEN_ICON_PX = 24;
 
 /**
  * One ball's manual entry, phone first: the drawing large, its one line, three stat bars against
- * the roster, then who it beats and loses to with the counter map's reason for each, and the balls
+ * the roster, then who it is strong and weak vs, with the counter map's reason for each, and the balls
  * it is even with. Every opponent is a button to that ball's entry, so the manual is browsed by its
- * counters. Try it sets up a quick match against a ball it beats (or its counter, if it beats none).
+ * counters. Try it sets up a quick match against a ball it is strong vs (or its counter, if there is none).
  */
 export function createBallDetail(
   balls: readonly BallDefinition[],
@@ -58,10 +58,10 @@ export function createBallDetail(
     return { fill, number };
   });
 
-  const beatsHeading = element('h2', 'ball-detail-heading ball-detail-beats', 'Beats');
-  const beats = element('ul', 'ball-detail-matchups');
-  const losesHeading = element('h2', 'ball-detail-heading ball-detail-loses', 'Loses to');
-  const loses = element('ul', 'ball-detail-matchups');
+  const strongHeading = element('h2', 'ball-detail-heading ball-detail-strong', 'Strong vs');
+  const strong = element('ul', 'ball-detail-matchups');
+  const weakHeading = element('h2', 'ball-detail-heading ball-detail-weak', 'Weak vs');
+  const weak = element('ul', 'ball-detail-matchups');
   const evenHeading = element('h2', 'ball-detail-heading', 'Even with');
   const even = element('ul', 'ball-detail-even');
 
@@ -72,7 +72,7 @@ export function createBallDetail(
     if (tryMatchup !== undefined) actions.onTry(tryMatchup);
   });
 
-  root.append(hero, stats, beatsHeading, beats, losesHeading, loses, evenHeading, even, tryIt);
+  root.append(hero, stats, strongHeading, strong, weakHeading, weak, evenHeading, even, tryIt);
 
   function opponentButton(id: string, iconPx: number, className: string): HTMLButtonElement {
     const button = element('button', className);
@@ -120,8 +120,8 @@ export function createBallDetail(
         setText(row.number, String(value));
       });
       const lines = matchupsOf(id, roster);
-      beats.replaceChildren(...matchupRows(lines.beats));
-      loses.replaceChildren(...matchupRows(lines.losesTo));
+      strong.replaceChildren(...matchupRows(lines.strong));
+      weak.replaceChildren(...matchupRows(lines.weak));
       even.replaceChildren(
         ...lines.even.map((line) => {
           const item = element('li', 'ball-detail-even-ball');
@@ -132,9 +132,12 @@ export function createBallDetail(
           return item;
         }),
       );
+      // A heading with nothing under it says nothing (the Brawler is strong vs no one).
+      strongHeading.hidden = lines.strong.length === 0;
+      weakHeading.hidden = lines.weak.length === 0;
       evenHeading.hidden = lines.even.length === 0;
-      // Try it against a ball it beats, so the first match shows what it's good at.
-      const opponent = lines.beats[0]?.opponent ?? lines.losesTo[0]?.opponent ?? id;
+      // Try it against a ball it is strong vs, so the first match shows what it's good at.
+      const opponent = lines.strong[0]?.opponent ?? lines.weak[0]?.opponent ?? id;
       tryMatchup = { a: id, b: opponent };
       setText(tryIt, `Try it: ${ball.name} vs ${nameOf(opponent)}`);
     },

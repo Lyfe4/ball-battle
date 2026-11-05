@@ -13,6 +13,11 @@ export interface BallGridState {
   readonly pressed: readonly string[];
   /** Tiles that can't be picked, each with a short note shown on it (e.g. "In slot 2"). */
   readonly unavailable?: ReadonlyMap<string, string>;
+  /**
+   * A short note on a tile that can still be tapped, shown on it and read with its name (the
+   * lineup's "Slot 2 ✕": a tap takes the ball out). `spoken` is the note in words.
+   */
+  readonly notes?: ReadonlyMap<string, { readonly shown: string; readonly spoken: string }>;
   /** ▲ or ▼ on each tile for how it fares against `against` (quick match only). */
   readonly marks?: { readonly against: string; readonly leans: ReadonlyMap<string, Lean> };
 }
@@ -109,7 +114,9 @@ export function createBallGrid(
       const reason = next.unavailable?.get(ball.id);
       if (reason === undefined) tile.removeAttribute('aria-disabled');
       else tile.setAttribute('aria-disabled', 'true');
-      setText(note, reason ?? '');
+      const tapNote = next.notes?.get(ball.id);
+      setText(note, reason ?? tapNote?.shown ?? '');
+      const spoken = reason ?? tapNote?.spoken;
       const lean = next.marks?.leans.get(ball.id) ?? 'even';
       // Even is left blank in a grid, so the counters stand out (the legend says so).
       setText(mark, lean === 'even' ? '' : MARKS[lean]);
@@ -120,7 +127,7 @@ export function createBallGrid(
           : `, ${lean} against ${next.marks.against}`;
       tile.setAttribute(
         'aria-label',
-        `${ball.name}${against}${reason === undefined ? '' : `, ${reason}`}`,
+        `${ball.name}${against}${spoken === undefined ? '' : `, ${spoken}`}`,
       );
     }
     // Keep the tab stop where focus is; otherwise put it on the chosen tile.

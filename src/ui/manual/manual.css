@@ -76,11 +76,11 @@
   font-size: 1rem;
 }
 
-.ball-detail-beats {
+.ball-detail-strong {
   color: var(--color-favoured);
 }
 
-.ball-detail-loses {
+.ball-detail-weak {
   color: var(--color-unfavoured);
 }
 

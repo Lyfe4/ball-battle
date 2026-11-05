@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../../sim/balls/index.ts';
+import { COUNTER_MAP } from '../../sim/counter-map.ts';
 import { favouredOf, leanOf, matchupsOf, speedTrait, statShares } from './matchups.ts';
 
 const ids = BALLS.map((ball) => ball.id);
@@ -7,8 +8,8 @@ const ids = BALLS.map((ball) => ball.id);
 describe('matchups', () => {
   it('sorts every other ball into exactly one list, for every ball', () => {
     for (const id of ids) {
-      const { beats, losesTo, even } = matchupsOf(id, ids);
-      const all = [...beats, ...losesTo, ...even].map((line) => line.opponent);
+      const { strong, weak, even } = matchupsOf(id, ids);
+      const all = [...strong, ...weak, ...even].map((line) => line.opponent);
       expect([...all].sort()).toStrictEqual(ids.filter((other) => other !== id).sort());
     }
   });
@@ -25,24 +26,24 @@ describe('matchups', () => {
 
   it('gives a reason for every pair, so no matchup is shown unexplained', () => {
     for (const id of ids) {
-      const { beats, losesTo, even } = matchupsOf(id, ids);
-      for (const line of [...beats, ...losesTo, ...even]) expect(line.reason).not.toBe('');
+      const { strong, weak, even } = matchupsOf(id, ids);
+      for (const line of [...strong, ...weak, ...even]) expect(line.reason).not.toBe('');
     }
   });
 
   it('words every reason for players: no decision-record or file references', () => {
     for (const id of ids) {
-      const { beats, losesTo, even } = matchupsOf(id, ids);
-      for (const line of [...beats, ...losesTo, ...even]) {
+      const { strong, weak, even } = matchupsOf(id, ids);
+      for (const line of [...strong, ...weak, ...even]) {
         expect(line.reason).not.toMatch(/ADR|\.ts\b|scripts\//);
       }
     }
   });
 
-  it('follows the map: the Brawler is even with everyone but Thorns, which beats it', () => {
+  it('follows the map: the Brawler is even with everyone but Thorns, which is strong vs it', () => {
     const brawler = matchupsOf('brawler', ids);
-    expect(brawler.beats).toStrictEqual([]);
-    expect(brawler.losesTo.map((line) => line.opponent)).toStrictEqual(['thorns']);
+    expect(brawler.strong).toStrictEqual([]);
+    expect(brawler.weak.map((line) => line.opponent)).toStrictEqual(['thorns']);
     expect(favouredOf('storm', 'vampire')).toBe('storm');
     expect(favouredOf('vampire', 'storm')).toBe('storm');
     expect(favouredOf('archer', 'storm')).toBeUndefined();
@@ -62,5 +63,19 @@ describe('matchups', () => {
     expect(traits.get('speedster')).toBe('Fastest ball');
     expect(traits.get('frost')).toBe('Slowest ball');
     expect([...traits.values()].filter((trait) => trait !== undefined)).toHaveLength(2);
+  });
+});
+
+describe('matchup wording', () => {
+  // A counter is favoured, never certain: player text says "strong vs" and "weak vs", never that a
+  // ball beats or loses to another (the manual's headings, the legend and the README follow suit).
+  const certain = /\bbeats?\b|\bloses to\b|\bdefeats?\b/i;
+
+  it('keeps certainty out of every counter-map reason', () => {
+    for (const entry of COUNTER_MAP) expect(entry.reason).not.toMatch(certain);
+  });
+
+  it('keeps certainty out of every ball description', () => {
+    for (const ball of BALLS) expect(ball.description).not.toMatch(certain);
   });
 });

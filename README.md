@@ -12,16 +12,16 @@ asks you to build and order three balls and read what the other side will play.
 Built with TypeScript, Vite and plain Canvas 2D. No game engine, no physics library, no
 framework.
 
-![Home, quick-match setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
+![Home, Free play setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
 
-The home screen plays a demo match behind the pitch; **Play** sets up a quick match and **Best of
-3** a series against the bot. Every screen is designed for a phone first and has a
+The home screen plays a demo match behind the pitch. Its main button, **Best of 3 vs bot**, is the
+game; **Free play** lets you choose both balls of one match, to try things out. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
 ([ADR 0025](docs/decisions/0025-show-less-and-back.md)).
 
-The **Ball manual** lists every ball with what it does and who it beats and loses to, each with
+The **Ball manual** lists every ball with what it does and who it is strong and weak vs, each with
 the reason, and a **matchup chart** of the whole counter map. Both are read from the ball
 definitions and the counter map, so they never go stale.
 
@@ -53,38 +53,38 @@ on how directly it lands, not how fast.
 Picks matter: most pairs lean one way. A counter is _favoured_ (it wins roughly 58-70% of the
 time), never decided, and each one comes from something you can watch happen:
 
-- **Speedster beats Archer**: it closes the distance faster than arrows can stop it.
-- **Archer beats Vampire**: arrows chip it from range, and the Vampire only heals off its own hits.
-- **Vampire beats Speedster**: it heals off every exchange and outlasts the burst.
-- **Storm beats Vampire**: lightning and its touch shock the Vampire, so it heals less.
-- **Speedster beats Storm**: the fastest ball outruns the lightning warnings.
-- **Frost beats Speedster**: slowed, it loses its speed and the wall bounces that build it up.
-- **Storm beats Frost**: the slowest ball can't leave a lightning warning in time.
-- **Thorns beats Brawler**: the hardest hitter hurts itself the most on the spikes.
-- **Archer, Storm, Venom and Sniper beat Thorns**: arrows, lightning, poison and shots never touch
+- **Speedster is strong vs Archer**: it closes the distance faster than arrows can stop it.
+- **Archer is strong vs Vampire**: arrows chip it from range, and the Vampire only heals off its own hits.
+- **Vampire is strong vs Speedster**: it heals off every exchange and outlasts the burst.
+- **Storm is strong vs Vampire**: lightning and its touch shock the Vampire, so it heals less.
+- **Speedster is strong vs Storm**: the fastest ball outruns the lightning warnings.
+- **Frost is strong vs Speedster**: slowed, it loses its speed and the wall bounces that build it up.
+- **Storm is strong vs Frost**: the slowest ball can't leave a lightning warning in time.
+- **Thorns is strong vs Brawler**: the hardest hitter hurts itself the most on the spikes.
+- **Archer, Storm, Venom and Sniper are strong vs Thorns**: arrows, lightning, poison and shots never touch
   the spikes, so nothing is reflected.
-- **Vampire beats Venom**: lifesteal heals back what the poison chipped away.
-- **Berserker beats Speedster**: its huge health soaks the burst, and every wound makes it hit
+- **Vampire is strong vs Venom**: lifesteal heals back what the poison chipped away.
+- **Berserker is strong vs Speedster**: its huge health soaks the burst, and every wound makes it hit
   harder.
-- **Vampire beats Berserker**: the biggest health pool gives lifesteal the most to drink.
-- **Speedster beats Sniper**: it is off the locked line before the shot.
-- **Quake beats Speedster**: the shockwave's warning is too short to outrun.
-- **Frost beats Quake**: slowed, the Quake reaches the walls less often, and every shockwave needs
+- **Vampire is strong vs Berserker**: the biggest health pool gives lifesteal the most to drink.
+- **Speedster is strong vs Sniper**: it is off the locked line before the shot.
+- **Quake is strong vs Speedster**: the shockwave's warning is too short to outrun.
+- **Frost is strong vs Quake**: slowed, the Quake reaches the walls less often, and every shockwave needs
   a wall.
-- **Venom beats Berserker**: poison numbs its rage (its cracks fade while it is poisoned).
-- **Berserker beats Frost**: its rage burns off the cold, so it can never be slowed.
-- **Frost beats Venom**: the cold wears poison off sooner, and the Frost hits Venom hard.
-- **Archer beats Frost**: leading arrows land most often on the slowest ball.
-- **Quake beats Archer, Storm and Sniper**: a shockwave staggers whatever it hits, and a staggered
+- **Venom is strong vs Berserker**: poison numbs its rage (its cracks fade while it is poisoned).
+- **Berserker is strong vs Frost**: its rage burns off the cold, so it can never be slowed.
+- **Frost is strong vs Venom**: the cold wears poison off sooner, and the Frost hits Venom hard.
+- **Archer is strong vs Frost**: leading arrows land most often on the slowest ball.
+- **Quake is strong vs Archer, Storm and Sniper**: a shockwave staggers whatever it hits, and a staggered
   ball can't aim, so it loses its next arrow, strike or shot.
-- **Magnet beats the balls weak up close** (Speedster, Archer, Storm, Venom, Sniper, Quake,
-  Necromancer): its pull drags them into a brawl. **Thorns beats the Magnet**: it drags the spikes
+- **Magnet is strong vs the balls weak up close** (Speedster, Archer, Storm, Venom, Sniper, Quake,
+  Necromancer): its pull drags them into a brawl. **Thorns is strong vs the Magnet**: it drags the spikes
   into itself.
-- **Ghost beats Speedster**: the fastest ball runs through it most often, and its rush lands on
-  nothing. **Archer, Storm, Sniper, Quake and Necromancer beat the Ghost**: their attacks never
+- **Ghost is strong vs Speedster**: the fastest ball runs through it most often, and its rush lands on
+  nothing. **Archer, Storm, Sniper, Quake and Necromancer are strong vs the Ghost**: their attacks never
   needed contact, so phasing never stops them.
-- **Necromancer beats Archer and Sniper**: a minion nearer than its owner draws the arrow or shot.
-  **Quake and Berserker beat the Necromancer**: a shockwave clears the minion and its owner, and
+- **Necromancer is strong vs Archer and Sniper**: a minion nearer than its owner draws the arrow or shot.
+  **Quake and Berserker are strong vs the Necromancer**: a shockwave clears the minion and its owner, and
   every minion pop feeds the Berserker's rage.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
@@ -147,20 +147,21 @@ hit-stops and effects alike) without changing the result; your choice is remembe
 browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
 displays.
 
-| Script               | What it does                                                                 |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `pnpm dev`           | Vite dev server                                                              |
-| `pnpm build`         | Typecheck and build to `dist/`                                               |
-| `pnpm preview`       | Serve `dist/` with the production security headers, to check the CSP         |
-| `pnpm test`          | Run the fast tests once (`pnpm test:watch` to watch)                         |
-| `pnpm test:slow`     | Roster-wide tests that play every matchup (a separate CI job)                |
-| `pnpm test:browsers` | Known match results and page flows in Chromium, Firefox, WebKit (own CI job) |
-| `pnpm golden`        | Record the known match results again after a ruleset bump                    |
-| `pnpm lint`          | ESLint                                                                       |
-| `pnpm typecheck`     | `tsc -b` across all tsconfig projects                                        |
-| `pnpm format`        | Prettier (`pnpm format:check` to only check)                                 |
-| `pnpm balance`       | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`) |
-| `pnpm balance:ci`    | The reduced balance check CI runs: 150 seeds, fails only on a clear miss     |
+| Script                 | What it does                                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`             | Vite dev server                                                                                             |
+| `pnpm build`           | Typecheck and build to `dist/`                                                                              |
+| `pnpm preview`         | Serve `dist/` with the production security headers, to check the CSP                                        |
+| `pnpm test`            | Run the fast tests once (`pnpm test:watch` to watch)                                                        |
+| `pnpm test:slow`       | Roster-wide tests that play every matchup (a separate CI job)                                               |
+| `pnpm test:browsers`   | Known match results and page flows in Chromium, Firefox, WebKit (own CI job)                                |
+| `pnpm golden`          | Record the known match results again after a ruleset bump                                                   |
+| `pnpm lint`            | ESLint                                                                                                      |
+| `pnpm typecheck`       | `tsc -b` across all tsconfig projects                                                                       |
+| `pnpm format`          | Prettier (`pnpm format:check` to only check)                                                                |
+| `pnpm balance`         | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`)                                |
+| `pnpm balance:summary` | A full balance run that also writes each ball's shape to [docs/balance-summary.md](docs/balance-summary.md) |
+| `pnpm balance:ci`      | The reduced balance check CI runs: 150 seeds, fails only on a clear miss                                    |
 
 ## Architecture
 
@@ -231,7 +232,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 131.14 kB JS (43.28 kB gzipped), 20.80 kB CSS. First version baseline: 5.05 kB
+Production bundle: 132.56 kB JS (43.76 kB gzipped), 20.80 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

@@ -6,14 +6,17 @@ import {
   nextMatch,
   remainingOf,
   scoreOf,
-  type NextMatch,
-  type SeriesState,
 } from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesTrack } from './series/series-track.ts';
-import { pairingOf, pickChoiceOf, trackOf } from './series/series-view.ts';
+import {
+  seriesScreenOf,
+  trackOf,
+  type SeriesMoment,
+  type SeriesPhase,
+} from './series/series-view.ts';
 import {
   betweenLine,
   botPicksLine,
@@ -37,23 +40,12 @@ export interface SeriesActions {
   readonly onLeave: () => void;
 }
 
-export interface SeriesView {
-  readonly state: SeriesState;
-  /** The match on screen, if any. */
-  readonly current: NextMatch | undefined;
-  /** True once the match on screen has ended and its result is showing. */
-  readonly settled: boolean;
-  /** A replayed link holds the pick that is due, so Next round makes it rather than the player. */
-  readonly linkPickDue: boolean;
-}
-
-/** Where the series is: a round being fought, the screen between rounds, or the result. */
-export type SeriesPhase = 'playing' | 'between' | 'finished';
+export type { SeriesPhase } from './series/series-view.ts';
 
 export interface SeriesPanel {
   setVisible(visible: boolean): void;
   /** Cheap to call every frame: only changed parts are touched. Returns the phase shown. */
-  update(view: SeriesView): SeriesPhase;
+  update(moment: SeriesMoment): SeriesPhase;
   /** Focuses what the player does next: a pick, Play round, or New series. */
   focusAction(): void;
 }
@@ -169,15 +161,18 @@ export function createSeriesPanel(
       else if (!next.hidden) next.focus();
       else if (!newSeries.hidden) newSeries.focus();
     },
-    update({ state, current, settled, linkPickDue }) {
-      const playing = current !== undefined && !settled;
-      const finished = state.winner !== undefined && !playing;
-      phase = playing ? 'playing' : finished ? 'finished' : 'between';
+    update(moment) {
+      const { state, current, linkState } = moment;
+      // What shows and which controls, from the pure model: never a screen with no way on.
+      const screen = seriesScreenOf(moment);
+      const { choice, pairing: pair, actions } = screen;
+      phase = screen.phase;
+      const playing = phase === 'playing';
+      const finished = phase === 'finished';
       root.dataset['phase'] = phase;
       track.update(state, trackOf(state, playing ? current : undefined));
 
-      const due = playing || linkPickDue ? undefined : awaitingPick(state);
-      const choice = due === 'a' ? pickChoiceOf(state) : undefined;
+      const due = playing || linkState !== undefined ? undefined : awaitingPick(state);
       const upcoming = nextMatch(state);
       const roundsPlayed = state.rounds.length;
 
@@ -192,8 +187,8 @@ export function createSeriesPanel(
       );
 
       // Your pick: the banner names what is answered, the rows are the options.
-      banner.hidden = choice === undefined;
-      picks.element.hidden = choice === undefined;
+      banner.hidden = !actions.includes('pick');
+      picks.element.hidden = !actions.includes('pick');
       if (choice !== undefined) {
         picks.show(choice);
         const face = choice.kind === 'answer' ? choice.options[0]?.faces[0] : undefined;
@@ -210,31 +205,30 @@ export function createSeriesPanel(
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
-      const pair = !playing && !finished && choice === undefined ? pairingOf(state) : undefined;
       pairing.hidden = pair === undefined;
       if (pair !== undefined) showPairing(pair.you, pair.bot);
-      next.hidden = pair === undefined;
+      next.hidden = !actions.includes('play');
       setText(
         next,
         state.pending.length > 0 ? '↻ Replay round' : `Play round ${String(roundsPlayed + 1)}`,
       );
-      rematch.hidden = !finished;
-      newSeries.hidden = !finished;
-      buttons.hidden = next.hidden && !finished;
+      rematch.hidden = !actions.includes('rematch');
+      newSeries.hidden = !actions.includes('newSeries');
+      buttons.hidden = next.hidden && rematch.hidden && newSeries.hidden;
       share.hidden = !finished;
       if (!finished) setText(share, 'Copy link');
       leave.hidden = finished;
 
       const reveal = formatOf(state.setup) === 'reveal';
       let text = '';
-      if (playing) text = playingLine(current, nameOf);
+      if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
       else if (due === 'a' && reveal && choice?.kind === 'show') {
         text = revealShowLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
       } else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
       else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
-      else if (linkPickDue) text = linkPickLine(roundsPlayed);
+      else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);
       return phase;
     },

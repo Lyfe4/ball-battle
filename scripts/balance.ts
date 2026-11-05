@@ -1,14 +1,18 @@
 // Plays every matchup headlessly with the real simulation and prints a balance matrix, ability
 // impact and win-rate sensitivity. Matchups run across all CPU cores; results are identical to a
 // serial run (--serial), because each job is deterministic and results are printed in job order.
-// Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci]
+// Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci] [--write-summary]
 //   seeds   per slot order, default 500 (seeds 0..N-1, so results reproduce)
 //   --ball  only that ball's matchups and its mirror, for adding or tuning one ball
 //   --ci    the reduced check CI runs (pnpm balance:ci): no sensitivity runs, and a counter-map
 //           allowance scaled to the sample, so only a clear miss fails
+//   --write-summary  also write the per-ball summary to docs/balance-summary.md (pnpm
+//           balance:summary; a full run only)
 // The elapsed time goes to stderr, so stdout can be diffed between runs. Exits with 1 when any
 // target is a MISS.
+import { writeFileSync } from 'node:fs';
 import { BALLS } from '../src/sim/balls/index.ts';
+import { RULESET_VERSION } from '../src/sim/ruleset.ts';
 import type { BallDefinition } from '../src/sim/types.ts';
 import { parseBalanceArgs, USAGE } from './balance-args.ts';
 import { runJobs, type PairJob } from './balance-jobs.ts';
@@ -21,6 +25,13 @@ import {
   type CounterVerdict,
 } from './counter-map.ts';
 import { median, withMaxHealth, type BallTotals, type PairResult } from './balance-stats.ts';
+import {
+  lopsidedBalls,
+  summarise,
+  summaryLines,
+  summaryMarkdown,
+  type PairRates,
+} from './balance-summary.ts';
 
 const SENSITIVITY_FACTORS = [0.95, 1.05] as const;
 
@@ -56,7 +67,7 @@ if ('error' in options) {
   console.error(USAGE);
   process.exit(1);
 }
-const { seeds, ballId, serial, ci } = options;
+const { seeds, ballId, serial, ci, writeSummary } = options;
 /** How far outside a counter-map band still passes (NEAR). */
 const nearWithin = ci ? ciAllowance(seeds * 2) : COUNTER_BANDS.nearWithin;
 const sensitivityFactors = ci ? [] : SENSITIVITY_FACTORS;
@@ -131,6 +142,7 @@ console.log(
   `  ${'Matchup'.padEnd(24)} ${'Wins'.padEnd(15)}  Draw   Median  Sensitivity (±5% health)`,
 );
 const sensitivityLines: string[] = [];
+const pairRates: PairRates[] = [];
 const counterLines: string[] = [];
 let counterMapOk = true;
 
@@ -176,6 +188,7 @@ for (const [x, y] of pairs) {
   games += base.games;
   lengths.push(...base.lengths);
   const xRate = base.wins[0] / base.games;
+  pairRates.push({ x: x.id, y: y.id, xRate, yRate: base.wins[1] / base.games });
   const own = (ball: BallDefinition, share: number) =>
     ballId === undefined || ball.id === ballId ? share : 1;
   worstShare = Math.min(worstShare, own(x, xRate), own(y, base.wins[1] / base.games));
@@ -238,6 +251,23 @@ for (const ball of focus) {
   );
 }
 
+// Each ball's shape: strong, even and weak matchups by the map and measured (balance-summary.ts).
+const summaries = summarise(
+  focus,
+  (id) => {
+    const totals = ballTotals.get(id);
+    return totals === undefined ? 0 : totals.wins / totals.games;
+  },
+  pairRates,
+);
+console.log('\n  Per ball shape: opponents (average win rate); gap = strong - weak');
+console.log(summaryLines(summaries).join('\n'));
+if (writeSummary) {
+  const context = { seeds, ruleset: RULESET_VERSION, command: 'pnpm balance:summary' };
+  writeFileSync('docs/balance-summary.md', summaryMarkdown(summaries, context));
+  console.log('\n  Wrote docs/balance-summary.md');
+}
+
 const drawRate = draws / games;
 const medianLength = median(lengths);
 console.log(`\n  ${'Draws'.padEnd(28)} ${pct(drawRate)}`);
@@ -266,6 +296,10 @@ console.log(
   ci
     ? '  --   win rates for ±5% health: not measured in the CI check'
     : `  ${sensitivityGrade} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
+);
+const lopsided = lopsidedBalls(summaries).map((ball) => ball.name);
+console.log(
+  `  ${lopsided.length === 0 ? 'ok  ' : 'WARN'} no lopsided shape (strong and weak within 3)${lopsided.length === 0 ? '' : `: ${lopsided.join(', ')}`}`,
 );
 const checksVampire = focus.some((ball) => ball.id === 'vampire');
 if (checksVampire) {

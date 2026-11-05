@@ -72,6 +72,22 @@ export function replayPickDue(session: SeriesSession): string | undefined {
 }
 
 /**
+ * A replayed link with a pick due: the state once the link's due picks are made, which Play round
+ * makes (`resolvePicks`). The screen shows the round they lead to. Undefined when no link pick is
+ * due.
+ */
+export function withLinkPicks(session: SeriesSession): SeriesState | undefined {
+  if (replayPickDue(session) === undefined) return undefined;
+  let state = session.state;
+  for (;;) {
+    const pick =
+      awaitingPick(state) === undefined ? undefined : session.replay?.[state.picks.length];
+    if (pick === undefined) return state;
+    state = recordPick(state, pick);
+  }
+}
+
+/**
  * Makes every pick that doesn't need the player, in order: a replayed link's next pick, else the
  * bot's whenever side B is due. Stops when the player is due (with no link pick) or nothing is.
  */

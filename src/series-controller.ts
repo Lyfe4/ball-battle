@@ -9,10 +9,10 @@ import {
   beginSession,
   pickInSession,
   rematchOf,
-  replayPickDue,
   resolvePicks,
   seriesAddress,
   settleCurrent,
+  withLinkPicks,
   type SeriesSession,
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
@@ -177,12 +177,11 @@ export function createSeriesController(
     update(world, resultShown) {
       if (session === undefined || !onScreen) return;
       const settled = ours() ? world.match.status === 'finished' && resultShown : session.recorded;
-      const linkPickDue = replayPickDue(session) !== undefined;
       const shown = panel.update({
         state: session.state,
         current: session.current,
         settled,
-        linkPickDue,
+        linkState: withLinkPicks(session),
       });
       if (shown === phase) return;
       phase = shown;

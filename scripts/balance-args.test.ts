@@ -10,6 +10,7 @@ describe('parseBalanceArgs', () => {
       ballId: undefined,
       serial: false,
       ci: false,
+      writeSummary: false,
     });
   });
 
@@ -19,9 +20,11 @@ describe('parseBalanceArgs', () => {
       ballId: 'storm',
       serial: true,
       ci: false,
+      writeSummary: false,
     });
     expect(parseBalanceArgs(['--ball=brawler'], ids)).toMatchObject({ ballId: 'brawler' });
     expect(parseBalanceArgs(['150', '--ci'], ids)).toMatchObject({ seeds: 150, ci: true });
+    expect(parseBalanceArgs(['--write-summary'], ids)).toMatchObject({ writeSummary: true });
   });
 
   it.each([
@@ -32,6 +35,8 @@ describe('parseBalanceArgs', () => {
     [['--ball', 'titan'], 'Unknown ball "titan"'],
     [['--ball'], 'argument missing'],
     [['--fast'], "Unknown option '--fast'"],
+    [['--write-summary', '--ball', 'storm'], 'needs a full run'],
+    [['--write-summary', '--ci'], 'needs a full run'],
   ])('rejects %j', (args, message) => {
     const result = parseBalanceArgs(args, ids);
     expect(result).toHaveProperty('error');

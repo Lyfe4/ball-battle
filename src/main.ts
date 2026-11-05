@@ -13,7 +13,7 @@ import { createRouter } from './app/router.ts';
 import { initialAppState, seriesRound } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
-import { loadSpeed, saveSpeed } from './app/speed.ts';
+import { loadSpeed, playbackSpeedFor, saveSpeed } from './app/speed.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
@@ -53,8 +53,8 @@ const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
-  pick: 'Quick match · BallBattle',
-  match: 'Quick match · BallBattle',
+  pick: 'Free play · BallBattle',
+  match: 'Free play · BallBattle',
   series: 'Best of 3 · BallBattle',
   manual: 'Ball manual · BallBattle',
   outdated: 'Link from another version · BallBattle',
@@ -244,7 +244,7 @@ const arena = createArena(
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
-    speed: () => state.speed,
+    speed: () => playbackSpeedFor(router.current(), state.speed),
     afterTicks: (world) => {
       series.settle(world);
     },

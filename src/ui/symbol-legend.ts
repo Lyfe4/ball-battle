@@ -10,8 +10,8 @@ export interface SymbolLegend {
 
 /** Every symbol the screens use, said once (ADR 0025): the mark or swatch and its meaning. */
 const ENTRIES: readonly (readonly [symbol: string, meaning: string, swatch?: string])[] = [
-  [MARKS.favoured, 'Favoured: wins this matchup more often', 'favoured'],
-  [MARKS.unfavoured, 'Unfavoured: loses it more often', 'unfavoured'],
+  [MARKS.favoured, 'Strong vs: favoured, wins it more often', 'favoured'],
+  [MARKS.unfavoured, 'Weak vs: unfavoured, loses it more often', 'unfavoured'],
   [MARKS.even, 'Even matchup (left blank in grids)', 'even'],
   ['?', 'Not shown yet'],
   ['', 'Won the round', 'won'],

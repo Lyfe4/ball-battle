@@ -2,7 +2,8 @@
 import { parseArgs } from 'node:util';
 
 export const DEFAULT_SEEDS = 500;
-export const USAGE = 'Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci]';
+export const USAGE =
+  'Usage: pnpm balance [seeds] [--ball <id>] [--serial] [--ci] [--write-summary]';
 
 export interface BalanceOptions {
   /** Seeds per slot order: seeds 0..seeds-1. */
@@ -16,6 +17,8 @@ export interface BalanceOptions {
    * sample (`ciAllowance`), so only a clear miss fails.
    */
   readonly ci: boolean;
+  /** Also write the per-ball summary to docs/balance-summary.md (a full run only). */
+  readonly writeSummary: boolean;
 }
 
 /** Parses the arguments after the script name, or returns an error message. */
@@ -32,6 +35,7 @@ export function parseBalanceArgs(
         ball: { type: 'string' },
         serial: { type: 'boolean', default: false },
         ci: { type: 'boolean', default: false },
+        'write-summary': { type: 'boolean', default: false },
       },
     });
   } catch (error) {
@@ -54,5 +58,9 @@ export function parseBalanceArgs(
   if (ballId !== undefined && !ballIds.includes(ballId)) {
     return { error: `Unknown ball "${ballId}". Known balls: ${ballIds.join(', ')}.` };
   }
-  return { seeds, ballId, serial: values.serial, ci: values.ci };
+  const writeSummary = values['write-summary'];
+  if (writeSummary && (ballId !== undefined || values.ci)) {
+    return { error: '--write-summary needs a full run: it can’t be combined with --ball or --ci.' };
+  }
+  return { seeds, ballId, serial: values.serial, ci: values.ci, writeSummary };
 }

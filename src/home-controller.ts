@@ -1,5 +1,5 @@
 // The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
-// pairs from the counter map, not announced as counters); and where Play leads. main.ts owns the arena and hands this module
+// pairs from the counter map, not announced as counters); and where Free play leads. main.ts owns the arena and hands this module
 // what it needs through `HomeHost`.
 import { demoAt } from './app/demo.ts';
 import type { Matchup } from './app/matchup.ts';
@@ -14,7 +14,7 @@ const NEXT_DEMO_MS = 2500;
 
 export interface HomeHost {
   showWorld(world: WorldState, seed: number): void;
-  /** Play: the quick-match setup, prefilled. */
+  /** Free play: the setup for choosing both balls, prefilled. */
   play(matchup: Matchup): void;
   series(): void;
   manual(): void;
@@ -22,7 +22,7 @@ export interface HomeHost {
 
 export interface HomeController {
   setVisible(visible: boolean): void;
-  /** Shows home with a demo running (or waiting, under reduced motion) and focuses Play. */
+  /** Shows home with a demo running (or waiting, under reduced motion) and focuses Best of 3. */
   open(): void;
   /** True while the demo waits on a still frame for Watch (reduced motion). */
   isWaiting(): boolean;
