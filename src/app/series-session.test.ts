@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import {
@@ -17,6 +18,7 @@ import {
 } from './series-session.ts';
 
 const setup: SeriesSetup = {
+  ruleset: RULESET_VERSION,
   seed: 77,
   a: ['frost', 'thorns', 'sniper'],
   b: ['venom', 'archer', 'speedster'],

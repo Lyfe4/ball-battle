@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from './ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
 import { randomBot } from './bot.ts';
@@ -23,6 +24,7 @@ import { deepFreeze } from './test-support.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 const setup: SeriesSetup = deepFreeze({
+  ruleset: RULESET_VERSION,
   seed: 42,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],
@@ -166,7 +168,12 @@ describe('playSeries', () => {
     let found: SeriesState | undefined;
     for (let seed = 0; seed < 200 && found === undefined; seed++) {
       const state = playSeries(
-        { seed, a: ['speedster', 'brawler', 'storm'], b: ['speedster', 'vampire', 'frost'] },
+        {
+          ruleset: RULESET_VERSION,
+          seed,
+          a: ['speedster', 'brawler', 'storm'],
+          b: ['speedster', 'vampire', 'frost'],
+        },
         BALL_LOOKUP,
       );
       if (state.rounds[0]?.outcomes[0] === 'draw') found = state;

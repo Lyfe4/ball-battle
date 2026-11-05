@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../sim/balls/index.ts';
 import {
@@ -22,7 +23,12 @@ describe('parseRoute', () => {
     expect(route('mode=bo3&la=storm,frost,venom&lb=quake,thorns,archer&seed=9')).toStrictEqual({
       screen: 'series',
       link: {
-        setup: { seed: 9, a: ['storm', 'frost', 'venom'], b: ['quake', 'thorns', 'archer'] },
+        setup: {
+          ruleset: 0,
+          seed: 9,
+          a: ['storm', 'frost', 'venom'],
+          b: ['quake', 'thorns', 'archer'],
+        },
       },
       step: 'play',
     });
@@ -63,7 +69,7 @@ describe('parseRoute', () => {
   it('writes a match over any other screen, and home as a bare URL', () => {
     const params = new URLSearchParams('view=pick&mode=bo3&step=lineup&fmt=loser');
     writeMatchUrl(params, { a: 'venom', b: 'quake' }, 12);
-    expect(params.toString()).toBe('a=venom&b=quake&seed=12');
+    expect(params.toString()).toBe(`a=venom&b=quake&seed=12&v=${String(RULESET_VERSION)}`);
     writeHomeParams(params);
     expect(parseRoute(params, ids)).toStrictEqual({ screen: 'home' });
   });

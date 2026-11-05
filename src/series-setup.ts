@@ -5,6 +5,7 @@
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
+import { RULESET_VERSION } from './sim/ruleset.ts';
 import type { Format, Lineup, SeriesSetup } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
@@ -90,7 +91,13 @@ export function createSeriesSetup(
         open('answer');
         return;
       }
-      host.start({ seed, a: own, b: bot, ...(format === 'blind' ? {} : { format }) });
+      host.start({
+        ruleset: RULESET_VERSION,
+        seed,
+        a: own,
+        b: bot,
+        ...(format === 'blind' ? {} : { format }),
+      });
     },
   });
 
@@ -104,7 +111,7 @@ export function createSeriesSetup(
     onAnswer: (ball) => {
       if (revealed === undefined) return;
       const { seed, bot, own } = revealed;
-      host.start({ seed, a: own, b: bot, format: 'reveal' }, ball);
+      host.start({ ruleset: RULESET_VERSION, seed, a: own, b: bot, format: 'reveal' }, ball);
     },
   });
 

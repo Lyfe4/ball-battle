@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from './ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
 import { botPick, randomBot } from './bot.ts';
@@ -22,6 +23,7 @@ import {
 import { deepFreeze } from './test-support.ts';
 
 const loser: SeriesSetup = deepFreeze({
+  ruleset: RULESET_VERSION,
   seed: 7,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],
@@ -105,6 +107,7 @@ describe('loser picks next', () => {
 
 describe('reveal, then take turns (ADR 0021)', () => {
   const reveal: SeriesSetup = deepFreeze({
+    ruleset: RULESET_VERSION,
     seed: 11,
     a: ['frost', 'thorns', 'sniper'],
     b: ['venom', 'quake', 'brawler'],
@@ -206,6 +209,7 @@ describe('the bot', () => {
 
   it('answers in reveal only after the player has shown, and from its own balls left', () => {
     const setup: SeriesSetup = {
+      ruleset: RULESET_VERSION,
       seed: 5,
       a: ['speedster', 'vampire', 'archer'],
       b: ['storm', 'frost', 'quake'],

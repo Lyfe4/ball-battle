@@ -12,6 +12,7 @@ import {
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
 import { botPick, randomBot } from './sim/bot.ts';
+import { RULESET_VERSION } from './sim/ruleset.ts';
 import {
   awaitingPick,
   matchWorld,
@@ -78,7 +79,13 @@ export function createSeriesController(
     onRematch: () => {
       if (session === undefined) return;
       const { a, b, format } = session.state.setup;
-      start({ seed: generateSeed(), a, b, ...(format === undefined ? {} : { format }) });
+      start({
+        ruleset: RULESET_VERSION,
+        seed: generateSeed(),
+        a,
+        b,
+        ...(format === undefined ? {} : { format }),
+      });
     },
     onNewSeries: () => {
       const last = session?.state.setup;

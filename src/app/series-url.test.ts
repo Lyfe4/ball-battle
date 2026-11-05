@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { playSeries, type SeriesSetup } from '../sim/series.ts';
@@ -10,6 +11,7 @@ import {
 
 const ids = BALLS.map((ball) => ball.id);
 const setup: SeriesSetup = {
+  ruleset: RULESET_VERSION,
   seed: 3_000_000_001,
   a: ['thorns', 'sniper', 'berserker'],
   b: ['venom', 'brawler', 'quake'],
@@ -42,8 +44,24 @@ describe('series URL', () => {
 
   it('accepts case and spaces in ids, like a quick-match link', () => {
     expect(parse('mode=BO3&la=Storm, frost ,VENOM&lb=archer,quake,sniper&seed=9')).toStrictEqual({
-      setup: { seed: 9, a: ['storm', 'frost', 'venom'], b: ['archer', 'quake', 'sniper'] },
+      setup: {
+        ruleset: 0,
+        seed: 9,
+        a: ['storm', 'frost', 'venom'],
+        b: ['archer', 'quake', 'sniper'],
+      },
     });
+  });
+
+  it('records the ruleset a series was played under, and reads a link without one as 0', () => {
+    const params = new URLSearchParams();
+    writeSeriesParams(params, { ...setup, ruleset: 7 });
+    expect(params.get('v')).toBe('7');
+    expect(parseSeriesParams(params, ids)?.setup?.ruleset).toBe(7);
+    const base = 'mode=bo3&la=storm,frost,venom&lb=archer,quake,sniper&seed=9';
+    for (const version of ['', '&v=', '&v=-2', '&v=1.5', '&v=x']) {
+      expect(parse(base + version)?.setup?.ruleset).toBe(0);
+    }
   });
 
   it.each([

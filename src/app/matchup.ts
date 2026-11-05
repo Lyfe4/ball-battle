@@ -1,3 +1,5 @@
+import { RULESET_VERSION } from '../sim/ruleset.ts';
+
 /** Which two balls fight: definition ids for slot A (left) and slot B (right). */
 export interface Matchup {
   readonly a: string;
@@ -24,9 +26,18 @@ export function parseMatchup(
   return { a: read('a'), b: read('b') };
 }
 
-/** Writes the matchup and seed into URL parameters, keeping any other parameters. */
-export function writeMatchParams(params: URLSearchParams, matchup: Matchup, seed: number): void {
+/**
+ * Writes the matchup, the seed and the ruleset it plays under (`v`, ADR 0022) into URL parameters,
+ * keeping any other parameters.
+ */
+export function writeMatchParams(
+  params: URLSearchParams,
+  matchup: Matchup,
+  seed: number,
+  ruleset: number = RULESET_VERSION,
+): void {
   params.set('a', matchup.a);
   params.set('b', matchup.b);
   params.set('seed', String(seed));
+  params.set('v', String(ruleset));
 }

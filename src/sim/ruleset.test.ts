@@ -49,7 +49,7 @@ function fingerprint(): string {
     const a = randomBot.pickLineup(100 + index, ids);
     const b = randomBot.pickLineup(index, ids);
     // The player takes its first remaining ball whenever it picks; the bot picks for itself.
-    let state = startSeries({ seed: index, a, b, format });
+    let state = startSeries({ ruleset: RULESET_VERSION, seed: index, a, b, format });
     for (;;) {
       const due = awaitingPick(state);
       if (due !== undefined) {

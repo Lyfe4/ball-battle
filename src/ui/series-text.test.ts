@@ -1,3 +1,4 @@
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { FORMATS, nextMatch, recordOutcome, startSeries, type SeriesState } from '../sim/series.ts';
 import {
@@ -16,6 +17,7 @@ import {
 
 const nameOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 const start = startSeries({
+  ruleset: RULESET_VERSION,
   seed: 1,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],

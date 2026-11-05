@@ -39,6 +39,8 @@ export const FORMATS: readonly Format[] = ['blind', 'reveal', 'loser'];
 
 /** Everything that decides a series: replaying it needs nothing else. */
 export interface SeriesSetup {
+  /** The RULESET_VERSION it is played under (ADR 0022); 0 for a link from before versions. */
+  readonly ruleset: number;
   readonly seed: number;
   /** The player's lineup (slot A in every round), in the order set before round 1. */
   readonly a: Lineup;
