@@ -1,0 +1,32 @@
+/* A short card about one ball: name, its full line, and who it beats and loses to. */
+.ball-info {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-small) var(--space-gap);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.ball-info-name {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ball-info-description,
+.ball-info-counters {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.ball-info-beats {
+  color: var(--color-favoured);
+  font-weight: 600;
+}
+
+.ball-info-loses {
+  color: var(--color-unfavoured);
+  font-weight: 600;
+}

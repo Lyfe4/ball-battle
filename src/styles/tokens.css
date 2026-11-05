@@ -15,6 +15,8 @@
   --palette-blue-500: #3b82f6;
   --palette-blue-300: #93c5fd;
   --palette-green-500: #22c55e;
+  --palette-green-400: #4ade80;
+  --palette-red-400: #f87171;
   --palette-white: #ffffff;
 
   /* Roles */
@@ -29,6 +31,9 @@
   --color-health-track: var(--palette-ink-950);
   --color-health-fill: var(--palette-green-500);
   --color-health-ghost: rgba(255, 255, 255, 0.7);
+  /* A matchup the counter map favours or doesn't, always shown with a symbol or word as well. */
+  --color-favoured: var(--palette-green-400);
+  --color-unfavoured: var(--palette-red-400);
 
   --space-gutter: 16px;
   --space-gap: 12px;
@@ -37,5 +42,6 @@
   --hud-width: 16rem;
   --tap-target: 44px;
   --font-size-small: 0.875rem;
+  --font-size-tiny: 0.75rem;
   --font-family: system-ui, sans-serif;
 }

@@ -14,6 +14,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
+import { uiPartsSection } from './ui-parts.ts';
 
 const LARGE_RADIUS_PX = 56;
 const SMALL_RADIUS_PX = 15;
@@ -198,8 +199,13 @@ function phoneArenaSection(): HTMLElement {
 const root = document.getElementById('guide');
 // styleguide.html?only=phone-arena shows the phone arena alone, to check designs at phone size and
 // pixel density without scrolling past every tile.
-if (root !== null && new URLSearchParams(window.location.search).get('only') === 'phone-arena') {
+// styleguide.html?only=ui shows the shared screen components.
+const only = new URLSearchParams(window.location.search).get('only');
+if (root !== null && only === 'phone-arena') {
   root.append(phoneArenaSection());
+} else if (root !== null && only === 'ui') {
+  root.append(uiPartsSection());
 } else if (root !== null) {
+  root.append(uiPartsSection());
   render(root);
 }

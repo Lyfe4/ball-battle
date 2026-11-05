@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest';
+import { BALLS } from '../../sim/balls/index.ts';
+import { favouredOf, leanOf, matchupsOf, statShares } from './matchups.ts';
+
+const ids = BALLS.map((ball) => ball.id);
+
+describe('matchups', () => {
+  it('sorts every other ball into exactly one list, for every ball', () => {
+    for (const id of ids) {
+      const { beats, losesTo, even } = matchupsOf(id, ids);
+      const all = [...beats, ...losesTo, ...even].map((line) => line.opponent);
+      expect([...all].sort()).toStrictEqual(ids.filter((other) => other !== id).sort());
+    }
+  });
+
+  it('reads each pair the same way from both sides', () => {
+    for (const a of ids) {
+      for (const b of ids) {
+        if (a === b) continue;
+        const flipped = { favoured: 'unfavoured', unfavoured: 'favoured', even: 'even' } as const;
+        expect(leanOf(b, a)).toBe(flipped[leanOf(a, b)]);
+      }
+    }
+  });
+
+  it('gives a reason for every pair, so no matchup is shown unexplained', () => {
+    for (const id of ids) {
+      const { beats, losesTo, even } = matchupsOf(id, ids);
+      for (const line of [...beats, ...losesTo, ...even]) expect(line.reason).not.toBe('');
+    }
+  });
+
+  it('follows the map: the Brawler is even with everyone but Thorns, which beats it', () => {
+    const brawler = matchupsOf('brawler', ids);
+    expect(brawler.beats).toStrictEqual([]);
+    expect(brawler.losesTo.map((line) => line.opponent)).toStrictEqual(['thorns']);
+    expect(favouredOf('storm', 'vampire')).toBe('storm');
+    expect(favouredOf('vampire', 'storm')).toBe('storm');
+    expect(favouredOf('archer', 'storm')).toBeUndefined();
+    expect(favouredOf('storm', 'storm')).toBeUndefined();
+  });
+
+  it('scales stats against the roster’s best, so the best has a full bar', () => {
+    for (const key of ['health', 'speed', 'hit'] as const) {
+      const shares = BALLS.map((ball) => statShares(ball, BALLS)[key]);
+      expect(Math.max(...shares)).toBe(1);
+      expect(Math.min(...shares)).toBeGreaterThan(0);
+    }
+  });
+});

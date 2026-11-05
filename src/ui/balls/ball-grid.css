@@ -1,0 +1,76 @@
+/*
+ * The ball grid: every ball as a tile with its drawing and name. Four columns on a phone, so
+ * eleven balls fit in three rows; wider screens fit more.
+ */
+.ball-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+  gap: var(--space-small);
+}
+
+.ball-tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  min-height: var(--tap-target);
+  padding: var(--space-small) 2px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ball-tile[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.ball-tile[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ball-tile:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ball-tile-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ball-tile-note {
+  color: var(--color-focus);
+  font-size: var(--font-size-tiny);
+  font-weight: 600;
+}
+
+.ball-tile-note:empty {
+  display: none;
+}
+
+/* ▲ / ▼ against the other ball: top-right, coloured, and named in the tile's accessible label. */
+.ball-tile-mark {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: var(--font-size-tiny);
+  line-height: 1;
+}
+
+.ball-tile-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.ball-tile-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
