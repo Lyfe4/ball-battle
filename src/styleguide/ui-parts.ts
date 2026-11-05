@@ -6,6 +6,8 @@ import { BALLS } from '../sim/balls/index.ts';
 import { createBallGrid } from '../ui/balls/ball-grid.ts';
 import { createBallInfo } from '../ui/balls/ball-info.ts';
 import { leanOf } from '../ui/balls/matchups.ts';
+import { createBallDetail } from '../ui/manual/ball-detail.ts';
+import { createMatchupChart } from '../ui/manual/matchup-chart.ts';
 
 /** One labelled example, in a phone-width frame. */
 function example(label: string, ...content: HTMLElement[]): HTMLElement {
@@ -53,12 +55,18 @@ export function uiPartsSection(): HTMLElement {
   const brawler = createBallInfo(BALLS);
   brawler.show('brawler');
 
+  const detail = createBallDetail(BALLS, { onOpen: () => undefined, onTry: () => undefined });
+  detail.show('storm');
+  const chart = createMatchupChart(BALLS, () => undefined);
+
   row.append(
     example('Ball grid, one chosen', plain.element),
     example('Ball grid, marked against Storm (quick match)', marked.element),
     example('Ball grid in a lineup: balls already in a slot', lineup.element),
     example('Ball info', info.element),
     example('Ball info, a ball that beats nothing in particular', brawler.element),
+    example('Ball manual entry', detail.element),
+    example('Matchup chart, first counter selected', chart.element),
   );
   section.append(heading, row);
   return section;
