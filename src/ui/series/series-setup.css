@@ -1,4 +1,4 @@
-/* Best-of-3 setup steps: the rules cards, the lineup tray, and the order list. */
+/* Best-of-3 setup steps: the rules cards, the lineup tray, and Reveal's round-1 answer. */
 .series-setup,
 .series-step {
   display: grid;
@@ -96,7 +96,7 @@
   font-weight: 400;
 }
 
-/* Reveal, then order: the bot's three, then the player's with marks against each and move buttons. */
+/* Reveal: the bot's three, in roster order. */
 .order-label {
   margin: 0 0 calc(var(--space-gap) * -0.5);
   color: var(--color-text-muted);
@@ -127,75 +127,49 @@
   font-weight: 600;
 }
 
-.order-list {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.order-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-  min-height: var(--tap-target);
-  padding-left: var(--space-small);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.order-number {
-  min-width: 1em;
-  color: var(--color-text-muted);
-  font-weight: 700;
-}
-
 .order-icon {
   flex: none;
 }
 
-.order-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
+/* Reveal, round 1: the bot's shown ball is selected; the player's three are large answer buttons. */
+.order-bot-ball.answer-shown {
+  background: var(--color-selected);
+}
+
+.answer-shown-note {
+  color: var(--color-focus);
+  font-size: var(--font-size-tiny);
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* One mark per bot ball, in the bot row's order, so the columns line up with the balls above. */
-.order-marks {
+.answer-choices {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.answer-choice {
   display: flex;
-  gap: 6px;
-  font-size: var(--font-size-small);
-}
-
-.order-mark[data-lean='favoured'] {
-  color: var(--color-favoured);
-}
-
-.order-mark[data-lean='unfavoured'] {
-  color: var(--color-unfavoured);
-}
-
-.order-mark[data-lean='even'] {
-  color: var(--color-text-muted);
-}
-
-.order-move {
-  flex: none;
-  width: var(--tap-target);
-  height: var(--tap-target);
-  border: 0;
+  align-items: center;
+  gap: var(--space-gap);
+  min-height: calc(var(--tap-target) + 12px);
+  padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
   background: var(--color-raised);
   color: var(--color-text);
   font: inherit;
+  font-weight: 600;
+  text-align: left;
   cursor: pointer;
 }
 
-.order-move:disabled {
-  opacity: 0.35;
-  cursor: default;
+.answer-name {
+  flex: 1;
+}
+
+.answer-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.answer-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
 }

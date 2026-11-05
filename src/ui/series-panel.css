@@ -85,3 +85,7 @@
 .series-pick-mark[data-lean='unfavoured'] {
   color: var(--color-unfavoured);
 }
+
+.series-pick-mark[data-lean='even'] {
+  color: var(--color-text-muted);
+}

@@ -82,11 +82,17 @@ describe('series URL', () => {
 });
 
 describe('series URL, draft formats', () => {
-  const reveal: SeriesSetup = { ...setup, format: 'reveal' };
+  // setup.a = thorns, sniper, berserker; setup.b = venom, brawler, quake. Bot shows, player answers,
+  // player shows, bot answers.
+  const reveal: SeriesSetup = {
+    ...setup,
+    format: 'reveal',
+    picks: ['brawler', 'thorns', 'sniper', 'venom'],
+  };
   const loser: SeriesSetup = { ...setup, format: 'loser', picks: ['quake'] };
 
   it.each<[string, SeriesSetup]>([
-    ['reveal, then order', reveal],
+    ['reveal, then take turns, with its four picks', reveal],
     ['loser picks next, with a pick', loser],
     ['loser picks next, before any pick', { ...setup, format: 'loser' }],
   ])('round-trips %s', (_name, original) => {
@@ -157,14 +163,24 @@ describe('series URL, draft formats', () => {
 
   it('names the setup step while a series is set up, and drops it in a whole series link', () => {
     const params = new URLSearchParams('a=storm&b=frost&seed=4');
-    writeSeriesModeParams(params, 'reveal', 'order');
-    expect(params.toString()).toBe('mode=bo3&fmt=reveal&step=order');
-    expect(parseSeriesParams(params, ids)).toStrictEqual({ format: 'reveal', step: 'order' });
+    writeSeriesModeParams(params, 'reveal', 'answer');
+    expect(params.toString()).toBe('mode=bo3&fmt=reveal&step=answer');
+    expect(parseSeriesParams(params, ids)).toStrictEqual({ format: 'reveal', step: 'answer' });
     expect(parse('mode=bo3&step=nonsense')).toStrictEqual({});
     writeSeriesParams(params, setup);
     expect(params.get('step')).toBeNull();
     clearSeriesParams(params);
     expect(params.has('mode')).toBe(false);
     expect(params.has('step')).toBe(false);
+  });
+
+  it('sends a reveal link from before the turns (no picks) back to the lineup, prefilled', () => {
+    expect(
+      parse('mode=bo3&fmt=reveal&la=thorns,sniper,berserker&lb=venom,brawler,quake&seed=9'),
+    ).toStrictEqual({
+      lineup: ['thorns', 'sniper', 'berserker'],
+      format: 'reveal',
+    });
+    expect(parse('mode=bo3&fmt=reveal&step=order')).toStrictEqual({ format: 'reveal' });
   });
 });

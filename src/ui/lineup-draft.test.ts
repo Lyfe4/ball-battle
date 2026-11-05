@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addToDraft, completeLineup, moveInDraft, removeFromDraft } from './lineup-draft.ts';
+import { addToDraft, completeLineup, removeFromDraft } from './lineup-draft.ts';
 
 describe('lineup draft', () => {
   it('fills the next empty slot with each tap', () => {
@@ -20,21 +20,6 @@ describe('lineup draft', () => {
   it('removes a slot and keeps the order of the rest', () => {
     expect(removeFromDraft(['storm', 'frost', 'venom'], 0)).toStrictEqual(['frost', 'venom']);
     expect(removeFromDraft(['storm', 'frost'], 5)).toStrictEqual(['storm', 'frost']);
-  });
-
-  it('moves a ball up or down, and not past either end', () => {
-    expect(moveInDraft(['storm', 'frost', 'venom'], 2, -1)).toStrictEqual([
-      'storm',
-      'venom',
-      'frost',
-    ]);
-    expect(moveInDraft(['storm', 'frost', 'venom'], 0, 1)).toStrictEqual([
-      'frost',
-      'storm',
-      'venom',
-    ]);
-    expect(moveInDraft(['storm', 'frost'], 0, -1)).toStrictEqual(['storm', 'frost']);
-    expect(moveInDraft(['storm', 'frost'], 1, 1)).toStrictEqual(['storm', 'frost']);
   });
 
   it('is complete with three balls only', () => {

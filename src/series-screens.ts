@@ -46,11 +46,11 @@ export function createSeriesScreens(
       host.exitToHome();
     },
     ballLink: host.ballLink,
-    start: (series) => {
+    start: (series, firstPick) => {
       navigation.push((url) => {
         writeSeriesModeParams(url, series.format, 'play');
       });
-      play.start(series);
+      play.start(series, false, firstPick);
       // After the start, so the arena is on screen to take focus.
       host.started();
     },

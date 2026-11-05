@@ -1,6 +1,7 @@
 // A best-of-3 series (ADR 0017, docs/vision.md): two lineups of three different balls, first to two
-// round wins. Draft formats (ADR 0019) decide how the order is set: blind, reveal-then-order, or
-// loser-picks-next, where the loser of a round picks its next ball after seeing the winner's. Pure
+// round wins. Draft formats (ADR 0019, 0021) decide who plays when: blind order; reveal, then take
+// turns showing first; or loser-picks-next, where the loser of a round picks its next ball after
+// seeing the winner's. Pure
 // and deterministic like the rest of the sim, so a server can replay a series from its setup (seed,
 // lineups, format and picks) to verify a reported result.
 import { getDefinition } from './definitions.ts';
@@ -27,8 +28,9 @@ export type Lineup = readonly [string, string, string];
 /**
  * How the order of each lineup is decided (ADR 0019):
  * - `blind`: each side sets its order without seeing the other's lineup (ADR 0017).
- * - `reveal`: both lineups are revealed, then each side secretly sets its order. The series then
- *   plays exactly like a blind one; only how the order was chosen differs.
+ * - `reveal` (ADR 0021): both lineups are revealed, then the sides take turns showing first. Round
+ *   1: side B (the bot) shows its ball, then side A answers. Round 2: A shows first, then B
+ *   answers. Round 3 is the ball each side has left. Every choice is a pick, recorded in order.
  * - `loser`: each side sets an order blind; after a round, the loser picks its next ball from what
  *   it has left, having seen the winner's next ball, while the winner keeps its order.
  */
@@ -44,11 +46,11 @@ export interface SeriesSetup {
   readonly b: Lineup;
   /** Undefined is `blind`, the format every series had before ADR 0019. */
   readonly format?: Format;
-  /** `loser` only: each pick made between rounds, in order. A replay takes them from here. */
+  /** `loser` and `reveal`: every pick made, both sides', in order. A replay takes them from here. */
   readonly picks?: readonly string[];
 }
 
-/** A pick made in a `loser` series: `side` chose `ball` to play round `round` (0-based). */
+/** A pick made in a `loser` or `reveal` series: `side` chose `ball` for round `round` (0-based). */
 export interface PickRecord {
   readonly round: number;
   readonly side: Side;
@@ -79,7 +81,7 @@ export interface SeriesState {
   readonly pending: readonly Outcome[];
   /** Set once a side has WINS_NEEDED round wins. */
   readonly winner: Side | undefined;
-  /** Picks made so far (`loser` series only). */
+  /** Picks made so far (`loser` and `reveal` series). */
   readonly picks: readonly PickRecord[];
 }
 
@@ -139,12 +141,28 @@ export function nextBallOf(state: SeriesState, side: Side): string | undefined {
 }
 
 /**
- * The side that must pick its next ball before the next round, if any: in a `loser` series, the
- * loser of the last round, while it still has a choice (two or more balls left) and hasn't picked.
+ * Who shows first in each round of a `reveal` series, then who answers (ADR 0021). Round 3 has no
+ * picks: each side plays the ball it has left.
+ */
+export const REVEAL_TURNS: readonly (readonly Side[])[] = [
+  ['b', 'a'],
+  ['a', 'b'],
+];
+
+/**
+ * The side that must pick its ball before the next round, if any. In a `loser` series, the loser
+ * of the last round, while it still has a choice (two or more balls left) and hasn't picked. In a
+ * `reveal` series, whoever's turn it is in the round (REVEAL_TURNS), until both have picked.
  */
 export function awaitingPick(state: SeriesState): Side | undefined {
-  if (formatOf(state.setup) !== 'loser' || state.winner !== undefined) return undefined;
-  if (state.pending.length > 0) return undefined;
+  const format = formatOf(state.setup);
+  if (state.winner !== undefined || state.pending.length > 0) return undefined;
+  if (format === 'reveal') {
+    const round = state.rounds.length;
+    const picked = (side: Side) => state.picks.some((p) => p.round === round && p.side === side);
+    return REVEAL_TURNS[round]?.find((side) => !picked(side));
+  }
+  if (format !== 'loser') return undefined;
   const last = state.rounds.at(-1);
   if (last === undefined) return undefined;
   const loser = otherSide(last.winner);
@@ -165,7 +183,7 @@ export function recordPick(state: SeriesState, ball: string): SeriesState {
 
 /** The setup with every pick so far: what a link stores to replay the series. */
 export function setupWithPicks(state: SeriesState): SeriesSetup {
-  if (formatOf(state.setup) !== 'loser') return state.setup;
+  if (formatOf(state.setup) === 'blind') return state.setup;
   return { ...state.setup, picks: state.picks.map((pick) => pick.ball) };
 }
 

@@ -1,6 +1,6 @@
 // A best-of-3 series in the URL (ADR 0017, 0019): `?mode=bo3&la=a,b,c&lb=d,e,f&seed=N` holds both
 // lineups and the series seed; `fmt=reveal` or `fmt=loser` names a draft format (none is blind), and
-// a loser-picks-next series adds `picks=x,y`, every pick in order. That is everything that decides a
+// a series with picks adds `picks=x,y,...`, every pick in order (ADR 0019, 0021). That is everything that decides a
 // series, so the link replays it exactly. A link with only `mode=bo3` (and perhaps `fmt`), or with
 // anything invalid, opens the lineup builder instead.
 import {
@@ -29,8 +29,8 @@ const KEYS = {
  * a whole series replays one; the others are steps of setting one up, and `play` and `order` fall
  * back to the lineup after a reload, since the bot's lineup is never in the URL until the end.
  */
-export type SeriesStep = 'lineup' | 'order' | 'play';
-const STEPS: readonly SeriesStep[] = ['lineup', 'order', 'play'];
+export type SeriesStep = 'lineup' | 'answer' | 'play';
+const STEPS: readonly SeriesStep[] = ['lineup', 'answer', 'play'];
 
 /** What a URL asks for in best-of-3 mode. */
 export interface SeriesLink {
@@ -59,14 +59,23 @@ function readFormat(raw: string | null): Format | undefined {
   return FORMATS.find((format) => format === name);
 }
 
+/** Picks a whole series of each format records (ADR 0019, 0021); a blind series has none. */
+const PICKS: Readonly<Record<Format, { readonly min: number; readonly max: number }>> = {
+  blind: { min: 0, max: 0 },
+  // Loser picks next: at most one per round after the first.
+  loser: { min: 0, max: LINEUP_SIZE - 1 },
+  // Reveal: both sides pick in rounds 1 and 2, and a series is never decided before round 2.
+  reveal: { min: 4, max: 4 },
+};
+
 /**
- * The picks of a loser-picks-next series: at most one per round after the first, each a ball from
- * one of the two lineups. Whether each pick was legal is checked when the series replays.
+ * The picks in a link, each a ball from one of the two lineups. Whether each pick was legal is
+ * checked when the series replays.
  */
 function readPicks(raw: string | null, a: Lineup, b: Lineup): string[] | undefined {
   if (raw === null || raw.trim() === '') return [];
   const list = ids(raw);
-  if (list.length > LINEUP_SIZE - 1) return undefined;
+  if (list.length > LINEUP_SIZE + 1) return undefined;
   return list.every((id) => a.includes(id) || b.includes(id)) ? list : undefined;
 }
 
@@ -91,10 +100,13 @@ export function parseSeriesParams(
   };
   if (a !== undefined && b !== undefined && seed !== undefined && format !== undefined) {
     const picks = readPicks(params.get(KEYS.picks), a, b);
-    const valid = picks !== undefined && (format === 'loser' || picks.length === 0);
+    // A reveal link from before ADR 0021 has no picks: it can't replay under the new rules, so it
+    // falls back to the lineup, prefilled, like any other link that doesn't hold a whole series.
+    const { min, max } = PICKS[format];
+    const valid = picks !== undefined && picks.length >= min && picks.length <= max;
     if (valid) {
       const extra = format === 'blind' ? {} : { format };
-      const withPicks = format === 'loser' && picks.length > 0 ? { picks } : {};
+      const withPicks = picks.length > 0 ? { picks } : {};
       return { setup: { seed, a, b, ...extra, ...withPicks } };
     }
   }

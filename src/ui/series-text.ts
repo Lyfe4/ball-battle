@@ -18,14 +18,14 @@ export const SIDE_NAMES: Readonly<Record<Side, string>> = { a: 'You', b: 'Bot' }
 /** Draft formats (ADR 0019), as the format choice and the scoreboard name them. */
 export const FORMAT_NAMES: Readonly<Record<Format, string>> = {
   blind: 'Blind order',
-  reveal: 'Reveal, then order',
+  reveal: 'Reveal, then take turns',
   loser: 'Loser picks next',
 };
 
 /** One line on how each format works, on its card in the rules step. */
 export const FORMAT_LINES: Readonly<Record<Format, string>> = {
   blind: 'Pick and order three balls without seeing the bot’s.',
-  reveal: 'Pick blind, see both lineups, then order yours in secret.',
+  reveal: 'Pick blind and see both lineups. Round 1 the bot shows its ball first; round 2 you do.',
   loser: 'After each round the loser picks its next ball, seeing the winner’s.',
 };
 
@@ -33,12 +33,23 @@ export const FORMAT_LINES: Readonly<Record<Format, string>> = {
 export const SERIES_RULE =
   'Three balls each against the bot, one round per pair. First to two wins.';
 
-/** What the lineup step asks for, by format: order matters unless the lineups are revealed first. */
+/** What the lineup step asks for, by format: order matters unless the sides take turns (reveal). */
 export const LINEUP_HINTS: Readonly<Record<Format, string>> = {
   blind: 'Tap three balls in the order they play. Tap a slot to take its ball out.',
-  reveal: 'Tap three balls. You set their order once both lineups are revealed.',
+  reveal: 'Tap three balls. You choose which plays each round once both lineups are revealed.',
   loser: 'Tap three balls in the order they play; a loss lets you pick again.',
 };
+
+/** A replayed link makes the next pick itself: the player only moves on. */
+export function linkPickLine(round: number): string {
+  return `Next, round ${String(round + 1)}, with the picks from the link.`;
+}
+
+/** Reveal, round 2: the player shows first, and the bot answers from what it has left. */
+export function revealShowLine(round: number, botLeft: readonly string[], nameOf: NameOf): string {
+  const left = botLeft.map(nameOf).join(' and ');
+  return `Round ${String(round + 1)}: you show first. Pick your ball; the bot answers with its best counter from ${left}.`;
+}
 
 /** Loser picks next, the player lost: what they are picking against. */
 export function pickLine(round: number, winnersNext: string, nameOf: NameOf): string {

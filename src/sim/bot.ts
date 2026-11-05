@@ -1,10 +1,11 @@
-// Opponents for a best-of-3 series (ADR 0017, 0019). Behind a small interface so a smarter bot (one
+// Opponents for a best-of-3 series (ADR 0017, 0019, 0021). Behind a small interface so a smarter bot (one
 // that learns what a player opens with) can replace this one without touching the series or the
 // UI. Pure and seeded, like the rest of the sim.
 import { isFavoured } from './counter-map.ts';
 import { createStream, deriveSeed } from './rng.ts';
 import {
   awaitingPick,
+  formatOf,
   LINEUP_SIZE,
   nextBallOf,
   otherSide,
@@ -18,12 +19,16 @@ export interface LineupBot {
   /** Three different ids from `roster`, in order. The same seed always gives the same lineup. */
   pickLineup(seed: number, roster: readonly string[]): Lineup;
   /**
-   * Reveal, then order: its order for its own lineup, once both lineups are revealed. `opponent` is
-   * the opponent's lineup as revealed, not its secret order, and the result must not depend on its
-   * order. Against an opponent order it can't see, every order of its own gives the same counter-map
-   * odds (ADR 0019 addendum), so a uniformly random order is the best it can do.
+   * Reveal (ADR 0021), round 1: the ball it shows first, from its own lineup. It has nothing to
+   * react to yet, so a seeded random choice is the fair one: any rule the player could learn would
+   * hand them the answer.
    */
-  orderLineup(seed: number, own: Lineup, opponent: Lineup): Lineup;
+  showFirst(seed: number, own: Lineup): string;
+  /**
+   * Reveal, round 2: its answer to the ball the opponent showed first, from the balls it has left:
+   * its best counter by the counter map (favoured, else even, else unfavoured).
+   */
+  answer(seed: number, round: number, remaining: readonly string[], shown: string): string;
   /**
    * Loser picks next: its ball for round `round` from `remaining`, knowing the winner's next ball
    * (`opponentNext`).
@@ -33,22 +38,9 @@ export interface LineupBot {
 
 /** Keeps each of the bot's choices on its own stream, apart from the series' round seeds. */
 const BOT_SALT = 0xb07;
-const ORDER_SALT = 0x0de7;
+const SHOW_SALT = 0x5409;
+const ANSWER_SALT = 0xa45e;
 const PICK_SALT = 0x91c4;
-
-/** A seeded shuffle of `ids` (Fisher-Yates). */
-function shuffled(ids: readonly string[], random: () => number): string[] {
-  const out = [...ids];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    const here = out[i];
-    const there = out[j];
-    if (here === undefined || there === undefined) continue;
-    out[i] = there;
-    out[j] = here;
-  }
-  return out;
-}
 
 function asLineup(ids: readonly string[]): Lineup {
   const [first, second, third] = ids;
@@ -59,10 +51,11 @@ function asLineup(ids: readonly string[]): Lineup {
 }
 
 /**
- * Picks three different balls uniformly at random, in a random order, and orders them at random
- * when lineups are revealed. When it loses a round and may pick its next ball, it picks a counter
- * to the winner's next ball if the counter map gives it one (at random among several), otherwise
- * any ball it has left.
+ * Picks three different balls uniformly at random, in a random order. In reveal (ADR 0021) it shows
+ * a random ball first in round 1 and answers the player's round-2 ball with its best counter. When
+ * it loses a round in loser-picks-next and may pick its next ball, it picks a counter to the
+ * winner's next ball if the counter map gives it one (at random among several), otherwise any
+ * ball it has left.
  */
 export const randomBot: LineupBot = {
   id: 'random',
@@ -79,8 +72,22 @@ export const randomBot: LineupBot = {
     }
     return asLineup(picked);
   },
-  orderLineup(seed, own) {
-    return asLineup(shuffled(own, createStream(deriveSeed([seed, ORDER_SALT]))));
+  showFirst(seed, own) {
+    const random = createStream(deriveSeed([seed, SHOW_SALT]));
+    const choice = own[Math.floor(random() * own.length)];
+    if (choice === undefined) throw new Error('No ball to show');
+    return choice;
+  },
+  answer(seed, round, remaining, shown) {
+    // Favoured beats even beats unfavoured; ties go to a seeded coin, so the bot isn't predictable
+    // between balls the map rates the same.
+    const rank = (id: string) => (isFavoured(id, shown) ? 2 : isFavoured(shown, id) ? 0 : 1);
+    const best = Math.max(...remaining.map(rank));
+    const pool = remaining.filter((id) => rank(id) === best);
+    const random = createStream(deriveSeed([seed, ANSWER_SALT, round]));
+    const choice = pool[Math.floor(random() * pool.length)];
+    if (choice === undefined) throw new Error('No ball left to answer with');
+    return choice;
   },
   pickNext(seed, round, remaining, opponentNext) {
     if (remaining.length === 0) throw new Error('No ball left to pick');
@@ -93,9 +100,16 @@ export const randomBot: LineupBot = {
   },
 };
 
-/** The bot's pick when side B (the bot) is due to pick in a `loser` series, else undefined. */
+/** The bot's pick when side B (the bot) is due to pick, else undefined. */
 export function botPick(bot: LineupBot, state: SeriesState): string | undefined {
   if (awaitingPick(state) !== 'b') return undefined;
+  const round = state.rounds.length;
+  if (formatOf(state.setup) === 'reveal') {
+    const shown = state.picks.find((pick) => pick.round === round && pick.side === 'a');
+    return shown === undefined
+      ? bot.showFirst(state.setup.seed, state.setup.b)
+      : bot.answer(state.setup.seed, round, remainingOf(state, 'b'), shown.ball);
+  }
   const winnersNext = nextBallOf(state, otherSide('b'));
   if (winnersNext === undefined) return undefined;
   return bot.pickNext(state.setup.seed, state.rounds.length, remainingOf(state, 'b'), winnersNext);

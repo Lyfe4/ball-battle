@@ -103,52 +103,124 @@ describe('loser picks next', () => {
   });
 });
 
-describe('reveal, then order', () => {
-  it('plays exactly like a blind series with the same orders', () => {
-    const blind: SeriesSetup = {
-      seed: 11,
-      a: ['frost', 'thorns', 'sniper'],
-      b: ['venom', 'quake', 'brawler'],
-    };
-    const reveal = playSeries({ ...blind, format: 'reveal' }, BALL_LOOKUP);
-    expect(reveal.rounds).toStrictEqual(playSeries(blind, BALL_LOOKUP).rounds);
-    expect(reveal.picks).toStrictEqual([]);
-    expect(awaitingPick(feed(['a'], startSeries({ ...blind, format: 'reveal' })))).toBeUndefined();
+describe('reveal, then take turns (ADR 0021)', () => {
+  const reveal: SeriesSetup = deepFreeze({
+    seed: 11,
+    a: ['frost', 'thorns', 'sniper'],
+    b: ['venom', 'quake', 'brawler'],
+    format: 'reveal',
+  });
+  const pickAll = (state: SeriesState, mine: readonly string[]): SeriesState => {
+    let next = state;
+    for (let guard = 0; guard < 8; guard++) {
+      const due = awaitingPick(next);
+      if (due === undefined) return next;
+      const own = mine.find((id) => remainingOf(next, 'a').includes(id));
+      next = recordPick(next, due === 'b' ? (botPick(randomBot, next) ?? '') : (own ?? ''));
+    }
+    return next;
+  };
+
+  it('has the bot show first in round 1 and the player first in round 2, and no picks in round 3', () => {
+    let state = startSeries(reveal);
+    expect(awaitingPick(state)).toBe('b');
+    expect(nextMatch(state)).toBeUndefined();
+    state = recordPick(state, 'quake');
+    expect(awaitingPick(state)).toBe('a');
+    state = recordPick(state, 'frost');
+    expect(awaitingPick(state)).toBeUndefined();
+    expect(nextMatch(state)).toMatchObject({ round: 0, a: 'frost', b: 'quake' });
+    state = recordOutcome(state, 'b');
+    expect(awaitingPick(state)).toBe('a');
+    state = recordPick(state, 'sniper');
+    expect(awaitingPick(state)).toBe('b');
+    state = recordPick(state, 'brawler');
+    expect(nextMatch(state)).toMatchObject({ round: 1, a: 'sniper', b: 'brawler' });
+    state = recordOutcome(state, 'a');
+    // 1-1: round 3 is the balls each side has left, with nothing to pick.
+    expect(awaitingPick(state)).toBeUndefined();
+    expect(nextMatch(state)).toMatchObject({ round: 2, a: 'thorns', b: 'venom' });
+  });
+
+  it('asks for no pick while a drawn round is replayed', () => {
+    const drawn = recordOutcome(
+      recordPick(recordPick(startSeries(reveal), 'quake'), 'frost'),
+      'draw',
+    );
+    expect(awaitingPick(drawn)).toBeUndefined();
+    expect(nextMatch(drawn)).toMatchObject({ round: 0, attempt: 1, a: 'frost', b: 'quake' });
+  });
+
+  it('replays the same series from its setup and picks, and refuses an old reveal setup with none', () => {
+    let state = startSeries(reveal);
+    for (let guard = 0; guard < 12 && state.winner === undefined; guard++) {
+      state = pickAll(state, ['sniper', 'frost', 'thorns']);
+      const match = nextMatch(state);
+      if (match === undefined) break;
+      const end = playToEnd(matchWorld(match, BALL_LOOKUP), BALL_LOOKUP);
+      if (end.match.status !== 'finished') throw new Error('unfinished');
+      state = recordOutcome(state, outcomeOf(end.match.result, end));
+    }
+    expect(state.winner).toBeDefined();
+    const replay = setupWithPicks(state);
+    expect(replay.picks).toHaveLength(4);
+    expect(playSeries(replay, BALL_LOOKUP).rounds).toStrictEqual(state.rounds);
+    expect(playSeries(replay, BALL_LOOKUP)).toStrictEqual(playSeries(replay, BALL_LOOKUP));
+    expect(() => playSeries(reveal, BALL_LOOKUP)).toThrow(/pick/);
   });
 });
 
 describe('the bot', () => {
   const ids = BALLS.map((ball) => ball.id);
 
-  it('orders its own lineup at random but deterministically', () => {
+  it('shows a random ball of its own first in reveal, the same for the same seed', () => {
     const own = randomBot.pickLineup(3, ids);
-    const orders = new Set<string>();
+    const shown = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
-      const order = randomBot.orderLineup(seed, own, ['brawler', 'storm', 'frost']);
-      expect([...order].sort()).toStrictEqual([...own].sort());
-      expect(randomBot.orderLineup(seed, own, ['brawler', 'storm', 'frost'])).toStrictEqual(order);
-      orders.add(order.join());
+      const ball = randomBot.showFirst(seed, own);
+      expect(own).toContain(ball);
+      expect(randomBot.showFirst(seed, own)).toBe(ball);
+      shown.add(ball);
     }
-    expect(orders.size).toBe(6);
+    expect(shown.size).toBe(3);
   });
 
-  it('orders the same way whatever order the player’s lineup is in, so it never reads it', () => {
-    const own = randomBot.pickLineup(5, ids);
-    const opponent = ['brawler', 'storm', 'frost'] as const;
-    const orders = [
-      opponent,
-      [opponent[0], opponent[2], opponent[1]],
-      [opponent[1], opponent[0], opponent[2]],
-      [opponent[1], opponent[2], opponent[0]],
-      [opponent[2], opponent[0], opponent[1]],
-      [opponent[2], opponent[1], opponent[0]],
-    ] as const;
-    for (let seed = 0; seed < 40; seed++) {
-      const expected = randomBot.orderLineup(seed, own, opponent);
-      for (const order of orders) {
-        expect(randomBot.orderLineup(seed, own, order)).toStrictEqual(expected);
+  it('answers the ball shown first with its best counter: favoured, else even, else unfavoured', () => {
+    let checked = 0;
+    for (const shown of ids) {
+      for (const x of ids) {
+        for (const y of ids) {
+          if (x === y || x === shown || y === shown) continue;
+          const rank = (id: string) => (isFavoured(id, shown) ? 2 : isFavoured(shown, id) ? 0 : 1);
+          for (let seed = 0; seed < 3; seed++) {
+            const answer = randomBot.answer(seed, 1, [x, y], shown);
+            expect([x, y]).toContain(answer);
+            expect(rank(answer)).toBe(Math.max(rank(x), rank(y)));
+            checked++;
+          }
+        }
       }
     }
+    expect(checked).toBeGreaterThan(1000);
+  });
+
+  it('answers in reveal only after the player has shown, and from its own balls left', () => {
+    const setup: SeriesSetup = {
+      seed: 5,
+      a: ['speedster', 'vampire', 'archer'],
+      b: ['storm', 'frost', 'quake'],
+      format: 'reveal',
+    };
+    let state = startSeries(setup);
+    const first = botPick(randomBot, state);
+    expect(first).toBe(randomBot.showFirst(5, setup.b));
+    state = recordPick(state, first ?? '');
+    expect(botPick(randomBot, state)).toBeUndefined();
+    state = recordOutcome(recordPick(state, 'vampire'), 'a');
+    expect(botPick(randomBot, state)).toBeUndefined();
+    state = recordPick(state, 'speedster');
+    const left = remainingOf(state, 'b');
+    expect(botPick(randomBot, state)).toBe(randomBot.answer(5, 1, left, 'speedster'));
   });
 
   it('picks a counter to the winner’s next ball whenever the counter map has one', () => {

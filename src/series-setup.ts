@@ -1,5 +1,5 @@
-// Setting up a best-of-3 series (ADR 0017, 0019), one job per screen: the rules, the lineup and, in
-// reveal-then-order, the order once both lineups are revealed. Each step is a history entry
+// Setting up a best-of-3 series (ADR 0017, 0019, 0021), one job per screen: the rules, the lineup
+// and, in reveal, the answer to the ball the bot shows first in round 1. Each step is a history entry
 // (`?mode=bo3&step=...`), so Back walks back through them. The bot's lineup lives here, in memory
 // only, until the series starts: it is never written to the URL before the series is decided.
 import { generateSeed } from './app/seed.ts';
@@ -10,10 +10,10 @@ import type { BallDefinition } from './sim/types.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
-import { createOrderStep } from './ui/series/order-step.ts';
+import { createAnswerStep } from './ui/series/answer-step.ts';
 import { createRulesStep } from './ui/series/rules-step.ts';
 
-export type SetupStep = 'rules' | 'lineup' | 'order';
+export type SetupStep = 'rules' | 'lineup' | 'answer';
 
 export interface SeriesSetupHost {
   push(write: (params: URLSearchParams) => void): void;
@@ -22,8 +22,8 @@ export interface SeriesSetupHost {
   back(toParent: () => void): void;
   /** Leaves Best of 3 for the parent screen (the first step's Back, arriving from a link). */
   exit(): void;
-  /** The setup is complete: play the series. */
-  start(setup: SeriesSetup): void;
+  /** The setup is complete: play the series (in reveal, with the player's round-1 answer). */
+  start(setup: SeriesSetup, firstPick?: string): void;
   /** The lineup's info card links to each ball's manual entry. */
   readonly ballLink: BallInfoLink;
 }
@@ -44,8 +44,10 @@ export function createSeriesSetup(
   const ballIds = balls.map((ball) => ball.id);
   let format: Format = 'blind';
   let draft: Draft = [];
-  /** Reveal, then order: the series seed and both lineups as revealed, while the player orders. */
-  let revealed: { readonly seed: number; readonly bot: Lineup; readonly own: Lineup } | undefined;
+  /** Reveal: the series seed, both lineups and the bot's round-1 ball, while the player answers. */
+  let revealed:
+    | { readonly seed: number; readonly bot: Lineup; readonly own: Lineup; readonly shown: string }
+    | undefined;
 
   const to = (step: SetupStep) => (params: URLSearchParams) => {
     writeSeriesModeParams(params, format, step === 'rules' ? undefined : step);
@@ -82,35 +84,34 @@ export function createSeriesSetup(
       const seed = generateSeed();
       const bot = randomBot.pickLineup(seed, ballIds);
       if (format === 'reveal') {
-        revealed = { seed, bot, own };
-        host.push(to('order'));
-        open('order');
+        // The same seeded choice the series makes when it starts, so the ball shown here plays.
+        revealed = { seed, bot, own, shown: randomBot.showFirst(seed, bot) };
+        host.push(to('answer'));
+        open('answer');
         return;
       }
       host.start({ seed, a: own, b: bot, ...(format === 'blind' ? {} : { format }) });
     },
   });
 
-  const order = createOrderStep(balls, {
+  const answer = createAnswerStep(balls, {
     onBack: () => {
       host.back(() => {
         host.replace(to('lineup'));
         open('lineup');
       });
     },
-    onLock: (ordered) => {
+    onAnswer: (ball) => {
       if (revealed === undefined) return;
       const { seed, bot, own } = revealed;
-      draft = ordered;
-      // The bot orders against the lineup as revealed, never the player's secret order.
-      host.start({ seed, a: ordered, b: randomBot.orderLineup(seed, bot, own), format: 'reveal' });
+      host.start({ seed, a: own, b: bot, format: 'reveal' }, ball);
     },
   });
 
   const steps: Readonly<Record<SetupStep, HTMLElement>> = {
     rules: rules.element,
     lineup: lineup.element,
-    order: order.element,
+    answer: answer.element,
   };
   root.replaceChildren(...Object.values(steps));
   root.classList.add('series-setup');
@@ -124,7 +125,7 @@ export function createSeriesSetup(
       revealed = undefined;
       lineup.open(format, draft);
     } else if (revealed !== undefined) {
-      order.open(revealed.own, revealed.bot);
+      answer.open(revealed.own, revealed.bot, revealed.shown);
     }
   }
 
@@ -136,7 +137,7 @@ export function createSeriesSetup(
       if (link.format !== undefined) format = link.format;
       if (link.lineup !== undefined) draft = link.lineup;
       // The bot's revealed lineup isn't in the URL: after a reload, ordering goes back to the lineup.
-      if (step === 'order' && revealed === undefined) {
+      if (step === 'answer' && revealed === undefined) {
         host.replace(to('lineup'));
         open('lineup');
         return;

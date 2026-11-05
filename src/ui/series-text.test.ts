@@ -8,6 +8,7 @@ import {
   LINEUP_HINTS,
   FORMAT_NAMES,
   pickLine,
+  revealShowLine,
   playingLine,
   roundLine,
   scoreLine,
@@ -87,6 +88,12 @@ describe('draft format text', () => {
     );
     expect(botPicksLine(1, 'vampire', names)).toBe(
       'Next, round 2: your VAMPIRE. The bot lost round 1, so it picks its next ball knowing yours.',
+    );
+  });
+
+  it('tells the player they show first in reveal, and what the bot can answer with', () => {
+    expect(revealShowLine(1, ['storm', 'quake'], names)).toBe(
+      'Round 2: you show first. Pick your ball; the bot answers with its best counter from STORM and QUAKE.',
     );
   });
 });

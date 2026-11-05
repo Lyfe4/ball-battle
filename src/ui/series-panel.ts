@@ -16,7 +16,9 @@ import {
   botPicksLine,
   finalLine,
   FORMAT_NAMES,
+  linkPickLine,
   pickLine,
+  revealShowLine,
   playingLine,
   roundLine,
   scoreLine,
@@ -41,6 +43,8 @@ export interface SeriesView {
   readonly current: NextMatch | undefined;
   /** True once the match on screen has ended and its result is showing. */
   readonly settled: boolean;
+  /** A replayed link holds the pick that is due, so Next round makes it rather than the player. */
+  readonly linkPickDue: boolean;
 }
 
 export interface SeriesPanel {
@@ -98,12 +102,13 @@ export function createSeriesPanel(
   }
 
   /**
-   * One button per ball the player may pick, marked ▲ / ▼ against the bot's next ball (the reason
-   * the pick is a counter-pick), rebuilt only when the choice changes.
+   * One button per ball the player may pick, marked ▲ / ▼ against each ball it may face: the bot's
+   * next ball in loser-picks-next, the two the bot can answer with in reveal. Rebuilt only when the
+   * choice changes.
    */
   let shownChoices = '';
-  function showChoices(choices: readonly string[], against: string): void {
-    const key = `${choices.join()}>${against}`;
+  function showChoices(choices: readonly string[], against: readonly string[]): void {
+    const key = `${choices.join()}>${against.join()}`;
     if (key === shownChoices) return;
     shownChoices = key;
     picks.replaceChildren(
@@ -115,13 +120,19 @@ export function createSeriesPanel(
         icon.setAttribute('aria-hidden', 'true');
         const ball = definitions.get(id);
         if (ball !== undefined) drawBallIcon(icon, ball, PICK_ICON_PX);
-        const lean = leanOf(id, against);
-        const mark = element('span', 'series-pick-mark', MARKS[lean]);
-        mark.dataset['lean'] = lean;
-        mark.setAttribute('aria-hidden', 'true');
-        pick.append(icon, element('span', '', `Play ${nameOf(id)}`), mark);
-        const word = lean === 'even' ? 'even with' : `${lean} against`;
-        pick.setAttribute('aria-label', `Play ${nameOf(id)}, ${word} ${nameOf(against)}`);
+        const marks = against.map((other) => {
+          const lean = leanOf(id, other);
+          const mark = element('span', 'series-pick-mark', MARKS[lean] || '·');
+          mark.dataset['lean'] = lean;
+          mark.setAttribute('aria-hidden', 'true');
+          return mark;
+        });
+        pick.append(icon, element('span', '', `Play ${nameOf(id)}`), ...marks);
+        const words = against.map((other) => {
+          const lean = leanOf(id, other);
+          return `${lean === 'even' ? 'even with' : `${lean} against`} ${nameOf(other)}`;
+        });
+        pick.setAttribute('aria-label', `Play ${nameOf(id)}, ${words.join(', ')}`);
         return pick;
       }),
     );
@@ -132,7 +143,7 @@ export function createSeriesPanel(
     setVisible(visible) {
       root.hidden = !visible;
     },
-    update({ state, current, settled }) {
+    update({ state, current, settled, linkPickDue }) {
       setText(format, FORMAT_NAMES[formatOf(state.setup)]);
       setText(score, scoreLine(state));
       if (state.rounds.length !== shownRounds) {
@@ -143,20 +154,27 @@ export function createSeriesPanel(
       }
       const playing = current !== undefined && !settled;
       const upcoming = nextMatch(state);
-      const due = playing ? undefined : awaitingPick(state);
+      const due = playing || linkPickDue ? undefined : awaitingPick(state);
       const finished = state.winner !== undefined && !playing;
       const roundsPlayed = state.rounds.length;
+      const reveal = formatOf(state.setup) === 'reveal';
+      const botLeft = remainingOf(state, 'b');
       let text = '';
       if (playing) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
+      else if (due === 'a' && reveal) text = revealShowLine(roundsPlayed, botLeft, nameOf);
       else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
       else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
+      else if (linkPickDue) text = linkPickLine(roundsPlayed);
       setText(status, text);
 
       picks.hidden = due !== 'a';
-      if (due === 'a') showChoices(remainingOf(state, 'a'), nextBallOf(state, 'b') ?? '');
-      const between = !playing && !finished && (upcoming !== undefined || due === 'b');
+      if (due === 'a') {
+        showChoices(remainingOf(state, 'a'), reveal ? botLeft : [nextBallOf(state, 'b') ?? '']);
+      }
+      const between =
+        !playing && !finished && (upcoming !== undefined || due === 'b' || linkPickDue);
       setText(next, state.pending.length > 0 ? 'Replay round' : 'Next round');
       next.hidden = !between;
       rematch.hidden = !finished;

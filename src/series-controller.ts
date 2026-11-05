@@ -40,8 +40,11 @@ export interface SeriesController {
   isPlaying(): boolean;
   /** Shows or hides the scoreboard. */
   setVisible(visible: boolean): void;
-  /** Starts a series. `fromLink` shows the full link at once and replays its picks. */
-  start(setup: SeriesSetup, fromLink?: boolean): void;
+  /**
+   * Starts a series. `fromLink` shows the full link at once and replays its picks; `firstPick` is
+   * the player's round-1 answer in reveal, made on the setup screen.
+   */
+  start(setup: SeriesSetup, fromLink?: boolean, firstPick?: string): void;
   /** Drops the series being played (the player left it). */
   leave(): void;
   /** Records the match on screen once it has finished; safe to call every frame. */
@@ -68,7 +71,8 @@ export function createSeriesController(
     },
     onPick: (ball) => {
       if (session === undefined || awaitingPick(session.state) !== 'a') return;
-      session = pickInSession(session, ball);
+      // In reveal the bot answers the ball just shown; resolvePicks makes its pick.
+      session = resolvePicks(pickInSession(session, ball));
       playCurrent();
     },
     onRematch: () => {
@@ -87,19 +91,25 @@ export function createSeriesController(
   });
 
   /**
-   * Makes any pick that doesn't need the player: a replayed link's next pick, or the bot's when it
-   * lost. A link pick that isn't legal any more is dropped, and the rest of the series is played.
+   * Makes every pick that doesn't need the player, in order: a replayed link's next picks (both
+   * sides'), and the bot's whenever it is due. Stops when the player is due or nothing is. A link
+   * pick that isn't legal any more is dropped, and the rest of the series is played live.
    */
   function resolvePicks(from: SeriesSession): SeriesSession {
-    const due = awaitingPick(from.state);
-    if (due === undefined) return from;
-    const fromLink = linkPicks[from.state.picks.length];
-    if (fromLink !== undefined && remainingOf(from.state, due).includes(fromLink)) {
-      return pickInSession(from, fromLink);
+    let session = from;
+    for (;;) {
+      const due = awaitingPick(session.state);
+      if (due === undefined) return session;
+      const fromLink = linkPicks[session.state.picks.length];
+      if (fromLink !== undefined && remainingOf(session.state, due).includes(fromLink)) {
+        session = pickInSession(session, fromLink);
+        continue;
+      }
+      linkPicks = [];
+      const bot = botPick(randomBot, session.state);
+      if (bot === undefined) return session;
+      session = pickInSession(session, bot);
     }
-    linkPicks = [];
-    const bot = botPick(randomBot, from.state);
-    return bot === undefined ? from : pickInSession(from, bot);
   }
 
   /** Plays the series' current match: both balls are revealed as it starts. */
@@ -113,9 +123,12 @@ export function createSeriesController(
    * decided, so the address bar never gives the bot's lineup away; a series opened from a link
    * already shows it.
    */
-  function start(setup: SeriesSetup, fromLink = false): void {
+  function start(setup: SeriesSetup, fromLink = false, firstPick?: string): void {
     linkPicks = fromLink ? (setup.picks ?? []) : [];
-    session = beginSession(setup);
+    session = resolvePicks(beginSession(setup));
+    if (firstPick !== undefined && awaitingPick(session.state) === 'a') {
+      session = resolvePicks(pickInSession(session, firstPick));
+    }
     host.replaceUrl((url) => {
       if (fromLink) writeSeriesParams(url, setup);
       else writeSeriesModeParams(url, setup.format, 'play');
@@ -149,7 +162,13 @@ export function createSeriesController(
     update(world, resultShown) {
       if (session === undefined) return;
       const settled = world.match.status === 'finished' && resultShown;
-      panel.update({ state: session.state, current: session.current, settled });
+      const due = awaitingPick(session.state);
+      const linkPick = linkPicks[session.state.picks.length];
+      const linkPickDue =
+        due !== undefined &&
+        linkPick !== undefined &&
+        remainingOf(session.state, due).includes(linkPick);
+      panel.update({ state: session.state, current: session.current, settled, linkPickDue });
     },
   };
 }
