@@ -15,7 +15,8 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 ## Commands
 
 - `pnpm dev`: start the Vite dev server on http://localhost:5199. `/styleguide.html` shows every
-  ball design in each ability state, large and at phone size (dev only, not in the build)
+  ball design in each ability state, large and at phone size, and the shared UI parts (dev only,
+  not in the build); `?only=ui` shows just the UI parts, `?only=phone-arena` the phone arena
 - `pnpm build`: typecheck and build to `dist/`
 - `pnpm preview`: serve `dist/` on http://localhost:4199 with the production security headers
   from `scripts/security-headers.ts` (Netlify serves the same set from `netlify.toml`; a test keeps
@@ -55,9 +56,12 @@ another. All must pass.
 5. **`src/main.ts` wires it together** with a `requestAnimationFrame` loop that uses an
    accumulator to run the fixed timestep independently of display refresh rate. Browser-side
    helpers that are not sim or rendering (the fixed-step clock, the presentation clock and frame
-   driver, seed and matchup parsing) live in `src/app/` as small pure functions with tests; keep
-   `main.ts` to wiring. The best-of-3 wiring (builder, scoreboard, session, link timing) is in
-   `src/series-controller.ts`; a new mode gets its own module like it.
+   driver, seed and matchup parsing, routes) live in `src/app/` as small pure functions with tests;
+   keep `main.ts` to wiring. The match on screen and the frame loop are `src/arena.ts`; history is
+   `src/navigation.ts`. Each screen's wiring has its own module: `home-controller.ts`,
+   `quick-controller.ts`, `series-setup.ts` and `series-controller.ts` (joined in
+   `series-screens.ts`), `manual-screen.ts`. A new screen gets its own module like them, a route in
+   `src/app/route.ts` (ADR 0020) and a test for its link.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`, created with
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus
    optional hooks. Runtime state (`BallState`) is kept separate from the definition.
@@ -86,7 +90,8 @@ The reasoning is in `docs/decisions/0001-deterministic-simulation.md`,
 `docs/decisions/0014-venom-thorns-counter.md`, `docs/decisions/0015-berserker-sniper-quake.md`,
 `docs/decisions/0016-counter-density.md`, `docs/decisions/0017-best-of-3-series.md` and
 `docs/decisions/0018-aimed-start.md` (the aimed start is measured in `docs/aiming-measurements.md`;
-the game does not use it) and `docs/decisions/0019-draft-formats.md`.
+the game does not use it), `docs/decisions/0019-draft-formats.md` and
+`docs/decisions/0020-screens.md`.
 
 ## Conventions
 
@@ -145,7 +150,13 @@ the game does not use it) and `docs/decisions/0019-draft-formats.md`.
 - Colours and sizes for the renderer come from `src/render/theme.ts`, not inline literals.
 - **Phone first.** Every screen is designed for a phone (about 375 px wide) first: one clear job
   per screen and as few controls as possible. Desktop adapts from the phone design, never the
-  other way round. Check every screen at 375×812 before calling it done.
+  other way round. Check every screen at 375×812 before calling it done. The arena shows only
+  when something is fighting; setup and reading screens take the whole phone screen (ADR 0020).
+- Page colours, sizes and type come from roles in `src/styles/tokens.css`, never palette names or
+  literals. A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
+  order; create the file before adding its `@import` (the dev server caches a missing import).
+- Ball and matchup text in the UI is read from the definitions and the counter map
+  (`src/ui/balls/matchups.ts`); it says "favoured", never a measured win rate.
 - Tests sit next to the code as `*.test.ts`.
 - Keep files under 300 lines (ESLint `max-lines`); split by responsibility before that.
 - Conventional Commits (`feat(sim): ...`, `chore: ...`), small and single-purpose. The commit body

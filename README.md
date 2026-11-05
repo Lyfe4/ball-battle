@@ -10,6 +10,17 @@ wins. There is no player control: you pick the balls and watch.
 Built with TypeScript, Vite and plain Canvas 2D. No game engine, no physics library, no
 framework.
 
+![Home, quick-match setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
+
+The home screen plays a demo match of one counter and says why it wins more often; **Play** sets
+that pair up with the favoured ball yours. Every screen is designed for a phone first and has a
+URL, so Back works and any screen can be linked
+([ADR 0020](docs/decisions/0020-screens.md)).
+
+The **Ball manual** lists every ball with what it does and who it beats and loses to, each with
+the reason, and a **matchup chart** of the whole counter map. Both are read from the ball
+definitions and the counter map, so they never go stale.
+
 Pick two balls and watch them fight. They collide elastically and deal damage scaled by how hard
 they hit; the match ends by knockout or at a 60-second time limit.
 
@@ -66,7 +77,8 @@ The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map
 
 ## Best of 3
 
-Switch to **Best of 3** to play a series against a bot: pick three different balls in order
+Choose **Best of 3** on the home screen to play a series against a bot: pick three different
+balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
 takes the series. The bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
@@ -97,7 +109,7 @@ Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42`: share or reloa
 the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a fresh
 random one.
 
-The **Speed 1× / 2×** toggle under the match status plays everything twice as fast (the fight,
+The **Speed 1× / 2×** toggle under a match plays everything twice as fast (the fight,
 hit-stops and effects alike) without changing the result; your choice is remembered in this
 browser. Motion is drawn between simulation ticks, so it stays smooth on 90, 120 and 144 Hz
 displays.
@@ -123,9 +135,12 @@ src/
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
   sim/series.ts     best-of-3 rules and the bot, pure so a server can re-run a series
-  ui/       plain-DOM picker, lineup builder, scoreboard and HUD
-  app/      browser-side helpers: clocks, playback speed, seed, matchup and series links
-  main.ts   wires it together with a requestAnimationFrame loop
+  ui/       plain-DOM screens: home, ball grid and detail, setup steps, manual, scoreboard, HUD
+  styles/   design tokens (a palette, then roles) and base styles; components' CSS sits beside them
+  app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links
+  arena.ts  the match on screen and the requestAnimationFrame loop
+  *-controller.ts, *-screens.ts, series-setup.ts, manual-screen.ts   each screen's wiring
+  main.ts   wires the screens together
 ```
 
 The rules, in brief:
@@ -163,10 +178,13 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0014: Venom, Thorns' counter](docs/decisions/0014-venom-thorns-counter.md)
 , [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md)
 , [ADR 0016: Counter density](docs/decisions/0016-counter-density.md)
-and [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md).
+, [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md)
+, [ADR 0018: Aimed start](docs/decisions/0018-aimed-start.md)
+, [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
+and [ADR 0020: Screens](docs/decisions/0020-screens.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 72.69 kB JS (24.98 kB gzipped), 7.88 kB CSS. First version baseline: 5.05 kB
+Production bundle: 104.75 kB JS (34.83 kB gzipped), 18.02 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License
