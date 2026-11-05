@@ -85,7 +85,7 @@ describe('series URL, draft formats', () => {
   const reveal: SeriesSetup = { ...setup, format: 'reveal' };
   const loser: SeriesSetup = { ...setup, format: 'loser', picks: ['quake'] };
 
-  it.each([
+  it.each<[string, SeriesSetup]>([
     ['reveal, then order', reveal],
     ['loser picks next, with a pick', loser],
     ['loser picks next, before any pick', { ...setup, format: 'loser' }],
