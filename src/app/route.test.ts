@@ -1,6 +1,11 @@
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
-import { BALLS } from '../sim/balls/index.ts';
+import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { randomBot } from '../sim/bot.ts';
+import { setupWithPicks, type SeriesSetup } from '../sim/series.ts';
+import { playSeries } from '../sim/series-verify.ts';
+import { playLikeTheGame } from '../sim/test-support.ts';
+import { writeSeriesParams } from './series-url.ts';
 import {
   clearView,
   parseRoute,
@@ -10,8 +15,7 @@ import {
   writePickParams,
 } from './route.ts';
 
-const ids = BALLS.map((ball) => ball.id);
-const route = (query: string) => parseRoute(new URLSearchParams(query), ids);
+const route = (query: string) => parseRoute(new URLSearchParams(query), BALL_LOOKUP);
 
 describe('parseRoute', () => {
   it('opens every link shape the game has written on the screen it was written from', () => {
@@ -28,6 +32,7 @@ describe('parseRoute', () => {
           seed: 9,
           a: ['storm', 'frost', 'venom'],
           b: ['quake', 'thorns', 'archer'],
+          opponent: { kind: 'bot', bot: 'random', lineupSeed: 9 },
         },
       },
       step: 'play',
@@ -71,7 +76,7 @@ describe('parseRoute', () => {
     writeMatchUrl(params, { a: 'venom', b: 'quake' }, 12);
     expect(params.toString()).toBe(`a=venom&b=quake&seed=12&v=${String(RULESET_VERSION)}`);
     writeHomeParams(params);
-    expect(parseRoute(params, ids)).toStrictEqual({ screen: 'home' });
+    expect(parseRoute(params, BALL_LOOKUP)).toStrictEqual({ screen: 'home' });
   });
 
   it('opens the quick-match setup prefilled, and round-trips it', () => {
@@ -82,12 +87,15 @@ describe('parseRoute', () => {
     const params = new URLSearchParams('mode=bo3&seed=4&fmt=loser');
     writePickParams(params, { a: 'frost', b: 'quake' });
     expect(params.toString()).toBe('view=pick&a=frost&b=quake');
-    expect(parseRoute(params, ids)).toStrictEqual({
+    expect(parseRoute(params, BALL_LOOKUP)).toStrictEqual({
       screen: 'pick',
       matchup: { a: 'frost', b: 'quake' },
     });
     clearView(params);
-    expect(parseRoute(params, ids)).toMatchObject({ screen: 'match', matchup: { a: 'frost' } });
+    expect(parseRoute(params, BALL_LOOKUP)).toMatchObject({
+      screen: 'match',
+      matchup: { a: 'frost' },
+    });
   });
 
   it('opens the manual on the roster, a ball, or the chart, and ignores an unknown ball', () => {
@@ -100,5 +108,60 @@ describe('parseRoute', () => {
     expect(params.toString()).toBe('view=manual&ball=venom');
     writeManualParams(params, { chart: true });
     expect(params.toString()).toBe('view=manual&tab=chart');
+  });
+
+  describe('a series link agrees with playSeries (one rule, ADR 0022)', () => {
+    const ids = [...BALL_LOOKUP.keys()];
+    const base: SeriesSetup = {
+      ruleset: RULESET_VERSION,
+      seed: 21,
+      a: randomBot.pickLineup(5, ids),
+      b: randomBot.pickLineup(21, ids),
+      opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: 21 },
+      format: 'reveal',
+    };
+    const played = setupWithPicks(playLikeTheGame(base, BALL_LOOKUP));
+    const picks = played.picks ?? [];
+    const notTheirs = ids.find((id) => !played.a.includes(id) && played.b.includes(id)) ?? '';
+    const [x, y, z] = played.b;
+    const linkOf = (setup: SeriesSetup) => {
+      const params = new URLSearchParams();
+      writeSeriesParams(params, setup);
+      return parseRoute(params, BALL_LOOKUP);
+    };
+    const plays = (setup: SeriesSetup) => {
+      try {
+        playSeries(setup, BALL_LOOKUP);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    it.each<[string, SeriesSetup]>([
+      ['the link the game wrote', played],
+      ['the bot lineup edited', { ...played, b: [y, x, z] }],
+      [
+        'the bot’s first pick edited',
+        { ...played, picks: [notTheirs === x ? y : x, ...picks.slice(1)] },
+      ],
+      [
+        'the player answering with a ball of the bot’s',
+        { ...played, picks: [picks[0] ?? '', notTheirs, ...picks.slice(2)] },
+      ],
+      ['a pick missing', { ...played, picks: picks.slice(0, 3) }],
+    ])('%s', (_name, setup) => {
+      const route = linkOf(setup);
+      const replays = route.screen === 'series' && route.step === 'play';
+      expect(replays).toBe(plays(setup));
+      if (!replays) {
+        // Not replayed: the lineup step, prefilled with the player's lineup and the format.
+        expect(route).toStrictEqual({
+          screen: 'series',
+          link: { lineup: setup.a, format: 'reveal' },
+          step: 'lineup',
+        });
+      }
+    });
   });
 });

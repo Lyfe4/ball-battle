@@ -13,13 +13,8 @@ import {
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
 import { botPick, randomBot } from './sim/bot.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
-import {
-  awaitingPick,
-  matchWorld,
-  remainingOf,
-  setupWithPicks,
-  type SeriesSetup,
-} from './sim/series.ts';
+import { awaitingPick, setupWithPicks, type SeriesSetup } from './sim/series.ts';
+import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createSeriesPanel } from './ui/series-panel.ts';
 
@@ -78,12 +73,14 @@ export function createSeriesController(
     },
     onRematch: () => {
       if (session === undefined) return;
-      const { a, b, format } = session.state.setup;
+      // Same lineups (the bot's still from its first lineup seed), a new series seed.
+      const { a, b, opponent, format } = session.state.setup;
       start({
         ruleset: RULESET_VERSION,
         seed: generateSeed(),
         a,
         b,
+        opponent,
         ...(format === undefined ? {} : { format }),
       });
     },
@@ -99,23 +96,17 @@ export function createSeriesController(
 
   /**
    * Makes every pick that doesn't need the player, in order: a replayed link's next picks (both
-   * sides'), and the bot's whenever it is due. Stops when the player is due or nothing is. A link
-   * pick that isn't legal any more is dropped, and the rest of the series is played live.
+   * sides'; the route only replays a link `verifySeries` accepted, so each is legal), and the bot's
+   * whenever it is due. Stops when the player is due or nothing is.
    */
   function resolvePicks(from: SeriesSession): SeriesSession {
     let session = from;
     for (;;) {
-      const due = awaitingPick(session.state);
-      if (due === undefined) return session;
+      if (awaitingPick(session.state) === undefined) return session;
       const fromLink = linkPicks[session.state.picks.length];
-      if (fromLink !== undefined && remainingOf(session.state, due).includes(fromLink)) {
-        session = pickInSession(session, fromLink);
-        continue;
-      }
-      linkPicks = [];
-      const bot = botPick(randomBot, session.state);
-      if (bot === undefined) return session;
-      session = pickInSession(session, bot);
+      const pick = fromLink ?? botPick(randomBot, session.state);
+      if (pick === undefined) return session;
+      session = pickInSession(session, pick);
     }
   }
 
@@ -171,10 +162,7 @@ export function createSeriesController(
       const settled = world.match.status === 'finished' && resultShown;
       const due = awaitingPick(session.state);
       const linkPick = linkPicks[session.state.picks.length];
-      const linkPickDue =
-        due !== undefined &&
-        linkPick !== undefined &&
-        remainingOf(session.state, due).includes(linkPick);
+      const linkPickDue = due !== undefined && linkPick !== undefined;
       panel.update({ state: session.state, current: session.current, settled, linkPickDue });
     },
   };

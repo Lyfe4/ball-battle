@@ -1,7 +1,8 @@
 // A best-of-3 series in the URL (ADR 0017, 0019): `?mode=bo3&la=a,b,c&lb=d,e,f&seed=N` holds both
 // lineups and the series seed; `fmt=reveal` or `fmt=loser` names a draft format (none is blind), a
 // series with picks adds `picks=x,y,...`, every pick in order (ADR 0019, 0021), and `v=` names the
-// ruleset it was played under (ADR 0022). That is everything that decides a series, so the link
+// ruleset it was played under (ADR 0022). Side B is always the bot, its lineup picked from the
+// series seed, or from `bs=` after a rematch kept the lineup (ADR 0022). That is everything that decides a series, so the link
 // replays it exactly under that ruleset. A link with only `mode=bo3` (and perhaps `fmt`), or with
 // anything invalid, opens the lineup builder instead.
 import {
@@ -10,8 +11,10 @@ import {
   LINEUP_SIZE,
   type Format,
   type Lineup,
+  type Opponent,
   type SeriesSetup,
 } from '../sim/series.ts';
+import { randomBot } from '../sim/bot.ts';
 import { parseSeed, parseVersion } from './seed.ts';
 
 export const SERIES_MODE = 'bo3';
@@ -24,6 +27,7 @@ const KEYS = {
   picks: 'picks',
   step: 'step',
   version: 'v',
+  lineupSeed: 'bs',
 } as const;
 
 /**
@@ -110,7 +114,14 @@ export function parseSeriesParams(
       const extra = format === 'blind' ? {} : { format };
       const withPicks = picks.length > 0 ? { picks } : {};
       const ruleset = parseVersion(params.get(KEYS.version));
-      return { setup: { ruleset, seed, a, b, ...extra, ...withPicks } };
+      // Every link is against the bot; its lineup seed is the series seed unless a rematch
+      // kept the lineup it picked for an earlier series (ADR 0022).
+      const rawLineupSeed = params.get(KEYS.lineupSeed);
+      const lineupSeed = rawLineupSeed === null ? seed : parseSeed(rawLineupSeed);
+      if (lineupSeed !== undefined) {
+        const opponent: Opponent = { kind: 'bot', bot: randomBot.id, lineupSeed };
+        return { setup: { ruleset, seed, a, b, opponent, ...extra, ...withPicks } };
+      }
     }
   }
   return a === undefined ? named : { lineup: a, ...named };
@@ -124,6 +135,10 @@ export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): 
   params.set(KEYS.b, setup.b.join(','));
   params.set(KEYS.seed, String(setup.seed));
   params.set(KEYS.version, String(setup.ruleset));
+  const { opponent } = setup;
+  if (opponent.kind === 'bot' && opponent.lineupSeed !== setup.seed) {
+    params.set(KEYS.lineupSeed, String(opponent.lineupSeed));
+  }
   if (setup.picks !== undefined && setup.picks.length > 0) {
     params.set(KEYS.picks, setup.picks.join(','));
   }
@@ -155,6 +170,7 @@ export function clearSeriesParams(params: URLSearchParams): void {
   params.delete(KEYS.picks);
   params.delete(KEYS.step);
   params.delete(KEYS.version);
+  params.delete(KEYS.lineupSeed);
 }
 
 function clearMatchParams(params: URLSearchParams): void {
@@ -166,4 +182,5 @@ function clearMatchParams(params: URLSearchParams): void {
   params.delete(KEYS.format);
   params.delete(KEYS.picks);
   params.delete(KEYS.version);
+  params.delete(KEYS.lineupSeed);
 }

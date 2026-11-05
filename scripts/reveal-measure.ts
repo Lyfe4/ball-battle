@@ -9,7 +9,7 @@ import { parseArgs } from 'node:util';
 import { BALL_LOOKUP, BALLS } from '../src/sim/balls/index.ts';
 import { getDefinition } from '../src/sim/definitions.ts';
 import { deriveSeed } from '../src/sim/rng.ts';
-import { playToEnd } from '../src/sim/series.ts';
+import { playToEnd } from '../src/sim/series-verify.ts';
 import { createWorld } from '../src/sim/world.ts';
 import { mapOdds, simultaneous, summarise, takeTurns, type Odds } from './reveal-analysis.ts';
 

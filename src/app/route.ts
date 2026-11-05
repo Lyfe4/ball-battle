@@ -3,6 +3,9 @@
 // ever written. Quick-match links (`?a=&b=&seed=`) and series links (`?mode=bo3...`, ADR 0017,
 // 0019) keep their meaning.
 import { parseMatchup, writeMatchParams, type Matchup } from './matchup.ts';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { verifySeries } from '../sim/series-verify.ts';
+import type { DefinitionLookup } from '../sim/types.ts';
 import { parseSeed } from './seed.ts';
 import {
   clearSeriesParams,
@@ -78,8 +81,13 @@ export function writeHomeParams(params: URLSearchParams): void {
   for (const key of [...params.keys()]) params.delete(key);
 }
 
-/** Reads the screen a URL asks for. Never throws: anything it can't use falls back. */
-export function parseRoute(params: URLSearchParams, validIds: readonly string[]): Route {
+/**
+ * Reads the screen a URL asks for. Never throws: anything it can't use falls back. A series link is
+ * replayed only if `verifySeries` (the same check a server runs, ADR 0022) accepts it; otherwise
+ * it opens the lineup step, prefilled with what the link holds, like any other incomplete link.
+ */
+export function parseRoute(params: URLSearchParams, definitions: DefinitionLookup): Route {
+  const validIds = [...definitions.keys()];
   const view = params.get(VIEW)?.trim().toLowerCase();
   if (view === 'pick') return { screen: 'pick', matchup: parseMatchup(params, validIds) };
   if (view === 'manual') {
@@ -90,8 +98,9 @@ export function parseRoute(params: URLSearchParams, validIds: readonly string[])
       chart: params.get(TAB)?.trim().toLowerCase() === 'chart',
     };
   }
-  const link = parseSeriesParams(params, validIds);
-  if (link !== undefined) {
+  const parsed = parseSeriesParams(params, validIds);
+  if (parsed !== undefined) {
+    const link = replayable(parsed, definitions);
     const step =
       link.setup !== undefined ? 'play' : (link.step ?? (link.lineup ? 'lineup' : 'rules'));
     return { screen: 'series', link, step };
@@ -102,4 +111,12 @@ export function parseRoute(params: URLSearchParams, validIds: readonly string[])
     matchup: parseMatchup(params, validIds),
     seed: parseSeed(params.get('seed')),
   };
+}
+
+/** The link as it can be played: its setup dropped (leaving the lineup and format) if invalid. */
+function replayable(link: SeriesLink, definitions: DefinitionLookup): SeriesLink {
+  const { setup } = link;
+  if (setup?.ruleset !== RULESET_VERSION) return link;
+  if (verifySeries(setup, definitions).ok) return link;
+  return { lineup: setup.a, ...(setup.format === undefined ? {} : { format: setup.format }) };
 }

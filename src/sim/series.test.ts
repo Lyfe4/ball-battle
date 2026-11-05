@@ -6,11 +6,8 @@ import {
   attemptSeed,
   isValidLineup,
   MAX_ATTEMPTS,
-  matchWorld,
   nextMatch,
   outcomeOf,
-  playSeries,
-  playToEnd,
   recordOutcome,
   roundSeed,
   scoreOf,
@@ -20,11 +17,13 @@ import {
   type SeriesSetup,
   type SeriesState,
 } from './series.ts';
+import { matchWorld, playSeries, playToEnd } from './series-verify.ts';
 import { deepFreeze } from './test-support.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 const setup: SeriesSetup = deepFreeze({
   ruleset: RULESET_VERSION,
+  opponent: { kind: 'player' },
   seed: 42,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],
@@ -170,6 +169,7 @@ describe('playSeries', () => {
       const state = playSeries(
         {
           ruleset: RULESET_VERSION,
+          opponent: { kind: 'player' },
           seed,
           a: ['speedster', 'brawler', 'storm'],
           b: ['speedster', 'vampire', 'frost'],

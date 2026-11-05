@@ -1,14 +1,8 @@
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import {
-  awaitingPick,
-  matchWorld,
-  playSeries,
-  playToEnd,
-  remainingOf,
-  type SeriesSetup,
-} from '../sim/series.ts';
+import { awaitingPick, remainingOf, type SeriesSetup } from '../sim/series.ts';
+import { matchWorld, playSeries, playToEnd } from '../sim/series-verify.ts';
 import {
   advanceSession,
   pickInSession,
@@ -19,6 +13,7 @@ import {
 
 const setup: SeriesSetup = {
   ruleset: RULESET_VERSION,
+  opponent: { kind: 'player' },
   seed: 77,
   a: ['frost', 'thorns', 'sniper'],
   b: ['venom', 'archer', 'speedster'],

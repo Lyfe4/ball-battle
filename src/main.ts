@@ -38,9 +38,9 @@ const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 
-const ballIds = BALLS.map((ball) => ball.id);
 const navigation = createNavigation();
-const currentRoute = (): Route => parseRoute(new URL(window.location.href).searchParams, ballIds);
+const currentRoute = (): Route =>
+  parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();
 let screen: Screen = initialRoute.screen;
 let matchup: Matchup = 'matchup' in initialRoute ? initialRoute.matchup : DEFAULT_MATCHUP;

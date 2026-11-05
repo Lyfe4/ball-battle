@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
 import { getDefinition } from './definitions.ts';
 import { seedRng } from './rng.ts';
-import { playToEnd } from './series.ts';
+import { playToEnd } from './series-verify.ts';
 import { blue, red, run } from './test-support.ts';
 import type { Vec2 } from './types.ts';
 import { vec2 } from './vec2.ts';

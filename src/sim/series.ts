@@ -1,14 +1,10 @@
 // A best-of-3 series (ADR 0017, docs/vision.md): two lineups of three different balls, first to two
 // round wins. Draft formats (ADR 0019, 0021) decide who plays when: blind order; reveal, then take
 // turns showing first; or loser-picks-next, where the loser of a round picks its next ball after
-// seeing the winner's. Pure
-// and deterministic like the rest of the sim, so a server can replay a series from its setup (seed,
-// lineups, format and picks) to verify a reported result.
-import { getDefinition } from './definitions.ts';
+// seeing the winner's. Pure and deterministic like the rest of the sim, so a server can replay a
+// series from its setup to verify a reported result (series-verify.ts).
 import { deriveSeed, nextFloat } from './rng.ts';
-import { step } from './step.ts';
-import type { DefinitionLookup, MatchResult, WorldState } from './types.ts';
-import { createWorld } from './world.ts';
+import type { MatchResult, WorldState } from './types.ts';
 
 /** Balls per lineup, and so the most rounds a series can take. */
 export const LINEUP_SIZE = 3;
@@ -37,6 +33,17 @@ export type Lineup = readonly [string, string, string];
 export type Format = 'blind' | 'reveal' | 'loser';
 export const FORMATS: readonly Format[] = ['blind', 'reveal', 'loser'];
 
+/**
+ * Who plays side B (ADR 0022):
+ * - a bot, named by its id, whose lineup is what it picks from `lineupSeed` (the series seed, or
+ *   the first series' seed after a rematch), so a verifier can recompute its lineup and picks;
+ * - a player, whose lineup and picks are their own, so only their legality can be checked. Links
+ *   can't express this; it is for a server that knows who played.
+ */
+export type Opponent =
+  | { readonly kind: 'bot'; readonly bot: string; readonly lineupSeed: number }
+  | { readonly kind: 'player' };
+
 /** Everything that decides a series: replaying it needs nothing else. */
 export interface SeriesSetup {
   /** The RULESET_VERSION it is played under (ADR 0022); 0 for a link from before versions. */
@@ -46,6 +53,7 @@ export interface SeriesSetup {
   readonly a: Lineup;
   /** The opponent's lineup (slot B). */
   readonly b: Lineup;
+  readonly opponent: Opponent;
   /** Undefined is `blind`, the format every series had before ADR 0019. */
   readonly format?: Format;
   /** `loser` and `reveal`: every pick made, both sides', in order. A replay takes them from here. */
@@ -245,46 +253,4 @@ export function recordOutcome(state: SeriesState, outcome: Outcome): SeriesState
 export function outcomeOf(result: MatchResult, world: WorldState): Outcome {
   if (result.kind === 'draw') return 'draw';
   return result.winnerId === world.balls[0]?.id ? 'a' : 'b';
-}
-
-/** The opening world of a series match. */
-export function matchWorld(match: NextMatch, definitions: DefinitionLookup): WorldState {
-  return createWorld(match.seed, [
-    getDefinition(definitions, match.a),
-    getDefinition(definitions, match.b),
-  ]);
-}
-
-/** Plays a match to its end, headlessly. Every match ends (ADR 0002), so this terminates. */
-export function playToEnd(world: WorldState, definitions: DefinitionLookup): WorldState {
-  let current = world;
-  while (current.match.status === 'running') current = step(current, definitions).world;
-  return current;
-}
-
-/**
- * The whole series, played headlessly: what a server would run to verify a result. The browser
- * plays the same matches one at a time through `nextMatch`, `recordOutcome` and `recordPick`, so
- * both agree. Picks come from `setup.picks` in order; a missing or unused pick throws.
- */
-export function playSeries(setup: SeriesSetup, definitions: DefinitionLookup): SeriesState {
-  let state = startSeries(setup);
-  const picks = setup.picks ?? [];
-  for (;;) {
-    if (awaitingPick(state) !== undefined) {
-      const pick = picks[state.picks.length];
-      if (pick === undefined) throw new Error('The series needs a pick it was not given');
-      state = recordPick(state, pick);
-      continue;
-    }
-    const match = nextMatch(state);
-    if (match === undefined) break;
-    const end = playToEnd(matchWorld(match, definitions), definitions);
-    if (end.match.status !== 'finished') throw new Error('A match ended without a result');
-    state = recordOutcome(state, outcomeOf(end.match.result, end));
-  }
-  if (picks.length > state.picks.length) {
-    throw new Error('The series was given picks it never used');
-  }
-  return state;
 }

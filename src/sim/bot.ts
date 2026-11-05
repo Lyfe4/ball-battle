@@ -100,6 +100,9 @@ export const randomBot: LineupBot = {
   },
 };
 
+/** Every bot, by id: what a series setup's opponent names (ADR 0022). */
+export const BOTS: ReadonlyMap<string, LineupBot> = new Map([[randomBot.id, randomBot]]);
+
 /** The bot's pick when side B (the bot) is due to pick, else undefined. */
 export function botPick(bot: LineupBot, state: SeriesState): string | undefined {
   if (awaitingPick(state) !== 'b') return undefined;

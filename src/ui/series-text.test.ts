@@ -18,6 +18,7 @@ import {
 const nameOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 const start = startSeries({
   ruleset: RULESET_VERSION,
+  opponent: { kind: 'player' },
   seed: 1,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],

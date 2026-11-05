@@ -8,9 +8,6 @@ import {
   nextBallOf,
   nextMatch,
   outcomeOf,
-  playSeries,
-  playToEnd,
-  matchWorld,
   recordOutcome,
   recordPick,
   remainingOf,
@@ -20,10 +17,12 @@ import {
   type SeriesSetup,
   type SeriesState,
 } from './series.ts';
+import { playSeries, playToEnd, matchWorld } from './series-verify.ts';
 import { deepFreeze } from './test-support.ts';
 
 const loser: SeriesSetup = deepFreeze({
   ruleset: RULESET_VERSION,
+  opponent: { kind: 'player' },
   seed: 7,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],
@@ -108,6 +107,7 @@ describe('loser picks next', () => {
 describe('reveal, then take turns (ADR 0021)', () => {
   const reveal: SeriesSetup = deepFreeze({
     ruleset: RULESET_VERSION,
+    opponent: { kind: 'player' },
     seed: 11,
     a: ['frost', 'thorns', 'sniper'],
     b: ['venom', 'quake', 'brawler'],
@@ -210,6 +210,7 @@ describe('the bot', () => {
   it('answers in reveal only after the player has shown, and from its own balls left', () => {
     const setup: SeriesSetup = {
       ruleset: RULESET_VERSION,
+      opponent: { kind: 'player' },
       seed: 5,
       a: ['speedster', 'vampire', 'archer'],
       b: ['storm', 'frost', 'quake'],

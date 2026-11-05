@@ -4,7 +4,7 @@
 import { BALL_LOOKUP } from '../src/sim/balls/index.ts';
 import { getDefinition } from '../src/sim/definitions.ts';
 import { createStream, deriveSeed } from '../src/sim/rng.ts';
-import { playToEnd } from '../src/sim/series.ts';
+import { playToEnd } from '../src/sim/series-verify.ts';
 import type { Vec2, WorldState } from '../src/sim/types.ts';
 import { scale } from '../src/sim/vec2.ts';
 import { AIMED_STARTS, aimDirection, createWorld } from '../src/sim/world.ts';

@@ -6,13 +6,20 @@ import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
-import type { Format, Lineup, SeriesSetup } from './sim/series.ts';
+import type { Format, Lineup, Opponent, SeriesSetup } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
 import type { BallInfoLink } from './ui/balls/ball-info.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
 import { createAnswerStep } from './ui/series/answer-step.ts';
 import { createRulesStep } from './ui/series/rules-step.ts';
+
+/** The bot whose lineup was just picked from `seed`, so a verifier can pick it again. */
+const botOpponent = (seed: number): Opponent => ({
+  kind: 'bot',
+  bot: randomBot.id,
+  lineupSeed: seed,
+});
 
 export type SetupStep = 'rules' | 'lineup' | 'answer';
 
@@ -96,6 +103,7 @@ export function createSeriesSetup(
         seed,
         a: own,
         b: bot,
+        opponent: botOpponent(seed),
         ...(format === 'blind' ? {} : { format }),
       });
     },
@@ -111,7 +119,17 @@ export function createSeriesSetup(
     onAnswer: (ball) => {
       if (revealed === undefined) return;
       const { seed, bot, own } = revealed;
-      host.start({ ruleset: RULESET_VERSION, seed, a: own, b: bot, format: 'reveal' }, ball);
+      host.start(
+        {
+          ruleset: RULESET_VERSION,
+          seed,
+          a: own,
+          b: bot,
+          opponent: botOpponent(seed),
+          format: 'reveal',
+        },
+        ball,
+      );
     },
   });
 

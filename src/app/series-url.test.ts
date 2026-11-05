@@ -1,7 +1,9 @@
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
-import { playSeries, type SeriesSetup } from '../sim/series.ts';
+import { randomBot } from '../sim/bot.ts';
+import { type SeriesSetup } from '../sim/series.ts';
+import { playSeries } from '../sim/series-verify.ts';
 import {
   clearSeriesParams,
   parseSeriesParams,
@@ -10,11 +12,14 @@ import {
 } from './series-url.ts';
 
 const ids = BALLS.map((ball) => ball.id);
+const SEED = 3_000_000_001;
+/** A series against the bot, as the game sets one up: the bot's lineup picked from the seed. */
 const setup: SeriesSetup = {
   ruleset: RULESET_VERSION,
-  seed: 3_000_000_001,
+  seed: SEED,
   a: ['thorns', 'sniper', 'berserker'],
-  b: ['venom', 'brawler', 'quake'],
+  b: randomBot.pickLineup(SEED, ids),
+  opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: SEED },
 };
 
 const parse = (query: string) => parseSeriesParams(new URLSearchParams(query), ids);
@@ -49,6 +54,7 @@ describe('series URL', () => {
         seed: 9,
         a: ['storm', 'frost', 'venom'],
         b: ['archer', 'quake', 'sniper'],
+        opponent: { kind: 'bot', bot: 'random', lineupSeed: 9 },
       },
     });
   });
@@ -100,14 +106,15 @@ describe('series URL', () => {
 });
 
 describe('series URL, draft formats', () => {
-  // setup.a = thorns, sniper, berserker; setup.b = venom, brawler, quake. Bot shows, player answers,
-  // player shows, bot answers.
+  // Bot shows, player answers, player shows, bot answers. The parser only checks that each pick
+  // is from a lineup; whether it was legal is verifySeries' job.
+  const [b0, b1, b2] = setup.b;
   const reveal: SeriesSetup = {
     ...setup,
     format: 'reveal',
-    picks: ['brawler', 'thorns', 'sniper', 'venom'],
+    picks: [b1, 'thorns', 'sniper', b0],
   };
-  const loser: SeriesSetup = { ...setup, format: 'loser', picks: ['quake'] };
+  const loser: SeriesSetup = { ...setup, format: 'loser', picks: [b2] };
 
   it.each<[string, SeriesSetup]>([
     ['reveal, then take turns, with its four picks', reveal],
@@ -125,7 +132,7 @@ describe('series URL, draft formats', () => {
     const params = new URLSearchParams();
     writeSeriesParams(params, loser);
     expect(params.get('fmt')).toBe('loser');
-    expect(params.get('picks')).toBe('quake');
+    expect(params.get('picks')).toBe(b2);
     const blind = new URLSearchParams();
     writeSeriesParams(blind, setup);
     expect(blind.has('fmt')).toBe(false);
@@ -158,25 +165,38 @@ describe('series URL, draft formats', () => {
   });
 
   it('replays a loser-picks-next series exactly from its link', () => {
-    // Find a seed where side B loses round 1, so the link carries a real pick.
+    // Find a seed where side B (the bot) loses round 1, so the link carries its pick.
     for (let seed = 0; seed < 50; seed++) {
       const base: SeriesSetup = { ...setup, seed, format: 'loser' };
-      const picks = ['brawler'];
-      let played;
-      try {
-        played = playSeries({ ...base, picks }, BALL_LOOKUP);
-      } catch {
-        continue;
+      for (const pick of setup.b) {
+        let played;
+        try {
+          played = playSeries({ ...base, picks: [pick] }, BALL_LOOKUP);
+        } catch {
+          continue;
+        }
+        const params = new URLSearchParams();
+        writeSeriesParams(params, { ...base, picks: [pick] });
+        const fromLink = parseSeriesParams(new URLSearchParams(params.toString()), ids)?.setup;
+        if (fromLink === undefined) throw new Error('expected a series in the link');
+        expect(playSeries(fromLink, BALL_LOOKUP)).toStrictEqual(played);
+        expect(played.picks).toStrictEqual([{ round: 1, side: 'b', ball: pick }]);
+        return;
       }
-      const params = new URLSearchParams();
-      writeSeriesParams(params, { ...base, picks });
-      const fromLink = parseSeriesParams(new URLSearchParams(params.toString()), ids)?.setup;
-      if (fromLink === undefined) throw new Error('expected a series in the link');
-      expect(playSeries(fromLink, BALL_LOOKUP)).toStrictEqual(played);
-      expect(played.picks).toStrictEqual([{ round: 1, side: 'b', ball: 'brawler' }]);
-      return;
     }
     throw new Error('no seed found where the pick applies');
+  });
+
+  it('keeps the seed the bot picked its lineup from after a rematch (bs=), and only then', () => {
+    const rematch: SeriesSetup = { ...setup, seed: 12 };
+    const params = new URLSearchParams();
+    writeSeriesParams(params, rematch);
+    expect(params.get('bs')).toBe(String(SEED));
+    expect(parseSeriesParams(params, ids)).toStrictEqual({ setup: rematch });
+    expect(playSeries(rematch, BALL_LOOKUP).winner).toBeDefined();
+    const first = new URLSearchParams();
+    writeSeriesParams(first, setup);
+    expect(first.has('bs')).toBe(false);
   });
 
   it('names the setup step while a series is set up, and drops it in a whole series link', () => {

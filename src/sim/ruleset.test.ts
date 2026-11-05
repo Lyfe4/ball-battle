@@ -6,20 +6,11 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
-import { botPick, randomBot } from './bot.ts';
+import { randomBot } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
-import {
-  awaitingPick,
-  FORMATS,
-  matchWorld,
-  nextMatch,
-  outcomeOf,
-  playToEnd,
-  recordOutcome,
-  recordPick,
-  remainingOf,
-  startSeries,
-} from './series.ts';
+import { FORMATS } from './series.ts';
+import { playToEnd } from './series-verify.ts';
+import { playLikeTheGame } from './test-support.ts';
 import { createWorld } from './world.ts';
 
 /**
@@ -49,21 +40,17 @@ function fingerprint(): string {
     const a = randomBot.pickLineup(100 + index, ids);
     const b = randomBot.pickLineup(index, ids);
     // The player takes its first remaining ball whenever it picks; the bot picks for itself.
-    let state = startSeries({ ruleset: RULESET_VERSION, seed: index, a, b, format });
-    for (;;) {
-      const due = awaitingPick(state);
-      if (due !== undefined) {
-        const ball = due === 'b' ? botPick(randomBot, state) : remainingOf(state, 'a')[0];
-        if (ball === undefined) throw new Error('No pick');
-        state = recordPick(state, ball);
-        continue;
-      }
-      const next = nextMatch(state);
-      if (next === undefined) break;
-      const end = playToEnd(matchWorld(next, BALL_LOOKUP), BALL_LOOKUP);
-      if (end.match.status !== 'finished') throw new Error('Unfinished match');
-      state = recordOutcome(state, outcomeOf(end.match.result, end));
-    }
+    const state = playLikeTheGame(
+      {
+        ruleset: RULESET_VERSION,
+        opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: index },
+        seed: index,
+        a,
+        b,
+        format,
+      },
+      BALL_LOOKUP,
+    );
     return { rounds: state.rounds, picks: state.picks, winner: state.winner };
   });
   const data = JSON.stringify({ matches, lineups, choices, series });
