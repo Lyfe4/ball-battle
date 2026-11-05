@@ -60,7 +60,16 @@ blind picks. See Decisions below.
      of series chance over bad play, and each side shows first once, so it suits PvP as it stands.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
-   makes cheap.
+   makes cheap. Two rules for it (2026-11-05):
+   - **The server issues the seed, after both players have locked in their lineups.** A client
+     never picks it (today's `generateSeed` is for local play only): a seed known before lock-in
+     lets a player choose a lineup for that seed, and a client-chosen seed can be rerolled until
+     it gives a win.
+   - **A result counts only once the server has re-simulated it** with `verifySeries`
+     (ADR 0022) under the same `RULESET_VERSION` the series was played with. A result from
+     another ruleset is replayed under the server's or rejected, never accepted as reported. The
+     known match results checked in Chromium, Firefox and WebKit (ADR 0023) are what let a
+     browser's fight and the server's re-simulation be the same fight.
 3. **Progression and unlocks.** Unlocks add **variety, not power**: a new ball is a new option in
    the guessing game, never a stronger version of an old one.
 
