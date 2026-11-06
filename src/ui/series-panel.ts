@@ -5,12 +5,15 @@ import {
   nextBallOf,
   nextMatch,
   remainingOf,
+  revealFirst,
   scoreOf,
 } from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
+import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesTrack } from './series/series-track.ts';
+import { createTossStrip } from './series/toss-strip.ts';
 import {
   seriesScreenOf,
   trackOf,
@@ -24,6 +27,7 @@ import {
   linkPickLine,
   pickLine,
   playingLine,
+  revealAnswerLine,
   revealShowLine,
 } from './series-text.ts';
 
@@ -79,9 +83,9 @@ export function createSeriesPanel(
   const result = element('p', 'series-result');
   const track = createSeriesTrack(definitions);
 
-  const banner = element('p', 'series-banner', 'Your pick');
-  banner.setAttribute('aria-hidden', 'true');
-  const bannerFace = element('canvas', 'series-banner-icon');
+  // Reveal's coin toss, over round 1 when the series opens here (a rematch).
+  const toss = createTossStrip();
+  const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
   const pairing = element('div', 'series-pairing');
@@ -103,8 +107,9 @@ export function createSeriesPanel(
     heading,
     status,
     result,
+    toss.element,
     track.element,
-    banner,
+    banner.element,
     picks.element,
     pairing,
     buttons,
@@ -150,7 +155,6 @@ export function createSeriesPanel(
     ball(pairBot, bot, bot !== undefined && bot === you);
   }
 
-  let bannerBall = '';
   let phase: SeriesPhase = 'playing';
   return {
     setVisible(visible) {
@@ -187,21 +191,15 @@ export function createSeriesPanel(
       );
 
       // Your pick: the banner names what is answered, the rows are the options.
-      banner.hidden = !actions.includes('pick');
+      const reveal = formatOf(state.setup) === 'reveal';
+      // The toss stays over round 1 until it is played.
+      toss.element.hidden = !reveal || playing || roundsPlayed > 0 || state.pending.length > 0;
+      if (!toss.element.hidden) toss.show(revealFirst(state.setup.seed), state.setup.seed);
+      banner.element.hidden = !actions.includes('pick');
       picks.element.hidden = !actions.includes('pick');
       if (choice !== undefined) {
         picks.show(choice);
-        const face = choice.kind === 'answer' ? choice.options[0]?.faces[0] : undefined;
-        const bannerKey = `${choice.kind}:${face ?? ''}`;
-        if (bannerKey !== bannerBall) {
-          bannerBall = bannerKey;
-          const known = face === undefined ? undefined : definitions.get(face);
-          if (known !== undefined) drawBallIcon(bannerFace, known, 20);
-          banner.replaceChildren(
-            choice.kind === 'answer' ? 'Your pick: answer ' : 'Your pick: show first',
-            ...(known === undefined ? [] : [bannerFace]),
-          );
-        }
+        banner.show(choice);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
@@ -219,12 +217,13 @@ export function createSeriesPanel(
       if (!finished) setText(share, 'Copy link');
       leave.hidden = finished;
 
-      const reveal = formatOf(state.setup) === 'reveal';
       let text = '';
       if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
       else if (due === 'a' && reveal && choice?.kind === 'show') {
         text = revealShowLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
+      } else if (due === 'a' && reveal) {
+        text = revealAnswerLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
       } else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
       else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);

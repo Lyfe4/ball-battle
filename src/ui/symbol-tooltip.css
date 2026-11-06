@@ -1,0 +1,19 @@
+/* The symbol tooltip (symbol-tooltip.ts): small, flat, one line per symbol, never in the way. */
+.symbol-tooltip {
+  position: fixed;
+  z-index: 10;
+  display: grid;
+  gap: 2px;
+  max-width: 15rem;
+  padding: 4px var(--space-small);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-size: var(--font-size-tiny);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.symbol-tooltip[hidden] {
+  display: none;
+}

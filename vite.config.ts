@@ -44,6 +44,7 @@ export default defineConfig({
           name: 'browsers',
           // The known match results, and flows through the real page (`*.browser.test.ts`).
           include: ['src/golden/*.test.ts', 'src/**/*.browser.test.ts'],
+          exclude: [...configDefaults.exclude, '**/*.wide.browser.test.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -51,6 +52,24 @@ export default defineConfig({
             // There is no page to see: a failure is a list of matches, not a screenshot.
             screenshotFailures: false,
             // V8, SpiderMonkey and JavaScriptCore: every engine a player or a server might run.
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          // Flows that need a desktop screen (a mouse hover, the arena beside a result), at a fixed
+          // size: resizing the viewport during a run upset the session history of later files in
+          // WebKit, so Back left the page.
+          name: 'browsers-wide',
+          include: ['src/**/*.wide.browser.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            screenshotFailures: false,
+            viewport: { width: 1280, height: 800 },
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
         },

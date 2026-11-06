@@ -3,6 +3,7 @@ import type { DefinitionLookup } from '../../sim/types.ts';
 import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { leanOf } from '../balls/matchups.ts';
 import { element } from '../dom.ts';
+import { markSymbol } from '../symbol-tooltip.ts';
 import type { PickChoice } from './series-view.ts';
 
 export interface PickRows {
@@ -55,6 +56,7 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
             const lean = leanOf(ball, face);
             const badge = element('span', 'pick-row-badge', MARKS[lean]);
             badge.dataset['lean'] = lean;
+            markSymbol(badge, lean);
             const holder = element('span', 'pick-row-face');
             // A mirror: the bot's ball drawn lighter, as in the arena.
             holder.append(icon(face, FACE_PX, face === ball), badge);

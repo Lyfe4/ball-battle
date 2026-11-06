@@ -7,6 +7,7 @@ import {
   completeLineup,
   draftCount,
   draftOf,
+  emptySlotText,
   removeFromDraft,
   toggleInDraft,
   type Draft,
@@ -97,7 +98,7 @@ export function createLineupStep(
     actions.onChange(draft);
     slots.forEach((slot, index) => {
       const ball = byId.get(draft[index] ?? '');
-      setText(slot.name, ball?.name ?? 'Empty');
+      setText(slot.name, ball?.name ?? emptySlotText(index, format !== 'reveal'));
       slot.button.classList.toggle('lineup-tray-empty', ball === undefined);
       slot.icon.hidden = ball === undefined;
       if (ball !== undefined) drawBallIcon(slot.icon, ball, TRAY_ICON_PX);

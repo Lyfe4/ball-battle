@@ -26,6 +26,7 @@ import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
+import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const found = document.getElementById(id);
@@ -36,6 +37,8 @@ function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
 }
 
 const stage = getElement('stage', HTMLElement);
+// What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
+installSymbolTooltips();
 const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
@@ -163,6 +166,9 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
       canvas.focus();
     },
     layoutChanged: showControls,
+    redraw: () => {
+      arena.redraw();
+    },
     exitToHome: () => {
       goHome('replace');
     },

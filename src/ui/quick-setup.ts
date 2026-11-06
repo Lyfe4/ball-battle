@@ -7,6 +7,7 @@ import { LEAN_WORDS, MARKS } from './balls/marks.ts';
 import { leanOf } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
+import { markSymbol } from './symbol-tooltip.ts';
 import { createScreenHeader } from './screen-header.ts';
 
 export interface QuickSetupActions {
@@ -111,7 +112,12 @@ export function createQuickSetup(
   const legend = element('p', 'quick-legend');
   legend.setAttribute('aria-hidden', 'true');
   const legendIcon = element('canvas', 'quick-legend-icon');
-  legend.append(`${MARKS.favoured} ${MARKS.unfavoured} vs `, legendIcon);
+  const legendMark = (lean: 'favoured' | 'unfavoured') => {
+    const mark = element('span', '', MARKS[lean]);
+    markSymbol(mark, lean);
+    return mark;
+  };
+  legend.append(legendMark('favoured'), ' ', legendMark('unfavoured'), ' vs ', legendIcon);
 
   const start = element('button', 'hud-button hud-button-primary quick-start', 'Start match');
   start.type = 'button';
@@ -133,6 +139,7 @@ export function createQuickSetup(
       setText(name, ball.name);
       setText(badge, MARKS[lean]);
       badge.dataset['lean'] = lean;
+      markSymbol(badge, lean);
       button.setAttribute('aria-pressed', String(slot === active));
       button.setAttribute(
         'aria-label',

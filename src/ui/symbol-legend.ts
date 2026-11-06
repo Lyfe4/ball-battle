@@ -1,7 +1,7 @@
 import { ruleCuePoints } from '../render/rule-cue.ts';
 import { theme } from '../render/theme.ts';
-import { MARKS } from './balls/marks.ts';
 import { element } from './dom.ts';
+import { SYMBOL_KEYS, SYMBOLS } from './symbols.ts';
 
 export interface SymbolLegend {
   /** The `?` button, for the screen header. */
@@ -10,18 +10,8 @@ export interface SymbolLegend {
   readonly panel: HTMLElement;
 }
 
-/** Every symbol the screens use, said once (ADR 0025): the mark or swatch and its meaning. */
-const ENTRIES: readonly (readonly [symbol: string, meaning: string, swatch?: string])[] = [
-  [MARKS.favoured, 'Strong vs: favoured, wins it more often', 'favoured'],
-  [MARKS.unfavoured, 'Weak vs: unfavoured, loses it more often', 'unfavoured'],
-  [MARKS.even, 'Even matchup (left blank in grids)', 'even'],
-  ['?', 'Not shown yet'],
-  ['', 'Won the round', 'won'],
-  ['', 'Lost the round', 'lost'],
-  ['↻', 'Replayed after a draw'],
-  ['⚡', 'Sudden death: three draws, decided by a coin flip'],
-  ['', 'In a fight: a rule between two balls just kicked in (see each ball)', 'cue'],
-];
+/** Symbols drawn as a swatch (a colour, a ring, the cue) rather than as plain text. */
+const SWATCHES = new Set(['favoured', 'unfavoured', 'even', 'won', 'lost', 'cue']);
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -67,13 +57,15 @@ export function createSymbolLegend(): SymbolLegend {
   panel.hidden = true;
   const list = element('ul', 'symbol-legend-list');
   list.append(
-    ...ENTRIES.map(([symbol, meaning, swatch]) => {
+    ...SYMBOL_KEYS.map((key) => {
+      const { mark: symbol, meaning, legendNote } = SYMBOLS[key];
       const item = element('li', 'symbol-legend-item');
       const mark = element('span', 'symbol-legend-mark', symbol);
       mark.setAttribute('aria-hidden', 'true');
-      if (swatch === 'cue') mark.append(cueMark());
-      else if (swatch !== undefined) mark.dataset['swatch'] = swatch;
-      item.append(mark, element('span', '', meaning));
+      if (key === 'cue') mark.append(cueMark());
+      else if (SWATCHES.has(key)) mark.dataset['swatch'] = key;
+      const words = legendNote === undefined ? meaning : `${meaning} (${legendNote})`;
+      item.append(mark, element('span', '', words));
       return item;
     }),
   );

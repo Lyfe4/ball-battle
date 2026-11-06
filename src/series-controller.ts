@@ -12,6 +12,7 @@ import {
   resolvePicks,
   seriesAddress,
   settleCurrent,
+  showBotBallNow,
   withLinkPicks,
   type SeriesSession,
 } from './app/series-session.ts';
@@ -31,6 +32,12 @@ export interface SeriesHost {
   replaceUrl(write: (params: URLSearchParams) => void): void;
   /** Which controls show has changed (a series started or ended). */
   layoutChanged(): void;
+  /**
+   * Draws the arena's frame again, which updates the scoreboard. The scoreboard updates from the
+   * arena's frames, and the arena stops drawing once a finished match is still, so a change that
+   * puts no new match on the arena (a Reveal series opening on a pick) must ask for one.
+   */
+  redraw(): void;
   /** After a series: set up the next one, with this one's lineup and format kept. */
   newSeries(last: SeriesSetup): void;
   /** Leaves the series for its setup. */
@@ -89,12 +96,14 @@ export function createSeriesController(
       if (session === undefined) return;
       session = resolvePicks(advanceSession(session), randomBot);
       playCurrent();
+      host.redraw();
     },
     onPick: (ball) => {
       if (session === undefined || awaitingPick(session.state) !== 'a') return;
       // In reveal the bot answers the ball just shown; resolvePicks makes its pick.
       session = resolvePicks(pickInSession(session, ball), randomBot);
       playCurrent();
+      host.redraw();
     },
     onRematch: () => {
       if (session !== undefined) start(rematchOf(session.state.setup, generateSeed()));
@@ -138,6 +147,8 @@ export function createSeriesController(
     writeAddress(started);
     host.layoutChanged();
     playCurrent();
+    // A Reveal series can open on a pick, with no match to show: the screen must still change.
+    host.redraw();
   }
 
   return {
@@ -156,6 +167,7 @@ export function createSeriesController(
       // The arena showed something else meanwhile: the round starts again from its seed, so it
       // plays out exactly as it would have. A round already recorded stays recorded.
       if (!ours() && !session.recorded) playCurrent();
+      host.redraw();
     },
     hold() {
       onScreen = false;
@@ -170,7 +182,7 @@ export function createSeriesController(
       // Only the series' own match, on screen, is recorded: never a quick match played meanwhile.
       if (session === undefined || !onScreen || !ours()) return;
       const before = session;
-      session = settleCurrent(session, world);
+      session = showBotBallNow(settleCurrent(session, world), randomBot);
       // Decided: now the link can show both lineups and every pick.
       if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },

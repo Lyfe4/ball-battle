@@ -76,15 +76,24 @@
   cursor: default;
 }
 
-.lineup-tray-unordered .lineup-tray-number {
+/* Reveal sets no order here, and an empty slot says its number in its text. */
+.lineup-tray-unordered .lineup-tray-number,
+.lineup-tray-empty .lineup-tray-number {
   display: none;
 }
 
+/* A filled slot's number, as a badge: the order the balls play in Blind and Loser picks next. */
 .lineup-tray-number {
   position: absolute;
   top: 4px;
-  left: 7px;
-  color: var(--color-text-muted);
+  left: 4px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
   font-size: var(--font-size-tiny);
   font-weight: 700;
 }

@@ -6,6 +6,7 @@ import { botPick, type LineupBot } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import {
   awaitingPick,
+  formatOf,
   nextMatch,
   outcomeOf,
   recordOutcome,
@@ -99,6 +100,22 @@ export function resolvePicks(from: SeriesSession, bot: LineupBot): SeriesSession
     if (pick === undefined) return session;
     session = pickInSession(session, pick);
   }
+}
+
+/**
+ * Reveal (ADR 0029): when the bot shows first in the coming round, it shows at once, while the
+ * finished round is still on screen. Its ball is a seeded random one that needs nothing from the
+ * player, so the screen between rounds can ask for the answer straight away rather than offer a
+ * Play round that would only reveal it. The match on screen stays current and recorded.
+ */
+export function showBotBallNow(session: SeriesSession, bot: LineupBot): SeriesSession {
+  const { state } = session;
+  if (formatOf(state.setup) !== 'reveal' || awaitingPick(state) !== 'b') return session;
+  const round = state.rounds.length;
+  // The player showed first this round: the bot's pick is an answer, made once the round is played.
+  if (state.picks.some((pick) => pick.round === round && pick.side === 'a')) return session;
+  const ball = replayPickDue(session) ?? botPick(bot, state);
+  return ball === undefined ? session : { ...session, state: recordPick(state, ball) };
 }
 
 /**

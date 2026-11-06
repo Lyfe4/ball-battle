@@ -105,10 +105,11 @@ Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-forma
 [ADR 0021](docs/decisions/0021-reveal-take-turns.md)):
 
 - **Blind**: as above, both orders set without seeing the other lineup.
-- **Reveal**: both lineups are revealed, then the sides take turns showing first. Round 1 the bot
-  shows its ball and you answer; round 2 you show first and the bot answers with its best counter;
-  round 3 is what is left. Your choices are worth about 13 points of series chance
-  ([measurements](docs/reveal-measurements.md)).
+- **Reveal**: both lineups are revealed, then the sides take turns showing first. A seeded coin toss
+  decides who shows first in round 1 and the other side answers; in round 2 the other side shows
+  first (the bot answers with its best counter); round 3 is what is left. Your choices are worth
+  about 12 points of series chance whoever wins the toss
+  ([ADR 0029](docs/decisions/0029-reveal-coin-toss.md), [measurements](docs/reveal-measurements.md)).
 - **Loser picks**: after a round, the loser picks its next ball knowing the winner's next one; the
   winner keeps its order. The bot counter-picks from the counter map when it loses.
 
@@ -224,10 +225,12 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0025: Show less, and Back](docs/decisions/0025-show-less-and-back.md)
 , [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md)
 , [ADR 0027: Phone play fixes](docs/decisions/0027-phone-play-fixes.md)
-and [ADR 0028: The counter pass](docs/decisions/0028-counter-pass.md).
+, [ADR 0028: The counter pass](docs/decisions/0028-counter-pass.md)
+, [ADR 0029: Reveal's coin toss](docs/decisions/0029-reveal-coin-toss.md)
+and [ADR 0030: Symbol tooltips and result fixes](docs/decisions/0030-symbol-tooltips-and-result-fixes.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 134.85 kB JS (44.66 kB gzipped), 20.84 kB CSS. First version baseline: 5.05 kB
+Production bundle: 138.32 kB JS (45.79 kB gzipped), 22.53 kB CSS. First version baseline: 5.05 kB
 JS (2.41 kB gzipped).
 
 ## License

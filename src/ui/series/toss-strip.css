@@ -1,0 +1,83 @@
+/*
+ * Reveal's coin toss (ADR 0029): a flat coin that flips three times and lands on the side that
+ * shows first, then the line fades in. Reduced motion shows the landed coin and the line at once.
+ */
+.series-toss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  margin: 0;
+  font-weight: 700;
+}
+
+.series-toss-coin {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  perspective: 120px;
+  transform-style: preserve-3d;
+}
+
+.series-toss-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-tiny);
+  backface-visibility: hidden;
+}
+
+.series-toss-back,
+.series-toss[data-first='b'] .series-toss-face:not(.series-toss-back) {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.series-toss[data-first='b'] .series-toss-back {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.series-toss-back {
+  transform: rotateX(180deg);
+}
+
+.series-toss-flip .series-toss-coin {
+  animation: series-toss-flip 600ms ease-out;
+}
+
+.series-toss-flip .series-toss-line {
+  animation: series-toss-line 200ms ease-out 600ms backwards;
+}
+
+@keyframes series-toss-flip {
+  from {
+    transform: rotateX(0deg) translateY(0);
+  }
+
+  50% {
+    transform: rotateX(540deg) translateY(-10px);
+  }
+
+  to {
+    transform: rotateX(1080deg) translateY(0);
+  }
+}
+
+@keyframes series-toss-line {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .series-toss-flip .series-toss-coin,
+  .series-toss-flip .series-toss-line {
+    animation: none;
+  }
+}

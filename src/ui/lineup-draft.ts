@@ -72,3 +72,12 @@ export function completeLineup(draft: Draft): Lineup | undefined {
     ? [first, second, third]
     : undefined;
 }
+
+/**
+ * What an empty slot says: which slot it is ("Slot 2 · Empty") where the tray sets the order, so a
+ * gap left by taking a ball out reads as the place the next pick goes. Reveal sets no order in the
+ * tray (ADR 0025), so its slots are just "Empty".
+ */
+export function emptySlotText(index: number, ordered: boolean): string {
+  return ordered ? `Slot ${String(index + 1)} · Empty` : 'Empty';
+}

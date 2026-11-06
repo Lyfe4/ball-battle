@@ -2,7 +2,13 @@ import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { randomBot } from '../sim/bot.ts';
-import { awaitingPick, remainingOf, setupWithPicks, type SeriesSetup } from '../sim/series.ts';
+import {
+  awaitingPick,
+  remainingOf,
+  revealFirst,
+  setupWithPicks,
+  type SeriesSetup,
+} from '../sim/series.ts';
 import { playLikeTheGame } from '../sim/test-support.ts';
 import { matchWorld, playSeries, playToEnd, verifySeries } from '../sim/series-verify.ts';
 import {
@@ -14,6 +20,7 @@ import {
   resolvePicks,
   seriesAddress,
   settleCurrent,
+  showBotBallNow,
   type SeriesSession,
 } from './series-session.ts';
 
@@ -97,7 +104,7 @@ describe('series session, picks and the address bar', () => {
   it('makes the bot’s pick at once and stops when the player is due', () => {
     const session = resolvePicks(beginSession(reveal), randomBot);
     expect(session.state.picks).toStrictEqual([
-      { round: 0, side: 'b', ball: randomBot.showFirst(reveal.seed, reveal.b) },
+      { round: 0, side: 'b', ball: randomBot.showFirst(reveal.seed, 0, reveal.b) },
     ]);
     expect(awaitingPick(session.state)).toBe('a');
     expect(replayPickDue(session)).toBeUndefined();
@@ -115,6 +122,37 @@ describe('series session, picks and the address bar', () => {
       expect(++guard).toBeLessThan(20);
     }
     expect(session.state).toStrictEqual(playSeries(decided, BALL_LOOKUP));
+  });
+
+  it('shows the bot’s ball at once when it shows first in round 2, keeping the round on screen', () => {
+    // Seed 5's toss goes to the player, so the bot answers in round 1 and shows first in round 2.
+    const won: SeriesSetup = { ...reveal, seed: 5 };
+    expect(revealFirst(won.seed)).toBe('a');
+    let session = resolvePicks(beginSession(won), randomBot);
+    expect(awaitingPick(session.state)).toBe('a');
+    expect(showBotBallNow(session, randomBot)).toBe(session);
+    session = resolvePicks(pickInSession(session, 'frost'), randomBot);
+    if (session.current === undefined) throw new Error('expected round 1');
+    const end = playToEnd(matchWorld(session.current, BALL_LOOKUP), BALL_LOOKUP);
+    const settled = settleCurrent(session, end);
+    const shown = showBotBallNow(settled, randomBot);
+    expect(shown.current).toBe(settled.current);
+    expect(shown.recorded).toBe(true);
+    expect(awaitingPick(shown.state)).toBe('a');
+    expect(shown.state.picks.at(-1)).toStrictEqual({
+      round: 1,
+      side: 'b',
+      ball: randomBot.showFirst(5, 1, remainingOf(settled.state, 'b')),
+    });
+    // The bot answers in round 2 of a series whose toss it won: nothing to show early.
+    let lost = resolvePicks(beginSession(reveal), randomBot);
+    lost = resolvePicks(pickInSession(lost, 'frost'), randomBot);
+    if (lost.current === undefined) throw new Error('expected round 1');
+    const lostEnd = settleCurrent(
+      lost,
+      playToEnd(matchWorld(lost.current, BALL_LOOKUP), BALL_LOOKUP),
+    );
+    expect(showBotBallNow(lostEnd, randomBot)).toBe(lostEnd);
   });
 
   it('says when the link holds the due pick, so the player is not asked for it', () => {

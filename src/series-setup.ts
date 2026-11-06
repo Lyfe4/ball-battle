@@ -1,14 +1,16 @@
-// Setting up a best-of-3 series (ADR 0017, 0019, 0021), one job per screen: the rules, the lineup
-// and, in reveal, the answer to the ball the bot shows first in round 1. The rules and the lineup are
+// Setting up a best-of-3 series (ADR 0017, 0019, 0021, 0029), one job per screen: the rules, the
+// lineup and, in reveal, round 1's coin toss and the player's first pick (an answer to the bot's
+// shown ball, or the ball they show first). The rules and the lineup are
 // history entries (`?mode=bo3&step=...`), so Back walks back through them; the answer is part of the
 // series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here, in memory
 // only, until the series starts: it is never written to the URL before the series is decided.
 import { generateSeed } from './app/seed.ts';
+import { beginSession, resolvePicks } from './app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { randomBot } from './sim/bot.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
-import type { Format, Lineup, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
+import type { Format, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
@@ -57,10 +59,8 @@ export function createSeriesSetup(
   const ballIds = balls.map((ball) => ball.id);
   let format: Format = 'blind';
   let draft: Draft = [];
-  /** Reveal: the series seed, both lineups and the bot's round-1 ball, while the player answers. */
-  let revealed:
-    | { readonly seed: number; readonly bot: Lineup; readonly own: Lineup; readonly shown: string }
-    | undefined;
+  /** Reveal: the series about to start (seed, both lineups), while the player makes round 1's pick. */
+  let revealed: SeriesSetup | undefined;
 
   const to = (step: SetupStep) => (params: URLSearchParams) => {
     writeSeriesModeParams(params, format, step === 'rules' ? undefined : step);
@@ -94,22 +94,21 @@ export function createSeriesSetup(
       draft = own;
       // The bot picks from the series seed, so the setup (and the link) fully decides the series.
       const seed = generateSeed();
-      const bot = randomBot.pickLineup(seed, ballIds);
+      const setup: SeriesSetup = {
+        ruleset: RULESET_VERSION,
+        seed,
+        a: own,
+        b: randomBot.pickLineup(seed, ballIds),
+        opponent: botOpponent(seed),
+        ...(format === 'blind' ? {} : { format }),
+      };
       if (format === 'reveal') {
-        // The same seeded choice the series makes when it starts, so the ball shown here plays.
-        revealed = { seed, bot, own, shown: randomBot.showFirst(seed, bot) };
+        revealed = setup;
         host.move(to('answer'));
         open('answer');
         return;
       }
-      host.start({
-        ruleset: RULESET_VERSION,
-        seed,
-        a: own,
-        b: bot,
-        opponent: botOpponent(seed),
-        ...(format === 'blind' ? {} : { format }),
-      });
+      host.start(setup);
     },
   });
 
@@ -121,19 +120,7 @@ export function createSeriesSetup(
       });
     },
     onAnswer: (ball) => {
-      if (revealed === undefined) return;
-      const { seed, bot, own } = revealed;
-      host.start(
-        {
-          ruleset: RULESET_VERSION,
-          seed,
-          a: own,
-          b: bot,
-          opponent: botOpponent(seed),
-          format: 'reveal',
-        },
-        ball,
-      );
+      if (revealed !== undefined) host.start(revealed, ball);
     },
   });
 
@@ -161,7 +148,9 @@ export function createSeriesSetup(
       revealed = undefined;
       lineup.open(format, draft);
     } else if (revealed !== undefined) {
-      answer.open(revealed.own, revealed.bot, revealed.shown);
+      // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
+      // choices the series makes when it starts, so what is shown here is what plays.
+      answer.open(resolvePicks(beginSession(revealed), randomBot).state);
     }
   }
 

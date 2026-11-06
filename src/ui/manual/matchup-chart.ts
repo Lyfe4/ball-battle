@@ -4,6 +4,7 @@ import { matchupLine } from '../balls/matchups.ts';
 import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { verdictOf } from '../balls/verdict.ts';
 import { element, setText } from '../dom.ts';
+import { markSymbol } from '../symbol-tooltip.ts';
 import { gridMove } from '../grid-nav.ts';
 
 export interface MatchupChart {
@@ -72,6 +73,7 @@ export function createMatchupChart(
       const button = element('button', 'matchup-button', lean === 'even' ? '' : MARKS[lean]);
       button.type = 'button';
       button.dataset['lean'] = lean;
+      markSymbol(button, lean === 'even' ? undefined : lean);
       button.setAttribute('aria-label', `${ball.name} ${LEAN_WORDS[lean]} ${opponent.name}`);
       button.addEventListener('focus', () => {
         select(row, col);

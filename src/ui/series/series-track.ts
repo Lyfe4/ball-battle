@@ -3,6 +3,7 @@ import type { SeriesState } from '../../sim/series.ts';
 import { scoreOf } from '../../sim/series.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element, setText } from '../dom.ts';
+import { markSymbol } from '../symbol-tooltip.ts';
 import { roundLine, scoreLine, SIDE_NAMES } from '../series-text.ts';
 import type { TrackCell, TrackColumn } from './series-view.ts';
 
@@ -48,11 +49,16 @@ export function createSeriesTrack(lookup: DefinitionLookup): SeriesTrack {
   function cell(content: TrackCell, repeat = false): HTMLElement {
     const node = element('span', 'series-track-cell');
     if (content.result !== undefined) node.dataset['result'] = content.result;
+    markSymbol(node, content.result);
     if (content.ball !== undefined) node.append(icon(content.ball, BALL_PX, repeat));
     else if (content.pool !== undefined) {
       node.classList.add('series-track-pool');
       node.append(...content.pool.map((id) => icon(id, POOL_PX)));
-    } else node.append(element('span', 'series-track-unknown', '?'));
+    } else {
+      const unknown = element('span', 'series-track-unknown', '?');
+      markSymbol(unknown, 'unknown');
+      node.append(unknown);
+    }
     return node;
   }
 
@@ -93,6 +99,10 @@ export function createSeriesTrack(lookup: DefinitionLookup): SeriesTrack {
           const marks = element('span', 'series-track-marks');
           if (column.draws > 0) setText(marks, `↻${column.draws > 1 ? String(column.draws) : ''}`);
           if (column.suddenDeath) setText(marks, '⚡');
+          markSymbol(
+            marks,
+            column.suddenDeath ? 'suddenDeath' : column.draws > 0 ? 'replay' : undefined,
+          );
           return marks;
         }),
       );

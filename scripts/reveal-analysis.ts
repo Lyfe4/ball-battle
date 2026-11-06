@@ -1,4 +1,4 @@
-// Pure analysis for the reveal measurements (docs/reveal-measurements.md, ADR 0021): how much the
+// Pure analysis for the reveal measurements (docs/reveal-measurements.md, ADR 0021, 0029): how much the
 // player's choices are worth in a best-of-3 under each way of setting who plays when. Exact
 // expectations over the bot's choices, given each round's odds; no matches are played here.
 //
@@ -49,7 +49,7 @@ export function simultaneous(you: readonly string[], bot: readonly string[], odd
 }
 
 /**
- * The bot's answer in reveal, round 2 (src/sim/bot.ts): its best counter by the counter map, ties
+ * The bot's answer in reveal, whichever round it answers in (src/sim/bot.ts): its best counter by the counter map, ties
  * at random. Returns each ball it may answer with and how likely.
  */
 export function answers(remaining: readonly string[], shown: string): [string, number][] {
@@ -95,6 +95,55 @@ export function takeTurns(you: readonly string[], bot: readonly string[], odds: 
       }),
     );
   return { best: solve((v) => Math.max(...v)), worst: solve((v) => Math.min(...v)) };
+}
+
+/**
+ * Reveal when the player wins the coin toss (ADR 0029): round 1 the player shows first and the bot
+ * answers (`answers`); round 2 the bot shows a random ball of its two left and the player answers,
+ * knowing the score; round 3 is what is left. The player's best and worst play against that bot.
+ */
+export function playerFirst(you: readonly string[], bot: readonly string[], odds: Odds): Spread {
+  const solve = (choose: (values: number[]) => number): number =>
+    choose(
+      you.map((y1) => {
+        const left = you.filter((id) => id !== y1);
+        return answers(bot, y1).reduce((total, [b1, answerChance]) => {
+          const botLeft = bot.filter((id) => id !== b1);
+          const afterRound1 = (wins: number, losses: number) =>
+            average(
+              botLeft.map((b2) => {
+                const b3 = botLeft.find((id) => id !== b2) ?? '';
+                return choose(
+                  left.map((y2) => {
+                    const y3 = left.find((id) => id !== y2) ?? '';
+                    const q2 = odds(y2, b2);
+                    const q3 = odds(y3, b3);
+                    const next = (w: number, l: number) => (w >= 2 ? 1 : l >= 2 ? 0 : q3);
+                    return q2 * next(wins + 1, losses) + (1 - q2) * next(wins, losses + 1);
+                  }),
+                );
+              }),
+            );
+          const q1 = odds(y1, b1);
+          return total + answerChance * (q1 * afterRound1(1, 0) + (1 - q1) * afterRound1(0, 1));
+        }, 0);
+      }),
+    );
+  return { best: solve((v) => Math.max(...v)), worst: solve((v) => Math.min(...v)) };
+}
+
+/**
+ * Reveal with the coin toss (ADR 0029): a fair coin decides who shows first in round 1, so each
+ * lineup pair is half `takeTurns` (the bot shows first) and half `playerFirst`. The toss is made
+ * before any choice, so the best and the worst play are each the average of the two.
+ */
+export function coinToss(you: readonly string[], bot: readonly string[], odds: Odds): Spread {
+  const botFirst = takeTurns(you, bot, odds);
+  const youFirst = playerFirst(you, bot, odds);
+  return {
+    best: (botFirst.best + youFirst.best) / 2,
+    worst: (botFirst.worst + youFirst.worst) / 2,
+  };
 }
 
 /** Every lineup of three different balls from `roster`. */

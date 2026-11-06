@@ -18,6 +18,8 @@ export interface SeriesScreensHost {
   /** A series started (the screen is now the series being played). */
   started(): void;
   layoutChanged(): void;
+  /** Draws the arena's frame again (which updates the scoreboard). */
+  redraw(): void;
   /** Home in place of this entry: the first step's Back, arriving from a link. */
   exitToHome(): void;
 }
@@ -76,6 +78,9 @@ export function createSeriesScreens(
     },
     layoutChanged: () => {
       host.layoutChanged();
+    },
+    redraw: () => {
+      host.redraw();
     },
     newSeries: (last) => {
       setup.keep(last);
