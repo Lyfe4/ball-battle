@@ -14,6 +14,7 @@ import { initialAppState, seriesRound } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed } from './app/speed.ts';
+import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
@@ -26,6 +27,7 @@ import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
+import { installLegendTips } from './ui/symbol-legend.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -53,6 +55,8 @@ const initialRoute = currentRoute();
 // Remembered per viewer. Reading localStorage itself can throw, hence the getter.
 const storage = () => window.localStorage;
 const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
+const tips = createTips(storage);
+installLegendTips(tips);
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
@@ -260,6 +264,8 @@ const arena = createArena(
     afterTicks: (world) => {
       series.settle(world);
     },
+    tips,
+    teaching: () => router.current() !== 'home',
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // The round screen waits for the Winner sticker's moment (ADR 0033).

@@ -18,6 +18,7 @@ export const venom = defineBall({
   name: 'Venom',
   description: 'Light hits that poison its enemy for over 4 s, chipping away between contacts.',
   color: '#84cc16',
+  ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 76,

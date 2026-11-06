@@ -38,6 +38,7 @@ export const quake = defineBall<QuakeState>({
   name: 'Quake',
   description: 'Every wall it hits sends out a shockwave that stops its enemy aiming.',
   color: '#78716c',
+  ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 71,

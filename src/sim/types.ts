@@ -1,3 +1,4 @@
+import type { AbilityLabel } from './ability-label.ts';
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
 import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
 import type { RuleAppliedEvent, RuleId } from './rules.ts';
@@ -64,6 +65,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
   readonly description: string;
   /** CSS colour used to draw the ball. Part of the ball's identity, not a theme token. */
   readonly color: string;
+  /**
+   * Its ability as a newcomer sees it (ADR 0036): a short name ("Lightning"), used for its hint and
+   * for its damage in "How it was won", and the event that first shows it. Text only: it never
+   * changes a fight. A ball with nothing to point at (the Brawler, a passive like growing) has none.
+   */
+  readonly ability?: AbilityLabel;
   readonly initialAbilityState: S;
   readonly hooks: BallHooks<S>;
   /**
@@ -108,6 +115,8 @@ export type HookName =
   'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken' | 'onKnockedOut';
 
 export type DamageCause = 'contact' | 'ability';
+
+export type { AbilityLabel, AbilitySign } from './ability-label.ts';
 
 /**
  * What delivered ability damage (output only; ADR 0036): a projectile, a zone's strike, a lasting

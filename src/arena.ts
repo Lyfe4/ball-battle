@@ -1,19 +1,28 @@
 // The arena: the match on screen, its battle-feel effects and the frame loop that advances it
 // (ADR 0007). main.ts decides which match to show and which screen is up; this module only plays
 // and draws one match at a time.
-import { advanceFrame, interpolationAlpha, startPlayback, type Playback } from './app/playback.ts';
+import {
+  advanceFrame,
+  interpolationAlpha,
+  skipIntro,
+  startPlayback,
+  type Playback,
+} from './app/playback.ts';
 import { isClockBusy } from './app/presentation-clock.ts';
 import { scaleFrame, type PlaybackSpeed } from './app/speed.ts';
+import type { Tips } from './app/tips.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
 import { interpolateWorld } from './render/interpolate.ts';
 import { createRewinds } from './render/rewind.ts';
+import { createSourceChips } from './render/source-chips.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
+import { createArenaTips } from './ui/arena-tips.ts';
 import { element } from './ui/dom.ts';
 import { createWinnerSticker } from './ui/winner-sticker.ts';
 
@@ -30,6 +39,9 @@ export interface ArenaHost {
    * celebration plays at full brightness (ADR 0033).
    */
   drawn(world: WorldState, resultShown: boolean, celebrated: boolean): void;
+  /** Tips in the arena (ADR 0036), and whether the match on screen is one to teach in. */
+  readonly tips: Tips;
+  teaching(): boolean;
 }
 
 export interface Arena {
@@ -60,6 +72,7 @@ export function createArena(
   const ctx = context;
   const effects = createEffects();
   const rewinds = createRewinds();
+  const sourceChips = createSourceChips();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
@@ -78,6 +91,9 @@ export function createArena(
   failure.hidden = true;
   container.append(failure);
   const sticker = createWinnerSticker(container, lookup);
+  const tips = createArenaTips(container, lookup, host.tips, () => {
+    playback = skipIntro(playback);
+  });
 
   function applyReducedMotion(): void {
     effects.setReducedMotion(reducedMotionQuery.matches);
@@ -108,10 +124,12 @@ export function createArena(
       intro: (index) => introLook(index, now, reduced),
       cue: (ballId) => effects.cue(ballId, now),
       rewinds: rewinds.trails(now),
+      chips: sourceChips.chips(now),
       reducedMotion: reduced,
     });
     // Due just after a knockout's slow-mo, or at once for a time-limit end.
     sticker.update(world, effects.stickerVisible(now));
+    tips.update(drawn, now, playback.clock.introMs);
     host.drawn(world, effects.resultVisible(now), effects.celebrationOver(now));
   }
 
@@ -154,6 +172,8 @@ export function createArena(
       for (const { previous, result } of outcome.ticks) {
         effects.apply(result.events, playback.effectMs);
         rewinds.apply(result.events, playback.effectMs);
+        sourceChips.apply(result.events, playback.effectMs);
+        tips.apply(result.events, result.world, playback.effectMs);
         effects.bounced(wallBounces(previous, result.world), playback.effectMs);
       }
       host.afterTicks(playback.world);
@@ -172,7 +192,9 @@ export function createArena(
         busy ||
         resultAppeared ||
         effects.isActive(playback.effectMs) ||
-        rewinds.isActive(playback.effectMs)
+        rewinds.isActive(playback.effectMs) ||
+        sourceChips.isActive(playback.effectMs) ||
+        tips.isActive(playback.effectMs)
       ) {
         render();
       }
@@ -196,9 +218,11 @@ export function createArena(
     show(world) {
       failed = false;
       failure.hidden = true;
-      playback = startPlayback(world, theme.introMs);
+      // The versus card, when it shows, holds the intro a little longer (presentation time).
+      playback = startPlayback(world, theme.introMs + tips.start(world, host.teaching()));
       effects.reset();
       rewinds.reset();
+      sourceChips.reset();
       lastFrameMs = undefined;
       render();
     },

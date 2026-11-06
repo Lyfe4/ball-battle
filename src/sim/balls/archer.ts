@@ -78,6 +78,7 @@ export const archer = defineBall<ArcherState>({
   name: 'Archer',
   description: 'Weak up close, but shoots an arrow at where its enemy is heading every 2 s.',
   color: '#22d3ee',
+  ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 50,

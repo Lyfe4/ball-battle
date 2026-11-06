@@ -16,6 +16,7 @@ export const frost = defineBall({
   name: 'Frost',
   description: 'Slow and sturdy. Every hit slows its enemy for 3 s.',
   color: '#bae6fd',
+  ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
   maxHealth: 80,

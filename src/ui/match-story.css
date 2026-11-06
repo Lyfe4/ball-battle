@@ -1,0 +1,76 @@
+/*
+ * "How it was won" (ADR 0036): a closed expander under a finished match. Calm, like the platform
+ * screens: flat bars in each ball's colour, its contact hits paler than its ability.
+ */
+.match-story {
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: var(--font-size-small);
+}
+
+.match-story[hidden] {
+  display: none;
+}
+
+.match-story-summary {
+  min-height: var(--tap-target);
+  padding: var(--space-small) var(--space-gap);
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.match-story-body {
+  display: grid;
+  gap: var(--space-gap);
+  padding: 0 var(--space-gap) var(--space-gap);
+}
+
+.match-story-side {
+  display: grid;
+  gap: 4px;
+}
+
+.match-story-head,
+.match-story-sources,
+.match-story-moments {
+  margin: 0;
+}
+
+.match-story-name {
+  font-weight: 700;
+}
+
+.match-story-bar {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-sunken);
+}
+
+.match-story-part {
+  background: var(--ball-color);
+}
+
+.match-story-part[data-ability='false'] {
+  opacity: 0.5;
+}
+
+.match-story-sources {
+  color: var(--color-text-muted);
+}
+
+.match-story-moments {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.match-story-time {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}

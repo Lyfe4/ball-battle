@@ -330,6 +330,15 @@ export const theme = {
   healthBarGap: 10,
   healthBarMinWidth: 76,
   healthTrack: '#0d0a1a',
+
+  /**
+   * The source chip (ADR 0036): a disc in the attacker's colour beside a health pill when unseen
+   * damage lands (poison, a burning patch, reflected spikes), outlined like the pill.
+   */
+  sourceChipRadius: 13,
+  sourceChipGap: 8,
+  sourceChipOutlineWidth: 5,
+  sourceChipPop: 0.3,
   healthHigh: '#5ee385',
   healthMid: '#ffd23f',
   healthLow: '#ff8a4c',

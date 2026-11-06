@@ -21,6 +21,7 @@ export const thorns = defineBall({
   name: 'Thorns',
   description: 'Spiked: every contact hit it takes hurts the attacker back.',
   color: '#16a34a',
+  ability: { name: 'Spikes', shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
   maxHealth: 77,

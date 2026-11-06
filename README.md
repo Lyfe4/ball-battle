@@ -19,6 +19,9 @@ arena until one wins, and every decision is made before the fight starts.
   Reveal (take turns showing first, after a coin toss) and Showdown.
 - **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
   starts.
+- **Teaching in the arena:** a versus card for your first matches, a short label the first time
+  you see each ball's ability, a chip in the attacker's colour for damage you can't see, and "How
+  it was won" after every match ([ADR 0036](docs/decisions/0036-teaching-in-the-arena.md)).
 - **A ball manual and matchup chart**, read from the same data the game runs on, so they never go
   stale.
 - **Every fight is a link.** A match or a whole series replays exactly from its URL.
