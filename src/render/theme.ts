@@ -273,6 +273,12 @@ export const theme = {
   winnerPulseMs: 900,
   /** The result text appears this long after a knockout, once the sequence has played. */
   resultDelayMs: 950,
+  /**
+   * The Winner sticker (ADR 0032) lands this long before the result, after the slow-mo and the
+   * shards: in a series round on a phone the round screen takes over at the result, so the
+   * sticker's moment is the time between.
+   */
+  winnerStickerLeadMs: 750,
   /** Match intro (real ms, under 1.5 s): each ball pops in, then a short hold before the first tick. */
   introMs: 1100,
   introPopMs: 420,

@@ -14,6 +14,7 @@ import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { element } from './ui/dom.ts';
+import { createWinnerSticker } from './ui/winner-sticker.ts';
 
 /** What the arena needs from the page around it. */
 export interface ArenaHost {
@@ -70,6 +71,7 @@ export function createArena(
   failure.setAttribute('role', 'alert');
   failure.hidden = true;
   container.append(failure);
+  const sticker = createWinnerSticker(container, lookup);
 
   function applyReducedMotion(): void {
     effects.setReducedMotion(reducedMotionQuery.matches);
@@ -101,6 +103,9 @@ export function createArena(
       cue: (ballId) => effects.cue(ballId, now),
       reducedMotion: reduced,
     });
+    // Due when the result is at most the sticker's lead away: just after a knockout's slow-mo, or
+    // at once for a time-limit end.
+    sticker.update(world, effects.resultVisible(now + theme.winnerStickerLeadMs));
     host.drawn(world, effects.resultVisible(now));
   }
 
