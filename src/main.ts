@@ -260,9 +260,10 @@ const arena = createArena(
     afterTicks: (world) => {
       series.settle(world);
     },
-    drawn: (world, resultShown) => {
+    drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
-      series.update(world, resultShown);
+      // The round screen waits for the Winner sticker's moment (ADR 0033).
+      series.update(world, celebrated);
       if (router.current() === 'home') home.drawn(resultShown);
     },
   },

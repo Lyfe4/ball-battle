@@ -72,8 +72,11 @@ export interface SeriesController {
   start(setup: SeriesSetup, fromLink?: boolean, firstPick?: string): void;
   /** Records the match on screen once it has finished; safe to call every frame. */
   settle(world: WorldState): void;
-  /** Updates the scoreboard; cheap enough for every frame. */
-  update(world: WorldState, resultShown: boolean): void;
+  /**
+   * Updates the scoreboard; cheap enough for every frame. `celebrated` is true once the round's
+   * result and its Winner sticker have played: only then does the round screen take over.
+   */
+  update(world: WorldState, celebrated: boolean): void;
 }
 
 export function createSeriesController(
@@ -186,9 +189,9 @@ export function createSeriesController(
       // Decided: now the link can show both lineups and every pick.
       if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },
-    update(world, resultShown) {
+    update(world, celebrated) {
       if (session === undefined || !onScreen) return;
-      const settled = ours() ? world.match.status === 'finished' && resultShown : session.recorded;
+      const settled = ours() ? world.match.status === 'finished' && celebrated : session.recorded;
       const shown = panel.update({
         state: session.state,
         current: session.current,

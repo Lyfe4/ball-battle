@@ -23,8 +23,12 @@ export interface ArenaHost {
   readonly speed: () => PlaybackSpeed;
   /** After a frame's ticks: the series records a finished match here. */
   afterTicks(world: WorldState): void;
-  /** After every draw, with the sim's latest world and whether the result is showing. */
-  drawn(world: WorldState, resultShown: boolean): void;
+  /**
+   * After every draw, with the sim's latest world, whether the result is showing, and whether the
+   * Winner sticker's moment is over: a screen that dims or covers the arena waits for that, so the
+   * celebration plays at full brightness (ADR 0033).
+   */
+  drawn(world: WorldState, resultShown: boolean, celebrated: boolean): void;
 }
 
 export interface Arena {
@@ -103,10 +107,9 @@ export function createArena(
       cue: (ballId) => effects.cue(ballId, now),
       reducedMotion: reduced,
     });
-    // Due when the result is at most the sticker's lead away: just after a knockout's slow-mo, or
-    // at once for a time-limit end.
-    sticker.update(world, effects.resultVisible(now + theme.winnerStickerLeadMs));
-    host.drawn(world, effects.resultVisible(now));
+    // Due just after a knockout's slow-mo, or at once for a time-limit end.
+    sticker.update(world, effects.stickerVisible(now));
+    host.drawn(world, effects.resultVisible(now), effects.celebrationOver(now));
   }
 
   /**
@@ -137,6 +140,7 @@ export function createArena(
     if (lastFrameMs !== undefined) {
       const wasBusy = isClockBusy(playback.clock);
       const resultWasShown = effects.resultVisible(playback.effectMs);
+      const wasCelebrated = effects.celebrationOver(playback.effectMs);
       const outcome = advanceFrame(
         playback,
         scaleFrame(nowMs - lastFrameMs, host.speed()),
@@ -155,7 +159,9 @@ export function createArena(
       // effect, so without this the result (and its buttons) would wait for some unrelated redraw.
       const running = playback.world.match.status === 'running';
       const busy = wasBusy || isClockBusy(playback.clock);
-      const resultAppeared = effects.resultVisible(playback.effectMs) !== resultWasShown;
+      const resultAppeared =
+        effects.resultVisible(playback.effectMs) !== resultWasShown ||
+        effects.celebrationOver(playback.effectMs) !== wasCelebrated;
       if (
         running ||
         outcome.ticks.length > 0 ||
