@@ -126,6 +126,13 @@ blind picks. See Decisions below.
   Quake, Necromancer). The **Necromancer**'s minions draw aimed attacks: it beats the Archer and
   Sniper and loses to the Quake (a shockwave clears its minion) and the Berserker (every pop feeds
   its rage). The Sniper and Thorns gain a second prey and the Quake a second predator.
+- **Batch 4** (2026-11-06, ADR 0034) adds three mechanics: the **Chrono** rewinds half a second
+  once a match when knocked out, which undoes one big hit (favoured vs Speedster, Storm, Sniper;
+  the Vampire and Venom are favoured over it); the **Titan** grows and gets heavier, so light
+  hitters lose the trade (vs Speedster, Archer, Venom, Necromancer; Thorns and Inferno over it);
+  the **Inferno** leaves burning patches (vs Ghost, Necromancer, Titan, Thorns; the Speedster and
+  Archer over it). Planned counters the data didn't support (Archer and Sniper over the Titan,
+  Inferno over the Frost) were replaced.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

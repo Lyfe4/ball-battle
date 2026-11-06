@@ -130,3 +130,9 @@ is 7.3 points (was 10.5) and the worst closing speed is 0.373 of the pass-throug
 - **Archer edges Brawler and Vampire** (about 57/43 each).
 
 These replace the counters recorded in ADR 0005 §6 and ADR 0006 §8.
+
+## Amended by ADR 0034 (2026-11-06)
+
+The first size exception: the Titan starts at the standard size and grows to 90 over a match,
+through `radiusOf`, applied at the end of each tick like cruise speed. The identity test lists it
+with its size over a match; every other ball stays standard.

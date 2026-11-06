@@ -132,3 +132,9 @@ Every ball wins 40-60% overall (Storm 49.5%). Turning one of these into a hard c
 - Negative: a third object list in the world, threaded through hook phases like projectiles.
   Zones don't interact with projectiles or with each other, and they don't push balls; any of
   that would be a new decision.
+
+## Amended by ADR 0034 (2026-11-06)
+
+A zone may now last: `spawnZone` takes an optional `linger`, and a lasting zone strikes again on a
+fixed rhythm until it ends (the Inferno's burning patches). Every pulse strikes like a strike, and
+a zone without `linger` still strikes exactly once.
