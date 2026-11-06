@@ -1,4 +1,4 @@
-// The real page in a real browser (`pnpm test:browsers`): a Showdown against the Hard bot set up
+// The real page in a real browser (`pnpm test:browsers`, at desktop size): a Showdown against the Hard bot set up
 // and started live (ADR 0035). The level is chosen on the rules step and remembered; round 1 asks
 // for an opener marked against the bot's whole lineup, with a one-line key, and never names the
 // bot's pick before it is made; picking starts the round with the chosen ball.
