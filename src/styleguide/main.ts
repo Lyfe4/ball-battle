@@ -15,6 +15,8 @@ import { ARENA_SIZE } from '../sim/constants.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
+import { batchFourExtras } from './arena-extras.ts';
+import { titanRadius } from '../sim/balls/titan.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
 
@@ -122,6 +124,8 @@ function phoneArena(): HTMLElement {
   }).map((ball, index) => ({
     ...ball,
     position: spot(index),
+    // The Titan as big as it is this far into a match (ADR 0034).
+    radius: ball.definitionId === 'titan' ? titanRadius(TICK) : ball.radius,
     abilityState: arenaAbilityState(ball),
     // A hurt Berserker, so its cracks show.
     health:
@@ -158,7 +162,11 @@ function phoneArena(): HTMLElement {
     healAmount: (id: string) => (id === healed ? 9 : 0),
     cue: (id: string) => (cued.has(id) ? 0.6 : 0),
   };
-  drawWorld(ctx, { ...world, tick: TICK, balls, minions }, BALL_LOOKUP, view, effects);
+  const { zones, rewinds } = batchFourExtras(balls);
+  drawWorld(ctx, { ...world, tick: TICK, balls, minions, zones }, BALL_LOOKUP, view, {
+    ...effects,
+    rewinds,
+  });
   const figure = document.createElement('figure');
   const caption = document.createElement('figcaption');
   caption.textContent = 'In the arena at phone width (340 px canvas)';
