@@ -4,6 +4,7 @@ import {
   completeLineup,
   draftCount,
   draftOf,
+  emptySlotText,
   removeFromDraft,
   toggleInDraft,
   type Draft,
@@ -81,5 +82,14 @@ describe('lineup draft', () => {
   it('is complete with three balls only', () => {
     expect(completeLineup(['storm', 'frost'])).toBeUndefined();
     expect(completeLineup(['storm', 'frost', 'venom'])).toStrictEqual(['storm', 'frost', 'venom']);
+  });
+
+  it('says which slot an empty one is where the tray sets the order, and not in Reveal', () => {
+    expect([0, 1, 2].map((index) => emptySlotText(index, true))).toStrictEqual([
+      'Slot 1 · Empty',
+      'Slot 2 · Empty',
+      'Slot 3 · Empty',
+    ]);
+    expect(emptySlotText(1, false)).toBe('Empty');
   });
 });
