@@ -116,7 +116,7 @@
   padding: var(--space-small);
   border-radius: var(--radius);
   background: var(--color-selected);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .pick-rows {

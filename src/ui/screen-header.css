@@ -11,9 +11,13 @@
   width: var(--tap-target);
   height: var(--tap-target);
   border-radius: var(--radius);
+  margin-bottom: var(--press-depth);
   background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
   color: var(--color-text);
   font: inherit;
+  /* The chevron ‹ reads as a bracket in the display family, so it keeps the system font. */
+  font-family: var(--font-family-symbol);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -22,7 +26,9 @@
 .screen-title {
   flex: 1;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.375rem;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
 }
 
 /* The symbol legend's ?: round, quiet, a full tap target. */
@@ -30,8 +36,10 @@
   flex: none;
   width: var(--tap-target);
   height: var(--tap-target);
+  margin-bottom: var(--press-depth);
   border-radius: 50%;
   background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
   color: var(--color-text-muted);
   font: inherit;
   font-weight: 700;
@@ -114,6 +122,17 @@
 .symbol-legend-note {
   margin: var(--space-small) 0 0;
   color: var(--color-text-muted);
+}
+
+.screen-back:not(:disabled):active,
+.symbol-legend-toggle:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.screen-back:focus-visible,
+.symbol-legend-toggle:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 
 .screen-title:focus {

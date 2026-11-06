@@ -14,15 +14,39 @@
 .segmented-button {
   min-width: var(--tap-target);
   min-height: var(--tap-target);
+  margin-bottom: var(--press-depth);
   border-radius: var(--radius);
   background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
   color: var(--color-text);
   font: inherit;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
 .segmented-button[aria-pressed='true'] {
   background: var(--color-selected);
-  font-weight: 600;
+}
+
+/* In a match the chosen speed is plain at a glance: the second accent, on its own slab. */
+.speed-toggle .segmented-button[aria-pressed='true'] {
+  background: var(--color-accent-2);
+  box-shadow: 0 var(--press-depth) 0 var(--color-accent-2-slab);
+  color: var(--color-accent-2-text);
+}
+
+.segmented-button:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.segmented-button:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+.speed-toggle .segmented-button[aria-pressed='true']:focus-visible {
+  box-shadow:
+    0 var(--press-depth) 0 var(--color-accent-2-slab),
+    var(--focus-ring);
 }

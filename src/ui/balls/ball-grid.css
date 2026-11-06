@@ -41,8 +41,10 @@
   line-height: 1.2;
 }
 
+/* Bricolage runs wider than the system font: a long name also tightens a little to stay on one line. */
 .ball-tile-name[data-long] {
   font-size: var(--font-size-tiny);
+  letter-spacing: -0.03em;
 }
 
 .ball-tile-note {

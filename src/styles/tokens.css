@@ -5,53 +5,77 @@
  * ball's identity, not the theme.
  */
 :root {
-  /* Palette */
-  --palette-ink-950: #0b0d12;
-  --palette-ink-900: #0f1117;
-  --palette-ink-850: #12151c;
-  --palette-ink-800: #161a23;
-  --palette-ink-700: #1f2532;
-  --palette-ink-600: #2d3446;
-  --palette-grey-400: #8b93a7;
-  --palette-grey-100: #e6e9f0;
-  --palette-blue-500: #3b82f6;
-  --palette-blue-300: #93c5fd;
-  --palette-blue-900: #1d3461;
-  --palette-green-500: #22c55e;
-  --palette-green-400: #4ade80;
-  --palette-red-400: #f87171;
-  --palette-white: #ffffff;
+  /*
+   * Palette: Sticker Pop (ADR 0032). Deep plum ink, warm cream text, a sunny yellow and a hot pink.
+   * The platform screens stay calm (generous space, one family, the accents used sparingly); the
+   * energy goes to the arena and the match moments.
+   */
+  --palette-plum-975: #0d0a1a;
+  --palette-plum-950: #110d21;
+  --palette-plum-900: #17122b;
+  --palette-plum-800: #231c3f;
+  --palette-plum-700: #30285a;
+  --palette-plum-600: #3d3176;
+  --palette-lilac-300: #b9afd9;
+  --palette-cream-50: #fff8ee;
+  --palette-sun-400: #ffd23f;
+  --palette-sun-700: #c99a00;
+  --palette-pink-400: #ff5ca8;
+  --palette-pink-300: #ff8cc4;
+  --palette-pink-800: #b3306f;
+  --palette-green-400: #5ee385;
+  --palette-red-400: #ff7a7a;
+  --palette-ink-text: #1b1430;
 
   /* Roles */
-  --color-page: var(--palette-ink-900);
+  --color-page: var(--palette-plum-900);
   /*
    * Layers are told apart by fill, never by lines: the page, then cards (surface), then what you
    * press (raised); sunken for an empty place to fill, selected for the chosen option.
    */
-  --color-surface: var(--palette-ink-800);
-  --color-raised: var(--palette-ink-700);
-  --color-sunken: var(--palette-ink-850);
-  --color-selected: var(--palette-blue-900);
-  --color-text: var(--palette-grey-100);
-  --color-text-muted: var(--palette-grey-400);
-  --color-accent: var(--palette-blue-500);
-  --color-accent-text: var(--palette-white);
-  --color-focus: var(--palette-blue-300);
-  --color-health-track: var(--palette-ink-950);
-  --color-health-fill: var(--palette-green-500);
-  --color-health-ghost: rgba(255, 255, 255, 0.7);
+  --color-surface: var(--palette-plum-800);
+  --color-raised: var(--palette-plum-700);
+  --color-sunken: var(--palette-plum-950);
+  --color-selected: var(--palette-plum-600);
+  --color-text: var(--palette-cream-50);
+  --color-text-muted: var(--palette-lilac-300);
+  /* The one primary action on a screen: yellow, with dark text. */
+  --color-accent: var(--palette-sun-400);
+  --color-accent-text: var(--palette-ink-text);
+  /* The second accent, used sparingly: the moment the player picks, links and the focus ring. */
+  --color-accent-2: var(--palette-pink-400);
+  --color-accent-2-text: var(--palette-ink-text);
+  --color-focus: var(--palette-pink-300);
+  /*
+   * The slab under something you press (Sticker Pop's chunky buttons): a darker band below it that
+   * a press pushes into. The primary's slab is a darker yellow.
+   */
+  --color-slab: var(--palette-plum-975);
+  --color-accent-slab: var(--palette-sun-700);
+  --color-accent-2-slab: var(--palette-pink-800);
+  /* The Winner sticker's card (ADR 0032), with --color-accent-text on it. */
+  --color-sticker: var(--palette-cream-50);
+  --color-health-track: var(--palette-plum-975);
+  --color-health-fill: var(--palette-green-400);
+  --color-health-ghost: rgba(255, 248, 238, 0.7);
   /* A matchup the counter map favours or doesn't, always shown with a symbol or word as well. */
   --color-favoured: var(--palette-green-400);
   --color-unfavoured: var(--palette-red-400);
   /* A round's winner is ringed and its loser dimmed: the series track and the result. */
-  --color-won: var(--palette-green-400);
+  --color-won: var(--palette-sun-400);
   --ring-won: 0 0 0 2px var(--color-page), 0 0 0 4px var(--color-won);
   --opacity-lost: 0.35;
 
   --space-gutter: 16px;
   --space-gap: 12px;
   --space-small: 8px;
-  --radius: 8px;
+  --radius: 14px;
+  /* Larger cards (the series track, the rules cards, the Winner sticker). */
+  --radius-large: 20px;
+  /* How far a chunky button sits above its slab, and sinks when pressed. */
+  --press-depth: 4px;
+  --shadow-slab: 0 var(--press-depth) 0 var(--color-slab);
+  --shadow-accent-slab: 0 var(--press-depth) 0 var(--color-accent-slab);
   --hud-width: 16rem;
   /* The side panel on a wide screen during setup, wide enough for four ball tiles. */
   --setup-width: 24rem;
@@ -68,10 +92,15 @@
   --tap-target: 44px;
   --font-size-small: 0.875rem;
   --font-size-tiny: 0.75rem;
-  --font-size-display: 2rem;
-  --font-size-hero: 2.75rem;
+  --font-size-display: 2.25rem;
+  --font-size-hero: 3.25rem;
   --font-size-lead: 1.125rem;
-  --font-family: system-ui, sans-serif;
+  /* One family for everything (self-hosted, src/style.css); headings use its heavy weight. */
+  --font-family: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  /* For a glyph the family draws oddly (the Back chevron ‹). */
+  --font-family-symbol: system-ui, sans-serif;
+  --font-weight-display: 800;
+  --letter-spacing-display: -0.025em;
 
   /*
    * Keyboard focus: a thick halo (3 px of page colour, then 3 px of focus colour) drawn with
