@@ -4,7 +4,8 @@
 - Date: 2026-11-05
 - Amends: ADR 0011 (picker), ADR 0017 (series UI), ADR 0019 (draft-format UI)
 - Amended by: ADR 0025 (Back rules, the info card removed, Best of 3 as visuals), ADR 0027 (Best
-  of 3 leads home, Free play, Strong vs / Weak vs, lineup gaps)
+  of 3 leads home, Free play, Strong vs / Weak vs, lineup gaps), ADR 0031 (desktop layouts; no
+  paused match beside setup screens on a desktop)
 
 ## Context
 
