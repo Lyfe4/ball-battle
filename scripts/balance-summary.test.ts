@@ -82,5 +82,18 @@ describe('summarise', () => {
     });
     expect(markdown).toContain('| Thorns | 50.0% | 1 (60.0%) | 0 | 1 (30.0%) | 0 |');
     expect(markdown).toContain('`pnpm balance:summary`');
+    expect(markdown).toContain('## Below target\n');
+    expect(markdown).toContain('None.');
+  });
+
+  it('lists every pair below its target band in the summary file', () => {
+    const summaries = summarise(balls, () => 0.5, pairs);
+    const markdown = summaryMarkdown(summaries, { seeds: 500, ruleset: 3, command: 'x' }, [
+      { pair: 'Storm vs Thorns', intended: 'Storm favoured', rates: '56.7%' },
+      { pair: 'Thorns vs Frost', intended: 'even', rates: '57.1% / 41.6%' },
+    ]);
+    expect(markdown).toContain('| Storm vs Thorns | Storm favoured | 56.7% |');
+    expect(markdown).toContain('| Thorns vs Frost | even | 57.1% / 41.6% |');
+    expect(markdown).not.toContain('None.');
   });
 });

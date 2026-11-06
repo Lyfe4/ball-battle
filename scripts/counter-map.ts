@@ -11,17 +11,25 @@ export {
 } from '../src/sim/counter-map.ts';
 
 /**
- * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`).
- * Favoured: the favoured side wins 62-72% (ADR 0028; 58-70% before). Even: both sides win 45-55%. One pair at 500 seeds has
- * about ±1.6 points of standard error, so:
- * - a result inside the band but within `warnWithin` of an edge is flagged (WARN, passes);
- * - a result outside the band by at most `nearWithin` is a near-miss (NEAR, passes): the noise
- *   allowance ADR 0010 accepted, written into the check;
+ * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`), in
+ * two levels (ADR 0028 addendum): a **target** each pair aims for, and a wider **floor** below
+ * which it fails.
+ * - Favoured: the target is 62-72%; the floor is 58%. The upper edge stays at 72%.
+ * - Even: the target is 45-55% for both sides; the floor is 42-58%.
+ *
+ * One pair at 500 seeds has about ±1.6 points of standard error, so:
+ * - inside the target but within `warnWithin` of an edge is flagged (WARN, passes);
+ * - between the target and the floor is below target (SHORT, printed as a WARN, passes): a pair to
+ *   sharpen, not a failure;
+ * - outside the floor (or above 72%) by at most `nearWithin` is a near-miss (NEAR, passes): the
+ *   noise allowance ADR 0010 accepted, written into the check;
  * - anything further out is a miss (MISS, fails the counter-map target).
  */
 export const COUNTER_BANDS = {
   favoured: [0.62, 0.72],
   even: [0.45, 0.55],
+  favouredFloor: [0.58, 0.72],
+  evenFloor: [0.42, 0.58],
   warnWithin: 0.02,
   nearWithin: 0.02,
 } as const;
@@ -50,22 +58,32 @@ export const SAFE_PICKS: readonly string[] = ['brawler'];
  */
 export const SAFE_PICK_COUNTERS: Readonly<Record<string, string>> = { brawler: 'thorns' };
 
-/** From best to worst. Only `miss` fails the counter-map target. */
-export type CounterVerdict = 'ok' | 'warn' | 'near' | 'miss';
+/**
+ * From best to worst. Only `miss` fails the counter-map target; `short` is a pair inside its floor
+ * but outside its target (printed as a WARN).
+ */
+export type CounterVerdict = 'ok' | 'warn' | 'short' | 'near' | 'miss';
 
-const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'near', 'miss'];
+const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'short', 'near', 'miss'];
+
+const inside = (rate: number, [low, high]: readonly [number, number]): boolean =>
+  rate >= low - EDGE_EPSILON && rate <= high + EDGE_EPSILON;
 
 function inBand(
   rate: number,
-  [low, high]: readonly [number, number],
+  target: readonly [number, number],
+  floor: readonly [number, number],
   nearWithin: number,
 ): CounterVerdict {
-  if (rate < low - EDGE_EPSILON || rate > high + EDGE_EPSILON) {
-    const outside = rate < low ? low - rate : rate - high;
-    return outside <= nearWithin + EDGE_EPSILON ? 'near' : 'miss';
+  if (inside(rate, target)) {
+    const [low, high] = target;
+    const margin = COUNTER_BANDS.warnWithin;
+    return rate < low + margin || rate > high - margin ? 'warn' : 'ok';
   }
-  const margin = COUNTER_BANDS.warnWithin;
-  return rate < low + margin || rate > high - margin ? 'warn' : 'ok';
+  if (inside(rate, floor)) return 'short';
+  const [low, high] = floor;
+  const outside = rate < low ? low - rate : rate - high;
+  return outside <= nearWithin + EDGE_EPSILON ? 'near' : 'miss';
 }
 
 /** The worse of two verdicts. */
@@ -75,8 +93,8 @@ function worse(a: CounterVerdict, b: CounterVerdict): CounterVerdict {
 
 /**
  * Checks one pair's win rates (`xRate` for the entry's x, `yRate` for its y) against its band.
- * For an even pair both sides must be in the even band; the worse verdict counts. `near` and
- * `warn` pass; only `miss` fails. `nearWithin` is how far outside a band still passes as NEAR:
+ * For an even pair both sides must be in the even band; the worse verdict counts. `warn`,
+ * `short` and `near` pass; only `miss` fails. `nearWithin` is how far outside a band still passes as NEAR:
  * the 2 points ADR 0010 accepted for a full run, or `ciAllowance` for a smaller sample.
  */
 export function checkCounter(
@@ -85,10 +103,13 @@ export function checkCounter(
   yRate: number,
   nearWithin: number = COUNTER_BANDS.nearWithin,
 ): CounterVerdict {
-  const check = (rate: number, band: readonly [number, number]) => inBand(rate, band, nearWithin);
-  if (entry.intended === 'x') return check(xRate, COUNTER_BANDS.favoured);
-  if (entry.intended === 'y') return check(yRate, COUNTER_BANDS.favoured);
-  return worse(check(xRate, COUNTER_BANDS.even), check(yRate, COUNTER_BANDS.even));
+  const { favoured, favouredFloor, even, evenFloor } = COUNTER_BANDS;
+  if (entry.intended === 'x') return inBand(xRate, favoured, favouredFloor, nearWithin);
+  if (entry.intended === 'y') return inBand(yRate, favoured, favouredFloor, nearWithin);
+  return worse(
+    inBand(xRate, even, evenFloor, nearWithin),
+    inBand(yRate, even, evenFloor, nearWithin),
+  );
 }
 
 /**

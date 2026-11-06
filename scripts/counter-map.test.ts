@@ -59,50 +59,56 @@ describe('the counter map', () => {
 });
 
 describe('checkCounter', () => {
-  it('checks the favoured side against 62-72%, warning near the edges', () => {
+  it('checks the favoured side against its 62-72% target, warning near the edges', () => {
     expect(checkCounter(favoured, 0.67, 0.32)).toBe('ok');
     expect(checkCounter(favoured, 0.63, 0.36)).toBe('warn');
     expect(checkCounter(favoured, 0.71, 0.28)).toBe('warn');
     expect(checkCounter({ ...favoured, intended: 'y' }, 0.32, 0.67)).toBe('ok');
   });
 
-  it('counts the band edges themselves as in band', () => {
+  it('counts the target edges themselves as in the target', () => {
     expect(checkCounter(favoured, 0.62, 0.38)).toBe('warn');
     expect(checkCounter(favoured, 0.72, 0.28)).toBe('warn');
     expect(checkCounter(even, 0.45, 0.55)).toBe('warn');
   });
 
-  it('calls a favoured result up to 2 points outside its band NEAR, and further out MISS', () => {
-    // Below the band (62%).
-    expect(checkCounter(favoured, 0.615, 0.38)).toBe('near');
-    expect(checkCounter(favoured, 0.6, 0.4)).toBe('near');
-    expect(checkCounter(favoured, 0.5999, 0.4)).toBe('miss');
-    // Above it (72%).
+  it('calls a favoured side between the 58% floor and the target below target, not a miss', () => {
+    expect(checkCounter(favoured, 0.61, 0.39)).toBe('short');
+    expect(checkCounter(favoured, 0.58, 0.42)).toBe('short');
+  });
+
+  it('calls a favoured result up to 2 points outside its floor NEAR, and further out MISS', () => {
+    // Below the floor (58%).
+    expect(checkCounter(favoured, 0.575, 0.42)).toBe('near');
+    expect(checkCounter(favoured, 0.56, 0.44)).toBe('near');
+    expect(checkCounter(favoured, 0.5599, 0.44)).toBe('miss');
+    // Above the target, which is also the floor's top (72%).
     expect(checkCounter(favoured, 0.74, 0.26)).toBe('near');
-    expect(checkCounter(favoured, 0.7401, 0.27)).toBe('miss');
+    expect(checkCounter(favoured, 0.7401, 0.25)).toBe('miss');
   });
 
   it('treats a rate exactly 2 points out as NEAR despite floating-point rounding', () => {
-    // 300/500 = 0.6 and 370/500 = 0.74, computed the way pnpm balance computes rates.
-    expect(checkCounter(favoured, 300 / 500, 200 / 500)).toBe('near');
+    // 280/500 = 0.56, 370/500 = 0.74 and 200/500 = 0.4, computed the way pnpm balance computes rates.
+    expect(checkCounter(favoured, 280 / 500, 220 / 500)).toBe('near');
     expect(checkCounter(favoured, 370 / 500, 130 / 500)).toBe('near');
-    expect(checkCounter(even, 215 / 500, 285 / 500)).toBe('near');
+    expect(checkCounter(even, 200 / 500, 300 / 500)).toBe('near');
   });
 
-  it('needs both sides of an even pair in 45-55%, the worse side deciding', () => {
+  it('needs both sides of an even pair in 45-55% for the target and 42-58% for the floor', () => {
     expect(checkCounter(even, 0.5, 0.49)).toBe('ok');
     expect(checkCounter(even, 0.53, 0.46)).toBe('warn');
-    expect(checkCounter(even, 0.56, 0.43)).toBe('near');
-    expect(checkCounter(even, 0.432, 0.566)).toBe('near');
-    expect(checkCounter(even, 0.5701, 0.4299)).toBe('miss');
-    expect(checkCounter(even, 0.45, 0.4299)).toBe('miss');
-    expect(checkCounter(even, 0.5, 0.44)).toBe('near');
+    expect(checkCounter(even, 0.56, 0.43)).toBe('short');
+    expect(checkCounter(even, 0.426, 0.571)).toBe('short');
+    expect(checkCounter(even, 0.5, 0.44)).toBe('short');
+    expect(checkCounter(even, 0.59, 0.41)).toBe('near');
+    expect(checkCounter(even, 0.6001, 0.3999)).toBe('miss');
+    expect(checkCounter(even, 0.45, 0.3999)).toBe('miss');
   });
 
   it('passes a wider miss as NEAR when given a larger allowance, as the CI check does', () => {
-    expect(checkCounter(favoured, 0.56, 0.44)).toBe('miss');
-    expect(checkCounter(favoured, 0.56, 0.44, 0.087)).toBe('near');
-    expect(checkCounter(favoured, 0.53, 0.47, 0.087)).toBe('miss');
+    expect(checkCounter(favoured, 0.52, 0.48)).toBe('miss');
+    expect(checkCounter(favoured, 0.52, 0.48, 0.087)).toBe('near');
+    expect(checkCounter(favoured, 0.49, 0.51, 0.087)).toBe('miss');
   });
 });
 
