@@ -120,3 +120,101 @@
 .resume-card-score {
   font-variant-numeric: tabular-nums;
 }
+
+/* Desktop (ADR 0031): each step laid out for the space, centred in the sheet. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* Rules: the three formats side by side, Choose lineup under them on the right. */
+  .rules-step {
+    justify-self: center;
+    width: 100%;
+    max-width: 52rem;
+  }
+
+  .rules-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rules-card {
+    align-content: start;
+  }
+
+  .rules-step > .screen-footer {
+    justify-self: end;
+    width: var(--setup-width);
+  }
+
+  /*
+   * Lineup: the picker layout, as in Free play. The tray (with Resume above it when a series is
+   * held) and the main action on the left, the grid on the right.
+   */
+  .lineup-step {
+    grid-template-columns: var(--setup-width) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  .lineup-step > .screen-header {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  .lineup-step > .resume-card {
+    grid-area: 2 / 1;
+  }
+
+  .lineup-step > .lineup-tray {
+    grid-area: 3 / 1;
+  }
+
+  .lineup-step > .screen-footer {
+    grid-area: 4 / 1;
+  }
+
+  .lineup-step > .ball-grid {
+    grid-area: 3 / 2 / -1 / 3;
+  }
+
+  /* With no series held, the tray moves up beside the grid's first row. */
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-tray {
+    grid-row: 2;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .screen-footer {
+    grid-row: 3;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .ball-grid {
+    grid-row: 2 / -1;
+  }
+
+  /* Reveal's round 1: where the series stands on the left, the pick on the right. */
+  .answer-step {
+    justify-self: center;
+    width: 100%;
+    max-width: 56rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  .answer-step > .screen-header {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  .answer-step > .series-toss {
+    grid-area: 2 / 1;
+  }
+
+  .answer-step > .series-track {
+    grid-area: 3 / 1 / -1 / 2;
+  }
+
+  .answer-step > .series-banner {
+    grid-area: 2 / 2;
+  }
+
+  .answer-step > .pick-rows {
+    grid-area: 3 / 2 / -1 / 3;
+  }
+}

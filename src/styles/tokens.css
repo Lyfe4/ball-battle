@@ -55,10 +55,22 @@
   --hud-width: 16rem;
   /* The side panel on a wide screen during setup, wide enough for four ball tiles. */
   --setup-width: 24rem;
+  /*
+   * Desktop (ADR 0031): the widest a setup or reading screen grows, so lines and grids don't
+   * stretch on a large monitor; a short notice stays narrower. The panel beside the arena on a
+   * desktop, wide enough for the series track and pick rows. The space above and below a sheet.
+   */
+  --sheet-width: 64rem;
+  --sheet-narrow: 36rem;
+  --panel-width-wide: 26rem;
+  --space-sheet: clamp(24px, 6vh, 64px);
+  --space-columns: 32px;
   --tap-target: 44px;
   --font-size-small: 0.875rem;
   --font-size-tiny: 0.75rem;
   --font-size-display: 2rem;
+  --font-size-hero: 2.75rem;
+  --font-size-lead: 1.125rem;
   --font-family: system-ui, sans-serif;
 
   /*

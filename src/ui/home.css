@@ -75,3 +75,21 @@
     display: flex;
   }
 }
+
+/*
+ * Desktop (ADR 0031): the demo stays the pitch, so the arena keeps its room; the panel beside it
+ * widens and the name reads as a title.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .stage[data-home] .hud {
+    width: var(--panel-width-wide);
+  }
+
+  .home-title {
+    font-size: var(--font-size-hero);
+  }
+
+  .home-pitch {
+    font-size: var(--font-size-lead);
+  }
+}

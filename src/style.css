@@ -15,6 +15,7 @@
 @import './ui/quick-setup.css';
 @import './ui/home.css';
 @import './ui/manual/manual.css';
+@import './ui/manual/matchup-chart.css';
 @import './ui/outdated.css';
 @import './ui/series/series-setup.css';
 @import './ui/series-panel.css';

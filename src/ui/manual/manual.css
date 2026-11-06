@@ -11,7 +11,8 @@
   gap: var(--space-small);
 }
 
-.ball-detail {
+.ball-detail,
+.ball-detail-group {
   display: grid;
   gap: var(--space-small);
 }
@@ -175,116 +176,6 @@
   white-space: nowrap;
 }
 
-/*
- * The matchup chart: cells are 26 px, or less when the roster needs it, so every column (the
- * header column plus one per ball, set as --chart-columns) fits the phone column without
- * scrolling: 15 columns are about 21 px each at 375 px wide.
- */
-.matchup-chart {
-  --chart-cell: min(
-    26px,
-    calc(
-      (100vw - 2 * var(--space-gutter) - 2px * (var(--chart-columns, 12) + 1)) /
-        var(--chart-columns, 12)
-    )
-  );
-
-  display: grid;
-  gap: var(--space-gap);
-}
-
-.matchup-chart-scroll {
-  overflow-x: auto;
-}
-
-.matchup-table {
-  border-collapse: separate;
-  border-spacing: 2px;
-  margin: 0 auto;
-}
-
-.matchup-caption {
-  padding-bottom: var(--space-small);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-tiny);
-  text-align: left;
-}
-
-.matchup-col,
-.matchup-row,
-.matchup-cell,
-.matchup-corner {
-  width: var(--chart-cell);
-  height: var(--chart-cell);
-  padding: 0;
-  text-align: center;
-}
-
-.matchup-col,
-.matchup-row {
-  border-radius: 4px;
-}
-
-.matchup-col.matchup-on,
-.matchup-on .matchup-row {
-  background: var(--color-raised);
-}
-
-.matchup-icon {
-  margin: auto;
-}
-
-.matchup-button {
-  width: var(--chart-cell);
-  height: var(--chart-cell);
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-tiny);
-  cursor: pointer;
-}
-
-.matchup-button[data-lean='favoured'] {
-  color: var(--color-favoured);
-}
-
-.matchup-button[data-lean='unfavoured'] {
-  color: var(--color-unfavoured);
-}
-
-.matchup-button.matchup-cross {
-  background: var(--color-raised);
-}
-
-/* The selected cell (the chart's one tab stop): the selected fill, like a chosen tile. */
-.matchup-button[tabindex='0'] {
-  background: var(--color-selected);
-  color: var(--color-text);
-}
-
-.matchup-detail {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-small) var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.matchup-detail-headline {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.matchup-detail-reason {
-  margin: 0 0 var(--space-small);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: 1.35;
-}
-
 .ball-detail-text {
   display: grid;
   gap: var(--space-small);
@@ -298,4 +189,85 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-tiny);
   font-weight: 600;
+}
+
+/*
+ * Desktop (ADR 0031). The index is the grid seven across. An entry is three columns, the ball beside
+ * its Strong vs and Weak vs, so a whole entry fits a laptop screen; the steps to its neighbours sit
+ * under the profile. The chart's own desktop layout is in matchup-chart.css.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .stage[data-screen='manual'] .hud {
+    width: 100%;
+  }
+
+  .manual:has(> .manual-index:not([hidden]) > .ball-grid:not([hidden])) {
+    justify-self: center;
+    width: 100%;
+    max-width: 40rem;
+  }
+
+  .manual-entry {
+    grid-template-columns: var(--setup-width) repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  .ball-detail {
+    grid-area: 1 / 1 / -1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+    /* A subgrid's own gap would shift its columns off the entry's: take the entry's. */
+    gap: normal;
+    align-items: start;
+  }
+
+  .ball-detail-profile {
+    grid-area: 1 / 1;
+  }
+
+  .ball-detail-even-group {
+    grid-area: 2 / 1;
+  }
+
+  .ball-detail > .hud-button {
+    grid-area: 3 / 1;
+  }
+
+  .ball-detail-strong-group {
+    grid-area: 1 / 2 / -1 / 3;
+  }
+
+  .ball-detail-weak-group {
+    grid-area: 1 / 3 / -1 / 4;
+  }
+
+  /*
+   * A ball strong vs no one (the Brawler) has no Strong vs column; its Weak vs moves up beside the
+   * profile rather than leaving a column that says nothing under no heading.
+   */
+  .ball-detail-strong-group:has(> .ball-detail-heading[hidden]) {
+    display: none;
+  }
+
+  .ball-detail:has(> .ball-detail-strong-group > .ball-detail-heading[hidden])
+    > .ball-detail-weak-group {
+    grid-column: 2;
+  }
+
+  /* The columns' headings line up with the top of the profile. */
+  .ball-detail-strong-group > .ball-detail-heading,
+  .ball-detail-weak-group > .ball-detail-heading {
+    margin-top: 0;
+  }
+
+  .manual-steps {
+    grid-area: 4 / 1;
+  }
+
+  /* Two tabs needn't span the sheet. */
+  .manual-tabs {
+    width: var(--setup-width);
+  }
 }

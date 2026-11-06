@@ -133,3 +133,11 @@
 .screen-footer > * {
   flex: 1;
 }
+
+/* Desktop (ADR 0031): the footer sits in its column, always in view, so it needn't stick. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .stage[data-setup] .screen-footer {
+    position: static;
+    padding-block: 0;
+  }
+}
