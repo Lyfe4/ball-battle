@@ -54,14 +54,26 @@ export function drawHealthBar(
   const rect = healthBarRect(ball, arenaSize);
   const health = clamp01(fraction);
   const ghost = clamp01(ghostFraction);
+  // A chunky pill (ADR 0032): the dark track, then the ghost and the fill inset inside it. A pill
+  // narrower than its own height would bulge, so a sliver of health is drawn at that width.
+  const pill = (x: number, y: number, width: number, height: number): void => {
+    ctx.beginPath();
+    ctx.roundRect(x, y, Math.max(width, height), height, height / 2);
+    ctx.fill();
+  };
   ctx.fillStyle = theme.healthTrack;
-  ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+  pill(rect.x, rect.y, rect.width, rect.height);
+  const inset = theme.healthBarInset;
+  const inner = { x: rect.x + inset, y: rect.y + inset, width: rect.width - inset * 2 };
+  const innerHeight = rect.height - inset * 2;
   if (ghost > health) {
     ctx.fillStyle = theme.healthGhost;
-    ctx.fillRect(rect.x, rect.y, rect.width * ghost, rect.height);
+    pill(inner.x, inner.y, inner.width * ghost, innerHeight);
   }
-  ctx.fillStyle = healthColor(fraction);
-  ctx.fillRect(rect.x, rect.y, rect.width * health, rect.height);
+  if (health > 0) {
+    ctx.fillStyle = healthColor(fraction);
+    pill(inner.x, inner.y, inner.width * health, innerHeight);
+  }
 }
 
 /** Impact particles: small dots that fly out and fade. */
