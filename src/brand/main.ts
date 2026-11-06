@@ -2,6 +2,7 @@
 // and its link-preview image, drawn with the game's own renderer so they match what players see.
 // Each canvas has a `data-file` naming the file in public/ it becomes; save each canvas as that
 // PNG (the "Save" links, or a headless capture of the canvases) and commit the files.
+import '@fontsource-variable/bricolage-grotesque';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import { drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
@@ -11,7 +12,13 @@ import type { WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 
 /** The page colour (tokens.css --color-page), for icons that must be opaque. */
-const PAGE = '#0f1117';
+const PAGE = '#17122b';
+/** tokens.css --color-text, --color-text-muted and --color-focus (links). */
+const TEXT = '#fff8ee';
+const MUTED = '#b9afd9';
+const LINK = '#ff8cc4';
+/** The game's one type family (src/style.css), loaded before the preview draws its words. */
+const FONT = "'Bricolage Grotesque Variable', system-ui, sans-serif";
 /** The ball the icons are drawn from: the Brawler, the baseline ball. */
 const ICON_BALL = getDefinition(BALL_LOOKUP, 'brawler');
 
@@ -117,11 +124,11 @@ function preview(): HTMLCanvasElement {
   ctx.drawImage(arenaCanvas, 30, 30);
 
   const x = 650;
-  ctx.fillStyle = '#e6e9f0';
-  ctx.font = '800 76px system-ui, sans-serif';
+  ctx.fillStyle = TEXT;
+  ctx.font = `800 76px ${FONT}`;
   ctx.fillText('BallBattle', x, 170);
-  ctx.fillStyle = '#8b93a7';
-  ctx.font = '400 30px system-ui, sans-serif';
+  ctx.fillStyle = MUTED;
+  ctx.font = `400 30px ${FONT}`;
   const lines = [
     'Build a lineup of three balls,',
     'set your order, and watch',
@@ -135,13 +142,14 @@ function preview(): HTMLCanvasElement {
   BALLS.forEach((ball, i) => {
     const node = document.createElement('canvas');
     drawBallIcon(node, ball, icon / Math.min(window.devicePixelRatio || 1, 2));
-    const column = i % 6;
-    const row = Math.floor(i / 6);
+    // Seven to a row: the roster's fourteen in two rows, clear of the address below.
+    const column = i % 7;
+    const row = Math.floor(i / 7);
     ctx.drawImage(node, x + column * (icon + 10), 410 + row * (icon + 10), icon, icon);
   });
 
-  ctx.fillStyle = '#93c5fd';
-  ctx.font = '600 26px system-ui, sans-serif';
+  ctx.fillStyle = LINK;
+  ctx.font = `600 26px ${FONT}`;
   ctx.fillText('battle-ball.netlify.app', x, 580);
   return out;
 }
@@ -157,4 +165,11 @@ function figure(node: HTMLCanvasElement): HTMLElement {
 }
 
 const root = document.getElementById('brand');
-if (root !== null) root.append(...ICONS.map((spec) => figure(icon(spec))), figure(preview()));
+// Canvas text uses whatever font is loaded at the time, so wait for the weights the preview uses.
+void Promise.all(
+  [`800 76px ${FONT}`, `400 30px ${FONT}`, `600 26px ${FONT}`].map((font) =>
+    document.fonts.load(font),
+  ),
+).then(() => {
+  if (root !== null) root.append(...ICONS.map((spec) => figure(icon(spec))), figure(preview()));
+});
