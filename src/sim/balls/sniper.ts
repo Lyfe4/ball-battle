@@ -51,6 +51,7 @@ export const sniper = defineBall<SniperState>({
   name: 'Sniper',
   description: 'Locks onto its enemy, then fires one heavy shot down the line.',
   color: '#818cf8',
+  ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 78,

@@ -32,6 +32,7 @@ export const speedster = defineBall<SpeedsterState>({
   name: 'Speedster',
   description: 'Gains speed and damage off every wall bounce, then cashes it in on a hit.',
   color: '#facc15',
+  ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 800,
   maxHealth: 70,

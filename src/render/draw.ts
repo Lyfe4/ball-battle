@@ -16,7 +16,8 @@ import {
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
-import { drawHealPulse, drawRuleCue } from './draw-cues.ts';
+import { drawHealPulse, drawRuleCue, drawSourceChip } from './draw-cues.ts';
+import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
 import { theme } from './theme.ts';
@@ -55,6 +56,8 @@ export interface FrameEffects {
   readonly cue: (ballId: string) => number;
   /** Rewinds being shown: the Chrono's trail back and its ghost (ADR 0034). */
   readonly rewinds: readonly RewindTrail[];
+  /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
+  readonly chips: readonly SourceChip[];
   /** Holds animated details (the shock ring's crackle, the cue's pop) still. */
   readonly reducedMotion: boolean;
 }
@@ -75,6 +78,7 @@ export const NO_EFFECTS: FrameEffects = {
   intro: () => ({ scale: 1, alpha: 1 }),
   cue: () => 0,
   rewinds: [],
+  chips: [],
   reducedMotion: false,
 };
 
@@ -157,6 +161,13 @@ export function drawWorld(
       const ghost = effects.ghost(ball.id, ball.health);
       drawHealthBar(ctx, ball, ball.health / maxHealth, ghost / maxHealth, size);
     }
+  }
+  // Unseen damage: who dealt it, beside the bar it came off (ADR 0036).
+  for (const { targetId, sourceId, strength } of effects.chips) {
+    const ball = world.balls.find((candidate) => candidate.id === targetId);
+    if (ball === undefined || ball.health <= 0) continue;
+    const color = ownerColor(world.balls, definitions, sourceId);
+    drawSourceChip(ctx, ball, color, strength, effects.reducedMotion, size);
   }
   // Rule cues go on top of everything: they say why something just happened (ADR 0028).
   for (const ball of world.balls) {

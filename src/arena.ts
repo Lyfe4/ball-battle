@@ -10,6 +10,7 @@ import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
 import { interpolateWorld } from './render/interpolate.ts';
 import { createRewinds } from './render/rewind.ts';
+import { createSourceChips } from './render/source-chips.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
@@ -60,6 +61,7 @@ export function createArena(
   const ctx = context;
   const effects = createEffects();
   const rewinds = createRewinds();
+  const sourceChips = createSourceChips();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
@@ -108,6 +110,7 @@ export function createArena(
       intro: (index) => introLook(index, now, reduced),
       cue: (ballId) => effects.cue(ballId, now),
       rewinds: rewinds.trails(now),
+      chips: sourceChips.chips(now),
       reducedMotion: reduced,
     });
     // Due just after a knockout's slow-mo, or at once for a time-limit end.
@@ -154,6 +157,7 @@ export function createArena(
       for (const { previous, result } of outcome.ticks) {
         effects.apply(result.events, playback.effectMs);
         rewinds.apply(result.events, playback.effectMs);
+        sourceChips.apply(result.events, playback.effectMs);
         effects.bounced(wallBounces(previous, result.world), playback.effectMs);
       }
       host.afterTicks(playback.world);
@@ -172,7 +176,8 @@ export function createArena(
         busy ||
         resultAppeared ||
         effects.isActive(playback.effectMs) ||
-        rewinds.isActive(playback.effectMs)
+        rewinds.isActive(playback.effectMs) ||
+        sourceChips.isActive(playback.effectMs)
       ) {
         render();
       }
@@ -199,6 +204,7 @@ export function createArena(
       playback = startPlayback(world, theme.introMs);
       effects.reset();
       rewinds.reset();
+      sourceChips.reset();
       lastFrameMs = undefined;
       render();
     },

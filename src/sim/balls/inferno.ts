@@ -22,6 +22,7 @@ export const inferno = defineBall({
   name: 'Inferno',
   description: 'Leaves a trail of fire that burns enemies who cross it.',
   color: '#fdba74',
+  ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 70,

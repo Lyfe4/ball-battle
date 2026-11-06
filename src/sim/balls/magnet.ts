@@ -36,6 +36,7 @@ export const magnet = defineBall<MagnetState>({
   name: 'Magnet',
   description: 'Every 2 s it pulls its enemy in.',
   color: '#e11d48',
+  ability: { name: 'Pull', shownBy: { kind: 'hook', hook: 'onTick' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 69,

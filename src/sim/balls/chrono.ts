@@ -47,6 +47,7 @@ export const chrono = defineBall<ChronoState>({
   name: 'Chrono',
   description: 'Once a match, a knockout hit rewinds it half a second: the hit is undone.',
   color: '#d4a373',
+  ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 78,

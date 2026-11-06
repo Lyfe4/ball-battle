@@ -15,6 +15,7 @@ export const vampire = defineBall({
   name: 'Vampire',
   description: 'Heals for 45% of the damage it deals.',
   color: '#a855f7',
+  ability: { name: 'Lifesteal', shownBy: { kind: 'healed' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 750,
   maxHealth: 58,

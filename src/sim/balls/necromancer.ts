@@ -52,6 +52,7 @@ export const necromancer = defineBall<NecromancerState>({
   name: 'Necromancer',
   description: 'Raises skeleton minions that pop on its enemy.',
   color: '#4d7c0f',
+  ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 66,

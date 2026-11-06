@@ -37,6 +37,7 @@ export const ghost = defineBall<GhostState>({
   description:
     'Phases out every few seconds: hits, pulls and skulls pass through it, and nothing can aim at it.',
   color: '#c4b5fd',
+  ability: { name: 'Spectral hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 77,
