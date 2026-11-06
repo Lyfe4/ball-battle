@@ -84,6 +84,13 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly phasedOf?: (self: BallView<S>) => boolean;
   /**
+   * The ball's radius on a tick, for a ball whose size changes during a match (the Titan, ADR 0034).
+   * A pure query, like `cruiseSpeed`. Applied at the end of every tick, with cruise speed, and the
+   * ball is kept inside the arena. Its mass is r², so a bigger ball is heavier. Defaults to
+   * `radius`, which is also its size when the match starts.
+   */
+  readonly radiusOf?: (self: BallView<S>, tick: number) => number;
+  /**
    * Share of a status's duration this ball keeps, per kind (ADR 0016): 0.8 wears it off 20% sooner,
    * 0 makes the ball immune. Kinds not listed last their full duration. Plain data, read when the
    * status is applied, so it works the same for actions and zones.

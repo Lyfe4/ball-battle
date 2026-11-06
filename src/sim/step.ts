@@ -10,6 +10,7 @@ import {
 import { applyBounceVariance } from './bounce-variance.ts';
 import { resolveCollisions } from './collision.ts';
 import { applyCruiseSpeed } from './cruise.ts';
+import { applySize } from './size.ts';
 import {
   applyContactDamage,
   defeatsThisTick,
@@ -76,8 +77,9 @@ import type {
  *     onDamageDealt nor onDamageTaken, so nothing can chain or loop.
  * 14. ballDefeated for balls that went from alive to 0 health this tick.
  * 15. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
- *     direction (ADR 0008); slowed balls go slower (ADR 0012). Last, so it reads ability state
- *     and statuses after every hook of the tick; it emits no events.
+ *     direction (ADR 0008); slowed balls go slower (ADR 0012). Then size: a ball that declares
+ *     `radiusOf` takes its radius for this tick and is kept inside the arena (ADR 0034). Last, so
+ *     both read ability state and statuses after every hook of the tick; they emit no events.
  * 16. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
@@ -221,6 +223,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   events.push(...defeatsThisTick(world.balls, balls, events, tick));
 
   balls = applyCruiseSpeed(balls, definitions);
+  balls = applySize(balls, definitions, tick, size);
 
   const match = evaluateMatch(balls, tick, definitions);
   if (match.status === 'finished') {
