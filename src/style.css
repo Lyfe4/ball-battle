@@ -3,6 +3,8 @@
  * (rather than importing each from its module) keeps the order explicit, so a rule never wins or
  * loses because of the order modules happen to load in.
  */
+/* The one type family, self-hosted (font-src 'self'): weights 200-800 on one variable font. */
+@import '@fontsource-variable/bricolage-grotesque';
 @import './styles/tokens.css';
 @import './styles/base.css';
 @import './styles/layout.css';
@@ -21,3 +23,4 @@
 @import './ui/series-panel.css';
 @import './ui/series/toss-strip.css';
 @import './ui/symbol-tooltip.css';
+@import './ui/winner-sticker.css';

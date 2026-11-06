@@ -1,18 +1,57 @@
-/* Buttons: the shared button and its primary variant. */
+/*
+ * Buttons: the shared button and its primary variant. Chunky (ADR 0032): each sits on a slab of
+ * --press-depth and a press pushes it down into it. The slab is part of the button's height, so a
+ * press never moves anything around it.
+ */
 
 .hud-button {
   flex: 1;
   min-height: var(--tap-target);
+  margin-bottom: var(--press-depth);
   border-radius: var(--radius);
   background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
   color: var(--color-text);
   font: inherit;
+  font-weight: 700;
   cursor: pointer;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out,
+    filter 120ms ease-out;
 }
 
 .hud-button-primary {
   background: var(--color-accent);
+  box-shadow: var(--shadow-accent-slab);
   color: var(--color-accent-text);
+  font-weight: 800;
+}
+
+@media (hover: hover) {
+  .hud-button:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+}
+
+.hud-button:not(:disabled):active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+/* The focus halo goes round the button and its slab, so the slab stays put while focused. */
+.hud-button:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+.hud-button-primary:focus-visible {
+  box-shadow: var(--shadow-accent-slab), var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-button {
+    transition: none;
+  }
 }
 
 /*
@@ -35,7 +74,10 @@
   content: ' ›' / '';
 }
 
+/* Disabled: flat on the page, with no slab to press into, in muted text. */
 .hud-button:disabled {
-  opacity: 0.45;
+  background: var(--color-raised);
+  box-shadow: none;
+  color: var(--color-text-muted);
   cursor: default;
 }

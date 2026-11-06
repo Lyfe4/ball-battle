@@ -152,15 +152,28 @@ export function drawWorld(
   }
 }
 
+/**
+ * The court (ADR 0032): a chunky rounded rim around the floor, then the floor and its tonal centre
+ * circle. The rim lies wholly outside [0, size], so a ball touching a wall touches the rim. Flat
+ * fills, no gradients or shadows, so it costs the same on a phone.
+ */
 function drawArena(ctx: CanvasRenderingContext2D, size: number): void {
-  ctx.fillStyle = theme.arenaFill;
-  ctx.fillRect(0, 0, size, size);
+  const rim = theme.arenaBorderWidth;
+  const corner = theme.arenaCornerRadius;
+  ctx.fillStyle = theme.arenaBorder;
+  ctx.beginPath();
+  ctx.roundRect(-rim, -rim, size + rim * 2, size + rim * 2, corner + rim);
+  ctx.fill();
 
-  // Offset by half the line width so the stroke lies entirely outside [0, size].
-  const half = theme.arenaBorderWidth / 2;
-  ctx.strokeStyle = theme.arenaBorder;
-  ctx.lineWidth = theme.arenaBorderWidth;
-  ctx.strokeRect(-half, -half, size + theme.arenaBorderWidth, size + theme.arenaBorderWidth);
+  ctx.fillStyle = theme.arenaFill;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, corner);
+  ctx.fill();
+
+  ctx.fillStyle = theme.arenaCentre;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size * theme.arenaCentreRadius, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 export interface BallLook {

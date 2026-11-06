@@ -1,11 +1,25 @@
 /**
  * Visual tokens for the canvas renderer. Sizes are in world units, so they scale with the arena.
- * Page-level colours live as CSS custom properties in src/style.css.
+ * Page-level colours live as CSS custom properties in src/styles/tokens.css.
  */
 export const theme = {
-  arenaFill: '#161a23',
-  arenaBorder: '#2d3446',
-  arenaBorderWidth: 8,
+  /**
+   * The court (ADR 0032): a deep indigo floor with a tonal centre circle, inside a chunky rounded
+   * rim. Flat fills only, so a frame costs two rounded rectangles and a circle. Every ball's colour
+   * keeps at least 3:1 against both floor tones (arena-contrast.test.ts): the pale ones (Frost,
+   * Ghost, Storm) by their lightness, the dark ones (Necromancer, Quake) by the floor's darkness.
+   */
+  arenaFill: '#1d1640',
+  arenaCentre: '#251c4b',
+  /** The centre circle's radius as a share of the arena's size. */
+  arenaCentreRadius: 0.32,
+  arenaBorder: '#3a2f6e',
+  arenaBorderWidth: 22,
+  /**
+   * The court's corner radius, in world units. No larger than a ball's radius, so a ball wedged
+   * in a corner is still drawn wholly on the court and never over the rim.
+   */
+  arenaCornerRadius: 50,
   ballOutline: 'rgba(0, 0, 0, 0.35)',
   ballOutlineWidth: 4,
   /** Used if a ball's definition is missing, so a bad id is visible rather than invisible. */
@@ -235,11 +249,11 @@ export const theme = {
   squashWall: 0.06,
   squashMs: 150,
   /** The part of a health bar just lost: holds, then drains down to the new health. */
-  healthGhost: 'rgba(255, 255, 255, 0.7)',
+  healthGhost: 'rgba(255, 248, 238, 0.7)',
   ghostHoldMs: 300,
   ghostDrainMs: 450,
   /** Impact particles: a few dots, more for a harder hit, never more than particleCap alive. */
-  particleColor: '#fde68a',
+  particleColor: '#ffe07a',
   particleMin: 2,
   particleMax: 6,
   particleSpeed: 380,
@@ -252,26 +266,37 @@ export const theme = {
   shardCount: 7,
   shardSpeed: 240,
   shardMs: 750,
-  winnerRing: '#ffffff',
+  winnerRing: '#ffd23f',
   winnerRingWidth: 5,
   winnerRingGrowth: 36,
   winnerPulses: 2,
   winnerPulseMs: 900,
   /** The result text appears this long after a knockout, once the sequence has played. */
   resultDelayMs: 950,
+  /**
+   * The Winner sticker (ADR 0032) lands this long before the result, after the slow-mo and the
+   * shards: in a series round on a phone the round screen takes over at the result, so the
+   * sticker's moment is the time between.
+   */
+  winnerStickerLeadMs: 750,
   /** Match intro (real ms, under 1.5 s): each ball pops in, then a short hold before the first tick. */
   introMs: 1100,
   introPopMs: 420,
   introStaggerMs: 160,
   introOvershoot: 0.12,
 
-  healthBarHeight: 12,
+  /**
+   * Health bars are chunky pills (ADR 0032): a dark track with the fill inset by `healthBarInset`,
+   * so the bar has a dark edge on any ball and any floor.
+   */
+  healthBarHeight: 18,
+  healthBarInset: 4,
   healthBarGap: 10,
-  healthBarMinWidth: 70,
-  healthTrack: 'rgba(0, 0, 0, 0.6)',
-  healthHigh: '#22c55e',
-  healthMid: '#eab308',
-  healthLow: '#f97316',
+  healthBarMinWidth: 76,
+  healthTrack: '#0d0a1a',
+  healthHigh: '#5ee385',
+  healthMid: '#ffd23f',
+  healthLow: '#ff8a4c',
 
   /** Caps the backing-store resolution; beyond 2x the extra pixels cost more than they show. */
   maxPixelRatio: 2,

@@ -3,8 +3,8 @@
 // before deploying. security-headers.test.ts keeps netlify.toml in step with this file.
 
 /**
- * Everything the built app loads comes from its own origin: one module script and one stylesheet
- * from /assets, the icons and the web app manifest. Nothing else is allowed. Inline styles set through the CSSOM (element.style) are
+ * Everything the built app loads comes from its own origin: one module script, one stylesheet and
+ * the self-hosted font files from /assets, the icons and the web app manifest. Nothing else is allowed. Inline styles set through the CSSOM (element.style) are
  * not subject to CSP, so the HUD and canvas sizing keep working under style-src 'self'.
  */
 export const CONTENT_SECURITY_POLICY = [
@@ -12,6 +12,7 @@ export const CONTENT_SECURITY_POLICY = [
   "script-src 'self'",
   "style-src 'self'",
   "img-src 'self'",
+  "font-src 'self'",
   "manifest-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",

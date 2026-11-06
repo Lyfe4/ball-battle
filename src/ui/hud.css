@@ -24,8 +24,9 @@
 }
 
 .hud-ball-name {
-  font-weight: 600;
-  color: var(--ball-color);
+  font-weight: 800;
+  /* A text-safe shade of the ball's colour (hud.ts), at least 4.5:1 on the page. */
+  color: var(--ball-text, var(--ball-color));
 }
 
 .hud-ball-health {
@@ -34,10 +35,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A chunky pill (ADR 0032), like the bars over the balls. */
 .hud-health-track {
   grid-column: 1 / -1;
-  height: 6px;
-  border-radius: 3px;
+  height: 12px;
+  border-radius: 999px;
   background: var(--color-health-track);
   overflow: hidden;
 }
@@ -49,6 +51,7 @@
 .hud-health-fill {
   position: relative;
   height: 100%;
+  border-radius: 999px;
   background: var(--ball-color, var(--color-health-fill));
 }
 
@@ -102,7 +105,7 @@
 .hud-ball-outcome {
   color: var(--color-won);
   font-size: var(--font-size-small);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .hud-ball[data-outcome='draw'] .hud-ball-outcome {

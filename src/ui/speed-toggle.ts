@@ -19,4 +19,6 @@ export function createSpeedToggle(
     initial,
     onChange,
   );
+  // The in-match toggle carries the game's energy (ADR 0032); other segmented choices stay calm.
+  root.classList.add('speed-toggle');
 }

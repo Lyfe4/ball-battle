@@ -28,8 +28,8 @@
 .home-title {
   margin: 0;
   font-size: var(--font-size-display);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
   line-height: 1.1;
 }
 
