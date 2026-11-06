@@ -2,17 +2,68 @@
 
 [![CI](https://github.com/Lyfe4/ball-battle/actions/workflows/ci.yml/badge.svg)](https://github.com/Lyfe4/ball-battle/actions/workflows/ci.yml)
 
-**Play it: [battle-ball.netlify.app](https://battle-ball.netlify.app/)**
+**Pick your balls. Watch your plan fight it out.**
 
-A strategy game about building a lineup. Pick your balls, set their order and watch your plan
-fight it out: balls with different abilities bounce around a square arena until one wins. There is
-no control once a fight starts, so the decisions are all in the picking. Against a bot, a Best of 3
-asks you to build and order three balls and read what the other side will play.
+A browser auto-battler about building a lineup: balls with different abilities bounce around an
+arena until one wins, and every decision is made before the fight starts.
 
-Built with TypeScript, Vite and plain Canvas 2D. No game engine, no physics library, no
-framework.
+### ▶ [Play it at battle-ball.netlify.app](https://battle-ball.netlify.app/)
 
-![Home, Free play setup, Best of 3 lineup, a ball's manual entry and the matchup chart, at phone width](docs/images/screens.png)
+![A real match from the live build: the Storm calls down lightning while the Necromancer's skull minion hunts it, ending in a knockout and the Winner sticker](docs/images/battle.webp)
+
+## Features
+
+- **14 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+  laser, a magnet's pull, a ghost that phases, a necromancer's skull minions and more.
+- **Best of 3 against a bot** in three draft formats: Blind, Reveal (take turns showing first, after
+  a coin toss) and Loser picks.
+- **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
+  starts.
+- **A ball manual and matchup chart**, read from the same data the game runs on, so they never go
+  stale.
+- **Every fight is a link.** A match or a whole series replays exactly from its URL.
+- **Phone first**, with a deliberate desktop layout, reduced-motion support and smooth motion at
+  60, 90 and 120 Hz.
+
+## Tech stack
+
+TypeScript (strict), Vite, plain HTML Canvas 2D and plain DOM. No game engine, no physics library,
+no UI framework. Tested with Vitest, in Node and through Playwright in Chromium, Firefox and
+WebKit. ESLint, Prettier, Husky and GitHub Actions. Deployed as a static site on Netlify with a
+strict Content Security Policy.
+
+## Engineering highlights
+
+- **A deterministic simulation, checked across three browser engines.** The game logic is a pure
+  function of the seed and the balls: fixed 60 Hz ticks, a seeded PRNG, and no `Math.sin`,
+  `Math.pow` or other functions whose results can differ between engines (an ESLint rule bans
+  them). 210 recorded matches must come out bit-identical in Node, Chromium, Firefox and WebKit on
+  every push. That is what lets a link replay a fight exactly, and a future server verify a result.
+- **Counters built from mechanics, held by an automated balance suite.** Stats can't make a ball
+  beat one opponent without beating everyone (ADR 0010). So each favoured matchup needs a written
+  mechanical reason, like "lightning shocks the Vampire, and shocked balls heal less". `pnpm balance`
+  plays every matchup headlessly across all CPU cores and checks it against its band. A reduced run
+  gates every pull request in CI.
+- **Ruleset versioning, so shared links never silently change.** Every link records the ruleset it
+  was played under. A test fingerprints the game's behaviour, so any change that could alter a fight
+  fails until the version is bumped. An older link says so instead of replaying a different fight.
+- **Measure ideas before building them.** Letting players aim the launch was prototyped and
+  measured across every matchup. It turned out to be a second blind guess, not a
+  skill, so it was removed. Bigger balls were measured and rejected too. Both write-ups are kept:
+  [aiming](docs/aiming-measurements.md), [bigger balls](docs/bigger-balls-experiment.md).
+- **Decisions are written down.** 33 short architecture decision records in
+  [docs/decisions](docs/decisions/) explain why the code is the way it is, including what was tried
+  and dropped.
+
+## Screens
+
+![Home, the Best of 3 lineup, a round in play, a ball's manual entry and the matchup chart, at phone width](docs/images/screens-phone.jpg)
+
+| A round on a desktop                                                 | A manual entry on a desktop                                                  |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| ![A Best of 3 round at desktop width](docs/images/round-desktop.jpg) | ![The Magnet's manual entry at desktop width](docs/images/entry-desktop.jpg) |
+
+## How it plays
 
 The home screen plays a demo match behind the pitch. Its main button, **Best of 3 vs bot**, is the
 game; **Free play** lets you choose both balls of one match, to try things out. Every screen is designed for a phone first and has a
@@ -25,7 +76,7 @@ The **Ball manual** lists every ball with what it does and who it is strong and 
 the reason, and a **matchup chart** of the whole counter map. Both are read from the ball
 definitions and the counter map, so they never go stale.
 
-Pick two balls and watch them fight. They collide elastically and deal damage scaled by how hard
+In a match, two balls collide elastically and deal damage scaled by how directly
 they hit; the match ends by knockout or at a 60-second time limit.
 
 | Ball        | Ability                                                                            |
@@ -227,11 +278,14 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0027: Phone play fixes](docs/decisions/0027-phone-play-fixes.md)
 , [ADR 0028: The counter pass](docs/decisions/0028-counter-pass.md)
 , [ADR 0029: Reveal's coin toss](docs/decisions/0029-reveal-coin-toss.md)
-and [ADR 0030: Symbol tooltips and result fixes](docs/decisions/0030-symbol-tooltips-and-result-fixes.md).
+, [ADR 0030: Symbol tooltips and result fixes](docs/decisions/0030-symbol-tooltips-and-result-fixes.md)
+, [ADR 0031: Desktop layouts](docs/decisions/0031-desktop-layouts.md)
+, [ADR 0032: The Sticker Pop restyle](docs/decisions/0032-sticker-pop-restyle.md)
+and [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 138.32 kB JS (45.79 kB gzipped), 22.53 kB CSS. First version baseline: 5.05 kB
-JS (2.41 kB gzipped).
+Production bundle: 141.20 kB JS (46.90 kB gzipped), 31.92 kB CSS (6.34 kB gzipped), and the
+self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License
 
