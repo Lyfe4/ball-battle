@@ -17,6 +17,8 @@ export const MAX_ATTEMPTS = 3;
 const ROUND_SALT = 0x5e7105;
 const ATTEMPT_SALT = 0xa77e3b7;
 const SUDDEN_DEATH_SALT = 0x5dde47;
+/** Reveal's coin toss for who shows first in round 1 (ADR 0029). */
+const TOSS_SALT = 0x70557055;
 
 export type Side = 'a' | 'b';
 export type Lineup = readonly [string, string, string];
@@ -24,9 +26,10 @@ export type Lineup = readonly [string, string, string];
 /**
  * How the order of each lineup is decided (ADR 0019):
  * - `blind`: each side sets its order without seeing the other's lineup (ADR 0017).
- * - `reveal` (ADR 0021): both lineups are revealed, then the sides take turns showing first. Round
- *   1: side B (the bot) shows its ball, then side A answers. Round 2: A shows first, then B
- *   answers. Round 3 is the ball each side has left. Every choice is a pick, recorded in order.
+ * - `reveal` (ADR 0021, 0029): both lineups are revealed, then the sides take turns showing first.
+ *   A seeded coin toss picks who shows first in round 1 while the other answers; in round 2 the
+ *   other side shows first. Round 3 is the ball each side has left. Every choice is a pick,
+ *   recorded in order.
  * - `loser`: each side sets an order blind; after a round, the loser picks its next ball from what
  *   it has left, having seen the winner's next ball, while the winner keeps its order.
  */
@@ -151,18 +154,31 @@ export function nextBallOf(state: SeriesState, side: Side): string | undefined {
 }
 
 /**
- * Who shows first in each round of a `reveal` series, then who answers (ADR 0021). Round 3 has no
- * picks: each side plays the ball it has left.
+ * Reveal's coin toss (ADR 0029): the side that shows first in round 1. Seeded from the series seed
+ * alone, so a link (which holds the seed) replays it and a verifier recomputes it.
  */
-export const REVEAL_TURNS: readonly (readonly Side[])[] = [
-  ['b', 'a'],
-  ['a', 'b'],
-];
+export function revealFirst(seriesSeed: number): Side {
+  return nextFloat(deriveSeed([seriesSeed, TOSS_SALT])).value < 0.5 ? 'a' : 'b';
+}
+
+/**
+ * Who shows first in each round of a `reveal` series, then who answers (ADR 0021, 0029): the toss
+ * winner shows first in round 1 and answers in round 2. Round 3 has no picks: each side plays the
+ * ball it has left.
+ */
+export function revealTurnsOf(setup: SeriesSetup): readonly (readonly Side[])[] {
+  const first = revealFirst(setup.seed);
+  const second = otherSide(first);
+  return [
+    [first, second],
+    [second, first],
+  ];
+}
 
 /**
  * The side that must pick its ball before the next round, if any. In a `loser` series, the loser
  * of the last round, while it still has a choice (two or more balls left) and hasn't picked. In a
- * `reveal` series, whoever's turn it is in the round (REVEAL_TURNS), until both have picked.
+ * `reveal` series, whoever's turn it is in the round (`revealTurnsOf`), until both have picked.
  */
 export function awaitingPick(state: SeriesState): Side | undefined {
   const format = formatOf(state.setup);
@@ -170,7 +186,7 @@ export function awaitingPick(state: SeriesState): Side | undefined {
   if (format === 'reveal') {
     const round = state.rounds.length;
     const picked = (side: Side) => state.picks.some((p) => p.round === round && p.side === side);
-    return REVEAL_TURNS[round]?.find((side) => !picked(side));
+    return revealTurnsOf(state.setup)[round]?.find((side) => !picked(side));
   }
   if (format !== 'loser') return undefined;
   const last = state.rounds.at(-1);

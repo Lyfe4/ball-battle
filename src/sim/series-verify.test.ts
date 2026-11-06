@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
 import { randomBot } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
-import { setupWithPicks, type Format, type SeriesSetup } from './series.ts';
+import { revealFirst, setupWithPicks, type Format, type SeriesSetup } from './series.ts';
 import { playSeries, verifySeries } from './series-verify.ts';
 import { playLikeTheGame } from './test-support.ts';
 
@@ -38,12 +38,31 @@ const reasonOf = (setup: SeriesSetup) => {
 describe('verifySeries', () => {
   it('accepts every series the game plays, in every format, with the state the game reached', () => {
     for (const format of ['blind', 'reveal', 'loser'] as const) {
-      for (const seed of [1, 2, 3]) {
+      // Seeds 1-4 give Reveal's toss to the bot, 5 and 6 to the player.
+      for (const seed of [1, 2, 3, 5, 6]) {
         const setup = decided(format, seed);
         const verdict = verifySeries(setup, BALL_LOOKUP);
         expect(verdict.ok, `${format} ${String(seed)}`).toBe(true);
         expect(verdict.ok && verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
       }
+    }
+  });
+
+  it('replays Reveal’s coin toss from the seed, and refuses picks in the other turn order', () => {
+    for (const [seed, first] of [
+      [4, 'b'],
+      [5, 'a'],
+    ] as const) {
+      expect(revealFirst(seed)).toBe(first);
+      const setup = decided('reveal', seed);
+      const { picks } = playSeries(setup, BALL_LOOKUP);
+      expect(picks.map((pick) => pick.side).slice(0, 2)).toStrictEqual(
+        first === 'a' ? ['a', 'b'] : ['b', 'a'],
+      );
+      const [one, two, ...rest] = setup.picks ?? [];
+      if (one === undefined || two === undefined) throw new Error('Expected picks');
+      // The same picks as if the toss had gone the other way.
+      expect(reasonOf({ ...setup, picks: [two, one, ...rest] })).not.toBe('ok');
     }
   });
 

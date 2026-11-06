@@ -19,14 +19,14 @@ export interface LineupBot {
   /** Three different ids from `roster`, in order. The same seed always gives the same lineup. */
   pickLineup(seed: number, roster: readonly string[]): Lineup;
   /**
-   * Reveal (ADR 0021), round 1: the ball it shows first, from its own lineup. It has nothing to
-   * react to yet, so a seeded random choice is the fair one: any rule the player could learn would
-   * hand them the answer.
+   * Reveal (ADR 0021, 0029): the ball it shows first in round `round`, from the balls it has left.
+   * It has nothing to react to, so a seeded random choice is the fair one: any rule the player could
+   * learn would hand them the answer.
    */
-  showFirst(seed: number, own: Lineup): string;
+  showFirst(seed: number, round: number, remaining: readonly string[]): string;
   /**
-   * Reveal, round 2: its answer to the ball the opponent showed first, from the balls it has left:
-   * its best counter by the counter map (favoured, else even, else unfavoured).
+   * Reveal: its answer to the ball the opponent showed first in round `round`, from the balls it has
+   * left: its best counter by the counter map (favoured, else even, else unfavoured).
    */
   answer(seed: number, round: number, remaining: readonly string[], shown: string): string;
   /**
@@ -51,8 +51,8 @@ function asLineup(ids: readonly string[]): Lineup {
 }
 
 /**
- * Picks three different balls uniformly at random, in a random order. In reveal (ADR 0021) it shows
- * a random ball first in round 1 and answers the player's round-2 ball with its best counter. When
+ * Picks three different balls uniformly at random, in a random order. In reveal (ADR 0021, 0029)
+ * it shows a random ball when it shows first and answers with its best counter when it answers. When
  * it loses a round in loser-picks-next and may pick its next ball, it picks a counter to the
  * winner's next ball if the counter map gives it one (at random among several), otherwise any
  * ball it has left.
@@ -72,9 +72,9 @@ export const randomBot: LineupBot = {
     }
     return asLineup(picked);
   },
-  showFirst(seed, own) {
-    const random = createStream(deriveSeed([seed, SHOW_SALT]));
-    const choice = own[Math.floor(random() * own.length)];
+  showFirst(seed, round, remaining) {
+    const random = createStream(deriveSeed([seed, SHOW_SALT, round]));
+    const choice = remaining[Math.floor(random() * remaining.length)];
     if (choice === undefined) throw new Error('No ball to show');
     return choice;
   },
@@ -110,7 +110,7 @@ export function botPick(bot: LineupBot, state: SeriesState): string | undefined 
   if (formatOf(state.setup) === 'reveal') {
     const shown = state.picks.find((pick) => pick.round === round && pick.side === 'a');
     return shown === undefined
-      ? bot.showFirst(state.setup.seed, state.setup.b)
+      ? bot.showFirst(state.setup.seed, round, remainingOf(state, 'b'))
       : bot.answer(state.setup.seed, round, remainingOf(state, 'b'), shown.ball);
   }
   const winnersNext = nextBallOf(state, otherSide('b'));

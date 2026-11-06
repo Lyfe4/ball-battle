@@ -11,6 +11,7 @@ import {
   recordOutcome,
   recordPick,
   remainingOf,
+  revealFirst,
   setupWithPicks,
   startSeries,
   type Outcome,
@@ -180,9 +181,9 @@ describe('the bot', () => {
     const own = randomBot.pickLineup(3, ids);
     const shown = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
-      const ball = randomBot.showFirst(seed, own);
+      const ball = randomBot.showFirst(seed, 0, own);
       expect(own).toContain(ball);
-      expect(randomBot.showFirst(seed, own)).toBe(ball);
+      expect(randomBot.showFirst(seed, 0, own)).toBe(ball);
       shown.add(ball);
     }
     expect(shown.size).toBe(3);
@@ -207,25 +208,48 @@ describe('the bot', () => {
     expect(checked).toBeGreaterThan(1000);
   });
 
-  it('answers in reveal only after the player has shown, and from its own balls left', () => {
-    const setup: SeriesSetup = {
-      ruleset: RULESET_VERSION,
-      opponent: { kind: 'player' },
-      seed: 5,
-      a: ['speedster', 'vampire', 'archer'],
-      b: ['storm', 'frost', 'quake'],
-      format: 'reveal',
-    };
+  const revealSetup = (seed: number): SeriesSetup => ({
+    ruleset: RULESET_VERSION,
+    opponent: { kind: 'player' },
+    seed,
+    a: ['speedster', 'vampire', 'archer'],
+    b: ['storm', 'frost', 'quake'],
+    format: 'reveal',
+  });
+
+  it('won the toss: shows first in round 1, answers the player in round 2', () => {
+    // Seed 4's toss goes to side B.
+    const setup = revealSetup(4);
+    expect(revealFirst(setup.seed)).toBe('b');
     let state = startSeries(setup);
     const first = botPick(randomBot, state);
-    expect(first).toBe(randomBot.showFirst(5, setup.b));
+    expect(first).toBe(randomBot.showFirst(4, 0, setup.b));
     state = recordPick(state, first ?? '');
     expect(botPick(randomBot, state)).toBeUndefined();
     state = recordOutcome(recordPick(state, 'vampire'), 'a');
     expect(botPick(randomBot, state)).toBeUndefined();
     state = recordPick(state, 'speedster');
     const left = remainingOf(state, 'b');
-    expect(botPick(randomBot, state)).toBe(randomBot.answer(5, 1, left, 'speedster'));
+    expect(botPick(randomBot, state)).toBe(randomBot.answer(4, 1, left, 'speedster'));
+  });
+
+  it('lost the toss: answers the player in round 1, shows first in round 2', () => {
+    // Seed 5's toss goes to side A.
+    const setup = revealSetup(5);
+    expect(revealFirst(setup.seed)).toBe('a');
+    let state = startSeries(setup);
+    expect(awaitingPick(state)).toBe('a');
+    expect(botPick(randomBot, state)).toBeUndefined();
+    state = recordPick(state, 'vampire');
+    const answer = botPick(randomBot, state);
+    expect(answer).toBe(randomBot.answer(5, 0, setup.b, 'vampire'));
+    state = recordOutcome(recordPick(state, answer ?? ''), 'b');
+    expect(awaitingPick(state)).toBe('b');
+    const shown = botPick(randomBot, state);
+    expect(shown).toBe(randomBot.showFirst(5, 1, remainingOf(state, 'b')));
+    state = recordPick(state, shown ?? '');
+    expect(awaitingPick(state)).toBe('a');
+    expect(botPick(randomBot, state)).toBeUndefined();
   });
 
   it('picks a counter to the winner’s next ball whenever the counter map has one', () => {

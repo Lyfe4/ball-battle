@@ -12,6 +12,7 @@ import {
   resolvePicks,
   seriesAddress,
   settleCurrent,
+  showBotBallNow,
   withLinkPicks,
   type SeriesSession,
 } from './app/series-session.ts';
@@ -170,7 +171,7 @@ export function createSeriesController(
       // Only the series' own match, on screen, is recorded: never a quick match played meanwhile.
       if (session === undefined || !onScreen || !ours()) return;
       const before = session;
-      session = settleCurrent(session, world);
+      session = showBotBallNow(settleCurrent(session, world), randomBot);
       // Decided: now the link can show both lineups and every pick.
       if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },

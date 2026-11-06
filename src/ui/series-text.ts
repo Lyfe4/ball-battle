@@ -44,6 +44,16 @@ export function revealShowLine(round: number, botLeft: readonly string[], nameOf
   return `Round ${String(round + 1)}: you show first. Pick your ball; the bot answers with its best counter from ${left}.`;
 }
 
+/** Reveal: the bot showed first; the player answers. */
+export function revealAnswerLine(round: number, shown: string, nameOf: NameOf): string {
+  return `Round ${String(round + 1)}: the bot shows its ${nameOf(shown)} first. Pick your answer.`;
+}
+
+/** Reveal's coin toss (ADR 0029), as the strip shows it: who shows first in round 1. */
+export function tossLine(first: Side): string {
+  return first === 'a' ? 'You show first' : 'Bot shows first';
+}
+
 /** Loser picks next, the player lost: what they are picking against. */
 export function pickLine(round: number, winnersNext: string, nameOf: NameOf): string {
   return `You lost round ${String(round)}. The bot plays its ${nameOf(winnersNext)} next: pick your ball to face it.`;
