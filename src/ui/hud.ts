@@ -2,6 +2,7 @@ import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
 import { readableOn } from '../render/contrast.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
+import { createMatchStory } from './match-story.ts';
 import { describeResult } from './result-text.ts';
 
 export interface HudActions {
@@ -76,14 +77,18 @@ export function createHud(
   newMatch.addEventListener('click', actions.onNewMatch);
   buttons.append(replay, newMatch);
 
-  root.append(list, result, buttons);
+  // How it was won (ADR 0036), under a finished quick match; a series tells each round itself.
+  const story = createMatchStory(definitions);
+  root.append(list, result, buttons, story.element);
   let seriesMode = false;
+  let start: WorldState | undefined;
 
   return {
     setSeriesMode(on) {
       seriesMode = on;
     },
     setMatch(world) {
+      start = world;
       list.replaceChildren();
       rows.clear();
       world.balls.forEach((ball, index) => {
@@ -145,6 +150,7 @@ export function createHud(
       }
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
       buttons.hidden = !finished || seriesMode;
+      story.show(finished && !seriesMode ? start : undefined);
     },
   };
 }

@@ -6,12 +6,15 @@ import {
   remainingOf,
   revealFirst,
   scoreOf,
+  type SeriesState,
 } from '../sim/series.ts';
-import type { DefinitionLookup } from '../sim/types.ts';
+import { matchWorld } from '../sim/series-verify.ts';
+import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesTrack } from './series/series-track.ts';
+import { createMatchStory } from './match-story.ts';
 import { createSymbolLegend } from './symbol-legend.ts';
 import { createTossStrip } from './series/toss-strip.ts';
 import {
@@ -105,6 +108,9 @@ export function createSeriesPanel(
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
+  // How the round just played was won (ADR 0036), between rounds and at the end.
+  const story = createMatchStory(definitions);
+
   const pairing = element('div', 'series-pairing');
   pairing.setAttribute('aria-hidden', 'true');
   const pairYou = element('span', 'series-pairing-ball');
@@ -133,6 +139,7 @@ export function createSeriesPanel(
     pairing,
     buttons,
     share,
+    story.element,
   );
   exit.replaceChildren(leave);
 
@@ -195,6 +202,7 @@ export function createSeriesPanel(
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
       setText(about, aboutLine(state.setup));
+      story.show(playing ? undefined : lastRoundStart(state, definitions));
       track.update(state, trackOf(state, playing ? current : undefined));
 
       const due = playing || linkState !== undefined ? undefined : awaitingPick(state);
@@ -252,4 +260,21 @@ export function createSeriesPanel(
       return phase;
     },
   };
+}
+
+/** The opening world of the last play of the round just finished, if one has. */
+const lastStarts = new WeakMap<object, WorldState>();
+function lastRoundStart(state: SeriesState, definitions: DefinitionLookup): WorldState | undefined {
+  const last = state.rounds.at(-1);
+  const seed = last?.seeds.at(-1);
+  if (last === undefined || seed === undefined) return undefined;
+  // The same object for the same round, so the story isn't reset every frame.
+  const known = lastStarts.get(last);
+  if (known !== undefined) return known;
+  const start = matchWorld(
+    { round: last.round, attempt: 0, seed, a: last.a, b: last.b },
+    definitions,
+  );
+  lastStarts.set(last, start);
+  return start;
 }
