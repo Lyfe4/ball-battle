@@ -125,7 +125,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
 `docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
 `docs/decisions/0033-arena-polish.md`, `docs/decisions/0034-chrono-titan-inferno.md` and
-`docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`).
+`docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`) and
+`docs/decisions/0036-teaching-in-the-arena.md`.
 
 ## Workflow
 
@@ -224,6 +225,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   player forward (or the result screen's buttons). A series screen renders only the actions of
   `seriesScreenOf`, and `no-dead-end.test.ts` walks every format, outcome order and pick, live and
   from a link; a new state or format must pass it.
+- **Teach in the arena, once** (ADR 0036). What a newcomer needs is shown at the moment it happens
+  and read from sim events (a ball's `ability.shownBy`, a damage event's `via`), never guessed from
+  event order; tips show once per device (`src/app/tips.ts`) and can be turned off in the legend.
+  A new ball with an ability to point at names it and the event that shows it.
 - **Show less by default** (ADR 0025). Information appears when the player wants it (on a tap, a
   `<details>` expander or a "more" link); anything shown is concise; visuals and symbols (ball
   icons, vs layouts, highlights, ▲ ▼ =) beat sentences wherever they're clear. Any symbol must be
