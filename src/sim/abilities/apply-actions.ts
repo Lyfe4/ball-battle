@@ -17,6 +17,7 @@ import type {
   AbilityAction,
   BallState,
   DamageEvent,
+  DamageVia,
   DefinitionLookup,
   ProjectileState,
   SimEvent,
@@ -72,6 +73,8 @@ export function applyActions(
   definitions: DefinitionLookup,
   tick: number,
   arenaSize: number,
+  /** What delivers any damage these actions deal, stamped on its events (output only, ADR 0036). */
+  via?: DamageVia,
 ): ActionResult {
   const next = [...scene.balls];
   const projectiles = [...scene.projectiles];
@@ -112,6 +115,7 @@ export function applyActions(
             healthAfter,
             multiplier: 1,
             survivedLethal: false,
+            ...(via === undefined ? {} : { via }),
           });
           return { ...target, health: healthAfter };
         });
@@ -256,7 +260,7 @@ export function applyActions(
 
 /**
  * Ability damage from `ownerId` to one ball, through the same path as the `damage` action. Used
- * by projectile hits and zone strikes. `damage` is the event, or undefined if nothing was removed
+ * by projectile hits, zone strikes, minions and poison, each naming itself as `via`. `damage` is the event, or undefined if nothing was removed
  * (the target was already defeated, or the amount was 0).
  */
 export function dealAbilityDamage(
@@ -266,6 +270,7 @@ export function dealAbilityDamage(
   amount: number,
   definitions: DefinitionLookup,
   tick: number,
+  via: DamageVia,
 ): { readonly balls: readonly BallState[]; readonly damage: DamageEvent | undefined } {
   const result = applyActions(
     sceneOf(balls),
@@ -275,6 +280,7 @@ export function dealAbilityDamage(
     tick,
     // A damage action never uses the arena size.
     Infinity,
+    via,
   );
   const damage = result.events.find((event) => event.type === 'damage');
   return { balls: result.balls, damage };

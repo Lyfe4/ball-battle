@@ -78,6 +78,7 @@ export function resolveZones(
         zone.damage,
         definitions,
         tick,
+        zone.endTick === undefined ? 'zone' : 'zonePulse',
       );
       current = result.balls;
       if (result.damage === undefined) continue;
