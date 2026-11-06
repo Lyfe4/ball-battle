@@ -115,7 +115,26 @@ The weakest pairs, on the centre circle and then the floor:
 The pale balls stand out by a wide margin. The dark ones are about where they were on the old
 floor, and each keeps its darker `ballOutline` as well.
 
-### 6. Brand images
+### 6. Ball-coloured text is readable
+
+The HUD names each ball in its own colour. As text on the page, three are too dark to read at
+WCAG's 4.5:1: the Necromancer (3.63), the Quake (3.78) and the Magnet (3.86).
+
+- **The fix.** `readableOn` (`src/render/contrast.ts`) gives the least lightened shade of a colour,
+  towards white so it keeps its hue, that reaches 4.5:1 on a background. A colour that already
+  does is left exactly as it is.
+- **Where it applies.** The HUD sets it as `--ball-text` against the page's `--color-page`, so the
+  names become 4.86, 4.61 and 4.54. The health bar, the balls and every drawing keep the ball's
+  own colour.
+- **Tests.**
+  - `arena-contrast.test.ts` holds every ball as text, and its mirror-match shade, to 4.5:1 on the
+    page colour read from `tokens.css`.
+  - `hud-text.browser.test.ts` measures the names on the real page in three engines. It failed at
+    3.63 with the shade removed.
+- The HUD's name is the only text in a ball's colour today. Any new one should use `readableOn`
+  too.
+
+### 7. Brand images
 
 - `/brand.html` draws with the new palette and font. The link preview's roster is now seven to a
   row: fourteen balls in rows of six ran into the address.
@@ -173,6 +192,3 @@ The bot's lineup is random, so the series screens show different balls before an
 - **Negative:** one runtime dependency, the font package. It holds only font files and CSS.
 - **Negative:** the sticker covers the middle of the arena at a quick match's result. The last
   frame matters less than who won, and Replay is one tap away.
-- **Open:** the Necromancer's name in the HUD (its own dark green on the page) is 3.6:1. It is bold
-  but below 4.5:1 for text, as it was on the old page. Ball names take their ball's colour by design
-  (ADR 0020), so a fix belongs to a wider look at ball-coloured text.

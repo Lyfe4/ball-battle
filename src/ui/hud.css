@@ -25,7 +25,8 @@
 
 .hud-ball-name {
   font-weight: 800;
-  color: var(--ball-color);
+  /* A text-safe shade of the ball's colour (hud.ts), at least 4.5:1 on the page. */
+  color: var(--ball-text, var(--ball-color));
 }
 
 .hud-ball-health {

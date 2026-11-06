@@ -1,3 +1,24 @@
+import { lighten } from './ball-colors.ts';
+
+/** WCAG 2's minimum contrast for normal-size text. */
+export const TEXT_CONTRAST = 4.5;
+
+/** How finely `readableOn` lightens: in twentieths of the way to white. */
+const LIGHTEN_STEPS = 20;
+
+/**
+ * A text-safe variant of `color` on `background`: the colour itself when it already reaches
+ * `minimum`, else the least lightened shade of it (towards white, so it keeps its hue) that does.
+ * For ball-coloured text (ADR 0032): the ball's own colour stays as it is wherever it is drawn.
+ */
+export function readableOn(color: string, background: string, minimum = TEXT_CONTRAST): string {
+  for (let step = 0; step <= LIGHTEN_STEPS; step++) {
+    const shade = lighten(color, step / LIGHTEN_STEPS);
+    if (contrastRatio(shade, background) >= minimum) return shade;
+  }
+  return '#ffffff';
+}
+
 /**
  * WCAG 2 contrast between two `#rrggbb` colours: from 1 (the same) to 21 (black on white). The
  * arena uses it to keep every ball clear of its floor (arena-contrast.test.ts).

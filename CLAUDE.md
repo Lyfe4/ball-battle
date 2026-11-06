@@ -235,7 +235,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   literals. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP
   `font-src 'self'`), calm platform screens (flat fills, the pink second accent used sparingly) and
   the energy in the arena and match moments (the court, health pills, the Winner sticker). Keep
-  that split; every ball must keep 3:1 against the floor (`arena-contrast.test.ts`). A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
+  that split; every ball must keep 3:1 against the floor, and text in a ball's colour goes
+  through `readableOn` for 4.5:1 on its background (`arena-contrast.test.ts`). A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
   order; create the file before adding its `@import` (the dev server caches a missing import).
 - Ball and matchup text in the UI is read from the definitions and the counter map
   (`src/ui/balls/matchups.ts`); it says "favoured", never a measured win rate.

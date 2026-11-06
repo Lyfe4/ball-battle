@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../sim/balls/index.ts';
 import { ballColor } from './ball-colors.ts';
-import { contrastRatio, relativeLuminance } from './contrast.ts';
+import { contrastRatio, readableOn, relativeLuminance, TEXT_CONTRAST } from './contrast.ts';
 import { theme } from './theme.ts';
 
 /** The WCAG minimum for graphics that must be told apart from what is around them. */
@@ -52,5 +53,54 @@ describe('every ball stands out on the arena floor', () => {
     const necromancer = BALLS.find((ball) => ball.id === 'necromancer');
     expect(necromancer).toBeDefined();
     expect(contrastRatio(necromancer?.color ?? '', '#3a3a4a')).toBeLessThan(MIN_CONTRAST);
+  });
+});
+
+/** A token's value in tokens.css, following var() references down to the palette. */
+function token(name: string): string {
+  const css = readFileSync(new URL('../styles/tokens.css', import.meta.url), 'utf8');
+  const value = new RegExp(`${name}:\\s*([^;]+);`).exec(css)?.[1]?.trim() ?? '';
+  const reference = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+  return reference === undefined ? value : token(reference);
+}
+
+describe('ball-coloured text is readable on the page', () => {
+  // The HUD names each ball in its colour (ADR 0032). The page sits behind it.
+  const page = token('--color-page');
+
+  it('reads the page colour from the tokens', () => {
+    expect(page).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it.each(BALLS.map((ball) => [ball.name, ball.color] as const))(
+    '%s as text keeps at least 4.5:1, in the shade nearest its own colour',
+    (name, color) => {
+      for (const shade of [ballColor(color, false), ballColor(color, true)]) {
+        const text = readableOn(shade, page);
+        const ratio = contrastRatio(text, page);
+        expect({ name, shade, enough: ratio >= TEXT_CONTRAST }).toStrictEqual({
+          name,
+          shade,
+          enough: true,
+        });
+        // A colour already readable is left exactly as it is.
+        if (contrastRatio(shade, page) >= TEXT_CONTRAST) expect(text).toBe(shade);
+      }
+    },
+  );
+
+  it('lightens the Necromancer, which is too dark to read as it is', () => {
+    const necromancer = BALLS.find((ball) => ball.id === 'necromancer')?.color ?? '';
+    expect(contrastRatio(necromancer, page)).toBeLessThan(TEXT_CONTRAST);
+    expect(readableOn(necromancer, page)).not.toBe(necromancer);
+  });
+
+  it('lightens only as far as it must, and gives white where nothing reaches the minimum', () => {
+    const grey = readableOn('#000000', '#000000');
+    expect(contrastRatio(grey, '#000000')).toBeGreaterThanOrEqual(TEXT_CONTRAST);
+    expect(grey).not.toBe('#ffffff');
+    expect(readableOn('#ffffff', '#17122b')).toBe('#ffffff');
+    // On a light background no lighter shade can help.
+    expect(readableOn('#eeeeee', '#fafafa')).toBe('#ffffff');
   });
 });
