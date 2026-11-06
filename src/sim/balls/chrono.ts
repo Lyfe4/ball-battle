@@ -21,7 +21,7 @@ export type ChronoState = Readonly<{
 
 /** A moment is kept every this many ticks. */
 export const MOMENT_EVERY_TICKS = 15;
-/** How many moments it keeps: it rewinds to the oldest, about 3 s back. */
+/** How many moments it keeps: it rewinds to the oldest, about half a second back. */
 export const REWIND_MOMENTS = 2;
 
 /** The Chrono's recent moments, read from any ball state (empty for other balls). */
@@ -36,15 +36,16 @@ export function hasRewound(ball: BallState): boolean {
 }
 
 /**
- * Once per match, when a hit would knock it out, it rewinds: back to where it was about 3 s
- * earlier, with the health it had then (ADR 0034). Its history is a few plain moments in its
+ * Once per match, when a hit would knock it out, it rewinds: back to where it was about half a
+ * second earlier, with the health it had then (ADR 0034). That undoes one big hit and little of a
+ * drip. Its history is a few plain moments in its
  * ability state, taken on a fixed rhythm. What has already landed on it stays: a status (Venom's
  * poison) keeps ticking, so a rewind against a poisoner buys little.
  */
 export const chrono = defineBall<ChronoState>({
   id: 'chrono',
   name: 'Chrono',
-  description: 'Once a match, a knockout hit rewinds it 3 s: back to where it was, health and all.',
+  description: 'Once a match, a knockout hit rewinds it half a second: the hit is undone.',
   color: '#d4a373',
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
