@@ -1,5 +1,6 @@
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
 import type { RuleAppliedEvent, RuleId } from './rules.ts';
+import type { ZoneLinger } from './zones/spawn.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -192,6 +193,8 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly delayTicks: number;
       /** Applied to every ball the strike hits, after its damage (ADR 0009). */
       readonly status?: StatusRequest;
+      /** Lasts after the first strike, pulsing on a fixed rhythm (ADR 0034). */
+      readonly linger?: ZoneLinger;
     }
   /**
    * Summons a minion just outside the hook owner's edge, heading along `velocity`, unless the
@@ -289,6 +292,12 @@ export interface ZoneState {
   readonly strikeTick: number;
   /** Applied to every ball the strike hits, after its damage (ADR 0009). */
   readonly status?: StatusRequest;
+  /**
+   * A lasting zone (ADR 0034) stays until this tick, striking again every `pulseEveryTicks` after
+   * `strikeTick` (on `endTick` too, if the rhythm lands on it). Absent: it strikes once.
+   */
+  readonly endTick?: number;
+  readonly pulseEveryTicks?: number;
 }
 
 /**
@@ -456,6 +465,8 @@ export interface ZoneStruckEvent {
   readonly radius: number;
   /** Balls that took damage from this strike. */
   readonly hitIds: readonly string[];
+  /** A lasting zone's pulse (ADR 0034): 0 for its first strike, then 1, 2, ... Absent otherwise. */
+  readonly pulse?: number;
 }
 
 export interface BallDefeatedEvent {
