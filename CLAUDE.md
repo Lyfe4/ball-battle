@@ -6,7 +6,7 @@ code quality matters as much as features.
 
 Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
 against a bot is built (ADR 0017), with three draft formats (blind, reveal with turns showing
-first, loser-picks-next; ADR 0019, 0021): the rules are pure sim code in `src/sim/series.ts`, the same functions
+first after a seeded coin toss, loser-picks-next; ADR 0019, 0021, 0029): the rules are pure sim code in `src/sim/series.ts`, the same functions
 a server would run to verify a series, so keep them deterministic and DOM-free.
 
 Stack: TypeScript (strict), Vite, pnpm, Vitest, ESLint (flat config) + Prettier, Husky +
@@ -116,8 +116,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0023-known-match-results-across-engines.md`,
 `docs/decisions/0024-player-facing-text-stays-in-definitions.md`,
 `docs/decisions/0025-show-less-and-back.md`,
-`docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md` and
-`docs/decisions/0028-counter-pass.md`.
+`docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md`,
+`docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md` and
+`docs/decisions/0030-symbol-tooltips-and-result-fixes.md`.
 
 ## Workflow
 
@@ -212,7 +213,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   icons, vs layouts, highlights, ▲ ▼ =) beat sentences wherever they're clear. Any symbol must be
   understandable without explanation or explained once in the symbol legend (`symbol-legend.ts`,
   the `?` in a screen's header), and always has words in its accessible name. Marks come from
-  `src/ui/balls/marks.ts`.
+  `src/ui/balls/marks.ts`; what each symbol means is in `src/ui/symbols.ts`, read by both the
+  legend and the hover/focus tooltip. Name every symbol on screen with `markSymbol` so the tooltip
+  can explain it (mouse and keyboard only; touch adds nothing, ADR 0030).
 - **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
   screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
   replaces the entry, going to the screen this entry came from goes back to it, a series is one
