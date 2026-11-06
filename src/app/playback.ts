@@ -46,6 +46,14 @@ export function startPlayback(world: WorldState, introMs: number): Playback {
 }
 
 /**
+ * Ends the intro now (a tap on the versus card, ADR 0036): presentation time only, so the match
+ * plays exactly the ticks it would have (ADR 0007).
+ */
+export function skipIntro(playback: Playback): Playback {
+  return { ...playback, clock: { ...playback.clock, introMs: 0 } };
+}
+
+/**
  * How far between `previous` and `world` to draw, 0 to 1: the share of the next tick already
  * banked in the accumulator. A finished match draws its final world (1), since no tick follows;
  * during a hit-stop the banked time can exceed a tick, which clamps to the tick just played.

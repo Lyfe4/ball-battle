@@ -26,6 +26,9 @@
   --palette-green-400: #5ee385;
   --palette-red-400: #ff7a7a;
   --palette-ink-text: #1b1430;
+  --palette-green-700: #15803d;
+  --palette-red-700: #b91c1c;
+  --palette-lilac-700: #5b4f7a;
 
   /* Roles */
   --color-page: var(--palette-plum-900);
@@ -55,6 +58,10 @@
   --color-accent-2-slab: var(--palette-pink-800);
   /* The Winner sticker's card (ADR 0032), with --color-accent-text on it. */
   --color-sticker: var(--palette-cream-50);
+  /* Text on a sticker (the versus card): marks and quiet words that keep 4.5:1 on cream. */
+  --color-on-sticker-favoured: var(--palette-green-700);
+  --color-on-sticker-unfavoured: var(--palette-red-700);
+  --color-on-sticker-muted: var(--palette-lilac-700);
   --color-health-track: var(--palette-plum-975);
   --color-health-fill: var(--palette-green-400);
   --color-health-ghost: rgba(255, 248, 238, 0.7);
