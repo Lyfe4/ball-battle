@@ -72,7 +72,20 @@ export function createBallDetail(
     if (tryMatchup !== undefined) actions.onTry(tryMatchup);
   });
 
-  root.append(hero, stats, strongHeading, strong, weakHeading, weak, evenHeading, even, tryIt);
+  // Grouped so a desktop can set the profile beside the Strong vs and Weak vs columns (ADR 0031);
+  // each group keeps the root's gap, so a phone shows one column exactly as before.
+  const group = (className: string, ...children: HTMLElement[]) => {
+    const node = element('div', `ball-detail-group ${className}`);
+    node.append(...children);
+    return node;
+  };
+  root.append(
+    group('ball-detail-profile', hero, stats),
+    group('ball-detail-strong-group', strongHeading, strong),
+    group('ball-detail-weak-group', weakHeading, weak),
+    group('ball-detail-even-group', evenHeading, even),
+    tryIt,
+  );
 
   function opponentButton(id: string, iconPx: number, className: string): HTMLButtonElement {
     const button = element('button', className);

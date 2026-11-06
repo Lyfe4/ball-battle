@@ -150,3 +150,41 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-tiny);
 }
+
+/*
+ * Desktop (ADR 0031), the picker layout: what is picked on the left (the slots, why, Start), what
+ * to pick from on the right (the legend and the grid). Rows are explicit so the grid's height goes
+ * to the last row and never spreads the left column apart.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .quick-setup {
+    grid-template-columns: var(--setup-width) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  .quick-setup > .screen-header {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  .quick-slots {
+    grid-area: 2 / 1 / 4 / 2;
+  }
+
+  .quick-why {
+    grid-area: 4 / 1;
+  }
+
+  .quick-setup > .screen-footer {
+    grid-area: 5 / 1;
+  }
+
+  .quick-legend {
+    grid-area: 2 / 2;
+  }
+
+  .quick-setup > .ball-grid {
+    grid-area: 3 / 2 / -1 / 3;
+  }
+}

@@ -101,3 +101,36 @@
     opacity: 0.3;
   }
 }
+
+/*
+ * Desktop (ADR 0031): a deliberate layout for large screens, never the phone column centred. Every
+ * desktop rule sits in this exact query, repeated verbatim in each component's stylesheet: at least
+ * 1024 px wide and landscape. Anything narrower (phones, upright or turned) keeps the rules above
+ * unchanged.
+ *
+ * When nothing is fighting (choosing balls, setting up a series, the manual, an older link) there
+ * is no arena: the screen is a centred sheet up to --sheet-width, laid out in columns by its own
+ * stylesheet, and the page scrolls rather than a box inside it.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .stage[data-setup] {
+    height: auto;
+    padding-block: var(--space-sheet);
+  }
+
+  .stage[data-setup] .arena-container {
+    display: none;
+  }
+
+  .stage[data-setup] .hud {
+    width: 100%;
+    max-width: var(--sheet-width);
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Between rounds and at the result the panel beside the dimmed round holds the screen's job. */
+  .stage[data-round-over] .hud {
+    width: var(--panel-width-wide);
+  }
+}

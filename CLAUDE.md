@@ -119,8 +119,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0024-player-facing-text-stays-in-definitions.md`,
 `docs/decisions/0025-show-less-and-back.md`,
 `docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md`,
-`docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md` and
-`docs/decisions/0030-symbol-tooltips-and-result-fixes.md`.
+`docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md`,
+`docs/decisions/0030-symbol-tooltips-and-result-fixes.md` and
+`docs/decisions/0031-desktop-layouts.md`.
 
 ## Workflow
 
@@ -201,11 +202,18 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - World coordinates are in world units (`ARENA_SIZE` = 1000), never pixels. The renderer maps
   world units to the screen.
 - Colours and sizes for the renderer come from `src/render/theme.ts`, not inline literals.
-- **Phone first.** Every screen is designed for a phone (about 375 px wide) first: one clear job
-  per screen and as few controls as possible. Desktop adapts from the phone design, never the
-  other way round. Check every screen at 375×812 before calling it done. The arena shows only
-  when something is fighting; setup and reading screens, and a series between rounds, take the
-  whole phone screen (ADR 0020, 0025).
+- **Phone first, then a deliberate layout for larger screens** (ADR 0020, 0031). Design every
+  screen for a phone (about 375 px wide) first: one clear job per screen and as few controls as
+  possible. Then give each screen a deliberate layout for larger screens. "Adapting" means
+  re-arranging to use the space (columns side by side, a list beside its detail), never the
+  phone layout centred in a wide page. Desktop rules go in the one desktop query
+  (`(min-width: 64rem) and (min-aspect-ratio: 5/4)`, next to the component's phone rules) and
+  never change the phone. Prefer the page scrolling to inner scroll boxes, which an overlay
+  scrollbar draws over, unless an inner scroll area has a clear purpose. Keep sensible maximum
+  widths (`--sheet-width`). Check every screen at 375×812 and at 1280×800, 1440×900 and
+  1920×1080 before calling it done. The arena shows only when something is fighting; setup and
+  reading screens, and a series between rounds, take the whole phone screen (ADR 0020, 0025),
+  and on a desktop setup and reading screens show no arena at all (ADR 0031).
 - **No dead ends** (ADR 0027). Every screen state offers at least one control that moves the
   player forward (or the result screen's buttons). A series screen renders only the actions of
   `seriesScreenOf`, and `no-dead-end.test.ts` walks every format, outcome order and pick, live and

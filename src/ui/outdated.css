@@ -19,3 +19,15 @@
     justify-content: center;
   }
 }
+
+/* Desktop (ADR 0031): a short notice stays at a readable width, as a card. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .outdated {
+    justify-self: center;
+    width: 100%;
+    max-width: var(--sheet-narrow);
+    padding: var(--space-gap) var(--space-gutter) var(--space-gutter);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+}
