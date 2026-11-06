@@ -118,6 +118,41 @@ describe('battle feel effects', () => {
     expect(effects.healAmount('ball-0')).toBe(4);
   });
 
+  it('lets the Winner sticker play out before a screen may dim or cover the arena', () => {
+    // ADR 0033: the round screen used to come 750 ms after the sticker landed, mid-confetti.
+    const effects = createEffects();
+    effects.apply(knockout(300), 0);
+    const landsAt = theme.resultDelayMs - theme.winnerStickerLeadMs;
+    expect(effects.stickerVisible(landsAt - 1)).toBe(false);
+    expect(effects.stickerVisible(landsAt)).toBe(true);
+    const over = landsAt + theme.winnerCelebrationMs;
+    // The result itself shows on time; only the celebration's end waits.
+    expect(effects.resultVisible(theme.resultDelayMs)).toBe(true);
+    expect(effects.celebrationOver(theme.resultDelayMs)).toBe(false);
+    expect(effects.celebrationOver(over - 1)).toBe(false);
+    expect(effects.isActive(over - 1)).toBe(true);
+    expect(effects.celebrationOver(over)).toBe(true);
+  });
+
+  it('gives a time-limit win its whole celebration, and a draw none', () => {
+    const effects = createEffects();
+    const win: SimEvent = {
+      type: 'matchEnded',
+      tick: 3600,
+      result: { kind: 'win', winnerId: 'ball-0' },
+      reason: 'timeLimit',
+    };
+    effects.apply([win], 50);
+    expect(effects.stickerVisible(50)).toBe(true);
+    expect(effects.celebrationOver(50 + theme.winnerCelebrationMs - 1)).toBe(false);
+    expect(effects.celebrationOver(50 + theme.winnerCelebrationMs)).toBe(true);
+
+    const draw = createEffects();
+    draw.apply([{ ...win, result: { kind: 'draw' } }], 50);
+    expect(draw.stickerVisible(50)).toBe(false);
+    expect(draw.celebrationOver(50)).toBe(true);
+  });
+
   it('shows a time-limit result at once', () => {
     const effects = createEffects();
     effects.apply(

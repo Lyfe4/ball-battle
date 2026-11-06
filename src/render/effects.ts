@@ -103,6 +103,19 @@ export interface Effects {
   winner(nowMs: number): WinnerRing | undefined;
   /** False until the knockout sequence has played; true at once for a time-limit end. */
   resultVisible(nowMs: number): boolean;
+  /**
+   * True once a won match's Winner sticker is due (ADR 0032): `winnerStickerLeadMs` before the
+   * result, after a knockout's slow-mo and shards, and at once for a time-limit end. Never for a
+   * draw.
+   */
+  stickerVisible(nowMs: number): boolean;
+  /**
+   * True once the result is showing and the Winner sticker has had its whole moment
+   * (`winnerCelebrationMs` from when it landed; ADR 0033). A screen that covers or dims the arena
+   * waits for this, so the celebration always plays at full brightness. A draw has no sticker, so
+   * it is the result itself.
+   */
+  celebrationOver(nowMs: number): boolean;
   /** True while any effect is still visible, so the caller knows to keep redrawing. */
   isActive(nowMs: number): boolean;
   reset(): void;
@@ -129,6 +142,9 @@ export function createEffects(): Effects {
   let knockouts: { ballId: string; startMs: number; seed: number }[] = [];
   let winner: { ballId: string; startMs: number } | undefined;
   let resultAtMs: number | undefined;
+  /** When a won match's sticker lands, and when its celebration is over (ADR 0033). */
+  let stickerAtMs: number | undefined;
+  let celebrationEndMs: number | undefined;
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
@@ -190,7 +206,14 @@ export function createEffects(): Effects {
         }
         if (event.type === 'matchEnded') {
           const isKnockout = event.reason === 'knockout';
-          resultAtMs = nowMs + (isKnockout ? theme.resultDelayMs : 0);
+          const resultAt = nowMs + (isKnockout ? theme.resultDelayMs : 0);
+          resultAtMs = resultAt;
+          const won = event.result.kind === 'win';
+          stickerAtMs = won ? Math.max(nowMs, resultAt - theme.winnerStickerLeadMs) : undefined;
+          celebrationEndMs =
+            stickerAtMs === undefined
+              ? resultAt
+              : Math.max(resultAt, stickerAtMs + theme.winnerCelebrationMs);
           if (isKnockout && event.result.kind === 'win') {
             winner = { ballId: event.result.winnerId, startMs: nowMs };
           }
@@ -262,6 +285,12 @@ export function createEffects(): Effects {
     resultVisible(nowMs) {
       return resultAtMs !== undefined && nowMs >= resultAtMs;
     },
+    stickerVisible(nowMs) {
+      return stickerAtMs !== undefined && nowMs >= stickerAtMs;
+    },
+    celebrationOver(nowMs) {
+      return celebrationEndMs !== undefined && nowMs >= celebrationEndMs;
+    },
     isActive(nowMs) {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
@@ -275,7 +304,7 @@ export function createEffects(): Effects {
         (shake !== undefined && progress(shake.startMs, nowMs, theme.shakeMs) < 1) ||
         knockouts.some(({ startMs }) => progress(startMs, nowMs, theme.shardMs) < 1) ||
         (winner !== undefined && progress(winner.startMs, nowMs, theme.winnerPulseMs) < 1) ||
-        (resultAtMs !== undefined && nowMs < resultAtMs)
+        (celebrationEndMs !== undefined && nowMs < celebrationEndMs)
       );
     },
     reset() {
@@ -292,6 +321,8 @@ export function createEffects(): Effects {
       knockouts = [];
       winner = undefined;
       resultAtMs = undefined;
+      stickerAtMs = undefined;
+      celebrationEndMs = undefined;
     },
   };
 }

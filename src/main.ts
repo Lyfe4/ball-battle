@@ -153,7 +153,13 @@ const quick = createQuickController(
 );
 
 const { setup: seriesSetup, play: series } = createSeriesScreens(
-  { setup: getElement('series-setup', HTMLElement), play: getElement('series', HTMLElement) },
+  {
+    setup: getElement('series-setup', HTMLElement),
+    play: {
+      panel: getElement('series', HTMLElement),
+      exit: getElement('series-exit', HTMLElement),
+    },
+  },
   BALLS,
   BALL_LOOKUP,
   {
@@ -254,9 +260,10 @@ const arena = createArena(
     afterTicks: (world) => {
       series.settle(world);
     },
-    drawn: (world, resultShown) => {
+    drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
-      series.update(world, resultShown);
+      // The round screen waits for the Winner sticker's moment (ADR 0033).
+      series.update(world, celebrated);
       if (router.current() === 'home') home.drawn(resultShown);
     },
   },

@@ -4,15 +4,14 @@
  */
 export const theme = {
   /**
-   * The court (ADR 0032): a deep indigo floor with a tonal centre circle, inside a chunky rounded
-   * rim. Flat fills only, so a frame costs two rounded rectangles and a circle. Every ball's colour
-   * keeps at least 3:1 against both floor tones (arena-contrast.test.ts): the pale ones (Frost,
-   * Ghost, Storm) by their lightness, the dark ones (Necromancer, Quake) by the floor's darkness.
+   * The court (ADR 0032): a deep indigo floor inside a chunky rounded rim. Flat fills only, so a
+   * frame costs two rounded rectangles. The floor carries no markings (ADR 0033): every circle on
+   * it is a game signal (a warning, a shockwave, a heal), so a decorative one would compete with
+   * them. Every ball's colour keeps at least 3:1 against the floor (arena-contrast.test.ts): the
+   * pale ones (Frost, Ghost, Storm) by their lightness, the dark ones (Necromancer, Quake) by the
+   * floor's darkness.
    */
   arenaFill: '#1d1640',
-  arenaCentre: '#251c4b',
-  /** The centre circle's radius as a share of the arena's size. */
-  arenaCentreRadius: 0.32,
   arenaBorder: '#3a2f6e',
   arenaBorderWidth: 22,
   /**
@@ -279,6 +278,12 @@ export const theme = {
    * sticker's moment is the time between.
    */
   winnerStickerLeadMs: 750,
+  /**
+   * How long the sticker's moment lasts from when it lands (ADR 0033): its pop (480 ms), the
+   * confetti (650 ms) and a beat to read the name. The series round screen, which dims the arena
+   * on a desktop and replaces it on a phone, waits for it.
+   */
+  winnerCelebrationMs: 1400,
   /** Match intro (real ms, under 1.5 s): each ball pops in, then a short hold before the first tick. */
   introMs: 1100,
   introPopMs: 420,

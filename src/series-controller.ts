@@ -21,7 +21,7 @@ import { randomBot } from './sim/bot.ts';
 import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
 import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
-import { createSeriesPanel, type SeriesPhase } from './ui/series-panel.ts';
+import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from './ui/series-panel.ts';
 
 /** What the series needs from the page around it. */
 export interface SeriesHost {
@@ -72,12 +72,15 @@ export interface SeriesController {
   start(setup: SeriesSetup, fromLink?: boolean, firstPick?: string): void;
   /** Records the match on screen once it has finished; safe to call every frame. */
   settle(world: WorldState): void;
-  /** Updates the scoreboard; cheap enough for every frame. */
-  update(world: WorldState, resultShown: boolean): void;
+  /**
+   * Updates the scoreboard; cheap enough for every frame. `celebrated` is true once the round's
+   * result and its Winner sticker have played: only then does the round screen take over.
+   */
+  update(world: WorldState, celebrated: boolean): void;
 }
 
 export function createSeriesController(
-  root: HTMLElement,
+  roots: SeriesPanelRoots,
   lookup: DefinitionLookup,
   host: SeriesHost,
 ): SeriesController {
@@ -91,7 +94,7 @@ export function createSeriesController(
   const ours = () => host.worldsShown() === shownAt;
   let phase: SeriesPhase = 'playing';
 
-  const panel = createSeriesPanel(root, lookup, {
+  const panel = createSeriesPanel(roots, lookup, {
     onNext: () => {
       if (session === undefined) return;
       session = resolvePicks(advanceSession(session), randomBot);
@@ -186,9 +189,9 @@ export function createSeriesController(
       // Decided: now the link can show both lineups and every pick.
       if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },
-    update(world, resultShown) {
+    update(world, celebrated) {
       if (session === undefined || !onScreen) return;
-      const settled = ours() ? world.match.status === 'finished' && resultShown : session.recorded;
+      const settled = ours() ? world.match.status === 'finished' && celebrated : session.recorded;
       const shown = panel.update({
         state: session.state,
         current: session.current,

@@ -8,8 +8,11 @@ import { theme } from './theme.ts';
 /** The WCAG minimum for graphics that must be told apart from what is around them. */
 const MIN_CONTRAST = 3;
 
-/** Every tone a ball can sit on: the floor and its centre circle (ADR 0032). */
-const FLOOR_TONES = { floor: theme.arenaFill, centre: theme.arenaCentre };
+/**
+ * Every tone a ball can sit on. One flat floor since the centre circle went (ADR 0033); a court
+ * marking added later must be listed here too.
+ */
+const FLOOR_TONES = { floor: theme.arenaFill };
 
 /** The weakest pairing of a ball colour with any floor tone. */
 function weakest(color: string): { tone: string; ratio: number } {

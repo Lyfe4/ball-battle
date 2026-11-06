@@ -102,6 +102,13 @@
   }
 }
 
+/* The dim comes after the Winner sticker's moment (ADR 0033), and eases in rather than snapping. */
+@media (min-aspect-ratio: 5/4) and (prefers-reduced-motion: no-preference) {
+  .stage[data-round-over] .arena-container {
+    transition: opacity 0.4s ease-out;
+  }
+}
+
 /*
  * Desktop (ADR 0031): a deliberate layout for large screens, never the phone column centred. Every
  * desktop rule sits in this exact query, repeated verbatim in each component's stylesheet: at least

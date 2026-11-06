@@ -192,3 +192,9 @@ The bot's lineup is random, so the series screens show different balls before an
 - **Negative:** one runtime dependency, the font package. It holds only font files and CSS.
 - **Negative:** the sticker covers the middle of the arena at a quick match's result. The last
   frame matters less than who won, and Replay is one tap away.
+
+## Amended by ADR 0033 (2026-11-06)
+
+The centre circle is gone: the floor carries no markings, because every circle on it is a game
+signal. In a series the round screen now waits until the Winner sticker's moment has played
+(1.4 s from when it lands), so the sticker and confetti are never dimmed or cut off.

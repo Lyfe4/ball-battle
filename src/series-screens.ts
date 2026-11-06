@@ -4,6 +4,7 @@ import { writeSeriesModeParams } from './app/series-url.ts';
 import type { Navigation } from './app/navigation.ts';
 import { createSeriesController, type SeriesController } from './series-controller.ts';
 import { createSeriesSetup, type SeriesSetupFlow } from './series-setup.ts';
+import type { SeriesPanelRoots } from './ui/series-panel.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
 
 export interface SeriesScreensHost {
@@ -30,7 +31,7 @@ export interface SeriesScreens {
 }
 
 export function createSeriesScreens(
-  roots: { readonly setup: HTMLElement; readonly play: HTMLElement },
+  roots: { readonly setup: HTMLElement; readonly play: SeriesPanelRoots },
   balls: readonly BallDefinition[],
   lookup: DefinitionLookup,
   host: SeriesScreensHost,

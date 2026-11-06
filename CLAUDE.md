@@ -121,7 +121,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md`,
 `docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md`,
 `docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
-`docs/decisions/0031-desktop-layouts.md` and `docs/decisions/0032-sticker-pop-restyle.md`.
+`docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md` and
+`docs/decisions/0033-arena-polish.md`.
 
 ## Workflow
 
