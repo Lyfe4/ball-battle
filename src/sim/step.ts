@@ -2,6 +2,7 @@ import {
   damageDealtInvocations,
   damageTakenInvocations,
   hitBallInvocations,
+  knockedOutInvocations,
   runPhase,
   tickInvocations,
   wallHitInvocations,
@@ -10,6 +11,7 @@ import {
 import { applyBounceVariance } from './bounce-variance.ts';
 import { resolveCollisions } from './collision.ts';
 import { applyCruiseSpeed } from './cruise.ts';
+import { applySize } from './size.ts';
 import {
   applyContactDamage,
   defeatsThisTick,
@@ -74,10 +76,13 @@ import type {
  * 13. onDamageTaken hooks for every damage event so far this tick, including damage from step 12's
  *     actions, then their actions (ADR 0012). Damage from these actions fires neither
  *     onDamageDealt nor onDamageTaken, so nothing can chain or loop.
+ * 13b. onKnockedOut hooks for balls that went from alive to 0 health this tick, then their
+ *     actions: a `rewind` puts the ball back in the match (ADR 0034). Fires no other hooks.
  * 14. ballDefeated for balls that went from alive to 0 health this tick.
  * 15. Cruise speed: every live ball's velocity is rescaled to its cruise speed, keeping its
- *     direction (ADR 0008); slowed balls go slower (ADR 0012). Last, so it reads ability state
- *     and statuses after every hook of the tick; it emits no events.
+ *     direction (ADR 0008); slowed balls go slower (ADR 0012). Then size: a ball that declares
+ *     `radiusOf` takes its radius for this tick and is kept inside the arena (ADR 0034). Last, so
+ *     both read ability state and statuses after every hook of the tick; they emit no events.
  * 16. Contacts are updated and the match end is decided.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
@@ -217,10 +222,13 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   phase(damageDealtInvocations(damageSoFar()));
   // Collected once, before the phase runs: damage its own actions deal is never fed back.
   phase(damageTakenInvocations(damageSoFar()));
+  // A ball brought to 0 this tick may still act on it, before it is defeated (ADR 0034).
+  phase(knockedOutInvocations(world.balls, balls));
 
   events.push(...defeatsThisTick(world.balls, balls, events, tick));
 
   balls = applyCruiseSpeed(balls, definitions);
+  balls = applySize(balls, definitions, tick, size);
 
   const match = evaluateMatch(balls, tick, definitions);
   if (match.status === 'finished') {

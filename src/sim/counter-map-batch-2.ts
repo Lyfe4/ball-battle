@@ -18,7 +18,7 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'speedster',
     intended: 'x',
-    reason: 'Its huge health soaks the burst, and every hit it soaks makes its own hits harder.',
+    reason: 'Its huge health soaks the burst, and every hit soaked makes it hit harder.',
   },
   {
     x: 'vampire',

@@ -11,7 +11,7 @@ export interface MatchupChart {
   readonly element: HTMLElement;
 }
 
-/** Fits the smallest cell a phone gets (about 21 px for 14 balls at 375 px wide). */
+/** Drawn at this size; the stylesheet shrinks it to the cell when the roster needs it. */
 const HEADER_ICON_PX = 18;
 
 /**

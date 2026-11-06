@@ -7,6 +7,17 @@ export interface ZoneRequest {
   readonly damage: number;
   readonly delayTicks: number;
   readonly status?: StatusRequest;
+  /** Keeps the zone after its first strike, pulsing again on a fixed rhythm (ADR 0034). */
+  readonly linger?: ZoneLinger;
+}
+
+/**
+ * A lasting zone (ADR 0034): after its first strike it stays for `ticks` more, striking again every
+ * `pulseEveryTicks`, so a ball that stays inside is hit again. Both are whole numbers, at least 1.
+ */
+export interface ZoneLinger {
+  readonly ticks: number;
+  readonly pulseEveryTicks: number;
 }
 
 export interface ZoneSpawnResult {
@@ -30,15 +41,21 @@ function assertValid(owner: BallState, request: ZoneRequest, arenaSize: number):
     Number.isInteger(delayTicks) &&
     delayTicks >= 1 &&
     (request.status === undefined ||
-      (Number.isInteger(request.status.durationTicks) && request.status.durationTicks >= 1));
+      (Number.isInteger(request.status.durationTicks) && request.status.durationTicks >= 1)) &&
+    (request.linger === undefined ||
+      (Number.isInteger(request.linger.ticks) &&
+        request.linger.ticks >= 1 &&
+        Number.isInteger(request.linger.pulseEveryTicks) &&
+        request.linger.pulseEveryTicks >= 1));
   if (!valid) {
     throw new Error(`An ability of "${owner.id}" tried to spawn an invalid zone`);
   }
 }
 
 /**
- * Creates a zone for `owner` that strikes `delayTicks` after `tick`. Its centre is clamped on each
- * axis to [radius, arenaSize - radius], so the whole circle is inside the arena (ADR 0006).
+ * Creates a zone for `owner` that strikes `delayTicks` after `tick`, and keeps pulsing until
+ * `linger.ticks` after that when it lingers (ADR 0034). Its centre is clamped on each axis to
+ * [radius, arenaSize - radius], so the whole circle is inside the arena (ADR 0006).
  */
 export function spawnZone(
   owner: BallState,
@@ -62,6 +79,12 @@ export function spawnZone(
     spawnTick: tick,
     strikeTick: tick + request.delayTicks,
     ...(request.status === undefined ? {} : { status: request.status }),
+    ...(request.linger === undefined
+      ? {}
+      : {
+          endTick: tick + request.delayTicks + request.linger.ticks,
+          pulseEveryTicks: request.linger.pulseEveryTicks,
+        }),
   };
   return {
     zone,

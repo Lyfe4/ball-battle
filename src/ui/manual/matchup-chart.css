@@ -1,7 +1,7 @@
 /*
  * The matchup chart, the manual's second tab: cells are 26 px, or less when the roster needs it,
  * so every column (the header column plus one per ball, set as --chart-columns) fits the phone
- * column without scrolling: 15 columns are about 21 px each at 375 px wide.
+ * column without scrolling: 18 columns are about 17 px each at 375 px wide.
  */
 .matchup-chart {
   --chart-cell: min(
@@ -54,6 +54,9 @@
 }
 
 .matchup-icon {
+  /* Never wider than a cell: with 17 balls a phone's cells are under the icon's 18 px. */
+  max-width: var(--chart-cell);
+  max-height: var(--chart-cell);
   margin: auto;
 }
 

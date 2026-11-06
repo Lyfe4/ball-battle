@@ -9,6 +9,7 @@ import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
 import { interpolateWorld } from './render/interpolate.ts';
+import { createRewinds } from './render/rewind.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
@@ -58,6 +59,7 @@ export function createArena(
   if (context === null) throw new Error('Canvas 2D is not supported in this browser');
   const ctx = context;
   const effects = createEffects();
+  const rewinds = createRewinds();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
@@ -105,6 +107,7 @@ export function createArena(
       winner: effects.winner(now),
       intro: (index) => introLook(index, now, reduced),
       cue: (ballId) => effects.cue(ballId, now),
+      rewinds: rewinds.trails(now),
       reducedMotion: reduced,
     });
     // Due just after a knockout's slow-mo, or at once for a time-limit end.
@@ -150,6 +153,7 @@ export function createArena(
       playback = outcome.playback;
       for (const { previous, result } of outcome.ticks) {
         effects.apply(result.events, playback.effectMs);
+        rewinds.apply(result.events, playback.effectMs);
         effects.bounced(wallBounces(previous, result.world), playback.effectMs);
       }
       host.afterTicks(playback.world);
@@ -167,7 +171,8 @@ export function createArena(
         outcome.ticks.length > 0 ||
         busy ||
         resultAppeared ||
-        effects.isActive(playback.effectMs)
+        effects.isActive(playback.effectMs) ||
+        rewinds.isActive(playback.effectMs)
       ) {
         render();
       }
@@ -193,6 +198,7 @@ export function createArena(
       failure.hidden = true;
       playback = startPlayback(world, theme.introMs);
       effects.reset();
+      rewinds.reset();
       lastFrameMs = undefined;
       render();
     },

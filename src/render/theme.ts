@@ -118,6 +118,9 @@ export const theme = {
     magnet: '#4c0519',
     ghost: '#2e1065',
     necromancer: '#0f1a07',
+    chrono: '#3b2410',
+    titan: '#052e16',
+    inferno: '#7c2d12',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -177,6 +180,34 @@ export const theme = {
   phasedOutline: '#ede9fe',
   phasedOutlineWidth: 4,
   phasedDash: [10, 8] as readonly number[],
+  /**
+   * The Chrono (ADR 0034): clock hands as thick as this share of r at small size, and the face
+   * faded to this once its rewind is spent. The rewind itself: a dotted trail from where it was
+   * knocked out to where it lands, and a fading ghost of it at the spot it left.
+   */
+  chronoHandSimple: 0.14,
+  chronoSpentAlpha: 0.45,
+  rewindTrail: '#fde68a',
+  rewindTrailWidth: 6,
+  rewindTrailDash: [4, 12] as readonly number[],
+  rewindMs: 900,
+  rewindGhostAlpha: 0.5,
+  /** The Titan's crest, as a share of r (heavier at small size). */
+  titanCrest: 0.12,
+  titanCrestSimple: 0.18,
+  /**
+   * The Inferno (ADR 0034): its flame's pale heart and how far the tip flickers (a share of r). Its
+   * burning patches: a warm disc under the balls, brighter just after a burn, fading as it burns
+   * out.
+   */
+  infernoHeart: '#fef08a',
+  infernoFlicker: 0.04,
+  burnFill: '#ff7a1a',
+  burnAlpha: 0.34,
+  burnPulseAlpha: 0.6,
+  burnEdge: '#ffd166',
+  burnEdgeWidth: 4,
+  burnPulseTicks: 6,
   /** The Necromancer's eyes, glowing out of its hood. */
   necromancerEyes: '#bef264',
   /**

@@ -14,6 +14,9 @@ import { venom } from './venom.ts';
 import { magnet } from './magnet.ts';
 import { ghost } from './ghost.ts';
 import { necromancer } from './necromancer.ts';
+import { chrono } from './chrono.ts';
+import { titan } from './titan.ts';
+import { inferno } from './inferno.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
 export const BALLS: readonly BallDefinition[] = [
@@ -31,6 +34,9 @@ export const BALLS: readonly BallDefinition[] = [
   magnet,
   ghost,
   necromancer,
+  chrono,
+  titan,
+  inferno,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);

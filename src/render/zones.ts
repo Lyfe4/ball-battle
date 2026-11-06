@@ -1,7 +1,7 @@
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ownerColor } from './ball-colors.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
-import { boltPoints, strikeProgress } from './zone-geometry.ts';
+import { boltPoints, burnLook, strikeProgress } from './zone-geometry.ts';
 import type { Strike } from './effects.ts';
 import { theme } from './theme.ts';
 
@@ -17,6 +17,10 @@ export function drawZones(
 ): void {
   const pulse = 0.5 + 0.5 * Math.cos((world.tick * 2 * Math.PI) / theme.zonePulsePeriodTicks);
   for (const zone of world.zones) {
+    if (zone.endTick !== undefined) {
+      drawBurn(ctx, zone, world.tick);
+      continue;
+    }
     const { x, y } = zone.position;
     const color = ownerColor(world.balls, definitions, zone.ownerId);
     const progress = strikeProgress(zone, world.tick);
@@ -44,6 +48,42 @@ export function drawZones(
     ctx.stroke();
     ctx.restore();
   }
+}
+
+/**
+ * A lasting zone, the Inferno's burning patch (ADR 0034): a small ember growing while it catches,
+ * then a warm disc that flares on every burn and fades as it burns out. Under the balls, like every
+ * zone.
+ */
+function drawBurn(
+  ctx: CanvasRenderingContext2D,
+  zone: WorldState['zones'][number],
+  tick: number,
+): void {
+  const { caught, life, glow } = burnLook(zone, tick, theme.burnPulseTicks);
+  const { x, y } = zone.position;
+  ctx.save();
+  ctx.fillStyle = theme.burnFill;
+  if (caught < 1) {
+    ctx.globalAlpha = theme.burnAlpha * caught;
+    ctx.beginPath();
+    ctx.arc(x, y, zone.radius * 0.4 * caught, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+  const fade = 0.5 + 0.5 * life;
+  ctx.globalAlpha = (theme.burnAlpha + (theme.burnPulseAlpha - theme.burnAlpha) * glow) * fade;
+  ctx.beginPath();
+  ctx.arc(x, y, zone.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = fade;
+  ctx.strokeStyle = theme.burnEdge;
+  ctx.lineWidth = theme.burnEdgeWidth;
+  ctx.beginPath();
+  ctx.arc(x, y, zone.radius - theme.burnEdgeWidth / 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 /** A clean ring that sweeps out from part-way to the zone's edge as it fades. */
@@ -82,6 +122,8 @@ export function drawStrikes(
       drawShockwave(ctx, position, radius, strength);
       continue;
     }
+    // A burning patch shows its burns itself (drawBurn): no flash or bolt.
+    if (style === 'burn') continue;
     ctx.save();
     ctx.globalAlpha = strength * theme.strikeFlashMaxAlpha;
     ctx.fillStyle = theme.strikeFlash;

@@ -121,8 +121,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md`,
 `docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md`,
 `docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
-`docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md` and
-`docs/decisions/0033-arena-polish.md`.
+`docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
+`docs/decisions/0033-arena-polish.md` and `docs/decisions/0034-chrono-titan-inferno.md`.
 
 ## Workflow
 
@@ -146,10 +146,11 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Within a tick: statuses due this tick expire (ADR 0009), onTick, move (with a seeded turn on wall
   bounces, ADR 0004), onWallHit, collide (a phased ball passes through, ADR 0026), contact damage
   (new contacts only, scaled by directness, ADR 0008), onHitBall, minions move and pop (ADR 0026),
-  projectiles move and resolve (ADR 0005), zones due this tick strike, apply their status and
-  clear enemy minions (ADR 0006, 0009, 0026), poison ticks (ADR 0012), onDamageDealt, onDamageTaken
-  (ADR 0012; damage from its actions fires no further hooks), defeat, cruise speed (ADR 0008,
-  reduced while slowed), match end. Events are emitted in that order. Every hook in a phase sees the
+  projectiles move and resolve (ADR 0005), zones due this tick strike (a lasting zone pulses on its
+  rhythm), apply their status and clear enemy minions (ADR 0006, 0009, 0026, 0034), poison ticks
+  (ADR 0012), onDamageDealt, onDamageTaken (ADR 0012; damage from its actions fires no further
+  hooks), onKnockedOut for balls just brought to 0 (a `rewind` puts one back, ADR 0034), defeat,
+  cruise speed (ADR 0008, reduced while slowed) then size (`radiusOf`, ADR 0034), match end. Events are emitted in that order. Every hook in a phase sees the
   same snapshot; actions are applied afterwards. The full order is documented on `step`.
 - Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
   or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
@@ -167,7 +168,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   rather than adding a `damage` action on hit: contact damage goes through directness, the
   lethal-exchange tiebreak and Thorns' reflection; an on-hit ability bonus skips all three.
 - Every ball uses `STANDARD_BALL_RADIUS`; a different size is a design decision listed as an
-  explicit exception in the roster's identity tests (ADR 0008).
+  explicit exception in the roster's identity tests (ADR 0008). The Titan is the one exception: it
+  grows through `radiusOf` (ADR 0034).
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
   its fixture balls `red` and `blue`, which have no abilities and fixed stats, so core tests don't
   change when real balls are rebalanced. Test-only balls with hooks are declared in the test.

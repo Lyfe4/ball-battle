@@ -13,7 +13,7 @@ arena until one wins, and every decision is made before the fight starts.
 
 ## Features
 
-- **14 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+- **17 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that phases, a necromancer's skull minions and more.
 - **Best of 3 against a bot** in three draft formats: Blind, Reveal (take turns showing first, after
   a coin toss) and Loser picks.
@@ -37,7 +37,7 @@ strict Content Security Policy.
 - **A deterministic simulation, checked across three browser engines.** The game logic is a pure
   function of the seed and the balls: fixed 60 Hz ticks, a seeded PRNG, and no `Math.sin`,
   `Math.pow` or other functions whose results can differ between engines (an ESLint rule bans
-  them). 210 recorded matches must come out bit-identical in Node, Chromium, Firefox and WebKit on
+  them). 306 recorded matches must come out bit-identical in Node, Chromium, Firefox and WebKit on
   every push. That is what lets a link replay a fight exactly, and a future server verify a result.
 - **Counters built from mechanics, held by an automated balance suite.** Stats can't make a ball
   beat one opponent without beating everyone (ADR 0010). So each favoured matchup needs a written
@@ -51,7 +51,7 @@ strict Content Security Policy.
   measured across every matchup. It turned out to be a second blind guess, not a
   skill, so it was removed. Bigger balls were measured and rejected too. Both write-ups are kept:
   [aiming](docs/aiming-measurements.md), [bigger balls](docs/bigger-balls-experiment.md).
-- **Decisions are written down.** 33 short architecture decision records in
+- **Decisions are written down.** 34 short architecture decision records in
   [docs/decisions](docs/decisions/) explain why the code is the way it is, including what was tried
   and dropped.
 
@@ -95,8 +95,11 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.    |
 | Ghost       | Phases out every few seconds: hits, pulls and skulls pass through; none aim at it. |
 | Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.           |
+| Chrono      | Once a match, a knockout hit rewinds it half a second: the hit is undone.          |
+| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.     |
+| Inferno     | Leaves a trail of fire that burns enemies who cross it, and burns up skulls.       |
 
-Every ball is the same size and keeps its own speed through collisions; a hit's damage depends
+Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
@@ -125,6 +128,15 @@ time), never decided, and each one comes from something you can watch happen:
   aimed at, so rushes, pulls and skulls pass through it. **Sniper is strong vs the Ghost**: a shot
   still hits it.
 - **Necromancer is strong vs Archer and Sniper**: a skull nearer than its owner draws the arrow or shot.
+- **Chrono is strong vs Speedster, Storm and Sniper**: a stacked rush, a strike or a shot is one big
+  hit, and its rewind undoes it. **Vampire and Venom are strong vs the Chrono**: what was drunk and
+  poison still on it aren't rewound.
+- **Titan is strong vs Speedster, Archer, Venom and Necromancer**: its growing body meets them more
+  often and their light hits lose the trade. **Thorns and Inferno are strong vs the Titan**: a bigger
+  body meets more spikes and covers more fire.
+- **Inferno is strong vs Ghost, Necromancer, Titan and Thorns**: fire burns a phased ball, burns up
+  skulls, covers a big body and never touches the spikes. **Speedster and Archer are strong vs the
+  Inferno**: one outruns the fire, the other never has to cross it.
 
 Three rules between balls show a small spark beside the ball the moment they act: a shocked ball's
 heal is cut, a staggered ball's attack is held, a poisoned Berserker's rage is numbed. Every heal
@@ -233,7 +245,7 @@ The rules, in brief:
 1. **The simulation is pure and deterministic.** `src/sim` cannot touch the DOM, the clock,
    timers or `Math.random`. A separate `tsconfig.sim.json` without the DOM lib and ESLint rules
    enforce this; transcendental `Math` functions are banned too, because they can differ between
-   browsers. 210 recorded matches are checked on every push to come out bit-identical in Node,
+   browsers. 306 recorded matches are checked on every push to come out bit-identical in Node,
    Chromium, Firefox and WebKit
    ([ADR 0023](docs/decisions/0023-known-match-results-across-engines.md)).
 2. **Fixed timestep.** The sim runs at exactly 60 ticks per second regardless of frame rate. The
@@ -284,7 +296,7 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 and [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 141.20 kB JS (46.90 kB gzipped), 31.92 kB CSS (6.34 kB gzipped), and the
+Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the
 self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License

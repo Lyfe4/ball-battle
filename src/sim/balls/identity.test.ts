@@ -2,7 +2,8 @@
 // keep these true; breaking one is a design decision, not a tuning step. The rules measured by
 // playing matches (how much of a ball's damage is its ability) are in ability-share.slow.test.ts.
 import { describe, expect, it } from 'vitest';
-import { STANDARD_BALL_RADIUS } from '../constants.ts';
+import { ARENA_SIZE, STANDARD_BALL_RADIUS } from '../constants.ts';
+import { createWorld } from '../world.ts';
 import { POISON_DAMAGE } from '../status.ts';
 import { archer, ARROW_DAMAGE } from './archer.ts';
 import { berserker, RAGE_DAMAGE } from './berserker.ts';
@@ -15,9 +16,12 @@ import { MAX_MINIONS, MINION_DAMAGE, MINION_RADIUS, necromancer } from './necrom
 import { ZONE_DAMAGE as SHOCKWAVE_DAMAGE } from './quake.ts';
 import { SHOT_DAMAGE } from './sniper.ts';
 import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
-import { storm, ZONE_DAMAGE } from './storm.ts';
+import { storm, ZONE_DAMAGE, ZONE_RADIUS as STORM_ZONE_RADIUS } from './storm.ts';
 import { reflectFor } from './thorns.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
+import { chrono, MOMENT_EVERY_TICKS, REWIND_MOMENTS } from './chrono.ts';
+import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
+import { MAX_RADIUS, titanRadius } from './titan.ts';
 
 describe('the ball roster: identity rules', () => {
   // What makes each ball itself. Balance tuning must keep these true; if a change needs to break
@@ -25,10 +29,44 @@ describe('the ball roster: identity rules', () => {
   const others = (id: string) => BALLS.filter((ball) => ball.id !== id);
 
   it('every ball is the standard size, apart from explicitly listed exceptions', () => {
-    // A size-themed ball (a Titan, a Tiny) is a design decision: list it here with its radius.
-    const RADIUS_EXCEPTIONS: Readonly<Record<string, number>> = {};
+    // A size-themed ball is a design decision: list it here with its radius over a match. The
+    // Titan starts at the standard size and grows to its cap (ADR 0034).
+    const RADIUS_EXCEPTIONS: Readonly<Record<string, readonly [number, number]>> = {
+      titan: [STANDARD_BALL_RADIUS, MAX_RADIUS],
+    };
     for (const ball of BALLS) {
-      expect(ball.radius).toBe(RADIUS_EXCEPTIONS[ball.id] ?? STANDARD_BALL_RADIUS);
+      const [start, largest] = RADIUS_EXCEPTIONS[ball.id] ?? [
+        STANDARD_BALL_RADIUS,
+        STANDARD_BALL_RADIUS,
+      ];
+      expect(ball.radius).toBe(start);
+      const sample = createWorld(1, [ball, ball]).balls[0];
+      if (sample === undefined) throw new Error('no ball');
+      // Its size late in a long match: as big as it ever gets.
+      expect(ball.radiusOf?.(sample, 1_000_000) ?? ball.radius).toBe(largest);
+    }
+  });
+
+  it('Titan grows to under a tenth of the arena, and only grows', () => {
+    expect(MAX_RADIUS).toBeLessThanOrEqual(ARENA_SIZE / 10);
+    expect(titanRadius(0)).toBe(STANDARD_BALL_RADIUS);
+    for (let tick = 0; tick < 3600; tick += 60) {
+      expect(titanRadius(tick + 60)).toBeGreaterThanOrEqual(titanRadius(tick));
+    }
+  });
+
+  it('Chrono rewinds once a match, about half a second back, and has no other ability', () => {
+    expect(MOMENT_EVERY_TICKS * REWIND_MOMENTS).toBeLessThanOrEqual(30);
+    expect(chrono.hooks.onHitBall).toBeUndefined();
+    expect(chrono.hooks.onDamageDealt).toBeUndefined();
+    expect(chrono.initialAbilityState['used']).toBe(false);
+  });
+
+  it('Inferno’s fire is small and short-lived, and its own hits are the second lightest', () => {
+    expect(PATCH_RADIUS).toBeLessThan(STORM_ZONE_RADIUS);
+    expect(PATCH_TICKS).toBeLessThanOrEqual(150);
+    for (const ball of others(inferno.id).filter((other) => other.id !== archer.id)) {
+      expect(inferno.contactDamage).toBeLessThan(ball.contactDamage);
     }
   });
 
@@ -75,6 +113,10 @@ describe('the ball roster: identity rules', () => {
       magnet: 0,
       ghost: SPECTRAL_DAMAGE,
       necromancer: MINION_DAMAGE,
+      // A rewind heals nothing it didn't have; it is no hit.
+      chrono: 0,
+      titan: 0,
+      inferno: BURN_DAMAGE,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {

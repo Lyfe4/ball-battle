@@ -20,7 +20,26 @@ function overlaps(zone: ZoneState, ball: Pick<BallState, 'position' | 'radius'>)
 }
 
 /**
- * Strikes every zone whose strike tick is `tick` (ADR 0006). Each one deals its damage to every
+ * Which strike of `zone` falls on `tick`: 0 for its first, then 1, 2, ... for a lasting zone's
+ * pulses (ADR 0034); undefined when it doesn't strike on this tick.
+ */
+export function pulseAt(zone: ZoneState, tick: number): number | undefined {
+  if (tick === zone.strikeTick) return 0;
+  const { endTick, pulseEveryTicks } = zone;
+  if (endTick === undefined || pulseEveryTicks === undefined) return undefined;
+  if (tick < zone.strikeTick || tick > endTick) return undefined;
+  const since = tick - zone.strikeTick;
+  return since % pulseEveryTicks === 0 ? since / pulseEveryTicks : undefined;
+}
+
+/** True once a zone has nothing left to do after `tick`: it struck once, or its time is up. */
+function isSpent(zone: ZoneState, tick: number): boolean {
+  return tick >= (zone.endTick ?? zone.strikeTick);
+}
+
+/**
+ * Strikes every zone whose strike tick is `tick` (ADR 0006), and every lasting zone whose pulse
+ * falls on it (ADR 0034). Each one deals its damage to every
  * live ball other than its owner that overlaps it now, then is removed; the rest are kept as they
  * are. Zones strike in spawn order and each strike is applied before the next, so a ball brought
  * to 0 health by one zone is not hit by the next. A zone with a status applies it to each ball it
@@ -40,10 +59,13 @@ export function resolveZones(
   const events: SimEvent[] = [];
 
   for (const zone of zones) {
-    if (zone.strikeTick !== tick) {
-      remaining.push(zone);
+    const pulse = pulseAt(zone, tick);
+    if (pulse === undefined) {
+      if (!isSpent(zone, tick)) remaining.push(zone);
       continue;
     }
+    // A lasting zone stays for its next pulse; a strike-once zone is used up.
+    if (!isSpent(zone, tick)) remaining.push(zone);
     const hitIds: string[] = [];
     const damage: SimEvent[] = [];
     for (const ball of current) {
@@ -92,6 +114,7 @@ export function resolveZones(
         position: zone.position,
         radius: zone.radius,
         hitIds,
+        ...(zone.endTick === undefined ? {} : { pulse }),
       },
       ...damage,
     );

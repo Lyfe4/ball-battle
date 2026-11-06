@@ -12,6 +12,7 @@ import {
 } from '../status.ts';
 import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
+import { rewindBall } from './rewind.ts';
 import type {
   AbilityAction,
   BallState,
@@ -223,6 +224,17 @@ export function applyActions(
       case 'ruleApplied':
         events.push({ type: 'ruleApplied', tick, ballId: ownerId, rule: action.rule });
         break;
+      case 'rewind': {
+        // The one action that acts on an owner at 0 health (onKnockedOut, ADR 0034).
+        const index = indexOf(ownerId);
+        const self = next[index];
+        if (self === undefined) break;
+        const { maxHealth } = getDefinition(definitions, self.definitionId);
+        const rewound = rewindBall(self, action, maxHealth, arenaSize, tick);
+        next[index] = rewound.ball;
+        events.push(rewound.event);
+        break;
+      }
       default: {
         // Adding an action kind without handling it here is a compile error.
         const unhandled: never = action;

@@ -118,3 +118,9 @@ are a draw. Division is correctly rounded, so equal fractions compare equal on e
   small amount of state. Separation is exact for two balls; with three or more, one pairwise pass
   can leave small overlaps, which will need iteration when multi-ball matches arrive.
 - Ability hooks remain uncalled; their design is revisited in the next step.
+
+## Amended by ADR 0034 (2026-11-06)
+
+A ball brought to 0 health may still act before it is defeated: `onKnockedOut` runs for it, and
+its `rewind` action can put it back in the match (the Chrono, once a match). Defeat is decided
+after that phase.

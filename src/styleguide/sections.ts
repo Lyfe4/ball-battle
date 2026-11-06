@@ -6,9 +6,10 @@ import { CHARGE_TICKS } from '../sim/balls/sniper.ts';
 import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
 import type { StatusKind } from '../sim/status.ts';
 import type { AbilityState, BallState, Vec2 } from '../sim/types.ts';
+import { BATCH_THREE_AND_FOUR } from './sections-late.ts';
+import { TICK } from './tick.ts';
 
-/** The tick every tile is drawn on. */
-export const TICK = 600;
+export { TICK };
 
 export interface Tile {
   readonly label: string;
@@ -185,42 +186,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
       { label: 'defeated', id: 'quake', defeated: true },
     ],
   ],
-  [
-    'Magnet: a horseshoe; its tips glow while it pulls (a dashed line runs to its enemy)',
-    [
-      { label: 'idle', id: 'magnet' },
-      {
-        label: 'pulling',
-        id: 'magnet',
-        abilityState: { nextPullTick: TICK + 100, pullUntilTick: TICK + 10 },
-      },
-      { label: 'mirror B', id: 'magnet', repeat: true },
-      { label: 'defeated', id: 'magnet', defeated: true },
-    ],
-  ],
-  [
-    'Ghost: a ghost’s face; see-through with a broken outline while phased',
-    [
-      { label: 'solid', id: 'ghost' },
-      { label: 'phased', id: 'ghost', abilityState: { phased: true, nextChangeTick: TICK + 10 } },
-      { label: 'mirror B', id: 'ghost', repeat: true },
-      {
-        label: 'phased, mirror B',
-        id: 'ghost',
-        repeat: true,
-        abilityState: { phased: true, nextChangeTick: TICK + 10 },
-      },
-    ],
-  ],
-  [
-    'Necromancer: a hood with glowing eyes; its minions are skulls ringed in its colour',
-    [
-      { label: 'idle', id: 'necromancer' },
-      { label: 'hit flash', id: 'necromancer', flash: 0.6 },
-      { label: 'mirror B', id: 'necromancer', repeat: true },
-      { label: 'defeated', id: 'necromancer', defeated: true },
-    ],
-  ],
+  ...BATCH_THREE_AND_FOUR,
   [
     'Heals (ADR 0028): a green wash and a swelling ring, sized by the heal; any ball',
     [

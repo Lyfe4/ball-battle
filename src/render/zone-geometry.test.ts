@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boltPoints, strikeProgress } from './zone-geometry.ts';
+import { boltPoints, burnLook, strikeProgress } from './zone-geometry.ts';
 import { theme } from './theme.ts';
 
 describe('boltPoints', () => {
@@ -39,5 +39,22 @@ describe('strikeProgress', () => {
     expect(strikeProgress(zone, 90)).toBe(0);
     expect(strikeProgress(zone, 200)).toBe(1);
     expect(strikeProgress({ spawnTick: 5, strikeTick: 5 }, 5)).toBe(1);
+  });
+});
+
+describe('a burning patch', () => {
+  const patch = { spawnTick: 0, strikeTick: 20, endTick: 140, pulseEveryTicks: 15 };
+
+  it('grows while it catches, then burns at full size', () => {
+    expect(burnLook(patch, 10, 6)).toStrictEqual({ caught: 0.5, life: 1, glow: 0 });
+    expect(burnLook(patch, 20, 6)).toStrictEqual({ caught: 1, life: 1, glow: 1 });
+  });
+
+  it('flares on each burn, and fades as it burns out', () => {
+    expect(burnLook(patch, 23, 6).glow).toBeCloseTo(0.5, 9);
+    expect(burnLook(patch, 29, 6).glow).toBe(0);
+    expect(burnLook(patch, 35, 6).glow).toBe(1);
+    expect(burnLook(patch, 80, 6).life).toBeCloseTo(0.5, 9);
+    expect(burnLook(patch, 140, 6).life).toBe(0);
   });
 });

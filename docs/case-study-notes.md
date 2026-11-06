@@ -1,7 +1,7 @@
 # Case study notes
 
 Raw material for a write-up of BallBattle. Facts only, each checked against the repo on
-2026-11-06 (ruleset 4, 14 balls). Links point to where each fact is recorded.
+2026-11-06 (ruleset 5, 17 balls). Links point to where each fact is recorded.
 
 ## The project in one paragraph
 
@@ -28,7 +28,7 @@ as part of the product. Live at https://battle-ball.netlify.app/.
 
 - First commit 2026-11-01. Latest at time of writing 2026-11-06.
 - 270 commits on `main` and 8 merged pull requests. At least 257 commit subjects follow Conventional Commits.
-- 33 ADRs in [docs/decisions](decisions/).
+- 34 ADRs in [docs/decisions](decisions/).
 
 Rough arc, by ADR:
 
@@ -41,6 +41,7 @@ Rough arc, by ADR:
 7. Batch 3 balls (0026).
 8. Phone fixes, the counter pass, the coin toss and tooltips (0027-0030).
 9. Desktop layouts and the Sticker Pop restyle (0031-0033).
+10. Batch 4: Chrono, Titan, Inferno, with rewind, growth and lasting zones (0034).
 
 ## Key decisions and why
 
@@ -73,7 +74,7 @@ Rough arc, by ADR:
   replaying a different fight. One function, `verifySeries`, decides whether a series is valid, for
   the browser and a future server alike.
 - **Known results checked in every engine**
-  ([ADR 0023](decisions/0023-known-match-results-across-engines.md)). 210 recorded matches must
+  ([ADR 0023](decisions/0023-known-match-results-across-engines.md)). 306 recorded matches must
   come out bit-identical in Node, Chromium, Firefox and WebKit on every push.
 - **Battle feel bends presentation time, never sim time**
   ([ADR 0007](decisions/0007-presentation-clock.md)). Hit-stop, slow-mo and the intro change when
@@ -119,7 +120,13 @@ Rough arc, by ADR:
   After raising the favoured band to 62-72%, 14 pairs missed and `pnpm balance` failed on every
   run. Each band now has a target and a floor: below target is a visible warning, and only outside
   the floor fails. The distance to the target is listed in
-  [balance-summary.md](balance-summary.md) (33 pairs at ruleset 4).
+  [balance-summary.md](balance-summary.md).
+- **Batch 4 replaced three planned counters** ([ADR 0034](decisions/0034-chrono-titan-inferno.md)).
+  The Archer and Sniper were meant to beat the Titan, a bigger target. Measured, the Titan's bigger
+  body meets the Archer more often and its light hits lose, so the Titan is favoured. The Inferno was
+  meant to beat the slow Frost, which turned out only 7% slower than the field. A 3 s rewind for the
+  Chrono undid all recent damage alike; half a second undoes one big hit, which is what made its
+  burst counters (and Venom's edge over it) appear.
 - **Rejected tuning, with numbers** ([ADR 0028](decisions/0028-counter-pass.md)):
   - two Necromancer minions at once took Necromancer vs Archer to 80-94%;
   - 25% more health for every ball steepened the leans that already existed, not the counters.
@@ -145,27 +152,27 @@ Rough arc, by ADR:
 
 ## Hard numbers
 
-| What                   | Number                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------- |
-| Balls                  | 14                                                                                             |
-| Unit tests             | 664 tests in 92 files, about 4-7 s                                                             |
-| Slow roster tests      | 11 tests in 4 files (determinism, pass-through margin, measured identity rules, minion cap)    |
-| Browser tests          | 30 tests in 24 files, in Chromium, Firefox and WebKit through Vitest's Playwright provider     |
-| Known match results    | 210, bit-identical in Node, Chromium, Firefox and WebKit                                       |
-| CI jobs                | 4: lint/typecheck/unit/build, slow tests, balance check (150 seeds), browsers                  |
-| Balance run            | every ordered pair, 500 seeds per slot order by default, on all CPU cores                      |
-| Overall win rates      | every ball 47.1-53.0% (target 40-60%)                                                          |
-| Draws, fight length    | draws 0.6% (target under 5%); median fight 18.0 s (target 12-30 s)                             |
-| Counter bands          | favoured 62-72% (floor 58%); even 45-55% (floor 42-58%); no side worse than 25/75              |
-| Interaction rules      | 3, each with an on-screen cue                                                                  |
-| Ruleset versions       | 4                                                                                              |
-| Production bundle      | 141.20 kB JS (46.90 kB gzipped), 31.92 kB CSS (6.34 kB gzipped), 41.34 kB font (Latin subset)  |
-| First version baseline | 5.05 kB JS (2.41 kB gzipped)                                                                   |
-| Runtime dependencies   | 1 (the self-hosted Bricolage Grotesque font)                                                   |
-| TypeScript             | about 17,100 lines outside tests, 10,400 in tests (`src` and `scripts`)                        |
-| Frame cost (ADR 0028)  | median 0.6-0.9 ms, no frame over 16.7 ms, at 60, 90 and 120 Hz on a 4x-throttled phone profile |
+| What                   | Number                                                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Balls                  | 17                                                                                                                         |
+| Unit tests             | 695 tests in 97 files, about 4-7 s                                                                                         |
+| Slow roster tests      | 12 tests in 4 files (determinism, pass-through margin, measured identity rules, minion cap)                                |
+| Browser tests          | 30 tests in 24 files, in Chromium, Firefox and WebKit through Vitest's Playwright provider                                 |
+| Known match results    | 306, bit-identical in Node, Chromium, Firefox and WebKit                                                                   |
+| CI jobs                | 4: lint/typecheck/unit/build, slow tests, balance check (150 seeds), browsers                                              |
+| Balance run            | every ordered pair, 500 seeds per slot order by default, on all CPU cores                                                  |
+| Overall win rates      | every ball 45.6-52.3% (target 40-60%)                                                                                      |
+| Draws, fight length    | draws 0.6% (target under 5%); median fight 18.1 s (target 12-30 s)                                                         |
+| Counter bands          | favoured 62-72% (floor 58%); even 45-55% (floor 42-58%); no side worse than 25/75                                          |
+| Interaction rules      | 3, each with an on-screen cue                                                                                              |
+| Ruleset versions       | 5                                                                                                                          |
+| Production bundle      | 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), 41.34 kB font (Latin subset)                              |
+| First version baseline | 5.05 kB JS (2.41 kB gzipped)                                                                                               |
+| Runtime dependencies   | 1 (the self-hosted Bricolage Grotesque font)                                                                               |
+| TypeScript             | about 18,300 lines outside tests, 11,000 in tests (`src` and `scripts`)                                                    |
+| Frame cost (ADR 0034)  | median 0.4-0.5 ms, no frame over 16.7 ms, at 60, 90 and 120 Hz on a 4x-throttled phone profile (`scripts/frame-timing.ts`) |
 
-Sources: `pnpm test`, `pnpm test:slow`, `pnpm test:browsers` and `pnpm build` run on 2026-11-06;
+Sources: `pnpm test`, `pnpm test:slow`, `pnpm test:browsers`, `pnpm build` and `scripts/frame-timing.ts` run on 2026-11-06;
 `src/golden/golden-matches.json`; `.github/workflows/ci.yml`;
 [balance-summary.md](balance-summary.md) and [ADR 0028](decisions/0028-counter-pass.md) for the
 balance figures.

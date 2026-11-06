@@ -1,5 +1,7 @@
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
+import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
 import type { RuleAppliedEvent, RuleId } from './rules.ts';
+import type { ZoneLinger } from './zones/spawn.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -83,6 +85,13 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly phasedOf?: (self: BallView<S>) => boolean;
   /**
+   * The ball's radius on a tick, for a ball whose size changes during a match (the Titan, ADR 0034).
+   * A pure query, like `cruiseSpeed`. Applied at the end of every tick, with cruise speed, and the
+   * ball is kept inside the arena. Its mass is r², so a bigger ball is heavier. Defaults to
+   * `radius`, which is also its size when the match starts.
+   */
+  readonly radiusOf?: (self: BallView<S>, tick: number) => number;
+  /**
    * Share of a status's duration this ball keeps, per kind (ADR 0016): 0.8 wears it off 20% sooner,
    * 0 makes the ball immune. Kinds not listed last their full duration. Plain data, read when the
    * status is applied, so it works the same for actions and zones.
@@ -95,7 +104,8 @@ export type BallView<S extends AbilityState> = Omit<BallState, 'abilityState'> &
   readonly abilityState: S;
 };
 
-export type HookName = 'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken';
+export type HookName =
+  'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken' | 'onKnockedOut';
 
 export type DamageCause = 'contact' | 'ability';
 
@@ -192,6 +202,8 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly delayTicks: number;
       /** Applied to every ball the strike hits, after its damage (ADR 0009). */
       readonly status?: StatusRequest;
+      /** Lasts after the first strike, pulsing on a fixed rhythm (ADR 0034). */
+      readonly linger?: ZoneLinger;
     }
   /**
    * Summons a minion just outside the hook owner's edge, heading along `velocity`, unless the
@@ -209,7 +221,12 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly durationTicks: number;
     }
   /** Says an interaction rule just acted on this ball (ADR 0028). Changes nothing in the world. */
-  | { readonly kind: 'ruleApplied'; readonly rule: RuleId };
+  | { readonly kind: 'ruleApplied'; readonly rule: RuleId }
+  /**
+   * Puts the hook owner back at an earlier position, velocity and health (the Chrono, ADR 0034).
+   * The only action that acts on an owner at 0 health, from `onKnockedOut`.
+   */
+  | ({ readonly kind: 'rewind' } & RewindRequest);
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 
@@ -231,6 +248,12 @@ export interface BallHooks<S extends AbilityState = AbilityState> {
    * deal never fires onDamageDealt or onDamageTaken again, so effects can't chain or loop.
    */
   readonly onDamageTaken?: (context: DamageTakenContext<S>) => Actions<S>;
+  /**
+   * After onDamageTaken, when damage this tick took the ball from alive to 0 health, before it is
+   * defeated (ADR 0034). The one hook that runs for a ball at 0: a `rewind` it returns puts it back
+   * in the match (apply it first: its other actions need it alive). Fires no other hooks.
+   */
+  readonly onKnockedOut?: (context: HookContext<S>) => Actions<S>;
 }
 
 /** One ball in a running match. Plain serialisable data; refers to its definition by id. */
@@ -289,6 +312,12 @@ export interface ZoneState {
   readonly strikeTick: number;
   /** Applied to every ball the strike hits, after its damage (ADR 0009). */
   readonly status?: StatusRequest;
+  /**
+   * A lasting zone (ADR 0034) stays until this tick, striking again every `pulseEveryTicks` after
+   * `strikeTick` (on `endTick` too, if the rhythm lands on it). Absent: it strikes once.
+   */
+  readonly endTick?: number;
+  readonly pulseEveryTicks?: number;
 }
 
 /**
@@ -456,6 +485,8 @@ export interface ZoneStruckEvent {
   readonly radius: number;
   /** Balls that took damage from this strike. */
   readonly hitIds: readonly string[];
+  /** A lasting zone's pulse (ADR 0034): 0 for its first strike, then 1, 2, ... Absent otherwise. */
+  readonly pulse?: number;
 }
 
 export interface BallDefeatedEvent {
@@ -494,6 +525,7 @@ export type SimEvent =
   | StatusExpiredEvent
   | HealReducedEvent
   | RuleAppliedEvent
+  | RewoundEvent
   | MinionEvent;
 
 export interface StepResult {
