@@ -170,8 +170,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
-  in its counter-map band (`scripts/counter-map.ts`: favoured side 62-72%, even 45-55%, within 2
-  points outside a band passes as NEAR; ADR 0010, 0028). Re-check after any stat or ability change.
+  inside its counter-map floor (`scripts/counter-map.ts`, ADR 0010, 0028): the target is favoured
+  62-72% and even 45-55%; a pair between the target and the floor (favoured 58-72%, even 42-58%)
+  is a WARN listed as below target, not a failure; within 2 points outside the floor passes as NEAR;
+  further out is a MISS. Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
   `src/sim/counter-map-*.ts` data file for its batch; the bands are checked in
   `scripts/counter-map.ts`), and each

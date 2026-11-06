@@ -149,10 +149,45 @@ export interface SummaryContext {
   readonly command: string;
 }
 
+/** A pair inside its floor but outside its target band (ADR 0028 addendum): warned, not failed. */
+export interface BelowTarget {
+  /** "Storm vs Thorns". */
+  readonly pair: string;
+  /** "Storm favoured", or "even". */
+  readonly intended: string;
+  /** The favoured side's rate, or both sides' for an even pair, as printed. */
+  readonly rates: string;
+}
+
+const band = ([low, high]: readonly [number, number]): string =>
+  `${String(Math.round(low * 100))}-${String(Math.round(high * 100))}%`;
+
+/** The below-target section of docs/balance-summary.md: every such pair, or "None.". */
+export function belowTargetLines(pairs: readonly BelowTarget[]): string[] {
+  const { favoured, even, favouredFloor, evenFloor } = COUNTER_BANDS;
+  const intro = [
+    '## Below target',
+    '',
+    `Counter-map pairs inside their floor (favoured ${band(favouredFloor)}, even ${band(evenFloor)})`,
+    `but outside their target (favoured ${band(favoured)}, even ${band(even)}): a WARN in`,
+    '`pnpm balance`, a pair to sharpen rather than a failure (ADR 0028 addendum).',
+    '',
+  ];
+  if (pairs.length === 0) return [...intro, 'None.', ''];
+  return [
+    ...intro,
+    '| Pair | Intended | Result |',
+    '| ---- | -------- | -----: |',
+    ...pairs.map(({ pair, intended, rates }) => `| ${pair} | ${intended} | ${rates} |`),
+    '',
+  ];
+}
+
 /** docs/balance-summary.md: the same summary as a table, generated and committed. */
 export function summaryMarkdown(
   summaries: readonly BallSummary[],
   context: SummaryContext,
+  belowTarget: readonly BelowTarget[] = [],
 ): string {
   const row = (ball: BallSummary) =>
     `| ${ball.name} | ${percent(ball.winRate)} | ${GROUPS.map((group) => cell(ball.byMap.groups[group])).join(' | ')} | ${gapText(ball.byMap)} | ${GROUPS.map((group) => cell(ball.measured.groups[group])).join(' | ')} | ${gapText(ball.measured)} |`;
@@ -181,5 +216,6 @@ export function summaryMarkdown(
       ? 'No ball is lopsided.'
       : `Lopsided: ${flagged.map((ball) => ball.name).join(', ')}.`,
     '',
+    ...belowTargetLines(belowTarget),
   ].join('\n');
 }

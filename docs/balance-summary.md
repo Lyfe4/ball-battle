@@ -31,3 +31,45 @@ failure.
 | Necromancer | 47.1% |   2 (59.5%) |  7 (47.8%) | 4 (39.7%) |      -2 |        2 (59.5%) |      6 (48.6%) |      5 (40.4%) |           -3 |
 
 Lopsided: Speedster, Frost.
+
+## Below target
+
+Counter-map pairs inside their floor (favoured 58-72%, even 42-58%)
+but outside their target (favoured 62-72%, even 45-55%): a WARN in
+`pnpm balance`, a pair to sharpen rather than a failure (ADR 0028 addendum).
+
+| Pair                     | Intended           |        Result |
+| ------------------------ | ------------------ | ------------: |
+| Brawler vs Archer        | even               | 43.0% / 56.8% |
+| Brawler vs Magnet        | even               | 53.3% / 43.7% |
+| Brawler vs Ghost         | even               | 43.1% / 56.5% |
+| Vampire vs Speedster     | even               | 56.5% / 43.4% |
+| Speedster vs Storm       | Speedster favoured |         58.9% |
+| Thorns vs Speedster      | even               | 55.9% / 43.3% |
+| Quake vs Speedster       | even               | 53.7% / 44.8% |
+| Ghost vs Speedster       | Ghost favoured     |         60.1% |
+| Frost vs Vampire         | even               | 43.4% / 54.7% |
+| Vampire vs Venom         | Vampire favoured   |         59.2% |
+| Vampire vs Berserker     | Vampire favoured   |         59.0% |
+| Quake vs Vampire         | Vampire favoured   |         58.5% |
+| Frost vs Archer          | Archer favoured    |         60.9% |
+| Archer vs Sniper         | even               | 54.9% / 44.9% |
+| Archer vs Quake          | Quake favoured     |         61.3% |
+| Magnet vs Archer         | even               | 56.9% / 42.6% |
+| Storm vs Frost           | Storm favoured     |         60.3% |
+| Storm vs Quake           | even               | 44.4% / 55.2% |
+| Storm vs Ghost           | even               | 57.2% / 42.5% |
+| Berserker vs Frost       | even               | 53.9% / 44.3% |
+| Frost vs Quake           | Frost favoured     |         60.9% |
+| Ghost vs Frost           | even               | 54.1% / 44.8% |
+| Venom vs Thorns          | Venom favoured     |         61.6% |
+| Quake vs Thorns          | even               | 42.2% / 57.2% |
+| Berserker vs Venom       | Venom favoured     |         59.0% |
+| Magnet vs Venom          | Magnet favoured    |         60.9% |
+| Quake vs Berserker       | Berserker favoured |         61.4% |
+| Berserker vs Necromancer | Berserker favoured |         59.0% |
+| Magnet vs Sniper         | Magnet favoured    |         60.5% |
+| Sniper vs Ghost          | Sniper favoured    |         61.0% |
+| Magnet vs Quake          | Magnet favoured    |         60.2% |
+| Quake vs Necromancer     | even               | 55.5% / 43.1% |
+| Necromancer vs Ghost     | Ghost favoured     |         60.8% |

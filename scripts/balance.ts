@@ -30,6 +30,7 @@ import {
   summarise,
   summaryLines,
   summaryMarkdown,
+  type BelowTarget,
   type PairRates,
 } from './balance-summary.ts';
 
@@ -144,18 +145,22 @@ console.log(
 const sensitivityLines: string[] = [];
 const pairRates: PairRates[] = [];
 const counterLines: string[] = [];
+/** Pairs between their floor and their target (ADR 0028 addendum): warned, listed, not failed. */
+const belowTarget: BelowTarget[] = [];
 let counterMapOk = true;
 
 const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
   ok: 'ok  ',
   warn: 'WARN',
+  short: 'WARN',
   near: 'NEAR',
   miss: 'MISS',
 };
 
 /**
- * One counter-map line for a pair. Only MISS fails the target: WARN (in band, near an edge) and
- * NEAR (just outside, within the noise allowance) pass.
+ * One counter-map line for a pair. Only MISS fails the target: WARN (in the target near an edge,
+ * or below the target but inside the floor) and NEAR (just outside, within the noise allowance)
+ * pass.
  */
 function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): string {
   const entry = counterFor(x.id, y.id);
@@ -177,7 +182,10 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
     entry.intended === 'even'
       ? `${pct(xRate).trim()} / ${pct(yRate).trim()}`
       : pct(entry.intended === 'x' ? xRate : yRate).trim();
-  return `  ${VERDICT_LABEL[verdict]} ${`${name(entry.x)} vs ${name(entry.y)}`.padEnd(24)} ${intended.padEnd(20)} ${rates}`;
+  const pair = `${name(entry.x)} vs ${name(entry.y)}`;
+  if (verdict === 'short') belowTarget.push({ pair, intended, rates });
+  const note = verdict === 'short' ? '  below target' : '';
+  return `  ${VERDICT_LABEL[verdict]} ${pair.padEnd(24)} ${intended.padEnd(20)} ${rates}${note}`;
 }
 
 for (const [x, y] of pairs) {
@@ -227,7 +235,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map (favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; WARN in band within ${COUNTER_BANDS.warnWithin * 100} pts of an edge; NEAR outside by at most ${(nearWithin * 100).toFixed(1)} pts, passes)`,
+  `\n  Counter map: target favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; floor favoured ${band(COUNTER_BANDS.favouredFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
 );
 console.log(counterLines.join('\n'));
 
@@ -264,7 +272,7 @@ console.log('\n  Per ball shape: opponents (average win rate); gap = strong - we
 console.log(summaryLines(summaries).join('\n'));
 if (writeSummary) {
   const context = { seeds, ruleset: RULESET_VERSION, command: 'pnpm balance:summary' };
-  writeFileSync('docs/balance-summary.md', summaryMarkdown(summaries, context));
+  writeFileSync('docs/balance-summary.md', summaryMarkdown(summaries, context, belowTarget));
   console.log('\n  Wrote docs/balance-summary.md');
 }
 
@@ -282,7 +290,10 @@ console.log(
 console.log(
   `  ${check(worstShare >= HARD_WORST_MATCHUP)} no matchup worse than 25/75 (hard limit, docs/vision.md)`,
 );
-console.log(`  ${check(counterMapOk)} every pair in its counter-map band`);
+console.log(`  ${check(counterMapOk)} every pair inside its counter-map floor`);
+console.log(
+  `  ${belowTarget.length === 0 ? 'ok  ' : 'WARN'} every pair in its target band${belowTarget.length === 0 ? '' : `: ${String(belowTarget.length)} below target (marked above)`}`,
+);
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
   `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
