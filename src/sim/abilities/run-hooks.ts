@@ -93,7 +93,15 @@ export function runPhase(
   const events: SimEvent[] = [];
   for (const { ballId, hook, actions } of collected) {
     events.push({ type: 'abilityTriggered', tick: world.tick, ballId, hook });
-    const result = applyActions(scene, ballId, actions, definitions, world.tick, world.arena.size);
+    const result = applyActions(
+      scene,
+      ballId,
+      actions,
+      definitions,
+      world.tick,
+      world.arena.size,
+      hook,
+    );
     scene = result;
     events.push(...result.events);
   }

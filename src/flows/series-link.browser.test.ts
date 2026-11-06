@@ -80,10 +80,18 @@ describe('a shared Reveal link', () => {
     history.replaceState(null, '', start);
     await import('../main.ts');
 
+    // Every series screen that shows a symbol offers the legend's ? (ADR 0035).
+    const explained = () =>
+      visible('#series [data-symbol]').length === 0 ||
+      visible('#series .symbol-legend-toggle').length === 1;
+    expect(explained()).toBe(true);
     await until(() => phase() === 'between', 60_000);
+    expect(visible('#series [data-symbol]').length).toBeGreaterThan(0);
+    expect(explained()).toBe(true);
     button(`Play round 2`).click();
     await settle();
     expect(phase()).toBe('playing');
+    expect(explained()).toBe(true);
     const [you, bot] = fighting();
     expect(you).toContain(BALL_LOOKUP.get(round2.a)?.name);
     expect(bot).toContain(BALL_LOOKUP.get(round2.b)?.name);

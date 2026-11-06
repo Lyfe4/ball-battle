@@ -1,7 +1,8 @@
 // A best-of-3 series in the URL (ADR 0017, 0019): `?mode=bo3&la=a,b,c&lb=d,e,f&seed=N` holds both
-// lineups and the series seed; `fmt=reveal` or `fmt=loser` names a draft format (none is blind), a
-// series with picks adds `picks=x,y,...`, every pick in order (ADR 0019, 0021), and `v=` names the
-// ruleset it was played under (ADR 0022). Side B is always the bot, its lineup picked from the
+// lineups and the series seed; `fmt=reveal` or `fmt=showdown` names a draft format (none is blind),
+// a series with picks adds `picks=x,y,...`, every pick in order (ADR 0019, 0021, 0035), and `v=` names
+// the ruleset it was played under (ADR 0022). Side B is always a bot: `bot=` names its level
+// (ADR 0035; absent is the first bot, which every older link played), its lineup picked from the
 // series seed, or from `bs=` after a rematch kept the lineup (ADR 0022). That is everything that decides a series, so the link
 // replays it exactly under that ruleset. A link with only `mode=bo3` (and perhaps `fmt`), or with
 // anything invalid, opens the lineup builder instead.
@@ -28,7 +29,14 @@ const KEYS = {
   step: 'step',
   version: 'v',
   lineupSeed: 'bs',
+  bot: 'bot',
 } as const;
+
+/**
+ * Retired formats a link may still name, and the format that replaced each. Such a link can't
+ * replay under today's rules, so it opens the lineup step with its replacement chosen (ADR 0035).
+ */
+const RETIRED_FORMATS: Readonly<Record<string, Format>> = { loser: 'showdown' };
 
 /**
  * The best-of-3 setup step a URL is on, past the first (choosing the rules). Only a link that holds
@@ -48,6 +56,11 @@ export interface SeriesLink {
   readonly format?: Format;
   /** The setup step, when the link names one. */
   readonly step?: SeriesStep;
+  /**
+   * A whole series in a retired format (ADR 0035): the ruleset it was played under, so the route
+   * shows the older-link notice before the lineup step, as for any other old replay link.
+   */
+  readonly retiredFrom?: number;
 }
 
 const ids = (raw: string): string[] => raw.split(',').map((id) => id.trim().toLowerCase());
@@ -65,13 +78,18 @@ function readFormat(raw: string | null): Format | undefined {
   return FORMATS.find((format) => format === name);
 }
 
+/** The format a retired format's link prefills the lineup step with, if it names one. */
+function replacementFormat(raw: string | null): Format | undefined {
+  return RETIRED_FORMATS[raw?.trim().toLowerCase() ?? ''];
+}
+
 /** Picks a whole series of each format records (ADR 0019, 0021); a blind series has none. */
 const PICKS: Readonly<Record<Format, { readonly min: number; readonly max: number }>> = {
   blind: { min: 0, max: 0 },
-  // Loser picks next: at most one per round after the first.
-  loser: { min: 0, max: LINEUP_SIZE - 1 },
-  // Reveal: both sides pick in rounds 1 and 2, and a series is never decided before round 2.
+  // Reveal and Showdown: both sides pick in rounds 1 and 2, and a series is never decided before
+  // round 2.
   reveal: { min: 4, max: 4 },
+  showdown: { min: 4, max: 4 },
 };
 
 /**
@@ -97,14 +115,21 @@ export function parseSeriesParams(
   const a = readLineup(params.get(KEYS.a), validIds);
   const b = readLineup(params.get(KEYS.b), validIds);
   const seed = parseSeed(params.get(KEYS.seed));
-  const format = readFormat(params.get(KEYS.format));
+  const format = readFormat(params.get(KEYS.format)) ?? replacementFormat(params.get(KEYS.format));
+  const retired = replacementFormat(params.get(KEYS.format)) !== undefined;
   const stepName = params.get(KEYS.step)?.trim().toLowerCase();
   const step = STEPS.find((name) => name === stepName);
   const named = {
     ...(format === undefined || format === 'blind' ? {} : { format }),
     ...(step === undefined ? {} : { step }),
   };
-  if (a !== undefined && b !== undefined && seed !== undefined && format !== undefined) {
+  if (
+    a !== undefined &&
+    b !== undefined &&
+    seed !== undefined &&
+    format !== undefined &&
+    !retired
+  ) {
     const picks = readPicks(params.get(KEYS.picks), a, b);
     // A reveal link from before ADR 0021 has no picks: it can't replay under the new rules, so it
     // falls back to the lineup, prefilled, like any other link that doesn't hold a whole series.
@@ -118,13 +143,19 @@ export function parseSeriesParams(
       // kept the lineup it picked for an earlier series (ADR 0022).
       const rawLineupSeed = params.get(KEYS.lineupSeed);
       const lineupSeed = rawLineupSeed === null ? seed : parseSeed(rawLineupSeed);
+      // The bot's level; a link from before levels played the first bot. An unknown level is
+      // kept, so `verifySeries` refuses the link rather than replaying another bot's series.
+      const named = params.get(KEYS.bot)?.trim().toLowerCase() ?? '';
+      const bot = named === '' ? randomBot.id : named;
       if (lineupSeed !== undefined) {
-        const opponent: Opponent = { kind: 'bot', bot: randomBot.id, lineupSeed };
+        const opponent: Opponent = { kind: 'bot', bot, lineupSeed };
         return { setup: { ruleset, seed, a, b, opponent, ...extra, ...withPicks } };
       }
     }
   }
-  return a === undefined ? named : { lineup: a, ...named };
+  const whole = retired && a !== undefined && b !== undefined && seed !== undefined;
+  const from = whole ? { retiredFrom: parseVersion(params.get(KEYS.version)) } : {};
+  return a === undefined ? named : { lineup: a, ...named, ...from };
 }
 
 /** Writes a whole series into URL parameters, replacing any quick-match ones. */
@@ -139,6 +170,8 @@ export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): 
   if (opponent.kind === 'bot' && opponent.lineupSeed !== setup.seed) {
     params.set(KEYS.lineupSeed, String(opponent.lineupSeed));
   }
+  // The first bot is what a link without `bot=` means, so its links stay as they were.
+  if (opponent.kind === 'bot' && opponent.bot !== randomBot.id) params.set(KEYS.bot, opponent.bot);
   if (setup.picks !== undefined && setup.picks.length > 0) {
     params.set(KEYS.picks, setup.picks.join(','));
   }
@@ -171,6 +204,7 @@ export function clearSeriesParams(params: URLSearchParams): void {
   params.delete(KEYS.step);
   params.delete(KEYS.version);
   params.delete(KEYS.lineupSeed);
+  params.delete(KEYS.bot);
 }
 
 function clearMatchParams(params: URLSearchParams): void {
@@ -183,4 +217,5 @@ function clearMatchParams(params: URLSearchParams): void {
   params.delete(KEYS.picks);
   params.delete(KEYS.version);
   params.delete(KEYS.lineupSeed);
+  params.delete(KEYS.bot);
 }

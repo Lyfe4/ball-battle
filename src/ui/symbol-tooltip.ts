@@ -1,14 +1,23 @@
-// A small tooltip that says what a symbol means (ADR 0030), for players with a mouse or a keyboard:
-// hovering a symbol with a mouse, or moving keyboard focus onto a control that shows symbols. Its
-// words come from the same table as the symbol legend (symbols.ts), so the two never disagree.
-// Touch adds nothing: a tap is a press, and the legend stays the way to look a symbol up there.
-// One tooltip serves the whole page, found by event delegation on `[data-symbol]`, so a screen only
+// A small tooltip that says what a symbol means (ADR 0030, 0035): hovering a symbol with a mouse,
+// moving keyboard focus onto a control that shows symbols, or on a touch screen tapping a symbol
+// that is not part of a control, or pressing and holding one that is (a pick row, a grid tile),
+// where a plain tap still presses the control. Its words come from the same table as the symbol
+// legend (symbols.ts), so the two never disagree. Screens that ask the player to read marks also
+// show a one-line key, so no gesture is ever needed to read them. One tooltip serves the whole page, found by event delegation on `[data-symbol]`, so a screen only
 // names its symbols (`markSymbol`) and never wires a tooltip of its own.
 import { element } from './dom.ts';
 import { tooltipLines, type SymbolKey } from './symbols.ts';
 import { placeTooltip } from './tooltip-place.ts';
 
 const SYMBOL = '[data-symbol]';
+/** A control a tap presses: a symbol inside one is explained by pressing and holding. */
+const CONTROL = 'button, a[href], [role="button"], input, select, label';
+/** How long a press is held before it explains the symbol instead of pressing the control. */
+export const HOLD_MS = 450;
+/** A touch that moves further than this is a scroll, not a tap or a hold. */
+const SLOP_PX = 10;
+/** A tooltip opened by touch closes by itself after this long. */
+const TOUCH_SHOW_MS = 3000;
 
 /** Names the symbol `node` shows, so the tooltip can say what it means; undefined clears it. */
 export function markSymbol(node: HTMLElement, key: SymbolKey | undefined): void {
@@ -54,8 +63,12 @@ export function installSymbolTooltips(doc: Document = document): void {
     tip.style.top = `${String(at.top)}px`;
   }
 
+  /** True while the tooltip shows for a touch, which focus moving must not close. */
+  let byTouch = false;
+
   function hide(): void {
     anchor = undefined;
+    byTouch = false;
     tip.hidden = true;
   }
 
@@ -83,10 +96,85 @@ export function installSymbolTooltips(doc: Document = document): void {
     else hide();
   });
   doc.addEventListener('focusout', () => {
-    hide();
+    // A touch's compatibility mouse events move focus after the tooltip opened: keep it.
+    if (!byTouch) hide();
   });
   doc.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') hide();
+  });
+
+  // Touch: a tap on a symbol outside a control, or a held press on one inside a control.
+  const view = doc.defaultView ?? window;
+  let press: { x: number; y: number; symbol: HTMLElement; held: boolean } | undefined;
+  let holdTimer: number | undefined;
+  let closeTimer: number | undefined;
+  /** Set once a hold has explained a symbol, so the click that follows doesn't press the control. */
+  let swallowClick = false;
+  const stopHold = () => {
+    if (holdTimer !== undefined) view.clearTimeout(holdTimer);
+    holdTimer = undefined;
+  };
+  const showForTouch = (symbol: HTMLElement) => {
+    show(symbol, [symbol]);
+    byTouch = true;
+    if (closeTimer !== undefined) view.clearTimeout(closeTimer);
+    closeTimer = view.setTimeout(hide, TOUCH_SHOW_MS);
+  };
+  doc.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch' || !(event.target instanceof Element)) return;
+    const symbol = event.target.closest<HTMLElement>(SYMBOL);
+    // Any other touch closes a tooltip that is open.
+    if (symbol !== anchor) hide();
+    swallowClick = false;
+    stopHold();
+    if (symbol === null) {
+      press = undefined;
+      return;
+    }
+    press = { x: event.clientX, y: event.clientY, symbol, held: false };
+    if (symbol.closest(CONTROL) === null) return;
+    holdTimer = view.setTimeout(() => {
+      if (press === undefined) return;
+      press.held = true;
+      swallowClick = true;
+      showForTouch(press.symbol);
+    }, HOLD_MS);
+  });
+  doc.addEventListener('pointermove', (event) => {
+    if (press === undefined || event.pointerType !== 'touch') return;
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > SLOP_PX) {
+      press = undefined;
+      stopHold();
+    }
+  });
+  doc.addEventListener('pointercancel', () => {
+    press = undefined;
+    stopHold();
+  });
+  doc.addEventListener('pointerup', (event) => {
+    if (press === undefined || event.pointerType !== 'touch') return;
+    stopHold();
+    const { symbol, held } = press;
+    press = undefined;
+    // A tap on a symbol that is not part of a control explains it.
+    if (!held && symbol.closest(CONTROL) === null) showForTouch(symbol);
+  });
+  // Capture, so the control under a held press never sees the click that ends it.
+  doc.addEventListener(
+    'click',
+    (event) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    { capture: true },
+  );
+  // A long press would otherwise open the browser's own menu over the tooltip.
+  doc.addEventListener('contextmenu', (event) => {
+    if (event.target instanceof Element && event.target.closest(SYMBOL) !== null) {
+      event.preventDefault();
+    }
   });
   // A tooltip left behind by scrolling would point at nothing.
   doc.addEventListener('scroll', hide, { capture: true, passive: true });

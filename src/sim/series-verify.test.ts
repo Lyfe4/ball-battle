@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
-import { randomBot } from './bot.ts';
+import { BOT_LEVELS, randomBot } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { revealFirst, setupWithPicks, type Format, type SeriesSetup } from './series.ts';
 import { playSeries, verifySeries } from './series-verify.ts';
@@ -9,25 +9,16 @@ import { playLikeTheGame } from './test-support.ts';
 const ids = BALLS.map((ball) => ball.id);
 
 /** A series against the bot as the game sets one up, played to the end: its link's setup. */
-function decided(format: Format, seed: number): SeriesSetup {
+function decided(format: Format, seed: number, bot = randomBot.id): SeriesSetup {
   const setup: SeriesSetup = {
     ruleset: RULESET_VERSION,
     seed,
     a: randomBot.pickLineup(seed + 1000, ids),
     b: randomBot.pickLineup(seed, ids),
-    opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: seed },
+    opponent: { kind: 'bot', bot, lineupSeed: seed },
     ...(format === 'blind' ? {} : { format }),
   };
   return setupWithPicks(playLikeTheGame(setup, BALL_LOOKUP));
-}
-
-/** A loser-picks-next series in which the bot lost round 1 and picked. */
-function loserWithBotPick(): SeriesSetup {
-  for (let seed = 0; seed < 100; seed++) {
-    const setup = decided('loser', seed);
-    if (playSeries(setup, BALL_LOOKUP).picks.some((pick) => pick.side === 'b')) return setup;
-  }
-  throw new Error('No seed where the bot picks');
 }
 
 const reasonOf = (setup: SeriesSetup) => {
@@ -37,13 +28,17 @@ const reasonOf = (setup: SeriesSetup) => {
 
 describe('verifySeries', () => {
   it('accepts every series the game plays, in every format, with the state the game reached', () => {
-    for (const format of ['blind', 'reveal', 'loser'] as const) {
-      // Seeds 1-4 give Reveal's toss to the bot, 5 and 6 to the player.
-      for (const seed of [1, 2, 3, 5, 6]) {
-        const setup = decided(format, seed);
-        const verdict = verifySeries(setup, BALL_LOOKUP);
-        expect(verdict.ok, `${format} ${String(seed)}`).toBe(true);
-        expect(verdict.ok && verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
+    for (const format of ['blind', 'reveal', 'showdown'] as const) {
+      for (const bot of [randomBot, ...BOT_LEVELS]) {
+        // Seeds 1-4 give Reveal's toss to the bot, 5 and 6 to the player. Each level plays one of
+        // each, which keeps the test inside its time limit on a busy runner.
+        const seeds = bot === randomBot ? [1, 2, 3, 5, 6] : [2, 5];
+        for (const seed of seeds) {
+          const setup = decided(format, seed, bot.id);
+          const verdict = verifySeries(setup, BALL_LOOKUP);
+          expect(verdict.ok, `${format} ${bot.id} ${String(seed)}`).toBe(true);
+          expect(verdict.ok && verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
+        }
       }
     }
   });
@@ -92,10 +87,22 @@ describe('verifySeries', () => {
     const [shown = '', ...rest] = reveal.picks ?? [];
     const otherBall = reveal.b.find((id) => id !== shown) ?? '';
     expect(reasonOf({ ...reveal, picks: [otherBall, ...rest] })).toMatch(/Pick 1 is not/);
-    const loser = loserWithBotPick();
-    const botBall = loser.picks?.[0];
-    const swapped = loser.b.find((id) => id !== botBall && id !== loser.b[0]) ?? '';
-    expect(reasonOf({ ...loser, picks: [swapped] })).toMatch(/not the one the bot makes/);
+    // Showdown: the bot's opener is pick 2, and another level would have opened differently.
+    for (let seed = 0; seed < 40; seed++) {
+      const hard = decided('showdown', seed, 'hard');
+      const [mine = '', opener = '', ...others] = hard.picks ?? [];
+      const swapped = hard.b.find((id) => id !== opener) ?? '';
+      expect(reasonOf({ ...hard, picks: [mine, swapped, ...others] })).toMatch(/Pick 2 is not/);
+    }
+    // The same series, said to be against another bot, is refused wherever that bot differs.
+    const refused = [1, 2, 3, 4, 5, 6, 7, 8].filter(
+      (seed) =>
+        reasonOf({
+          ...decided('reveal', seed, 'hard'),
+          opponent: { kind: 'bot', bot: 'easy', lineupSeed: seed },
+        }) !== 'ok',
+    );
+    expect(refused.length).toBeGreaterThan(0);
   });
 
   it('refuses a pick the side does not have, a missing pick and one never used', () => {
@@ -121,7 +128,7 @@ describe('verifySeries', () => {
   });
 
   it('checks only that a player opponent’s picks are legal', () => {
-    const setup = decided('loser', 1);
+    const setup = decided('showdown', 1);
     const [x, y, z] = setup.b;
     const player: SeriesSetup = { ...setup, b: [z, y, x], opponent: { kind: 'player' } };
     expect(reasonOf({ ...player, picks: [] })).not.toMatch(/lineup|bot/);

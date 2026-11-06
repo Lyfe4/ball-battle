@@ -3,12 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { FORMATS, nextMatch, recordOutcome, startSeries, type SeriesState } from '../sim/series.ts';
 import {
   betweenLine,
-  botPicksLine,
   finalLine,
   FORMAT_LINES,
   FORMAT_NAMES,
-  pickLine,
-  revealShowLine,
+  openLine,
+  showLine,
   playingLine,
   roundLine,
   scoreLine,
@@ -83,18 +82,12 @@ describe('draft format text', () => {
     }
   });
 
-  it('tells the losing player what they pick against, and says when the bot picks', () => {
-    expect(pickLine(1, 'frost', names)).toBe(
-      'You lost round 1. The bot plays its FROST next: pick your ball to face it.',
+  it('tells the player they show first, and what the bot may answer with, never which', () => {
+    expect(showLine(1, ['storm', 'quake'], names)).toBe(
+      'Round 2: you show first. Pick your ball; the bot answers with STORM or QUAKE.',
     );
-    expect(botPicksLine(1, 'vampire', names)).toBe(
-      'Next, round 2: your VAMPIRE. The bot lost round 1, so it picks its next ball knowing yours.',
-    );
-  });
-
-  it('tells the player they show first in reveal, and what the bot can answer with', () => {
-    expect(revealShowLine(1, ['storm', 'quake'], names)).toBe(
-      'Round 2: you show first. Pick your ball; the bot answers with its best counter from STORM and QUAKE.',
+    expect(openLine(['storm', 'quake', 'frost'], names)).toBe(
+      'Round 1: pick your opener. The bot picks from STORM, QUAKE, FROST at the same time.',
     );
   });
 });

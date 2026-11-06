@@ -139,10 +139,10 @@ describe('Back through whole flows', () => {
   it('goes back to the lineup for New series rather than stacking another', () => {
     const { navigation, back, at } = app();
     navigation.go((url) => {
-      writeSeriesModeParams(url, 'loser', 'lineup');
+      writeSeriesModeParams(url, 'showdown', 'lineup');
     });
     navigation.go((url) => {
-      writeSeriesModeParams(url, 'loser', 'play');
+      writeSeriesModeParams(url, 'showdown', 'play');
     });
     navigation.go((url) => {
       writeSeriesModeParams(url, 'blind', 'lineup');

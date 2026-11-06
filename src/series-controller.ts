@@ -7,6 +7,7 @@ import { generateSeed } from './app/seed.ts';
 import {
   advanceSession,
   beginSession,
+  botOf,
   pickInSession,
   rematchOf,
   resolvePicks,
@@ -17,7 +18,6 @@ import {
   type SeriesSession,
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
-import { randomBot } from './sim/bot.ts';
 import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
 import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
@@ -67,7 +67,7 @@ export interface SeriesController {
   setVisible(visible: boolean): void;
   /**
    * Starts a series, replacing any held one. `fromLink` shows the full link at once and replays its
-   * picks; `firstPick` is the player's round-1 answer in reveal, made on the setup screen.
+   * picks; `firstPick` is the player's round-1 pick in Reveal or Showdown, made on the setup screen.
    */
   start(setup: SeriesSetup, fromLink?: boolean, firstPick?: string): void;
   /** Records the match on screen once it has finished; safe to call every frame. */
@@ -97,14 +97,14 @@ export function createSeriesController(
   const panel = createSeriesPanel(roots, lookup, {
     onNext: () => {
       if (session === undefined) return;
-      session = resolvePicks(advanceSession(session), randomBot);
+      session = resolvePicks(advanceSession(session), botOf(session.state.setup));
       playCurrent();
       host.redraw();
     },
     onPick: (ball) => {
       if (session === undefined || awaitingPick(session.state) !== 'a') return;
-      // In reveal the bot answers the ball just shown; resolvePicks makes its pick.
-      session = resolvePicks(pickInSession(session, ball), randomBot);
+      // The bot answers the ball just shown (or opens a Showdown); resolvePicks makes its pick.
+      session = resolvePicks(pickInSession(session, ball), botOf(session.state.setup));
       playCurrent();
       host.redraw();
     },
@@ -140,9 +140,10 @@ export function createSeriesController(
   }
 
   function start(setup: SeriesSetup, fromLink = false, firstPick?: string): void {
-    let started = resolvePicks(beginSession(setup, fromLink), randomBot);
+    const bot = botOf(setup);
+    let started = resolvePicks(beginSession(setup, fromLink), bot);
     if (firstPick !== undefined && awaitingPick(started.state) === 'a') {
-      started = resolvePicks(pickInSession(started, firstPick), randomBot);
+      started = resolvePicks(pickInSession(started, firstPick), bot);
     }
     session = started;
     onScreen = true;
@@ -185,7 +186,7 @@ export function createSeriesController(
       // Only the series' own match, on screen, is recorded: never a quick match played meanwhile.
       if (session === undefined || !onScreen || !ours()) return;
       const before = session;
-      session = showBotBallNow(settleCurrent(session, world), randomBot);
+      session = showBotBallNow(settleCurrent(session, world), botOf(session.state.setup));
       // Decided: now the link can show both lineups and every pick.
       if (session !== before && session.state.winner !== undefined) writeAddress(session);
     },

@@ -1,13 +1,15 @@
-// Setting up a best-of-3 series (ADR 0017, 0019, 0021, 0029), one job per screen: the rules, the
-// lineup and, in reveal, round 1's coin toss and the player's first pick (an answer to the bot's
-// shown ball, or the ball they show first). The rules and the lineup are
+// Setting up a best-of-3 series (ADR 0017, 0019, 0021, 0029, 0035), one job per screen: the rules
+// (with the bot's level), the lineup and, in Reveal and Showdown, round 1 with both lineups shown:
+// Reveal's coin toss and the player's first pick (an answer to the bot's shown ball, or the ball
+// they show first), or Showdown's opener, picked while the bot picks its own. The rules and the lineup are
 // history entries (`?mode=bo3&step=...`), so Back walks back through them; the answer is part of the
 // series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here, in memory
 // only, until the series starts: it is never written to the URL before the series is decided.
+import { loadBotLevel, saveBotLevel } from './app/bot-level.ts';
 import { generateSeed } from './app/seed.ts';
-import { beginSession, resolvePicks } from './app/series-session.ts';
+import { beginSession, botOf, resolvePicks } from './app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
-import { randomBot } from './sim/bot.ts';
+import { botFor, DEFAULT_BOT } from './sim/bot.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
 import type { Format, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
@@ -19,11 +21,14 @@ import { createResumeCard } from './ui/series/resume-card.ts';
 import { createRulesStep } from './ui/series/rules-step.ts';
 
 /** The bot whose lineup was just picked from `seed`, so a verifier can pick it again. */
-const botOpponent = (seed: number): Opponent => ({
+const botOpponent = (bot: string, seed: number): Opponent => ({
   kind: 'bot',
-  bot: randomBot.id,
+  bot,
   lineupSeed: seed,
 });
+
+/** Reading `localStorage` can throw; the level helpers catch it. */
+const storage = () => window.localStorage;
 
 export type SetupStep = 'rules' | 'lineup' | 'answer';
 
@@ -35,7 +40,7 @@ export interface SeriesSetupHost {
   back(toParent: () => void): void;
   /** Leaves Best of 3 for the parent screen (the first step's Back, arriving from a link). */
   exit(): void;
-  /** The setup is complete: play the series (in reveal, with the player's round-1 answer). */
+  /** The setup is complete: play the series (Reveal and Showdown: with the player's round-1 pick). */
   start(setup: SeriesSetup, firstPick?: string): void;
   /** An undecided series left with Back, which the rules and lineup offer to resume. */
   held(): SeriesState | undefined;
@@ -58,8 +63,10 @@ export function createSeriesSetup(
 ): SeriesSetupFlow {
   const ballIds = balls.map((ball) => ball.id);
   let format: Format = 'blind';
+  /** The bot's level, as last chosen on this device. */
+  let level = loadBotLevel(storage);
   let draft: Draft = [];
-  /** Reveal: the series about to start (seed, both lineups), while the player makes round 1's pick. */
+  /** Reveal and Showdown: the series about to start, while the player makes round 1's pick. */
   let revealed: SeriesSetup | undefined;
 
   const to = (step: SetupStep) => (params: URLSearchParams) => {
@@ -71,6 +78,10 @@ export function createSeriesSetup(
       host.back(() => {
         host.exit();
       });
+    },
+    onLevel: (chosen) => {
+      level = chosen;
+      saveBotLevel(storage, chosen);
     },
     onNext: (chosen) => {
       format = chosen;
@@ -94,15 +105,17 @@ export function createSeriesSetup(
       draft = own;
       // The bot picks from the series seed, so the setup (and the link) fully decides the series.
       const seed = generateSeed();
+      // Blind has no choices for a bot to make, so every level plays it alike: the default.
+      const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : level, seed);
       const setup: SeriesSetup = {
         ruleset: RULESET_VERSION,
         seed,
         a: own,
-        b: randomBot.pickLineup(seed, ballIds),
-        opponent: botOpponent(seed),
+        b: botFor(opponent).pickLineup(seed, ballIds),
+        opponent,
         ...(format === 'blind' ? {} : { format }),
       };
-      if (format === 'reveal') {
+      if (format !== 'blind') {
         revealed = setup;
         host.move(to('answer'));
         open('answer');
@@ -143,14 +156,14 @@ export function createSeriesSetup(
     resume.show(step === 'answer' ? undefined : host.held());
     if (step === 'rules') {
       revealed = undefined;
-      rules.open(format);
+      rules.open(format, level);
     } else if (step === 'lineup') {
       revealed = undefined;
       lineup.open(format, draft);
     } else if (revealed !== undefined) {
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
       // choices the series makes when it starts, so what is shown here is what plays.
-      answer.open(resolvePicks(beginSession(revealed), randomBot).state);
+      answer.open(resolvePicks(beginSession(revealed), botOf(revealed)).state);
     }
   }
 

@@ -7,6 +7,7 @@ import {
   type Format,
   type NextMatch,
   type RoundRecord,
+  type SeriesSetup,
   type SeriesState,
   type Side,
 } from '../sim/series.ts';
@@ -20,15 +21,39 @@ export const SIDE_NAMES: Readonly<Record<Side, string>> = { a: 'You', b: 'Bot' }
 export const FORMAT_NAMES: Readonly<Record<Format, string>> = {
   blind: 'Blind order',
   reveal: 'Reveal, then take turns',
-  loser: 'Loser picks next',
+  showdown: 'Showdown',
+};
+
+/** The bot's levels (ADR 0035), by bot id, as the rules step and the series header name them. */
+export const LEVEL_NAMES: Readonly<Record<string, string>> = {
+  easy: 'Easy',
+  normal: 'Normal',
+  hard: 'Hard',
 };
 
 /** A few words on how each format plays, on its card in the rules step (ADR 0025: short). */
 export const FORMAT_LINES: Readonly<Record<Format, string>> = {
   blind: 'Set your order. The bot’s stays hidden.',
   reveal: 'See both lineups. Take turns showing first.',
-  loser: 'Lose a round, pick your next ball.',
+  showdown: 'Open together. Winners show, losers answer.',
 };
+
+/** Formats in a word, for the bar over a series being played. */
+export const FORMAT_SHORT: Readonly<Record<Format, string>> = {
+  blind: 'Blind',
+  reveal: 'Reveal',
+  showdown: 'Showdown',
+};
+
+/** "Best of 3 · Reveal · Hard": what is being played, over the series (ADR 0035). */
+export function aboutLine(setup: SeriesSetup): string {
+  const level = setup.opponent.kind === 'bot' ? LEVEL_NAMES[setup.opponent.bot] : undefined;
+  const format = formatOf(setup);
+  const parts = ['Best of 3', FORMAT_SHORT[format]];
+  // Blind has no choices a level changes, and the first bot (old links) has no level.
+  if (level !== undefined && format !== 'blind') parts.push(level);
+  return parts.join(' · ');
+}
 
 /** The series rule every format shares, said once above the format cards. */
 export const SERIES_RULE = '3 balls each · first to 2 wins';
@@ -38,30 +63,26 @@ export function linkPickLine(round: number): string {
   return `Next, round ${String(round + 1)}, with the picks from the link.`;
 }
 
-/** Reveal, round 2: the player shows first, and the bot answers from what it has left. */
-export function revealShowLine(round: number, botLeft: readonly string[], nameOf: NameOf): string {
-  const left = botLeft.map(nameOf).join(' and ');
-  return `Round ${String(round + 1)}: you show first. Pick your ball; the bot answers with its best counter from ${left}.`;
+/** The player shows first; the bot answers from what it has left (Reveal, Showdown). */
+export function showLine(round: number, botLeft: readonly string[], nameOf: NameOf): string {
+  const left = botLeft.map(nameOf).join(' or ');
+  return `Round ${String(round + 1)}: you show first. Pick your ball; the bot answers with ${left}.`;
 }
 
-/** Reveal: the bot showed first; the player answers. */
-export function revealAnswerLine(round: number, shown: string, nameOf: NameOf): string {
+/** Showdown, round 1: both pick at the same time. */
+export function openLine(botLeft: readonly string[], nameOf: NameOf): string {
+  const left = botLeft.map(nameOf).join(', ');
+  return `Round 1: pick your opener. The bot picks from ${left} at the same time.`;
+}
+
+/** The bot showed first; the player answers (Reveal, Showdown). */
+export function answerLine(round: number, shown: string, nameOf: NameOf): string {
   return `Round ${String(round + 1)}: the bot shows its ${nameOf(shown)} first. Pick your answer.`;
 }
 
 /** Reveal's coin toss (ADR 0029), as the strip shows it: who shows first in round 1. */
 export function tossLine(first: Side): string {
   return first === 'a' ? 'You show first' : 'Bot shows first';
-}
-
-/** Loser picks next, the player lost: what they are picking against. */
-export function pickLine(round: number, winnersNext: string, nameOf: NameOf): string {
-  return `You lost round ${String(round)}. The bot plays its ${nameOf(winnersNext)} next: pick your ball to face it.`;
-}
-
-/** Loser picks next, the bot lost: it picks once the player moves on. */
-export function botPicksLine(round: number, yourNext: string, nameOf: NameOf): string {
-  return `Next, round ${String(round + 1)}: your ${nameOf(yourNext)}. The bot lost round ${String(round)}, so it picks its next ball knowing yours.`;
 }
 
 /** "You 1 – 0 Bot". */
@@ -95,7 +116,7 @@ export function playingLine(match: NextMatch, nameOf: NameOf): string {
 
 /**
  * Between plays: what just happened and what comes next. The bot's next ball stays hidden until
- * the round starts, except in Reveal, where both lineups are shown and the round's balls are known
+ * the round starts, except in Reveal and Showdown, where both lineups are shown and the round's balls are known
  * (round 3 is what each side has left).
  */
 export function betweenLine(state: SeriesState, next: NextMatch, nameOf: NameOf): string {
@@ -103,7 +124,7 @@ export function betweenLine(state: SeriesState, next: NextMatch, nameOf: NameOf)
     return `Round ${String(next.round + 1)} drew. It is replayed on a new seed (play ${String(next.attempt + 1)} of ${String(MAX_ATTEMPTS)}); a third draw goes to sudden death.`;
   }
   const against =
-    formatOf(state.setup) === 'reveal' ? `the bot’s ${nameOf(next.b)}` : 'a hidden ball';
+    formatOf(state.setup) === 'blind' ? 'a hidden ball' : `the bot’s ${nameOf(next.b)}`;
   return `Next, round ${String(next.round + 1)}: your ${nameOf(next.a)} against ${against}.`;
 }
 

@@ -33,6 +33,7 @@ export function resolvePoison(
       POISON_DAMAGE,
       definitions,
       tick,
+      'poison',
     );
     current = result.balls;
     if (result.damage !== undefined) damage.push(result.damage);

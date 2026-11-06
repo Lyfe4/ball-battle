@@ -3,7 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Replaces: the reveal-then-order rule of ADR 0019 (section 2 and the bot's `orderLineup`)
-- Amended by: ADR 0029 (a seeded coin toss decides who shows first in round 1; the bot no longer
+- Amended by: ADR 0035 (bot levels; the round-2 rows no longer show the bot's possible answers),
+  ADR 0029 (a seeded coin toss decides who shows first in round 1; the bot no longer
   always does)
 
 ## Context

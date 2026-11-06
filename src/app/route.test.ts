@@ -49,7 +49,7 @@ describe('parseRoute', () => {
     });
     expect(route('mode=bo3')).toStrictEqual({ screen: 'series', link: {}, step: 'rules' });
     expect(route('mode=bo3&la=storm,frost,venom')).toMatchObject({ step: 'lineup' });
-    expect(route('mode=bo3&fmt=loser&step=lineup')).toMatchObject({ step: 'lineup' });
+    expect(route('mode=bo3&fmt=showdown&step=lineup')).toMatchObject({ step: 'lineup' });
   });
 
   it('holds a replay link from another ruleset on the outdated screen (ADR 0022)', () => {
@@ -87,12 +87,22 @@ describe('parseRoute', () => {
     });
     // An old series the rules now refuse (this bot never picked that lineup) opens its lineup.
     const series = new URLSearchParams(
-      'mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns',
+      'mode=bo3&fmt=reveal&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=quake,storm,frost,thorns',
     );
     writeTodaysRuleset(series);
     expect(parseRoute(series, BALL_LOOKUP)).toStrictEqual({
       screen: 'series',
-      link: { lineup: ['storm', 'frost', 'venom'], format: 'loser' },
+      link: { lineup: ['storm', 'frost', 'venom'], format: 'reveal' },
+      step: 'lineup',
+    });
+    // A retired format's series (ADR 0035) opens its lineup with the format that replaced it.
+    const loser = new URLSearchParams(
+      'mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns&v=5',
+    );
+    writeTodaysRuleset(loser);
+    expect(parseRoute(loser, BALL_LOOKUP)).toMatchObject({
+      screen: 'series',
+      link: { lineup: ['storm', 'frost', 'venom'], format: 'showdown' },
       step: 'lineup',
     });
   });
@@ -122,7 +132,7 @@ describe('parseRoute', () => {
   });
 
   it('writes a match over any other screen, and home as a bare URL', () => {
-    const params = new URLSearchParams('view=pick&mode=bo3&step=lineup&fmt=loser');
+    const params = new URLSearchParams('view=pick&mode=bo3&step=lineup&fmt=showdown');
     writeMatchUrl(params, { a: 'venom', b: 'quake' }, 12);
     expect(params.toString()).toBe(`a=venom&b=quake&seed=12&v=${String(RULESET_VERSION)}`);
     writeHomeParams(params);
@@ -134,7 +144,7 @@ describe('parseRoute', () => {
       screen: 'pick',
       matchup: { a: 'storm', b: 'vampire' },
     });
-    const params = new URLSearchParams('mode=bo3&seed=4&fmt=loser');
+    const params = new URLSearchParams('mode=bo3&seed=4&fmt=showdown');
     writePickParams(params, { a: 'frost', b: 'quake' });
     expect(params.toString()).toBe('view=pick&a=frost&b=quake');
     expect(parseRoute(params, BALL_LOOKUP)).toStrictEqual({

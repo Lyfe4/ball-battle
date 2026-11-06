@@ -167,6 +167,7 @@ export function resolveMinions(
         minion.damage,
         definitions,
         tick,
+        'minion',
       );
       current = hit.balls;
       events.push({

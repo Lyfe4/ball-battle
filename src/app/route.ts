@@ -119,7 +119,7 @@ export function parseRoute(
   }
   const parsed = parseSeriesParams(params, validIds);
   if (parsed !== undefined) {
-    const made = parsed.setup?.ruleset;
+    const made = parsed.setup?.ruleset ?? parsed.retiredFrom;
     if (made !== undefined && made !== RULESET_VERSION) {
       return { screen: 'outdated', kind: 'series', made };
     }

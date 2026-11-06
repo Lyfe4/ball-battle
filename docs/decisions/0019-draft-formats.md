@@ -1,7 +1,8 @@
 # 0019: Draft formats for best of 3
 
 - Status: Accepted (both formats are built to be played and compared; which one stays is open).
-  Reveal's rule (section 2) is replaced by ADR 0021. §5's "a pick that is no longer legal is
+  Reveal's rule (section 2) is replaced by ADR 0021. Loser picks next (section 3) is replaced by
+  Showdown (ADR 0035), and the bot's choices by its levels. §5's "a pick that is no longer legal is
   dropped and the rest is played live" is replaced by ADR 0022: a link `verifySeries` refuses is
   not replayed at all, and bot picks must be the bot's.
 - Date: 2026-11-05

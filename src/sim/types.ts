@@ -109,6 +109,13 @@ export type HookName =
 
 export type DamageCause = 'contact' | 'ability';
 
+/**
+ * What delivered ability damage (output only; ADR 0036): a projectile, a zone's strike, a lasting
+ * zone's pulse, a minion, poison, or the hook whose `damage` action dealt it. It never feeds back
+ * into the sim; the arena reads it to show where damage came from.
+ */
+export type DamageVia = 'projectile' | 'zone' | 'zonePulse' | 'minion' | 'poison' | HookName;
+
 /** Read-only inputs every hook receives. Hooks never mutate anything; they return actions. */
 export interface HookContext<S extends AbilityState = AbilityState> {
   /** The world as it was at the start of this hook phase, with `tick` set to the current tick. */
@@ -409,6 +416,8 @@ export interface DamageEvent {
    * describe what actually happened.
    */
   readonly survivedLethal: boolean;
+  /** Ability damage only: what delivered it (ADR 0036). */
+  readonly via?: DamageVia;
 }
 
 export interface HealedEvent {

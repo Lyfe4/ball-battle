@@ -1,17 +1,14 @@
 import { RULESET_VERSION } from './ruleset.ts';
 import { describe, expect, it } from 'vitest';
-import { BALL_LOOKUP, BALLS } from './balls/index.ts';
+import { BALL_LOOKUP } from './balls/index.ts';
 import { botPick, randomBot } from './bot.ts';
-import { COUNTER_MAP, isFavoured } from './counter-map.ts';
 import {
   awaitingPick,
-  nextBallOf,
   nextMatch,
   outcomeOf,
   recordOutcome,
   recordPick,
   remainingOf,
-  revealFirst,
   setupWithPicks,
   startSeries,
   type Outcome,
@@ -21,69 +18,72 @@ import {
 import { playSeries, playToEnd, matchWorld } from './series-verify.ts';
 import { deepFreeze } from './test-support.ts';
 
-const loser: SeriesSetup = deepFreeze({
+const showdown: SeriesSetup = deepFreeze({
   ruleset: RULESET_VERSION,
   opponent: { kind: 'player' },
   seed: 7,
   a: ['speedster', 'vampire', 'archer'],
   b: ['storm', 'frost', 'quake'],
-  format: 'loser',
+  format: 'showdown',
 });
 
-const feed = (outcomes: readonly Outcome[], from: SeriesState = startSeries(loser)) =>
-  outcomes.reduce(recordOutcome, from);
+/** Both openers (A's first), then round 1's result. */
+const opened = (a: string, b: string, outcome: Outcome): SeriesState =>
+  recordOutcome(recordPick(recordPick(startSeries(showdown), a), b), outcome);
 
-describe('loser picks next', () => {
-  it('stops after round 1 for the loser to pick, with the winner keeping its order', () => {
-    const afterOne = feed(['a']);
-    expect(awaitingPick(afterOne)).toBe('b');
-    expect(nextMatch(afterOne)).toBeUndefined();
-    // The winner's next ball is fixed by its order, so the loser sees it before picking.
-    expect(nextBallOf(afterOne, 'a')).toBe('vampire');
-    expect(remainingOf(afterOne, 'b')).toStrictEqual(['frost', 'quake']);
-
-    const picked = recordPick(afterOne, 'quake');
-    expect(awaitingPick(picked)).toBeUndefined();
-    expect(nextMatch(picked)).toMatchObject({ round: 1, a: 'vampire', b: 'quake' });
-    expect(picked.picks).toStrictEqual([{ round: 1, side: 'b', ball: 'quake' }]);
-
-    // 1-1: each side has one ball left, so there is nothing to pick and round 3 follows.
-    const oneAll = recordOutcome(picked, 'b');
-    expect(awaitingPick(oneAll)).toBeUndefined();
-    expect(nextMatch(oneAll)).toMatchObject({ round: 2, a: 'archer', b: 'frost' });
+describe('showdown (ADR 0035)', () => {
+  it('asks both sides for an opener, A first, and plays nothing before both have picked', () => {
+    let state = startSeries(showdown);
+    expect(awaitingPick(state)).toBe('a');
+    expect(nextMatch(state)).toBeUndefined();
+    state = recordPick(state, 'archer');
+    expect(awaitingPick(state)).toBe('b');
+    expect(nextMatch(state)).toBeUndefined();
+    state = recordPick(state, 'frost');
+    expect(awaitingPick(state)).toBeUndefined();
+    expect(nextMatch(state)).toMatchObject({ round: 0, a: 'archer', b: 'frost' });
   });
 
-  it('lets the player pick when the player loses', () => {
-    const afterOne = feed(['b']);
-    expect(awaitingPick(afterOne)).toBe('a');
-    expect(nextMatch(recordPick(afterOne, 'archer'))).toMatchObject({ a: 'archer', b: 'frost' });
+  it('has the winner of round 1 show first in round 2 and the loser answer', () => {
+    const youWon = opened('archer', 'frost', 'a');
+    expect(awaitingPick(youWon)).toBe('a');
+    const shown = recordPick(youWon, 'vampire');
+    expect(awaitingPick(shown)).toBe('b');
+    const answered = recordPick(shown, 'storm');
+    expect(nextMatch(answered)).toMatchObject({ round: 1, a: 'vampire', b: 'storm' });
+
+    const botWon = opened('archer', 'frost', 'b');
+    expect(awaitingPick(botWon)).toBe('b');
+    expect(awaitingPick(recordPick(botWon, 'quake'))).toBe('a');
   });
 
-  it('plays no round before the pick, and asks for none while a drawn round is replayed', () => {
-    expect(() => feed(['a', 'b'])).toThrow(/pick is due/);
-    expect(() => recordPick(startSeries(loser), 'storm')).toThrow(/No pick is due/);
-    const replaying = recordOutcome(recordPick(feed(['a']), 'frost'), 'draw');
-    expect(awaitingPick(replaying)).toBeUndefined();
-    expect(nextMatch(replaying)).toMatchObject({ round: 1, attempt: 1, b: 'frost' });
+  it('plays round 3 with the balls left, with nothing to pick', () => {
+    const state = recordOutcome(
+      recordPick(recordPick(opened('archer', 'frost', 'a'), 'vampire'), 'storm'),
+      'b',
+    );
+    expect(awaitingPick(state)).toBeUndefined();
+    expect(nextMatch(state)).toMatchObject({ round: 2, a: 'speedster', b: 'quake' });
   });
 
-  it('rejects a pick of a ball the side has already played or never had', () => {
-    const afterOne = feed(['a']);
-    expect(() => recordPick(afterOne, 'storm')).toThrow(/has left/);
-    expect(() => recordPick(afterOne, 'brawler')).toThrow(/has left/);
-    expect(() => recordPick(recordPick(afterOne, 'frost'), 'quake')).toThrow(/No pick is due/);
+  it('asks for no pick while a drawn round is replayed, and rejects a ball already played', () => {
+    const drawn = recordOutcome(
+      recordPick(recordPick(startSeries(showdown), 'archer'), 'frost'),
+      'draw',
+    );
+    expect(awaitingPick(drawn)).toBeUndefined();
+    expect(nextMatch(drawn)).toMatchObject({ round: 0, attempt: 1, a: 'archer', b: 'frost' });
+    const after = opened('archer', 'frost', 'a');
+    expect(() => recordPick(after, 'archer')).toThrow(/has left/);
+    expect(() => recordPick(after, 'storm')).toThrow(/has left/);
   });
 
   it('replays the same series from its setup and picks, and refuses missing or unused picks', () => {
-    // Play it as the browser does, with the bot picking when it loses and the player picking the
-    // last ball in its order when it does.
-    let state = startSeries(loser);
-    for (;;) {
+    let state = startSeries(showdown);
+    for (let guard = 0; guard < 12 && state.winner === undefined; guard++) {
       const due = awaitingPick(state);
       if (due !== undefined) {
-        const pick = botPick(randomBot, state) ?? remainingOf(state, 'a').at(-1);
-        if (pick === undefined) throw new Error('expected a pick');
-        state = recordPick(state, pick);
+        state = recordPick(state, remainingOf(state, due).at(-1) ?? '');
         continue;
       }
       const match = nextMatch(state);
@@ -92,16 +92,12 @@ describe('loser picks next', () => {
       if (end.match.status !== 'finished') throw new Error('unfinished');
       state = recordOutcome(state, outcomeOf(end.match.result, end));
     }
-    const replayed = playSeries(setupWithPicks(state), BALL_LOOKUP);
-    expect(replayed.rounds).toStrictEqual(state.rounds);
-    expect(replayed.picks).toStrictEqual(state.picks);
-    expect(playSeries(setupWithPicks(state), BALL_LOOKUP)).toStrictEqual(replayed);
-
-    if (state.picks.length > 0) {
-      expect(() => playSeries({ ...loser, picks: [] }, BALL_LOOKUP)).toThrow(/needs a pick/);
-    }
-    const extra = [...(setupWithPicks(state).picks ?? []), 'archer', 'archer'];
-    expect(() => playSeries({ ...loser, picks: extra }, BALL_LOOKUP)).toThrow(/pick/);
+    const replay = setupWithPicks(state);
+    expect(replay.picks).toHaveLength(4);
+    expect(playSeries(replay, BALL_LOOKUP).rounds).toStrictEqual(state.rounds);
+    expect(() => playSeries(showdown, BALL_LOOKUP)).toThrow(/needs a pick/);
+    const extra = [...(replay.picks ?? []), 'archer'];
+    expect(() => playSeries({ ...showdown, picks: extra }, BALL_LOOKUP)).toThrow(/pick/);
   });
 });
 
@@ -171,135 +167,5 @@ describe('reveal, then take turns (ADR 0021)', () => {
     expect(playSeries(replay, BALL_LOOKUP).rounds).toStrictEqual(state.rounds);
     expect(playSeries(replay, BALL_LOOKUP)).toStrictEqual(playSeries(replay, BALL_LOOKUP));
     expect(() => playSeries(reveal, BALL_LOOKUP)).toThrow(/pick/);
-  });
-});
-
-describe('the bot', () => {
-  const ids = BALLS.map((ball) => ball.id);
-
-  it('shows a random ball of its own first in reveal, the same for the same seed', () => {
-    const own = randomBot.pickLineup(3, ids);
-    const shown = new Set<string>();
-    for (let seed = 0; seed < 40; seed++) {
-      const ball = randomBot.showFirst(seed, 0, own);
-      expect(own).toContain(ball);
-      expect(randomBot.showFirst(seed, 0, own)).toBe(ball);
-      shown.add(ball);
-    }
-    expect(shown.size).toBe(3);
-  });
-
-  it('answers the ball shown first with its best counter: favoured, else even, else unfavoured', () => {
-    let checked = 0;
-    for (const shown of ids) {
-      for (const x of ids) {
-        for (const y of ids) {
-          if (x === y || x === shown || y === shown) continue;
-          const rank = (id: string) => (isFavoured(id, shown) ? 2 : isFavoured(shown, id) ? 0 : 1);
-          for (let seed = 0; seed < 3; seed++) {
-            const answer = randomBot.answer(seed, 1, [x, y], shown);
-            expect([x, y]).toContain(answer);
-            expect(rank(answer)).toBe(Math.max(rank(x), rank(y)));
-            checked++;
-          }
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(1000);
-  });
-
-  const revealSetup = (seed: number): SeriesSetup => ({
-    ruleset: RULESET_VERSION,
-    opponent: { kind: 'player' },
-    seed,
-    a: ['speedster', 'vampire', 'archer'],
-    b: ['storm', 'frost', 'quake'],
-    format: 'reveal',
-  });
-
-  it('won the toss: shows first in round 1, answers the player in round 2', () => {
-    // Seed 4's toss goes to side B.
-    const setup = revealSetup(4);
-    expect(revealFirst(setup.seed)).toBe('b');
-    let state = startSeries(setup);
-    const first = botPick(randomBot, state);
-    expect(first).toBe(randomBot.showFirst(4, 0, setup.b));
-    state = recordPick(state, first ?? '');
-    expect(botPick(randomBot, state)).toBeUndefined();
-    state = recordOutcome(recordPick(state, 'vampire'), 'a');
-    expect(botPick(randomBot, state)).toBeUndefined();
-    state = recordPick(state, 'speedster');
-    const left = remainingOf(state, 'b');
-    expect(botPick(randomBot, state)).toBe(randomBot.answer(4, 1, left, 'speedster'));
-  });
-
-  it('lost the toss: answers the player in round 1, shows first in round 2', () => {
-    // Seed 5's toss goes to side A.
-    const setup = revealSetup(5);
-    expect(revealFirst(setup.seed)).toBe('a');
-    let state = startSeries(setup);
-    expect(awaitingPick(state)).toBe('a');
-    expect(botPick(randomBot, state)).toBeUndefined();
-    state = recordPick(state, 'vampire');
-    const answer = botPick(randomBot, state);
-    expect(answer).toBe(randomBot.answer(5, 0, setup.b, 'vampire'));
-    state = recordOutcome(recordPick(state, answer ?? ''), 'b');
-    expect(awaitingPick(state)).toBe('b');
-    const shown = botPick(randomBot, state);
-    expect(shown).toBe(randomBot.showFirst(5, 1, remainingOf(state, 'b')));
-    state = recordPick(state, shown ?? '');
-    expect(awaitingPick(state)).toBe('a');
-    expect(botPick(randomBot, state)).toBeUndefined();
-  });
-
-  it('picks a counter to the winner’s next ball whenever the counter map has one', () => {
-    let checked = 0;
-    for (const opponent of ids) {
-      const counters = ids.filter((id) => isFavoured(id, opponent));
-      const others = ids.filter((id) => id !== opponent && !isFavoured(id, opponent));
-      for (const counter of counters) {
-        for (const other of others.slice(0, 3)) {
-          for (let seed = 0; seed < 5; seed++) {
-            expect(randomBot.pickNext(seed, 1, [other, counter], opponent)).toBe(counter);
-            expect(randomBot.pickNext(seed, 1, [counter, other], opponent)).toBe(counter);
-            checked++;
-          }
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(100);
-  });
-
-  it('picks at random among its balls when none counters, and never outside them', () => {
-    // The Brawler is even against everyone but Thorns: nothing in this pair counters it.
-    const remaining = ['storm', 'sniper'];
-    expect(remaining.some((id) => isFavoured(id, 'brawler'))).toBe(false);
-    const picks = new Set(
-      Array.from({ length: 40 }, (_, seed) => randomBot.pickNext(seed, 1, remaining, 'brawler')),
-    );
-    expect(picks).toStrictEqual(new Set(remaining));
-    expect(randomBot.pickNext(9, 1, remaining, 'brawler')).toBe(
-      randomBot.pickNext(9, 1, remaining, 'brawler'),
-    );
-  });
-
-  it('knows the map: every favoured entry reads as a counter one way only', () => {
-    for (const entry of COUNTER_MAP) {
-      const xWins = isFavoured(entry.x, entry.y);
-      const yWins = isFavoured(entry.y, entry.x);
-      expect(xWins).toBe(entry.intended === 'x');
-      expect(yWins).toBe(entry.intended === 'y');
-    }
-  });
-
-  it('picks for side B only when the bot is the one due to pick', () => {
-    // The bot lost round 1; it faces the Vampire next with the Frost and the Quake left.
-    const afterOne = feed(['a']);
-    const pick = botPick(randomBot, afterOne);
-    const expected = ['frost', 'quake'].filter((id) => isFavoured(id, 'vampire'));
-    if (expected.length > 0) expect(expected).toContain(pick);
-    else expect(['frost', 'quake']).toContain(pick);
-    expect(botPick(randomBot, feed(['b']))).toBeUndefined();
-    expect(botPick(randomBot, startSeries(loser))).toBeUndefined();
   });
 });

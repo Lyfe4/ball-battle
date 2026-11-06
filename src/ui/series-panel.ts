@@ -2,7 +2,6 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import {
   awaitingPick,
   formatOf,
-  nextBallOf,
   nextMatch,
   remainingOf,
   revealFirst,
@@ -13,6 +12,7 @@ import { element, setText } from './dom.ts';
 import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesTrack } from './series/series-track.ts';
+import { createSymbolLegend } from './symbol-legend.ts';
 import { createTossStrip } from './series/toss-strip.ts';
 import {
   seriesScreenOf,
@@ -21,20 +21,20 @@ import {
   type SeriesPhase,
 } from './series/series-view.ts';
 import {
+  aboutLine,
+  answerLine,
   betweenLine,
-  botPicksLine,
   finalLine,
   linkPickLine,
-  pickLine,
+  openLine,
   playingLine,
-  revealAnswerLine,
-  revealShowLine,
+  showLine,
 } from './series-text.ts';
 
 export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
   readonly onNext: () => void;
-  /** The player picked `ball` for the coming round (loser picks next, a reveal turn). */
+  /** The player picked `ball` for the coming round (a Reveal or Showdown turn). */
   readonly onPick: (ball: string) => void;
   /** Same lineups, new seed. */
   readonly onRematch: () => void;
@@ -91,6 +91,12 @@ export function createSeriesPanel(
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
 
+  // What is being played, and the legend's ? for every symbol the series shows (ADR 0035).
+  const bar = element('div', 'series-bar');
+  const about = element('p', 'series-bar-about');
+  const legend = createSymbolLegend();
+  bar.append(about, legend.toggle);
+
   const result = element('p', 'series-result');
   const track = createSeriesTrack(definitions);
 
@@ -116,6 +122,8 @@ export function createSeriesPanel(
   const leave = button('Leave series', 'text-link series-leave', actions.onLeave);
   root.append(
     heading,
+    bar,
+    legend.panel,
     status,
     result,
     toss.element,
@@ -186,6 +194,7 @@ export function createSeriesPanel(
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
+      setText(about, aboutLine(state.setup));
       track.update(state, trackOf(state, playing ? current : undefined));
 
       const due = playing || linkState !== undefined ? undefined : awaitingPick(state);
@@ -232,12 +241,11 @@ export function createSeriesPanel(
       let text = '';
       if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
-      else if (due === 'a' && reveal && choice?.kind === 'show') {
-        text = revealShowLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
-      } else if (due === 'a' && reveal) {
-        text = revealAnswerLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
-      } else if (due === 'a') text = pickLine(roundsPlayed, nextBallOf(state, 'b') ?? '', nameOf);
-      else if (due === 'b') text = botPicksLine(roundsPlayed, nextBallOf(state, 'a') ?? '', nameOf);
+      else if (due === 'a' && choice?.facing !== undefined) {
+        text = answerLine(roundsPlayed, choice.facing, nameOf);
+      } else if (due === 'a' && choice?.kind === 'open') {
+        text = openLine(remainingOf(state, 'b'), nameOf);
+      } else if (due === 'a') text = showLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
       else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);

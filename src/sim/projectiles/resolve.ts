@@ -98,6 +98,7 @@ export function resolveProjectiles(
         projectile.damage,
         definitions,
         tick,
+        'projectile',
       );
       current = afterHit;
       events.push({

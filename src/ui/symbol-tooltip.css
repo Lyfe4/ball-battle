@@ -17,3 +17,13 @@
 .symbol-tooltip[hidden] {
   display: none;
 }
+
+/*
+ * A control that shows symbols explains them on a held press (ADR 0035): keep the browser's own
+ * long-press callout and text selection from opening over the tooltip.
+ */
+button:has([data-symbol]) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
