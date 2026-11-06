@@ -110,6 +110,12 @@ no `bot=`, and still replays exactly after "Play with today's rules".
   - The tooltip closes on the next touch, on scroll or after 3 s.
   - The browser's long-press callout and text selection are off on controls that show symbols.
 
+Screenshots in `docs/images/bot-levels/`:
+
+- `phone-rules.png`: the rules step with the level choice;
+- `phone-showdown-opener.png` and `desktop-showdown-opener.png`: Showdown's round 1, with the key;
+- `phone-show-first.png`: round 2 after winning round 1, with the series bar and its `?`.
+
 ## Measured
 
 `docs/series-measurements.md`: exact series chances over 20,105 evenly spaced lineup pairs from 17
