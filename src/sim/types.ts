@@ -1,4 +1,5 @@
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
+import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
 import type { RuleAppliedEvent, RuleId } from './rules.ts';
 import type { ZoneLinger } from './zones/spawn.ts';
 import type {
@@ -103,7 +104,8 @@ export type BallView<S extends AbilityState> = Omit<BallState, 'abilityState'> &
   readonly abilityState: S;
 };
 
-export type HookName = 'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken';
+export type HookName =
+  'onTick' | 'onWallHit' | 'onHitBall' | 'onDamageDealt' | 'onDamageTaken' | 'onKnockedOut';
 
 export type DamageCause = 'contact' | 'ability';
 
@@ -219,7 +221,12 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly durationTicks: number;
     }
   /** Says an interaction rule just acted on this ball (ADR 0028). Changes nothing in the world. */
-  | { readonly kind: 'ruleApplied'; readonly rule: RuleId };
+  | { readonly kind: 'ruleApplied'; readonly rule: RuleId }
+  /**
+   * Puts the hook owner back at an earlier position, velocity and health (the Chrono, ADR 0034).
+   * The only action that acts on an owner at 0 health, from `onKnockedOut`.
+   */
+  | ({ readonly kind: 'rewind' } & RewindRequest);
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 
@@ -241,6 +248,12 @@ export interface BallHooks<S extends AbilityState = AbilityState> {
    * deal never fires onDamageDealt or onDamageTaken again, so effects can't chain or loop.
    */
   readonly onDamageTaken?: (context: DamageTakenContext<S>) => Actions<S>;
+  /**
+   * After onDamageTaken, when damage this tick took the ball from alive to 0 health, before it is
+   * defeated (ADR 0034). The one hook that runs for a ball at 0: a `rewind` it returns puts it back
+   * in the match (apply it first: its other actions need it alive). Fires no other hooks.
+   */
+  readonly onKnockedOut?: (context: HookContext<S>) => Actions<S>;
 }
 
 /** One ball in a running match. Plain serialisable data; refers to its definition by id. */
@@ -512,6 +525,7 @@ export type SimEvent =
   | StatusExpiredEvent
   | HealReducedEvent
   | RuleAppliedEvent
+  | RewoundEvent
   | MinionEvent;
 
 export interface StepResult {

@@ -32,6 +32,7 @@ const HOOK_CODES: Readonly<Record<HookName, number>> = {
   onHitBall: 3,
   onDamageDealt: 4,
   onDamageTaken: 5,
+  onKnockedOut: 6,
 };
 
 export interface PhaseResult extends Scene {
@@ -65,7 +66,8 @@ export function runPhase(
   for (const invocation of invocations) {
     const ballIndex = snapshot.findIndex((ball) => ball.id === invocation.ballId);
     const self = snapshot[ballIndex];
-    if (self === undefined || !isAlive(self)) continue;
+    // onKnockedOut is for a ball just brought to 0 (ADR 0034); every other hook needs it alive.
+    if (self === undefined || (!isAlive(self) && invocation.hook !== 'onKnockedOut')) continue;
     const definition = getDefinition(definitions, self.definitionId);
     const call = callCounts.get(self.id) ?? 0;
     callCounts.set(self.id, call + 1);
@@ -195,5 +197,23 @@ export function damageTakenInvocations(damage: readonly DamageEvent[]): Invocati
               cause: event.cause,
             });
       },
+    }));
+}
+
+/**
+ * One call for each ball that was alive at the start of the tick and is at 0 health now, before it
+ * is defeated (ADR 0034).
+ */
+export function knockedOutInvocations(
+  before: readonly BallState[],
+  now: readonly BallState[],
+): Invocation[] {
+  const down = new Set(now.filter((ball) => !isAlive(ball)).map((ball) => ball.id));
+  return before
+    .filter((ball) => isAlive(ball) && down.has(ball.id))
+    .map((ball) => ({
+      ballId: ball.id,
+      hook: 'onKnockedOut',
+      call: (definition, base) => definition.hooks.onKnockedOut?.(base),
     }));
 }
