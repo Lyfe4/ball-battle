@@ -2,6 +2,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { MARKS } from './marks.ts';
 import { element, setText } from '../dom.ts';
+import { markSymbol } from '../symbol-tooltip.ts';
 import { gridMove } from '../grid-nav.ts';
 import type { Lean } from './matchups.ts';
 
@@ -121,6 +122,7 @@ export function createBallGrid(
       // Even is left blank in a grid, so the counters stand out (the legend says so).
       setText(mark, lean === 'even' ? '' : MARKS[lean]);
       mark.dataset['lean'] = lean;
+      markSymbol(mark, lean === 'even' ? undefined : lean);
       const against =
         next.marks === undefined || lean === 'even'
           ? ''
