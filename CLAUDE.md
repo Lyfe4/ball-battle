@@ -120,8 +120,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0025-show-less-and-back.md`,
 `docs/decisions/0026-magnet-ghost-necromancer.md`, `docs/decisions/0027-phone-play-fixes.md`,
 `docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md`,
-`docs/decisions/0030-symbol-tooltips-and-result-fixes.md` and
-`docs/decisions/0031-desktop-layouts.md`.
+`docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
+`docs/decisions/0031-desktop-layouts.md` and `docs/decisions/0032-sticker-pop-restyle.md`.
 
 ## Workflow
 
@@ -232,7 +232,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   entry. A new screen gets a key in `screenKeyOf` and a flow in `history-rules.test.ts`. Leaving
   an undecided series holds it to resume; never drop it on Back.
 - Page colours, sizes and type come from roles in `src/styles/tokens.css`, never palette names or
-  literals. A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
+  literals. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP
+  `font-src 'self'`), calm platform screens (flat fills, the pink second accent used sparingly) and
+  the energy in the arena and match moments (the court, health pills, the Winner sticker). Keep
+  that split; every ball must keep 3:1 against the floor (`arena-contrast.test.ts`). A component's stylesheet sits next to it and is listed in `src/style.css` in cascade
   order; create the file before adding its `@import` (the dev server caches a missing import).
 - Ball and matchup text in the UI is read from the definitions and the counter map
   (`src/ui/balls/matchups.ts`); it says "favoured", never a measured win rate.
