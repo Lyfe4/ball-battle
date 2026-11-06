@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP, BALLS } from './balls/index.ts';
-import { randomBot } from './bot.ts';
+import { BOTS, randomBot, type BotView } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { FORMATS } from './series.ts';
 import { playToEnd } from './series-verify.ts';
@@ -23,6 +23,7 @@ const FINGERPRINTS: Readonly<Record<number, string>> = {
   3: '76a1e5f3f47156c5693886a54bacc49e19910369ce62ef2f7b56125e230c6bf6',
   4: '0cc1471bbc3b73069e8f3a48903a6af1e18b9aaaaf8da8c377ad65353bfd0a3f',
   5: '925d3b22e2fcedf46c38411b40ae1dd0a3974aa70f0b3b7359e68ce78fca40e8',
+  6: '97f73b186fbe7f6c4e8747ce78e765575348444cef5ea0a0ace800d84b0f4410',
 };
 
 function fingerprint(): string {
@@ -35,28 +36,48 @@ function fingerprint(): string {
   );
   const lineups = [0, 1, 2, 3].map((seed) => randomBot.pickLineup(seed, ids));
   const lineup = randomBot.pickLineup(7, ids);
-  const choices = ids.map((shown) => ({
-    show: randomBot.showFirst(shown.length, 0, lineup),
-    answer: randomBot.answer(3, 1, ids, shown),
-    next: randomBot.pickNext(3, 1, ids, shown),
-  }));
-  const series = FORMATS.map((format, index) => {
-    const a = randomBot.pickLineup(100 + index, ids);
-    const b = randomBot.pickLineup(index, ids);
-    // The player takes its first remaining ball whenever it picks; the bot picks for itself.
-    const state = playLikeTheGame(
-      {
-        ruleset: RULESET_VERSION,
-        opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: index },
-        seed: index,
-        a,
-        b,
+  // Every bot's every kind of choice, against every ball shown.
+  const choices = [...BOTS.values()].map((bot) =>
+    ids.map((shown, index) => {
+      const opponent = randomBot.pickLineup(index + 50, ids);
+      const view = (role: BotView['role'], format: BotView['format']): BotView => ({
         format,
-      },
-      BALL_LOOKUP,
-    );
-    return { rounds: state.rounds, picks: state.picks, winner: state.winner };
-  });
+        seed: shown.length + index,
+        round: role === 'open' ? 0 : 1,
+        role,
+        own: lineup,
+        opponent,
+        ...(role === 'answer' ? { shown } : {}),
+        wins: 0,
+        losses: role === 'open' ? 0 : 1,
+      });
+      return {
+        show: bot.choose(view('show', 'reveal')),
+        answer: bot.choose(view('answer', 'reveal')),
+        open: bot.choose(view('open', 'showdown')),
+        showdownShow: bot.choose(view('show', 'showdown')),
+      };
+    }),
+  );
+  const series = [...BOTS.keys()].flatMap((bot) =>
+    FORMATS.map((format, index) => {
+      const a = randomBot.pickLineup(100 + index, ids);
+      const b = randomBot.pickLineup(index, ids);
+      // The player takes its first remaining ball whenever it picks; the bot picks for itself.
+      const state = playLikeTheGame(
+        {
+          ruleset: RULESET_VERSION,
+          opponent: { kind: 'bot', bot, lineupSeed: index },
+          seed: index,
+          a,
+          b,
+          format,
+        },
+        BALL_LOOKUP,
+      );
+      return { rounds: state.rounds, picks: state.picks, winner: state.winner };
+    }),
+  );
   const data = JSON.stringify({ matches, lineups, choices, series });
   return createHash('sha256').update(data).digest('hex');
 }

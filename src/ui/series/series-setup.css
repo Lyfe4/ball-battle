@@ -44,6 +44,15 @@
   line-height: 1.35;
 }
 
+/* The bot's level (ADR 0035): one small segmented choice under the formats, hidden for Blind. */
+.rules-level .segmented-button {
+  min-width: 5.5rem;
+}
+
+.rules-level[hidden] {
+  display: none;
+}
+
 /* The lineup tray: three numbered slots in a row; a filled slot is a button that takes its ball out. */
 .lineup-tray {
   display: grid;
@@ -141,6 +150,10 @@
   .rules-step > .screen-footer {
     justify-self: end;
     width: var(--setup-width);
+  }
+
+  .rules-level {
+    justify-content: start;
   }
 
   /*

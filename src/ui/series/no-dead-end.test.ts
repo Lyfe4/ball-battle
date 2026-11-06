@@ -9,6 +9,7 @@ import {
   beginSession,
   pickInSession,
   resolvePicks,
+  showBotBallNow,
   withLinkPicks,
   type SeriesSession,
 } from '../../app/series-session.ts';
@@ -83,11 +84,11 @@ function walk(
         : ['a', 'b'];
   for (const outcome of tries) {
     const now = [...path, outcome];
-    const settled = {
-      ...session,
-      state: recordOutcome(session.state, outcome),
-      recorded: true,
-    };
+    // As the controller settles a round: when the bot shows first next, it shows at once.
+    const settled = showBotBallNow(
+      { ...session, state: recordOutcome(session.state, outcome), recorded: true },
+      randomBot,
+    );
     const screen = screenOf(settled, true);
     walked.moments += 1;
     const where = `${settled.state.setup.format ?? 'blind'} ${now.join('')}`;
@@ -103,8 +104,8 @@ function walk(
       walk(resolvePicks(advanceSession(settled), randomBot), walked, now, outcomes);
     }
     if (screen.actions.includes('pick')) {
-      for (const option of screen.choice?.options ?? []) {
-        walk(resolvePicks(pickInSession(settled, option.ball), randomBot), walked, now, outcomes);
+      for (const ball of screen.choice?.options ?? []) {
+        walk(resolvePicks(pickInSession(settled, ball), randomBot), walked, now, outcomes);
       }
     }
   }
@@ -116,11 +117,11 @@ describe('no dead ends in a series', () => {
       const live: Walked = { moments: 0, decided: [], deadEnds: [] };
       for (const b of LINEUPS) {
         const start = resolvePicks(beginSession(setupOf(format, b)), randomBot);
-        // Reveal's round-1 answer is made on the setup screen before the series starts: every
-        // answer is walked.
+        // Reveal's and Showdown's round-1 pick is made on the setup screen before the series
+        // starts: every pick is walked.
         const answers = start.current === undefined ? screenOf(start, false).choice : undefined;
         if (answers === undefined) walk(start, live, []);
-        for (const { ball } of answers?.options ?? []) {
+        for (const ball of answers?.options ?? []) {
           walk(resolvePicks(pickInSession(start, ball), randomBot), live, []);
         }
       }

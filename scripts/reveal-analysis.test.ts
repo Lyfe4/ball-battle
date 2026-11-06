@@ -75,9 +75,11 @@ describe('reveal analysis', () => {
           if (x === y || x === shown || y === shown) continue;
           const possible = answers([x, y], shown).map(([id]) => id);
           for (let seed = 0; seed < 4; seed++) {
-            expect(possible).toContain(randomBot.answer(seed, 1, [x, y], shown));
+            const view = { format: 'reveal' as const, seed, own: [x, y], opponent: [shown], shown };
+            const answer = { ...view, role: 'answer' as const, wins: 0, losses: 1 };
+            expect(possible).toContain(randomBot.choose({ ...answer, round: 1 }));
             // Round 1, when the player won the toss and showed first, answers the same way.
-            expect(possible).toContain(randomBot.answer(seed, 0, [x, y], shown));
+            expect(possible).toContain(randomBot.choose({ ...answer, round: 0, losses: 0 }));
           }
         }
       }

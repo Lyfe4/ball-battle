@@ -1,12 +1,13 @@
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { randomBot } from '../sim/bot.ts';
+import { botPick, randomBot } from '../sim/bot.ts';
 import {
   awaitingPick,
   remainingOf,
   revealFirst,
   setupWithPicks,
+  startSeries,
   type SeriesSetup,
 } from '../sim/series.ts';
 import { playLikeTheGame } from '../sim/test-support.ts';
@@ -65,11 +66,13 @@ describe('series session', () => {
   });
 });
 
-describe('series session, loser picks next', () => {
-  const loser: SeriesSetup = { ...setup, format: 'loser' };
+describe('series session, showdown', () => {
+  const showdown: SeriesSetup = { ...setup, format: 'showdown' };
 
   it('has no current match while a pick is due, and plays the picked ball after it', () => {
-    let session = beginSession(loser);
+    let session = beginSession(showdown);
+    expect(session.current).toBeUndefined();
+    session = pickInSession(pickInSession(session, showdown.a[0]), showdown.b[0]);
     // Play round 1 to its end, whatever its result.
     for (;;) {
       const current = session.current;
@@ -81,10 +84,16 @@ describe('series session, loser picks next', () => {
     const due = awaitingPick(session.state);
     if (due === undefined) throw new Error('expected a pick after round 1');
     expect(session.current).toBeUndefined();
-    const ball = remainingOf(session.state, due).at(-1);
-    if (ball === undefined) throw new Error('expected a ball left');
-    const picked = pickInSession(session, ball);
-    expect(picked.current?.[due]).toBe(ball);
+    // The winner shows first; there is still no match until the loser answers.
+    const shown = remainingOf(session.state, due).at(-1) ?? '';
+    const waiting = pickInSession(session, shown);
+    expect(waiting.current).toBeUndefined();
+    const other = due === 'a' ? 'b' : 'a';
+    expect(awaitingPick(waiting.state)).toBe(other);
+    const answer = remainingOf(waiting.state, other)[0] ?? '';
+    const picked = pickInSession(waiting, answer);
+    expect(picked.current?.[due]).toBe(shown);
+    expect(picked.current?.[other]).toBe(answer);
     expect(picked.recorded).toBe(false);
   });
 });
@@ -104,7 +113,7 @@ describe('series session, picks and the address bar', () => {
   it('makes the bot’s pick at once and stops when the player is due', () => {
     const session = resolvePicks(beginSession(reveal), randomBot);
     expect(session.state.picks).toStrictEqual([
-      { round: 0, side: 'b', ball: randomBot.showFirst(reveal.seed, 0, reveal.b) },
+      { round: 0, side: 'b', ball: botPick(randomBot, startSeries(reveal)) },
     ]);
     expect(awaitingPick(session.state)).toBe('a');
     expect(replayPickDue(session)).toBeUndefined();
@@ -142,7 +151,7 @@ describe('series session, picks and the address bar', () => {
     expect(shown.state.picks.at(-1)).toStrictEqual({
       round: 1,
       side: 'b',
-      ball: randomBot.showFirst(5, 1, remainingOf(settled.state, 'b')),
+      ball: botPick(randomBot, settled.state),
     });
     // The bot answers in round 2 of a series whose toss it won: nothing to show early.
     let lost = resolvePicks(beginSession(reveal), randomBot);

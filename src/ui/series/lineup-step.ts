@@ -93,12 +93,15 @@ export function createLineupStep(
   footer.append(done);
   root.append(header.element, tray, grid.element, footer);
 
+  /** Reveal and Showdown pick each round's ball as they go, so the lineup has no order. */
+  const unordered = () => format !== 'blind';
+
   function update(next: Draft): void {
     draft = next;
     actions.onChange(draft);
     slots.forEach((slot, index) => {
       const ball = byId.get(draft[index] ?? '');
-      setText(slot.name, ball?.name ?? emptySlotText(index, format !== 'reveal'));
+      setText(slot.name, ball?.name ?? emptySlotText(index, !unordered()));
       slot.button.classList.toggle('lineup-tray-empty', ball === undefined);
       slot.icon.hidden = ball === undefined;
       if (ball !== undefined) drawBallIcon(slot.icon, ball, TRAY_ICON_PX);
@@ -117,8 +120,8 @@ export function createLineupStep(
       notes: new Map(
         inTray.map(([id, slot]) => [
           id,
-          // Reveal sets no order here (no slot numbers), so its note is the ✕ alone.
-          format === 'reveal'
+          // Reveal and Showdown set no order here (no slot numbers), so the note is the ✕ alone.
+          unordered()
             ? { shown: '✕', spoken: 'in your lineup, tap to take out' }
             : {
                 shown: `Slot ${String(slot)} ✕`,
@@ -132,7 +135,7 @@ export function createLineupStep(
     setText(
       done,
       complete
-        ? format === 'reveal'
+        ? unordered()
           ? 'Reveal lineups'
           : 'Start series'
         : `Pick ${String(LINEUP_SIZE - draftCount(draft))} more`,
@@ -144,7 +147,7 @@ export function createLineupStep(
     open(nextFormat, nextDraft) {
       format = nextFormat;
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
-      tray.classList.toggle('lineup-tray-unordered', format === 'reveal');
+      tray.classList.toggle('lineup-tray-unordered', unordered());
       update(draftOf(nextDraft, (id) => byId.has(id)));
       header.focus();
     },

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { BALL_LOOKUP } from '../../sim/balls/index.ts';
-import { randomBot } from '../../sim/bot.ts';
+import { BOT_LEVELS, botPick, randomBot } from '../../sim/bot.ts';
 import { RULESET_VERSION } from '../../sim/ruleset.ts';
 import {
+  awaitingPick,
+  FORMATS,
   recordOutcome,
   recordPick,
   startSeries,
@@ -10,7 +11,7 @@ import {
   type SeriesState,
 } from '../../sim/series.ts';
 import { betweenLine } from '../series-text.ts';
-import { botAnswers, pairingOf, pickChoiceOf, trackOf } from './series-view.ts';
+import { pairingOf, pickChoiceOf, seriesScreenOf, trackOf } from './series-view.ts';
 
 const series = (format: Format) =>
   startSeries({
@@ -59,23 +60,20 @@ describe('reveal', () => {
   });
 
   it('asks round 1 as an answer to the ball the bot showed', () => {
-    const choice = pickChoiceOf(play(series('reveal'), 'thorns'));
-    expect(choice?.kind).toBe('answer');
-    expect(choice?.options.map((option) => option.faces)).toStrictEqual([
-      ['thorns'],
-      ['thorns'],
-      ['thorns'],
-    ]);
+    expect(pickChoiceOf(play(series('reveal'), 'thorns'))).toStrictEqual({
+      kind: 'answer',
+      facing: 'thorns',
+      options: ['brawler', 'archer', 'vampire'],
+      opponents: ['thorns', 'speedster', 'frost'],
+    });
   });
 
-  it('asks round 2 as a ball to show, with the bot’s possible answers to each', () => {
-    const choice = pickChoiceOf(play(series('reveal'), 'thorns', 'archer', 'a'));
-    expect(choice?.kind).toBe('show');
-    expect(choice?.options.map((option) => option.ball)).toStrictEqual(['brawler', 'vampire']);
-    for (const option of choice?.options ?? []) {
-      expect(option.faces.length).toBeGreaterThan(0);
-      expect(['speedster', 'frost']).toEqual(expect.arrayContaining([...option.faces]));
-    }
+  it('asks round 2 as a ball to show, marked against every ball the bot has left', () => {
+    expect(pickChoiceOf(play(series('reveal'), 'thorns', 'archer', 'a'))).toStrictEqual({
+      kind: 'show',
+      options: ['brawler', 'vampire'],
+      opponents: ['speedster', 'frost'],
+    });
   });
 
   it('shows the bot’s unplayed balls as a pool on the track until one is chosen', () => {
@@ -90,49 +88,75 @@ describe('reveal', () => {
   });
 });
 
-describe('the bot’s answer preview', () => {
-  it('always holds the answer the bot really gives', () => {
-    const roster = [...BALL_LOOKUP.keys()];
-    for (const shown of roster) {
-      for (const first of roster) {
-        for (const second of roster) {
-          if (first === second) continue;
-          const preview = botAnswers([first, second], shown);
-          for (let seed = 0; seed < 8; seed += 1) {
-            expect(preview).toContain(randomBot.answer(seed, 1, [first, second], shown));
+describe('the bot’s choices (ADR 0035)', () => {
+  it('never shows a choice the bot has not made, in any format, at any level', () => {
+    let checked = 0;
+    for (const format of FORMATS) {
+      for (const bot of [randomBot, ...BOT_LEVELS]) {
+        for (let seed = 0; seed < 12; seed++) {
+          let state = startSeries({
+            ruleset: RULESET_VERSION,
+            opponent: { kind: 'bot', bot: bot.id, lineupSeed: seed },
+            seed,
+            a: ['brawler', 'archer', 'vampire'],
+            b: ['thorns', 'speedster', 'frost'],
+            format,
+          });
+          for (let guard = 0; guard < 12 && state.winner === undefined; guard++) {
+            const due = awaitingPick(state);
+            if (due === 'a') {
+              const choice = pickChoiceOf(state);
+              const moment = { state, current: undefined, settled: true, linkState: undefined };
+              const screen = seriesScreenOf(moment);
+              // The bot's coming pick, worked out ahead: nothing on screen may single it out. Its
+              // balls are all listed as columns, so only the rest of the screen is searched.
+              const ahead = recordPick(state, choice?.options[0] ?? '');
+              const coming = botPick(bot, ahead);
+              const said = JSON.stringify({ ...screen, choice: { ...choice, opponents: [] } });
+              if (coming !== undefined) {
+                expect(said, `${format} ${bot.id} ${String(seed)}`).not.toContain(coming);
+                checked++;
+              }
+              state = ahead;
+            } else if (due === 'b') {
+              state = recordPick(state, botPick(bot, state) ?? '');
+            } else {
+              state = recordOutcome(state, guard % 2 === 0 ? 'a' : 'b');
+            }
           }
         }
       }
     }
-  });
-
-  it('names one ball when the counter map ranks one answer best', () => {
-    // The Vampire is favoured against the Venom and even with the Frost, so against a Vampire the
-    // bot answers with the Frost.
-    expect(botAnswers(['venom', 'frost'], 'vampire')).toStrictEqual(['frost']);
+    expect(checked).toBeGreaterThan(100);
   });
 });
 
-describe('blind and loser picks next', () => {
+describe('showdown', () => {
+  it('asks round 1 as an opener, marked against the bot’s whole lineup', () => {
+    expect(pickChoiceOf(series('showdown'))).toStrictEqual({
+      kind: 'open',
+      options: ['brawler', 'archer', 'vampire'],
+      opponents: ['thorns', 'speedster', 'frost'],
+    });
+    // The bot's other two wait under round 2 once round 1 is set.
+    const [, round2] = trackOf(play(series('showdown'), 'archer', 'thorns'), undefined);
+    expect(round2?.bot).toStrictEqual({ pool: ['speedster', 'frost'] });
+  });
+
+  it('has the winner show first and the loser answer the shown ball', () => {
+    expect(pickChoiceOf(play(series('showdown'), 'archer', 'thorns', 'a'))?.kind).toBe('show');
+    const lost = play(series('showdown'), 'archer', 'thorns', 'b', 'frost');
+    expect(pickChoiceOf(lost)).toMatchObject({ kind: 'answer', facing: 'frost' });
+  });
+});
+
+describe('blind', () => {
   it('never shows the bot’s next ball in a blind series', () => {
     const state = play(series('blind'), 'a');
     expect(pairingOf(state)?.bot).toBeUndefined();
     expect(trackOf(state, undefined)[1]?.bot).toStrictEqual({});
     // The player's own order is set, so their later balls show.
     expect(trackOf(state, undefined)[2]?.you).toStrictEqual({ ball: 'vampire' });
-  });
-
-  it('shows the winner’s next ball to the player who lost and must pick', () => {
-    const lost = play(series('loser'), 'b');
-    expect(pickChoiceOf(lost)).toStrictEqual({
-      kind: 'answer',
-      options: [
-        { ball: 'archer', faces: ['speedster'] },
-        { ball: 'vampire', faces: ['speedster'] },
-      ],
-    });
-    // Having won, the bot's next ball stays hidden from a player who has nothing to pick.
-    expect(pairingOf(play(series('loser'), 'a'))?.bot).toBeUndefined();
   });
 
   it('leaves unplayed rounds off the track once the series is decided', () => {

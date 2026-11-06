@@ -1,6 +1,6 @@
 // Helpers shared by the sim tests. Plain functions with no test-framework imports, so they obey
 // the same rules as the rest of src/sim.
-import { botPick, randomBot } from './bot.ts';
+import { botFor, botPick } from './bot.ts';
 import { defineBall } from './define-ball.ts';
 import { indexDefinitions } from './definitions.ts';
 import {
@@ -90,16 +90,17 @@ export function deepFreeze<T>(value: T): T {
 }
 
 /**
- * Plays a series the way the game does, one match at a time: the random bot makes side B's picks,
+ * Plays a series the way the game does, one match at a time: the setup's bot makes side B's picks,
  * and side A picks its first ball left whenever it is due. `setupWithPicks` of the result is a link
  * the game could have written.
  */
 export function playLikeTheGame(setup: SeriesSetup, definitions: DefinitionLookup): SeriesState {
+  const bot = botFor(setup.opponent);
   let state = startSeries(setup);
   for (;;) {
     const due = awaitingPick(state);
     if (due !== undefined) {
-      const ball = due === 'b' ? botPick(randomBot, state) : remainingOf(state, 'a')[0];
+      const ball = due === 'b' ? botPick(bot, state) : remainingOf(state, 'a')[0];
       if (ball === undefined) throw new Error(`Side ${due} has no pick`);
       state = recordPick(state, ball);
       continue;

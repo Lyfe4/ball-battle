@@ -55,8 +55,8 @@ describe('seriesRound', () => {
   it('replays a link’s series, carries on with one in play, else sets up from the lineup', () => {
     expect(seriesRound({ setup }, false)).toStrictEqual({ replay: setup });
     expect(seriesRound({ setup }, true)).toStrictEqual({ replay: setup });
-    expect(seriesRound({ format: 'loser' }, true)).toBe('carry on');
-    expect(seriesRound({ format: 'loser' }, false)).toBe('lineup');
+    expect(seriesRound({ format: 'showdown' }, true)).toBe('carry on');
+    expect(seriesRound({ format: 'showdown' }, false)).toBe('lineup');
   });
 });
 

@@ -114,12 +114,16 @@ describe('series URL, draft formats', () => {
     format: 'reveal',
     picks: [b1, 'thorns', 'sniper', b0],
   };
-  const loser: SeriesSetup = { ...setup, format: 'loser', picks: [b2] };
+  const showdown: SeriesSetup = {
+    ...setup,
+    format: 'showdown',
+    picks: ['sniper', b2, b0, 'thorns'],
+    opponent: { kind: 'bot', bot: 'hard', lineupSeed: SEED },
+  };
 
   it.each<[string, SeriesSetup]>([
     ['reveal, then take turns, with its four picks', reveal],
-    ['loser picks next, with a pick', loser],
-    ['loser picks next, before any pick', { ...setup, format: 'loser' }],
+    ['a showdown against the Hard bot, with its four picks', showdown],
   ])('round-trips %s', (_name, original) => {
     const params = new URLSearchParams();
     writeSeriesParams(params, original);
@@ -128,63 +132,58 @@ describe('series URL, draft formats', () => {
     });
   });
 
-  it('writes the format and the picks into the link, and nothing extra for a blind series', () => {
+  it('writes the format, the picks and the bot’s level, and nothing extra for a blind series', () => {
     const params = new URLSearchParams();
-    writeSeriesParams(params, loser);
-    expect(params.get('fmt')).toBe('loser');
-    expect(params.get('picks')).toBe(b2);
+    writeSeriesParams(params, showdown);
+    expect(params.get('fmt')).toBe('showdown');
+    expect(params.get('picks')).toBe(`sniper,${b2},${b0},thorns`);
+    expect(params.get('bot')).toBe('hard');
     const blind = new URLSearchParams();
     writeSeriesParams(blind, setup);
     expect(blind.has('fmt')).toBe(false);
     expect(blind.has('picks')).toBe(false);
+    // The first bot is what a link without a level means, so its links are unchanged.
+    expect(blind.has('bot')).toBe(false);
+  });
+
+  it('reads a link without a level as the first bot, and keeps an unknown level for verifying', () => {
+    const query = `mode=bo3&la=thorns,sniper,berserker&lb=${setup.b.join(',')}&seed=${String(SEED)}`;
+    expect(parse(query)?.setup?.opponent).toStrictEqual(setup.opponent);
+    expect(parse(`${query}&bot=Genius`)?.setup?.opponent).toMatchObject({ bot: 'genius' });
   });
 
   it('keeps the format while a series is built or played', () => {
-    const params = new URLSearchParams('fmt=loser&picks=quake');
+    const params = new URLSearchParams('fmt=showdown&picks=quake&bot=easy');
     writeSeriesModeParams(params, 'reveal');
     expect(params.toString()).toBe('mode=bo3&fmt=reveal');
-    expect(parse('mode=bo3&fmt=loser')).toStrictEqual({ format: 'loser' });
+    expect(parse('mode=bo3&fmt=showdown')).toStrictEqual({ format: 'showdown' });
     expect(parse('mode=bo3&fmt=Reveal&la=storm,frost,venom')).toStrictEqual({
       lineup: ['storm', 'frost', 'venom'],
       format: 'reveal',
     });
   });
 
+  it('opens a retired "loser picks next" link on the lineup, with Showdown chosen (ADR 0035)', () => {
+    expect(
+      parse(
+        'mode=bo3&fmt=loser&la=storm,frost,venom&lb=quake,thorns,archer&seed=9&picks=thorns&v=5',
+      ),
+    ).toStrictEqual({ lineup: ['storm', 'frost', 'venom'], format: 'showdown', retiredFrom: 5 });
+    expect(parse('mode=bo3&fmt=loser')).toStrictEqual({ format: 'showdown' });
+  });
+
   it.each([
     ['an unknown format', 'fmt=draft'],
     ['picks in a blind series', 'picks=venom'],
-    ['picks in a reveal series', 'fmt=reveal&picks=venom'],
-    ['a pick from neither lineup', 'fmt=loser&picks=storm'],
-    ['more picks than rounds after the first', 'fmt=loser&picks=venom,quake,brawler'],
+    ['too few picks in a reveal series', 'fmt=reveal&picks=venom'],
+    ['a pick from neither lineup', 'fmt=showdown&picks=storm,venom,brawler,thorns'],
+    ['too many picks', 'fmt=showdown&picks=thorns,venom,sniper,brawler,berserker'],
   ])('falls back to the lineup builder for %s', (_case, query) => {
     const link = parse(
       `mode=bo3&la=thorns,sniper,berserker&lb=venom,brawler,quake&seed=5&${query}`,
     );
     expect(link?.setup).toBeUndefined();
     expect(link?.lineup).toStrictEqual(['thorns', 'sniper', 'berserker']);
-  });
-
-  it('replays a loser-picks-next series exactly from its link', () => {
-    // Find a seed where side B (the bot) loses round 1, so the link carries its pick.
-    for (let seed = 0; seed < 50; seed++) {
-      const base: SeriesSetup = { ...setup, seed, format: 'loser' };
-      for (const pick of setup.b) {
-        let played;
-        try {
-          played = playSeries({ ...base, picks: [pick] }, BALL_LOOKUP);
-        } catch {
-          continue;
-        }
-        const params = new URLSearchParams();
-        writeSeriesParams(params, { ...base, picks: [pick] });
-        const fromLink = parseSeriesParams(new URLSearchParams(params.toString()), ids)?.setup;
-        if (fromLink === undefined) throw new Error('expected a series in the link');
-        expect(playSeries(fromLink, BALL_LOOKUP)).toStrictEqual(played);
-        expect(played.picks).toStrictEqual([{ round: 1, side: 'b', ball: pick }]);
-        return;
-      }
-    }
-    throw new Error('no seed found where the pick applies');
   });
 
   it('keeps the seed the bot picked its lineup from after a rematch (bs=), and only then', () => {

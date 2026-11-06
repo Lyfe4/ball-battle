@@ -1,7 +1,7 @@
 // A best-of-3 series (ADR 0017, docs/vision.md): two lineups of three different balls, first to two
-// round wins. Draft formats (ADR 0019, 0021) decide who plays when: blind order; reveal, then take
-// turns showing first; or loser-picks-next, where the loser of a round picks its next ball after
-// seeing the winner's. Pure and deterministic like the rest of the sim, so a server can replay a
+// round wins. Draft formats (ADR 0019, 0021, 0035) decide who plays when: blind order; reveal, then
+// take turns showing first; or showdown, where both open at once and then the winner of a round
+// shows first and the loser answers. Pure and deterministic like the rest of the sim, so a server can replay a
 // series from its setup to verify a reported result (series-verify.ts).
 import { deriveSeed, nextFloat } from './rng.ts';
 import type { MatchResult, WorldState } from './types.ts';
@@ -30,11 +30,13 @@ export type Lineup = readonly [string, string, string];
  *   A seeded coin toss picks who shows first in round 1 while the other answers; in round 2 the
  *   other side shows first. Round 3 is the ball each side has left. Every choice is a pick,
  *   recorded in order.
- * - `loser`: each side sets an order blind; after a round, the loser picks its next ball from what
- *   it has left, having seen the winner's next ball, while the winner keeps its order.
+ * - `showdown` (ADR 0035): both lineups are revealed. In round 1 both sides pick at the same time,
+ *   neither seeing the other's pick (recorded A then B; a bot's pick never reads A's). In round 2
+ *   the winner of round 1 shows first and the loser answers. Round 3 is the ball each side has left.
+ *   It replaced "loser picks next" (ADR 0019), whose links now open the lineup step.
  */
-export type Format = 'blind' | 'reveal' | 'loser';
-export const FORMATS: readonly Format[] = ['blind', 'reveal', 'loser'];
+export type Format = 'blind' | 'reveal' | 'showdown';
+export const FORMATS: readonly Format[] = ['blind', 'reveal', 'showdown'];
 
 /**
  * Who plays side B (ADR 0022):
@@ -59,11 +61,11 @@ export interface SeriesSetup {
   readonly opponent: Opponent;
   /** Undefined is `blind`, the format every series had before ADR 0019. */
   readonly format?: Format;
-  /** `loser` and `reveal`: every pick made, both sides', in order. A replay takes them from here. */
+  /** `reveal` and `showdown`: every pick made, both sides', in order. A replay takes them from here. */
   readonly picks?: readonly string[];
 }
 
-/** A pick made in a `loser` or `reveal` series: `side` chose `ball` for round `round` (0-based). */
+/** A pick made in a `reveal` or `showdown` series: `side` chose `ball` for round `round` (0-based). */
 export interface PickRecord {
   readonly round: number;
   readonly side: Side;
@@ -94,7 +96,7 @@ export interface SeriesState {
   readonly pending: readonly Outcome[];
   /** Set once a side has WINS_NEEDED round wins. */
   readonly winner: Side | undefined;
-  /** Picks made so far (`loser` and `reveal` series). */
+  /** Picks made so far (`reveal` and `showdown` series). */
   readonly picks: readonly PickRecord[];
 }
 
@@ -176,25 +178,33 @@ export function revealTurnsOf(setup: SeriesSetup): readonly (readonly Side[])[] 
 }
 
 /**
- * The side that must pick its ball before the next round, if any. In a `loser` series, the loser
- * of the last round, while it still has a choice (two or more balls left) and hasn't picked. In a
- * `reveal` series, whoever's turn it is in the round (`revealTurnsOf`), until both have picked.
+ * Who picks in each round of a `showdown` series, in the order the picks are recorded (ADR 0035):
+ * round 1 both at once (A's recorded first, but neither sees the other's), round 2 the winner of
+ * round 1 shows first and the loser answers. Round 3 has no picks.
+ */
+export function showdownTurnsOf(state: SeriesState): readonly (readonly Side[])[] {
+  const first = state.rounds[0]?.winner;
+  return first === undefined
+    ? [['a', 'b']]
+    : [
+        ['a', 'b'],
+        [first, otherSide(first)],
+      ];
+}
+
+/**
+ * The side that must pick its ball before the next round, if any: whoever's turn it is in the
+ * round (`revealTurnsOf`, `showdownTurnsOf`), until every side due has picked. A blind series has
+ * no picks.
  */
 export function awaitingPick(state: SeriesState): Side | undefined {
   const format = formatOf(state.setup);
-  if (state.winner !== undefined || state.pending.length > 0) return undefined;
-  if (format === 'reveal') {
-    const round = state.rounds.length;
-    const picked = (side: Side) => state.picks.some((p) => p.round === round && p.side === side);
-    return revealTurnsOf(state.setup)[round]?.find((side) => !picked(side));
-  }
-  if (format !== 'loser') return undefined;
-  const last = state.rounds.at(-1);
-  if (last === undefined) return undefined;
-  const loser = otherSide(last.winner);
+  if (state.winner !== undefined || state.pending.length > 0 || format === 'blind')
+    return undefined;
   const round = state.rounds.length;
-  if (state.picks.some((p) => p.round === round && p.side === loser)) return undefined;
-  return remainingOf(state, loser).length >= 2 ? loser : undefined;
+  const turns = format === 'reveal' ? revealTurnsOf(state.setup) : showdownTurnsOf(state);
+  const picked = (side: Side) => state.picks.some((p) => p.round === round && p.side === side);
+  return turns[round]?.find((side) => !picked(side));
 }
 
 /** Records the due pick. Throws when no pick is due or the ball isn't one the side has left. */

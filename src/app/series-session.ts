@@ -2,7 +2,7 @@
 // frame loop's bookkeeping and the series' rules for the page are tested without a DOM: each match
 // is recorded exactly once, however many frames show its finished world; picks nobody needs to be
 // asked for are made in order; and the address bar never shows the bot's lineup early.
-import { botPick, type LineupBot } from '../sim/bot.ts';
+import { botFor, botPick, type LineupBot } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import {
   awaitingPick,
@@ -33,6 +33,9 @@ export interface SeriesSession {
   readonly replay: readonly string[] | undefined;
 }
 
+/** The bot a series is played against: the one its setup names, or the default level. */
+export const botOf = (setup: SeriesSetup): LineupBot => botFor(setup.opponent);
+
 /** Starts a series: played live, or `fromLink`, replaying a link's picks. */
 export function beginSession(setup: SeriesSetup, fromLink = false): SeriesSession {
   const state = startSeries(setup);
@@ -53,7 +56,7 @@ export function settleCurrent(session: SeriesSession, world: WorldState): Series
 
 /**
  * Moves on to the next match (the next round, or a drawn round again) once one is recorded. While
- * a pick is due (loser picks next, ADR 0019) there is no current match until `pickInSession`.
+ * a pick is due (ADR 0021, 0035) there is no current match until `pickInSession`.
  */
 export function advanceSession(session: SeriesSession): SeriesSession {
   if (!session.recorded) return session;
@@ -103,16 +106,17 @@ export function resolvePicks(from: SeriesSession, bot: LineupBot): SeriesSession
 }
 
 /**
- * Reveal (ADR 0029): when the bot shows first in the coming round, it shows at once, while the
- * finished round is still on screen. Its ball is a seeded random one that needs nothing from the
- * player, so the screen between rounds can ask for the answer straight away rather than offer a
- * Play round that would only reveal it. The match on screen stays current and recorded.
+ * Reveal and Showdown (ADR 0029, 0035): when the bot shows first in the coming round, it shows at
+ * once, while the finished round is still on screen. Its ball needs nothing from the player, so the
+ * screen between rounds can ask for the answer straight away rather than offer a Play round that
+ * would only reveal it. The match on screen stays current and recorded.
  */
 export function showBotBallNow(session: SeriesSession, bot: LineupBot): SeriesSession {
   const { state } = session;
-  if (formatOf(state.setup) !== 'reveal' || awaitingPick(state) !== 'b') return session;
+  if (formatOf(state.setup) === 'blind' || awaitingPick(state) !== 'b') return session;
   const round = state.rounds.length;
-  // The player showed first this round: the bot's pick is an answer, made once the round is played.
+  // The player picked first this round: the bot's pick is an answer (or a Showdown opener made at
+  // the same time), made once the player moves on.
   if (state.picks.some((pick) => pick.round === round && pick.side === 'a')) return session;
   const ball = replayPickDue(session) ?? botPick(bot, state);
   return ball === undefined ? session : { ...session, state: recordPick(state, ball) };

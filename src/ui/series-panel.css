@@ -20,6 +20,20 @@
 }
 
 /* The track: the score over a grid of rounds, the player's ball over the bot's. */
+/* What is being played, and the legend's ? (ADR 0035): one quiet line over the series. */
+.series-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
+.series-bar-about {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
 .series-track {
   display: grid;
   gap: var(--space-small);
@@ -127,9 +141,33 @@
   font-weight: 800;
 }
 
-.pick-rows {
+.pick-rows,
+.pick-rows-list {
   display: grid;
   gap: var(--space-small);
+}
+
+/* The marks' key, one line under the rows (ADR 0035): read without any gesture. */
+.pick-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 var(--space-small);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.pick-key-mark {
+  font-family: var(--font-family-symbol);
+}
+
+.pick-key-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.pick-key-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
 }
 
 .pick-row {
@@ -155,14 +193,16 @@
   gap: var(--space-small);
 }
 
-.pick-row-joiner {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  font-weight: 400;
-}
-
 .pick-row-face {
   position: relative;
+  display: grid;
+  border-radius: 50%;
+}
+
+/* The bot's shown ball, when answering it: ringed, the others are what is left for later. */
+.pick-row-face[data-facing='true'] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .pick-row-badge {
