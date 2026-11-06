@@ -163,6 +163,9 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
       canvas.focus();
     },
     layoutChanged: showControls,
+    redraw: () => {
+      arena.redraw();
+    },
     exitToHome: () => {
       goHome('replace');
     },
