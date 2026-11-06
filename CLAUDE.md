@@ -31,7 +31,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   concern; their helpers are in `src/sim/balls/roster-support.ts`.
 - `pnpm test:browsers`: the known match results (`src/golden`, ADR 0023) and flows through the
   real page (`src/**/*.browser.test.ts`, ADR 0025) in headless Chromium, Firefox and WebKit
-  through Vitest's Playwright provider. Needs the browsers once:
+  through Vitest's Playwright provider. A flow that needs a desktop screen is
+  `*.wide.browser.test.ts`, run at a fixed 1280 x 800 (project `browsers-wide`): never resize the
+  viewport during a test, which upsets later files' history in WebKit. Needs the browsers once:
   `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project

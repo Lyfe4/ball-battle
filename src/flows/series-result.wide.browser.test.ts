@@ -1,5 +1,6 @@
 // The real page in a real browser (`pnpm test:browsers`): the Best of 3 result screen's three
-// actions, at desktop width with real clicks. Before the fix, Rematch after a Reveal series did
+// actions, at desktop width (the browsers-wide project, 1280 x 800, where the arena stays beside the
+// result and no resize redraws it) with real clicks. Before the fix, Rematch after a Reveal series did
 // nothing visible: the rematch opens on a pick, so no new match reached the arena, and the
 // scoreboard only redrew on the arena's frames, which had stopped once the last round was still.
 // The address changed and the health bars and speed came back under the old result.
@@ -65,8 +66,6 @@ describe('the Best of 3 result screen', () => {
     const link = `?${params.toString()}`;
 
     window.localStorage.setItem('ballbattle.speed', '2');
-    // Wide, where the arena stays beside the result and no resize redraws it.
-    await browserPage.viewport(1280, 800);
     const body = new DOMParser().parseFromString(page, 'text/html').body;
     document.body.replaceChildren(...body.children);
     const start = new URL(location.href);

@@ -1,8 +1,8 @@
 // The real page in a real browser (`pnpm test:browsers`): hovering a symbol with a mouse, or moving
 // keyboard focus onto a control that shows one, says what it means in the legend's own words. A
-// touch adds nothing (ADR 0030).
+// touch adds nothing (ADR 0030). Runs at desktop size (the browsers-wide project).
 import { describe, expect, it } from 'vitest';
-import { page as browserPage, userEvent } from 'vitest/browser';
+import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
 import { SYMBOLS } from '../ui/symbols.ts';
 import { settle, visible } from './page-support.ts';
@@ -11,7 +11,6 @@ const tooltip = () => visible('.symbol-tooltip').map((tip) => tip.textContent);
 
 describe('the symbol tooltip', () => {
   it('shows on mouse hover and keyboard focus, and not on touch', async () => {
-    await browserPage.viewport(1280, 800);
     const body = new DOMParser().parseFromString(page, 'text/html').body;
     document.body.replaceChildren(...body.children);
     const start = new URL(location.href);
