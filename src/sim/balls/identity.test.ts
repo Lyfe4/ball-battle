@@ -59,7 +59,7 @@ describe('the ball roster: identity rules', () => {
     expect(MOMENT_EVERY_TICKS * REWIND_MOMENTS).toBeLessThanOrEqual(30);
     expect(chrono.hooks.onHitBall).toBeUndefined();
     expect(chrono.hooks.onDamageDealt).toBeUndefined();
-    expect(chrono.initialAbilityState.used).toBe(false);
+    expect(chrono.initialAbilityState['used']).toBe(false);
   });
 
   it('Inferno’s fire is small and short-lived, and its own hits are the second lightest', () => {
