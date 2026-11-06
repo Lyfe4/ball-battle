@@ -1,3 +1,6 @@
+import { chronoDesign } from './chrono.ts';
+import { infernoDesign } from './inferno.ts';
+import { titanDesign } from './titan.ts';
 import { archerDesign } from './archer.ts';
 import { berserkerDesign } from './berserker.ts';
 import { brawlerDesign } from './brawler.ts';
@@ -33,4 +36,7 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['magnet', magnetDesign],
   ['ghost', ghostDesign],
   ['necromancer', necromancerDesign],
+  ['chrono', chronoDesign],
+  ['titan', titanDesign],
+  ['inferno', infernoDesign],
 ]);

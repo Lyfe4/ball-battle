@@ -1,3 +1,6 @@
+import { ownerColor } from './ball-colors.ts';
+import { drawRewinds } from './draw-rewind.ts';
+import type { RewindTrail } from './rewind.ts';
 import type { BallState, DefinitionLookup, Vec2, WorldState } from '../sim/types.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/state.ts';
@@ -50,6 +53,8 @@ export interface FrameEffects {
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
   /** Rule cue strength for a ball, 0 to 1 (ADR 0028). */
   readonly cue: (ballId: string) => number;
+  /** Rewinds being shown: the Chrono's trail back and its ghost (ADR 0034). */
+  readonly rewinds: readonly RewindTrail[];
   /** Holds animated details (the shock ring's crackle, the cue's pop) still. */
   readonly reducedMotion: boolean;
 }
@@ -69,6 +74,7 @@ export const NO_EFFECTS: FrameEffects = {
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
   cue: () => 0,
+  rewinds: [],
   reducedMotion: false,
 };
 
@@ -101,6 +107,12 @@ export function drawWorld(
   drawZones(ctx, world, definitions);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
+  drawRewinds(
+    ctx,
+    effects.rewinds,
+    (ballId) => world.balls.find((ball) => ball.id === ballId)?.radius ?? 0,
+    (ballId) => ownerColor(world.balls, definitions, ballId),
+  );
   const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
     if (breaking.has(ball.id)) return;

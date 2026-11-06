@@ -60,8 +60,8 @@ export interface BallDesign {
   /** Where `heading` comes from: none, the ball's velocity, or its aim at the nearest enemy. */
   readonly facing: 'none' | 'velocity' | 'aim';
   /**
-   * How the ball's zones look when they strike: a lightning bolt (the default) or a clean
-   * shockwave ring that sweeps out to the zone's edge.
+   * How the ball's zones look when they strike: a lightning bolt (the default), a clean shockwave
+   * ring that sweeps out to the zone's edge, or nothing beyond the burning patch's own flare.
    */
-  readonly strike?: 'bolt' | 'shockwave';
+  readonly strike?: 'bolt' | 'shockwave' | 'burn';
 }

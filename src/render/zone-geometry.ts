@@ -42,3 +42,33 @@ export function strikeProgress(
   if (span <= 0) return 1;
   return Math.min(1, Math.max(0, (tick - zone.spawnTick) / span));
 }
+
+/** How a lasting zone (the Inferno's burning patch, ADR 0034) looks on a tick. */
+export interface BurnLook {
+  /** 0 to 1 while it catches (before its first burn); 1 once it burns. */
+  readonly caught: number;
+  /** How much life it has left once it burns: 1 at its first burn, down to 0 at its end. */
+  readonly life: number;
+  /** 1 on the tick it burns, fading to 0 over `glowTicks`: the burn you can see land. */
+  readonly glow: number;
+}
+
+/** A lasting zone's look on `tick`, from its state alone. */
+export function burnLook(
+  zone: Readonly<{
+    spawnTick: number;
+    strikeTick: number;
+    endTick?: number;
+    pulseEveryTicks?: number;
+  }>,
+  tick: number,
+  glowTicks: number,
+): BurnLook {
+  const end = zone.endTick ?? zone.strikeTick;
+  const every = zone.pulseEveryTicks ?? 1;
+  if (tick < zone.strikeTick) return { caught: strikeProgress(zone, tick), life: 1, glow: 0 };
+  const span = end - zone.strikeTick;
+  const life = span <= 0 ? 0 : Math.max(0, (end - tick) / span);
+  const since = (tick - zone.strikeTick) % every;
+  return { caught: 1, life, glow: Math.max(0, 1 - since / glowTicks) };
+}
