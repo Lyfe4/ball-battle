@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { archer } from './archer.ts';
 import { ghost } from './ghost.ts';
+import { inferno } from './inferno.ts';
 import { BALLS } from './index.ts';
 import { necromancer } from './necromancer.ts';
 import { quake } from './quake.ts';
@@ -41,6 +42,8 @@ describe('the ball roster (slow): ability share', () => {
     ['Ghost gets a meaningful share of its damage from spectral hits', ghost, 0.1],
     // Measured about 46% (ADR 0026).
     ['Necromancer gets at least a third of its damage from its minions', necromancer, 0.33],
+    // ADR 0034: its own hits are light; the fire is the ball.
+    ['Inferno gets most of its damage from its fire', inferno, 0.5],
   ])('%s', { timeout: ROSTER_TIMEOUT_MS }, (_rule, ball, least) => {
     expect(abilityShare(ball)).toBeGreaterThanOrEqual(least);
   });

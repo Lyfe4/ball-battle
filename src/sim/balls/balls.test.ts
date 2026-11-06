@@ -11,6 +11,9 @@ import { brawler } from './brawler.ts';
 import { ghost } from './ghost.ts';
 import { magnet } from './magnet.ts';
 import { necromancer } from './necromancer.ts';
+import { chrono } from './chrono.ts';
+import { inferno } from './inferno.ts';
+import { titan } from './titan.ts';
 import { frost } from './frost.ts';
 import { quake } from './quake.ts';
 import { sniper } from './sniper.ts';
@@ -57,6 +60,11 @@ describe('the ball roster', () => {
       magnet: magnet.speed,
       ghost: ghost.speed,
       necromancer: necromancer.speed,
+      // A rewind puts back a velocity it once had at its own cruise speed (ADR 0034).
+      chrono: chrono.speed,
+      // It grows, which only widens the detection limit; its speed never changes.
+      titan: titan.speed,
+      inferno: inferno.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {
