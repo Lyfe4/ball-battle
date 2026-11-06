@@ -3,8 +3,10 @@ import { BALLS } from '../src/sim/balls/index.ts';
 import { randomBot } from '../src/sim/bot.ts';
 import {
   answers,
+  coinToss,
   lineupsOf,
   mapOdds,
+  playerFirst,
   seriesWin,
   simultaneous,
   takeTurns,
@@ -41,6 +43,26 @@ describe('reveal analysis', () => {
     expect(moved / sample.length).toBeGreaterThan(0.8);
   });
 
+  it('makes the player’s choices count whoever wins the toss, and averages the two', () => {
+    let moved = 0;
+    for (const [you, bot] of sample) {
+      const first = playerFirst(you, bot, mapOdds);
+      expect(first.best).toBeGreaterThanOrEqual(first.worst);
+      if (first.best - first.worst >= 0.03) moved++;
+      const toss = coinToss(you, bot, mapOdds);
+      const second = takeTurns(you, bot, mapOdds);
+      expect(toss.best).toBeCloseTo((first.best + second.best) / 2, 12);
+      expect(toss.worst).toBeCloseTo((first.worst + second.worst) / 2, 12);
+    }
+    expect(moved / sample.length).toBeGreaterThan(0.8);
+  });
+
+  it('gives a player who shows first and plays perfectly against even odds exactly half', () => {
+    const even = () => 0.5;
+    const [you, bot] = sample[0] ?? [[], []];
+    expect(playerFirst(you, bot, even)).toStrictEqual({ best: 0.5, worst: 0.5 });
+  });
+
   it('models the bot’s round-2 answer the way the bot makes it', () => {
     for (const shown of roster) {
       for (const x of roster) {
@@ -49,6 +71,8 @@ describe('reveal analysis', () => {
           const possible = answers([x, y], shown).map(([id]) => id);
           for (let seed = 0; seed < 4; seed++) {
             expect(possible).toContain(randomBot.answer(seed, 1, [x, y], shown));
+            // Round 1, when the player won the toss and showed first, answers the same way.
+            expect(possible).toContain(randomBot.answer(seed, 0, [x, y], shown));
           }
         }
       }

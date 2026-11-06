@@ -1,4 +1,4 @@
-// Measures what the player's choices are worth in Reveal, before and after ADR 0021
+// Measures what the player's choices are worth in Reveal, before and after ADR 0021 and 0029
 // (docs/reveal-measurements.md). Plays every ordered pair from the player's slot (A) to get each
 // round's odds, then computes every pair of lineups exactly (reveal-analysis.ts).
 //   node scripts/reveal-measure.ts [seeds=200] [--rates file.json] [--save file.json]
@@ -11,7 +11,15 @@ import { getDefinition } from '../src/sim/definitions.ts';
 import { deriveSeed } from '../src/sim/rng.ts';
 import { playToEnd } from '../src/sim/series-verify.ts';
 import { createWorld } from '../src/sim/world.ts';
-import { mapOdds, simultaneous, summarise, takeTurns, type Odds } from './reveal-analysis.ts';
+import {
+  coinToss,
+  mapOdds,
+  playerFirst,
+  simultaneous,
+  summarise,
+  takeTurns,
+  type Odds,
+} from './reveal-analysis.ts';
 
 type Rates = Record<string, Record<string, number>>;
 
@@ -61,7 +69,9 @@ for (const [label, odds] of [
   console.log(`\n${label}`);
   for (const [name, rule] of [
     ['Before ADR 0021: both orders secret', simultaneous],
-    ['ADR 0021: take turns (bot answers with its best counter)', takeTurns],
+    ['ADR 0021: take turns, the bot shows first', takeTurns],
+    ['ADR 0029: take turns, the player shows first', playerFirst],
+    ['ADR 0029: take turns, a coin toss decides who shows first', coinToss],
   ] as const) {
     const s = summarise(rule, roster, odds);
     console.log(

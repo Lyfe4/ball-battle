@@ -1,7 +1,41 @@
 # Reveal: do the player's choices change their odds?
 
-Measured 2026-11-05, before and after the rule change in ADR 0021. Scripts:
-`scripts/reveal-analysis.ts` (the maths, unit-tested) and `scripts/reveal-measure.ts` (runs it).
+Measured 2026-11-05, before and after the rule change in ADR 0021, and again on 2026-11-06 with
+ADR 0029's coin toss (ruleset 4, all 14 balls). Scripts: `scripts/reveal-analysis.ts` (the maths,
+unit-tested) and `scripts/reveal-measure.ts` (runs it).
+
+## With the coin toss (ADR 0029, 2026-11-06)
+
+ADR 0029 replaces "the bot always shows first in round 1" with a seeded coin toss. Whoever wins it
+shows first in round 1; the other side shows first in round 2. Measured the same way as below, over
+every pair of lineups from today's 14 balls (364 × 364 = 132,496 pairs), with measured odds from
+200 seeds per ordered pair (39,200 matches):
+
+| Odds        | Who shows first in round 1     | Best play | Worst play | Gap      | Lineup pairs where choices move the odds by 3+ points |
+| ----------- | ------------------------------ | --------- | ---------- | -------- | ----------------------------------------------------- |
+| Counter map | The bot, always (ADR 0021)     | 54.0%     | 41.9%      | 12.0 pts | 97.5%                                                 |
+| Counter map | The player                     | 53.4%     | 41.9%      | 11.5 pts | 93.4%                                                 |
+| Counter map | A coin toss decides (ADR 0029) | 53.7%     | 41.9%      | 11.7 pts | 96.8%                                                 |
+| Measured    | The bot, always (ADR 0021)     | 54.3%     | 41.6%      | 12.7 pts | 99.1%                                                 |
+| Measured    | The player                     | 54.0%     | 41.6%      | 12.3 pts | 98.7%                                                 |
+| Measured    | A coin toss decides (ADR 0029) | 54.1%     | 41.6%      | 12.5 pts | 99.0%                                                 |
+
+- **The toss keeps Reveal fair and keeps its decisions.** With the toss, good play is worth 12.5
+  points (measured) where it was 12.7, and choices still move the odds in 99% of lineup pairs.
+- **It doesn't matter much who wins the toss.** Showing first in round 1 is worth about the same as
+  answering first: best play is 0.3 to 0.6 points lower for the player who shows first, and worst
+  play is the same. Neither side gains by winning the toss, which is what a fair coin needs.
+- **Showing first is a real decision too.** When the player shows first in round 1, the gap is
+  11.5 to 12.3 points, close to answering's 12.0 to 12.7, so the player's round-1 choice matters
+  as much either way.
+- **The numbers moved a little since 2026-11-05** (54.3% best measured, was 55.0%) because the
+  roster grew from 11 to 14 balls and the counter pass (ADR 0028) changed the odds, not because
+  of the toss.
+
+The toss's chances are the average of the two orders, since the toss is made before any choice
+(`coinToss` in `reveal-analysis.ts`; a test checks it).
+
+The rest of this document is the original measurement, with 11 balls.
 
 ## The question
 
@@ -35,6 +69,9 @@ Run it with:
 ```bash
 node scripts/reveal-measure.ts 200
 ```
+
+It prints a line for each rule: secret orders, the bot showing first, the player showing first, and
+the coin toss.
 
 Add `--save rates.json` to keep the measured odds and `--rates rates.json` to reuse them. About
 5 minutes to play the matches, then about 10 s for the analysis.
@@ -79,5 +116,5 @@ version gave 51.6% best play. The implemented bot, measured above, is a little k
   odds themselves.
 - The measured odds have about ±3.5 points of noise per pair at 200 seeds. They enter the series
   maths smoothed over many pairs, and the two sources agree within a point.
-- The bot shows its round-1 ball at random. A bot that read the player's lineup when choosing it
+- The bot shows its ball at random whenever it shows first. A bot that read the player's lineup when choosing it
   would change the numbers. That is a design choice recorded in ADR 0021.

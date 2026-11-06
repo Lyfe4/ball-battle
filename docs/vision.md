@@ -58,6 +58,9 @@ blind picks. See Decisions below.
      showing first: round 1 the bot shows and the player answers, round 2 the player shows and the
      bot answers with its best counter, round 3 is what is left. Good play is worth about 13 points
      of series chance over bad play, and each side shows first once, so it suits PvP as it stands.
+   - **A coin toss decides who shows first (2026-11-06, ADR 0029).** The bot no longer always
+     leads: a seeded toss, replayed from the series seed and checked by `verifySeries`, picks who
+     shows first in round 1. Good play stays worth about 12 points whoever wins it.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
    makes cheap. Two rules for it (2026-11-05):
