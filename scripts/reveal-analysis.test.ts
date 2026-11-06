@@ -13,10 +13,15 @@ import {
 } from './reveal-analysis.ts';
 
 const roster = BALLS.map((ball) => ball.id);
-// A spread of lineups, small enough for a unit test: every 37th pair of the 27,225.
+// A spread of lineup pairs, small enough for a unit test: about SAMPLE_SIZE of them, evenly spaced
+// through every pair, so the cost stays the same as the roster grows (462,400 pairs at 17 balls).
+const SAMPLE_SIZE = 3000;
 const lineups = lineupsOf(roster);
+const stride = Math.max(1, Math.ceil((lineups.length * lineups.length) / SAMPLE_SIZE));
 const sample = lineups.flatMap((you, i) =>
-  lineups.filter((_, j) => (i * lineups.length + j) % 37 === 0).map((bot) => [you, bot] as const),
+  lineups
+    .filter((_, j) => (i * lineups.length + j) % stride === 0)
+    .map((bot) => [you, bot] as const),
 );
 
 describe('reveal analysis', () => {
