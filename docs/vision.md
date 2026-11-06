@@ -51,7 +51,7 @@ blind picks. See Decisions below.
    - **Draft formats (2026-11-05, ADR 0019), to put the skill in picking:** _reveal, then order_
      (both lineups revealed, then each side orders its own in secret) and _loser picks next_ (the
      loser of a round picks its next ball after seeing the winner's next one; the winner keeps its
-     order), next to today's blind order. Both are playable against the bot so the better one can
+     order; replaced by Showdown, ADR 0035), next to today's blind order. Both are playable against the bot so the better one can
      be chosen by playing; which becomes the PvP default is open.
    - **Reveal takes turns (2026-11-05, ADR 0021).** Reveal-then-order turned out to give the
      player's order no value against the bot (`docs/reveal-measurements.md`). Reveal now takes turns
@@ -61,6 +61,14 @@ blind picks. See Decisions below.
    - **A coin toss decides who shows first (2026-11-06, ADR 0029).** The bot no longer always
      leads: a seeded toss, replayed from the series seed and checked by `verifySeries`, picks who
      shows first in round 1. Good play stays worth about 12 points whoever wins it.
+   - **Bot levels and Showdown (2026-11-07, ADR 0035).** The bot plays at Easy, Normal or Hard, so
+     it is an opponent to read rather than a rule to learn; every choice is still seeded, in the
+     link and verified. Showdown replaces Loser picks next: both open round 1 at once, then the
+     winner shows first and the loser answers. Measured (`docs/series-measurements.md`): the
+     levels move the series chance by 3-5 points (soft counters cap it), choices are worth 5-11
+     points at every level, and Reveal keeps more skill than Showdown, so Reveal stays the main
+     mode for now. Pick screens show each ball's odds against every opponent ball, never the
+     bot's move.
 2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
    seeds and can re-simulate any match to verify a reported result, which the deterministic sim
    makes cheap. Two rules for it (2026-11-05):

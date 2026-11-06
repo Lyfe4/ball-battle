@@ -15,8 +15,8 @@ arena until one wins, and every decision is made before the fight starts.
 
 - **17 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that phases, a necromancer's skull minions and more.
-- **Best of 3 against a bot** in three draft formats: Blind, Reveal (take turns showing first, after
-  a coin toss) and Loser picks.
+- **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Blind,
+  Reveal (take turns showing first, after a coin toss) and Showdown.
 - **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
   starts.
 - **A ball manual and matchup chart**, read from the same data the game runs on, so they never go
@@ -170,14 +170,18 @@ Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-forma
 - **Blind**: as above, both orders set without seeing the other lineup.
 - **Reveal**: both lineups are revealed, then the sides take turns showing first. A seeded coin toss
   decides who shows first in round 1 and the other side answers; in round 2 the other side shows
-  first (the bot answers with its best counter); round 3 is what is left. Your choices are worth
+  first; round 3 is what is left. Your choices are worth
   about 12 points of series chance whoever wins the toss
   ([ADR 0029](docs/decisions/0029-reveal-coin-toss.md), [measurements](docs/reveal-measurements.md)).
-- **Loser picks**: after a round, the loser picks its next ball knowing the winner's next one; the
-  winner keeps its order. The bot counter-picks from the counter map when it loses.
+- **Showdown**: both lineups are revealed, both sides open round 1 at the same time, then the winner
+  shows first and the loser answers.
 
-The link records the rules and every pick (`fmt=loser&picks=archer`, or Reveal's four), so these
-series replay exactly too.
+In Reveal and Showdown, choose how the bot plays: **Easy** picks at random, **Normal** usually
+counters, and **Hard** plays the whole series and mixes its choices so it can't be read. The pick
+screens never show the bot's move, only how each of your balls stands against each of its balls
+([ADR 0035](docs/decisions/0035-bot-levels-and-showdown.md),
+[measurements](docs/series-measurements.md)). The link records the rules, the level and every pick
+(`fmt=showdown&bot=hard&picks=...`), so these series replay exactly too.
 
 ## Running it
 

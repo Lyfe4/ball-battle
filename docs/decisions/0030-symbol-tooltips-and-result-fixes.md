@@ -1,6 +1,8 @@
 # 0030: Symbol tooltips, a Rematch that works, and numbered lineup slots
 
 - Status: Accepted
+- Amended by: ADR 0035 (§4: touch now shows the tooltip, a tap outside a control or a held press
+  inside one, and pick screens show a one-line key)
 - Date: 2026-11-06
 - Amends: ADR 0025 (§1 symbols, §4 the end of a series), ADR 0027 (§5 the lineup)
 

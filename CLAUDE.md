@@ -6,8 +6,10 @@ code quality matters as much as features.
 
 Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
 against a bot is built (ADR 0017), with three draft formats (blind, reveal with turns showing
-first after a seeded coin toss, loser-picks-next; ADR 0019, 0021, 0029): the rules are pure sim code in `src/sim/series.ts`, the same functions
-a server would run to verify a series, so keep them deterministic and DOM-free.
+first after a seeded coin toss, and showdown; ADR 0019, 0021, 0029, 0035) and three bot levels
+(ADR 0035, `src/sim/bot.ts`): the rules and the bots are pure sim code in `src/sim/series.ts` and
+`src/sim/bot.ts`, the same functions a server would run to verify a series, so keep them
+deterministic and DOM-free.
 
 Stack: TypeScript (strict), Vite, pnpm, Vitest, ESLint (flat config) + Prettier, Husky +
 lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
@@ -122,7 +124,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0028-counter-pass.md`, `docs/decisions/0029-reveal-coin-toss.md`,
 `docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
 `docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
-`docs/decisions/0033-arena-polish.md` and `docs/decisions/0034-chrono-titan-inferno.md`.
+`docs/decisions/0033-arena-polish.md`, `docs/decisions/0034-chrono-titan-inferno.md` and
+`docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`).
 
 ## Workflow
 

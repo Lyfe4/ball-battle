@@ -1,5 +1,7 @@
 # Reveal: do the player's choices change their odds?
 
+Bot levels and Showdown (ADR 0035) are measured in `docs/series-measurements.md`.
+
 Measured 2026-11-05, before and after the rule change in ADR 0021, and again on 2026-11-06 with
 ADR 0029's coin toss (ruleset 4, all 14 balls). Scripts: `scripts/reveal-analysis.ts` (the maths,
 unit-tested) and `scripts/reveal-measure.ts` (runs it).
