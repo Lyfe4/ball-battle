@@ -4,7 +4,15 @@
   gap: var(--space-gap);
 }
 
-/* Leaving a series is rare: a quiet text link (.text-link), still a full tap target. */
+/*
+ * Leaving a series is rare: a quiet text link (.text-link), still a full tap target. It has its own
+ * place at the end of the panel (#series-exit), under the health bars while a round plays, so it
+ * reads as the way out rather than part of the game.
+ */
+.series-exit {
+  display: grid;
+}
+
 .series-leave,
 .series-share {
   justify-self: center;

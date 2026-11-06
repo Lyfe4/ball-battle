@@ -153,7 +153,13 @@ const quick = createQuickController(
 );
 
 const { setup: seriesSetup, play: series } = createSeriesScreens(
-  { setup: getElement('series-setup', HTMLElement), play: getElement('series', HTMLElement) },
+  {
+    setup: getElement('series-setup', HTMLElement),
+    play: {
+      panel: getElement('series', HTMLElement),
+      exit: getElement('series-exit', HTMLElement),
+    },
+  },
   BALLS,
   BALL_LOOKUP,
   {

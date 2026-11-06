@@ -21,7 +21,7 @@ import { randomBot } from './sim/bot.ts';
 import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
 import { matchWorld } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
-import { createSeriesPanel, type SeriesPhase } from './ui/series-panel.ts';
+import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from './ui/series-panel.ts';
 
 /** What the series needs from the page around it. */
 export interface SeriesHost {
@@ -77,7 +77,7 @@ export interface SeriesController {
 }
 
 export function createSeriesController(
-  root: HTMLElement,
+  roots: SeriesPanelRoots,
   lookup: DefinitionLookup,
   host: SeriesHost,
 ): SeriesController {
@@ -91,7 +91,7 @@ export function createSeriesController(
   const ours = () => host.worldsShown() === shownAt;
   let phase: SeriesPhase = 'playing';
 
-  const panel = createSeriesPanel(root, lookup, {
+  const panel = createSeriesPanel(roots, lookup, {
     onNext: () => {
       if (session === undefined) return;
       session = resolvePicks(advanceSession(session), randomBot);

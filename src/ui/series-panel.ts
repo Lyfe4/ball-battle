@@ -46,6 +46,16 @@ export interface SeriesActions {
 
 export type { SeriesPhase } from './series/series-view.ts';
 
+/** Where the series panel draws: the panel itself, and its way out, last under the match. */
+export interface SeriesPanelRoots {
+  readonly panel: HTMLElement;
+  /**
+   * Holds "Leave series". It sits after the health bars and speed, so while a round plays the way
+   * out is at the bottom of the panel rather than between the score and the fight.
+   */
+  readonly exit: HTMLElement;
+}
+
 export interface SeriesPanel {
   setVisible(visible: boolean): void;
   /** Cheap to call every frame: only changed parts are touched. Returns the phase shown. */
@@ -64,10 +74,11 @@ const PAIR_PX = 56;
  * readers, in a live region.
  */
 export function createSeriesPanel(
-  root: HTMLElement,
+  roots: SeriesPanelRoots,
   definitions: DefinitionLookup,
   actions: SeriesActions,
 ): SeriesPanel {
+  const { panel: root, exit } = roots;
   root.replaceChildren();
   root.className = 'series';
   const nameOf = (id: string) => definitions.get(id)?.name ?? id;
@@ -114,8 +125,8 @@ export function createSeriesPanel(
     pairing,
     buttons,
     share,
-    leave,
   );
+  exit.replaceChildren(leave);
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const node = element('button', className, text);
@@ -159,6 +170,7 @@ export function createSeriesPanel(
   return {
     setVisible(visible) {
       root.hidden = !visible;
+      exit.hidden = !visible;
     },
     focusAction() {
       if (!picks.element.hidden) picks.focus();
