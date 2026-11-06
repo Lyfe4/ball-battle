@@ -78,8 +78,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'frost',
     y: 'speedster',
     intended: 'x',
-    reason:
-      'Slowed cuts both Speedster weapons: its speed and the wall bounces that build its stacks.',
+    reason: 'Slowed, it loses its speed and the wall bounces that build its stacks.',
   },
   {
     x: 'storm',

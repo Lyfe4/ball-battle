@@ -92,7 +92,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'speedster',
     intended: 'x',
-    reason: 'The fastest ball runs through it most often, and its stacked rush lands on nothing.',
+    reason: 'It runs through the Ghost most often, and its rush lands on nothing.',
   },
   {
     x: 'ghost',

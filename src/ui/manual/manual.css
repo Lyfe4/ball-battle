@@ -266,6 +266,20 @@
     grid-area: 4 / 1;
   }
 
+  /*
+   * Slightly tighter cards in the Strong vs and Weak vs columns, so a ball with six counters (the
+   * Speedster) still fits a 1280 x 800 screen (ADR 0034). The phone keeps its spacing.
+   */
+  .ball-detail-strong-group .ball-detail-matchups,
+  .ball-detail-weak-group .ball-detail-matchups {
+    gap: 5px;
+  }
+
+  .ball-detail-strong-group .ball-detail-row,
+  .ball-detail-weak-group .ball-detail-row {
+    padding-block: 2px 5px;
+  }
+
   /* Two tabs needn't span the sheet. */
   .manual-tabs {
     width: var(--setup-width);
