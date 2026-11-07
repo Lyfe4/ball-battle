@@ -1,5 +1,7 @@
 // Best of 3's two halves wired to the page: setting a series up (series-setup.ts) and playing it
-// (series-controller.ts), with their moves between screens. main.ts hands over what they need.
+// (series-controller.ts), with their moves between screens. main.ts hands over what they need. A
+// series saved before a reload is taken back here, held until the route shows it (ADR 0042).
+import { clearSeries, loadSeries, saveSeries, type SaveStorage } from './app/series-save.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
 import type { Navigation } from './app/navigation.ts';
 import { createSeriesController, type SeriesController } from './series-controller.ts';
@@ -14,6 +16,10 @@ export interface SeriesScreensHost {
   /** Shows another screen in place of this entry (a Back fallback). */
   replaceWith(write: (params: URLSearchParams) => void): void;
   showWorld(world: WorldState, seed: number): void;
+  /** Puts a finished match on screen as it ended (a round's result, after a reload). */
+  showFinished(world: WorldState, seed: number): void;
+  /** Where the series is kept across a reload (ADR 0042). */
+  readonly storage: SaveStorage;
   /** Counts every world put on the arena (the series checks its match is still there). */
   worldsShown(): number;
   /** A series started (the screen is now the series being played). */
@@ -73,6 +79,13 @@ export function createSeriesScreens(
     showWorld: (world, seed) => {
       host.showWorld(world, seed);
     },
+    showFinished: (world, seed) => {
+      host.showFinished(world, seed);
+    },
+    save: (session) => {
+      if (session === undefined) clearSeries(host.storage);
+      else saveSeries(host.storage, session);
+    },
     worldsShown: () => host.worldsShown(),
     replaceUrl: (write) => {
       navigation.replace(write);
@@ -98,6 +111,11 @@ export function createSeriesScreens(
       });
     },
   });
+
+  // A reload: the series as it was, held as a Back would have left it, so the route carries on with
+  // it (a round's URL) or offers it back (Resume on the rules and the lineup).
+  const saved = loadSeries(host.storage, lookup);
+  if (saved !== undefined) play.adopt(saved);
 
   return { setup, play };
 }

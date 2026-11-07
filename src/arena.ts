@@ -53,8 +53,11 @@ export interface ArenaHost {
 const READY_FLOOR_MS = theme.introMs - theme.introStaggerMs - theme.introPopMs;
 
 export interface Arena {
-  /** Puts a new match on screen: playback and effects start over. */
-  show(world: WorldState): void;
+  /**
+   * Puts a new match on screen: playback and effects start over. `finished` shows a match that has
+   * already ended as it ended: no intro, no Fight! to wait on, no effects to replay.
+   */
+  show(world: WorldState, finished?: boolean): void;
   /** Draws the match on screen again (e.g. after the HUD changed around it). */
   redraw(): void;
   /** The sim's latest world. */
@@ -237,13 +240,17 @@ export function createArena(
   requestAnimationFrame(frame);
 
   return {
-    show(world) {
+    show(world, finished = false) {
       failed = false;
       failure.hidden = true;
       const moment = host.moment();
-      tips.start(moment !== 'demo');
-      held = ready.start(world, moment);
-      playback = startPlayback(world, theme.introMs);
+      tips.start(moment !== 'demo' && !finished);
+      // A finished match never waits on Fight!: the ready card treats it as it treats the demo.
+      held = ready.start(world, finished ? 'demo' : moment);
+      // A finished match starts with its intro already over, so both balls are drawn at once.
+      playback = finished
+        ? { ...startPlayback(world, 0), effectMs: theme.introMs }
+        : startPlayback(world, theme.introMs);
       effects.reset();
       rewinds.reset();
       sourceChips.reset();

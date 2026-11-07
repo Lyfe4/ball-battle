@@ -52,11 +52,21 @@ describe('seriesRound', () => {
     opponent: { kind: 'player' },
   } as const;
 
+  const none = { has: false, address: undefined };
+  const undecided = { has: true, address: undefined };
+
   it('replays a link’s series, carries on with one in play, else sets up from the lineup', () => {
-    expect(seriesRound({ setup }, false)).toStrictEqual({ replay: setup });
-    expect(seriesRound({ setup }, true)).toStrictEqual({ replay: setup });
-    expect(seriesRound({ format: 'showdown' }, true)).toBe('carry on');
-    expect(seriesRound({ format: 'showdown' }, false)).toBe('lineup');
+    expect(seriesRound({ setup }, none)).toStrictEqual({ replay: setup });
+    expect(seriesRound({ setup }, undecided)).toStrictEqual({ replay: setup });
+    expect(seriesRound({ format: 'showdown' }, undecided)).toBe('carry on');
+    expect(seriesRound({ format: 'showdown' }, none)).toBe('lineup');
+  });
+
+  it('carries on with the series in hand when the link is that series (a reload, ADR 0042)', () => {
+    expect(seriesRound({ setup }, { has: true, address: { ...setup } })).toBe('carry on');
+    // Another series in hand: the link's is replayed, replacing it.
+    const other = { ...setup, seed: 2 };
+    expect(seriesRound({ setup }, { has: true, address: other })).toStrictEqual({ replay: setup });
   });
 });
 
