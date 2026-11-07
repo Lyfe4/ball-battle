@@ -135,8 +135,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`),
 `docs/decisions/0036-teaching-in-the-arena.md`, `docs/decisions/0037-clarity-fixes.md`,
 `docs/decisions/0038-one-look-per-screen-state.md`,
-`docs/decisions/0039-the-phone-arena-is-the-screen.md`, `docs/decisions/0040-settings.md` and
-`docs/decisions/0041-the-spark-marks-the-counter.md`.
+`docs/decisions/0039-the-phone-arena-is-the-screen.md`, `docs/decisions/0040-settings.md`,
+`docs/decisions/0041-the-spark-marks-the-counter.md` and
+`docs/decisions/0042-reload-safe-series.md`.
 
 ## Workflow
 
@@ -155,7 +156,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   the new fingerprint to its table and never edit an old one, then run `pnpm golden`. Links from other rulesets show a
   notice instead of replaying a different fight.
 - Whether a series setup is valid is decided by `verifySeries` (`src/sim/series-verify.ts`) alone:
-  `playSeries`, the browser's route and a future server all use it. Don't add a second check.
+  `playSeries`, the browser's route, a saved series after a reload (ADR 0042) and a future server
+  all use it. Don't add a second check.
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
@@ -279,6 +281,15 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   replaces the entry, going to the screen this entry came from goes back to it, a series is one
   entry. A new screen gets a key in `screenKeyOf` and a flow in `history-rules.test.ts`. Leaving
   an undecided series holds it to resume; never drop it on Back.
+- **A series survives a reload** (ADR 0042). The series controller saves the session after every
+  change (`src/app/series-save.ts`, in `localStorage`, never the URL): the setup with its picks so
+  far (what `verifySeries` checks), the plays recorded and whether the last result is on screen.
+  `restoreSeries` replays it with the same session functions and trusts it only if `verifySeries`
+  accepts the whole series; anything else is dropped and the page starts as usual. A new session
+  change in the controller goes through `keep` so it is saved; a deliberate exit (Leave series,
+  New series) clears it, a Back holds it. A fight under way restarts from its Fight! moment.
+  Browser flows that reload use a frame (`src/flows/reload-support.ts`); every browser test file
+  starts with no saved series (`src/flows/browser-setup.ts`).
 - Page colours, sizes and type come from roles in `src/styles/tokens.css`, never palette names or
   literals. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP
   `font-src 'self'`), calm platform screens (flat fills, the pink second accent used sparingly) and

@@ -165,7 +165,11 @@ Choose **Best of 3** on the home screen to play a series against a bot: pick thr
 balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
 takes the series. A track shows every round at a glance, the winner ringed and the loser dimmed,
-and a series left with Back (easy to do by accident on a phone) can be resumed where it was. The
+and a series left with Back (easy to do by accident on a phone) can be resumed where it was. A
+reload, a closed tab or Safari reloading it in the background puts the series back exactly where
+it was; a fight under way starts again from its Fight! moment as the same match. The series is kept
+on the device, not in the URL, and checked with the same rule as a link before it is put back
+([ADR 0042](docs/decisions/0042-reload-safe-series.md)). The
 bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
 series ends, the link holds both lineups, the series seed and the ruleset, e.g.
@@ -249,7 +253,8 @@ src/
   golden/   known match results, checked in Node and in Chromium, Firefox and WebKit
   ui/       plain-DOM screens: home, ball grid and detail, setup steps, manual, scoreboard, HUD
   styles/   design tokens (a palette, then roles) and base styles; components' CSS sits beside them
-  app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links
+  app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links,
+            the series saved across a reload
   arena.ts  the match on screen and the requestAnimationFrame loop
   *-controller.ts, *-screens.ts, series-setup.ts, manual-screen.ts   each screen's wiring
   main.ts   wires the screens together
@@ -311,7 +316,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md)
 , [ADR 0039: The phone arena is the screen](docs/decisions/0039-the-phone-arena-is-the-screen.md)
 , [ADR 0040: Settings](docs/decisions/0040-settings.md)
-and [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md).
+, [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md)
+and [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the
