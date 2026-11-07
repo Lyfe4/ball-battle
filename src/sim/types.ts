@@ -1,8 +1,11 @@
 import type { AbilityLabel } from './ability-label.ts';
 import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts';
 import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
+import type { ReturnFlight } from './projectiles/returning.ts';
+import type { SpawnRequest } from './projectiles/spawn.ts';
 import type { RuleAppliedEvent, RuleId } from './rules.ts';
-import type { ZoneLinger } from './zones/spawn.ts';
+import type { ShieldBrokenEvent } from './shield.ts';
+import type { ZoneLinger, ZoneTriggerRequest } from './zones/spawn.ts';
 import type {
   HealReducedEvent,
   StatusAppliedEvent,
@@ -196,15 +199,10 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
   | { readonly kind: 'setAbilityState'; readonly state: S }
   /**
    * Fires a projectile from just outside the hook owner's edge, in the direction of `velocity`
-   * (world units per second). See ADR 0005.
+   * (world units per second). See ADR 0005. With `returnAfterTicks` it is a returning projectile
+   * (ADR 0043): it turns back, homes on its owner and can hit each enemy once each way.
    */
-  | {
-      readonly kind: 'spawnProjectile';
-      readonly velocity: Vec2;
-      readonly radius: number;
-      readonly damage: number;
-      readonly lifetimeTicks: number;
-    }
+  | ({ readonly kind: 'spawnProjectile' } & SpawnRequest)
   /**
    * Marks a circle that strikes once, `delayTicks` (a whole number, at least 1) from now, dealing
    * `damage` to every enemy ball inside it at that moment. The centre is clamped so the circle
@@ -220,6 +218,8 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly status?: StatusRequest;
       /** Lasts after the first strike, pulsing on a fixed rhythm (ADR 0034). */
       readonly linger?: ZoneLinger;
+      /** Strikes early when an enemy touches it, once armed (ADR 0043). */
+      readonly trigger?: ZoneTriggerRequest;
     }
   /**
    * Summons a minion just outside the hook owner's edge, heading along `velocity`, unless the
@@ -306,6 +306,8 @@ export interface ProjectileState {
   readonly damage: number;
   /** Ticks until it expires, a safety net that keeps the projectile count bounded. */
   readonly ticksLeft: number;
+  /** Present for a returning projectile (ADR 0043): where it is in its flight out and back. */
+  readonly returning?: ReturnFlight;
 }
 
 /**
@@ -334,6 +336,11 @@ export interface ZoneState {
    */
   readonly endTick?: number;
   readonly pulseEveryTicks?: number;
+  /**
+   * A zone that can be set off (ADR 0043): from `armTick` on, the first solid enemy ball to touch
+   * the circle of `radius` at its centre makes it strike at once.
+   */
+  readonly trigger?: Readonly<{ radius: number; armTick: number }>;
 }
 
 /**
@@ -474,8 +481,11 @@ export interface ProjectileExpiredEvent {
   readonly tick: number;
   readonly projectileId: string;
   readonly ownerId: string;
-  /** `minion`: it hit an enemy minion, which it destroyed (ADR 0026). */
-  readonly reason: 'wall' | 'lifetime' | 'minion';
+  /**
+   * `minion`: it hit an enemy minion, which it destroyed (ADR 0026). `caught`: a returning
+   * projectile came back to its owner (ADR 0043).
+   */
+  readonly reason: 'wall' | 'lifetime' | 'minion' | 'caught';
 }
 
 /** A zone appeared; it will strike on `strikeTick`. */
@@ -505,6 +515,8 @@ export interface ZoneStruckEvent {
   readonly hitIds: readonly string[];
   /** A lasting zone's pulse (ADR 0034): 0 for its first strike, then 1, 2, ... Absent otherwise. */
   readonly pulse?: number;
+  /** Present when an enemy ball set it off before its time (ADR 0043): that ball. */
+  readonly triggeredBy?: string;
 }
 
 export interface BallDefeatedEvent {
@@ -544,6 +556,7 @@ export type SimEvent =
   | HealReducedEvent
   | RuleAppliedEvent
   | RewoundEvent
+  | ShieldBrokenEvent
   | MinionEvent;
 
 export interface StepResult {

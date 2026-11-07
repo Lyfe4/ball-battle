@@ -10,6 +10,7 @@ export function showsAbility(event: SimEvent, ballId: string, sign: AbilitySign)
     case 'minionSpawned':
       return event.type === sign.kind && event.ownerId === ballId;
     case 'rewound':
+    case 'shieldBroken':
     case 'healed':
       return event.type === sign.kind && event.ballId === ballId;
     case 'status':

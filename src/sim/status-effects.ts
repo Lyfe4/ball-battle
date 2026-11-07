@@ -3,11 +3,13 @@
 import { dealAbilityDamage } from './abilities/apply-actions.ts';
 import { isAlive } from './combat.ts';
 import { isPoisonTick, POISON_DAMAGE } from './status.ts';
-import type { BallState, DamageEvent, DefinitionLookup } from './types.ts';
+import type { BallState, DamageEvent, DefinitionLookup, SimEvent } from './types.ts';
 
 export interface PoisonResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
+  /** Everything the ticks produced, in order: damage, and any shield a tick broke (ADR 0043). */
+  readonly events: readonly SimEvent[];
 }
 
 /**
@@ -23,6 +25,7 @@ export function resolvePoison(
 ): PoisonResult {
   let current = balls;
   const damage: DamageEvent[] = [];
+  const events: SimEvent[] = [];
   for (const ball of balls) {
     const poison = ball.statuses.find((status) => status.kind === 'poisoned');
     if (poison === undefined || !isAlive(ball) || !isPoisonTick(poison.sinceTick, tick)) continue;
@@ -37,6 +40,7 @@ export function resolvePoison(
     );
     current = result.balls;
     if (result.damage !== undefined) damage.push(result.damage);
+    events.push(...result.events);
   }
-  return { balls: current, damage };
+  return { balls: current, damage, events };
 }

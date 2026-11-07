@@ -177,7 +177,7 @@ export function resolveMinions(
         point,
         amount: hit.damage?.amount ?? 0,
       });
-      if (hit.damage !== undefined) events.push(hit.damage);
+      events.push(...hit.events);
     } else if (minion.ticksLeft <= 1) {
       events.push({
         type: 'minionDestroyed',

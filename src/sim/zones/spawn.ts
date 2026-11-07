@@ -9,6 +9,19 @@ export interface ZoneRequest {
   readonly status?: StatusRequest;
   /** Keeps the zone after its first strike, pulsing again on a fixed rhythm (ADR 0034). */
   readonly linger?: ZoneLinger;
+  /** Also strikes early, the moment an enemy touches it once it is armed (ADR 0043). */
+  readonly trigger?: ZoneTriggerRequest;
+}
+
+/**
+ * A zone that can be set off (ADR 0043), the Bomber's bomb: once `armTicks` have passed, the first
+ * solid enemy ball to touch its body (a circle of `radius` at its centre) makes it
+ * strike at once, before its fuse runs out. A whole number of ticks, at least 1; a radius above 0
+ * and no bigger than the zone. A trigger is for strike-once zones: it can't linger.
+ */
+export interface ZoneTriggerRequest {
+  readonly radius: number;
+  readonly armTicks: number;
 }
 
 /**
@@ -46,7 +59,14 @@ function assertValid(owner: BallState, request: ZoneRequest, arenaSize: number):
       (Number.isInteger(request.linger.ticks) &&
         request.linger.ticks >= 1 &&
         Number.isInteger(request.linger.pulseEveryTicks) &&
-        request.linger.pulseEveryTicks >= 1));
+        request.linger.pulseEveryTicks >= 1)) &&
+    (request.trigger === undefined ||
+      (request.linger === undefined &&
+        Number.isFinite(request.trigger.radius) &&
+        request.trigger.radius > 0 &&
+        request.trigger.radius <= radius &&
+        Number.isInteger(request.trigger.armTicks) &&
+        request.trigger.armTicks >= 1));
   if (!valid) {
     throw new Error(`An ability of "${owner.id}" tried to spawn an invalid zone`);
   }
@@ -85,6 +105,9 @@ export function spawnZone(
           endTick: tick + request.delayTicks + request.linger.ticks,
           pulseEveryTicks: request.linger.pulseEveryTicks,
         }),
+    ...(request.trigger === undefined
+      ? {}
+      : { trigger: { radius: request.trigger.radius, armTick: tick + request.trigger.armTicks } }),
   };
   return {
     zone,
