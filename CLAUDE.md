@@ -35,7 +35,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   real page (`src/**/*.browser.test.ts`, ADR 0025) in headless Chromium, Firefox and WebKit
   through Vitest's Playwright provider. A flow that needs a desktop screen is
   `*.wide.browser.test.ts`, run at a fixed 1280 x 800 (project `browsers-wide`): never resize the
-  viewport during a test, which upsets later files' history in WebKit. Needs the browsers once:
+  viewport during a test, which upsets later files' history in WebKit. A flow on a touch phone is
+  `*.touch.browser.test.ts` (project `browsers-touch`: touch on, 375 x 812, and a `tap` command
+  for real taps, ADR 0037). Needs the browsers once:
   `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
@@ -125,8 +127,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0030-symbol-tooltips-and-result-fixes.md`,
 `docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
 `docs/decisions/0033-arena-polish.md`, `docs/decisions/0034-chrono-titan-inferno.md` and
-`docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`) and
-`docs/decisions/0036-teaching-in-the-arena.md`.
+`docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`),
+`docs/decisions/0036-teaching-in-the-arena.md` and `docs/decisions/0037-clarity-fixes.md`.
 
 ## Workflow
 
@@ -236,7 +238,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   the `?` in a screen's header), and always has words in its accessible name. Marks come from
   `src/ui/balls/marks.ts`; what each symbol means is in `src/ui/symbols.ts`, read by both the
   legend and the hover/focus tooltip. Name every symbol on screen with `markSymbol` so the tooltip
-  can explain it (mouse and keyboard only; touch adds nothing, ADR 0030).
+  can explain it. A matchup mark names both balls and who has the edge (`matchupTip`); a mark a
+  phone player must read is its own 44 px tap target beside the control, never inside it, and
+  nothing relies on press-and-hold (ADR 0037).
 - **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
   screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
   replaces the entry, going to the screen this entry came from goes back to it, a series is one
