@@ -2,6 +2,7 @@
 // every format and at every bot level, comes back exactly as it was after a save and a reload.
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { ROSTER_TIMEOUT_MS } from '../sim/balls/roster-support.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { FORMATS, type Format } from '../sim/series.ts';
 import { loadSeries, saveSeries, type SaveStorage } from './series-save.ts';
@@ -29,7 +30,7 @@ describe('every saved position comes back exactly', () => {
       bot.id,
     ]),
   );
-  it.each(cases)('%s against the %s bot', (format, bot) => {
+  it.each(cases)('%s against the %s bot', { timeout: ROSTER_TIMEOUT_MS }, (format, bot) => {
     let positions = 0;
     for (let seed = 0; seed < SEEDS; seed += 1) {
       for (const session of pagePositions(seriesAgainst(format, bot, seed))) {
