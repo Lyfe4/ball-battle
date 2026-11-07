@@ -16,10 +16,48 @@
   min-height: var(--tap-target);
   padding: var(--space-small) var(--space-gap);
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-small);
+  cursor: pointer;
+}
+
+/* The result, in one plain line: what the summary is for. */
+.match-story-result {
+  font-weight: 700;
+}
+
+.match-story-label {
   color: var(--color-text-muted);
   font-weight: 700;
-  cursor: pointer;
+}
+
+.match-story-more {
+  margin-left: auto;
+  color: var(--color-focus);
+  font-size: var(--font-size-tiny);
+  font-weight: 600;
+}
+
+.match-story-more::after {
+  content: ' ›';
+}
+
+.match-story[open] .match-story-more::after {
+  content: ' ⌄';
+}
+
+/*
+ * While the player picks (between rounds), the story is a quiet line under the choice, without a
+ * card of its own, so it never competes with the pick (ADR 0037).
+ */
+.series[data-phase='between'] .match-story {
+  background: none;
+  color: var(--color-text-muted);
+}
+
+.series[data-phase='between'] .match-story-result {
+  font-weight: 600;
 }
 
 .match-story-body {
@@ -61,6 +99,7 @@
 
 .match-story-sources {
   color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .match-story-moments {

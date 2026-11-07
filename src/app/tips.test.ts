@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTips, VERSUS_MATCHES, type TipStorage } from './tips.ts';
+import { createTips, READY_CARD_STORAGE_KEY, type TipStorage } from './tips.ts';
 
 function memory(): { storage: TipStorage; store: Map<string, string> } {
   const store = new Map<string, string>();
@@ -27,11 +27,27 @@ describe('tips', () => {
     expect(later.takeHint('archer')).toBe(true);
   });
 
-  it('shows the versus card for the first few matches only', () => {
-    const tips = createTips(memory().storage);
-    const shown = Array.from({ length: VERSUS_MATCHES + 2 }, () => tips.takeVersus());
-    expect(shown.filter(Boolean)).toHaveLength(VERSUS_MATCHES);
-    expect(shown.at(-1)).toBe(false);
+  it('shows the what-to-watch card once per pairing, in either order, across page loads', () => {
+    const { storage } = memory();
+    const tips = createTips(storage);
+    expect(tips.takeReady('storm', 'chrono')).toBe(true);
+    expect(tips.takeReady('storm', 'chrono')).toBe(false);
+    expect(tips.takeReady('chrono', 'storm')).toBe(false);
+    expect(tips.takeReady('storm', 'storm')).toBe(true);
+    expect(createTips(storage).takeReady('chrono', 'storm')).toBe(false);
+    expect(createTips(storage).takeReady('titan', 'venom')).toBe(true);
+  });
+
+  it('turns the card off on its own, keeping the hints, until tips are reset', () => {
+    const { storage, store } = memory();
+    const tips = createTips(storage);
+    tips.hideReadyCards();
+    expect(store.get(READY_CARD_STORAGE_KEY)).toBe('off');
+    expect(tips.takeReady('storm', 'chrono')).toBe(false);
+    expect(createTips(storage).takeReady('storm', 'chrono')).toBe(false);
+    expect(tips.takeHint('storm')).toBe(true);
+    tips.reset();
+    expect(tips.takeReady('storm', 'chrono')).toBe(true);
   });
 
   it('shows nothing when turned off, and everything again after a reset', () => {
@@ -41,10 +57,11 @@ describe('tips', () => {
     tips.setEnabled(false);
     expect(createTips(storage).enabled()).toBe(false);
     expect(tips.takeHint('venom')).toBe(false);
-    expect(tips.takeVersus()).toBe(false);
+    expect(tips.takeReady('storm', 'venom')).toBe(false);
     tips.reset();
     expect(tips.enabled()).toBe(true);
     expect(tips.takeHint('storm')).toBe(true);
+    expect(tips.takeReady('storm', 'venom')).toBe(true);
     expect(createTips(storage).enabled()).toBe(true);
   });
 
@@ -56,6 +73,8 @@ describe('tips', () => {
     expect(tips.enabled()).toBe(true);
     expect(tips.takeHint('storm')).toBe(true);
     expect(tips.takeHint('storm')).toBe(false);
+    expect(tips.takeReady('storm', 'venom')).toBe(true);
+    expect(tips.takeReady('storm', 'venom')).toBe(false);
     expect(() => {
       tips.setEnabled(false);
     }).not.toThrow();

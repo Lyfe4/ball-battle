@@ -44,7 +44,11 @@ export default defineConfig({
           name: 'browsers',
           // The known match results, and flows through the real page (`*.browser.test.ts`).
           include: ['src/golden/*.test.ts', 'src/**/*.browser.test.ts'],
-          exclude: [...configDefaults.exclude, '**/*.wide.browser.test.ts'],
+          exclude: [
+            ...configDefaults.exclude,
+            '**/*.wide.browser.test.ts',
+            '**/*.touch.browser.test.ts',
+          ],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -71,6 +75,29 @@ export default defineConfig({
             screenshotFailures: false,
             viewport: { width: 1280, height: 800 },
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          // Flows on a touch phone (`*.touch.browser.test.ts`, ADR 0037): a context with touch, at
+          // phone size, and a `tap` command that taps like a finger (Playwright's own tap, which
+          // sends touch events and lets the browser make the pointer events and click from them).
+          name: 'browsers-touch',
+          include: ['src/**/*.touch.browser.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright({ contextOptions: { hasTouch: true } }),
+            headless: true,
+            screenshotFailures: false,
+            viewport: { width: 375, height: 812 },
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+            commands: {
+              tap: async (context, selector: string) => {
+                await context.iframe.locator(selector).first().tap();
+              },
+            },
           },
         },
       },

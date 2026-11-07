@@ -1,30 +1,24 @@
-// Teaching in the arena, at the moment things happen (ADR 0036): a versus card over the intro for a
-// player's first few matches, and a short label by a ball the first time this device sees its
-// ability ("Lightning!"). Both are read from sim events and the definitions and the counter map,
-// so they can't disagree with the fight; both are decoration (aria-hidden), and both respect
-// reduced motion (arena-tips.css). Tips can be turned off in the symbol legend.
+// Teaching in the arena, at the moment things happen (ADR 0036): a short label by a ball the first
+// time this device sees its ability ("Lightning!"). Read from sim events and the definitions, so it
+// can't disagree with the fight; decoration (aria-hidden) that respects reduced motion
+// (arena-tips.css). Tips can be turned off in the symbol legend. The pairing's "what to watch" is
+// the ready card's (ready-card.ts, ADR 0037).
 import type { Tips } from '../app/tips.ts';
-import { drawBallIcon } from '../render/ball-icon.ts';
 import { showsAbility } from '../render/ability-sign.ts';
 import { theme } from '../render/theme.ts';
-import { counterFor } from '../sim/counter-map.ts';
 import type { DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
-import { MARKS } from './balls/marks.ts';
-import { leanOf } from './balls/matchups.ts';
 import { element } from './dom.ts';
 
 /** How long an ability hint shows, in effect-time milliseconds. */
 export const HINT_MS = 1600;
-/** How much longer the intro runs while the versus card shows (presentation time, ADR 0007). */
-export const VERSUS_EXTRA_MS = 1300;
 
 export interface ArenaTips {
-  /** A new match: whether its versus card shows, and how much longer its intro runs for it. */
-  start(world: WorldState, teaching: boolean): number;
+  /** A new match: whether hints show in it (never in the home demo). */
+  start(teaching: boolean): void;
   /** A tick's events: the first time a ball's ability shows, its hint is due. */
   apply(events: readonly SimEvent[], world: WorldState, nowMs: number): void;
-  /** Places what shows over `drawn` at `nowMs`; `introLeftMs` is the intro time still to run. */
-  update(drawn: WorldState, nowMs: number, introLeftMs: number): void;
+  /** Places the hint over `drawn` at `nowMs`. */
+  update(drawn: WorldState, nowMs: number): void;
   isActive(nowMs: number): boolean;
 }
 
@@ -41,22 +35,12 @@ export function createArenaTips(
   container: HTMLElement,
   lookup: DefinitionLookup,
   tips: Tips,
-  onSkip: () => void,
 ): ArenaTips {
   const layer = element('div', 'arena-tips');
   layer.setAttribute('aria-hidden', 'true');
   const hint = element('span', 'ability-hint');
   hint.hidden = true;
-  const card = element('button', 'versus-card');
-  card.type = 'button';
-  // Decoration over the canvas: a tap skips it, and it never takes keyboard focus.
-  card.tabIndex = -1;
-  card.hidden = true;
-  card.addEventListener('click', () => {
-    card.hidden = true;
-    onSkip();
-  });
-  layer.append(hint, card);
+  layer.append(hint);
   container.append(layer);
 
   /** Hints due, in order: one shows at a time, so two never overlap. */
@@ -64,45 +48,12 @@ export function createArenaTips(
   let showing: { ballId: string; text: string; startMs: number } | undefined;
   let teachingNow = false;
 
-  function fillCard(world: WorldState): void {
-    const [a, b] = world.balls;
-    const first = a === undefined ? undefined : lookup.get(a.definitionId);
-    const second = b === undefined ? undefined : lookup.get(b.definitionId);
-    if (first === undefined || second === undefined) return;
-    const side = (definition: typeof first, repeat: boolean) => {
-      const holder = element('span', 'versus-ball');
-      const icon = element('canvas', 'versus-icon');
-      drawBallIcon(icon, definition, 28, repeat);
-      holder.append(icon, element('span', 'versus-name', definition.name));
-      return holder;
-    };
-    const mirror = first.id === second.id;
-    const lean = leanOf(first.id, second.id);
-    const mark = element('span', 'versus-mark', mirror ? '' : MARKS[lean]);
-    mark.dataset['lean'] = lean;
-    const head = element('span', 'versus-head');
-    head.append(side(first, false), mark, element('span', 'versus-vs', 'vs'), side(second, mirror));
-    const reason = mirror
-      ? 'A mirror match: same ball, same tricks.'
-      : counterFor(first.id, second.id)?.reason;
-    card.replaceChildren(
-      head,
-      element('span', 'versus-reason', reason ?? ''),
-      element('span', 'versus-skip', 'Tap to skip'),
-    );
-  }
-
   return {
-    start(world, teaching) {
+    start(teaching) {
       queue = [];
       showing = undefined;
       hint.hidden = true;
       teachingNow = teaching;
-      const versus = teaching && tips.takeVersus();
-      card.hidden = !versus;
-      if (!versus) return 0;
-      fillCard(world);
-      return VERSUS_EXTRA_MS;
     },
     apply(events, world, nowMs) {
       if (!teachingNow || !tips.enabled()) return;
@@ -120,9 +71,7 @@ export function createArenaTips(
         if (next !== undefined) showing = { ...next, startMs: nowMs };
       }
     },
-    update(drawn, nowMs, introLeftMs) {
-      // The card leaves just before the first tick, so the fight is never covered.
-      if (!card.hidden && introLeftMs <= 250) card.hidden = true;
+    update(drawn, nowMs) {
       if (showing !== undefined && nowMs - showing.startMs >= HINT_MS) {
         const next = queue.shift();
         showing = next === undefined ? undefined : { ...next, startMs: nowMs };

@@ -20,7 +20,7 @@ import {
   type SeriesState,
 } from '../sim/series.ts';
 import { matchWorld, playToEnd } from '../sim/series-verify.ts';
-import { button, settle, visible } from './page-support.ts';
+import { button, settle, until, visible } from './page-support.ts';
 
 /** A decided Reveal series as a player would have played it: always the first ball left. */
 function decidedReveal(seed: number): SeriesState {
@@ -55,14 +55,6 @@ function decidedReveal(seed: number): SeriesState {
 
 const fighting = () => visible('.hud-ball-name').map((row) => row.textContent);
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
-
-async function until(done: () => boolean, ms: number): Promise<void> {
-  const end = Date.now() + ms;
-  while (!done()) {
-    if (Date.now() > end) throw new Error('Timed out waiting for the page');
-    await settle();
-  }
-}
 
 describe('a shared Reveal link', () => {
   it('offers Play round 2 after round 1, which plays the link’s round 2', async () => {

@@ -13,18 +13,10 @@ import { randomBot } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { setupWithPicks } from '../sim/series.ts';
 import { playLikeTheGame } from '../sim/test-support.ts';
-import { button, settle, visible } from './page-support.ts';
+import { button, settle, until, visible } from './page-support.ts';
 
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
 const score = () => visible('.series-track-points')[0]?.textContent;
-
-async function until(done: () => boolean, ms: number): Promise<void> {
-  const end = Date.now() + ms;
-  while (!done()) {
-    if (Date.now() > end) throw new Error('Timed out waiting for the page');
-    await settle();
-  }
-}
 
 /** Plays the replayed link to its result: Play round whenever the screen offers it. */
 async function playToResult(): Promise<void> {

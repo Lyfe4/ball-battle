@@ -7,6 +7,7 @@ import { createWorld } from '../sim/world.ts';
 import { TICK_MS } from './fixed-step.ts';
 import {
   advanceFrame,
+  heldFrameMs,
   interpolationAlpha,
   startPlayback,
   type PlayedTick,
@@ -169,5 +170,37 @@ describe('playback', () => {
     }));
     expect(outcome.ticks).toHaveLength(0);
     expect(outcome.playback.world).toBe(finished);
+  });
+});
+
+describe('the ready moment', () => {
+  it('plays the intro up to its floor, then runs no tick however long it is held', () => {
+    const start = matchWorld('chrono', 'storm', 3);
+    const floor = 500;
+    let playback = startPlayback(start, 1100);
+    for (let frame = 0; frame < 600; frame += 1) {
+      const outcome = advanceFrame(
+        playback,
+        heldFrameMs(playback.clock, 16.7, floor),
+        stepWorld,
+        () => ({ hitStopMs: 0 }),
+      );
+      expect(outcome.ticks).toHaveLength(0);
+      playback = outcome.playback;
+    }
+    // The opening world itself, untouched: exactly where the match starts.
+    expect(playback.world).toBe(start);
+    expect(playback.clock.introMs).toBe(floor);
+    expect(playback.effectMs).toBeCloseTo(600, 6);
+    // Released, it plays the rest of the intro and then the match's own first tick.
+    let rest = playback;
+    for (let ms = 0; ms < floor; ms += 100) {
+      const intro = advanceFrame(rest, 100, stepWorld, () => ({ hitStopMs: 0 }));
+      expect(intro.ticks).toHaveLength(0);
+      rest = intro.playback;
+    }
+    const released = advanceFrame(rest, TICK_MS + 1, stepWorld, () => ({ hitStopMs: 0 }));
+    expect(released.ticks).toHaveLength(1);
+    expect(released.playback.world).toStrictEqual(stepWorld(start).world);
   });
 });

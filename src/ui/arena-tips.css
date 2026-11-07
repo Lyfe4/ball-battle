@@ -1,7 +1,7 @@
 /*
- * Tips in the arena (ADR 0036): the ability hint that follows a ball and the versus card over the
- * intro. Both sit over the canvas without changing its size, look like the Winner sticker's small
- * cousins, and pop only when motion is welcome.
+ * Tips in the arena (ADR 0036): the ability hint that follows a ball. It sits over the canvas
+ * without changing its size, looks like the Winner sticker's small cousin, and pops only when motion
+ * is welcome.
  */
 .arena-tips {
   position: relative;
@@ -28,80 +28,13 @@
   transform: translate(-50%, 0) rotate(-3deg);
 }
 
-.ability-hint[hidden],
-.versus-card[hidden] {
+.ability-hint[hidden] {
   display: none;
-}
-
-.versus-card {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  width: min(80%, 20rem);
-  padding: var(--space-gap);
-  border: 0;
-  border-radius: var(--radius-large);
-  background: var(--color-sticker);
-  box-shadow:
-    0 0 0 4px var(--color-accent),
-    0 8px 0 var(--color-accent-slab);
-  color: var(--color-accent-text);
-  font: inherit;
-  text-align: center;
-  transform: translate(-50%, -50%) rotate(-2deg);
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.versus-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-weight: 800;
-}
-
-.versus-ball {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.versus-mark {
-  font-family: var(--font-family-symbol);
-}
-
-/* Dark enough on the cream card to keep 4.5:1. */
-.versus-mark[data-lean='favoured'] {
-  color: var(--color-on-sticker-favoured);
-}
-
-.versus-mark[data-lean='unfavoured'] {
-  color: var(--color-on-sticker-unfavoured);
-}
-
-.versus-vs,
-.versus-skip {
-  color: var(--color-on-sticker-muted);
-  font-size: var(--font-size-tiny);
-}
-
-.versus-reason {
-  font-size: var(--font-size-small);
-  line-height: 1.35;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .ability-hint-pop {
     animation: tip-pop 260ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
-  }
-
-  .versus-card:not([hidden]) {
-    animation: tip-pop 320ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
   }
 }
 

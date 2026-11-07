@@ -1,0 +1,188 @@
+/*
+ * The ready moment (ready-card.ts, ADR 0037): a cream sticker over the arena's opening frame, the
+ * Winner sticker's smaller cousin, with a chunky pink Fight! (the second accent marks the moment the
+ * player acts). It pops in once and Fight! glows while it waits, only when motion is welcome. The
+ * glow changes brightness, never size or place, so the button is a still target for a finger.
+ */
+/*
+ * On a phone the card hangs from the arena's bottom rim, over the series bar and track (not needed
+ * while the player is about to start), so the whole court and both starting balls stay in view: a
+ * readable card covers most of a 343 px arena wherever it sits.
+ */
+.arena-container {
+  position: relative;
+}
+
+.ready-layer {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% - var(--space-gap));
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+}
+
+.ready-card {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: min(88%, 21rem);
+  padding: var(--space-small) var(--space-gap) 0;
+  border-radius: var(--radius-large);
+  background: var(--color-sticker);
+  box-shadow:
+    0 0 0 4px var(--color-accent),
+    0 8px 0 var(--color-accent-slab);
+  color: var(--color-accent-text);
+  text-align: center;
+  transform: rotate(-2deg);
+}
+
+/* Without a card to read, only the pairing and Fight!: a smaller sticker. */
+.ready-card[data-card='false'] {
+  width: auto;
+  padding-bottom: var(--space-gap);
+}
+
+.ready-head,
+.ready-edge,
+.ready-reason {
+  margin: 0;
+}
+
+.ready-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  font-weight: 800;
+}
+
+.ready-ball {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ready-vs {
+  color: var(--color-on-sticker-muted);
+  font-size: var(--font-size-small);
+}
+
+.ready-edge {
+  font-weight: 800;
+}
+
+.ready-mark {
+  font-family: var(--font-family-symbol);
+  color: var(--color-on-sticker-muted);
+}
+
+.ready-mark[data-lean='favoured'] {
+  color: var(--color-on-sticker-favoured);
+}
+
+.ready-reason {
+  font-size: var(--font-size-small);
+  line-height: 1.3;
+}
+
+.ready-fight {
+  min-width: 10rem;
+  min-height: var(--tap-target);
+  margin: 4px 0 var(--press-depth);
+  padding: 0 var(--space-gap);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-accent-2);
+  box-shadow: 0 var(--press-depth) 0 var(--color-accent-2-slab);
+  color: var(--color-accent-2-text);
+  font: inherit;
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.ready-fight:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.ready-fight:focus-visible {
+  box-shadow:
+    0 var(--press-depth) 0 var(--color-accent-2-slab),
+    var(--focus-ring);
+}
+
+.ready-never {
+  min-height: var(--tap-target);
+  color: var(--color-on-sticker-muted);
+  font-size: var(--font-size-tiny);
+}
+
+/*
+ * With the panel beside the arena (layout.css's wide layout) the court is tall and the card covers
+ * about a third of it: it sits over the court, in the band its starting balls leave clearest
+ * (placeFor).
+ */
+@media (min-aspect-ratio: 5/4) {
+  .ready-layer {
+    position: relative;
+    top: auto;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    padding: var(--space-sheet);
+  }
+
+  .ready-layer[data-place='top'] {
+    align-items: start;
+  }
+
+  .ready-layer[data-place='bottom'] {
+    align-items: end;
+  }
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .ready-card {
+    width: min(100%, 26rem);
+    padding: var(--space-gutter) var(--space-gutter) var(--space-small);
+  }
+
+  .ready-reason {
+    font-size: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ready-layer:not([hidden]) .ready-card {
+    animation: ready-pop 320ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+
+  .ready-layer:not([hidden]) .ready-fight {
+    animation: ready-breathe 1.4s ease-in-out 600ms infinite;
+  }
+}
+
+@keyframes ready-pop {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes ready-breathe {
+  50% {
+    filter: brightness(1.12);
+  }
+}

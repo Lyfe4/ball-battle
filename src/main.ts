@@ -150,7 +150,7 @@ const quick = createQuickController(
     showWorld,
     goHome,
     started: () => {
-      canvas.focus();
+      arena.focus();
     },
     ballLink,
   },
@@ -173,7 +173,7 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     showWorld,
     worldsShown: () => worldsShown,
     started: () => {
-      canvas.focus();
+      arena.focus();
     },
     layoutChanged: showControls,
     redraw: () => {
@@ -265,7 +265,8 @@ const arena = createArena(
       series.settle(world);
     },
     tips,
-    teaching: () => router.current() !== 'home',
+    moment: () =>
+      router.current() === 'home' ? 'demo' : router.current() === 'series' ? 'series' : 'quick',
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // The round screen waits for the Winner sticker's moment (ADR 0033).

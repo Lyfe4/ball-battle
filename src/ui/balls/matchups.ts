@@ -83,3 +83,35 @@ export function statShares(ball: BallDefinition, roster: readonly BallDefinition
     hit: ball.contactDamage / most((b) => b.contactDamage),
   };
 }
+
+/** Whose balls a matchup is told between: the player's against the bot's, or two balls. */
+export type TipFraming = 'yours' | 'neutral';
+
+/**
+ * A matchup mark's tooltip, naming both balls and saying plainly who has the edge (ADR 0037):
+ * "Your Chrono vs the bot's Storm: you're favoured", "Speedster vs Storm: Storm is favoured".
+ * The counter map's one-line reason follows as a second line, so a tap shows what to watch.
+ */
+export function matchupTip(
+  ball: string,
+  opponent: string,
+  nameOf: (id: string) => string,
+  framing: TipFraming,
+): readonly string[] {
+  const mine = nameOf(ball);
+  const theirs = nameOf(opponent);
+  const yours = framing === 'yours';
+  const pair = yours ? `Your ${mine} vs the bot’s ${theirs}` : `${mine} vs ${theirs}`;
+  if (ball === opponent) return [`${pair}: a mirror, even`];
+  const lean = leanOf(ball, opponent);
+  const edge =
+    lean === 'even'
+      ? 'even'
+      : lean === 'favoured'
+        ? yours
+          ? 'you’re favoured'
+          : `${mine} is favoured`
+        : `${theirs} is favoured`;
+  const reason = counterFor(ball, opponent)?.reason ?? '';
+  return reason === '' ? [`${pair}: ${edge}`] : [`${pair}: ${edge}`, reason];
+}

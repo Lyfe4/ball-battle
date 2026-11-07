@@ -4,7 +4,7 @@
 import {
   advanceFrame,
   interpolationAlpha,
-  skipIntro,
+  heldFrameMs,
   startPlayback,
   type Playback,
 } from './app/playback.ts';
@@ -23,6 +23,7 @@ import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createArenaTips } from './ui/arena-tips.ts';
+import { createReadyCard, type ReadyMoment } from './ui/ready-card.ts';
 import { element } from './ui/dom.ts';
 import { createWinnerSticker } from './ui/winner-sticker.ts';
 
@@ -39,10 +40,17 @@ export interface ArenaHost {
    * celebration plays at full brightness (ADR 0033).
    */
   drawn(world: WorldState, resultShown: boolean, celebrated: boolean): void;
-  /** Tips in the arena (ADR 0036), and whether the match on screen is one to teach in. */
+  /** Tips in the arena (ADR 0036). */
   readonly tips: Tips;
-  teaching(): boolean;
+  /** What the match on screen is: the home demo, a Free play match or a series round (ADR 0037). */
+  moment(): ReadyMoment;
 }
+
+/**
+ * The intro left while a match is held on its ready moment: every ball has popped in, and the rest
+ * of the intro (a short beat) runs after Fight! before the first tick.
+ */
+const READY_FLOOR_MS = theme.introMs - theme.introStaggerMs - theme.introPopMs;
 
 export interface Arena {
   /** Puts a new match on screen: playback and effects start over. */
@@ -51,6 +59,8 @@ export interface Arena {
   redraw(): void;
   /** The sim's latest world. */
   world(): WorldState;
+  /** Focuses what the player does next: Fight! when the match waits on it, else the arena. */
+  focus(): void;
   /** True once the match's intro has played and both balls are fully drawn. */
   introOver(): boolean;
 }
@@ -91,8 +101,13 @@ export function createArena(
   failure.hidden = true;
   container.append(failure);
   const sticker = createWinnerSticker(container, lookup);
-  const tips = createArenaTips(container, lookup, host.tips, () => {
-    playback = skipIntro(playback);
+  const tips = createArenaTips(container, lookup, host.tips);
+  /** True while the match waits on its ready moment's Fight! (ADR 0037): no tick runs. */
+  let held = false;
+  const ready = createReadyCard(container, lookup, host.tips, () => {
+    held = false;
+    lastFrameMs = undefined;
+    canvas.focus({ preventScroll: true });
   });
 
   function applyReducedMotion(): void {
@@ -129,7 +144,7 @@ export function createArena(
     });
     // Due just after a knockout's slow-mo, or at once for a time-limit end.
     sticker.update(world, effects.stickerVisible(now));
-    tips.update(drawn, now, playback.clock.introMs);
+    tips.update(drawn, now);
     host.drawn(world, effects.resultVisible(now), effects.celebrationOver(now));
   }
 
@@ -158,13 +173,20 @@ export function createArena(
       lastFrameMs = undefined;
       return;
     }
+    // Held and fully popped in: nothing moves until Fight!, so nothing is drawn either.
+    if (held && playback.clock.introMs <= READY_FLOOR_MS) {
+      lastFrameMs = nowMs;
+      return;
+    }
     if (lastFrameMs !== undefined) {
       const wasBusy = isClockBusy(playback.clock);
       const resultWasShown = effects.resultVisible(playback.effectMs);
       const wasCelebrated = effects.celebrationOver(playback.effectMs);
+      const frameMs = scaleFrame(nowMs - lastFrameMs, host.speed());
+      // Held on the ready moment: the pop-in plays, then time stops before the first tick.
       const outcome = advanceFrame(
         playback,
-        scaleFrame(nowMs - lastFrameMs, host.speed()),
+        held ? heldFrameMs(playback.clock, frameMs, READY_FLOOR_MS) : frameMs,
         (world) => step(world, lookup),
         ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
       );
@@ -218,8 +240,10 @@ export function createArena(
     show(world) {
       failed = false;
       failure.hidden = true;
-      // The versus card, when it shows, holds the intro a little longer (presentation time).
-      playback = startPlayback(world, theme.introMs + tips.start(world, host.teaching()));
+      const moment = host.moment();
+      tips.start(moment !== 'demo');
+      held = ready.start(world, moment);
+      playback = startPlayback(world, theme.introMs);
       effects.reset();
       rewinds.reset();
       sourceChips.reset();
@@ -227,6 +251,9 @@ export function createArena(
       render();
     },
     redraw: render,
+    focus() {
+      if (!ready.focus()) canvas.focus();
+    },
     world: () => playback.world,
     introOver: () => playback.effectMs >= theme.introMs,
   };

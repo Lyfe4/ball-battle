@@ -5,15 +5,7 @@ import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { CONFETTI_PIECES } from '../ui/confetti.ts';
-import { button, settle, visible } from './page-support.ts';
-
-async function until(done: () => boolean, ms: number): Promise<void> {
-  const end = Date.now() + ms;
-  while (!done()) {
-    if (Date.now() > end) throw new Error('Timed out waiting for the page');
-    await settle();
-  }
-}
+import { button, settle, until, visible } from './page-support.ts';
 
 const card = () => visible('.winner-sticker-card')[0];
 
