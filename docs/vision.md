@@ -86,6 +86,16 @@ blind picks. See Decisions below.
 
 ## Decisions
 
+### Aiming is dropped (2026-11-07)
+
+- **A launch choice was tested three times, and dropped.** Aiming v1, a free launch angle
+  (`docs/aiming-measurements.md`); bigger balls, to see if they rescued it
+  (`docs/bigger-balls-experiment.md`); and aiming v2, a few clear launch choices, an opening strike
+  and launches inside Reveal's turns (`docs/aiming-v2-experiment.md`). Every version either barely
+  mattered (about 2 points, since an 18-second fight washes out the launch) or broke the counter
+  map. So skill stays in the draft. Skill beyond the draft would need an input during the fight,
+  which is a separate idea.
+
 ### Where the skill is (2026-11-05)
 
 - **In picking, not in aiming.** A chosen launch direction was measured and turned out to be a
