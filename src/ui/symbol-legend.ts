@@ -74,7 +74,8 @@ function tipsRow(): HTMLElement {
 /**
  * The symbol legend: a `?` button in a screen's header that opens a short list of what each mark
  * means, so a screen can show symbols instead of sentences. A disclosure (aria-expanded), closed
- * by default; Escape closes it and returns focus to the button.
+ * by default, opening in place under the ?; the ?, the Close at its end and Escape each close it
+ * and return focus to the ?.
  */
 export function createSymbolLegend(): SymbolLegend {
   legends += 1;
@@ -103,7 +104,20 @@ export function createSymbolLegend(): SymbolLegend {
       return item;
     }),
   );
-  panel.append(list, element('p', 'symbol-legend-note', 'Favoured is never certain.'), tipsRow());
+  // Its own way out at its end (ADR 0038), so it closes even when the ? has scrolled out of view.
+  const close = element('button', 'text-link symbol-legend-close', 'Close');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close the legend');
+  close.addEventListener('click', () => {
+    open(false);
+    toggle.focus();
+  });
+  panel.append(
+    list,
+    element('p', 'symbol-legend-note', 'Favoured is never certain.'),
+    tipsRow(),
+    close,
+  );
 
   // While open, Escape closes it wherever focus is, and focus returns to the ?.
   const onKey = (event: KeyboardEvent) => {

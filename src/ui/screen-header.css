@@ -170,3 +170,10 @@
 .symbol-legend-tips[hidden] {
   display: none;
 }
+
+/* The legend's own Close (ADR 0038): a quiet link, a full tap target, at the end of the panel. */
+.symbol-legend-close {
+  display: block;
+  min-height: var(--tap-target);
+  margin-left: auto;
+}
