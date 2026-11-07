@@ -3,7 +3,7 @@
 // both balls still where the match starts, the card saying who is favoured and what to watch, and
 // Fight! to start. The first time a ball's ability shows, a short label names it, once per device;
 // a finished match leads "How it was won" with its result. The same pairing again starts by
-// itself, and with tips off no card shows.
+// itself, and with the cards switched off in settings no card shows.
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
 import {
@@ -85,11 +85,14 @@ describe('tips in the arena', () => {
     await wait(1600);
     expect(canvasNow()).not.toBe(first);
 
-    // Tips off (the legend's switch): a new pairing shows no card either.
+    // Cards off (the settings' switch, ADR 0040): a new pairing shows no card either.
     button('Change balls').click();
     await settle();
-    visible('.quick-setup .symbol-legend-toggle')[0]?.click();
-    button('Turn tips off').click();
+    visible('.quick-setup .settings-toggle')[0]?.click();
+    [...document.querySelectorAll<HTMLElement>('#settings-panel [role="switch"]')]
+      .find((node) => node.textContent.includes('What to watch cards'))
+      ?.click();
+    button('Close settings').click();
     visible('.ball-tile')
       .find((tile) => tile.dataset['ballId'] === 'storm')
       ?.click();
