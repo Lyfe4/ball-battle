@@ -51,9 +51,10 @@ strict Content Security Policy.
   was played under. A test fingerprints the game's behaviour, so any change that could alter a fight
   fails until the version is bumped. An older link says so instead of replaying a different fight.
 - **Measure ideas before building them.** Letting players aim the launch was prototyped and
-  measured across every matchup. It turned out to be a second blind guess, not a
-  skill, so it was removed. Bigger balls were measured and rejected too. Both write-ups are kept:
-  [aiming](docs/aiming-measurements.md), [bigger balls](docs/bigger-balls-experiment.md).
+  measured across every matchup, three times. It either barely mattered or broke the counters, so
+  it was dropped and the skill stays in the draft. The write-ups are kept:
+  [aiming](docs/aiming-measurements.md), [bigger balls](docs/bigger-balls-experiment.md),
+  [aiming v2](docs/aiming-v2-experiment.md).
 - **Decisions are written down.** 34 short architecture decision records in
   [docs/decisions](docs/decisions/) explain why the code is the way it is, including what was tried
   and dropped.
