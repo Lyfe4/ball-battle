@@ -1,7 +1,8 @@
 /*
  * The ready moment (ready-card.ts, ADR 0037): a cream sticker over the arena's opening frame, the
  * Winner sticker's smaller cousin, with a chunky pink Fight! (the second accent marks the moment the
- * player acts). It pops in once and Fight! breathes while it waits, only when motion is welcome.
+ * player acts). It pops in once and Fight! glows while it waits, only when motion is welcome. The
+ * glow changes brightness, never size or place, so the button is a still target for a finger.
  */
 /*
  * On a phone the card hangs from the arena's bottom rim, over the series bar and track (not needed
@@ -182,6 +183,6 @@
 
 @keyframes ready-breathe {
   50% {
-    scale: 1.05;
+    filter: brightness(1.12);
   }
 }

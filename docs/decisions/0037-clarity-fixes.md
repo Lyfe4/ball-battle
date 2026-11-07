@@ -112,7 +112,7 @@ sticker card shows the pairing and a pink **Fight!** button.
     balls leave clearest, measured from its real height (`placeFor`).
 - **Accessible.** Fight! takes focus when the round starts. Enter and Space start the match, and
   so does Escape (the moment is never a trap). Afterwards focus moves to the arena. The card's
-  words are read by screen readers. The pop and Fight!'s breathing only run when motion is welcome.
+  words are read by screen readers. The pop and Fight!'s glow only run when motion is welcome; the glow changes brightness, never size, so Fight! stays a still target (a growing button never settled for a tap).
 
 ### 5. "How it was won": the result first, moments by a stated rule
 
