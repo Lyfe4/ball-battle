@@ -37,7 +37,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   `*.wide.browser.test.ts`, run at a fixed 1280 x 800 (project `browsers-wide`): never resize the
   viewport during a test, which upsets later files' history in WebKit. A flow on a touch phone is
   `*.touch.browser.test.ts` (project `browsers-touch`: touch on, 375 x 812, and a `tap` command
-  for real taps, ADR 0037). Needs the browsers once:
+  for real taps, ADR 0037). A flow that must also hold on a full HD screen is
+  `*.full.browser.test.ts` (project `browsers-full`, 1920 x 1080, ADR 0038). Needs the browsers
+  once:
   `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
@@ -128,7 +130,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
 `docs/decisions/0033-arena-polish.md`, `docs/decisions/0034-chrono-titan-inferno.md` and
 `docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`),
-`docs/decisions/0036-teaching-in-the-arena.md` and `docs/decisions/0037-clarity-fixes.md`.
+`docs/decisions/0036-teaching-in-the-arena.md`, `docs/decisions/0037-clarity-fixes.md` and
+`docs/decisions/0038-one-look-per-screen-state.md`.
 
 ## Workflow
 
@@ -243,6 +246,13 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   can explain it. A matchup mark names both balls and who has the edge (`matchupTip`); a mark a
   phone player must read is its own 44 px tap target beside the control, never inside it, and
   nothing relies on press-and-hold (ADR 0037).
+- **One look per screen state** (ADR 0038). A part that several screens show is one component
+  used by all of them: "How it was won" (`match-story.ts`), the pick banner and rows, the series
+  bar (`?` and what is played), the pairing (`balls/pairing.ts`) and the ready card, which
+  always sits centred on the court. `one-of-each.test.ts` fails on a second copy, and
+  `src/flows/consistency-flow.ts` checks at 375, 1280 and 1920 wide that every legend opens
+  without losing its `?` and closes with the `?`, its Close and Escape. Escape only ever closes
+  things; it never starts or picks.
 - **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
   screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
   replaces the entry, going to the screen this entry came from goes back to it, a series is one

@@ -13,6 +13,7 @@
 @import './ui/segmented.css';
 @import './ui/hud.css';
 @import './ui/balls/ball-grid.css';
+@import './ui/balls/pairing.css';
 @import './ui/screen-header.css';
 @import './ui/quick-setup.css';
 @import './ui/home.css';
@@ -20,6 +21,7 @@
 @import './ui/manual/matchup-chart.css';
 @import './ui/outdated.css';
 @import './ui/series/series-setup.css';
+@import './ui/series/series-bar.css';
 @import './ui/series-panel.css';
 @import './ui/series/pick-rows.css';
 @import './ui/series/toss-strip.css';

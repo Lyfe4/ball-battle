@@ -49,8 +49,14 @@
     min-width: 0;
   }
 
+  /*
+   * Centred beside the arena while it fits; auto margins (not align-items) so a panel taller than
+   * the screen, with the legend and "How it was won" open, grows downward and the page scrolls to
+   * it, rather than spilling above the top where its ? could never be reached (ADR 0038).
+   */
   .hud {
     width: var(--hud-width);
+    margin-block: auto;
   }
 }
 

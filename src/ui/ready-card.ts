@@ -5,11 +5,11 @@
 // "ready, fight" beat between rounds; in Free play the card (and so the wait) shows only for a new
 // pairing, so a run of matches is never slowed by a tap. The home demo never waits.
 import type { Tips } from '../app/tips.ts';
-import { drawBallIcon } from '../render/ball-icon.ts';
 import { counterFor } from '../sim/counter-map.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { MARKS } from './balls/marks.ts';
 import { favouredOf } from './balls/matchups.ts';
+import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
 /** What the arena is showing: the home demo, a Free play match, or a Best of 3 round. */
@@ -28,32 +28,10 @@ export function readyFor(moment: ReadyMoment, cardDue: boolean): { held: boolean
   return { held: moment === 'series' || cardDue, card: cardDue };
 }
 
-const ICON_PX = 24;
-
-/** Where the card sits over the arena: the band its starting balls leave clearest. */
-export type ReadyPlace = 'top' | 'middle' | 'bottom';
-
 /**
- * The band of the court with the fewest balls in it at tick 0 (the middle when tied), for a card
- * covering `share` of the court's height, so the starting positions it is about stay in view.
+ * The card sits centred on the court, on every screen and in every round (ADR 0038), so the moment
+ * always looks the same and Fight! is always in the same place.
  */
-export function placeFor(world: WorldState, share: number): ReadyPlace {
-  const size = world.arena.size;
-  const bands: readonly [ReadyPlace, number, number][] = [
-    ['middle', (1 - share) / 2, (1 + share) / 2],
-    ['top', 0, share],
-    ['bottom', 1 - share, 1],
-  ];
-  const covered = ([, from, to]: readonly [ReadyPlace, number, number]) =>
-    world.balls.filter(
-      (ball) =>
-        ball.position.y + ball.radius > from * size && ball.position.y - ball.radius < to * size,
-    ).length;
-  let best = bands[0];
-  for (const band of bands) if (best === undefined || covered(band) < covered(best)) best = band;
-  return best?.[0] ?? 'middle';
-}
-
 export function createReadyCard(
   container: HTMLElement,
   lookup: DefinitionLookup,
@@ -63,14 +41,14 @@ export function createReadyCard(
   const layer = element('div', 'ready-layer');
   const card = element('section', 'ready-card');
   card.setAttribute('aria-label', 'Ready');
-  const head = element('p', 'ready-head');
+  const head = createPairing();
   const edge = element('p', 'ready-edge');
   const reason = element('p', 'ready-reason');
   const fight = element('button', 'ready-fight', 'Fight!');
   fight.type = 'button';
   const never = element('button', 'text-link ready-never', 'Don’t show these again');
   never.type = 'button';
-  card.append(head, edge, reason, fight, never);
+  card.append(head.element, edge, reason, fight, never);
   layer.append(card);
   layer.hidden = true;
   container.append(layer);
@@ -85,27 +63,12 @@ export function createReadyCard(
     tips.hideReadyCards();
     go();
   });
-  // Escape starts the match too: the moment is never a trap.
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !layer.hidden) go();
-  });
-
-  function side(definition: BallDefinition, repeat: boolean): HTMLElement {
-    const holder = element('span', 'ready-ball');
-    const icon = element('canvas', 'ready-icon');
-    icon.setAttribute('aria-hidden', 'true');
-    drawBallIcon(icon, definition, ICON_PX, repeat);
-    holder.append(icon, element('span', 'ready-name', definition.name));
-    return holder;
-  }
+  // Escape only closes things (ADR 0038): it never starts a fight. The card isn't modal (Tab moves
+  // on), so it is never a trap; Fight! (a click, Enter or Space) is the one way to start.
 
   function fill(first: BallDefinition, second: BallDefinition, withCard: boolean): void {
     const mirror = first.id === second.id;
-    head.replaceChildren(
-      side(first, false),
-      element('span', 'ready-vs', 'vs'),
-      side(second, mirror),
-    );
+    head.show(first, second);
     edge.hidden = !withCard;
     reason.hidden = !withCard;
     never.hidden = !withCard;
@@ -144,16 +107,6 @@ export function createReadyCard(
       if (!held) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
-      // Placed once laid out (the arena may only just be showing), by the share of the court the
-      // card really covers at this size.
-      layer.dataset['place'] = 'middle';
-      requestAnimationFrame(() => {
-        if (layer.clientHeight === 0) return;
-        layer.dataset['place'] = placeFor(
-          world,
-          Math.min(1, card.offsetHeight / layer.clientHeight),
-        );
-      });
       return true;
     },
     focus() {

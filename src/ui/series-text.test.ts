@@ -7,6 +7,7 @@ import {
   FORMAT_LINES,
   FORMAT_NAMES,
   openLine,
+  pickLine,
   showLine,
   playingLine,
   roundLine,
@@ -89,5 +90,23 @@ describe('draft format text', () => {
     expect(openLine(['storm', 'quake', 'frost'], names)).toBe(
       'Round 1: pick your opener. The bot picks from STORM, QUAKE, FROST at the same time.',
     );
+  });
+});
+
+describe('the pick asked for', () => {
+  const choice = (kind: 'answer' | 'show' | 'open', facing?: string) => ({
+    kind,
+    ...(facing === undefined ? {} : { facing }),
+    options: ['speedster', 'vampire'],
+    opponents: ['storm', 'frost'],
+  });
+
+  it('says the same on round 1 and between rounds, for each kind of pick', () => {
+    const left = ['storm', 'frost'];
+    expect(pickLine(choice('answer', 'storm'), 1, left, nameOf)).toBe(
+      'Round 2: the bot plays Storm. Pick your answer.',
+    );
+    expect(pickLine(choice('open'), 0, left, nameOf)).toBe(openLine(left, nameOf));
+    expect(pickLine(choice('show'), 1, left, nameOf)).toBe(showLine(1, left, nameOf));
   });
 });

@@ -47,6 +47,7 @@ export default defineConfig({
           exclude: [
             ...configDefaults.exclude,
             '**/*.wide.browser.test.ts',
+            '**/*.full.browser.test.ts',
             '**/*.touch.browser.test.ts',
           ],
           browser: {
@@ -74,6 +75,23 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             viewport: { width: 1280, height: 800 },
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          // Flows that must also hold on a full HD screen (`*.full.browser.test.ts`, ADR 0038), where
+          // the legend bug was found: fixed at 1920 x 1080 for the same reason as browsers-wide.
+          name: 'browsers-full',
+          include: ['src/**/*.full.browser.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            screenshotFailures: false,
+            viewport: { width: 1920, height: 1080 },
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
         },

@@ -2,9 +2,10 @@ import { formatOf, revealFirst, remainingOf, type SeriesState } from '../../sim/
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
-import { answerLine, openLine, showLine } from '../series-text.ts';
+import { pickLine } from '../series-text.ts';
 import { createPickBanner } from './pick-banner.ts';
 import { createPickRows } from './pick-rows.ts';
+import { createSeriesBar } from './series-bar.ts';
 import { createSeriesTrack } from './series-track.ts';
 import { createTossStrip } from './toss-strip.ts';
 import { pickChoiceOf, trackOf } from './series-view.ts';
@@ -28,25 +29,37 @@ export interface AnswerActions {
 
 /**
  * Round 1 of Reveal (ADR 0021, 0029) or Showdown (ADR 0035), phone first and visual (ADR 0025):
+ * under its heading the series bar every later pick shows (what is played, and the ?; ADR 0038),
  * Reveal's coin toss, the track (the bot's shown ball in round 1 when it won the toss, else its
  * three waiting), then "Your pick" and one row per ball the player has, each marked against every
  * ball the bot has. A tap picks and the round starts.
  */
 export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerActions): AnswerStep {
   const root = element('section', 'series-step answer-step');
-  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack, { legend: true });
+  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack);
+  const bar = createSeriesBar();
   const toss = createTossStrip();
   const track = createSeriesTrack(lookup);
   const banner = createPickBanner(lookup);
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
   const rows = createPickRows(lookup, actions.onAnswer);
-  root.append(header.element, toss.element, status, track.element, banner.element, rows.element);
+  root.append(
+    header.element,
+    bar.element,
+    bar.legend,
+    toss.element,
+    status,
+    track.element,
+    banner.element,
+    rows.element,
+  );
   const nameOf = (id: string) => lookup.get(id)?.name ?? id;
 
   return {
     element: root,
     open(state) {
+      bar.show(state.setup);
       const reveal = formatOf(state.setup) === 'reveal';
       toss.element.hidden = !reveal;
       if (reveal) toss.show(revealFirst(state.setup.seed), state.setup.seed);
@@ -55,13 +68,7 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
       if (choice !== undefined) {
         banner.show(choice);
         rows.show(choice);
-        const botLeft = remainingOf(state, 'b');
-        status.textContent =
-          choice.facing !== undefined
-            ? answerLine(0, choice.facing, nameOf)
-            : choice.kind === 'open'
-              ? openLine(botLeft, nameOf)
-              : showLine(0, botLeft, nameOf);
+        status.textContent = pickLine(choice, 0, remainingOf(state, 'b'), nameOf);
       }
       header.focus();
     },

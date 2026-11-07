@@ -20,20 +20,6 @@
 }
 
 /* The track: the score over a grid of rounds, the player's ball over the bot's. */
-/* What is being played, and the legend's ? (ADR 0035): one quiet line over the series. */
-.series-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-small);
-}
-
-.series-bar-about {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
 .series-track {
   display: grid;
   gap: var(--space-small);
@@ -110,8 +96,7 @@
   border-radius: var(--radius);
 }
 
-.series-track-unknown,
-.series-pairing-unknown {
+.series-track-unknown {
   display: grid;
   place-items: center;
   width: 30px;
@@ -162,26 +147,11 @@
   }
 }
 
-/* The next round when nothing is asked: the two balls large. */
+/* The next round when nothing is asked: the pairing (pairing.ts), as the ready card shows it. */
 .series-pairing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-gap);
   padding: var(--space-gap);
   border-radius: var(--radius);
   background: var(--color-surface);
-}
-
-.series-pairing .series-pairing-unknown {
-  width: 56px;
-  height: 56px;
-  font-size: 1.5rem;
-}
-
-.series-pairing-vs {
-  color: var(--color-text-muted);
-  font-weight: 700;
 }
 
 /* The result, first and large: one word for who won, in the winner's colour of the track. */
