@@ -56,6 +56,8 @@ const initialRoute = currentRoute();
 const storage = () => window.localStorage;
 const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 const tips = createTips(storage);
+/** The match on the arena has ended and its result is showing. */
+let matchOver = false;
 installLegendTips(tips);
 
 const TITLES: Readonly<Record<Screen, string>> = {
@@ -269,6 +271,12 @@ const arena = createArena(
       router.current() === 'home' ? 'demo' : router.current() === 'series' ? 'series' : 'quick',
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
+      // A finished Free play match has no use for speed: it makes way (ADR 0039).
+      const over = world.match.status === 'finished' && resultShown;
+      if (over !== matchOver) {
+        matchOver = over;
+        showControls();
+      }
       // The round screen waits for the Winner sticker's moment (ADR 0033).
       series.update(world, celebrated);
       if (router.current() === 'home') home.drawn(resultShown);
@@ -317,7 +325,7 @@ function showControls(): void {
     screen === 'series' && series.phase() !== undefined && series.phase() !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
   hudRoot.hidden = setup || screen === 'home' || roundOver;
-  speedRoot.hidden = setup || screen === 'home' || roundOver;
+  speedRoot.hidden = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
   document.title = TITLES[screen];

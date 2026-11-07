@@ -1,6 +1,40 @@
 import { playwright } from '@vitest/browser-playwright';
-import { configDefaults, defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig, type TestProjectInlineConfiguration } from 'vitest/config';
+import type { BrowserCommand } from 'vitest/node';
 import { SECURITY_HEADERS } from './scripts/security-headers.ts';
+
+const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
+  await context.iframe.locator(selector).first().tap();
+};
+
+/**
+ * A touch phone project (ADR 0037, 0039): a context with touch at a fixed phone size, and a `tap`
+ * command that taps like a finger (Playwright's own tap, which sends touch events and lets the
+ * browser make the pointer events and click from them).
+ */
+function phoneProject(
+  name: string,
+  suffix: string,
+  width: number,
+  height: number,
+): TestProjectInlineConfiguration {
+  return {
+    extends: true,
+    test: {
+      name,
+      include: [`src/**/*.${suffix}.browser.test.ts`],
+      browser: {
+        enabled: true,
+        provider: playwright({ contextOptions: { hasTouch: true } }),
+        headless: true,
+        screenshotFailures: false,
+        viewport: { width, height },
+        instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+        commands: { tap },
+      },
+    },
+  };
+}
 
 export default defineConfig({
   build: {
@@ -49,6 +83,8 @@ export default defineConfig({
             '**/*.wide.browser.test.ts',
             '**/*.full.browser.test.ts',
             '**/*.touch.browser.test.ts',
+            '**/*.iphone.browser.test.ts',
+            '**/*.safari.browser.test.ts',
           ],
           browser: {
             enabled: true,
@@ -96,29 +132,12 @@ export default defineConfig({
           },
         },
       },
-      {
-        extends: true,
-        test: {
-          // Flows on a touch phone (`*.touch.browser.test.ts`, ADR 0037): a context with touch, at
-          // phone size, and a `tap` command that taps like a finger (Playwright's own tap, which
-          // sends touch events and lets the browser make the pointer events and click from them).
-          name: 'browsers-touch',
-          include: ['src/**/*.touch.browser.test.ts'],
-          browser: {
-            enabled: true,
-            provider: playwright({ contextOptions: { hasTouch: true } }),
-            headless: true,
-            screenshotFailures: false,
-            viewport: { width: 375, height: 812 },
-            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
-            commands: {
-              tap: async (context, selector: string) => {
-                await context.iframe.locator(selector).first().tap();
-              },
-            },
-          },
-        },
-      },
+      // Flows on a touch phone (`*.touch.browser.test.ts`, ADR 0037).
+      phoneProject('browsers-touch', 'touch', 375, 812),
+      // A 390 x 844 iPhone with no browser chrome, and the same phone in Safari with its toolbars
+      // shown (390 x 664), where the series arena shrank (ADR 0039).
+      phoneProject('browsers-iphone', 'iphone', 390, 844),
+      phoneProject('browsers-safari', 'safari', 390, 664),
     ],
   },
 });

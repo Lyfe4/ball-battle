@@ -11,3 +11,61 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
 }
+
+/* The ? (and the settings gear) at the end of the line. */
+.series-bar-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-small);
+  margin-left: auto;
+}
+
+/*
+ * The score line (ADR 0039): while a round is fought on a phone the bar reads "Round 2 · You 1–0
+ * Bot ▾" in place of what is played, and a tap opens the full track under it. Beside the arena
+ * (and on a desktop) there is room, so the bar and the track stay as they are.
+ */
+.series-bar-score {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small);
+  margin-left: calc(-1 * var(--space-small));
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.series-bar-score:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.series-bar-more {
+  color: var(--color-text-muted);
+  font-family: var(--font-family-symbol);
+}
+
+.series-bar-score[aria-expanded='true'] .series-bar-more {
+  transform: rotate(180deg);
+}
+
+@media not all and (min-aspect-ratio: 5/4) {
+  .series[data-phase='playing'] .series-bar-about {
+    display: none;
+  }
+
+  .series[data-phase='playing'] .series-bar-score:not([hidden]) {
+    display: inline-flex;
+  }
+
+  .series[data-phase='playing']:not([data-track-open]) > .series-track {
+    display: none;
+  }
+}

@@ -5,7 +5,8 @@
 import type { Lean } from './balls/matchups.ts';
 import { MARKS } from './balls/marks.ts';
 
-export type SymbolKey = Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'cue';
+export type SymbolKey =
+  Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more' | 'cue';
 
 export interface SymbolEntry {
   /** The symbol as text; empty for one drawn as a swatch (a ring, a dimmed ball, the rule cue). */
@@ -34,6 +35,11 @@ export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
   lost: { mark: '', meaning: 'Lost the round' },
   replay: { mark: '↻', meaning: 'Replayed after a draw' },
   suddenDeath: { mark: '⚡', meaning: 'Sudden death: three draws, decided by a coin flip' },
+  more: {
+    mark: '▾',
+    meaning: 'Opens the full series track',
+    legendNote: 'on the score line during a round',
+  },
   cue: { mark: '', meaning: 'In a fight: a rule between two balls just kicked in (see each ball)' },
 };
 

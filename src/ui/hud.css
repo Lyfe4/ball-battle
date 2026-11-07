@@ -117,3 +117,25 @@
     transition: none;
   }
 }
+
+/*
+ * Speed and the way out of a series share one row under the health bars on a phone (ADR 0039):
+ * speed at the start, Leave series (a quiet text link) at the far end, well apart. Beside the arena
+ * each keeps its own row, as before.
+ */
+.hud-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+}
+
+.hud-foot:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .hud-foot {
+    display: contents;
+  }
+}

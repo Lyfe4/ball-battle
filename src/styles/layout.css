@@ -37,6 +37,19 @@
   gap: var(--space-small);
 }
 
+/*
+ * The court is the screen (ADR 0039). While a round is fought on a phone, opening something under
+ * it (the legend, the full track) makes the page scroll to it rather than squeezing the court; the
+ * shrink above is only for screens too short for even the closed panel.
+ */
+@media not all and (min-aspect-ratio: 5/4) {
+  .stage:has(.series[data-phase='playing'][data-track-open]),
+  .stage:has(.series[data-phase='playing'] .symbol-legend:not([hidden])) {
+    height: auto;
+    min-height: 100dvh;
+  }
+}
+
 @media (min-aspect-ratio: 5/4) {
   .stage {
     flex-direction: row;

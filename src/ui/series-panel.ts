@@ -84,11 +84,24 @@ export function createSeriesPanel(
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
 
+  // The full track. While a round plays on a phone it waits under the score line (ADR 0039):
+  // opened, it stays open for the rest of that round and closes when the next one starts.
+  const track = createSeriesTrack(definitions);
+  track.element.id = 'series-track';
+  /** The round being fought (0-based), and the round the track was opened in. */
+  let fought: number | undefined;
+  let trackOpenFor: number | undefined;
+  let drawBar = (): void => undefined;
+  const toggleTrack = () => {
+    trackOpenFor = trackOpenFor === undefined ? fought : undefined;
+    root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
+    drawBar();
+  };
+
   // What is being played, and the legend's ? for every symbol the series shows (ADR 0035).
-  const bar = createSeriesBar();
+  const bar = createSeriesBar({ id: track.element.id, onToggle: toggleTrack });
 
   const result = element('p', 'series-result');
-  const track = createSeriesTrack(definitions);
 
   // Reveal's coin toss, over round 1 when the series opens here (a rematch).
   const toss = createTossStrip();
@@ -176,7 +189,20 @@ export function createSeriesPanel(
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
-      bar.show(state.setup);
+      // The track's open state belongs to the round being fought, so a new round starts closed.
+      fought = playing ? current?.round : undefined;
+      if (trackOpenFor !== fought) trackOpenFor = undefined;
+      root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
+      const score = scoreOf(state);
+      drawBar = () => {
+        bar.show(
+          state.setup,
+          fought === undefined
+            ? undefined
+            : { round: fought, you: score.a, bot: score.b, open: trackOpenFor !== undefined },
+        );
+      };
+      drawBar();
       // The match just played, a drawn play included (ADR 0038).
       const last = playing ? undefined : lastPlayOf(state);
       story.show(
