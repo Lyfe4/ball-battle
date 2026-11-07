@@ -136,8 +136,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0036-teaching-in-the-arena.md`, `docs/decisions/0037-clarity-fixes.md`,
 `docs/decisions/0038-one-look-per-screen-state.md`,
 `docs/decisions/0039-the-phone-arena-is-the-screen.md`, `docs/decisions/0040-settings.md`,
-`docs/decisions/0041-the-spark-marks-the-counter.md` and
-`docs/decisions/0042-reload-safe-series.md`.
+`docs/decisions/0041-the-spark-marks-the-counter.md`,
+`docs/decisions/0042-reload-safe-series.md` and
+`docs/decisions/0043-boomerang-bomber-guardian-bloom.md`.
 
 ## Workflow
 
@@ -164,12 +165,14 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Within a tick: statuses due this tick expire (ADR 0009), onTick, move (with a seeded turn on wall
   bounces, ADR 0004), onWallHit, collide (a phased ball passes through, ADR 0026), contact damage
   (new contacts only, scaled by directness, ADR 0008), onHitBall, minions move and pop (ADR 0026),
-  projectiles move and resolve (ADR 0005), zones due this tick strike (a lasting zone pulses on its
-  rhythm), apply their status and clear enemy minions (ADR 0006, 0009, 0026, 0034), poison ticks
+  projectiles move and resolve (a returning one turns and homes on its owner, ADR 0005, 0043), zones
+  due this tick strike (a lasting zone pulses on its rhythm; a bomb an enemy ball touched strikes
+  early), apply their status and clear enemy minions (ADR 0006, 0009, 0026, 0034, 0043), poison ticks
   (ADR 0012), onDamageDealt, onDamageTaken (ADR 0012; damage from its actions fires no further
   hooks), onKnockedOut for balls just brought to 0 (a `rewind` puts one back, ADR 0034), defeat,
   cruise speed (ADR 0008, reduced while slowed) then size (`radiusOf`, ADR 0034), match end. Events are emitted in that order. Every hook in a phase sees the
-  same snapshot; actions are applied afterwards. The full order is documented on `step`.
+  same snapshot; actions are applied afterwards. Wherever damage lands, a shield takes the hit
+  first (ADR 0043). The full order is documented on `step`.
 - Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
   or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
   A new kind extends `StatusKind` in `src/sim/status.ts`. A ball that shrugs a status off declares
@@ -182,6 +185,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   that passes through others declares `phasedOf(self)`; summoned objects are minions
   (`src/sim/minions/`), not balls. Aimed attacks pick their target with `nearestTarget`, which
   includes enemy minions, so every aimed ball treats them alike.
+- A ball that takes hits for itself gets the `shielded` status (it soaks up to `SHIELD_SOAK` of the
+  next hit, any kind, and breaks; ADR 0043) rather than checking damage in a hook. A projectile that
+  comes back uses `returnAfterTicks`; a zone an enemy ball can set off declares a `trigger` (swept,
+  so no speed skips it).
 - An ability that changes how hard a ball hits declares `contactDamageOf(self, stats)` (ADR 0015)
   rather than adding a `damage` action on hit: contact damage goes through directness, the
   lethal-exchange tiebreak and Thorns' reflection; an on-hit ability bonus skips all three.

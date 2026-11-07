@@ -152,27 +152,42 @@ Rough arc, by ADR:
 
 ## Hard numbers
 
-| What                   | Number                                                                                                                     |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Balls                  | 17                                                                                                                         |
-| Unit tests             | 695 tests in 97 files, about 4-7 s                                                                                         |
-| Slow roster tests      | 12 tests in 4 files (determinism, pass-through margin, measured identity rules, minion cap)                                |
-| Browser tests          | 30 tests in 24 files, in Chromium, Firefox and WebKit through Vitest's Playwright provider                                 |
-| Known match results    | 306, bit-identical in Node, Chromium, Firefox and WebKit                                                                   |
-| CI jobs                | 4: lint/typecheck/unit/build, slow tests, balance check (150 seeds), browsers                                              |
-| Balance run            | every ordered pair, 500 seeds per slot order by default, on all CPU cores                                                  |
-| Overall win rates      | every ball 45.6-52.3% (target 40-60%)                                                                                      |
-| Draws, fight length    | draws 0.6% (target under 5%); median fight 18.1 s (target 12-30 s)                                                         |
-| Counter bands          | favoured 62-72% (floor 58%); even 45-55% (floor 42-58%); no side worse than 25/75                                          |
-| Interaction rules      | 3, each with an on-screen cue                                                                                              |
-| Ruleset versions       | 5                                                                                                                          |
-| Production bundle      | 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), 41.34 kB font (Latin subset)                              |
-| First version baseline | 5.05 kB JS (2.41 kB gzipped)                                                                                               |
-| Runtime dependencies   | 1 (the self-hosted Bricolage Grotesque font)                                                                               |
-| TypeScript             | about 18,300 lines outside tests, 11,000 in tests (`src` and `scripts`)                                                    |
-| Frame cost (ADR 0034)  | median 0.4-0.5 ms, no frame over 16.7 ms, at 60, 90 and 120 Hz on a 4x-throttled phone profile (`scripts/frame-timing.ts`) |
+| What                   | Number                                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Balls                  | 21                                                                                                                                             |
+| Unit tests             | 824 tests in 114 files, about 5-8 s                                                                                                            |
+| Slow roster tests      | 12 tests in 4 files (determinism, pass-through margin, measured identity rules, minion cap)                                                    |
+| Browser tests          | 30 tests in 24 files, in Chromium, Firefox and WebKit through Vitest's Playwright provider                                                     |
+| Known match results    | 462, bit-identical in Node, Chromium, Firefox and WebKit                                                                                       |
+| CI jobs                | 4: lint/typecheck/unit/build, slow tests, balance check (150 seeds), browsers                                                                  |
+| Balance run            | every ordered pair, 500 seeds per slot order by default, on all CPU cores                                                                      |
+| Overall win rates      | every ball 46.0-52.6% (target 40-60%)                                                                                                          |
+| Draws, fight length    | draws 0.6% (target under 5%); median fight 18.1 s (target 12-30 s)                                                                             |
+| Counter bands          | favoured 62-72% (floor 58%); even 45-55% (floor 42-58%); no side worse than 25/75                                                              |
+| Interaction rules      | 3, each with an on-screen cue                                                                                                                  |
+| Ruleset versions       | 7                                                                                                                                              |
+| Production bundle      | 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), 41.34 kB font (Latin subset)                                                  |
+| First version baseline | 5.05 kB JS (2.41 kB gzipped)                                                                                                                   |
+| Runtime dependencies   | 1 (the self-hosted Bricolage Grotesque font)                                                                                                   |
+| TypeScript             | about 18,300 lines outside tests, 11,000 in tests (`src` and `scripts`)                                                                        |
+| Frame cost (ADR 0043)  | no frame over 16.7 ms at 60, 90 and 120 Hz on a 4x-throttled phone profile, over the batch 5 balls' busiest fights (`scripts/frame-timing.ts`) |
 
 Sources: `pnpm test`, `pnpm test:slow`, `pnpm test:browsers`, `pnpm build` and `scripts/frame-timing.ts` run on 2026-11-06;
 `src/golden/golden-matches.json`; `.github/workflows/ci.yml`;
 [balance-summary.md](balance-summary.md) and [ADR 0028](decisions/0028-counter-pass.md) for the
 balance figures.
+
+## Batch 5 (ADR 0043)
+
+- **Measure the idea, not just the numbers.** Two starting ideas read well and measured badly. A
+  shield that blocks the next hit completely beat the Brawler 98%, because contact hits in this
+  game are rare and heavy, so "beats one big hit" meant "beats every heavy hitter". Uncapped
+  regrowth won every long fight. A scratch sweep (one variant ball against the roster, one process
+  per config, about 300 configs) found the cap that keeps each idea readable inside the 25/75
+  limit, before any full balance run.
+- **Let the structural tests push back.** "Every ball has a counter" failed for the first Bomber.
+  Lengthening its fuse turned bombs into a field that lies in wait, and the counter appeared from
+  the mechanic (the Archer crosses the bombs least) rather than from a stat.
+- **Browser tests catch content, not just code.** The new matchups lengthened the Speedster's
+  manual page past a laptop screen and the Bomber's line past two phone lines; both were caught by
+  the existing layout flows in CI.
