@@ -3,15 +3,19 @@
 // every screen with a legend, the legend opens without pushing its ? out of reach and closes with
 // the ?, its own Close and Escape. Every ready moment's card sits centred on the court, and Escape
 // never starts the fight. Every "How it was won" is the one design: closed, led by the result.
-// Every screen has one settings gear whose menu opens fully on screen and closes three ways
-// (ADR 0040), and every setup screen's header starts in the same place.
+// Every story has the same rendered look, and the legend and settings panels share one look
+// (ADR 0044). Every screen has one settings gear whose menu opens fully on screen, keeps off a
+// fighting court or pauses it, and closes four ways (ADR 0040, 0044, settings-checks.ts), and
+// every setup screen's header starts in the same place.
 import { expect } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, READY_SEEN_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
+import { checkPanelLooks, checkStoryLook, notePanelLook } from './look-checks.ts';
 import { button, settle, until, visible } from './page-support.ts';
+import { checkSettings } from './settings-checks.ts';
 
 /** A real click; a control that can't be reached fails fast rather than at the test's timeout. */
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
@@ -58,6 +62,7 @@ async function checkLegend(where: string): Promise<void> {
   expect(legendOpen(toggle), where).toBe(true);
   expect(reachable()).toStrictEqual({ where, top: true, left: true });
   expect({ where, ...legendLayout(panel()) }).toStrictEqual({ where, clipped: 0, overlapping: 0 });
+  notePanelLook(`legend: ${where}`, panel());
   await click(toggle);
   expect(legendOpen(toggle), where).toBe(false);
   expect(panel()?.hidden, where).toBe(true);
@@ -105,6 +110,8 @@ async function checkStory(where: string, prefix: RegExp): Promise<void> {
   const story = stories[0];
   if (!(story instanceof HTMLDetailsElement)) throw new Error(`${where}: no story`);
   expect(story.open, where).toBe(false);
+  // The same look in every place, not only the same parts (ADR 0044).
+  checkStoryLook(where, story);
   expect(story.querySelector('.match-story-line')?.textContent, where).toMatch(prefix);
   expect(story.querySelector('.match-story-more')?.textContent, where).toBe('How it was won');
   const summary = story.querySelector('summary');
@@ -112,49 +119,6 @@ async function checkStory(where: string, prefix: RegExp): Promise<void> {
   expect(story.open, where).toBe(true);
   expect(story.querySelectorAll('.match-story-side'), where).toHaveLength(2);
   expect(story.querySelectorAll('ol.match-story-moments > li').length, where).toBeGreaterThan(0);
-}
-
-/**
- * The settings gear (ADR 0040): one per screen; it opens the menu fully on screen, and the gear,
- * Close and Escape each close it with focus back on the gear.
- */
-async function checkSettings(where: string): Promise<void> {
-  const gears = visible('.settings-toggle');
-  expect(gears, where).toHaveLength(1);
-  const [gear] = gears;
-  if (gear === undefined) return;
-  const panel = () => document.getElementById(gear.getAttribute('aria-controls') ?? '');
-  const isOpen = () => gear.getAttribute('aria-expanded') === 'true' && panel()?.hidden === false;
-
-  await click(gear);
-  expect(isOpen(), where).toBe(true);
-  const box = panel()?.getBoundingClientRect();
-  const inside =
-    box !== undefined &&
-    box.left >= 0 &&
-    box.top >= 0 &&
-    box.right <= document.documentElement.clientWidth &&
-    box.bottom <= window.innerHeight;
-  expect({ where, inside }).toStrictEqual({ where, inside: true });
-  await click(gear);
-  expect(isOpen(), where).toBe(false);
-
-  await click(gear);
-  const close = panel()?.querySelector<HTMLElement>('.settings-close');
-  if (close !== null && close !== undefined) await click(close);
-  expect({ where, open: isOpen(), focus: document.activeElement === gear }).toStrictEqual({
-    where,
-    open: false,
-    focus: true,
-  });
-
-  await click(gear);
-  await userEvent.keyboard('{Escape}');
-  expect({ where, open: isOpen(), focus: document.activeElement === gear }).toStrictEqual({
-    where,
-    open: false,
-    focus: true,
-  });
 }
 
 /** Where each setup screen's header sits on the page: they must all match. */
@@ -228,7 +192,7 @@ export async function runConsistencyFlow(): Promise<void> {
 
   for (let round = 1; ; round += 1) {
     await checkReady(`series round ${String(round)}`);
-    if (phase() === 'playing') await checkSettings(`series round ${String(round)} fight`);
+    if (phase() === 'playing') await checkSettings(`series round ${String(round)} fight`, true);
     await until(() => phase() !== 'playing', 90_000);
     await settle();
     const finished = phase() === 'finished';
@@ -255,7 +219,7 @@ export async function runConsistencyFlow(): Promise<void> {
   await checkSettings('Free play setup');
   await click(button('Start match'));
   await checkReady('Free play');
-  await checkSettings('Free play fight');
+  await checkSettings('Free play fight', true);
   await until(() => visible('.match-story').length === 1, 90_000);
   await checkStory('Free play result', /^(?!Round)\S/);
   await checkSettings('Free play result');
@@ -270,4 +234,5 @@ export async function runConsistencyFlow(): Promise<void> {
 
   await open('?');
   await checkSettings('home');
+  checkPanelLooks();
 }

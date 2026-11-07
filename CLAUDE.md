@@ -137,8 +137,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0038-one-look-per-screen-state.md`,
 `docs/decisions/0039-the-phone-arena-is-the-screen.md`, `docs/decisions/0040-settings.md`,
 `docs/decisions/0041-the-spark-marks-the-counter.md`,
-`docs/decisions/0042-reload-safe-series.md` and
-`docs/decisions/0043-boomerang-bomber-guardian-bloom.md`.
+`docs/decisions/0042-reload-safe-series.md`,
+`docs/decisions/0043-boomerang-bomber-guardian-bloom.md` and
+`docs/decisions/0044-one-story-look-and-settings-off-the-court.md`.
 
 ## Workflow
 
@@ -275,14 +276,19 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   used by all of them: "How it was won" (`match-story.ts`), the pick banner and rows, the series
   bar (`?` and what is played), the pairing (`balls/pairing.ts`) and the ready card, which
   always sits centred on the court. `one-of-each.test.ts` fails on a second copy, and
-  `src/flows/consistency-flow.ts` checks at 375, 1280 and 1920 wide that every legend opens
-  without losing its `?` and closes with the `?`, its Close and Escape. Escape only ever closes
-  things; it never starts or picks.
+  `src/flows/consistency-flow.ts` checks at 375, 390 x 664, 1280 and 1920 wide that every legend
+  opens without losing its `?` and closes with the `?`, its Close and Escape. One look means the
+  rendered look too: no context rule restyles a shared part on one screen (`look-checks.ts`
+  compares computed styles, ADR 0044). The legend and settings are one info panel
+  (`info-panel.css`, `.panel-close`). Escape only ever closes things; it never starts or picks.
 - **Settings** (ADR 0040) is one menu (`settings-menu.ts`) behind a gear at the top right of every
   screen, just before the `?` where there is one; exactly one gear per screen. It floats by its
   gear inside the visible screen and never moves the layout; the gear, Close, Escape and a tap
-  outside close it, with focus back on the gear. It holds only real per-device choices (speed,
-  ability hints, what-to-watch cards); the consistency flow checks it from every screen.
+  outside close it, with focus back on the gear. It keeps off the court (beside it on a desktop,
+  over the panel on a phone, compact on a short phone); only when nothing keeps it off does it
+  cover the court, and then the arena holds the match until it closes (render side, ADR 0044).
+  It holds only real per-device choices (speed, ability hints, what-to-watch cards); the
+  consistency flow checks it from every screen.
 - **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
   screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
   replaces the entry, going to the screen this entry came from goes back to it, a series is one

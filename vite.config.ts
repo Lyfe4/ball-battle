@@ -11,6 +11,22 @@ const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
 };
 
 /**
+ * A press at a point of the element marked `data-press-here` (settings-checks.ts): a finger's tap
+ * on a touch phone, else a mouse click. Relative to the element, so the test frame's own
+ * place on the page doesn't matter.
+ */
+const pressAt: BrowserCommand<[x: number, y: number, touch: boolean]> = async (
+  context,
+  x,
+  y,
+  touch,
+) => {
+  const target = context.iframe.locator('[data-press-here]').first();
+  if (touch) await target.tap({ position: { x, y } });
+  else await target.click({ position: { x, y } });
+};
+
+/**
  * A touch phone project (ADR 0037, 0039): a context with touch at a fixed phone size, and a `tap`
  * command that taps like a finger (Playwright's own tap, which sends touch events and lets the
  * browser make the pointer events and click from them).
@@ -33,7 +49,7 @@ function phoneProject(
         screenshotFailures: false,
         viewport: { width, height },
         instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
-        commands: { tap },
+        commands: { tap, pressAt },
       },
       setupFiles: [BROWSER_SETUP],
     },
@@ -117,6 +133,7 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             viewport: { width: 1280, height: 800 },
+            commands: { pressAt },
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
         },
@@ -135,6 +152,7 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             viewport: { width: 1920, height: 1080 },
+            commands: { pressAt },
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
         },

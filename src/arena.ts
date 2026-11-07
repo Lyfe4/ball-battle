@@ -24,7 +24,9 @@ import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createArenaTips } from './ui/arena-tips.ts';
 import { createReadyCard, type ReadyMoment } from './ui/ready-card.ts';
+import { settingsCoverCourt } from './ui/settings-menu.ts';
 import { element } from './ui/dom.ts';
+import type { Box } from './ui/tooltip-place.ts';
 import { createWinnerSticker } from './ui/winner-sticker.ts';
 
 /** What the arena needs from the page around it. */
@@ -66,6 +68,8 @@ export interface Arena {
   focus(): void;
   /** True once the match's intro has played and both balls are fully drawn. */
   introOver(): boolean;
+  /** The drawn court on screen, if it shows (none behind a setup screen, ADR 0044). */
+  readonly court: () => Box | undefined;
 }
 
 /**
@@ -172,8 +176,9 @@ export function createArena(
   function advance(nowMs: number): void {
     // The match pauses while a dialog covers it, like a hidden tab: no time passes, so it carries
     // on exactly where it stopped. The loop asks rather than listening for the dialog's close
-    // event, which did not fire in a background tab (ADR 0011).
-    if (host.isPaused()) {
+    // event, which did not fire in a background tab (ADR 0011). Settings over the court hold it the
+    // same way until they close, so nothing is missed (ADR 0044).
+    if (host.isPaused() || settingsCoverCourt()) {
       lastFrameMs = undefined;
       return;
     }
@@ -264,5 +269,9 @@ export function createArena(
     },
     world: () => playback.world,
     introOver: () => playback.effectMs >= theme.introMs,
+    court() {
+      const box = canvas.getBoundingClientRect();
+      return box.width > 0 && box.height > 0 ? box : undefined;
+    },
   };
 }

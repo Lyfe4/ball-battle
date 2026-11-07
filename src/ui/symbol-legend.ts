@@ -52,7 +52,7 @@ export function createSymbolLegend(): SymbolLegend {
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-controls', id);
 
-  const panel = element('section', 'symbol-legend');
+  const panel = element('section', 'info-panel symbol-legend');
   panel.id = id;
   panel.setAttribute('aria-label', 'Symbols');
   panel.hidden = true;
@@ -71,7 +71,7 @@ export function createSymbolLegend(): SymbolLegend {
     }),
   );
   // Its own way out at its end (ADR 0038), so it closes even when the ? has scrolled out of view.
-  const close = element('button', 'text-link symbol-legend-close', 'Close');
+  const close = element('button', 'text-link panel-close symbol-legend-close', 'Close');
   close.type = 'button';
   close.setAttribute('aria-label', 'Close the legend');
   close.addEventListener('click', () => {
