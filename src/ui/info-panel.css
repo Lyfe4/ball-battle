@@ -1,0 +1,21 @@
+/*
+ * The info panel (ADR 0044): one look for the symbol legend (inline under its ?) and the settings
+ * menu (floating by its gear). A raised fill on one slab, the large radius, the gap as padding, the
+ * small type, and the same quiet Close link at its end. Where each sits is up to its own sheet.
+ */
+.info-panel {
+  padding: var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  text-align: left;
+}
+
+/* Close, at the panel's end: a quiet link, a full tap target, on the right. */
+.panel-close {
+  display: block;
+  min-height: var(--tap-target);
+  margin-left: auto;
+}

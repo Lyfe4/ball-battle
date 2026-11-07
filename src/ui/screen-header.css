@@ -51,13 +51,11 @@
   color: var(--color-text);
 }
 
-/* The legend opens under the header, across its full width. */
+/* The legend opens under the header, across its full width; its look is the info panel's. */
 .symbol-legend {
   flex-basis: 100%;
-  padding: var(--space-small) var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  font-size: var(--font-size-small);
+  /* Clear of the slab under the header's buttons. */
+  margin-top: var(--press-depth);
 }
 
 .symbol-legend-list {
@@ -159,11 +157,4 @@
     position: static;
     padding-block: 0;
   }
-}
-
-/* The legend's own Close (ADR 0038): a quiet link, a full tap target, at the end of the panel. */
-.symbol-legend-close {
-  display: block;
-  min-height: var(--tap-target);
-  margin-left: auto;
 }

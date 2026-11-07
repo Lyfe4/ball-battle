@@ -47,19 +47,6 @@
   content: ' ⌄';
 }
 
-/*
- * While the player picks (between rounds), the story is a quiet line under the choice, without a
- * card of its own, so it never competes with the pick (ADR 0037).
- */
-.series[data-phase='between'] .match-story {
-  background: none;
-  color: var(--color-text-muted);
-}
-
-.series[data-phase='between'] .match-story-result {
-  font-weight: 600;
-}
-
 .match-story-body {
   display: grid;
   gap: var(--space-gap);
