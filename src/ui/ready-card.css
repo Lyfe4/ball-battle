@@ -5,9 +5,8 @@
  * glow changes brightness, never size or place, so the button is a still target for a finger.
  */
 /*
- * On a phone the card hangs from the arena's bottom rim, over the series bar and track (not needed
- * while the player is about to start), so the whole court and both starting balls stay in view: a
- * readable card covers most of a 343 px arena wherever it sits.
+ * Centred on the court, on a phone and a desktop, in every round and mode (ADR 0038), so the moment
+ * always looks the same and Fight! is always in the same place.
  */
 .arena-container {
   position: relative;
@@ -16,11 +15,10 @@
 .ready-layer {
   position: absolute;
   z-index: 3;
-  top: calc(100% - var(--space-gap));
-  left: 0;
-  right: 0;
+  inset: 0;
   display: grid;
-  justify-items: center;
+  place-items: center;
+  padding: var(--space-gap);
 }
 
 .ready-card {
@@ -45,30 +43,14 @@
   padding-bottom: var(--space-gap);
 }
 
-.ready-head,
 .ready-edge,
 .ready-reason {
   margin: 0;
 }
 
-.ready-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-small);
-  font-weight: 800;
-}
-
-.ready-ball {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ready-vs {
+/* The same pairing as between series rounds (pairing.ts), in the sticker's quiet colour. */
+.ready-card .pairing-vs {
   color: var(--color-on-sticker-muted);
-  font-size: var(--font-size-small);
 }
 
 .ready-edge {
@@ -121,31 +103,6 @@
   min-height: var(--tap-target);
   color: var(--color-on-sticker-muted);
   font-size: var(--font-size-tiny);
-}
-
-/*
- * With the panel beside the arena (layout.css's wide layout) the court is tall and the card covers
- * about a third of it: it sits over the court, in the band its starting balls leave clearest
- * (placeFor).
- */
-@media (min-aspect-ratio: 5/4) {
-  .ready-layer {
-    position: relative;
-    top: auto;
-    grid-area: 1 / 1;
-    width: 100%;
-    height: 100%;
-    place-items: center;
-    padding: var(--space-sheet);
-  }
-
-  .ready-layer[data-place='top'] {
-    align-items: start;
-  }
-
-  .ready-layer[data-place='bottom'] {
-    align-items: end;
-  }
 }
 
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
