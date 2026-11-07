@@ -4,6 +4,8 @@
 - Date: 2026-11-07
 - Amends: ADR 0025 (§4 the pick banner and rows), ADR 0030 (§4 tooltips), ADR 0035 (§4 the rows,
   §5 touch: press-and-hold is gone), ADR 0036 (§4 the versus card is replaced, §5 the story)
+- Amended by: ADR 0038 (§4 the ready card always sits centred on the court, and Escape no longer
+  starts the match)
 
 ## Context
 

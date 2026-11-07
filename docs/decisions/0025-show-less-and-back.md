@@ -3,7 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Amends: ADR 0020 (§3 history, §4 info card, §5 screens), ADR 0017 (scoreboard UI)
-- Amended by: ADR 0027 (no dead ends: the series screen model and its test)
+- Amended by: ADR 0027 (no dead ends: the series screen model and its test), ADR 0038 (the
+  legend has its own Close)
 
 ## Context
 
