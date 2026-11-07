@@ -11,7 +11,11 @@
   gap: var(--space-gap);
   /* dvh tracks the visible viewport on mobile as browser chrome shows and hides. */
   height: 100dvh;
-  padding: var(--space-gutter);
+  /* Clear of a notch, the home bar and rounded corners (viewport-fit=cover), never less than the gutter. */
+  padding: max(var(--space-gutter), env(safe-area-inset-top))
+    max(var(--space-gutter), env(safe-area-inset-right))
+    max(var(--space-gutter), env(safe-area-inset-bottom))
+    max(var(--space-gutter), env(safe-area-inset-left));
 }
 
 .arena-container {
