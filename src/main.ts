@@ -298,7 +298,7 @@ function setSpeed(next: PlaybackSpeed): void {
   refreshSettings();
 }
 const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
-installSettings({ tips, speed: () => state.speed, setSpeed });
+installSettings({ tips, speed: () => state.speed, setSpeed, court: arena.court });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
 let worldsShown = 0;

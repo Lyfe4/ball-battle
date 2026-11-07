@@ -45,12 +45,6 @@
   width: min(20rem, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
   max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
-  padding: var(--space-gap);
-  border-radius: var(--radius-large);
-  background: var(--color-raised);
-  box-shadow: var(--shadow-slab);
-  color: var(--color-text);
-  text-align: left;
 }
 
 .settings-panel[hidden] {
@@ -143,6 +137,46 @@
 
 .settings-switch[aria-checked='true'] .settings-switch-thumb {
   background: var(--color-accent-text);
+}
+
+/* Only while the menu covers the court: the match waits for it (ADR 0044). */
+.settings-paused {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.settings-paused[hidden] {
+  display: none;
+}
+
+/*
+ * Compact (ADR 0044): on a short phone, the form that may fit beside the court. The title shares
+ * its row with speed, and the words a sighted player doesn't need (the "Speed" and "Tips in the
+ * arena" captions) are left to screen readers; every control keeps its full tap target.
+ */
+.settings-panel[data-compact] {
+  grid-template-columns: 1fr auto;
+  gap: 0 var(--space-gap);
+}
+
+.settings-panel[data-compact] .settings-title {
+  align-self: center;
+}
+
+.settings-panel[data-compact] .settings-group,
+.settings-panel[data-compact] .settings-foot {
+  grid-column: 1 / -1;
+  gap: 0 var(--space-gap);
+}
+
+.settings-panel[data-compact] .settings-heading,
+.settings-panel[data-compact] .segmented-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* "Show all tips again" and Close share the last row. */

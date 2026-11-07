@@ -1,13 +1,17 @@
-// Settings (ADR 0040): one small menu behind a gear that sits beside every `?` and at the top of
-// every screen. There is one panel on the page, opened by whichever gear was pressed, so it looks
-// the same everywhere. It floats over the page (never pushing the layout), placed by its gear and
-// kept inside the visible screen. The gear toggles it; Close, Escape and a tap outside close it,
-// and focus returns to the gear. Everything in it is saved per device by the code it calls.
+// Settings (ADR 0040, 0044): one small menu behind a gear that sits beside every `?` and at the top
+// of every screen. There is one panel on the page, opened by whichever gear was pressed, so it
+// looks the same everywhere (and like the legend: the shared info panel). It floats over the page
+// (never pushing the layout), placed by its gear, kept off the court and inside the visible
+// screen; on a short phone it first tries a compact form, and only when nothing keeps it off the
+// court does it cover it, and the match waits (`settingsCoverCourt`). The gear toggles it; Close,
+// Escape and a tap outside close it, and focus returns to the gear. Everything in it is saved per
+// device by the code it calls.
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
 import type { Tips } from '../app/tips.ts';
 import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
-import { placeMenu, type Insets } from './settings-place.ts';
+import type { Box } from './tooltip-place.ts';
+import { menuMaxHeight, menuWidth, placeMenu, type Insets } from './settings-place.ts';
 
 /** What the menu reads and changes, set once by main.ts. */
 export interface SettingsHost {
@@ -15,6 +19,8 @@ export interface SettingsHost {
   readonly speed: () => PlaybackSpeed;
   /** The in-fight speed buttons and this menu show the same remembered choice. */
   readonly setSpeed: (speed: PlaybackSpeed) => void;
+  /** The court on screen, if one shows: the menu keeps off it (ADR 0044). */
+  readonly court: () => Box | undefined;
 }
 
 const PANEL_ID = 'settings-panel';
@@ -54,6 +60,10 @@ interface Menu {
   readonly probe: HTMLElement;
   /** The gear the panel is open for, if it is open. */
   opener: HTMLButtonElement | undefined;
+  /** True while the open panel covers the court: the match waits (ADR 0044). */
+  covers: boolean;
+  /** Says the match waits, shown only while the panel covers the court. */
+  readonly paused: HTMLElement;
   readonly render: () => void;
 }
 
@@ -71,7 +81,7 @@ function createSwitch(text: string, onToggle: () => void): HTMLButtonElement {
 }
 
 function buildMenu(): Menu {
-  const panel = element('section', 'settings-panel');
+  const panel = element('section', 'info-panel settings-panel');
   panel.id = PANEL_ID;
   panel.setAttribute('aria-labelledby', `${PANEL_ID}-title`);
   panel.hidden = true;
@@ -102,7 +112,9 @@ function buildMenu(): Menu {
   tipsHeading.id = `${PANEL_ID}-tips`;
   tipsGroup.append(tipsHeading, hints, cards);
 
-  const close = element('button', 'text-link settings-close', 'Close');
+  const paused = element('p', 'settings-paused', 'The match waits while this is open.');
+  paused.hidden = true;
+  const close = element('button', 'text-link panel-close settings-close', 'Close');
   close.type = 'button';
   close.setAttribute('aria-label', 'Close settings');
   close.addEventListener('click', () => {
@@ -110,7 +122,7 @@ function buildMenu(): Menu {
   });
   const foot = element('div', 'settings-foot');
   foot.append(again, close);
-  panel.append(title, speedRow, tipsGroup, foot);
+  panel.append(title, paused, speedRow, tipsGroup, foot);
 
   function render(): void {
     if (host === undefined) return;
@@ -133,7 +145,7 @@ function buildMenu(): Menu {
   const probe = element('div', 'settings-safe-probe');
   probe.setAttribute('aria-hidden', 'true');
   document.body.append(probe);
-  return { panel, probe, opener: undefined, render };
+  return { panel, probe, opener: undefined, covers: false, paused, render };
 }
 
 /** The safe-area insets, read from a fixed probe whose edges sit on them (settings-menu.css). */
@@ -147,21 +159,49 @@ function safeInsets(probe: HTMLElement): Insets {
   };
 }
 
-/** Puts the open panel by its gear, inside the visible screen. */
+/**
+ * Puts the open panel by its gear, inside the visible screen and off the court (ADR 0044): at its
+ * own size if that keeps off the court, else in its compact form, else at its own size over the
+ * court, saying the match waits.
+ */
 function place(): void {
   if (menu?.opener === undefined) return;
   const view = window.visualViewport;
-  const { panel, probe } = menu;
-  const spot = placeMenu(
-    menu.opener.getBoundingClientRect(),
-    { width: panel.offsetWidth, height: panel.offsetHeight },
-    {
-      width: document.documentElement.clientWidth,
-      height: view?.height ?? window.innerHeight,
-      top: view?.offsetTop ?? 0,
-    },
-    safeInsets(probe),
-  );
+  const { panel, probe, opener, paused } = menu;
+  const gear = opener.getBoundingClientRect();
+  const insets = safeInsets(probe);
+  const court = host?.court();
+  const screen = {
+    width: document.documentElement.clientWidth,
+    height: view?.height ?? window.innerHeight,
+    top: view?.offsetTop ?? 0,
+  };
+  const at = () =>
+    placeMenu(
+      gear,
+      { width: panel.offsetWidth, height: panel.offsetHeight },
+      screen,
+      insets,
+      court,
+    );
+  panel.style.maxHeight = `${String(menuMaxHeight(screen, insets))}px`;
+  panel.style.width = '';
+  delete panel.dataset['compact'];
+  paused.hidden = true;
+  const width = menuWidth(gear, panel.offsetWidth, screen, insets, court);
+  if (width !== undefined) panel.style.width = `${String(width)}px`;
+  let spot = at();
+  if (spot.covers) {
+    panel.dataset['compact'] = '';
+    spot = at();
+  }
+  if (spot.covers) {
+    delete panel.dataset['compact'];
+    paused.hidden = false;
+    spot = at();
+  }
+  menu.covers = spot.covers;
+  paused.hidden = !spot.covers;
   panel.style.left = `${String(spot.left)}px`;
   panel.style.top = `${String(spot.top)}px`;
 }
@@ -170,12 +210,35 @@ function onKey(event: KeyboardEvent): void {
   if (event.key === 'Escape') closeMenu(true);
 }
 
-/** A press anywhere but the panel and its gear closes it, without taking the press away. */
+/** What a press can move focus to: a press on one of these keeps its own focus. */
+const FOCUSABLE = 'a[href], button, input, select, textarea, summary, label, [tabindex], canvas';
+
+/** Keeps focus where it is through one press's mousedown (a press on nothing focusable). */
+function keepFocus(event: MouseEvent): void {
+  event.preventDefault();
+}
+
+/** Drops keepFocus at the next press, if the last one never sent a mousedown (a touch scroll). */
+function dropKeepFocus(): void {
+  document.removeEventListener('mousedown', keepFocus, true);
+}
+
+/**
+ * A press anywhere but the panel and its gear closes it, without taking the press away. A press on
+ * a control does what it does (and takes focus); a press on nothing focusable returns focus to the
+ * gear, as Close and Escape do, rather than leaving it on the page.
+ */
 function onPointer(event: PointerEvent): void {
   const target = event.target;
-  if (!(target instanceof Node) || menu === undefined) return;
-  if (menu.panel.contains(target) || menu.opener?.contains(target) === true) return;
+  if (!(target instanceof Element) || menu === undefined) return;
+  const opener = menu.opener;
+  if (menu.panel.contains(target) || opener?.contains(target) === true) return;
   closeMenu(false);
+  if (opener === undefined || target.closest(FOCUSABLE) !== null) return;
+  opener.focus({ preventScroll: true });
+  // A touch's mousedown comes after its touchend, so this waits for it; the next press drops it.
+  document.addEventListener('mousedown', keepFocus, { capture: true, once: true });
+  document.addEventListener('pointerdown', dropKeepFocus, { capture: true, once: true });
 }
 
 function closeMenu(refocus: boolean): void {
@@ -183,6 +246,7 @@ function closeMenu(refocus: boolean): void {
   if (menu === undefined || opener === undefined) return;
   menu.panel.hidden = true;
   menu.opener = undefined;
+  menu.covers = false;
   opener.setAttribute('aria-expanded', 'false');
   document.removeEventListener('keydown', onKey);
   document.removeEventListener('pointerdown', onPointer, true);
@@ -222,6 +286,11 @@ export function createSettingsToggle(): HTMLButtonElement {
     else openMenu(gear);
   });
   return gear;
+}
+
+/** True while the open menu covers the court: the match waits until it closes (ADR 0044). */
+export function settingsCoverCourt(): boolean {
+  return menu?.opener !== undefined && menu.covers;
 }
 
 /** Shows the in-fight speed's change in an open menu. */
