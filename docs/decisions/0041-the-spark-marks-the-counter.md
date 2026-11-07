@@ -91,7 +91,7 @@ Thorns were three lines; Thorns's words are unchanged in meaning.
 | Sniper                                                   | Locks on and fires one heavy shot; stagger breaks the lock.   |
 | Ghost ✱ "nothing can aim at it", but shots in flight hit | Phases out 1 s in 4: hits, skulls, pulls and new aim miss it. |
 | Speedster                                                | Wall bounces build speed and damage for its next hit.         |
-| Chrono                                                   | Once a match, it rewinds half a second to undo a knockout.    |
+| Chrono                                                   | Once a match, rewinds to undo a knockout hit.                 |
 | Thorns                                                   | Spiked: every contact hit it takes hurts the attacker.        |
 
 ### 3. The coin toss is said in the pick banner

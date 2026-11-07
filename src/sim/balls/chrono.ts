@@ -45,7 +45,7 @@ export function hasRewound(ball: BallState): boolean {
 export const chrono = defineBall<ChronoState>({
   id: 'chrono',
   name: 'Chrono',
-  description: 'Once a match, it rewinds half a second to undo a knockout.',
+  description: 'Once a match, rewinds to undo a knockout hit.',
   color: '#d4a373',
   ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
   radius: STANDARD_BALL_RADIUS,

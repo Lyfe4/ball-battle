@@ -79,6 +79,7 @@ function checkFits(where: string): void {
 
 /** A round being fought: court full width and everything that matters on screen. */
 async function checkFight(where: string): Promise<void> {
+  visible('#hud-speed [aria-label="1 times speed"]')[0]?.click();
   await click(button('Fight!'));
   await wait(400);
   await checkCourt(where);
@@ -93,6 +94,8 @@ async function checkWholeFight(where: string, series: boolean): Promise<void> {
     await checkOpened(`${where} track`, () => visible('#series .series-bar-score')[0]);
   }
   if (fighting()) foughtChecks += 1;
+  // Checked: the rest of the fight at 2x, so a long one can't outlast the wait in a slow browser.
+  visible('#hud-speed [aria-label="2 times speed"]')[0]?.click();
 }
 
 /** Opens `toggle` mid-fight: the court keeps its size; closed again, everything fits again. */
@@ -138,7 +141,7 @@ export async function runPhoneArenaFlow(): Promise<void> {
     await checkCourt(`${where} ready`);
     fighting = () => phase() === 'playing';
     await checkWholeFight(where, true);
-    await until(() => phase() !== 'playing', 90_000);
+    await until(() => phase() !== 'playing', 150_000);
     await settle();
     if (phase() === 'finished') break;
     const pick = visible('#series .pick-row-pick')[0];
@@ -146,15 +149,16 @@ export async function runPhoneArenaFlow(): Promise<void> {
     else await click(button(visible('#series .hud-button-primary')[0]?.textContent ?? ''));
   }
 
-  // Free play: a new pairing's ready card, the fight and the result.
-  await open('?view=pick&a=venom&b=titan');
+  // Free play: a new pairing's ready card, the fight and the result. Every series round has one of
+  // the player's balls (Storm, Venom, Quake) in it, so Frost vs Titan is always new here.
+  await open('?view=pick&a=frost&b=titan');
   await click(button('Start match'));
   await until(() => visible('.ready-card').length === 1, 10_000, false);
   fighting = () => true;
   await checkCourt('Free play ready');
   fighting = () => visible('.match-story').length === 0;
   await checkWholeFight('Free play', false);
-  await until(() => visible('.match-story').length === 1, 90_000);
+  await until(() => visible('.match-story').length === 1, 150_000);
   await settle();
   fighting = () => true;
   await checkCourt('Free play result');
