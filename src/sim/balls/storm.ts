@@ -57,7 +57,7 @@ export function randomOffset(random: () => number, radius: number): Vec2 {
 export const storm = defineBall<StormState>({
   id: 'storm',
   name: 'Storm',
-  description: 'Calls down lightning where its enemy stands every 2 s. Shocked balls heal less.',
+  description: 'Calls lightning every 2 s. Shock halves heals; stagger stops it.',
   color: '#93c5fd',
   ability: { name: 'Lightning', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,

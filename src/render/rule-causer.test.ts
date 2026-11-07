@@ -3,17 +3,14 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { getDefinition } from '../sim/definitions.ts';
-import type { RuleAppliedEvent, RuleId } from '../sim/rules.ts';
+import type { RuleAppliedEvent } from '../sim/rules.ts';
 import { step } from '../sim/step.ts';
 import { createWorld } from '../sim/world.ts';
 import { ruleCauserId } from './rule-cue.ts';
+import { RULE_CAST } from '../ui/rule-cast.ts';
 
-/** Each rule, the ball whose ability causes it, and the balls it acts on. */
-const RULES: readonly (readonly [RuleId, string, readonly string[]])[] = [
-  ['healCut', 'storm', ['vampire']],
-  ['aimHeld', 'quake', ['archer', 'sniper', 'storm']],
-  ['rageNumbed', 'venom', ['berserker']],
-];
+/** Each rule, the ball whose ability causes it, and the balls it acts on (rule-cast.ts). */
+const RULES = RULE_CAST.map(({ rule, causer, affected }) => [rule, causer, affected] as const);
 
 describe('the ball that caused a rule', () => {
   it.each(RULES)(

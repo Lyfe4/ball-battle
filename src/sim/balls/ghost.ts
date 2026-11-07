@@ -34,8 +34,7 @@ export function isGhostPhased(ball: BallState): boolean {
 export const ghost = defineBall<GhostState>({
   id: 'ghost',
   name: 'Ghost',
-  description:
-    'Phases out every few seconds: hits, pulls and skulls pass through it, and nothing can aim at it.',
+  description: 'Phases out 1 s in 4: hits, skulls, pulls and new aim miss it.',
   color: '#c4b5fd',
   ability: { name: 'Spectral hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   radius: STANDARD_BALL_RADIUS,

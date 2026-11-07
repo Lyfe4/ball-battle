@@ -30,7 +30,7 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'berserker',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'thorns',
@@ -60,7 +60,7 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'venom',
     intended: 'y',
-    reason: 'Poison numbs its rage, so it never hits hard while Venom keeps it poisoned.',
+    reason: 'Poison numbs most of its rage, so its hits barely grow.',
   },
   {
     x: 'speedster',
@@ -78,7 +78,7 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'sniper',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'sniper',
@@ -133,7 +133,7 @@ export const BATCH_TWO_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'quake',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'quake',

@@ -36,7 +36,7 @@ export function readyTickOf(ball: BallState): number | undefined {
 export const quake = defineBall<QuakeState>({
   id: 'quake',
   name: 'Quake',
-  description: 'Every wall it hits sends out a shockwave that stops its enemy aiming.',
+  description: 'Wall hits send shockwaves that stagger: no aim for 4.5 s.',
   color: '#78716c',
   ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
   radius: STANDARD_BALL_RADIUS,
