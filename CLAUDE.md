@@ -38,8 +38,11 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   viewport during a test, which upsets later files' history in WebKit. A flow on a touch phone is
   `*.touch.browser.test.ts` (project `browsers-touch`: touch on, 375 x 812, and a `tap` command
   for real taps, ADR 0037). A flow that must also hold on a full HD screen is
-  `*.full.browser.test.ts` (project `browsers-full`, 1920 x 1080, ADR 0038). Needs the browsers
-  once:
+  `*.full.browser.test.ts` (project `browsers-full`, 1920 x 1080, ADR 0038). Two more phone sizes
+  run with touch (ADR 0039): `*.iphone.browser.test.ts` (project `browsers-iphone`, 390 x 844) and
+  `*.safari.browser.test.ts` (project `browsers-safari`, 390 x 664: what Safari leaves of that
+  iPhone with its toolbars shown, where a layout that fits the full screen can still squeeze the
+  court). Needs the browsers once:
   `pnpm exec playwright install chromium firefox webkit`.
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
@@ -130,8 +133,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0031-desktop-layouts.md`, `docs/decisions/0032-sticker-pop-restyle.md`,
 `docs/decisions/0033-arena-polish.md`, `docs/decisions/0034-chrono-titan-inferno.md` and
 `docs/decisions/0035-bot-levels-and-showdown.md` (measured in `docs/series-measurements.md`),
-`docs/decisions/0036-teaching-in-the-arena.md`, `docs/decisions/0037-clarity-fixes.md` and
-`docs/decisions/0038-one-look-per-screen-state.md`.
+`docs/decisions/0036-teaching-in-the-arena.md`, `docs/decisions/0037-clarity-fixes.md`,
+`docs/decisions/0038-one-look-per-screen-state.md`,
+`docs/decisions/0039-the-phone-arena-is-the-screen.md`, `docs/decisions/0040-settings.md` and
+`docs/decisions/0041-the-spark-marks-the-counter.md`.
 
 ## Workflow
 
@@ -207,8 +212,12 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   rule about a kind of ball ("shocked balls heal less", "a staggered ball can't aim", "a phased
   ball can't be touched, gripped or aimed at") over a pair trick, and must be visible the moment
   they act: return a `ruleApplied` action (or emit the event) so the arena shows the rule cue
-  (ADR 0028). Today there are three (`src/sim/rules.ts`): heal cut, aim held, rage numbed. Fill
-  counter gaps with new balls rather than more rules.
+  (ADR 0028). The cue sits on the ball whose ability caused the rule, read in the render layer
+  from the status the rule is about (`RULE_STATUS`, `ruleCauserId` in `src/render/rule-cue.ts`,
+  ADR 0041); a new rule adds its status there, its words in `src/ui/rule-words.ts` and its cast in
+  `src/ui/rule-cast.ts`, and every ball it involves names it in its description and in the
+  counter reasons it decides (`rule-text.test.ts`). Today there are three (`src/sim/rules.ts`):
+  heal cut, aim held, rage numbed. Fill counter gaps with new balls rather than more rules.
 - The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.
@@ -227,14 +236,21 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   widths (`--sheet-width`). Check every screen at 375×812 and at 1280×800, 1440×900 and
   1920×1080 before calling it done. The arena shows only when something is fighting; setup and
   reading screens, and a series between rounds, take the whole phone screen (ADR 0020, 0025),
-  and on a desktop setup and reading screens show no arena at all (ADR 0031).
+  and on a desktop setup and reading screens show no arena at all (ADR 0031). Setup and reading
+  screens start at the top, so every header sits in the same place; only the panel beside a match
+  centres (ADR 0039).
+- **The phone arena is the screen** (ADR 0039). On a phone, whenever the court shows it is as wide
+  as the page allows, and mid-fight the court, both health bars and speed fit on one screen with
+  no scroll, also at 390 × 664 (Safari with its toolbars). Anything opened mid-fight (the legend,
+  the full track) scrolls the page; it never squeezes the court. Measure a new part under the
+  court against `phone-arena-flow.ts` before adding it. Respect the safe areas.
 - **No dead ends** (ADR 0027). Every screen state offers at least one control that moves the
   player forward (or the result screen's buttons). A series screen renders only the actions of
   `seriesScreenOf`, and `no-dead-end.test.ts` walks every format, outcome order and pick, live and
   from a link; a new state or format must pass it.
 - **Teach in the arena, once** (ADR 0036). What a newcomer needs is shown at the moment it happens
   and read from sim events (a ball's `ability.shownBy`, a damage event's `via`), never guessed from
-  event order; tips show once per device (`src/app/tips.ts`) and can be turned off in the legend.
+  event order; tips show once per device (`src/app/tips.ts`) and are turned off in settings.
   A new ball with an ability to point at names it and the event that shows it.
 - **Show less by default** (ADR 0025). Information appears when the player wants it (on a tap, a
   `<details>` expander or a "more" link); anything shown is concise; visuals and symbols (ball
@@ -253,6 +269,11 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   `src/flows/consistency-flow.ts` checks at 375, 1280 and 1920 wide that every legend opens
   without losing its `?` and closes with the `?`, its Close and Escape. Escape only ever closes
   things; it never starts or picks.
+- **Settings** (ADR 0040) is one menu (`settings-menu.ts`) behind a gear at the top right of every
+  screen, just before the `?` where there is one; exactly one gear per screen. It floats by its
+  gear inside the visible screen and never moves the layout; the gear, Close, Escape and a tap
+  outside close it, with focus back on the gear. It holds only real per-device choices (speed,
+  ability hints, what-to-watch cards); the consistency flow checks it from every screen.
 - **Back** follows one rule for every move (ADR 0025, `src/app/history-rules.ts`): move between
   screens with `navigation.go`, never by choosing push or replace. A move on the same screen key
   replaces the entry, going to the screen this entry came from goes back to it, a series is one

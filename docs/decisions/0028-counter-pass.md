@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Amends: ADR 0010 (bands), ADR 0016 (two rules removed), ADR 0026 (phasing, minions)
+- Amended by: ADR 0041 (the rule cue sits on the ball that caused the rule, and its words)
 
 ## Context
 

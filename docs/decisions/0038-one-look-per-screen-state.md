@@ -5,6 +5,7 @@
 - Amends: ADR 0025 (§ the legend opens in place: it now also has its own Close), ADR 0035 (the
   series bar now also sits over round 1's pick), ADR 0037 (§4 where the ready card sits, and
   Escape no longer starts the match)
+- Amended by: ADR 0039 (§1: setup screens start at the top), ADR 0040 (the legend’s tips row moves to settings)
 
 ## Context
 

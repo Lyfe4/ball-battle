@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Amends: ADR 0032 (§4 the court, the Winner sticker), ADR 0025 (where "Leave series" sits)
+- Amended by: ADR 0039 (§2: on a phone Leave series shares a row with speed)
 
 ## Context
 
