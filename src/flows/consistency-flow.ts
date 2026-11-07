@@ -98,6 +98,24 @@ async function checkStory(where: string, prefix: RegExp): Promise<void> {
   expect(story.querySelectorAll('ol.match-story-moments > li').length, where).toBeGreaterThan(0);
 }
 
+/** Where each setup screen's header sits on the page: they must all match. */
+const headerTops = new Map<string, number>();
+
+/** Records the visible screen header's top, from the top of the page. */
+function noteHeaderTop(where: string): void {
+  const headers = visible('.screen-header');
+  expect(headers, where).toHaveLength(1);
+  const top = headers[0]?.getBoundingClientRect().top;
+  if (top !== undefined) headerTops.set(where, Math.round(top + window.scrollY));
+}
+
+/** Every setup screen's header starts in the same place: top-anchored, never centred. */
+function checkHeaderTops(): void {
+  const first = [...headerTops.values()][0];
+  const off = [...headerTops].filter(([, top]) => Math.abs(top - (first ?? top)) > 1);
+  expect({ off, screens: headerTops.size }).toStrictEqual({ off: [], screens: headerTops.size });
+}
+
 /**
  * A Reveal series against the Hard bot, set up and played live to its result (whatever the seed
  * makes of it: wins, losses, draws), then Free play and the manual.
@@ -115,6 +133,8 @@ export async function runConsistencyFlow(): Promise<void> {
   history.replaceState(null, '', start);
   await import('../main.ts');
   await settle();
+  headerTops.clear();
+  noteHeaderTop('series rules');
 
   visible('.rules-card')
     .find((card) => card.textContent.startsWith('Reveal'))
@@ -123,6 +143,7 @@ export async function runConsistencyFlow(): Promise<void> {
   button('Hard bot').click();
   button('Choose lineup').click();
   await settle();
+  noteHeaderTop('series lineup');
   for (const id of ['storm', 'berserker', 'brawler']) {
     visible('.ball-tile')
       .find((tile) => tile.dataset['ballId'] === id)
@@ -135,6 +156,7 @@ export async function runConsistencyFlow(): Promise<void> {
   expect(visible('.answer-step .series-bar-about')[0]?.textContent).toBe(
     'Best of 3 · Reveal · Hard',
   );
+  noteHeaderTop('round 1 pick');
   await checkLegend('round 1 pick');
   visible('.answer-step .pick-row-pick')[0]?.click();
 
@@ -160,6 +182,7 @@ export async function runConsistencyFlow(): Promise<void> {
 
   // Free play: the setup's legend, a new pairing's card, and the result's story (no round).
   await open('?view=pick&a=venom&b=titan');
+  noteHeaderTop('Free play setup');
   await checkLegend('Free play setup');
   await click(button('Start match'));
   await checkReady('Free play');
@@ -167,5 +190,9 @@ export async function runConsistencyFlow(): Promise<void> {
   await checkStory('Free play result', /^(?!Round)\S/);
 
   await open('?view=manual');
+  noteHeaderTop('manual');
   await checkLegend('manual');
+  await open('?view=manual&ball=storm');
+  noteHeaderTop('manual ball');
+  checkHeaderTops();
 }
