@@ -13,7 +13,7 @@ export function lifestealFor(amount: number): number {
 export const vampire = defineBall({
   id: 'vampire',
   name: 'Vampire',
-  description: 'Heals for 45% of the damage it deals.',
+  description: 'Heals 45% of the damage it deals; shock halves that.',
   color: '#a855f7',
   ability: { name: 'Lifesteal', shownBy: { kind: 'healed' } },
   radius: STANDARD_BALL_RADIUS,

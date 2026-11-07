@@ -1,6 +1,5 @@
 import { ruleCuePoints } from '../render/rule-cue.ts';
 import { theme } from '../render/theme.ts';
-import type { Tips } from '../app/tips.ts';
 import { element } from './dom.ts';
 import { SYMBOL_KEYS, SYMBOLS } from './symbols.ts';
 
@@ -37,39 +36,6 @@ function cueMark(): SVGSVGElement {
 }
 
 let legends = 0;
-
-/** The page's tips in the arena (ADR 0036), set once by main.ts so every legend can switch them. */
-let pageTips: Tips | undefined;
-export function installLegendTips(tips: Tips): void {
-  pageTips = tips;
-}
-
-/** The legend's last line: tips in the arena on or off, and a way to see them all again. */
-function tipsRow(): HTMLElement {
-  const row = element('p', 'symbol-legend-tips');
-  const toggle = element('button', 'text-link');
-  toggle.type = 'button';
-  const again = element('button', 'text-link', 'Show tips again');
-  again.type = 'button';
-  const render = () => {
-    const on = pageTips?.enabled() ?? true;
-    toggle.textContent = on ? 'Turn tips off' : 'Turn tips on';
-    toggle.setAttribute('aria-pressed', String(!on));
-  };
-  toggle.addEventListener('click', () => {
-    pageTips?.setEnabled(!pageTips.enabled());
-    render();
-  });
-  again.addEventListener('click', () => {
-    pageTips?.reset();
-    render();
-    again.textContent = 'Tips will show again';
-  });
-  row.append(element('span', '', 'Tips in the arena: '), toggle, ' · ', again);
-  row.hidden = pageTips === undefined;
-  render();
-  return row;
-}
 
 /**
  * The symbol legend: a `?` button in a screen's header that opens a short list of what each mark
@@ -112,12 +78,7 @@ export function createSymbolLegend(): SymbolLegend {
     open(false);
     toggle.focus();
   });
-  panel.append(
-    list,
-    element('p', 'symbol-legend-note', 'Favoured is never certain.'),
-    tipsRow(),
-    close,
-  );
+  panel.append(list, element('p', 'symbol-legend-note', 'Favoured is never certain.'), close);
 
   // While open, Escape closes it wherever focus is, and focus returns to the ?.
   const onKey = (event: KeyboardEvent) => {
@@ -127,8 +88,6 @@ export function createSymbolLegend(): SymbolLegend {
   };
   function open(expanded: boolean): void {
     panel.hidden = !expanded;
-    // The tips may have changed on another screen's legend since this one was built.
-    if (expanded) panel.querySelector('.symbol-legend-tips')?.replaceWith(tipsRow());
     toggle.setAttribute('aria-expanded', String(expanded));
     if (expanded) document.addEventListener('keydown', onKey);
     else document.removeEventListener('keydown', onKey);

@@ -11,7 +11,11 @@
   gap: var(--space-gap);
   /* dvh tracks the visible viewport on mobile as browser chrome shows and hides. */
   height: 100dvh;
-  padding: var(--space-gutter);
+  /* Clear of a notch, the home bar and rounded corners (viewport-fit=cover), never less than the gutter. */
+  padding: max(var(--space-gutter), env(safe-area-inset-top))
+    max(var(--space-gutter), env(safe-area-inset-right))
+    max(var(--space-gutter), env(safe-area-inset-bottom))
+    max(var(--space-gutter), env(safe-area-inset-left));
 }
 
 .arena-container {
@@ -35,6 +39,19 @@
 .hud-status {
   display: grid;
   gap: var(--space-small);
+}
+
+/*
+ * The court is the screen (ADR 0039). While a round is fought on a phone, opening something under
+ * it (the legend, the full track) makes the page scroll to it rather than squeezing the court; the
+ * shrink above is only for screens too short for even the closed panel.
+ */
+@media not all and (min-aspect-ratio: 5/4) {
+  .stage:has(.series[data-phase='playing'][data-track-open]),
+  .stage:has(.series[data-phase='playing'] .symbol-legend:not([hidden])) {
+    height: auto;
+    min-height: 100dvh;
+  }
 }
 
 @media (min-aspect-ratio: 5/4) {
@@ -86,9 +103,14 @@
     opacity: 0.3;
   }
 
+  /*
+   * A setup screen starts at the top, so its header sits in the same place on every screen; only
+   * the panel beside a match centres (the auto margins above, ADR 0038).
+   */
   .stage[data-setup] .hud {
     width: var(--setup-width);
     max-height: 100%;
+    margin-block: 0;
     overflow-y: auto;
   }
 }

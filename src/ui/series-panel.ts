@@ -16,7 +16,6 @@ import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesBar } from './series/series-bar.ts';
 import { createSeriesTrack } from './series/series-track.ts';
 import { createMatchStory } from './match-story.ts';
-import { createTossStrip } from './series/toss-strip.ts';
 import {
   lastPlayOf,
   seriesScreenOf,
@@ -84,14 +83,25 @@ export function createSeriesPanel(
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
 
+  // The full track. While a round plays on a phone it waits under the score line (ADR 0039):
+  // opened, it stays open for the rest of that round and closes when the next one starts.
+  const track = createSeriesTrack(definitions);
+  track.element.id = 'series-track';
+  /** The round being fought (0-based), and the round the track was opened in. */
+  let fought: number | undefined;
+  let trackOpenFor: number | undefined;
+  let drawBar = (): void => undefined;
+  const toggleTrack = () => {
+    trackOpenFor = trackOpenFor === undefined ? fought : undefined;
+    root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
+    drawBar();
+  };
+
   // What is being played, and the legend's ? for every symbol the series shows (ADR 0035).
-  const bar = createSeriesBar();
+  const bar = createSeriesBar({ id: track.element.id, onToggle: toggleTrack });
 
   const result = element('p', 'series-result');
-  const track = createSeriesTrack(definitions);
 
-  // Reveal's coin toss, over round 1 when the series opens here (a rematch).
-  const toss = createTossStrip();
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
@@ -119,7 +129,6 @@ export function createSeriesPanel(
     bar.legend,
     status,
     result,
-    toss.element,
     track.element,
     banner.element,
     picks.element,
@@ -176,7 +185,20 @@ export function createSeriesPanel(
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
-      bar.show(state.setup);
+      // The track's open state belongs to the round being fought, so a new round starts closed.
+      fought = playing ? current?.round : undefined;
+      if (trackOpenFor !== fought) trackOpenFor = undefined;
+      root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
+      const score = scoreOf(state);
+      drawBar = () => {
+        bar.show(
+          state.setup,
+          fought === undefined
+            ? undefined
+            : { round: fought, you: score.a, bot: score.b, open: trackOpenFor !== undefined },
+        );
+      };
+      drawBar();
       // The match just played, a drawn play included (ADR 0038).
       const last = playing ? undefined : lastPlayOf(state);
       story.show(
@@ -203,14 +225,16 @@ export function createSeriesPanel(
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';
-      // The toss stays over round 1 until it is played.
-      toss.element.hidden = !reveal || playing || roundsPlayed > 0 || state.pending.length > 0;
-      if (!toss.element.hidden) toss.show(revealFirst(state.setup.seed), state.setup.seed);
+      // Reveal's coin toss leads round 1's pick when the series opens here, a rematch (ADR 0041).
+      const toss =
+        reveal && roundsPlayed === 0 && state.pending.length === 0
+          ? { first: revealFirst(state.setup.seed), key: state.setup.seed }
+          : undefined;
       banner.element.hidden = !actions.includes('pick');
       picks.element.hidden = !actions.includes('pick');
       if (choice !== undefined) {
         picks.show(choice);
-        banner.show(choice);
+        banner.show(choice, toss);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
@@ -236,7 +260,7 @@ export function createSeriesPanel(
       if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
       else if (due === 'a' && choice !== undefined) {
-        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf);
+        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf, toss?.first);
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);

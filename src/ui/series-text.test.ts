@@ -7,6 +7,7 @@ import {
   FORMAT_LINES,
   FORMAT_NAMES,
   openLine,
+  bannerText,
   pickLine,
   showLine,
   playingLine,
@@ -108,5 +109,21 @@ describe('the pick asked for', () => {
     );
     expect(pickLine(choice('open'), 0, left, nameOf)).toBe(openLine(left, nameOf));
     expect(pickLine(choice('show'), 1, left, nameOf)).toBe(showLine(1, left, nameOf));
+  });
+
+  it('leads Reveal’s round 1 with the coin toss in words, whoever won it (ADR 0041)', () => {
+    const left = ['storm', 'frost'];
+    expect(bannerText(choice('show'), nameOf, 'a')).toStrictEqual({
+      lead: 'Coin toss: you show first.',
+      ask: 'Pick a ball; the bot answers.',
+    });
+    expect(bannerText(choice('answer', 'storm'), nameOf, 'b')).toStrictEqual({
+      lead: 'Coin toss: the bot shows first. It plays Storm.',
+      ask: 'Pick your answer.',
+    });
+    expect(bannerText(choice('answer', 'storm'), nameOf).lead).toBe('The bot plays Storm.');
+    expect(pickLine(choice('answer', 'storm'), 0, left, nameOf, 'b')).toMatch(
+      /^Coin toss: the bot shows first. /,
+    );
   });
 });

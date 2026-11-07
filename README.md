@@ -76,7 +76,10 @@ game; **Free play** lets you choose both balls of one match, to try things out. 
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
-([ADR 0025](docs/decisions/0025-show-less-and-back.md)).
+([ADR 0025](docs/decisions/0025-show-less-and-back.md)). A gear beside every `?` opens
+**Settings**: speed, and whether ability hints and what-to-watch cards show
+([ADR 0040](docs/decisions/0040-settings.md)). On a phone the court takes the whole width
+whenever it shows ([ADR 0039](docs/decisions/0039-the-phone-arena-is-the-screen.md)).
 
 The **Ball manual** lists every ball with what it does and who it is strong and weak vs, each with
 the reason, and a **matchup chart** of the whole counter map. Both are read from the ball
@@ -116,7 +119,7 @@ time), never decided, and each one comes from something you can watch happen:
 - **Speedster is strong vs Archer, Storm and Sniper**: it closes on arrows, outruns lightning
   warnings and is off the Sniper's locked line before the shot.
 - **Archer is strong vs Vampire, Frost, Thorns and Ghost**: arrows chip from range where lifesteal and
-  spikes can't answer, land most on the slowest ball, and are already flying when the Ghost turns solid.
+  spikes can't answer, land most on the slowest ball, and an arrow already flying still hits a phased Ghost.
 - **Storm is strong vs Vampire, Frost, Thorns and Necromancer**: its strike and touch shock the
   Vampire so it heals less; the slow can't leave a warning; a strike clears the skull and its owner.
 - **Vampire is strong vs Venom, Berserker and Quake**: lifesteal heals back the chip of poison and
@@ -144,8 +147,10 @@ time), never decided, and each one comes from something you can watch happen:
   skulls, covers a big body and never touches the spikes. **Speedster and Archer are strong vs the
   Inferno**: one outruns the fire, the other never has to cross it.
 
-Three rules between balls show a small spark beside the ball the moment they act: a shocked ball's
-heal is cut, a staggered ball's attack is held, a poisoned Berserker's rage is numbed. Every heal
+Three rules between balls show a small spark on the ball whose ability just countered the other,
+the moment they act: the Storm's shock halves a heal, the Quake's shockwave staggers a ball so it
+can't aim, the Venom's poison numbs the Berserker's rage
+([ADR 0041](docs/decisions/0041-the-spark-marks-the-counter.md)). Every heal
 shows as a green pulse sized by the heal.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
@@ -303,7 +308,10 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0030: Symbol tooltips and result fixes](docs/decisions/0030-symbol-tooltips-and-result-fixes.md)
 , [ADR 0031: Desktop layouts](docs/decisions/0031-desktop-layouts.md)
 , [ADR 0032: The Sticker Pop restyle](docs/decisions/0032-sticker-pop-restyle.md)
-and [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md).
+, [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md)
+, [ADR 0039: The phone arena is the screen](docs/decisions/0039-the-phone-arena-is-the-screen.md)
+, [ADR 0040: Settings](docs/decisions/0040-settings.md)
+and [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the

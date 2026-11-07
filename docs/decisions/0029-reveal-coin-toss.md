@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Amends: ADR 0021 (§1 the rule, §2 turns, §3 the bot, §5 screens)
+- Amended by: ADR 0041 (the toss is said in the pick banner; the strip is gone)
 
 ## Context
 

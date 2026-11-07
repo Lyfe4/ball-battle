@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTips, READY_CARD_STORAGE_KEY, type TipStorage } from './tips.ts';
+import { createTips, READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY, type TipStorage } from './tips.ts';
 
 function memory(): { storage: TipStorage; store: Map<string, string> } {
   const store = new Map<string, string>();
@@ -38,31 +38,50 @@ describe('tips', () => {
     expect(createTips(storage).takeReady('titan', 'venom')).toBe(true);
   });
 
-  it('turns the card off on its own, keeping the hints, until tips are reset', () => {
+  it('turns the cards off on their own, keeping the hints, and on again (ADR 0040)', () => {
     const { storage, store } = memory();
     const tips = createTips(storage);
-    tips.hideReadyCards();
+    tips.setReadyCards(false);
     expect(store.get(READY_CARD_STORAGE_KEY)).toBe('off');
+    expect(tips.readyCards()).toBe(false);
     expect(tips.takeReady('storm', 'chrono')).toBe(false);
-    expect(createTips(storage).takeReady('storm', 'chrono')).toBe(false);
+    expect(createTips(storage).readyCards()).toBe(false);
     expect(tips.takeHint('storm')).toBe(true);
-    tips.reset();
+    tips.setReadyCards(true);
+    expect(createTips(storage).readyCards()).toBe(true);
     expect(tips.takeReady('storm', 'chrono')).toBe(true);
   });
 
-  it('shows nothing when turned off, and everything again after a reset', () => {
+  it('turns the hints off on their own, keeping the cards', () => {
     const { storage } = memory();
     const tips = createTips(storage);
-    tips.takeHint('storm');
     tips.setEnabled(false);
     expect(createTips(storage).enabled()).toBe(false);
     expect(tips.takeHint('venom')).toBe(false);
-    expect(tips.takeReady('storm', 'venom')).toBe(false);
+    expect(tips.takeReady('storm', 'venom')).toBe(true);
+  });
+
+  it('shows everything again after a reset: both switches on, nothing seen', () => {
+    const { storage } = memory();
+    const tips = createTips(storage);
+    tips.takeHint('storm');
+    tips.takeReady('storm', 'venom');
+    tips.setEnabled(false);
+    tips.setReadyCards(false);
     tips.reset();
-    expect(tips.enabled()).toBe(true);
+    expect([tips.enabled(), tips.readyCards()]).toStrictEqual([true, true]);
     expect(tips.takeHint('storm')).toBe(true);
     expect(tips.takeReady('storm', 'venom')).toBe(true);
-    expect(createTips(storage).enabled()).toBe(true);
+    const later = createTips(storage);
+    expect([later.enabled(), later.readyCards()]).toStrictEqual([true, true]);
+  });
+
+  it('keeps the cards off for a device that turned all tips off before they were split', () => {
+    const { storage, store } = memory();
+    store.set(TIPS_STORAGE_KEY, 'off');
+    const tips = createTips(storage);
+    expect([tips.enabled(), tips.readyCards()]).toStrictEqual([false, false]);
+    expect(store.get(READY_CARD_STORAGE_KEY)).toBe('off');
   });
 
   it('still shows each hint once per page load when storage throws', () => {

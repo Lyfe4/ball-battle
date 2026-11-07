@@ -13,7 +13,7 @@ import { createRouter } from './app/router.ts';
 import { initialAppState, seriesRound } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
-import { loadSpeed, playbackSpeedFor, saveSpeed } from './app/speed.ts';
+import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
@@ -27,7 +27,7 @@ import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
-import { installLegendTips } from './ui/symbol-legend.ts';
+import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -56,7 +56,8 @@ const initialRoute = currentRoute();
 const storage = () => window.localStorage;
 const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 const tips = createTips(storage);
-installLegendTips(tips);
+/** The match on the arena has ended and its result is showing. */
+let matchOver = false;
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
@@ -269,6 +270,12 @@ const arena = createArena(
       router.current() === 'home' ? 'demo' : router.current() === 'series' ? 'series' : 'quick',
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
+      // A finished Free play match has no use for speed: it makes way (ADR 0039).
+      const over = world.match.status === 'finished' && resultShown;
+      if (over !== matchOver) {
+        matchOver = over;
+        showControls();
+      }
       // The round screen waits for the Winner sticker's moment (ADR 0033).
       series.update(world, celebrated);
       if (router.current() === 'home') home.drawn(resultShown);
@@ -276,10 +283,15 @@ const arena = createArena(
   },
 );
 
-createSpeedToggle(speedRoot, state.speed, (next) => {
+/** One remembered speed: the in-fight buttons and the settings menu both show and change it. */
+function setSpeed(next: PlaybackSpeed): void {
   state.speed = next;
   saveSpeed(storage, next);
-});
+  speedToggle.select(next);
+  refreshSettings();
+}
+const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
+installSettings({ tips, speed: () => state.speed, setSpeed });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
 let worldsShown = 0;
@@ -317,7 +329,7 @@ function showControls(): void {
     screen === 'series' && series.phase() !== undefined && series.phase() !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
   hudRoot.hidden = setup || screen === 'home' || roundOver;
-  speedRoot.hidden = setup || screen === 'home' || roundOver;
+  speedRoot.hidden = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
   document.title = TITLES[screen];

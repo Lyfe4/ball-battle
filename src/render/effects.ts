@@ -1,4 +1,4 @@
-import type { SimEvent, Vec2 } from '../sim/types.ts';
+import type { BallState, SimEvent, Vec2 } from '../sim/types.ts';
 import { impactsOf, impactStrength, shakeOf, type WallBounce } from './impact.ts';
 import {
   ghostDone,
@@ -10,6 +10,7 @@ import {
   type GhostEntry,
 } from './motion.ts';
 import { burst, burstSeed, particleAt, type Dot, type Particle } from './particles.ts';
+import { ruleCauserId } from './rule-cue.ts';
 import { theme } from './theme.ts';
 
 /** How long a damage flash lasts, in effect-time milliseconds. */
@@ -71,7 +72,8 @@ export interface WinnerRing {
  * from the final blow still fades out after the match has stopped ticking.
  */
 export interface Effects {
-  apply(events: readonly SimEvent[], nowMs: number): void;
+  /** `balls`: the world after these events, to put each rule cue on the ball that caused it. */
+  apply(events: readonly SimEvent[], nowMs: number, balls?: readonly BallState[]): void;
   /** Wall bounces read from consecutive worlds (see wallBounces). */
   bounced(bounces: readonly WallBounce[], nowMs: number): void;
   /** Reduced motion: no shake, squash, particles or shards; a static winner ring. */
@@ -173,7 +175,7 @@ export function createEffects(): Effects {
   };
 
   return {
-    apply(events, nowMs) {
+    apply(events, nowMs, balls = []) {
       for (const event of events) {
         if (event.type === 'damage') {
           flashStarts.set(event.targetId, nowMs);
@@ -188,7 +190,8 @@ export function createEffects(): Effects {
           healStarts.set(event.ballId, nowMs);
           healAmounts.set(event.ballId, before + event.amount);
         }
-        if (event.type === 'ruleApplied') cueStarts.set(event.ballId, nowMs);
+        // On the ball whose ability caused the rule (ADR 0041).
+        if (event.type === 'ruleApplied') cueStarts.set(ruleCauserId(event, balls), nowMs);
         if (event.type === 'projectileHit' || event.type === 'minionHit') {
           sparkStarts.push({ point: event.point, start: nowMs });
         }

@@ -49,7 +49,7 @@ export function chargeOf(ball: BallState): SniperCharge | undefined {
 export const sniper = defineBall<SniperState>({
   id: 'sniper',
   name: 'Sniper',
-  description: 'Locks onto its enemy, then fires one heavy shot down the line.',
+  description: 'Locks on and fires one heavy shot; stagger breaks the lock.',
   color: '#818cf8',
   ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,

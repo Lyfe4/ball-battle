@@ -1,0 +1,57 @@
+/*
+ * Reveal's coin toss in the pick banner (ADR 0029, 0041): a flat coin, the winner's name on its
+ * face, that flips three times and lands, then the words beside it say what it means. Reduced
+ * motion shows the landed coin at once.
+ */
+.series-coin {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  perspective: 120px;
+  transform-style: preserve-3d;
+}
+
+.series-coin-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-tiny);
+  font-weight: 800;
+  backface-visibility: hidden;
+}
+
+.series-coin-back {
+  background: var(--color-raised);
+  color: var(--color-text);
+  transform: rotateX(180deg);
+}
+
+.series-coin-flip .series-coin {
+  animation: series-coin-flip 600ms ease-out;
+}
+
+@keyframes series-coin-flip {
+  from {
+    transform: rotateX(0deg) translateY(0);
+  }
+
+  50% {
+    transform: rotateX(540deg) translateY(-8px);
+  }
+
+  to {
+    transform: rotateX(1080deg) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .series-coin-flip .series-coin {
+    animation: none;
+  }
+}

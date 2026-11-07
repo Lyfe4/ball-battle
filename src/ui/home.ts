@@ -1,3 +1,4 @@
+import { createSettingsToggle } from './settings-menu.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
@@ -83,7 +84,10 @@ export function createHome(
   const footer = element('p', 'home-footer');
   footer.append(source);
 
-  root.append(demo, title, pitch, series, more, strip, footer);
+  // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
+  const head = element('div', 'home-head');
+  head.append(title, createSettingsToggle());
+  root.append(demo, head, pitch, series, more, strip, footer);
 
   return {
     setVisible(visible) {

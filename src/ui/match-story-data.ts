@@ -1,7 +1,8 @@
 // "How it was won" (ADR 0036, 0037): a finished match retold from its own events, as pure data. The
 // match is replayed headlessly from its opening world, which is (seed, balls), so the story is
 // the fight itself and can never disagree with what was on screen (ADR 0001).
-import type { RuleId } from '../sim/rules.ts';
+import { ruleCauserId } from '../render/rule-cue.ts';
+import { RULE_WORDS } from './rule-words.ts';
 import { TICK_RATE } from '../sim/constants.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
@@ -52,12 +53,6 @@ export const MAX_MOMENTS = 4;
 export const BIG_HIT = 20;
 /** Kept in this order when there are more than MAX_MOMENTS. */
 const PRIORITY: readonly MomentKind[] = ['finish', 'lead', 'rule', 'bigHit'];
-
-const RULE_WORDS: Readonly<Record<RuleId, (name: string) => string>> = {
-  healCut: (name) => `Shock cut ${name}’s healing.`,
-  aimHeld: (name) => `${name} was staggered and couldn’t aim.`,
-  rageNumbed: (name) => `Poison numbed ${name}’s rage.`,
-};
 
 /** One ball's damage in words: its sources only when they say more than the total. */
 export function sourceWords(side: SideStory): string {
@@ -248,7 +243,10 @@ export function storyOf(
       candidates.push({
         tick: event.tick,
         kind: 'rule',
-        text: RULE_WORDS[event.rule](nameOf(event.ballId)),
+        text: RULE_WORDS[event.rule](
+          nameOf(ruleCauserId(event, start.balls)),
+          nameOf(event.ballId),
+        ),
       });
     }
     if (event.type === 'rewound') {

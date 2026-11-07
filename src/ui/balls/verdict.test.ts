@@ -9,7 +9,7 @@ describe('verdictOf', () => {
     const asA = verdictOf('storm', 'vampire', nameOf);
     expect(asA).toStrictEqual({
       headline: 'Storm is favoured',
-      reason: 'Lightning is ranged damage, which lifesteal cannot answer.',
+      reason: 'Shock halves its healing, so lifesteal can’t keep up.',
       leanOfA: 'favoured',
     });
     const asB = verdictOf('vampire', 'storm', nameOf);

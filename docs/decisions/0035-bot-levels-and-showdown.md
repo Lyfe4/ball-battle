@@ -5,7 +5,7 @@
 - Replaces: Loser picks next (ADR 0019 §3, the bot's `pickNext`)
 - Amends: ADR 0017 §4 (the bot), ADR 0021 §3 and §5 (the bot's answer, the round-2 rows), ADR 0022
   §5 (the opponent names a level), ADR 0025 §4 (pick rows), ADR 0030 §4 (touch)
-- Amended by: ADR 0038 (the series bar also sits over round 1's pick)
+- Amended by: ADR 0038 (the series bar also sits over round 1's pick), ADR 0039 (the series bar did shrink the arena on a phone, in Safari: see its Context)
 
 ## Context
 

@@ -206,7 +206,7 @@
     width: 100%;
     max-width: 56rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto 1fr;
     column-gap: var(--space-columns);
     align-items: start;
   }
@@ -215,12 +215,17 @@
     grid-area: 1 / 1 / 2 / -1;
   }
 
-  .answer-step > .series-toss {
+  /* The bar (what is played, the gear and the ?) heads the left column, as on a phone. */
+  .answer-step > .series-bar {
     grid-area: 2 / 1;
   }
 
+  .answer-step > .symbol-legend {
+    grid-area: 3 / 1;
+  }
+
   .answer-step > .series-track {
-    grid-area: 3 / 1 / -1 / 2;
+    grid-area: 4 / 1 / -1 / 2;
   }
 
   .answer-step > .series-banner {

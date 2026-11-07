@@ -36,7 +36,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'storm',
     y: 'vampire',
     intended: 'x',
-    reason: 'Lightning is ranged damage, which lifesteal cannot answer.',
+    reason: 'Shock halves its healing, so lifesteal can’t keep up.',
   },
   {
     x: 'speedster',
@@ -54,25 +54,25 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'speedster',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'brawler',
     y: 'vampire',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'brawler',
     y: 'archer',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'brawler',
     y: 'storm',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'frost',
@@ -90,7 +90,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'frost',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'frost',
@@ -156,7 +156,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'venom',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'venom',

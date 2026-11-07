@@ -24,7 +24,8 @@
 @import './ui/series/series-bar.css';
 @import './ui/series-panel.css';
 @import './ui/series/pick-rows.css';
-@import './ui/series/toss-strip.css';
+@import './ui/series/pick-banner.css';
+@import './ui/settings-menu.css';
 @import './ui/symbol-tooltip.css';
 @import './ui/winner-sticker.css';
 @import './ui/arena-tips.css';

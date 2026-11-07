@@ -93,3 +93,11 @@
     font-size: var(--font-size-lead);
   }
 }
+
+/* The title and the settings gear (ADR 0040), on one row. */
+.home-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+}

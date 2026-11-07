@@ -30,7 +30,7 @@ export function stacksOf(ball: BallState): number {
 export const speedster = defineBall<SpeedsterState>({
   id: 'speedster',
   name: 'Speedster',
-  description: 'Gains speed and damage off every wall bounce, then cashes it in on a hit.',
+  description: 'Wall bounces build speed and damage for its next hit.',
   color: '#facc15',
   ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   radius: STANDARD_BALL_RADIUS,

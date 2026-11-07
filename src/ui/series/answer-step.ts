@@ -7,7 +7,6 @@ import { createPickBanner } from './pick-banner.ts';
 import { createPickRows } from './pick-rows.ts';
 import { createSeriesBar } from './series-bar.ts';
 import { createSeriesTrack } from './series-track.ts';
-import { createTossStrip } from './toss-strip.ts';
 import { pickChoiceOf, trackOf } from './series-view.ts';
 
 export interface AnswerStep {
@@ -36,9 +35,11 @@ export interface AnswerActions {
  */
 export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerActions): AnswerStep {
   const root = element('section', 'series-step answer-step');
-  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack);
+  // The series bar under the heading holds this screen's gear and ? (ADR 0038, 0040).
+  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack, {
+    settings: false,
+  });
   const bar = createSeriesBar();
-  const toss = createTossStrip();
   const track = createSeriesTrack(lookup);
   const banner = createPickBanner(lookup);
   const status = element('p', 'visually-hidden');
@@ -48,7 +49,6 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
     header.element,
     bar.element,
     bar.legend,
-    toss.element,
     status,
     track.element,
     banner.element,
@@ -60,15 +60,17 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
     element: root,
     open(state) {
       bar.show(state.setup);
+      // Reveal's coin toss leads the banner (ADR 0029, 0041).
       const reveal = formatOf(state.setup) === 'reveal';
-      toss.element.hidden = !reveal;
-      if (reveal) toss.show(revealFirst(state.setup.seed), state.setup.seed);
+      const toss = reveal
+        ? { first: revealFirst(state.setup.seed), key: state.setup.seed }
+        : undefined;
       track.update(state, trackOf(state, undefined));
       const choice = pickChoiceOf(state);
       if (choice !== undefined) {
-        banner.show(choice);
+        banner.show(choice, toss);
         rows.show(choice);
-        status.textContent = pickLine(choice, 0, remainingOf(state, 'b'), nameOf);
+        status.textContent = pickLine(choice, 0, remainingOf(state, 'b'), nameOf, toss?.first);
       }
       header.focus();
     },

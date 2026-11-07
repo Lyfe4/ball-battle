@@ -16,7 +16,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'chrono',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'chrono',
@@ -101,7 +101,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'titan',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'titan',
@@ -186,7 +186,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'inferno',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'speedster',

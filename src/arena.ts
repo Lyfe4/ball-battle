@@ -192,7 +192,7 @@ export function createArena(
       );
       playback = outcome.playback;
       for (const { previous, result } of outcome.ticks) {
-        effects.apply(result.events, playback.effectMs);
+        effects.apply(result.events, playback.effectMs, result.world.balls);
         rewinds.apply(result.events, playback.effectMs);
         sourceChips.apply(result.events, playback.effectMs);
         tips.apply(result.events, result.world, playback.effectMs);

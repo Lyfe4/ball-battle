@@ -19,7 +19,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'magnet',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'magnet',
@@ -86,7 +86,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'ghost',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'ghost',
@@ -104,7 +104,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'ghost',
     intended: 'x',
-    reason: 'Arrows never needed contact, so phasing never stops them.',
+    reason: 'Arrows in flight still hit it phased; phasing only delays the next.',
   },
   {
     x: 'storm',
@@ -140,7 +140,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'sniper',
     y: 'ghost',
     intended: 'x',
-    reason: 'A shot still hits it while it is phased.',
+    reason: 'A shot locked before it phases still hits it.',
   },
   {
     x: 'quake',
@@ -160,7 +160,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'necromancer',
     intended: 'even',
-    reason: 'Safe pick: solid stats, no matchup decided by mechanics.',
+    reason: 'No tricks either way: plain hits decide it.',
   },
   {
     x: 'necromancer',

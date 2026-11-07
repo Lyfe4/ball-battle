@@ -90,14 +90,43 @@ export function pickLine(
   round: number,
   botLeft: readonly string[],
   nameOf: NameOf,
+  toss?: Side,
 ): string {
-  if (choice.facing !== undefined) return answerLine(round, choice.facing, nameOf);
-  return choice.kind === 'open' ? openLine(botLeft, nameOf) : showLine(round, botLeft, nameOf);
+  const head = toss === undefined ? '' : `${tossLine(toss)} `;
+  if (choice.facing !== undefined) return head + answerLine(round, choice.facing, nameOf);
+  return (
+    head + (choice.kind === 'open' ? openLine(botLeft, nameOf) : showLine(round, botLeft, nameOf))
+  );
 }
 
-/** Reveal's coin toss (ADR 0029), as the strip shows it: who shows first in round 1. */
+/** Reveal's coin toss (ADR 0029, 0041) in words: who shows first in round 1. */
 export function tossLine(first: Side): string {
-  return first === 'a' ? 'You show first' : 'Bot shows first';
+  return first === 'a' ? 'Coin toss: you show first.' : 'Coin toss: the bot shows first.';
+}
+
+/** A pick's prompt as two short sentences: what is happening, then what to do (ADR 0037). */
+export interface BannerText {
+  readonly lead: string;
+  readonly ask: string;
+}
+
+/**
+ * The pick banner's words. On Reveal's round 1 (`toss`, who won the coin toss) the lead says the
+ * toss first, so its result is never a bare "You" or "Bot" (ADR 0041).
+ */
+export function bannerText(choice: PickChoice, nameOf: NameOf, toss?: Side): BannerText {
+  if (choice.kind === 'answer' && choice.facing !== undefined) {
+    const plays = `${toss === 'b' ? 'It' : 'The bot'} plays ${nameOf(choice.facing)}.`;
+    const lead = toss === 'b' ? `${tossLine('b')} ${plays}` : plays;
+    return { lead, ask: 'Pick your answer.' };
+  }
+  if (choice.kind === 'open') {
+    return { lead: 'Pick your opener.', ask: 'The bot picks at the same time.' };
+  }
+  return {
+    lead: toss === 'a' ? tossLine('a') : 'You show first.',
+    ask: 'Pick a ball; the bot answers.',
+  };
 }
 
 /** "You 1 – 0 Bot". */
