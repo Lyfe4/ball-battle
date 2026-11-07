@@ -23,6 +23,10 @@ import { storm } from './storm.ts';
 import { thorns } from './thorns.ts';
 import { vampire } from './vampire.ts';
 import { venom } from './venom.ts';
+import { BOMB_RADIUS, bomber } from './bomber.ts';
+import { bloom } from './bloom.ts';
+import { boomerang } from './boomerang.ts';
+import { guardian } from './guardian.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -65,11 +69,30 @@ describe('the ball roster', () => {
       // It grows, which only widens the detection limit; its speed never changes.
       titan: titan.speed,
       inferno: inferno.speed,
+      // Its boomerang is a projectile, swept like an arrow (ADR 0005, 0043); the ball keeps its speed.
+      boomerang: boomerang.speed,
+      bomber: bomber.speed,
+      // A shield changes how much a hit takes, never a speed.
+      guardian: guardian.speed,
+      bloom: bloom.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {
       const closing = (topCruiseSpeed[a.id] ?? Infinity) + (topCruiseSpeed[b.id] ?? Infinity);
       expect(closing / ((a.radius + b.radius) / DT)).toBeLessThan(0.6);
+    }
+  });
+
+  it('would catch the fastest ball on a bomb by the plain overlap test too, though it is swept', () => {
+    // A bomb is set off by a swept touch (ADR 0043), so no speed can skip it. Even unswept, the
+    // fastest ball moves less per tick than 0.6 of the reach of a bomb's body and a ball.
+    const fastest = Math.max(
+      ...BALLS.map((ball) =>
+        ball.id === speedster.id ? speedForStacks(speedster.speed, MAX_STACKS) : ball.speed,
+      ),
+    );
+    for (const ball of BALLS) {
+      expect(fastest * DT).toBeLessThan(0.6 * (BOMB_RADIUS + ball.radius));
     }
   });
 });

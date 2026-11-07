@@ -61,7 +61,8 @@ export interface BallDesign {
   readonly facing: 'none' | 'velocity' | 'aim';
   /**
    * How the ball's zones look when they strike: a lightning bolt (the default), a clean shockwave
-   * ring that sweeps out to the zone's edge, or nothing beyond the burning patch's own flare.
+   * ring that sweeps out to the zone's edge, nothing beyond the burning patch's own flare, or a
+   * bomb's blast: a warm flash with a ring sweeping out (ADR 0043).
    */
-  readonly strike?: 'bolt' | 'shockwave' | 'burn';
+  readonly strike?: 'bolt' | 'shockwave' | 'burn' | 'blast';
 }

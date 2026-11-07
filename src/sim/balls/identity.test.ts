@@ -22,6 +22,20 @@ import { LIFESTEAL, vampire } from './vampire.ts';
 import { chrono, MOMENT_EVERY_TICKS, REWIND_MOMENTS } from './chrono.ts';
 import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
 import { MAX_RADIUS, titanRadius } from './titan.ts';
+import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
+import {
+  BLAST_DAMAGE,
+  BLAST_RADIUS,
+  BOMB_RADIUS,
+  bomber,
+  DROP_TICKS,
+  FUSE_TICKS,
+} from './bomber.ts';
+import { guardian, REGROW_TICKS } from './guardian.ts';
+import { bloom, CALM_TICKS, HEAL_AMOUNT, REGROW_PER_REST } from './bloom.ts';
+import { SHIELD_SOAK } from '../shield.ts';
+import { speedForStacks } from './speedster.ts';
+import { TICK_RATE } from '../constants.ts';
 
 describe('the ball roster: identity rules', () => {
   // What makes each ball itself. Balance tuning must keep these true; if a change needs to break
@@ -68,6 +82,36 @@ describe('the ball roster: identity rules', () => {
     for (const ball of others(inferno.id).filter((other) => other.id !== archer.id)) {
       expect(inferno.contactDamage).toBeLessThan(ball.contactDamage);
     }
+  });
+
+  it('Boomerang’s hits are lighter than an arrow, and it always gets home', () => {
+    expect(BOOMERANG_DAMAGE).toBeLessThan(ARROW_DAMAGE);
+    // Faster than any ball can go, a stacked Speedster included, so it always catches its owner.
+    const fastest = speedForStacks(speedster.speed, MAX_STACKS);
+    expect(BOOMERANG_SPEED).toBeGreaterThan(fastest * 1.2);
+    expect(Object.keys(boomerang.hooks)).toStrictEqual(['onTick']);
+  });
+
+  it('Bomber’s bombs are small to touch, wider to blast, and at most two lie at once', () => {
+    expect(BOMB_RADIUS).toBeLessThan(STANDARD_BALL_RADIUS);
+    expect(BLAST_RADIUS).toBeGreaterThan(BOMB_RADIUS);
+    expect(BLAST_RADIUS).toBeLessThan(STORM_ZONE_RADIUS);
+    expect(Math.ceil(FUSE_TICKS / DROP_TICKS)).toBeLessThanOrEqual(2);
+    expect(Object.keys(bomber.hooks)).toStrictEqual(['onTick']);
+  });
+
+  it('Guardian’s shield blunts a heavy hit rather than stopping it, and regrows in seconds', () => {
+    // A full block beat every heavy hitter, the Brawler most of all (ADR 0043).
+    expect(SHIELD_SOAK).toBeLessThan(brawler.contactDamage / 2);
+    expect(REGROW_TICKS).toBeGreaterThanOrEqual(3 * TICK_RATE);
+    expect(REGROW_TICKS).toBeLessThanOrEqual(8 * TICK_RATE);
+    expect(Object.keys(guardian.hooks)).toStrictEqual(['onTick']);
+  });
+
+  it('Bloom regrows only after a rest, a little at a time, and shock halves it exactly', () => {
+    expect(CALM_TICKS).toBeGreaterThanOrEqual(TICK_RATE);
+    expect(REGROW_PER_REST).toBeLessThanOrEqual(bloom.maxHealth / 10);
+    expect(HEAL_AMOUNT % 2).toBe(0);
   });
 
   it('Speedster is the fastest ball at base speed', () => {
@@ -117,6 +161,12 @@ describe('the ball roster: identity rules', () => {
       chrono: 0,
       titan: 0,
       inferno: BURN_DAMAGE,
+      // One hit each way; each is its own hit.
+      boomerang: BOOMERANG_DAMAGE,
+      bomber: BLAST_DAMAGE,
+      // A shield and regrowth deal nothing.
+      guardian: 0,
+      bloom: 0,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {

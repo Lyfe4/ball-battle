@@ -121,6 +121,10 @@ export const theme = {
     chrono: '#3b2410',
     titan: '#052e16',
     inferno: '#7c2d12',
+    boomerang: '#134e4a',
+    bomber: '#2e0627',
+    guardian: '#92400e',
+    bloom: '#831843',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -208,6 +212,45 @@ export const theme = {
   burnEdge: '#ffd166',
   burnEdgeWidth: 4,
   burnPulseTicks: 6,
+  /**
+   * Batch 5 (ADR 0043). The Boomerang's mark and its boomerang in flight: a bent bar as thick as
+   * this share of r (heavier at small size), spinning a full turn every few ticks while it flies.
+   */
+  boomerangArm: 0.2,
+  boomerangArmSimple: 0.28,
+  boomerangSpinTicks: 10,
+  boomerangFlightScale: 3.4,
+  /** The Bomber's bomb: its fuse spark, which flickers with the sim tick. */
+  bomberSpark: '#fde68a',
+  /**
+   * Its bombs on the floor: a dark body ringed in the owner's colour, a fuse arc around it that
+   * burns down to the blast, and a faint dashed circle for the blast's reach. Dim until armed.
+   */
+  bombBody: '#1c1917',
+  bombRingWidth: 5,
+  bombFuseWidth: 6,
+  bombFuse: '#fde68a',
+  bombReachAlpha: 0.5,
+  bombReachDash: [10, 12] as readonly number[],
+  bombAreaAlpha: 0.07,
+  bombUnarmedAlpha: 0.45,
+  /** A bomb going off: a warm flash over its reach and a ring sweeping out to its edge. */
+  blastFlash: '#fed7aa',
+  blastFlashMaxAlpha: 0.55,
+  blastRing: '#fb923c',
+  blastRingWidth: 10,
+  /**
+   * The Guardian's shield (a `shielded` status): a bright gold ring hugging the ball. When it
+   * breaks, its pieces fly out and fade.
+   */
+  shieldRing: '#fde047',
+  shieldRingWidth: 7,
+  shieldRingGap: 5,
+  shieldBreakMs: 450,
+  shieldShards: 6,
+  shieldShardFlight: 30,
+  /** The Bloom's flower: petals that open wide while it rests and regrows, and a pale centre. */
+  bloomCentre: '#fef9c3',
   /** The Necromancer's eyes, glowing out of its hood. */
   necromancerEyes: '#bef264',
   /**

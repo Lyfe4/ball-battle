@@ -16,6 +16,10 @@ import { thornsDesign } from './thorns.ts';
 import type { BallDesign } from './types.ts';
 import { vampireDesign } from './vampire.ts';
 import { venomDesign } from './venom.ts';
+import { boomerangDesign } from './boomerang.ts';
+import { bomberDesign } from './bomber.ts';
+import { guardianDesign } from './guardian.ts';
+import { bloomDesign } from './bloom.ts';
 
 /**
  * How each kind of ball looks, keyed by definition id. A ball without an entry is drawn as a
@@ -39,4 +43,8 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['chrono', chronoDesign],
   ['titan', titanDesign],
   ['inferno', infernoDesign],
+  ['boomerang', boomerangDesign],
+  ['bomber', bomberDesign],
+  ['guardian', guardianDesign],
+  ['bloom', bloomDesign],
 ]);

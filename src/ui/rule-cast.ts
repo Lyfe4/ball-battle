@@ -13,7 +13,12 @@ export interface RuleCast {
 }
 
 export const RULE_CAST: readonly RuleCast[] = [
-  { rule: 'healCut', causer: 'storm', affected: ['vampire'], word: /shock/i },
-  { rule: 'aimHeld', causer: 'quake', affected: ['archer', 'sniper', 'storm'], word: /stagger/i },
+  { rule: 'healCut', causer: 'storm', affected: ['vampire', 'bloom'], word: /shock/i },
+  {
+    rule: 'aimHeld',
+    causer: 'quake',
+    affected: ['archer', 'sniper', 'storm', 'boomerang'],
+    word: /stagger/i,
+  },
   { rule: 'rageNumbed', causer: 'venom', affected: ['berserker'], word: /numb/i },
 ];
