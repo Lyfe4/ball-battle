@@ -1,13 +1,15 @@
 // Teaching in the arena, at the moment things happen (ADR 0036): a short label by a ball the first
 // time this device sees its ability ("Lightning!"). Read from sim events and the definitions, so it
 // can't disagree with the fight; decoration (aria-hidden) that respects reduced motion
-// (arena-tips.css). Tips can be turned off in the symbol legend. The pairing's "what to watch" is
-// the ready card's (ready-card.ts, ADR 0037).
+// (arena-tips.css). The first time a rule acts, the ball whose ability caused it says so too
+// ("Shock halves healing!", ADR 0041). Hints can be turned off in settings (ADR 0040). The
+// pairing's "what to watch" is the ready card's (ready-card.ts, ADR 0037).
 import type { Tips } from '../app/tips.ts';
 import { showsAbility } from '../render/ability-sign.ts';
 import { theme } from '../render/theme.ts';
 import type { DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
 import { element } from './dom.ts';
+import { ruleHintOf } from './rule-words.ts';
 
 /** How long an ability hint shows, in effect-time milliseconds. */
 export const HINT_MS = 1600;
@@ -58,6 +60,9 @@ export function createArenaTips(
     apply(events, world, nowMs) {
       if (!teachingNow || !tips.enabled()) return;
       for (const event of events) {
+        if (event.type === 'ruleApplied' && tips.takeHint(`rule:${event.rule}`)) {
+          queue.push(ruleHintOf(event, world.balls));
+        }
         for (const ball of world.balls) {
           const ability = lookup.get(ball.definitionId)?.ability;
           if (ability === undefined || !showsAbility(event, ball.id, ability.shownBy)) continue;

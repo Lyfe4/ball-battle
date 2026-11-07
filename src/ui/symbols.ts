@@ -40,7 +40,7 @@ export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
     meaning: 'Opens the full series track',
     legendNote: 'on the score line during a round',
   },
-  cue: { mark: '', meaning: 'In a fight: a rule between two balls just kicked in (see each ball)' },
+  cue: { mark: '', meaning: 'In a fight: this ball’s ability just countered the other ball' },
 };
 
 export const SYMBOL_KEYS = Object.keys(SYMBOLS) as readonly SymbolKey[];
