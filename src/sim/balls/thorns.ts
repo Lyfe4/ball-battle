@@ -19,7 +19,7 @@ export function reflectFor(amount: number): number {
 export const thorns = defineBall({
   id: 'thorns',
   name: 'Thorns',
-  description: 'Spiked: every contact hit it takes hurts the attacker back.',
+  description: 'Spiked: every contact hit it takes hurts the attacker.',
   color: '#16a34a',
   ability: { name: 'Spikes', shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' } },
   radius: STANDARD_BALL_RADIUS,

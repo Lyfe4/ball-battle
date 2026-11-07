@@ -76,7 +76,7 @@ export function leadTarget(
 export const archer = defineBall<ArcherState>({
   id: 'archer',
   name: 'Archer',
-  description: 'Leads an arrow every 2 s, weak up close. Stagger stops its aim.',
+  description: 'Leads an arrow every 2 s; frail up close. Stagger stops aim.',
   color: '#22d3ee',
   ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,

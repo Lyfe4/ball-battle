@@ -28,7 +28,7 @@ export function rageFor(health: number, maxHealth: number): number {
 export const berserker = defineBall({
   id: 'berserker',
   name: 'Berserker',
-  description: 'Huge health; hits harder when hurt. Poison numbs its rage.',
+  description: 'Huge health; hits harder as it is hurt. Poison numbs rage.',
   color: '#f97316',
   radius: STANDARD_BALL_RADIUS,
   speed: 780,

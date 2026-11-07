@@ -76,20 +76,23 @@ pairs or turn over.
 
 The rest were accurate and kept; many run to two lines on a phone, and are left for now.
 
-**Descriptions**, each fitting two lines in the manual at 375 px (Speedster and Chrono were three):
+**Descriptions**, each fitting two lines in the manual at 375 px with 12 px to spare (text metrics
+differ a little between systems: Linux CI wrapped one that fit on Windows). Speedster, Chrono and
+Thorns were three lines; Thorns's words are unchanged in meaning.
 
-| Ball                                                     | Now                                                              |
-| -------------------------------------------------------- | ---------------------------------------------------------------- |
-| Storm                                                    | Calls lightning every 2 s. Shock halves heals; stagger stops it. |
-| Vampire                                                  | Heals for 45% of the damage it deals. Shock halves its healing.  |
-| Venom                                                    | Light hits poison for 4.5 s: it chips away and numbs rage.       |
-| Berserker                                                | Huge health; hits harder when hurt. Poison numbs its rage.       |
-| Quake                                                    | Wall hits send shockwaves that stagger: no aim for 4.5 s.        |
-| Archer                                                   | Leads an arrow every 2 s, weak up close. Stagger stops its aim.  |
-| Sniper                                                   | Locks on, then fires one heavy shot. A stagger breaks its lock.  |
-| Ghost ✱ "nothing can aim at it", but shots in flight hit | Phases out 1 s in 4: hits, skulls, pulls and new aim miss it.    |
-| Speedster                                                | Wall bounces build speed and damage, spent on its next hit.      |
-| Chrono                                                   | Once a match, rewinds half a second to undo a knockout hit.      |
+| Ball                                                     | Now                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------- |
+| Storm                                                    | Lightning every 2 s; shock halves heals. Stagger stops it.    |
+| Vampire                                                  | Heals 45% of the damage it deals; shock halves that.          |
+| Venom                                                    | Light hits poison for 4.5 s: it chips away and numbs rage.    |
+| Berserker                                                | Huge health; hits harder as it is hurt. Poison numbs rage.    |
+| Quake                                                    | Wall hits send shockwaves that stagger: no aim for 4.5 s.     |
+| Archer                                                   | Leads an arrow every 2 s; frail up close. Stagger stops aim.  |
+| Sniper                                                   | Locks on and fires one heavy shot; stagger breaks the lock.   |
+| Ghost ✱ "nothing can aim at it", but shots in flight hit | Phases out 1 s in 4: hits, skulls, pulls and new aim miss it. |
+| Speedster                                                | Wall bounces build speed and damage for its next hit.         |
+| Chrono                                                   | Once a match, it rewinds half a second to undo a knockout.    |
+| Thorns                                                   | Spiked: every contact hit it takes hurts the attacker.        |
 
 ### 3. The coin toss is said in the pick banner
 
@@ -111,7 +114,8 @@ as on a phone, instead of sitting below the track.
 - `ui/rule-text.test.ts`: for each rule (`ui/rule-cast.ts`, checked against real matches by the
   test above), the causer's and each affected ball's description name it, as does each counter
   reason between them. Shown failing on the old text.
-- `manual-text.touch.browser.test.ts`: every description fits two lines at 375 × 812.
+- `manual-text.touch.browser.test.ts`: every description fits two lines at 375 × 812, with 12 px to
+  spare.
 - `series-text.test.ts`: the banner and status words with the toss; the consistency flow and
   `series-result.wide` check the round 1 screen and a rematch say "Coin toss: …" (the rematch
   check failed on the old banner).
