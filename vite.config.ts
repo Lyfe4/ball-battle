@@ -3,6 +3,9 @@ import { configDefaults, defineConfig, type TestProjectInlineConfiguration } fro
 import type { BrowserCommand } from 'vitest/node';
 import { SECURITY_HEADERS } from './scripts/security-headers.ts';
 
+/** Before every browser test file: no series saved by another file's flow (ADR 0042). */
+const BROWSER_SETUP = 'src/flows/browser-setup.ts';
+
 const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
   await context.iframe.locator(selector).first().tap();
 };
@@ -32,6 +35,7 @@ function phoneProject(
         instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
         commands: { tap },
       },
+      setupFiles: [BROWSER_SETUP],
     },
   };
 }
@@ -86,6 +90,7 @@ export default defineConfig({
             '**/*.iphone.browser.test.ts',
             '**/*.safari.browser.test.ts',
           ],
+          setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -105,6 +110,7 @@ export default defineConfig({
           // WebKit, so Back left the page.
           name: 'browsers-wide',
           include: ['src/**/*.wide.browser.test.ts'],
+          setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -122,6 +128,7 @@ export default defineConfig({
           // the legend bug was found: fixed at 1920 x 1080 for the same reason as browsers-wide.
           name: 'browsers-full',
           include: ['src/**/*.full.browser.test.ts'],
+          setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
             provider: playwright(),
