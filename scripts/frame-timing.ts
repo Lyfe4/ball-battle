@@ -1,5 +1,5 @@
-// Times the arena's frame callback in headless Chromium on a throttled phone profile (ADR 0034,
-// the method of ADR 0027 and 0028): 375 x 812 at 2x density with 4x CPU throttling, over a few
+// Times the arena's frame callback in headless Chromium on a throttled phone profile (ADR 0034 and
+// 0043, the method of ADR 0027 and 0028): 375 x 812 at 2x density with 4x CPU throttling, over a few
 // whole matches, at 60 Hz (the browser's own requestAnimationFrame) and at 90 and 120 Hz (a fixed
 // driver that calls the frame callbacks on that rhythm). Prints frames, median, p95, max and the
 // count over 16.7 ms per rate. Needs a running server (pnpm dev or pnpm preview).
@@ -16,11 +16,11 @@ const base = process.argv[2] ?? 'http://localhost:5199/';
 
 /** The matches to time: the newest balls' busiest moments, each played to its end. */
 const MATCHES: readonly (readonly [string, string, number])[] = [
-  ['inferno', 'necromancer', 3],
-  ['titan', 'speedster', 3],
-  ['chrono', 'storm', 6],
-  ['inferno', 'titan', 2],
-  ['chrono', 'inferno', 4],
+  ['bomber', 'speedster', 3],
+  ['boomerang', 'necromancer', 3],
+  ['guardian', 'venom', 6],
+  ['bloom', 'storm', 2],
+  ['bomber', 'boomerang', 4],
 ];
 
 /**
