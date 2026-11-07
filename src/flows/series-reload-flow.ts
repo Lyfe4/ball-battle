@@ -19,7 +19,7 @@ import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { formatOf, remainingOf, type Format, type Lineup } from '../sim/series.ts';
+import type { Format, Lineup } from '../sim/series.ts';
 import { settle } from './page-support.ts';
 import {
   backIn,
@@ -34,117 +34,30 @@ import {
   type Framed,
 } from './reload-support.ts';
 
-const storage = () => window.localStorage;
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import {
+  checkBotHidden,
+  fightShown,
+  reloadsTo,
+  steady,
+  storage,
+  tapBall,
+  wait,
+  type Screen,
+} from './reload-screen.ts';
 
-/** What the player sees: the URL, the title, every visible part's words, and the court. */
-interface Screen {
+/** A decided series' link, and the balls of its round 1. */
+interface Shared {
   readonly search: string;
-  readonly title: string;
-  readonly parts: readonly string[];
-  /** The court's size and pixels, where the opening drawn is checked. */
-  readonly court?: string;
+  readonly round1: readonly [string, string];
 }
-
-/** The parts of the page a series screen is made of. The Winner sticker (see-through between rounds, ADR 0033) is left out. */
-const PARTS = [
-  '#series-setup',
-  '#series',
-  '#series-exit',
-  '#hud-status',
-  '#hud-speed',
-  '.ready-layer',
-];
-
-function screenOf(framed: Framed, court: boolean): Screen {
-  const doc = framed.doc();
-  const parts = PARTS.map((selector) => {
-    const part = doc.querySelector<HTMLElement>(selector);
-    if (part?.closest('[hidden]') !== null) return `${selector}: -`;
-    return `${selector}: ${part.innerText.replace(/\s+/g, ' ').trim()}`;
-  });
-  const canvas = doc.querySelector<HTMLCanvasElement>('#arena');
-  const drawn =
-    court && canvas !== null
-      ? `${String(canvas.width)}x${String(canvas.height)} ${canvas.toDataURL()}`
-      : undefined;
-  return {
-    search: framed.win().location.search,
-    title: doc.title,
-    parts,
-    ...(drawn === undefined ? {} : { court: drawn }),
-  };
-}
-
-/** Waits for the screen to stop changing (the ready moment's pop-in, a layout settling). */
-async function steady(framed: Framed, court: boolean): Promise<Screen> {
-  let last = screenOf(framed, court);
-  for (let tries = 0; tries < 40; tries += 1) {
-    await wait(400);
-    const now = screenOf(framed, court);
-    if (JSON.stringify(now) === JSON.stringify(last)) return now;
-    last = now;
-  }
-  return last;
-}
-
-/** Reloads and checks the page comes back to `expected` (by default, the screen before it). */
-async function reloadsTo(framed: Framed, where: string, court: boolean, expected?: Screen) {
-  const before = expected ?? (await steady(framed, court));
-  await reload(framed);
-  const end = Date.now() + 15_000;
-  let after = screenOf(framed, court);
-  while (JSON.stringify(after) !== JSON.stringify(before) && Date.now() < end) {
-    await wait(300);
-    after = screenOf(framed, court);
-  }
-  expect({ where, ...after }).toStrictEqual({ where, ...before });
-  return before;
-}
-
-/**
- * In Blind the bot's balls stay hidden until each round starts (ADR 0017): none it hasn't played
- * yet is in the URL, the page's words or any accessible name, unless the player has it too.
- */
-function checkBotHidden(framed: Framed, where: string): void {
-  const session = loadSeries(storage, BALL_LOOKUP);
-  if (session === undefined || formatOf(session.state.setup) !== 'blind') return;
-  if (session.state.winner !== undefined) return;
-  const { state, current } = session;
-  const hidden = remainingOf(state, 'b').filter(
-    (id) => id !== current?.b && !state.setup.a.includes(id),
-  );
-  const doc = framed.doc();
-  const said = [
-    framed.win().location.href,
-    doc.body.innerText,
-    ...shown(framed, '[aria-label], [title]').map(
-      (node) => `${node.getAttribute('aria-label') ?? ''} ${node.getAttribute('title') ?? ''}`,
-    ),
-  ].join(' ');
-  const named = hidden.filter(
-    (id) => said.includes(id) || said.includes(BALL_LOOKUP.get(id)?.name ?? id),
-  );
-  expect({ where, named, lineupInUrl: paramOf(framed, 'lb') }).toStrictEqual({
-    where,
-    named: [],
-    lineupInUrl: null,
-  });
-}
-
-function tapBall(framed: Framed, id: string): void {
-  const name = BALL_LOOKUP.get(id)?.name;
-  const tile = shown(framed, '.lineup-step .ball-tile').find((node) =>
-    node.textContent.includes(name ?? id),
-  );
-  if (tile === undefined) throw new Error(`No tile for ${id}`);
-  tile.click();
-}
-
-const fightShown = (framed: Framed) => shown(framed, '.ready-fight').length === 1;
 
 /** A whole series played live, reloaded at every step and once left with Back and resumed. */
-async function liveSeries(framed: Framed, format: Format, level: string, own: Lineup) {
+async function liveSeries(
+  framed: Framed,
+  format: Format,
+  level: string,
+  own: Lineup,
+): Promise<Shared> {
   storage().setItem(BOT_LEVEL_STORAGE_KEY, level);
   const fmt = format === 'blind' ? '' : `&fmt=${format}`;
   await visit(framed, `?mode=bo3${fmt}&step=lineup`);
@@ -210,11 +123,72 @@ async function liveSeries(framed: Framed, format: Format, level: string, own: Li
 
   // Decided: now the link names both lineups. New series forgets it.
   expect(paramOf(framed, 'lb')).not.toBeNull();
+  const first = loadSeries(storage, BALL_LOOKUP)?.state.rounds[0];
+  if (first === undefined) throw new Error('No round 1 saved');
+  const shared: Shared = { search: framed.win().location.search, round1: [first.a, first.b] };
   buttonIn(framed, 'New series').click();
   await settle();
   expect(paramOf(framed, 'step')).toBe('lineup');
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
+  return shared;
+}
+
+/**
+ * A copied link opened in a fresh browser (nothing saved) replays the series from round 1, as links
+ * always have (ADR 0017): only the device that played it carries on at its result.
+ */
+async function sharedLinkFromRoundOne(framed: Framed, shared: Shared): Promise<void> {
+  for (const key of [SERIES_STORAGE_KEY, SERIES_SETUP_STORAGE_KEY]) storage().removeItem(key);
+  await visit(framed, shared.search);
+  await waitFor(() => fightShown(framed), 15_000, 'the shared link’s round 1');
+  const names = shown(framed, '.hud-ball-name').map((row) => row.textContent);
+  const [you, bot] = shared.round1.map((id) => BALL_LOOKUP.get(id)?.name ?? id);
+  expect({
+    phase: seriesPhase(framed),
+    search: framed.win().location.search,
+    round: shown(framed, '#series')[0]?.innerText.includes('Round 1'),
+    you: names[0]?.includes(you ?? ''),
+    bot: names[1]?.includes(bot ?? ''),
+  }).toStrictEqual({ phase: 'playing', search: shared.search, round: true, you: true, bot: true });
+}
+
+/**
+ * Leave series is asked once, in place (ADR 0042): the row says what is lost and offers Leave and
+ * Stay, each a full tap target. Stay (a tap, or Escape) keeps the series as it was and puts focus
+ * back on the link; only Leave leaves.
+ */
+async function leaveIsAskedOnce(framed: Framed): Promise<void> {
+  const before = storage().getItem(SERIES_STORAGE_KEY);
+  const asked = () => shown(framed, '.leave-confirm-row').length === 1;
+  for (const answer of ['Stay', 'Escape'] as const) {
+    buttonIn(framed, 'Leave series').click();
+    await settle();
+    expect(asked()).toBe(true);
+    expect(shown(framed, '.series-leave')).toHaveLength(0);
+    expect(framed.doc().activeElement?.textContent).toBe('Stay');
+    expect(shown(framed, '.leave-confirm-question')[0]?.textContent).toBe(
+      'Leave? You’ll lose this series',
+    );
+    for (const name of ['Leave', 'Stay']) {
+      expect(buttonIn(framed, name).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    }
+    if (answer === 'Stay') buttonIn(framed, 'Stay').click();
+    else {
+      framed.doc().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    }
+    await settle();
+    expect({ answer, asked: asked(), step: paramOf(framed, 'step') }).toStrictEqual({
+      answer,
+      asked: false,
+      step: 'play',
+    });
+    expect(framed.doc().activeElement?.textContent).toBe('Leave series');
+    expect(storage().getItem(SERIES_STORAGE_KEY)).toBe(before);
+  }
+  buttonIn(framed, 'Leave series').click();
+  await settle();
+  buttonIn(framed, 'Leave').click();
 }
 
 /** A saved position put back by a fresh visit to a round's URL, then reloaded again. */
@@ -264,7 +238,7 @@ async function leavingAndBadSaves(framed: Framed): Promise<void> {
   saveSeries(storage, fight);
   await visit(framed, '?mode=bo3&step=play');
   await waitFor(() => fightShown(framed), 10_000, 'Fight! before Leave');
-  buttonIn(framed, 'Leave series').click();
+  await leaveIsAskedOnce(framed);
   await waitFor(() => paramOf(framed, 'step') === 'lineup', 10_000, 'the lineup after Leave');
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
@@ -303,7 +277,8 @@ export async function runSeriesReloadFlow(): Promise<void> {
   for (const key of [SERIES_STORAGE_KEY, SERIES_SETUP_STORAGE_KEY]) storage().removeItem(key);
   const framed = await openFramed('?mode=bo3');
 
-  await liveSeries(framed, 'blind', 'normal', ['storm', 'venom', 'quake']);
+  const blind = await liveSeries(framed, 'blind', 'normal', ['storm', 'venom', 'quake']);
+  await sharedLinkFromRoundOne(framed, blind);
   await liveSeries(framed, 'reveal', 'hard', ['frost', 'titan', 'archer']);
   await liveSeries(framed, 'showdown', 'easy', ['brawler', 'ghost', 'inferno']);
   await drawsAndSuddenDeath(framed);

@@ -1,0 +1,55 @@
+/*
+ * Leave series, asked once (ADR 0042): the link's row turns into the question and two buttons, in
+ * place, with no modal. Stay is the primary (the safe default); Leave is the plain button.
+ */
+.leave-confirm {
+  display: grid;
+}
+
+.leave-confirm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.leave-confirm-row[hidden] {
+  display: none;
+}
+
+.leave-confirm-question {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  text-align: center;
+}
+
+.leave-confirm-row .hud-button {
+  flex: 0 1 8rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .leave-confirm-row {
+    animation: leave-confirm-in 160ms ease-out both;
+  }
+}
+
+@keyframes leave-confirm-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* Room on a desktop for the question and both buttons on one line. */
+  .leave-confirm-question {
+    flex-basis: auto;
+    margin-inline-end: var(--space-small);
+  }
+}
