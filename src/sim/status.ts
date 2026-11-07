@@ -10,8 +10,10 @@ import type { BallState } from './types.ts';
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
  * - staggered: can't aim. A ball that aims (the Archer, Storm and Sniper) holds its next attack
  *   until the stagger ends, and a Sniper's locked aim breaks (ADR 0016).
+ * - shielded: the next hit on the ball, of any kind, is blocked completely and breaks the shield
+ *   (ADR 0043, `shield.ts`).
  */
-export type StatusKind = 'shocked' | 'slowed' | 'poisoned' | 'staggered';
+export type StatusKind = 'shocked' | 'slowed' | 'poisoned' | 'staggered' | 'shielded';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {

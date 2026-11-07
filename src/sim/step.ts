@@ -43,8 +43,9 @@ import type {
  * new world and never mutates the input, so callers can keep earlier states for comparison or
  * replay. `definitions` must be the same lookup every tick of a match.
  *
- * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009, 0012); events come out in the
- * same order:
+ * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009, 0012, 0043); events come out in
+ * the same order. Wherever damage is dealt below, a shielded ball's shield takes the hit first: it
+ * soaks up to SHIELD_SOAK of it and breaks, and only the rest lands (ADR 0043):
  *  1. A finished match is returned as is, with no events.
  *  2. Statuses whose expiry tick is this tick are removed (ADR 0009), so every hook below already
  *     sees them gone.
@@ -63,11 +64,15 @@ import type {
  *     move this tick.
  * 9b. Projectiles move and resolve: swept against each ball's (and minion's) motion this tick,
  *     the nearest hit before a wall deals ability damage (ADR 0005), or destroys an enemy minion
- *     that comes first. Projectiles spawned in steps 3-8 already move this tick.
+ *     that comes first. Projectiles spawned in steps 3-8 already move this tick. A returning
+ *     projectile (ADR 0043) turns on its turn tick or at a wall, then homes on its owner; a hit
+ *     doesn't stop it (once per ball each way), its owner catches it, and a minion stops it.
  * 10. Zones whose strike tick is this tick strike: each deals ability damage to every live ball
  *     other than its owner that overlaps it now, then applies its status (if any) to the balls it
  *     hit, destroys every enemy minion inside it, then is removed (ADR 0006, 0009, 0026). A zone
- *     always strikes at least one tick after it was spawned.
+ *     always strikes at least one tick after it was spawned. A zone with a trigger (a bomb,
+ *     ADR 0043) also strikes now if a solid enemy ball's swept path touched its body this tick, once
+ *     it is armed.
  * 11. Poison ticks: every poisoned ball whose poison is due takes its source's ability damage
  *     (ADR 0012).
  * 12. onDamageDealt hooks for every damage event so far this tick (contact, projectile, zone and
@@ -172,7 +177,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   const combat = applyContactDamage(balls, newContacts, definitions, tick);
   balls = combat.balls;
-  events.push(...combat.damage);
+  events.push(...combat.damage, ...combat.blocked);
 
   const phasedIds = new Set(balls.filter(isPhasedBall).map((ball) => ball.id));
   phase(hitBallInvocations(newContacts, (id) => phasedIds.has(id)));
@@ -207,7 +212,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   minions = flight.minions;
   events.push(...flight.events);
 
-  const strikes = resolveZones(zones, balls, definitions, tick, minions);
+  const strikes = resolveZones(zones, balls, definitions, tick, minions, startPositions);
   balls = strikes.balls;
   zones = strikes.zones;
   minions = strikes.minions;
@@ -215,7 +220,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   const poison = resolvePoison(balls, definitions, tick);
   balls = poison.balls;
-  events.push(...poison.damage);
+  events.push(...poison.events);
 
   const damageSoFar = (): DamageEvent[] =>
     events.filter((event): event is DamageEvent => event.type === 'damage');

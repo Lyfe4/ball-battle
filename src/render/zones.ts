@@ -3,6 +3,7 @@ import { ownerColor } from './ball-colors.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { boltPoints, burnLook, strikeProgress } from './zone-geometry.ts';
 import type { Strike } from './effects.ts';
+import { drawBlast, drawBomb } from './bombs.ts';
 import { theme } from './theme.ts';
 
 /**
@@ -19,6 +20,10 @@ export function drawZones(
   for (const zone of world.zones) {
     if (zone.endTick !== undefined) {
       drawBurn(ctx, zone, world.tick);
+      continue;
+    }
+    if (zone.trigger !== undefined) {
+      drawBomb(ctx, zone, ownerColor(world.balls, definitions, zone.ownerId), world.tick);
       continue;
     }
     const { x, y } = zone.position;
@@ -115,9 +120,14 @@ export function drawStrikes(
   world: WorldState,
   strikes: readonly Strike[],
 ): void {
-  for (const { zoneId, ownerId, position, radius, strength } of strikes) {
+  for (const strike of strikes) {
+    const { zoneId, ownerId, position, radius, strength } = strike;
     const owner = world.balls.find((ball) => ball.id === ownerId);
     const style = owner === undefined ? undefined : BALL_DESIGNS.get(owner.definitionId)?.strike;
+    if (style === 'blast') {
+      drawBlast(ctx, strike);
+      continue;
+    }
     if (style === 'shockwave') {
       drawShockwave(ctx, position, radius, strength);
       continue;

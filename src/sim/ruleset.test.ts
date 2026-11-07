@@ -24,6 +24,7 @@ const FINGERPRINTS: Readonly<Record<number, string>> = {
   4: '0cc1471bbc3b73069e8f3a48903a6af1e18b9aaaaf8da8c377ad65353bfd0a3f',
   5: '925d3b22e2fcedf46c38411b40ae1dd0a3974aa70f0b3b7359e68ce78fca40e8',
   6: '97f73b186fbe7f6c4e8747ce78e765575348444cef5ea0a0ace800d84b0f4410',
+  7: 'bcd34175bd9d0b0dcdb68c872d997458e7c6eb58480ac69fac1cddf82d3230f9',
 };
 
 function fingerprint(): string {

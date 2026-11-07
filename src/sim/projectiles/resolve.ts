@@ -4,6 +4,7 @@ import { DT } from '../constants.ts';
 import type { BallState, DefinitionLookup, ProjectileState, SimEvent, Vec2 } from '../types.ts';
 import { addScaled, scale } from '../vec2.ts';
 import type { MinionState } from '../minions/types.ts';
+import { resolveReturning } from './returning.ts';
 import { sweepHitTime, wallHitTime } from './sweep.ts';
 
 export interface ProjectileResult {
@@ -42,6 +43,26 @@ export function resolveProjectiles(
   const events: SimEvent[] = [];
 
   for (const projectile of projectiles) {
+    if (projectile.returning !== undefined) {
+      const flown = resolveReturning(
+        projectile,
+        projectile.returning,
+        current,
+        startPositions,
+        standing,
+        minionStarts,
+        definitions,
+        arenaSize,
+        tick,
+      );
+      current = flown.balls;
+      if (flown.destroyedMinionId !== undefined) {
+        standing = standing.filter((minion) => minion.id !== flown.destroyedMinionId);
+      }
+      if (flown.projectile !== undefined) remaining.push(flown.projectile);
+      events.push(...flown.events);
+      continue;
+    }
     const travel = scale(projectile.velocity, DT);
     let nearest: { readonly s: number; readonly ball: BallState } | undefined;
     for (const ball of current) {
@@ -91,7 +112,11 @@ export function resolveProjectiles(
         },
       );
     } else if (nearest !== undefined && (wallS === undefined || nearest.s <= wallS)) {
-      const { balls: afterHit, damage } = dealAbilityDamage(
+      const {
+        balls: afterHit,
+        damage,
+        events: hitEvents,
+      } = dealAbilityDamage(
         current,
         projectile.ownerId,
         nearest.ball.id,
@@ -108,7 +133,7 @@ export function resolveProjectiles(
         point: addScaled(projectile.position, travel, nearest.s),
         amount: damage?.amount ?? 0,
       });
-      if (damage !== undefined) events.push(damage);
+      events.push(...hitEvents);
     } else if (wallS !== undefined) {
       events.push({ type: 'projectileExpired', ...base, reason: 'wall' });
     } else if (projectile.ticksLeft <= 1) {

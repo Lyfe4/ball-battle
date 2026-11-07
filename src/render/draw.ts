@@ -20,6 +20,7 @@ import { drawHealPulse, drawRuleCue, drawSourceChip } from './draw-cues.ts';
 import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
+import { drawShieldBreak } from './shield-ring.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 
@@ -54,6 +55,8 @@ export interface FrameEffects {
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
   /** Rule cue strength for a ball, 0 to 1 (ADR 0028). */
   readonly cue: (ballId: string) => number;
+  /** A shield just broke on this ball: 1 down to 0 (ADR 0043). */
+  readonly shieldBreak: (ballId: string) => number;
   /** Rewinds being shown: the Chrono's trail back and its ghost (ADR 0034). */
   readonly rewinds: readonly RewindTrail[];
   /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
@@ -77,6 +80,7 @@ export const NO_EFFECTS: FrameEffects = {
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
   cue: () => 0,
+  shieldBreak: () => 0,
   rewinds: [],
   chips: [],
   reducedMotion: false,
@@ -145,6 +149,7 @@ export function drawWorld(
       const pulse = { strength: heal, amount: effects.healAmount(ball.id), maxHealth };
       drawHealPulse(ctx, ball, pulse, effects.reducedMotion);
       drawStatuses(ctx, ball, world.tick, effects.reducedMotion);
+      drawShieldBreak(ctx, ball, effects.shieldBreak(ball.id), effects.reducedMotion);
     }
   });
   drawKnockouts(ctx, world, definitions, effects.knockouts);

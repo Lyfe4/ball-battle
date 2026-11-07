@@ -1,6 +1,7 @@
 import type { PairContact } from './collision.ts';
 import { CONTACT_SLOP, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
+import { isShielded, soakHit, type ShieldBrokenEvent } from './shield.ts';
 import type {
   BallDefeatedEvent,
   BallDefinition,
@@ -84,6 +85,8 @@ export function contactDamageOf(ball: BallState, definition: BallDefinition): nu
 export interface DamageResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
+  /** Shields that took a hit and broke (ADR 0043); the rest of each hit is in `damage`. */
+  readonly blocked: readonly ShieldBrokenEvent[];
 }
 
 /** One ball's hit on another, before it is applied. `raw` is not yet clamped to the target's health. */
@@ -108,6 +111,7 @@ export function applyContactDamage(
 ): DamageResult {
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
   const damage: DamageEvent[] = [];
+  const blocked: ShieldBrokenEvent[] = [];
 
   const pendingHit = (target: BallState, source: BallState, directness: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
@@ -120,7 +124,8 @@ export function applyContactDamage(
     };
   };
 
-  const apply = ({ target, source, raw, multiplier }: PendingHit, survives: boolean): BallState => {
+  const apply = (hit: PendingHit, survives: boolean): BallState => {
+    const { target, source, raw, multiplier } = hit;
     // A survivor keeps 1 health (or less, if it somehow had less) instead of dropping to 0.
     const healthAfter = survives ? Math.min(target.health, 1) : Math.max(0, target.health - raw);
     const amount = target.health - healthAfter;
@@ -140,20 +145,30 @@ export function applyContactDamage(
     return { ...target, health: healthAfter };
   };
 
+  // A shield takes its hit first (ADR 0043): it soaks up to SHIELD_SOAK and breaks.
+  const soak = (hit: PendingHit): PendingHit => {
+    if (!isShielded(hit.target)) return hit;
+    const soaked = soakHit(hit.target, hit.source.id, hit.raw, tick);
+    blocked.push(soaked.event);
+    return { ...hit, target: soaked.ball, raw: soaked.rest };
+  };
+
   for (const { ballIds, directness, phased } of newContacts) {
     // Passing through a phased ball deals no contact damage either way (ADR 0026).
     if (phased) continue;
     const a = byId.get(ballIds[0]);
     const b = byId.get(ballIds[1]);
     if (a === undefined || b === undefined) continue;
-    const toA = pendingHit(a, b, directness[1]);
-    const toB = pendingHit(b, a, directness[0]);
-    const mutualLethal = isAlive(a) && isAlive(b) && toA.raw >= a.health && toB.raw >= b.health;
+    const toA = soak(pendingHit(a, b, directness[1]));
+    const toB = soak(pendingHit(b, a, directness[0]));
+    // A hit soaked whole deals nothing, so it is never lethal.
+    const lethal = (hit: PendingHit) => hit.raw > 0 && hit.raw >= hit.target.health;
+    const mutualLethal = isAlive(a) && isAlive(b) && lethal(toA) && lethal(toB);
     byId.set(a.id, apply(toA, mutualLethal && toB.raw > toA.raw));
     byId.set(b.id, apply(toB, mutualLethal && toA.raw > toB.raw));
   }
 
-  return { balls: balls.map((ball) => byId.get(ball.id) ?? ball), damage };
+  return { balls: balls.map((ball) => byId.get(ball.id) ?? ball), damage, blocked };
 }
 
 /**

@@ -1,7 +1,9 @@
 // Extras for the style guide's phone arena (ADR 0034): a burning patch behind the Inferno, just
 // after a burn, and the Chrono's rewind trail, to check both read at phone size.
 import { PATCH_RADIUS } from '../sim/balls/inferno.ts';
-import type { BallState, ZoneState } from '../sim/types.ts';
+import { BLAST_RADIUS, BOMB_RADIUS, FUSE_TICKS } from '../sim/balls/bomber.ts';
+import { BOOMERANG_RADIUS } from '../sim/balls/boomerang.ts';
+import type { BallState, ProjectileState, ZoneState } from '../sim/types.ts';
 import type { RewindTrail } from '../render/rewind.ts';
 import { TICK } from './tick.ts';
 
@@ -39,4 +41,49 @@ export function batchFourExtras(balls: readonly BallState[]): {
           },
         ];
   return { zones, rewinds };
+}
+
+/**
+ * Batch 5 in the phone arena (ADR 0043): a bomb lying beside the Bomber, part-way down its fuse, a
+ * boomerang in flight beside the Boomerang, and the Guardian behind its shield.
+ */
+export function batchFiveExtras(balls: readonly BallState[]): {
+  readonly zones: readonly ZoneState[];
+  readonly projectiles: readonly ProjectileState[];
+  readonly shieldedId: string | undefined;
+} {
+  const bomber = balls.find((ball) => ball.definitionId === 'bomber');
+  const zones: ZoneState[] =
+    bomber === undefined
+      ? []
+      : [
+          {
+            id: 'zone-1',
+            ownerId: bomber.id,
+            position: { x: bomber.position.x, y: bomber.position.y + 95 },
+            radius: BLAST_RADIUS,
+            damage: 0,
+            spawnTick: TICK - 80,
+            strikeTick: TICK - 80 + FUSE_TICKS,
+            trigger: { radius: BOMB_RADIUS, armTick: TICK - 60 },
+          },
+        ];
+  const thrower = balls.find((ball) => ball.definitionId === 'boomerang');
+  const projectiles: ProjectileState[] =
+    thrower === undefined
+      ? []
+      : [
+          {
+            id: 'projectile-0',
+            ownerId: thrower.id,
+            position: { x: thrower.position.x + 85, y: thrower.position.y - 40 },
+            velocity: { x: 1, y: 0 },
+            radius: BOOMERANG_RADIUS,
+            damage: 0,
+            ticksLeft: 1,
+            returning: { turnTick: TICK, back: true, hitIds: [] },
+          },
+        ];
+  const shieldedId = balls.find((ball) => ball.definitionId === 'guardian')?.id;
+  return { zones, projectiles, shieldedId };
 }

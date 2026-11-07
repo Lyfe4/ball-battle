@@ -1,7 +1,8 @@
 import { applyActions, dealAbilityDamage, sceneOf } from '../abilities/apply-actions.ts';
 import { isAlive } from '../combat.ts';
 import type { MinionState } from '../minions/types.ts';
-import type { BallState, DefinitionLookup, SimEvent, ZoneState } from '../types.ts';
+import type { BallState, DefinitionLookup, SimEvent, Vec2, ZoneState } from '../types.ts';
+import { triggeredBy } from './trigger.ts';
 
 export interface ZoneResult {
   readonly balls: readonly BallState[];
@@ -44,7 +45,9 @@ function isSpent(zone: ZoneState, tick: number): boolean {
  * are. Zones strike in spawn order and each strike is applied before the next, so a ball brought
  * to 0 health by one zone is not hit by the next. A zone with a status applies it to each ball it
  * hit, right after that ball's damage (ADR 0009); a ball the strike defeated gets none. Then it
- * destroys every enemy minion inside it (ADR 0026).
+ * destroys every enemy minion inside it (ADR 0026). A zone with a trigger (ADR 0043) also strikes
+ * early, on the tick a solid enemy ball first touches its body once it is armed, swept on its
+ * motion this tick (from `startPositions`).
  */
 export function resolveZones(
   zones: readonly ZoneState[],
@@ -52,6 +55,7 @@ export function resolveZones(
   definitions: DefinitionLookup,
   tick: number,
   minions: readonly MinionState[] = [],
+  startPositions: ReadonlyMap<string, Vec2> = new Map(),
 ): ZoneResult {
   let current = balls;
   let standing = minions;
@@ -59,13 +63,14 @@ export function resolveZones(
   const events: SimEvent[] = [];
 
   for (const zone of zones) {
-    const pulse = pulseAt(zone, tick);
+    const setOffBy = triggeredBy(zone, tick, current, startPositions, definitions);
+    const pulse = setOffBy === undefined ? pulseAt(zone, tick) : 0;
     if (pulse === undefined) {
       if (!isSpent(zone, tick)) remaining.push(zone);
       continue;
     }
-    // A lasting zone stays for its next pulse; a strike-once zone is used up.
-    if (!isSpent(zone, tick)) remaining.push(zone);
+    // A lasting zone stays for its next pulse; a strike-once zone (or one set off) is used up.
+    if (setOffBy === undefined && !isSpent(zone, tick)) remaining.push(zone);
     const hitIds: string[] = [];
     const damage: SimEvent[] = [];
     for (const ball of current) {
@@ -81,9 +86,10 @@ export function resolveZones(
         zone.endTick === undefined ? 'zone' : 'zonePulse',
       );
       current = result.balls;
+      // A shield that blocks the strike breaks, and the ball takes no status either (ADR 0043).
+      damage.push(...result.events);
       if (result.damage === undefined) continue;
       hitIds.push(ball.id);
-      damage.push(result.damage);
       if (zone.status !== undefined) {
         // Through an applyStatus action, like the damage: statuses only ever come from actions.
         const applied = applyActions(
@@ -116,6 +122,7 @@ export function resolveZones(
         radius: zone.radius,
         hitIds,
         ...(zone.endTick === undefined ? {} : { pulse }),
+        ...(setOffBy === undefined ? {} : { triggeredBy: setOffBy }),
       },
       ...damage,
     );

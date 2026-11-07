@@ -51,7 +51,7 @@ describe('matchups', () => {
   });
 
   it('scales stats against the roster’s best, so the best has a full bar', () => {
-    for (const key of ['health', 'hit'] as const) {
+    for (const key of ['health', 'hit', 'speed'] as const) {
       const shares = BALLS.map((ball) => statShares(ball, BALLS)[key]);
       expect(Math.max(...shares)).toBe(1);
       expect(Math.min(...shares)).toBeGreaterThan(0);

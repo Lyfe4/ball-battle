@@ -59,11 +59,14 @@ export interface StatShares {
   /** Each stat as a share of the roster's highest, 0 to 1, for bars that compare balls. */
   readonly health: number;
   readonly hit: number;
+  /** Base cruise speed: what every ball travels at (ADR 0008) before any ability changes it. */
+  readonly speed: number;
 }
 
 /**
  * Speed as a trait, only where it defines a ball: the roster's fastest or slowest by base speed.
- * The rest differ by a few percent, too little for a bar to show anything.
+ * Its bar starts from zero like the others, so a few percent barely shows; the chip names the two
+ * extremes.
  */
 export function speedTrait(
   ball: BallDefinition,
@@ -81,6 +84,7 @@ export function statShares(ball: BallDefinition, roster: readonly BallDefinition
   return {
     health: ball.maxHealth / most((b) => b.maxHealth),
     hit: ball.contactDamage / most((b) => b.contactDamage),
+    speed: ball.speed / most((b) => b.speed),
   };
 }
 

@@ -8,6 +8,11 @@ export interface SpawnRequest {
   readonly radius: number;
   readonly damage: number;
   readonly lifetimeTicks: number;
+  /**
+   * Makes it a returning projectile (ADR 0043): it turns back this many ticks after it is thrown
+   * (or at a wall), homes on its owner, and can hit each enemy once each way.
+   */
+  readonly returnAfterTicks?: number;
 }
 
 export interface SpawnResult {
@@ -26,7 +31,9 @@ function assertValid(owner: BallState, request: SpawnRequest): number {
     radius > 0 &&
     Number.isFinite(damage) &&
     Number.isInteger(lifetimeTicks) &&
-    lifetimeTicks > 0;
+    lifetimeTicks > 0 &&
+    (request.returnAfterTicks === undefined ||
+      (Number.isInteger(request.returnAfterTicks) && request.returnAfterTicks >= 1));
   if (!valid) {
     throw new Error(`An ability of "${owner.id}" tried to spawn an invalid projectile`);
   }
@@ -84,6 +91,9 @@ export function spawnProjectile(
       radius,
       damage: request.damage,
       ticksLeft: request.lifetimeTicks,
+      ...(request.returnAfterTicks === undefined
+        ? {}
+        : { returning: { turnTick: tick + request.returnAfterTicks, back: false, hitIds: [] } }),
     },
     events: [fired],
   };

@@ -151,6 +151,15 @@ blind picks. See Decisions below.
   the **Inferno** leaves burning patches (vs Ghost, Necromancer, Titan, Thorns; the Speedster and
   Archer over it). Planned counters the data didn't support (Archer and Sniper over the Titan,
   Inferno over the Frost) were replaced.
+- **Batch 5** (2026-11-07, ADR 0043) adds three reusable mechanics and four balls. The
+  **Boomerang**'s boomerang hits going out and coming back (vs Vampire, Ghost, Inferno; the
+  Speedster, Quake, Titan, Necromancer and Bloom over it). The **Bomber**'s bombs blow when an
+  enemy ball runs into one, so the fastest ball runs into most (vs Speedster; the Archer over it).
+  The **Guardian**'s shield soaks part of the next hit and regrows (vs Vampire; Venom, Inferno and
+  Thorns over it). The **Bloom** regrows a little after each hit if left alone (vs Boomerang,
+  Necromancer, Bomber; Venom and Thorns over it). A full-block shield and uncapped regrowth were
+  measured first and capped, because contact hits are rare and heavy here: a full block
+  hard-countered every heavy hitter, the Brawler most of all. The Brawler stays even with all four.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

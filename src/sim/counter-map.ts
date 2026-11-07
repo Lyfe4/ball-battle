@@ -6,6 +6,8 @@
 import { BATCH_TWO_ENTRIES } from './counter-map-batch-2.ts';
 import { BATCH_THREE_ENTRIES } from './counter-map-batch-3.ts';
 import { BATCH_FOUR_ENTRIES } from './counter-map-batch-4.ts';
+import { BATCH_FIVE_ENTRIES } from './counter-map-batch-5.ts';
+import { BATCH_FIVE_DEFENDER_ENTRIES } from './counter-map-batch-5-defenders.ts';
 import { FIRST_ENTRIES } from './counter-map-first.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
@@ -25,6 +27,8 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
   ...BATCH_TWO_ENTRIES,
   ...BATCH_THREE_ENTRIES,
   ...BATCH_FOUR_ENTRIES,
+  ...BATCH_FIVE_ENTRIES,
+  ...BATCH_FIVE_DEFENDER_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */

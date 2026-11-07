@@ -10,6 +10,7 @@ import {
   shockedHeal,
   withStatus,
 } from '../status.ts';
+import { isShielded, soakHit } from '../shield.ts';
 import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import { rewindBall } from './rewind.ts';
@@ -104,20 +105,30 @@ export function applyActions(
         update(action.targetId, (target) => {
           const amount = Math.min(target.health, Math.max(0, action.amount));
           if (amount <= 0) return undefined;
-          const healthAfter = target.health - amount;
+          // A shield takes the hit first: it soaks up to SHIELD_SOAK and breaks (ADR 0043).
+          let struck = target;
+          let hit = amount;
+          if (isShielded(target)) {
+            const soaked = soakHit(target, ownerId, amount, tick);
+            events.push(soaked.event);
+            if (soaked.rest <= 0) return soaked.ball;
+            struck = soaked.ball;
+            hit = soaked.rest;
+          }
+          const healthAfter = struck.health - hit;
           events.push({
             type: 'damage',
             tick,
-            targetId: target.id,
+            targetId: struck.id,
             sourceId: ownerId,
             cause: 'ability',
-            amount,
+            amount: hit,
             healthAfter,
             multiplier: 1,
             survivedLethal: false,
             ...(via === undefined ? {} : { via }),
           });
-          return { ...target, health: healthAfter };
+          return { ...struck, health: healthAfter };
         });
         break;
       case 'heal':
@@ -260,8 +271,10 @@ export function applyActions(
 
 /**
  * Ability damage from `ownerId` to one ball, through the same path as the `damage` action. Used
- * by projectile hits, zone strikes, minions and poison, each naming itself as `via`. `damage` is the event, or undefined if nothing was removed
- * (the target was already defeated, or the amount was 0).
+ * by projectile hits, zone strikes, minions and poison, each naming itself as `via`. `damage` is
+ * the event, or undefined if nothing was removed (the target was already defeated, the amount was
+ * 0, or a shield blocked it). `events` is what the hit produced: its damage event, or the
+ * `shieldBroken` of a blocked hit (ADR 0043).
  */
 export function dealAbilityDamage(
   balls: readonly BallState[],
@@ -271,7 +284,11 @@ export function dealAbilityDamage(
   definitions: DefinitionLookup,
   tick: number,
   via: DamageVia,
-): { readonly balls: readonly BallState[]; readonly damage: DamageEvent | undefined } {
+): {
+  readonly balls: readonly BallState[];
+  readonly damage: DamageEvent | undefined;
+  readonly events: readonly SimEvent[];
+} {
   const result = applyActions(
     sceneOf(balls),
     ownerId,
@@ -283,5 +300,5 @@ export function dealAbilityDamage(
     via,
   );
   const damage = result.events.find((event) => event.type === 'damage');
-  return { balls: result.balls, damage };
+  return { balls: result.balls, damage, events: result.events };
 }

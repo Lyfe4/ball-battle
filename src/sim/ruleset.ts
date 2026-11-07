@@ -12,4 +12,4 @@
 // colours) need no bump. After a bump, run `pnpm golden` to record the new known match results
 // (`src/golden/golden-matches.json`, ADR 0023).
 
-export const RULESET_VERSION = 6;
+export const RULESET_VERSION = 7;
