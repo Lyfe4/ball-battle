@@ -3,24 +3,23 @@
  * Winner sticker's smaller cousin, with a chunky pink Fight! (the second accent marks the moment the
  * player acts). It pops in once and Fight! breathes while it waits, only when motion is welcome.
  */
-.ready-layer {
+/*
+ * On a phone the card hangs from the arena's bottom rim, over the series bar and track (not needed
+ * while the player is about to start), so the whole court and both starting balls stay in view: a
+ * readable card covers most of a 343 px arena wherever it sits.
+ */
+.arena-container {
   position: relative;
-  z-index: 2;
-  grid-area: 1 / 1;
+}
+
+.ready-layer {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% - var(--space-gap));
+  left: 0;
+  right: 0;
   display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  padding: var(--space-small);
-}
-
-/* The card keeps clear of the balls' starting positions (placeFor). */
-.ready-layer[data-place='top'] {
-  align-items: start;
-}
-
-.ready-layer[data-place='bottom'] {
-  align-items: end;
+  justify-items: center;
 }
 
 .ready-card {
@@ -121,6 +120,31 @@
   min-height: var(--tap-target);
   color: var(--color-on-sticker-muted);
   font-size: var(--font-size-tiny);
+}
+
+/*
+ * With the panel beside the arena (layout.css's wide layout) the court is tall and the card covers
+ * about a third of it: it sits over the court, in the band its starting balls leave clearest
+ * (placeFor).
+ */
+@media (min-aspect-ratio: 5/4) {
+  .ready-layer {
+    position: relative;
+    top: auto;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    padding: var(--space-sheet);
+  }
+
+  .ready-layer[data-place='top'] {
+    align-items: start;
+  }
+
+  .ready-layer[data-place='bottom'] {
+    align-items: end;
+  }
 }
 
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {

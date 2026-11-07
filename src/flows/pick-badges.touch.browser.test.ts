@@ -15,7 +15,8 @@ declare module 'vitest/browser' {
 }
 
 const step = () => new URL(location.href).searchParams.get('step');
-const tooltip = () => visible('.symbol-tooltip').map((tip) => tip.textContent);
+const tooltip = () =>
+  visible('.symbol-tooltip').flatMap((tip) => [...tip.children].map((line) => line.textContent));
 
 describe('pick rows on a touch phone', () => {
   it('explains a mark on a tap, picks on a tap elsewhere on the row, then waits on Fight!', async () => {
@@ -36,12 +37,15 @@ describe('pick rows on a touch phone', () => {
     const box = badge.getBoundingClientRect();
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
 
-    // A tap on the first row's first mark: both balls named, who has the edge, why. No pick.
+    // A tap on the first row's first mark: both balls named, who has the edge, and why (a mirror
+    // needs no why). The bot's lineup is drawn at random, so any ball can be first. No pick.
     await commands.tap('.answer-step .pick-row-badge');
     await settle();
-    const [edge, why] = tooltip()[0]?.split(/(?<=favoured|even)/) ?? [];
-    expect(edge).toMatch(/^Your Chrono vs the bot’s \S+: (you’re favoured|even|.+ is favoured)/);
-    expect(why?.length).toBeGreaterThan(0);
+    const [edge, why] = tooltip();
+    expect(edge).toMatch(
+      /^Your Chrono vs the bot’s \S+: (you’re favoured|even|\S+ is favoured|a mirror, even)$/,
+    );
+    if (edge?.endsWith('a mirror, even') !== true) expect(why?.length).toBeGreaterThan(0);
     expect(step()).toBe('answer');
 
     // Rows start no text selection and open no long-press menu.

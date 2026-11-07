@@ -22,10 +22,13 @@ export interface MatchStoryView {
 export function createMatchStory(lookup: DefinitionLookup): MatchStoryView {
   const root = element('details', 'match-story');
   const summary = element('summary', 'match-story-summary');
+  // The label and the result are one line of text, so a long result wraps as a sentence.
+  const line = element('span', 'match-story-line');
   const label = element('span', 'match-story-label');
   const result = element('span', 'match-story-result');
+  line.append(label, result);
   const more = element('span', 'match-story-more', 'How it was won');
-  summary.append(label, result, more);
+  summary.append(line, more);
   const body = element('div', 'match-story-body');
   root.append(summary, body);
   root.hidden = true;
