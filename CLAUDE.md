@@ -135,7 +135,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Work on a branch and open a pull request; never commit to `main` directly. Once every CI check on
   the pull request passes, merge it yourself with a merge commit (keep the individual commits, no
   squash), then delete the branch. If a check fails, fix it on the branch first: never merge a red
-  pull request.
+  pull request. "Every CI check" means the four CI jobs and Netlify's deploy preview. Netlify's
+  header rules, pages changed and redirect rules checks are informational and can stay pending, so
+  don't wait on them (a failure in one is still worth a look).
 
 ## Conventions
 
