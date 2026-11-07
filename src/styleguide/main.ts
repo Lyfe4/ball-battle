@@ -15,7 +15,8 @@ import { ARENA_SIZE } from '../sim/constants.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { batchFourExtras } from './arena-extras.ts';
+import { batchFiveExtras, batchFourExtras } from './arena-extras.ts';
+import { SHIELD_TICKS } from '../sim/shield.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
@@ -163,7 +164,18 @@ function phoneArena(): HTMLElement {
     cue: (id: string) => (cued.has(id) ? 0.6 : 0),
   };
   const { zones, rewinds } = batchFourExtras(balls);
-  drawWorld(ctx, { ...world, tick: TICK, balls, minions, zones }, BALL_LOOKUP, view, {
+  const late = batchFiveExtras(balls);
+  const shield = {
+    kind: 'shielded',
+    sourceId: '',
+    expiresTick: SHIELD_TICKS,
+    sinceTick: 0,
+  } as const;
+  const shown = balls.map((ball) =>
+    ball.id === late.shieldedId ? { ...ball, statuses: [shield] } : ball,
+  );
+  const extras = { zones: [...zones, ...late.zones], projectiles: late.projectiles };
+  drawWorld(ctx, { ...world, tick: TICK, balls: shown, minions, ...extras }, BALL_LOOKUP, view, {
     ...effects,
     rewinds,
   });

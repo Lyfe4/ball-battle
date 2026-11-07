@@ -4,6 +4,7 @@ import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { aimLineOf, laserAlpha } from './aim-line.ts';
 import { ownerColor } from './ball-colors.ts';
 import type { Spark } from './effects.ts';
+import { drawBoomerangBar } from './ball-designs/boomerang.ts';
 import { theme } from './theme.ts';
 
 /** Arrows and other projectiles: a short streak behind a round head, in the owner's colour. */
@@ -14,6 +15,10 @@ export function drawProjectiles(
 ): void {
   for (const projectile of world.projectiles) {
     const color = ownerColor(world.balls, definitions, projectile.ownerId);
+    if (projectile.returning !== undefined) {
+      drawBoomerang(ctx, projectile.position, projectile.radius, color, world.tick);
+      continue;
+    }
 
     const { x, y } = projectile.position;
     const speed = Math.hypot(projectile.velocity.x, projectile.velocity.y);
@@ -32,6 +37,26 @@ export function drawProjectiles(
     ctx.fillStyle = color;
     ctx.fill();
   }
+}
+
+/**
+ * A boomerang in flight (ADR 0043): the Boomerang's own bent bar in its colour, spinning a full turn
+ * every few sim ticks, outlined so it reads on the floor and on a ball.
+ */
+function drawBoomerang(
+  ctx: CanvasRenderingContext2D,
+  { x, y }: { readonly x: number; readonly y: number },
+  radius: number,
+  color: string,
+  tick: number,
+): void {
+  const scale = radius * theme.boomerangFlightScale;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(((tick % theme.boomerangSpinTicks) / theme.boomerangSpinTicks) * Math.PI * 2);
+  drawBoomerangBar(ctx, scale, theme.boomerangArmSimple * 1.5, theme.ballOutline);
+  drawBoomerangBar(ctx, scale, theme.boomerangArmSimple, color);
+  ctx.restore();
 }
 
 /** A burst of short rays at each recent hit, growing and fading as its strength falls. */

@@ -141,6 +141,7 @@ export function createArena(
       winner: effects.winner(now),
       intro: (index) => introLook(index, now, reduced),
       cue: (ballId) => effects.cue(ballId, now),
+      shieldBreak: (ballId) => effects.shieldBreak(ballId, now),
       rewinds: rewinds.trails(now),
       chips: sourceChips.chips(now),
       reducedMotion: reduced,
