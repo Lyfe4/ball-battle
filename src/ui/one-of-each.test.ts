@@ -33,6 +33,9 @@ const OWNERS: readonly (readonly [string, string])[] = [
   ["'series-bar'", 'ui/series/series-bar.ts'],
   ["'pairing'", 'ui/balls/pairing.ts'],
   ["'ready-card'", 'ui/ready-card.ts'],
+  ["'settings-panel'", 'ui/settings-menu.ts'],
+  ["'settings-toggle'", 'ui/settings-menu.ts'],
+  ["'series-bar-score'", 'ui/series/series-bar.ts'],
 ];
 
 describe('one component per shared part', () => {

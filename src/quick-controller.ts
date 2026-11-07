@@ -1,6 +1,7 @@
 // Quick-match wiring: the setup screen where the two balls are chosen, the match screen (starting a
 // match, or carrying on with it), and its own actions (Change balls, Home). main.ts owns the arena
 // and the screens and hands this module what it needs through `QuickHost`.
+import { createSettingsToggle } from './ui/settings-menu.ts';
 import type { Matchup } from './app/matchup.ts';
 import type { Navigation } from './app/navigation.ts';
 import { writeMatchUrl, writePickParams, type Screen } from './app/route.ts';
@@ -99,7 +100,7 @@ export function createQuickController(
   home.addEventListener('click', () => {
     host.goHome();
   });
-  actionsRoot.append(home, changeBalls);
+  actionsRoot.append(home, changeBalls, createSettingsToggle());
 
   return {
     setVisible(screen) {

@@ -60,7 +60,7 @@ export function createReadyCard(
   }
   fight.addEventListener('click', go);
   never.addEventListener('click', () => {
-    tips.hideReadyCards();
+    tips.setReadyCards(false);
     go();
   });
   // Escape only closes things (ADR 0038): it never starts a fight. The card isn't modal (Tab moves

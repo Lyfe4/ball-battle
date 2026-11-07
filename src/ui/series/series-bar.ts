@@ -5,6 +5,7 @@
 import type { SeriesSetup } from '../../sim/series.ts';
 import { element, setText } from '../dom.ts';
 import { aboutLine, SIDE_NAMES } from '../series-text.ts';
+import { createSettingsToggle } from '../settings-menu.ts';
 import { createSymbolLegend } from '../symbol-legend.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
 
@@ -47,7 +48,7 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
   const about = element('p', 'series-bar-about');
   const legend = createSymbolLegend();
   const tools = element('div', 'series-bar-tools');
-  tools.append(legend.toggle);
+  tools.append(createSettingsToggle(), legend.toggle);
   bar.append(about);
 
   // The score line: a disclosure for the full track. Only a series panel with a track has one.

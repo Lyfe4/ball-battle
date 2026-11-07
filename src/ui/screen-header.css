@@ -161,16 +161,6 @@
   }
 }
 
-/* Tips in the arena on or off (ADR 0036), the legend's last line. */
-.symbol-legend-tips {
-  margin: var(--space-small) 0 0;
-  color: var(--color-text-muted);
-}
-
-.symbol-legend-tips[hidden] {
-  display: none;
-}
-
 /* The legend's own Close (ADR 0038): a quiet link, a full tap target, at the end of the panel. */
 .symbol-legend-close {
   display: block;

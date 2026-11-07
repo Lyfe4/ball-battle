@@ -36,7 +36,10 @@ export interface AnswerActions {
  */
 export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerActions): AnswerStep {
   const root = element('section', 'series-step answer-step');
-  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack);
+  // The series bar under the heading holds this screen's gear and ? (ADR 0038, 0040).
+  const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack, {
+    settings: false,
+  });
   const bar = createSeriesBar();
   const toss = createTossStrip();
   const track = createSeriesTrack(lookup);

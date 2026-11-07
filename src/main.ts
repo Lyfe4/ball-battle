@@ -13,7 +13,7 @@ import { createRouter } from './app/router.ts';
 import { initialAppState, seriesRound } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
-import { loadSpeed, playbackSpeedFor, saveSpeed } from './app/speed.ts';
+import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
@@ -27,7 +27,7 @@ import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
-import { installLegendTips } from './ui/symbol-legend.ts';
+import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -58,7 +58,6 @@ const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 const tips = createTips(storage);
 /** The match on the arena has ended and its result is showing. */
 let matchOver = false;
-installLegendTips(tips);
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
@@ -284,10 +283,15 @@ const arena = createArena(
   },
 );
 
-createSpeedToggle(speedRoot, state.speed, (next) => {
+/** One remembered speed: the in-fight buttons and the settings menu both show and change it. */
+function setSpeed(next: PlaybackSpeed): void {
   state.speed = next;
   saveSpeed(storage, next);
-});
+  speedToggle.select(next);
+  refreshSettings();
+}
+const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
+installSettings({ tips, speed: () => state.speed, setSpeed });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
 let worldsShown = 0;

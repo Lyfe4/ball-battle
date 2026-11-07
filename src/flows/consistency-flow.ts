@@ -3,6 +3,8 @@
 // every screen with a legend, the legend opens without pushing its ? out of reach and closes with
 // the ?, its own Close and Escape. Every ready moment's card sits centred on the court, and Escape
 // never starts the fight. Every "How it was won" is the one design: closed, led by the result.
+// Every screen has one settings gear whose menu opens fully on screen and closes three ways
+// (ADR 0040), and every setup screen's header starts in the same place.
 import { expect } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -26,6 +28,19 @@ async function open(search: string): Promise<void> {
 
 const legendOpen = (toggle: HTMLElement) => toggle.getAttribute('aria-expanded') === 'true';
 
+/** The open legend's lines: none wider than its box, and no two lines on top of each other. */
+function legendLayout(panel: HTMLElement | null): { clipped: number; overlapping: number } {
+  const lines = [...(panel?.querySelectorAll<HTMLElement>('.symbol-legend-item, p') ?? [])];
+  const clipped = lines.filter((line) => line.scrollWidth > line.clientWidth + 1).length;
+  const boxes = lines.map((line) => line.getBoundingClientRect());
+  const overlapping = boxes.filter((box, index) =>
+    boxes
+      .slice(index + 1)
+      .some((other) => box.bottom > other.top + 1 && other.bottom > box.top + 1),
+  ).length;
+  return { clipped, overlapping };
+}
+
 /** The ? on screen, opened: it stays on the page and every way of closing it works. */
 async function checkLegend(where: string): Promise<void> {
   const toggles = visible('.symbol-legend-toggle');
@@ -42,6 +57,7 @@ async function checkLegend(where: string): Promise<void> {
   await click(toggle);
   expect(legendOpen(toggle), where).toBe(true);
   expect(reachable()).toStrictEqual({ where, top: true, left: true });
+  expect({ where, ...legendLayout(panel()) }).toStrictEqual({ where, clipped: 0, overlapping: 0 });
   await click(toggle);
   expect(legendOpen(toggle), where).toBe(false);
   expect(panel()?.hidden, where).toBe(true);
@@ -98,6 +114,49 @@ async function checkStory(where: string, prefix: RegExp): Promise<void> {
   expect(story.querySelectorAll('ol.match-story-moments > li').length, where).toBeGreaterThan(0);
 }
 
+/**
+ * The settings gear (ADR 0040): one per screen; it opens the menu fully on screen, and the gear,
+ * Close and Escape each close it with focus back on the gear.
+ */
+async function checkSettings(where: string): Promise<void> {
+  const gears = visible('.settings-toggle');
+  expect(gears, where).toHaveLength(1);
+  const [gear] = gears;
+  if (gear === undefined) return;
+  const panel = () => document.getElementById(gear.getAttribute('aria-controls') ?? '');
+  const isOpen = () => gear.getAttribute('aria-expanded') === 'true' && panel()?.hidden === false;
+
+  await click(gear);
+  expect(isOpen(), where).toBe(true);
+  const box = panel()?.getBoundingClientRect();
+  const inside =
+    box !== undefined &&
+    box.left >= 0 &&
+    box.top >= 0 &&
+    box.right <= document.documentElement.clientWidth &&
+    box.bottom <= window.innerHeight;
+  expect({ where, inside }).toStrictEqual({ where, inside: true });
+  await click(gear);
+  expect(isOpen(), where).toBe(false);
+
+  await click(gear);
+  const close = panel()?.querySelector<HTMLElement>('.settings-close');
+  if (close !== null && close !== undefined) await click(close);
+  expect({ where, open: isOpen(), focus: document.activeElement === gear }).toStrictEqual({
+    where,
+    open: false,
+    focus: true,
+  });
+
+  await click(gear);
+  await userEvent.keyboard('{Escape}');
+  expect({ where, open: isOpen(), focus: document.activeElement === gear }).toStrictEqual({
+    where,
+    open: false,
+    focus: true,
+  });
+}
+
 /** Where each setup screen's header sits on the page: they must all match. */
 const headerTops = new Map<string, number>();
 
@@ -135,6 +194,7 @@ export async function runConsistencyFlow(): Promise<void> {
   await settle();
   headerTops.clear();
   noteHeaderTop('series rules');
+  await checkSettings('series rules');
 
   visible('.rules-card')
     .find((card) => card.textContent.startsWith('Reveal'))
@@ -144,6 +204,7 @@ export async function runConsistencyFlow(): Promise<void> {
   button('Choose lineup').click();
   await settle();
   noteHeaderTop('series lineup');
+  await checkSettings('series lineup');
   for (const id of ['storm', 'berserker', 'brawler']) {
     visible('.ball-tile')
       .find((tile) => tile.dataset['ballId'] === id)
@@ -158,10 +219,12 @@ export async function runConsistencyFlow(): Promise<void> {
   );
   noteHeaderTop('round 1 pick');
   await checkLegend('round 1 pick');
+  await checkSettings('round 1 pick');
   visible('.answer-step .pick-row-pick')[0]?.click();
 
   for (let round = 1; ; round += 1) {
     await checkReady(`series round ${String(round)}`);
+    if (phase() === 'playing') await checkSettings(`series round ${String(round)} fight`);
     await until(() => phase() !== 'playing', 90_000);
     await settle();
     const finished = phase() === 'finished';
@@ -174,6 +237,7 @@ export async function runConsistencyFlow(): Promise<void> {
     }
     // With the story open the panel is at its tallest.
     await checkLegend(where);
+    await checkSettings(where);
     if (finished) break;
     const pick = visible('#series .pick-row-pick')[0];
     if (pick !== undefined) await click(pick);
@@ -184,15 +248,22 @@ export async function runConsistencyFlow(): Promise<void> {
   await open('?view=pick&a=venom&b=titan');
   noteHeaderTop('Free play setup');
   await checkLegend('Free play setup');
+  await checkSettings('Free play setup');
   await click(button('Start match'));
   await checkReady('Free play');
+  await checkSettings('Free play fight');
   await until(() => visible('.match-story').length === 1, 90_000);
   await checkStory('Free play result', /^(?!Round)\S/);
+  await checkSettings('Free play result');
 
   await open('?view=manual');
   noteHeaderTop('manual');
   await checkLegend('manual');
+  await checkSettings('manual');
   await open('?view=manual&ball=storm');
   noteHeaderTop('manual ball');
   checkHeaderTops();
+
+  await open('?');
+  await checkSettings('home');
 }

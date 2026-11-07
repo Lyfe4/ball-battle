@@ -1,13 +1,13 @@
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
-import { createSegmented } from './segmented.ts';
+import { createSegmented, type Segmented } from './segmented.ts';
 
 /** The 1x / 2x playback speed toggle. The frame loop applies the choice and remembers it. */
 export function createSpeedToggle(
   root: HTMLElement,
   initial: PlaybackSpeed,
   onChange: (speed: PlaybackSpeed) => void,
-): void {
-  createSegmented(
+): Segmented<PlaybackSpeed> {
+  const segmented = createSegmented(
     root,
     'speed-toggle',
     'Speed',
@@ -21,4 +21,5 @@ export function createSpeedToggle(
   );
   // The in-match toggle carries the game's energy (ADR 0032); other segmented choices stay calm.
   root.classList.add('speed-toggle');
+  return segmented;
 }

@@ -1,0 +1,169 @@
+/*
+ * Settings (settings-menu.ts, ADR 0040): a gear like the legend's ?, and one small menu that floats
+ * by it. Calm platform style (ADR 0032): flat fills, one slab, the accent only on a switch that is
+ * on. It never takes part in the layout, so opening it moves nothing.
+ */
+.settings-toggle {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin-bottom: var(--press-depth);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.settings-toggle[aria-expanded='true'] {
+  background: var(--color-selected);
+  color: var(--color-text);
+}
+
+.settings-toggle:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+.settings-gear {
+  width: 20px;
+  height: 20px;
+  fill: currentcolor;
+  stroke: currentcolor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.settings-panel {
+  position: fixed;
+  z-index: 20;
+  display: grid;
+  gap: var(--space-gap);
+  width: min(20rem, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  padding: var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .settings-panel {
+    animation: settings-open 120ms ease-out;
+  }
+}
+
+@keyframes settings-open {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+.settings-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+}
+
+.settings-speed {
+  justify-content: flex-start;
+}
+
+.settings-speed .segmented-label {
+  margin-right: auto;
+}
+
+.settings-group {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-heading {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* A switch: the words, then a pill whose thumb slides to the end when it is on. */
+.settings-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+  min-height: var(--tap-target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-switch:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.settings-switch-track {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 46px;
+  height: 28px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--color-sunken);
+}
+
+.settings-switch-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.settings-switch[aria-checked='true'] .settings-switch-track {
+  justify-content: flex-end;
+  background: var(--color-accent);
+}
+
+.settings-switch[aria-checked='true'] .settings-switch-thumb {
+  background: var(--color-accent-text);
+}
+
+/* "Show all tips again" and Close share the last row. */
+.settings-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-gap);
+}
+
+.settings-again,
+.settings-close {
+  min-height: var(--tap-target);
+}
+
+/* Sits on the safe-area insets so the menu can be kept clear of them (settings-menu.ts). */
+.settings-safe-probe {
+  position: fixed;
+  inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  visibility: hidden;
+  pointer-events: none;
+}
