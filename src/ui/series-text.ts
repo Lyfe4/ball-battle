@@ -11,6 +11,7 @@ import {
   type SeriesState,
   type Side,
 } from '../sim/series.ts';
+import type { PickChoice } from './series/series-view.ts';
 
 /** Display names by ball id. */
 export type NameOf = (id: string) => string;
@@ -78,6 +79,20 @@ export function openLine(botLeft: readonly string[], nameOf: NameOf): string {
 /** The bot showed first; the player answers (Reveal, Showdown). */
 export function answerLine(round: number, shown: string, nameOf: NameOf): string {
   return `Round ${String(round + 1)}: the bot plays ${nameOf(shown)}. Pick your answer.`;
+}
+
+/**
+ * The pick asked for, in words, the same on round 1's step and between rounds (ADR 0038): an
+ * answer to the bot's shown ball, Showdown's opener, or the ball the player shows first.
+ */
+export function pickLine(
+  choice: PickChoice,
+  round: number,
+  botLeft: readonly string[],
+  nameOf: NameOf,
+): string {
+  if (choice.facing !== undefined) return answerLine(round, choice.facing, nameOf);
+  return choice.kind === 'open' ? openLine(botLeft, nameOf) : showLine(round, botLeft, nameOf);
 }
 
 /** Reveal's coin toss (ADR 0029), as the strip shows it: who shows first in round 1. */

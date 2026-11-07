@@ -1,4 +1,3 @@
-import { drawBallIcon } from '../render/ball-icon.ts';
 import {
   awaitingPick,
   formatOf,
@@ -6,33 +5,26 @@ import {
   remainingOf,
   revealFirst,
   scoreOf,
-  type SeriesState,
+  type NextMatch,
 } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
+import { createPairing } from './balls/pairing.ts';
 import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
+import { createSeriesBar } from './series/series-bar.ts';
 import { createSeriesTrack } from './series/series-track.ts';
 import { createMatchStory } from './match-story.ts';
-import { createSymbolLegend } from './symbol-legend.ts';
 import { createTossStrip } from './series/toss-strip.ts';
 import {
+  lastPlayOf,
   seriesScreenOf,
   trackOf,
   type SeriesMoment,
   type SeriesPhase,
 } from './series/series-view.ts';
-import {
-  aboutLine,
-  answerLine,
-  betweenLine,
-  finalLine,
-  linkPickLine,
-  openLine,
-  playingLine,
-  showLine,
-} from './series-text.ts';
+import { betweenLine, finalLine, linkPickLine, playingLine, pickLine } from './series-text.ts';
 
 export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
@@ -67,8 +59,6 @@ export interface SeriesPanel {
   focusAction(): void;
 }
 
-const PAIR_PX = 56;
-
 /**
  * The best-of-3 screens, visual first (ADR 0025). While a round is fought: the track under the
  * arena. Between rounds (the arena makes way): the track, then either "Your pick" with one row
@@ -95,10 +85,7 @@ export function createSeriesPanel(
   status.setAttribute('aria-live', 'polite');
 
   // What is being played, and the legend's ? for every symbol the series shows (ADR 0035).
-  const bar = element('div', 'series-bar');
-  const about = element('p', 'series-bar-about');
-  const legend = createSymbolLegend();
-  bar.append(about, legend.toggle);
+  const bar = createSeriesBar();
 
   const result = element('p', 'series-result');
   const track = createSeriesTrack(definitions);
@@ -112,11 +99,10 @@ export function createSeriesPanel(
   // quiet while a pick is asked for, so it never competes with the choice.
   const story = createMatchStory(definitions);
 
-  const pairing = element('div', 'series-pairing');
-  pairing.setAttribute('aria-hidden', 'true');
-  const pairYou = element('span', 'series-pairing-ball');
-  const pairBot = element('span', 'series-pairing-ball');
-  pairing.append(pairYou, element('span', 'series-pairing-vs', 'vs'), pairBot);
+  // The next round as the ready card shows it (ADR 0038); the live status says it in words.
+  const pairing = createPairing();
+  pairing.element.classList.add('series-pairing');
+  pairing.element.setAttribute('aria-hidden', 'true');
 
   const buttons = element('div', 'hud-actions');
   const next = button('Play round', 'hud-button hud-button-primary', actions.onNext);
@@ -129,15 +115,15 @@ export function createSeriesPanel(
   const leave = button('Leave series', 'text-link series-leave', actions.onLeave);
   root.append(
     heading,
-    bar,
-    legend.panel,
+    bar.element,
+    bar.legend,
     status,
     result,
     toss.element,
     track.element,
     banner.element,
     picks.element,
-    pairing,
+    pairing.element,
     buttons,
     share,
     story.element,
@@ -162,24 +148,12 @@ export function createSeriesPanel(
     }
   }
 
-  let pairKey = '';
-  function showPairing(you: string | undefined, bot: string | undefined): void {
-    const key = `${you ?? '?'}>${bot ?? '?'}`;
-    if (key === pairKey) return;
-    pairKey = key;
-    const ball = (holder: HTMLElement, id: string | undefined, repeat = false) => {
-      const known = id === undefined ? undefined : definitions.get(id);
-      if (known === undefined) {
-        holder.replaceChildren(element('span', 'series-pairing-unknown', '?'));
-        return;
-      }
-      const canvas = element('canvas', '');
-      drawBallIcon(canvas, known, PAIR_PX, repeat);
-      holder.replaceChildren(canvas);
-    };
-    ball(pairYou, you);
-    // A mirror round: the bot's ball drawn lighter, as in the arena.
-    ball(pairBot, bot, bot !== undefined && bot === you);
+  // The same opening world for the same play, so the story isn't reset every frame.
+  let told: { readonly key: string; readonly world: WorldState } | undefined;
+  function startOf(play: NextMatch): WorldState {
+    const key = [play.round, play.attempt, play.seed, play.a, play.b].join(':');
+    if (told?.key !== key) told = { key, world: matchWorld(play, definitions) };
+    return told.world;
   }
 
   let phase: SeriesPhase = 'playing';
@@ -202,15 +176,14 @@ export function createSeriesPanel(
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
-      setText(about, aboutLine(state.setup));
-      const lastRound = state.rounds.at(-1);
+      bar.show(state.setup);
+      // The match just played, a drawn play included (ADR 0038).
+      const last = playing ? undefined : lastPlayOf(state);
       story.show(
-        playing ? undefined : lastRoundStart(state, definitions),
-        `Round ${String(state.rounds.length)}`,
+        last === undefined ? undefined : startOf(last),
+        last === undefined ? undefined : `Round ${String(last.round + 1)}`,
         // Whose ball is whose, so even a mirror reads plainly.
-        lastRound === undefined
-          ? undefined
-          : [`your ${nameOf(lastRound.a)}`, `the bot’s ${nameOf(lastRound.b)}`],
+        last === undefined ? undefined : [`your ${nameOf(last.a)}`, `the bot’s ${nameOf(last.b)}`],
       );
       track.update(state, trackOf(state, playing ? current : undefined));
 
@@ -241,8 +214,12 @@ export function createSeriesPanel(
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
-      pairing.hidden = pair === undefined;
-      if (pair !== undefined) showPairing(pair.you, pair.bot);
+      pairing.element.hidden = pair === undefined;
+      if (pair !== undefined) {
+        const known = (id: string | undefined) =>
+          id === undefined ? undefined : definitions.get(id);
+        pairing.show(known(pair.you), known(pair.bot));
+      }
       next.hidden = !actions.includes('play');
       setText(
         next,
@@ -258,32 +235,12 @@ export function createSeriesPanel(
       let text = '';
       if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
-      else if (due === 'a' && choice?.facing !== undefined) {
-        text = answerLine(roundsPlayed, choice.facing, nameOf);
-      } else if (due === 'a' && choice?.kind === 'open') {
-        text = openLine(remainingOf(state, 'b'), nameOf);
-      } else if (due === 'a') text = showLine(roundsPlayed, remainingOf(state, 'b'), nameOf);
-      else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
+      else if (due === 'a' && choice !== undefined) {
+        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf);
+      } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);
       return phase;
     },
   };
-}
-
-/** The opening world of the last play of the round just finished, if one has. */
-const lastStarts = new WeakMap<object, WorldState>();
-function lastRoundStart(state: SeriesState, definitions: DefinitionLookup): WorldState | undefined {
-  const last = state.rounds.at(-1);
-  const seed = last?.seeds.at(-1);
-  if (last === undefined || seed === undefined) return undefined;
-  // The same object for the same round, so the story isn't reset every frame.
-  const known = lastStarts.get(last);
-  if (known !== undefined) return known;
-  const start = matchWorld(
-    { round: last.round, attempt: 0, seed, a: last.a, b: last.b },
-    definitions,
-  );
-  lastStarts.set(last, start);
-  return start;
 }

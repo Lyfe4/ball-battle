@@ -2,16 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { BOT_LEVELS, botPick, randomBot } from '../../sim/bot.ts';
 import { RULESET_VERSION } from '../../sim/ruleset.ts';
 import {
+  attemptSeed,
   awaitingPick,
   FORMATS,
   recordOutcome,
   recordPick,
+  roundSeed,
   startSeries,
   type Format,
   type SeriesState,
 } from '../../sim/series.ts';
 import { betweenLine } from '../series-text.ts';
-import { pairingOf, pickChoiceOf, seriesScreenOf, trackOf } from './series-view.ts';
+import { lastPlayOf, pairingOf, pickChoiceOf, seriesScreenOf, trackOf } from './series-view.ts';
 
 const series = (format: Format) =>
   startSeries({
@@ -161,5 +163,43 @@ describe('blind', () => {
 
   it('leaves unplayed rounds off the track once the series is decided', () => {
     expect(trackOf(play(series('blind'), 'a', 'a'), undefined)).toHaveLength(2);
+  });
+});
+
+describe('the last play, as "How it was won" tells it', () => {
+  const round1 = roundSeed(1, 0);
+
+  it('is nothing before a round is played', () => {
+    expect(lastPlayOf(series('blind'))).toBeUndefined();
+  });
+
+  it('is a drawn play waiting to be replayed, not the round before it', () => {
+    expect(lastPlayOf(play(series('blind'), 'draw'))).toStrictEqual({
+      round: 0,
+      attempt: 0,
+      seed: attemptSeed(round1, 0),
+      a: 'brawler',
+      b: 'thorns',
+    });
+    expect(lastPlayOf(play(series('blind'), 'a', 'draw', 'draw'))).toMatchObject({
+      round: 1,
+      attempt: 1,
+      seed: attemptSeed(roundSeed(1, 1), 1),
+      a: 'archer',
+      b: 'speedster',
+    });
+  });
+
+  it('is the round just won, or its third draw after sudden death', () => {
+    expect(lastPlayOf(play(series('blind'), 'draw', 'b'))).toMatchObject({
+      round: 0,
+      attempt: 1,
+      seed: attemptSeed(round1, 1),
+    });
+    expect(lastPlayOf(play(series('blind'), 'draw', 'draw', 'draw'))).toMatchObject({
+      round: 0,
+      attempt: 2,
+      seed: attemptSeed(round1, 2),
+    });
   });
 });

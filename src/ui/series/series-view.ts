@@ -2,12 +2,14 @@
 // round track, the pick rows, the next pairing; ADR 0025) are tested without a DOM. Only what the
 // player is allowed to know is ever returned: the bot's hidden balls are `undefined`.
 import {
+  attemptSeed,
   awaitingPick,
   formatOf,
   LINEUP_SIZE,
   nextBallOf,
   nextMatch,
   remainingOf,
+  roundSeed,
   type NextMatch,
   type SeriesState,
   type Side,
@@ -152,6 +154,24 @@ export function pairingOf(state: SeriesState): Pairing | undefined {
     bot: knownNextBall(state, 'b') ?? (isOpen(state) ? next?.b : undefined),
     attempt: next?.attempt ?? 0,
   };
+}
+
+/**
+ * The last match played in the series, the one "How it was won" tells between rounds and at the
+ * end (ADR 0038): a drawn play waiting to be replayed, else the last play of the last round (its
+ * third draw, after sudden death). Undefined before anything is played.
+ */
+export function lastPlayOf(state: SeriesState): NextMatch | undefined {
+  const replay = state.pending.length > 0 ? nextMatch(state) : undefined;
+  if (replay !== undefined) {
+    const attempt = replay.attempt - 1;
+    const seed = attemptSeed(roundSeed(state.setup.seed, replay.round), attempt);
+    return { ...replay, attempt, seed };
+  }
+  const last = state.rounds.at(-1);
+  const seed = last?.seeds.at(-1);
+  if (last === undefined || seed === undefined) return undefined;
+  return { round: last.round, attempt: last.seeds.length - 1, seed, a: last.a, b: last.b };
 }
 
 /** What the player can do next on a series screen: every screen but a fight offers one or more. */

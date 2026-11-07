@@ -1,0 +1,13 @@
+/* What is being played, and the legend's ? (series-bar.ts, ADR 0035, 0038): one quiet line. */
+.series-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
+.series-bar-about {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}

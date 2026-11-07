@@ -1,0 +1,42 @@
+/*
+ * One pairing (pairing.ts, ADR 0038): each ball's drawing over its name, "vs" between them. The same
+ * size on the ready card and between series rounds; only the colours follow the surface it sits on.
+ */
+.pairing {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-small);
+}
+
+.pairing-ball {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 5.5rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pairing-unknown {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-raised);
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+}
+
+.pairing-name {
+  line-height: 1.2;
+}
+
+.pairing-vs {
+  align-self: center;
+  margin-bottom: 1.2em;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
