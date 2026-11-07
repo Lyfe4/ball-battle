@@ -18,8 +18,16 @@ export interface SymbolEntry {
 
 /** In the legend's order. */
 export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
-  favoured: { mark: MARKS.favoured, meaning: 'Strong vs: favoured, wins it more often' },
-  unfavoured: { mark: MARKS.unfavoured, meaning: 'Weak vs: unfavoured, loses it more often' },
+  favoured: {
+    mark: MARKS.favoured,
+    meaning: 'Favoured: this ball tends to win the matchup',
+    legendNote: 'on a pick row, your ball against the bot’s',
+  },
+  unfavoured: {
+    mark: MARKS.unfavoured,
+    meaning: 'Unfavoured: the other ball tends to win',
+    legendNote: 'on a pick row, the bot’s ball',
+  },
   even: { mark: MARKS.even, meaning: 'Even matchup', legendNote: 'left blank in grids' },
   unknown: { mark: '?', meaning: 'Not shown yet' },
   won: { mark: '', meaning: 'Won the round' },

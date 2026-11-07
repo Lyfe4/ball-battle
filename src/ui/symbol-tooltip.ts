@@ -1,28 +1,48 @@
-// A small tooltip that says what a symbol means (ADR 0030, 0035): hovering a symbol with a mouse,
-// moving keyboard focus onto a control that shows symbols, or on a touch screen tapping a symbol
-// that is not part of a control, or pressing and holding one that is (a pick row, a grid tile),
-// where a plain tap still presses the control. Its words come from the same table as the symbol
-// legend (symbols.ts), so the two never disagree. Screens that ask the player to read marks also
-// show a one-line key, so no gesture is ever needed to read them. One tooltip serves the whole page, found by event delegation on `[data-symbol]`, so a screen only
+// A small tooltip that says what a symbol means (ADR 0030, 0035, 0037): hovering a symbol with a
+// mouse, moving keyboard focus onto a control that shows symbols, or a tap. A matchup mark carries
+// its own words naming both balls and who has the edge (`tip`); other symbols use the legend's
+// words (symbols.ts), so the two never disagree. On a touch screen a mark that must be readable is
+// its own tap target (`tap`, a badge beside the control it describes): a tap on it explains it and
+// never presses anything else. A tap on a symbol that is not part of a control explains it too.
+// There is no press-and-hold: on phones it opened the browser's own selection menu instead.
+// One tooltip serves the whole page, found by event delegation on `[data-symbol]`, so a screen only
 // names its symbols (`markSymbol`) and never wires a tooltip of its own.
 import { element } from './dom.ts';
 import { tooltipLines, type SymbolKey } from './symbols.ts';
 import { placeTooltip } from './tooltip-place.ts';
 
 const SYMBOL = '[data-symbol]';
-/** A control a tap presses: a symbol inside one is explained by pressing and holding. */
+/** A badge that explains its mark on a tap (or click), instead of pressing the row around it. */
+const TAP = '[data-symbol-tap]';
+/** Where a control's symbols are listed from when it takes keyboard focus (a pick row). */
+const SCOPE = '[data-symbol-scope]';
+/** A control a tap presses: a symbol inside one is explained by hover or focus, not a tap. */
 const CONTROL = 'button, a[href], [role="button"], input, select, label';
-/** How long a press is held before it explains the symbol instead of pressing the control. */
-export const HOLD_MS = 450;
-/** A touch that moves further than this is a scroll, not a tap or a hold. */
-const SLOP_PX = 10;
-/** A tooltip opened by touch closes by itself after this long. */
-const TOUCH_SHOW_MS = 3000;
+/** A tooltip opened by a tap closes by itself after this long. */
+export const TAP_SHOW_MS = 4000;
+
+export interface SymbolOptions {
+  /** This mark's own words (a matchup: both balls and who has the edge, then why). */
+  readonly tip?: readonly string[];
+  /** The mark is its own tap target: a tap explains it. */
+  readonly tap?: boolean;
+}
 
 /** Names the symbol `node` shows, so the tooltip can say what it means; undefined clears it. */
-export function markSymbol(node: HTMLElement, key: SymbolKey | undefined): void {
-  if (key === undefined) delete node.dataset['symbol'];
-  else node.dataset['symbol'] = key;
+export function markSymbol(
+  node: HTMLElement,
+  key: SymbolKey | undefined,
+  options: SymbolOptions = {},
+): void {
+  if (key === undefined) {
+    delete node.dataset['symbol'];
+    delete node.dataset['tip'];
+    return;
+  }
+  node.dataset['symbol'] = key;
+  if (options.tip === undefined) delete node.dataset['tip'];
+  else node.dataset['tip'] = options.tip.join('\n');
+  if (options.tap === true) node.dataset['symbolTap'] = '';
 }
 
 /** The symbols an element shows: itself if it is one, else the ones inside it, in order. */
@@ -33,6 +53,20 @@ function symbolsIn(node: Element): readonly HTMLElement[] {
   );
 }
 
+/**
+ * What the tooltip says for `symbols`: one symbol says all its words (a matchup's edge and why);
+ * several say one line each (a matchup's edge, else the legend's meaning), each once.
+ */
+export function linesOf(symbols: readonly HTMLElement[]): readonly string[] {
+  const tips = symbols.map((symbol) => symbol.dataset['tip']?.split('\n'));
+  const [only] = tips;
+  if (symbols.length === 1 && only !== undefined) return only;
+  const lines = symbols.map(
+    (symbol, index) => tips[index]?.[0] ?? tooltipLines([symbol.dataset['symbol']])[0],
+  );
+  return [...new Set(lines.filter((line) => line !== undefined))];
+}
+
 /** Installs the page's one symbol tooltip. Call once, from main.ts. */
 export function installSymbolTooltips(doc: Document = document): void {
   const tip = element('div', 'symbol-tooltip');
@@ -41,49 +75,61 @@ export function installSymbolTooltips(doc: Document = document): void {
   tip.hidden = true;
   doc.body.append(tip);
   let anchor: Element | undefined;
+  const view = doc.defaultView ?? window;
+  let closeTimer: number | undefined;
+  /** True while the tooltip shows for a tap, which focus moving or the mouse leaving must not close. */
+  let byTap = false;
 
   function show(on: Element, symbols: readonly HTMLElement[]): void {
-    const lines = tooltipLines(symbols.map((symbol) => symbol.dataset['symbol']));
+    const lines = linesOf(symbols);
     if (lines.length === 0) {
       hide();
       return;
     }
     anchor = on;
-    tip.replaceChildren(...lines.map((line) => element('span', 'symbol-tooltip-line', line)));
+    tip.replaceChildren(
+      ...lines.map((line, index) =>
+        element('span', index === 0 ? 'symbol-tooltip-line' : 'symbol-tooltip-why', line),
+      ),
+    );
     tip.hidden = false;
     const box = (symbols.length === 1 ? symbols[0] : on)?.getBoundingClientRect();
     if (box === undefined) return;
-    const view = doc.documentElement;
+    const page = doc.documentElement;
     const at = placeTooltip(
       box,
       { width: tip.offsetWidth, height: tip.offsetHeight },
-      { width: view.clientWidth, height: view.clientHeight },
+      { width: page.clientWidth, height: page.clientHeight },
     );
     tip.style.left = `${String(at.left)}px`;
     tip.style.top = `${String(at.top)}px`;
   }
 
-  /** True while the tooltip shows for a touch, which focus moving must not close. */
-  let byTouch = false;
-
   function hide(): void {
     anchor = undefined;
-    byTouch = false;
+    byTap = false;
     tip.hidden = true;
   }
 
+  function showForTap(symbol: HTMLElement): void {
+    show(symbol, [symbol]);
+    byTap = true;
+    if (closeTimer !== undefined) view.clearTimeout(closeTimer);
+    closeTimer = view.setTimeout(hide, TAP_SHOW_MS);
+  }
+
   doc.addEventListener('pointerover', (event) => {
-    // A mouse only: touch and pen presses never open it.
+    // A mouse only: touch and pen presses never open it by passing over.
     if (event.pointerType !== 'mouse' || !(event.target instanceof Element)) return;
     const symbol = event.target.closest<HTMLElement>(SYMBOL);
     if (symbol === null) {
-      if (anchor !== undefined && !anchor.contains(event.target)) hide();
+      if (anchor !== undefined && !byTap && !anchor.contains(event.target)) hide();
       return;
     }
     if (symbol !== anchor) show(symbol, [symbol]);
   });
   doc.addEventListener('pointerout', (event) => {
-    if (anchor === undefined || event.pointerType !== 'mouse') return;
+    if (anchor === undefined || byTap || event.pointerType !== 'mouse') return;
     const to = event.relatedTarget;
     if (!(to instanceof Node) || !anchor.contains(to)) hide();
   });
@@ -91,88 +137,42 @@ export function installSymbolTooltips(doc: Document = document): void {
     const target = event.target;
     // Keyboard focus only: a tap or a click focuses without :focus-visible.
     if (!(target instanceof HTMLElement) || !target.matches(':focus-visible')) return;
-    const symbols = symbolsIn(target);
-    if (symbols.length > 0) show(target, symbols);
+    const scope = target.closest(SCOPE) ?? target;
+    const symbols = symbolsIn(scope);
+    if (symbols.length > 0) show(scope, symbols);
     else hide();
   });
   doc.addEventListener('focusout', () => {
-    // A touch's compatibility mouse events move focus after the tooltip opened: keep it.
-    if (!byTouch) hide();
+    if (!byTap) hide();
   });
   doc.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') hide();
   });
 
-  // Touch: a tap on a symbol outside a control, or a held press on one inside a control.
-  const view = doc.defaultView ?? window;
-  let press: { x: number; y: number; symbol: HTMLElement; held: boolean } | undefined;
-  let holdTimer: number | undefined;
-  let closeTimer: number | undefined;
-  /** Set once a hold has explained a symbol, so the click that follows doesn't press the control. */
-  let swallowClick = false;
-  const stopHold = () => {
-    if (holdTimer !== undefined) view.clearTimeout(holdTimer);
-    holdTimer = undefined;
-  };
-  const showForTouch = (symbol: HTMLElement) => {
-    show(symbol, [symbol]);
-    byTouch = true;
-    if (closeTimer !== undefined) view.clearTimeout(closeTimer);
-    closeTimer = view.setTimeout(hide, TOUCH_SHOW_MS);
-  };
+  // Any press elsewhere closes a tooltip that is open.
   doc.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'touch' || !(event.target instanceof Element)) return;
+    if (anchor === undefined || !(event.target instanceof Element)) return;
+    if (event.target.closest(SYMBOL) !== anchor) hide();
+  });
+  // A tap (or click) on a tap badge, or on a symbol that is not part of a control, explains it.
+  // The badge sits beside the control it describes, so the control never sees this click.
+  doc.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
     const symbol = event.target.closest<HTMLElement>(SYMBOL);
-    // Any other touch closes a tooltip that is open.
-    if (symbol !== anchor) hide();
-    swallowClick = false;
-    stopHold();
-    if (symbol === null) {
-      press = undefined;
-      return;
-    }
-    press = { x: event.clientX, y: event.clientY, symbol, held: false };
-    if (symbol.closest(CONTROL) === null) return;
-    holdTimer = view.setTimeout(() => {
-      if (press === undefined) return;
-      press.held = true;
-      swallowClick = true;
-      showForTouch(press.symbol);
-    }, HOLD_MS);
+    if (symbol === null) return;
+    if (symbol.matches(TAP) || symbol.closest(CONTROL) === null) showForTap(symbol);
   });
-  doc.addEventListener('pointermove', (event) => {
-    if (press === undefined || event.pointerType !== 'touch') return;
-    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > SLOP_PX) {
-      press = undefined;
-      stopHold();
-    }
-  });
-  doc.addEventListener('pointercancel', () => {
-    press = undefined;
-    stopHold();
-  });
-  doc.addEventListener('pointerup', (event) => {
-    if (press === undefined || event.pointerType !== 'touch') return;
-    stopHold();
-    const { symbol, held } = press;
-    press = undefined;
-    // A tap on a symbol that is not part of a control explains it.
-    if (!held && symbol.closest(CONTROL) === null) showForTouch(symbol);
-  });
-  // Capture, so the control under a held press never sees the click that ends it.
-  doc.addEventListener(
-    'click',
-    (event) => {
-      if (!swallowClick) return;
-      swallowClick = false;
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    { capture: true },
-  );
-  // A long press would otherwise open the browser's own menu over the tooltip.
+  // A long press on a mark or a pick row would otherwise open the browser's own menu.
   doc.addEventListener('contextmenu', (event) => {
-    if (event.target instanceof Element && event.target.closest(SYMBOL) !== null) {
+    if (event.target instanceof Element && event.target.closest(`${SYMBOL}, ${SCOPE}`) !== null) {
+      event.preventDefault();
+    }
+  });
+  // Nor start a text selection (iOS shows its copy menu for one).
+  doc.addEventListener('selectstart', (event) => {
+    const target = event.target;
+    const at = target instanceof Element ? target : (target as Node | null)?.parentElement;
+    if ((at?.closest(`${SYMBOL}, ${SCOPE}, .ball-tile, .quick-slot`) ?? null) !== null) {
       event.preventDefault();
     }
   });

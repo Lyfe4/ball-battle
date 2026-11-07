@@ -1,0 +1,168 @@
+/* The pick rows (pick-rows.ts, ADR 0025, 0035, 0037). */
+.pick-rows,
+.pick-rows-list {
+  display: grid;
+  gap: var(--space-small);
+}
+
+/* The marks' key, one line under the rows (ADR 0035): read without any gesture. */
+.pick-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 var(--space-small);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.pick-key-mark {
+  font-family: var(--font-family-symbol);
+}
+
+.pick-key-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.pick-key-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+/*
+ * A pick as a type chart (ADR 0037): the bot's balls once as column heads, then one row per ball of
+ * the player's with a mark in each column. The pick button is stretched over the whole row; the
+ * marks sit above it as their own 44 px tap targets, so a tap on a mark explains it and a tap
+ * anywhere else picks.
+ */
+.pick-rows-head,
+.pick-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(var(--pick-columns, 3), var(--tap-target));
+  align-items: center;
+  column-gap: 6px;
+  padding-inline: var(--space-gap) var(--space-small);
+}
+
+.pick-head-label {
+  justify-self: end;
+  padding-right: var(--space-small);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.pick-head-ball {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border-radius: 50%;
+}
+
+/* The bot's shown ball, when answering it: ringed; its column is the one that counts now. */
+.pick-head-ball[data-facing='true'] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pick-row {
+  position: relative;
+  min-height: calc(var(--tap-target) + 12px);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  /* No selection or copy menu on a long press (iOS shows one over button text). */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.pick-row:has(.pick-row-pick:hover) {
+  background: var(--color-selected);
+}
+
+/* Keyboard focus rings the whole row, as the row is what the button picks. */
+.pick-row:has(.pick-row-pick:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.pick-row-pick {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: calc(var(--tap-target) + 12px);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick-row-pick:focus-visible {
+  box-shadow: none;
+}
+
+/* The whole row picks: the button's hit area covers it, under the marks. */
+.pick-row-pick::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.pick-row-own {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-width: 0;
+}
+
+.pick-row-name {
+  overflow-wrap: anywhere;
+}
+
+.pick-row-badge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-family-symbol);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  cursor: help;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* The disc drawn smaller than the 44 px it answers to, so the row stays calm. */
+.pick-row-badge::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--color-page);
+}
+
+/* The column being answered: its marks ringed like its head. */
+.pick-row-badge[data-facing='true']::before {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.pick-row-badge[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.pick-row-badge[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}

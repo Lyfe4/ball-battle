@@ -77,7 +77,7 @@ export function openLine(botLeft: readonly string[], nameOf: NameOf): string {
 
 /** The bot showed first; the player answers (Reveal, Showdown). */
 export function answerLine(round: number, shown: string, nameOf: NameOf): string {
-  return `Round ${String(round + 1)}: the bot shows its ${nameOf(shown)} first. Pick your answer.`;
+  return `Round ${String(round + 1)}: the bot plays ${nameOf(shown)}. Pick your answer.`;
 }
 
 /** Reveal's coin toss (ADR 0029), as the strip shows it: who shows first in round 1. */

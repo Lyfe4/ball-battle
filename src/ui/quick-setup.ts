@@ -4,7 +4,7 @@ import type { BallDefinition } from '../sim/types.ts';
 import { createBallGrid } from './balls/ball-grid.ts';
 import type { BallInfoLink } from './balls/ball-link.ts';
 import { LEAN_WORDS, MARKS } from './balls/marks.ts';
-import { leanOf } from './balls/matchups.ts';
+import { leanOf, matchupTip } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
 import { markSymbol } from './symbol-tooltip.ts';
@@ -117,7 +117,13 @@ export function createQuickSetup(
     markSymbol(mark, lean);
     return mark;
   };
-  legend.append(legendMark('favoured'), ' ', legendMark('unfavoured'), ' vs ', legendIcon);
+  legend.append(
+    legendMark('favoured'),
+    ' strong · ',
+    legendMark('unfavoured'),
+    ' weak vs ',
+    legendIcon,
+  );
 
   const start = element('button', 'hud-button hud-button-primary quick-start', 'Start match');
   start.type = 'button';
@@ -139,7 +145,7 @@ export function createQuickSetup(
       setText(name, ball.name);
       setText(badge, MARKS[lean]);
       badge.dataset['lean'] = lean;
-      markSymbol(badge, lean);
+      markSymbol(badge, lean, { tip: matchupTip(ball.id, other, nameOf, 'neutral') });
       button.setAttribute('aria-pressed', String(slot === active));
       button.setAttribute(
         'aria-label',
@@ -156,6 +162,9 @@ export function createQuickSetup(
       marks: {
         against: nameOf(other),
         leans: new Map(balls.map((ball) => [ball.id, leanOf(ball.id, other)])),
+        tips: new Map(
+          balls.map((ball) => [ball.id, matchupTip(ball.id, other, nameOf, 'neutral')]),
+        ),
       },
     });
     const otherBall = byId.get(other);

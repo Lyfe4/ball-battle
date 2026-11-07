@@ -4,7 +4,7 @@
   z-index: 10;
   display: grid;
   gap: 2px;
-  max-width: 15rem;
+  max-width: 18rem;
   padding: 4px var(--space-small);
   border-radius: var(--radius);
   background: var(--color-raised);
@@ -18,12 +18,22 @@
   display: none;
 }
 
+/* A matchup's reason, under who has the edge (ADR 0037). */
+.symbol-tooltip-why {
+  color: var(--color-text-muted);
+}
+
 /*
- * A control that shows symbols explains them on a held press (ADR 0035): keep the browser's own
- * long-press callout and text selection from opening over the tooltip.
+ * Controls that show symbols, and the marks that are their own tap targets (ADR 0037): keep the
+ * browser's own long-press callout and text selection (iOS's copy menu) from opening over them.
  */
-button:has([data-symbol]) {
+button:has([data-symbol]),
+[data-symbol-tap],
+.ball-tile,
+.quick-slot,
+.matchup-button {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  touch-action: manipulation;
 }

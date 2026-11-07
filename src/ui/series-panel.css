@@ -131,103 +131,35 @@
 /* "Your pick": the one moment the player acts, so it stands out (ADR 0025). */
 .series-banner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 2px;
   margin: 0;
-  padding: var(--space-small);
+  padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
   background: var(--color-selected);
+  text-align: center;
+}
+
+.series-banner-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 800;
 }
 
-.pick-rows,
-.pick-rows-list {
-  display: grid;
-  gap: var(--space-small);
-}
-
-/* The marks' key, one line under the rows (ADR 0035): read without any gesture. */
-.pick-key {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 var(--space-small);
-  margin: 0;
+.series-banner-ask {
   color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
-.pick-key-mark {
-  font-family: var(--font-family-symbol);
-}
-
-.pick-key-mark[data-lean='favoured'] {
-  color: var(--color-favoured);
-}
-
-.pick-key-mark[data-lean='unfavoured'] {
-  color: var(--color-unfavoured);
-}
-
-.pick-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-gap);
-  min-height: calc(var(--tap-target) + 12px);
-  padding: var(--space-small) var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-raised);
-  color: var(--color-text);
-  font: inherit;
   font-weight: 600;
-  text-align: left;
-  cursor: pointer;
 }
 
-.pick-row-own,
-.pick-row-faces {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-}
-
-.pick-row-face {
-  position: relative;
-  display: grid;
-  border-radius: 50%;
-}
-
-/* The bot's shown ball, when answering it: ringed, the others are what is left for later. */
-.pick-row-face[data-facing='true'] {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.pick-row-badge {
-  position: absolute;
-  top: -6px;
-  right: -8px;
-  display: grid;
-  place-items: center;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  background: var(--color-page);
-  font-size: var(--font-size-tiny);
-}
-
-.pick-row-badge[data-lean='favoured'] {
-  color: var(--color-favoured);
-}
-
-.pick-row-badge[data-lean='unfavoured'] {
-  color: var(--color-unfavoured);
-}
-
-.pick-row-badge[data-lean='even'] {
-  color: var(--color-text-muted);
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .series-banner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: var(--space-small);
+  }
 }
 
 /* The next round when nothing is asked: the two balls large. */

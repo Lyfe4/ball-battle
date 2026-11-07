@@ -21,6 +21,7 @@
 @import './ui/outdated.css';
 @import './ui/series/series-setup.css';
 @import './ui/series-panel.css';
+@import './ui/series/pick-rows.css';
 @import './ui/series/toss-strip.css';
 @import './ui/symbol-tooltip.css';
 @import './ui/winner-sticker.css';
