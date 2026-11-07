@@ -21,10 +21,11 @@ const ROW_ICON_PX = 28;
 const EVEN_ICON_PX = 24;
 
 /**
- * One ball's manual entry, phone first: the drawing large, its one line, three stat bars against
- * the roster, then who it is strong and weak vs, with the counter map's reason for each, and the balls
- * it is even with. Every opponent is a button to that ball's entry, so the manual is browsed by its
- * counters. Try it sets up a quick match against a ball it is strong vs (or its counter, if there is none).
+ * One ball's manual entry, phone first: the drawing large, its one line, three stat bars from zero
+ * against the roster (health, contact hit and base speed), then who it is strong and weak vs, with
+ * the counter map's reason for each, and the balls it is even with. Every opponent is a button to
+ * that ball's entry, so the manual is browsed by its counters. Try it sets up a quick match against
+ * a ball it is strong vs (or its counter, if there is none).
  */
 export function createBallDetail(
   balls: readonly BallDefinition[],
@@ -45,7 +46,7 @@ export function createBallDetail(
   hero.append(icon, text);
 
   const stats = element('dl', 'ball-detail-stats');
-  const statRows = (['Health', 'Contact hit'] as const).map((label) => {
+  const statRows = (['Health', 'Contact hit', 'Speed'] as const).map((label) => {
     const term = element('dt', 'ball-detail-stat', label);
     const value = element('dd', 'ball-detail-value');
     const bar = element('span', 'ball-detail-bar');
@@ -123,6 +124,7 @@ export function createBallDetail(
       const values = [
         [shares.health, ball.maxHealth],
         [shares.hit, ball.contactDamage],
+        [shares.speed, ball.speed],
       ] as const;
       const speed = speedTrait(ball, balls);
       setText(trait, speed ?? '');

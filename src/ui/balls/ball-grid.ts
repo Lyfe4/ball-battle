@@ -41,8 +41,11 @@ export interface BallGridOptions {
   readonly onPick: (id: string) => void;
 }
 
-/** Names longer than this many letters overflow a 4-column phone tile at the normal size. */
-const LONG_NAME = 9;
+/**
+ * Names longer than this many letters can overflow a 4-column phone tile at the normal size: a
+ * nine-letter name with wide letters ('Boomerang') does, so nine already counts as long.
+ */
+const LONG_NAME = 8;
 
 /**
  * Every ball as a tile: the real drawing, large, and the name, no description (the manual
