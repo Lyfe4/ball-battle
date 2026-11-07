@@ -101,6 +101,16 @@ with nothing to carry on with opens the lineup step, as it always has. This is n
 - **Leave series** forgets the series: there is nothing to resume. This changes ADR 0025 §3, where
   Leave held it like a Back. Leave is a deliberate button; a Back swipe can be an accident, so Back
   still holds the series and a reload keeps it held.
+  - **Leave is asked once, in place** (`src/ui/series/leave-confirm.ts`), because it can't be
+    undone and it sits by the speed buttons. A tap on the link turns its row into "Leave? You’ll
+    lose this series · Leave · Stay".
+    - There is no modal: the fight goes on behind it.
+    - Stay is the primary button and takes focus, and Escape means Stay (Escape only closes things,
+      ADR 0038). Focus returns to the link.
+    - Leaving the screen any other way, such as Back, answers Stay.
+    - The row fades in only when motion is welcome.
+    - New series at the result needs no question: the series is already decided and its link is in
+      the address bar.
 - **New series**, **Rematch** and starting any other series replace or clear it. A finished series
   stays saved, so a reload shows its result, until one of these happens or Back leaves it (a
   decided series has nothing to resume, ADR 0025).
@@ -140,6 +150,11 @@ with nothing to carry on with opens the lineup step, as it always has. This is n
     after sudden death.
   - It checks that Leave series and New series clear the save, and that an old-ruleset save and a
     broken save land on the lineup with no Resume.
+  - It checks Leave's question: it shows in place with the focus on Stay; Leave and Stay are 44 px
+    tap targets; Stay and Escape each keep the series unchanged and put focus back on the link; only
+    Leave leaves.
+  - It checks that a decided series' link opened in a fresh browser (nothing saved) replays from
+    round 1, as links always have. Only the device that played it carries on at its result.
   - The flow was run against `main`'s page code (with `main`'s app files swapped in), once per
     step, skipping the checks before it. Every step failed on `main`: the lineup tray, round 1's
     pick, Fight!, mid-fight, between rounds, the held series, the result, after a draw, the third
@@ -159,7 +174,23 @@ with nothing to carry on with opens the lineup step, as it always has. This is n
 - Negative: one save slot per device, last writer wins. Two tabs playing two series each save their
   own. A reload of either tab carries on with whichever saved last. That is acceptable for a
   single-player game, and the series replaced is never corrupted, only swapped.
-- Negative: a page load with a saved series replays up to about 18 matches headlessly before the
-  first frame. On a slow phone this may be noticeable (an estimated 100 to 200 ms, not measured on
-  a device).
-- Negative: Leave series can no longer be undone with Resume.
+- Negative: a page load with a saved series replays its matches headlessly before the first frame,
+  twice: once to reach the position, once in `verifySeries`.
+  - **Measured** in headless Chromium on the repo's throttled phone profile (375 × 812, 2× density,
+    4× CPU, as in `scripts/frame-timing.ts`), restoring a decided series, which replays every play:
+
+    | Series                                                                                  | Plays | Restore (median of 7, slowest) |
+    | --------------------------------------------------------------------------------------- | ----- | ------------------------------ |
+    | The longest found: the most plays in 40,000 Blind mirror series (seed 908, 8,065 ticks) | 6     | 208 ms, 261 ms                 |
+    | Sudden death (seed 28534)                                                               | 5     | 132 ms, 139 ms                 |
+
+  - About 13 µs a tick under throttling. The whole page reached DOMContentLoaded in 591 ms with the
+    longest series saved, against 272 ms on the lineup with nothing saved. That difference includes
+    building the result screen.
+  - The theoretical worst case, nine 60-second draws, would be about 0.85 s. No series anywhere
+    near it turned up in the search.
+  - If it matters on real phones, the second replay can go: `verifySeries` could hand back the
+    states it passes through. That would be a small change to `src/sim`.
+- Negative: Leave series can no longer be undone with Resume; it is asked once instead.
+- Negative: the browser CI job now takes longer than 10 minutes, because the reload flows play
+  three whole series per size and engine. Its timeout is 25 minutes.
