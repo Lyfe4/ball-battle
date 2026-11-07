@@ -16,7 +16,6 @@ import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesBar } from './series/series-bar.ts';
 import { createSeriesTrack } from './series/series-track.ts';
 import { createMatchStory } from './match-story.ts';
-import { createTossStrip } from './series/toss-strip.ts';
 import {
   lastPlayOf,
   seriesScreenOf,
@@ -103,8 +102,6 @@ export function createSeriesPanel(
 
   const result = element('p', 'series-result');
 
-  // Reveal's coin toss, over round 1 when the series opens here (a rematch).
-  const toss = createTossStrip();
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
@@ -132,7 +129,6 @@ export function createSeriesPanel(
     bar.legend,
     status,
     result,
-    toss.element,
     track.element,
     banner.element,
     picks.element,
@@ -229,14 +225,16 @@ export function createSeriesPanel(
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';
-      // The toss stays over round 1 until it is played.
-      toss.element.hidden = !reveal || playing || roundsPlayed > 0 || state.pending.length > 0;
-      if (!toss.element.hidden) toss.show(revealFirst(state.setup.seed), state.setup.seed);
+      // Reveal's coin toss leads round 1's pick when the series opens here, a rematch (ADR 0041).
+      const toss =
+        reveal && roundsPlayed === 0 && state.pending.length === 0
+          ? { first: revealFirst(state.setup.seed), key: state.setup.seed }
+          : undefined;
       banner.element.hidden = !actions.includes('pick');
       picks.element.hidden = !actions.includes('pick');
       if (choice !== undefined) {
         picks.show(choice);
-        banner.show(choice);
+        banner.show(choice, toss);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
@@ -262,7 +260,7 @@ export function createSeriesPanel(
       if (playing && current !== undefined) text = playingLine(current, nameOf);
       else if (finished) text = finalLine(state);
       else if (due === 'a' && choice !== undefined) {
-        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf);
+        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf, toss?.first);
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);

@@ -217,6 +217,10 @@ export async function runConsistencyFlow(): Promise<void> {
   expect(visible('.answer-step .series-bar-about')[0]?.textContent).toBe(
     'Best of 3 · Reveal · Hard',
   );
+  // Reveal's coin toss in words, leading the pick (ADR 0041).
+  expect(visible('.answer-step .series-banner')[0]?.textContent).toMatch(
+    /Coin toss: (you show|the bot shows) first\./,
+  );
   noteHeaderTop('round 1 pick');
   await checkLegend('round 1 pick');
   await checkSettings('round 1 pick');

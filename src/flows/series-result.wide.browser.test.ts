@@ -94,7 +94,9 @@ describe('the Best of 3 result screen', () => {
     expect(score()).toBe('0 – 0');
     expect(visible('.series-result')).toHaveLength(0);
     if (phase() === 'between') {
-      expect(visible('.series-toss')).toHaveLength(1);
+      expect(visible('#series .series-banner')[0]?.textContent).toMatch(
+        /Coin toss: (you show|the bot shows) first\./,
+      );
       expect(visible('#series .pick-row').length).toBeGreaterThan(0);
       await browserPage
         .getByRole('button', { name: /^(Play|Show) / })
