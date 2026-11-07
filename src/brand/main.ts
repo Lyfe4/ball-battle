@@ -139,14 +139,14 @@ function preview(): HTMLCanvasElement {
   });
 
   const icon = 40;
-  // The roster in two rows, clear of the address below: nine to a row for seventeen balls.
-  const perRow = Math.ceil(BALLS.length / 2);
+  // The roster in three rows, clear of the address below: seven to a row for twenty-one balls.
+  const perRow = Math.ceil(BALLS.length / 3);
   BALLS.forEach((ball, i) => {
     const node = document.createElement('canvas');
     drawBallIcon(node, ball, icon / Math.min(window.devicePixelRatio || 1, 2));
     const column = i % perRow;
     const row = Math.floor(i / perRow);
-    ctx.drawImage(node, x + column * (icon + 8), 410 + row * (icon + 10), icon, icon);
+    ctx.drawImage(node, x + column * (icon + 8), 396 + row * (icon + 8), icon, icon);
   });
 
   ctx.fillStyle = LINK;
