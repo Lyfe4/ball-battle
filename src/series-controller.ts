@@ -2,7 +2,9 @@
 // and when the link may show the bot's lineup. Setting a series up is series-setup.ts. main.ts owns
 // the arena and the frame loop and hands this module what it needs through `SeriesHost`, so it
 // stays wiring only. A Back from the series holds it rather than dropping it (ADR 0025): it can be
-// resumed where it was, with every choice already made kept, until a new series replaces it.
+// resumed where it was, with every choice already made kept, until a new series replaces it. Every
+// change is saved on the device (ADR 0042), so a reload puts the series back where it was; leaving
+// it on purpose (Leave series, New series) forgets it.
 import { generateSeed } from './app/seed.ts';
 import {
   advanceSession,
@@ -19,14 +21,19 @@ import {
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
 import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
-import { matchWorld } from './sim/series-verify.ts';
+import { matchWorld, playToEnd } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from './ui/series-panel.ts';
+import { lastPlayOf } from './ui/series/series-view.ts';
 
 /** What the series needs from the page around it. */
 export interface SeriesHost {
   /** Puts a new match on screen. */
   showWorld(world: WorldState, seed: number): void;
+  /** Puts a finished match on screen as it ended, with no intro and no Fight! to wait on. */
+  showFinished(world: WorldState, seed: number): void;
+  /** Keeps the series on the device, so a reload puts it back (ADR 0042); undefined forgets it. */
+  save(session: SeriesSession | undefined): void;
   /** Counts every world put on the arena, by anyone: whether the one there is still the series'. */
   worldsShown(): number;
   replaceUrl(write: (params: URLSearchParams) => void): void;
@@ -56,6 +63,16 @@ export interface SeriesController {
   held(): SeriesState | undefined;
   /** Puts a held series back on screen where it was; every choice made stays made. */
   resume(): void;
+  /**
+   * Takes back a series saved before a reload (ADR 0042), held until the route puts it on screen,
+   * as a Back would have left it.
+   */
+  adopt(saved: SeriesSession): void;
+  /**
+   * The whole series the address bar shows for the series in hand, once it shows one: a decided
+   * series or a replayed link. A link to it carries on with it rather than replaying it.
+   */
+  address(): SeriesSetup | undefined;
   /** Leaves the series' screen but keeps it, undecided, so it can be resumed. */
   hold(): void;
   /**
@@ -94,17 +111,23 @@ export function createSeriesController(
   const ours = () => host.worldsShown() === shownAt;
   let phase: SeriesPhase = 'playing';
 
+  /** Sets the series in hand and saves it, so a reload finds it as it is now. */
+  function keep(next: SeriesSession | undefined): void {
+    session = next;
+    host.save(next);
+  }
+
   const panel = createSeriesPanel(roots, lookup, {
     onNext: () => {
       if (session === undefined) return;
-      session = resolvePicks(advanceSession(session), botOf(session.state.setup));
+      keep(resolvePicks(advanceSession(session), botOf(session.state.setup)));
       playCurrent();
       host.redraw();
     },
     onPick: (ball) => {
       if (session === undefined || awaitingPick(session.state) !== 'a') return;
       // The bot answers the ball just shown (or opens a Showdown); resolvePicks makes its pick.
-      session = resolvePicks(pickInSession(session, ball), botOf(session.state.setup));
+      keep(resolvePicks(pickInSession(session, ball), botOf(session.state.setup)));
       playCurrent();
       host.redraw();
     },
@@ -113,11 +136,14 @@ export function createSeriesController(
     },
     onNewSeries: () => {
       const last = session?.state.setup;
-      session = undefined;
+      keep(undefined);
       onScreen = false;
       if (last !== undefined) host.newSeries(last);
     },
     onLeave: () => {
+      // Leaving on purpose forgets the series: there is nothing to resume (ADR 0042). A Back,
+      // which can be an accident, holds it instead.
+      keep(undefined);
       host.leave();
     },
   });
@@ -128,6 +154,21 @@ export function createSeriesController(
     if (current === undefined) return;
     host.showWorld(matchWorld(current, lookup), current.seed);
     shownAt = host.worldsShown();
+  }
+
+  /**
+   * The series' match as the arena should show it after something else was there: the match to
+   * fight from its Fight! moment, or the play whose result is on screen as it ended.
+   */
+  function showAgain(): void {
+    if (session === undefined) return;
+    if (!session.recorded) {
+      playCurrent();
+      return;
+    }
+    const last = lastPlayOf(session.state);
+    if (last === undefined) return;
+    host.showFinished(playToEnd(matchWorld(last, lookup), lookup), last.seed);
   }
 
   /** Writes what the address bar may show of the series now (seriesAddress). */
@@ -145,7 +186,7 @@ export function createSeriesController(
     if (firstPick !== undefined && awaitingPick(started.state) === 'a') {
       started = resolvePicks(pickInSession(started, firstPick), bot);
     }
-    session = started;
+    keep(started);
     onScreen = true;
     phase = 'playing';
     writeAddress(started);
@@ -168,15 +209,26 @@ export function createSeriesController(
       onScreen = true;
       writeAddress(session);
       host.layoutChanged();
-      // The arena showed something else meanwhile: the round starts again from its seed, so it
-      // plays out exactly as it would have. A round already recorded stays recorded.
-      if (!ours() && !session.recorded) playCurrent();
+      // The arena showed something else meanwhile (or the page was reloaded): the round starts
+      // again from its seed, so it plays out exactly as it would have. A round already recorded
+      // stays recorded, its finished match behind the round screen.
+      if (!ours()) showAgain();
       host.redraw();
+    },
+    adopt(saved) {
+      session = saved;
+      onScreen = false;
+      shownAt = -1;
+    },
+    address() {
+      if (session === undefined) return undefined;
+      const address = seriesAddress(session);
+      return 'setup' in address ? address.setup : undefined;
     },
     hold() {
       onScreen = false;
       // A decided series has nothing left to resume.
-      if (session?.state.winner !== undefined) session = undefined;
+      if (session?.state.winner !== undefined) keep(undefined);
     },
     setVisible(visible) {
       panel.setVisible(visible && onScreen && session !== undefined);
@@ -186,9 +238,11 @@ export function createSeriesController(
       // Only the series' own match, on screen, is recorded: never a quick match played meanwhile.
       if (session === undefined || !onScreen || !ours()) return;
       const before = session;
-      session = showBotBallNow(settleCurrent(session, world), botOf(session.state.setup));
+      const settled = showBotBallNow(settleCurrent(session, world), botOf(session.state.setup));
+      if (settled === before) return;
+      keep(settled);
       // Decided: now the link can show both lineups and every pick.
-      if (session !== before && session.state.winner !== undefined) writeAddress(session);
+      if (settled.state.winner !== undefined) writeAddress(settled);
     },
     update(world, celebrated) {
       if (session === undefined || !onScreen) return;

@@ -11,6 +11,7 @@ import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import { createPairing } from './balls/pairing.ts';
+import { createLeaveConfirm } from './series/leave-confirm.ts';
 import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesBar } from './series/series-bar.ts';
@@ -122,7 +123,8 @@ export function createSeriesPanel(
   const share = button('Copy link', 'text-link series-share', () => {
     void copyLink();
   });
-  const leave = button('Leave series', 'text-link series-leave', actions.onLeave);
+  // Leaving forgets the series (ADR 0042), so it is asked once, in place.
+  const leave = createLeaveConfirm(actions.onLeave);
   root.append(
     heading,
     bar.element,
@@ -137,7 +139,7 @@ export function createSeriesPanel(
     share,
     story.element,
   );
-  exit.replaceChildren(leave);
+  exit.replaceChildren(leave.element);
 
   function button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const node = element('button', className, text);
@@ -170,6 +172,8 @@ export function createSeriesPanel(
     setVisible(visible) {
       root.hidden = !visible;
       exit.hidden = !visible;
+      // Leaving the screen any other way (Back) answers the question with Stay.
+      if (!visible) leave.close();
     },
     focusAction() {
       if (!picks.element.hidden) picks.focus();
@@ -254,7 +258,7 @@ export function createSeriesPanel(
       buttons.hidden = next.hidden && rematch.hidden && newSeries.hidden;
       share.hidden = !finished;
       if (!finished) setText(share, 'Copy link');
-      leave.hidden = finished;
+      leave.setHidden(finished);
 
       let text = '';
       if (playing && current !== undefined) text = playingLine(current, nameOf);

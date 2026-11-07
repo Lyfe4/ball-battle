@@ -40,8 +40,9 @@ const RETIRED_FORMATS: Readonly<Record<string, Format>> = { loser: 'showdown' };
 
 /**
  * The best-of-3 setup step a URL is on, past the first (choosing the rules). Only a link that holds
- * a whole series replays one; the others are steps of setting one up, and `answer` and `play` fall
- * back to the lineup after a reload, since the bot's lineup is never in the URL until the end.
+ * a whole series replays one; the others are steps of setting one up. The bot's lineup is never in
+ * the URL until the end, so after a reload `answer` and `play` carry on with what the device saved
+ * (ADR 0042), or fall back to the lineup when nothing was.
  */
 export type SeriesStep = 'lineup' | 'answer' | 'play';
 const STEPS: readonly SeriesStep[] = ['lineup', 'answer', 'play'];
@@ -175,6 +176,16 @@ export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): 
   if (setup.picks !== undefined && setup.picks.length > 0) {
     params.set(KEYS.picks, setup.picks.join(','));
   }
+}
+
+/** True when two setups are the same series: they write the same link. */
+export function sameSeries(first: SeriesSetup, second: SeriesSetup): boolean {
+  const link = (setup: SeriesSetup) => {
+    const params = new URLSearchParams();
+    writeSeriesParams(params, setup);
+    return params.toString();
+  };
+  return link(first) === link(second);
 }
 
 /**

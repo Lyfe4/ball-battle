@@ -3,16 +3,24 @@
 // Reveal's coin toss and the player's first pick (an answer to the bot's shown ball, or the ball
 // they show first), or Showdown's opener, picked while the bot picks its own. The rules and the lineup are
 // history entries (`?mode=bo3&step=...`), so Back walks back through them; the answer is part of the
-// series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here, in memory
-// only, until the series starts: it is never written to the URL before the series is decided.
+// series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here and in
+// the device's storage (so a reload keeps round 1's pick where it was, ADR 0042) until the series
+// starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from './app/bot-level.ts';
+import { loadSetup, saveSetup } from './app/series-save.ts';
 import { generateSeed } from './app/seed.ts';
 import { beginSession, botOf, resolvePicks } from './app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { botFor, DEFAULT_BOT } from './sim/bot.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
-import type { Format, Opponent, SeriesSetup, SeriesState } from './sim/series.ts';
+import {
+  formatOf,
+  type Format,
+  type Opponent,
+  type SeriesSetup,
+  type SeriesState,
+} from './sim/series.ts';
 import type { BallDefinition } from './sim/types.ts';
 import type { Draft } from './ui/lineup-draft.ts';
 import { createLineupStep } from './ui/series/lineup-step.ts';
@@ -62,12 +70,20 @@ export function createSeriesSetup(
   host: SeriesSetupHost,
 ): SeriesSetupFlow {
   const ballIds = balls.map((ball) => ball.id);
+  const lookup = indexDefinitions(balls);
   let format: Format = 'blind';
   /** The bot's level, as last chosen on this device. */
   let level = loadBotLevel(storage);
-  let draft: Draft = [];
+  // The tray and the revealed series as they were before a reload (ADR 0042).
+  const saved = loadSetup(storage, lookup);
+  let draft: Draft = saved.draft;
   /** Reveal and Showdown: the series about to start, while the player makes round 1's pick. */
-  let revealed: SeriesSetup | undefined;
+  let revealed: SeriesSetup | undefined = saved.revealed;
+
+  /** Keeps the tray and the revealed series on the device, as they are now. */
+  function remember(): void {
+    saveSetup(storage, revealed === undefined ? { draft } : { draft, revealed });
+  }
 
   const to = (step: SetupStep) => (params: URLSearchParams) => {
     writeSeriesModeParams(params, format, step === 'rules' ? undefined : step);
@@ -100,6 +116,7 @@ export function createSeriesSetup(
     },
     onChange: (tray) => {
       draft = tray;
+      remember();
     },
     onDone: (own) => {
       draft = own;
@@ -117,15 +134,17 @@ export function createSeriesSetup(
       };
       if (format !== 'blind') {
         revealed = setup;
+        remember();
         host.move(to('answer'));
         open('answer');
         return;
       }
+      remember();
       host.start(setup);
     },
   });
 
-  const answer = createAnswerStep(indexDefinitions(balls), {
+  const answer = createAnswerStep(lookup, {
     onBack: () => {
       host.back(() => {
         host.replace(to('lineup'));
@@ -133,7 +152,12 @@ export function createSeriesSetup(
       });
     },
     onAnswer: (ball) => {
-      if (revealed !== undefined) host.start(revealed, ball);
+      if (revealed === undefined) return;
+      const series = revealed;
+      // Started, the series is saved as a series: the answer step can't be reopened (ADR 0025).
+      revealed = undefined;
+      remember();
+      host.start(series, ball);
     },
   });
 
@@ -156,9 +180,11 @@ export function createSeriesSetup(
     resume.show(step === 'answer' ? undefined : host.held());
     if (step === 'rules') {
       revealed = undefined;
+      remember();
       rules.open(format, level);
     } else if (step === 'lineup') {
       revealed = undefined;
+      remember();
       lineup.open(format, draft);
     } else if (revealed !== undefined) {
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
@@ -174,8 +200,9 @@ export function createSeriesSetup(
     show(step, link) {
       if (link.format !== undefined) format = link.format;
       if (link.lineup !== undefined) draft = link.lineup;
-      // The bot's revealed lineup isn't in the URL: after a reload, ordering goes back to the lineup.
-      if (step === 'answer' && revealed === undefined) {
+      // The bot's revealed lineup isn't in the URL but on the device: without it (or with a series
+      // in another format than the URL names) round 1's pick goes back to the lineup.
+      if (step === 'answer' && (revealed === undefined || formatOf(revealed) !== format)) {
         host.replace(to('lineup'));
         open('lineup');
         return;
@@ -185,6 +212,7 @@ export function createSeriesSetup(
     keep(setup) {
       draft = setup.a;
       format = setup.format ?? 'blind';
+      remember();
     },
   };
 }

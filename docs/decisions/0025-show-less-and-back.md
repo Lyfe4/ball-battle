@@ -4,7 +4,8 @@
 - Date: 2026-11-05
 - Amends: ADR 0020 (§3 history, §4 info card, §5 screens), ADR 0017 (scoreboard UI)
 - Amended by: ADR 0027 (no dead ends: the series screen model and its test), ADR 0038 (the
-  legend has its own Close), ADR 0039 (§4: while a round is fought on a phone the track waits under the score line)
+  legend has its own Close), ADR 0039 (§4: while a round is fought on a phone the track waits under the score line), ADR
+  0042 (§3: a held series survives a reload; Leave series forgets it)
 
 ## Context
 

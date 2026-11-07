@@ -23,6 +23,7 @@
 @import './ui/series/series-setup.css';
 @import './ui/series/series-bar.css';
 @import './ui/series-panel.css';
+@import './ui/series/leave-confirm.css';
 @import './ui/series/pick-rows.css';
 @import './ui/series/pick-banner.css';
 @import './ui/settings-menu.css';

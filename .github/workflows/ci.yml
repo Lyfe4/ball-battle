@@ -81,7 +81,9 @@ jobs:
   browsers:
     name: Known match results in Chromium, Firefox and WebKit
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The reload flows (ADR 0042) play three whole series per size and engine, which took the job
+    # past 10 minutes.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

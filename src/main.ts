@@ -172,6 +172,10 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     go,
     replaceWith,
     showWorld,
+    showFinished: (world, seed) => {
+      showWorld(world, seed, true);
+    },
+    storage,
     worldsShown: () => worldsShown,
     started: () => {
       arena.focus();
@@ -227,7 +231,10 @@ const router = createRouter(
           seriesSetup.show(route.step, route.link);
           return;
         }
-        const round = seriesRound(route.link, series.hasSeries());
+        const round = seriesRound(route.link, {
+          has: series.hasSeries(),
+          address: series.address(),
+        });
         if (round === 'carry on') {
           series.resume();
         } else if (round === 'lineup') {
@@ -296,12 +303,15 @@ installSettings({ tips, speed: () => state.speed, setSpeed });
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
 let worldsShown = 0;
 
-/** Puts a new world on screen: playback, effects and the HUD start over. */
-function showWorld(world: WorldState, shownSeed: number): void {
+/**
+ * Puts a new world on screen: playback, effects and the HUD start over. `finished` shows a match
+ * that has already ended as it ended, with no intro or Fight! (a round's result after a reload).
+ */
+function showWorld(world: WorldState, shownSeed: number, finished = false): void {
   worldsShown += 1;
   state.seed = shownSeed;
   hud.setMatch(world);
-  arena.show(world);
+  arena.show(world, finished);
 }
 
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
