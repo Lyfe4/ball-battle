@@ -79,7 +79,9 @@ URL, so Back works and any screen can be linked
 once in a legend, details one tap away, and Back that undoes exactly one move
 ([ADR 0025](docs/decisions/0025-show-less-and-back.md)). A gear beside every `?` opens
 **Settings**: speed, and whether ability hints and what-to-watch cards show
-([ADR 0040](docs/decisions/0040-settings.md)). On a phone the court takes the whole width
+([ADR 0040](docs/decisions/0040-settings.md)). It keeps off the court, and where a phone is too
+short for that the match waits while it is open
+([ADR 0044](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)). On a phone the court takes the whole width
 whenever it shows ([ADR 0039](docs/decisions/0039-the-phone-arena-is-the-screen.md)).
 
 The **Ball manual** lists every ball with what it does and who it is strong and weak vs, each with
@@ -336,7 +338,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0039: The phone arena is the screen](docs/decisions/0039-the-phone-arena-is-the-screen.md)
 , [ADR 0040: Settings](docs/decisions/0040-settings.md)
 , [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md)
-and [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md).
+, [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md)
+and [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the

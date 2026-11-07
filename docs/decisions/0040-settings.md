@@ -5,6 +5,8 @@
 - Amends: ADR 0036 (§ tips can be turned off: now in settings, as two switches), ADR 0037 (§ the
   ready card's "Don't show these again" is the settings' cards switch), ADR 0038 (§1 the legend:
   its tips row is gone; the series bar holds the gear)
+- Amended by: ADR 0044 (the panel keeps off the court, has a compact form, makes the match wait
+  when it must cover it, returns focus on a tap outside, and shares the legend's look)
 
 ## Context
 
