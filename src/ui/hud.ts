@@ -79,6 +79,13 @@ export function createHud(
 
   // How it was won (ADR 0036), under a finished quick match; a series tells each round itself.
   const story = createMatchStory(definitions);
+  /** A Free play mirror's two balls, told apart as the HUD's slots are: "Titan A", "Titan B". */
+  const mirrorNames = (world: WorldState | undefined): readonly string[] | undefined => {
+    const [a, b] = world?.balls ?? [];
+    if (a === undefined || a.definitionId !== b?.definitionId) return undefined;
+    const name = definitions.get(a.definitionId)?.name ?? a.definitionId;
+    return [`${name} A`, `${name} B`];
+  };
   root.append(list, result, buttons, story.element);
   let seriesMode = false;
   let start: WorldState | undefined;
@@ -150,7 +157,7 @@ export function createHud(
       }
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
       buttons.hidden = !finished || seriesMode;
-      story.show(finished && !seriesMode ? start : undefined);
+      story.show(finished && !seriesMode ? start : undefined, undefined, mirrorNames(start));
     },
   };
 }

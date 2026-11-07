@@ -1,19 +1,23 @@
-// The real page in a real browser (`pnpm test:browsers`): hovering a symbol with a mouse, or moving
-// keyboard focus onto a control that shows one, says what it means in the legend's own words. On
-// touch, a held press on a control's symbol explains it without pressing the control, while a tap
-// still presses it, and a tap on a symbol outside a control explains it (ADR 0035). Runs at
-// desktop size (the browsers-wide project).
+// The real page in a real browser (`pnpm test:browsers`): hovering a matchup mark with a mouse, or
+// moving keyboard focus onto a control that shows one, names both balls and who has the edge
+// (ADR 0037); a click on a tile still picks it, and a click on a symbol outside a control explains
+// it in the legend's words. Taps on a touch phone are in pick-badges.touch.browser.test.ts. Runs
+// at desktop size (the browsers-wide project).
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
-import { HOLD_MS, markSymbol } from '../ui/symbol-tooltip.ts';
+import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { matchupTip } from '../ui/balls/matchups.ts';
+import { markSymbol } from '../ui/symbol-tooltip.ts';
 import { SYMBOLS } from '../ui/symbols.ts';
 import { settle, visible } from './page-support.ts';
 
-const tooltip = () => visible('.symbol-tooltip').map((tip) => tip.textContent);
+const lines = () =>
+  visible('.symbol-tooltip').flatMap((tip) => [...tip.children].map((line) => line.textContent));
+const nameOf = (id: string) => BALL_LOOKUP.get(id)?.name ?? id;
 
 describe('the symbol tooltip', () => {
-  it('shows on mouse hover, keyboard focus, a held press and a tap outside a control', async () => {
+  it('names both balls and the edge on hover and focus; a click on a tile still picks', async () => {
     const body = new DOMParser().parseFromString(page, 'text/html').body;
     document.body.replaceChildren(...body.children);
     const start = new URL(location.href);
@@ -28,76 +32,55 @@ describe('the symbol tooltip', () => {
       if (mark === undefined) throw new Error(`No ${lean} mark in the grid`);
       return mark;
     };
-    expect(tooltip()).toStrictEqual([]);
+    const tileBall = (mark: HTMLElement) =>
+      mark.closest<HTMLElement>('.ball-tile')?.dataset['ballId'] ?? '';
+    expect(lines()).toStrictEqual([]);
 
-    // A touch on a mark is a press: nothing new appears.
+    // A touch passing over a mark opens nothing.
     marked('unfavoured').dispatchEvent(
       new PointerEvent('pointerover', { bubbles: true, pointerType: 'touch' }),
     );
-    expect(tooltip()).toStrictEqual([]);
+    expect(lines()).toStrictEqual([]);
 
-    // A mouse over the red ▼: the legend's words for it.
-    await userEvent.hover(marked('unfavoured'));
+    // A mouse over a red ▼: "Frost vs Speedster: Speedster is favoured", then why.
+    const weak = marked('unfavoured');
+    await userEvent.hover(weak);
     await settle();
-    expect(tooltip()).toStrictEqual([SYMBOLS.unfavoured.meaning]);
-    await userEvent.hover(marked('favoured'));
+    expect(lines()).toStrictEqual([...matchupTip(tileBall(weak), 'speedster', nameOf, 'neutral')]);
+    expect(lines()[0]).toBe(`${nameOf(tileBall(weak))} vs Speedster: Speedster is favoured`);
+    const strong = marked('favoured');
+    await userEvent.hover(strong);
     await settle();
-    expect(tooltip()).toStrictEqual([SYMBOLS.favoured.meaning]);
+    expect(lines()[0]).toBe(
+      `${nameOf(tileBall(strong))} vs Speedster: ${nameOf(tileBall(strong))} is favoured`,
+    );
     await userEvent.keyboard('{Escape}');
-    expect(tooltip()).toStrictEqual([]);
+    expect(lines()).toStrictEqual([]);
 
-    // Keyboard focus on a tile with a mark: the same words.
+    // Keyboard focus on a tile with one mark: the same words as hovering it.
     const tile = marked('unfavoured').closest('button');
     if (tile === null) throw new Error('The mark is not on a tile');
-    // Tab into the page, then put focus on the tile as the grid's arrow keys would.
     await userEvent.keyboard('{Tab}');
     tile.focus();
     await settle();
     expect(tile.matches(':focus-visible')).toBe(true);
-    expect(tooltip()).toStrictEqual([SYMBOLS.unfavoured.meaning]);
+    expect(lines()).toStrictEqual([...matchupTip(tileBall(weak), 'speedster', nameOf, 'neutral')]);
     tile.blur();
-    expect(tooltip()).toStrictEqual([]);
+    expect(lines()).toStrictEqual([]);
 
-    // Touch: a held press on the tile's ▼ explains it, and the click that ends it picks nothing.
-    const touch = (type: string, on: Element) => {
-      const box = on.getBoundingClientRect();
-      on.dispatchEvent(
-        new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          pointerType: 'touch',
-          clientX: box.x + 2,
-          clientY: box.y + 2,
-        }),
-      );
-    };
-    const mark = marked('unfavoured');
+    // A click on a tile picks it (the slot fills), and explains nothing.
     const before = location.search;
-    touch('pointerdown', mark);
-    await new Promise((resolve) => setTimeout(resolve, HOLD_MS + 100));
-    expect(tooltip()).toStrictEqual([SYMBOLS.unfavoured.meaning]);
-    touch('pointerup', mark);
-    mark.click();
-    await settle();
-    expect(location.search).toBe(before);
-    expect(tooltip()).toStrictEqual([SYMBOLS.unfavoured.meaning]);
-
-    // A quick tap presses the tile as always (it is chosen), and explains nothing.
-    const tapped = marked('unfavoured');
-    touch('pointerdown', tapped);
-    touch('pointerup', tapped);
-    tapped.click();
+    marked('unfavoured').click();
     await settle();
     expect(location.search).not.toBe(before);
 
-    // A tap on a symbol that is not part of a control explains it.
+    // A click on a symbol that is not part of a control explains it, in the legend's words.
     const loose = document.createElement('span');
-    loose.textContent = '▲';
-    markSymbol(loose, 'favoured');
+    loose.textContent = '?';
+    markSymbol(loose, 'unknown');
     document.body.append(loose);
-    touch('pointerdown', loose);
-    touch('pointerup', loose);
-    expect(tooltip()).toStrictEqual([SYMBOLS.favoured.meaning]);
+    loose.click();
+    expect(lines()).toStrictEqual([SYMBOLS.unknown.meaning]);
     loose.remove();
   });
 });

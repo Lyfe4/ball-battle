@@ -108,7 +108,8 @@ export function createSeriesPanel(
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
-  // How the round just played was won (ADR 0036), between rounds and at the end.
+  // How the round just played was won (ADR 0036, 0037), between rounds and at the end: last, and
+  // quiet while a pick is asked for, so it never competes with the choice.
   const story = createMatchStory(definitions);
 
   const pairing = element('div', 'series-pairing');
@@ -202,7 +203,15 @@ export function createSeriesPanel(
       const finished = phase === 'finished';
       root.dataset['phase'] = phase;
       setText(about, aboutLine(state.setup));
-      story.show(playing ? undefined : lastRoundStart(state, definitions));
+      const lastRound = state.rounds.at(-1);
+      story.show(
+        playing ? undefined : lastRoundStart(state, definitions),
+        `Round ${String(state.rounds.length)}`,
+        // Whose ball is whose, so even a mirror reads plainly.
+        lastRound === undefined
+          ? undefined
+          : [`your ${nameOf(lastRound.a)}`, `the bot’s ${nameOf(lastRound.b)}`],
+      );
       track.update(state, trackOf(state, playing ? current : undefined));
 
       const due = playing || linkState !== undefined ? undefined : awaitingPick(state);

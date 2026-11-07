@@ -39,15 +39,17 @@ describe('a Showdown against the Hard bot', () => {
     button('Reveal lineups').click();
     await settle();
 
-    expect(visible('.answer-step .series-banner')[0]?.textContent).toBe('Your pick: opener');
+    expect(visible('.answer-step .series-banner')[0]?.textContent).toBe(
+      'Pick your opener. The bot picks at the same time.',
+    );
     const rows = visible('.answer-step .pick-row');
     expect(rows).toHaveLength(3);
     // Every row is marked against each of the bot's three balls, and the key says what marks mean.
     for (const row of rows) expect(row.querySelectorAll('[data-symbol]')).toHaveLength(3);
-    expect(visible('.answer-step .pick-key')[0]?.textContent).toContain('favoured');
+    expect(visible('.answer-step .pick-key')[0]?.textContent).toContain('you’re favoured');
     expect(visible('.answer-step .symbol-legend-toggle')).toHaveLength(1);
 
-    rows[1]?.click();
+    rows[1]?.querySelector<HTMLButtonElement>('.pick-row-pick')?.click();
     await settle();
     expect(location.search).toContain('fmt=showdown');
     const fighting = visible('.hud-ball-name').map((row) => row.textContent);

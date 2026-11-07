@@ -3,12 +3,22 @@ import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import { playToEnd } from '../sim/series-verify.ts';
 import { createWorld } from '../sim/world.ts';
-import { clockOf, MAX_MOMENTS, storyOf } from './match-story-data.ts';
+import {
+  BIG_HIT,
+  chooseMoments,
+  clockOf,
+  leadTakenAt,
+  MAX_MOMENTS,
+  sourceWords,
+  storyOf,
+  type Moment,
+  type SideStory,
+} from './match-story-data.ts';
 
 const start = (a: string, b: string, seed: number) =>
   createWorld(seed, [getDefinition(BALL_LOOKUP, a), getDefinition(BALL_LOOKUP, b)]);
 
-describe('how it was won (ADR 0036)', () => {
+describe('how it was won (ADR 0036, 0037)', () => {
   it('adds up to the health each ball lost, and puts the winner first', () => {
     for (const [a, b] of [
       ['storm', 'vampire'],
@@ -41,15 +51,132 @@ describe('how it was won (ADR 0036)', () => {
     expect(labels).toContain('Hits');
   });
 
-  it('keeps a few key moments in order, ending with the knockout or the time', () => {
+  it('keeps a few key moments in order, always ending with the finish', () => {
     for (let seed = 0; seed < 6; seed++) {
       const { moments } = storyOf(start('storm', 'vampire', seed), BALL_LOOKUP);
       expect(moments.length).toBeGreaterThan(0);
       expect(moments.length).toBeLessThanOrEqual(MAX_MOMENTS);
       const ticks = moments.map((moment) => moment.tick);
       expect(ticks).toStrictEqual([...ticks].sort((x, y) => x - y));
-      expect(moments.at(-1)?.text).toMatch(/knocked out|Time up/);
+      expect(moments.filter((moment) => moment.kind === 'finish')).toHaveLength(1);
+      expect(moments.at(-1)?.kind).toBe('finish');
     }
+  });
+
+  it('leads with the result in one plain line, and says who hit whom', () => {
+    for (let seed = 0; seed < 8; seed++) {
+      const opening = start('chrono', 'titan', seed);
+      const end = playToEnd(opening, BALL_LOOKUP);
+      const story = storyOf(opening, BALL_LOOKUP);
+      if (end.match.status !== 'finished') throw new Error('The match did not finish');
+      const { result, reason, endTick } = end.match;
+      if (result.kind === 'win') {
+        const winner = story.sides[0]?.name ?? '';
+        const loser = story.sides[1]?.name ?? '';
+        expect(story.result).toBe(
+          reason === 'knockout'
+            ? `${winner} knocked out ${loser} at ${clockOf(endTick)}`
+            : `Time up: ${winner} won with more health left`,
+        );
+      } else {
+        expect(story.result).toMatch(/draw/);
+      }
+      for (const moment of story.moments.filter((m) => m.kind === 'bigHit')) {
+        expect(moment.text).toMatch(
+          /^(Chrono|Titan)\S* .*hit (Chrono|Titan) for \d+, the round’s biggest hit\.$/,
+        );
+      }
+    }
+  });
+
+  it('chooses moments by what decided the round: finish, comeback, rules, then the big hit', () => {
+    const at = (tick: number, kind: Moment['kind']): Moment => ({ tick, kind, text: kind });
+    const all = [
+      at(5, 'bigHit'),
+      at(1, 'rule'),
+      at(2, 'rule'),
+      at(9, 'finish'),
+      at(3, 'rule'),
+      at(6, 'lead'),
+    ];
+    expect(chooseMoments(all).map((m) => m.kind)).toStrictEqual(['rule', 'rule', 'lead', 'finish']);
+    expect(chooseMoments(all, 6).map((m) => m.tick)).toStrictEqual([1, 2, 3, 5, 6, 9]);
+    expect(chooseMoments([at(9, 'finish'), at(4, 'bigHit')]).map((m) => m.kind)).toStrictEqual([
+      'bigHit',
+      'finish',
+    ]);
+    expect(BIG_HIT).toBe(20);
+  });
+
+  it('marks the comeback only when the winner was behind at some point', () => {
+    const track = (rows: readonly (readonly [number, number])[]) =>
+      rows.map(([a, b], tick) => ({
+        tick,
+        share: new Map([
+          ['a', a],
+          ['b', b],
+        ]),
+      }));
+    // Ahead or level all the way: no comeback.
+    const ahead = track([
+      [1, 1],
+      [1, 0.9],
+      [0.8, 0.5],
+      [0.6, 0],
+    ]);
+    expect(leadTakenAt(ahead, 'a')).toBeUndefined();
+    // Behind, level, ahead, behind again, then ahead for good from tick 5.
+    const comeback = track([
+      [1, 1],
+      [0.8, 0.9],
+      [0.8, 0.8],
+      [0.8, 0.7],
+      [0.6, 0.7],
+      [0.6, 0.5],
+      [0.4, 0],
+    ]);
+    expect(leadTakenAt(comeback, 'a')).toBe(5);
+  });
+
+  it('says a ball’s sources only when there is more than one, or a heal', () => {
+    const side: SideStory = {
+      ballId: 'a',
+      definitionId: 'titan',
+      name: 'Titan',
+      repeat: false,
+      won: true,
+      dealt: 61,
+      sources: [{ label: 'Hits', amount: 61, ability: false }],
+      healed: 0,
+      healsCut: 0,
+    };
+    expect(sourceWords(side)).toBe('all hits');
+    expect(
+      sourceWords({
+        ...side,
+        healed: 12,
+        healsCut: 2,
+        sources: [
+          { label: 'Poison', amount: 40, ability: true },
+          { label: 'Hits', amount: 21, ability: false },
+        ],
+      }),
+    ).toBe('Poison 40 · Hits 21 · healed 12, 2 cut by shock');
+  });
+
+  it('names each slot by its label when given, so a mirror reads plainly', () => {
+    const story = storyOf(start('titan', 'titan', 1), BALL_LOOKUP, [
+      'your Titan',
+      'the bot’s Titan',
+    ]);
+    expect(story.result).toMatch(
+      /^(Your Titan knocked out the bot’s Titan|The bot’s Titan knocked out your Titan|Time up)/,
+    );
+    expect(story.sides.map((side) => side.name).sort()).toStrictEqual([
+      'The bot’s Titan',
+      'Your Titan',
+    ]);
+    for (const moment of story.moments) expect(moment.text.charAt(0)).toMatch(/[A-Z0-9]/);
   });
 
   it('reads a tick as the match clock', () => {
