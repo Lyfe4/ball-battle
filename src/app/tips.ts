@@ -1,26 +1,32 @@
-// What a newcomer has already been shown (ADR 0036), remembered on their device: the balls whose
-// ability hint has shown, how many versus cards they've seen, and whether tips are on at all.
-// Storage can be missing or throw (private windows, blocked site data); then tips still work for
-// this page load and are simply shown again next time.
+// What a newcomer has already been shown (ADR 0036, 0037), remembered on their device: the balls
+// whose ability hint has shown, the pairings whose "what to watch" card has shown, and whether tips
+// (and the card) are on at all. Storage can be missing or throw (private windows, blocked site
+// data); then tips still work for this page load and are simply shown again next time.
 
 export const TIPS_STORAGE_KEY = 'ballbattle.tips';
 export const HINTS_SEEN_STORAGE_KEY = 'ballbattle.hintsSeen';
-export const VERSUS_SEEN_STORAGE_KEY = 'ballbattle.versusSeen';
-
-/** The versus card shows for a player's first few matches, then never again. */
-export const VERSUS_MATCHES = 3;
+export const READY_SEEN_STORAGE_KEY = 'ballbattle.readySeen';
+export const READY_CARD_STORAGE_KEY = 'ballbattle.readyCard';
+/** ADR 0036's count of versus cards seen; cleared by a reset, never read. */
+const OLD_VERSUS_STORAGE_KEY = 'ballbattle.versusSeen';
 
 export type TipStorage = () => Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export interface Tips {
-  /** Off means no hints and no versus card. */
+  /** Off means no hints and no "what to watch" card. */
   enabled(): boolean;
   setEnabled(on: boolean): void;
   /** True the first time this device sees `ballId`'s ability; marks it seen. */
   takeHint(ballId: string): boolean;
-  /** True for a player's first VERSUS_MATCHES matches; counts this one. */
-  takeVersus(): boolean;
-  /** Shows every hint and the versus card again, and turns tips on. */
+  /**
+   * True the first time this device meets the pairing of `a` and `b` (either order), while tips and
+   * the card are on; marks it seen. The card's reason is per pairing, so it shows exactly when it
+   * says something new.
+   */
+  takeReady(a: string, b: string): boolean;
+  /** Turns the "what to watch" card off ("Don't show these again"), leaving the hints on. */
+  hideReadyCards(): void;
+  /** Shows every hint and card again, and turns tips on. */
   reset(): void;
 }
 
@@ -41,14 +47,17 @@ function write(storage: TipStorage, key: string, value: string | undefined): voi
   }
 }
 
+const listOf = (value: string | null) => (value ?? '').split(',').filter((id) => id !== '');
+
+/** One key for a pairing, whichever slot each ball is in. */
+export const pairKey = (a: string, b: string) => [a, b].sort().join('|');
+
 export function createTips(storage: TipStorage): Tips {
-  // Kept in memory too, so a hint never repeats within a page load even when storage fails.
+  // Kept in memory too, so a tip never repeats within a page load even when storage fails.
   let on = read(storage, TIPS_STORAGE_KEY) !== 'off';
-  const seen = new Set(
-    (read(storage, HINTS_SEEN_STORAGE_KEY) ?? '').split(',').filter((id) => id !== ''),
-  );
-  const stored = Number(read(storage, VERSUS_SEEN_STORAGE_KEY));
-  let versus = Number.isInteger(stored) && stored > 0 ? stored : 0;
+  let cards = read(storage, READY_CARD_STORAGE_KEY) !== 'off';
+  const seen = new Set(listOf(read(storage, HINTS_SEEN_STORAGE_KEY)));
+  const pairs = new Set(listOf(read(storage, READY_SEEN_STORAGE_KEY)));
   return {
     enabled: () => on,
     setEnabled(next) {
@@ -61,19 +70,31 @@ export function createTips(storage: TipStorage): Tips {
       write(storage, HINTS_SEEN_STORAGE_KEY, [...seen].join(','));
       return true;
     },
-    takeVersus() {
-      if (!on || versus >= VERSUS_MATCHES) return false;
-      versus += 1;
-      write(storage, VERSUS_SEEN_STORAGE_KEY, String(versus));
+    takeReady(a, b) {
+      const key = pairKey(a, b);
+      if (!on || !cards || pairs.has(key)) return false;
+      pairs.add(key);
+      write(storage, READY_SEEN_STORAGE_KEY, [...pairs].join(','));
       return true;
+    },
+    hideReadyCards() {
+      cards = false;
+      write(storage, READY_CARD_STORAGE_KEY, 'off');
     },
     reset() {
       seen.clear();
-      versus = 0;
+      pairs.clear();
       on = true;
-      write(storage, HINTS_SEEN_STORAGE_KEY, undefined);
-      write(storage, VERSUS_SEEN_STORAGE_KEY, undefined);
-      write(storage, TIPS_STORAGE_KEY, undefined);
+      cards = true;
+      for (const key of [
+        HINTS_SEEN_STORAGE_KEY,
+        READY_SEEN_STORAGE_KEY,
+        READY_CARD_STORAGE_KEY,
+        TIPS_STORAGE_KEY,
+        OLD_VERSUS_STORAGE_KEY,
+      ]) {
+        write(storage, key, undefined);
+      }
     },
   };
 }

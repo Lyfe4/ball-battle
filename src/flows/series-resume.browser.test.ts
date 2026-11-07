@@ -22,7 +22,7 @@ describe('a Reveal series left with Back', () => {
     button('Reveal lineups').click();
     await settle();
     expect(step()).toBe('answer');
-    const answer = visible('.pick-row')[0];
+    const answer = visible('.pick-row .pick-row-pick')[0];
     if (answer === undefined) throw new Error('No answer to pick');
     answer.click();
     await settle();

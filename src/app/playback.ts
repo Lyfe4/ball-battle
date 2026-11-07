@@ -46,11 +46,13 @@ export function startPlayback(world: WorldState, introMs: number): Playback {
 }
 
 /**
- * Ends the intro now (a tap on the versus card, ADR 0036): presentation time only, so the match
- * plays exactly the ticks it would have (ADR 0007).
+ * How much of a frame may run while a match is held on its ready moment (ADR 0037): the intro's
+ * pop-in plays, then time stops with `floorMs` of the intro left, so no tick runs and the arena
+ * shows the match's opening world (tick 0) until the player starts it. Presentation time only
+ * (ADR 0007): once released, the same ticks run as they would have.
  */
-export function skipIntro(playback: Playback): Playback {
-  return { ...playback, clock: { ...playback.clock, introMs: 0 } };
+export function heldFrameMs(clock: PresentationClock, frameMs: number, floorMs: number): number {
+  return Math.max(0, Math.min(frameMs, clock.introMs - floorMs));
 }
 
 /**
