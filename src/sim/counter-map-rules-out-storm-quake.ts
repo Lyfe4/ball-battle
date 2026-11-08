@@ -78,9 +78,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'storm',
     y: 'frost',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Too slow to leave the warning circle.',
+    intended: 'even',
+    reason: 'Slow to leave the warning circle, but sturdy enough to take a strike.',
   },
   {
     x: 'storm',
@@ -157,8 +156,9 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'quake',
-    intended: 'even',
-    reason: 'The cold slows it to fewer walls, but every shockwave still lands.',
+    intended: 'x',
+    band: 'movement',
+    reason: 'Slowed, it hits fewer walls, so it sends out fewer shockwaves.',
   },
   {
     x: 'inferno',
@@ -169,9 +169,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'quake',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The pull drags it away from the walls its shockwaves need.',
+    intended: 'even',
+    reason: 'The pull drags it away from the walls, but into a brawl it can hold.',
   },
   {
     x: 'quake',
@@ -200,9 +199,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'ghost',
-    intended: 'y',
-    band: 'kind',
-    reason: 'It fades after a shockwave, so the next ones miss.',
+    intended: 'even',
+    reason: 'It fades after a shockwave, but the next wall comes after the fade.',
   },
   {
     x: 'quake',
@@ -213,9 +211,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'necromancer',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Every shockwave clears the skulls around it.',
+    intended: 'even',
+    reason: 'A shockwave clears the skull, but a new one rises soon after.',
   },
   {
     x: 'quake',

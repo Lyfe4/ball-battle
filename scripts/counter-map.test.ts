@@ -4,12 +4,13 @@ import {
   checkCounter,
   ciAllowance,
   COUNTER_BANDS,
-  KIND_FLOOR_DURING_REDESIGN,
   outsideFinalBand,
   COUNTER_MAP,
   counterFor,
   SAFE_PICK_COUNTERS,
   SAFE_PICKS,
+  WITHOUT_FAVOURED,
+  WITHOUT_UNFAVOURED,
   type CounterEntry,
 } from './counter-map.ts';
 
@@ -38,15 +39,19 @@ describe('the counter map', () => {
     }
   });
 
-  it('gives every ball a favoured and an unfavoured matchup, except the safe picks', () => {
-    for (const { id } of BALLS.filter((ball) => !SAFE_PICKS.includes(ball.id))) {
-      const sides = COUNTER_MAP.filter((entry) => entry.intended !== 'even').map((entry) => {
-        const winner = entry.intended === 'x' ? entry.x : entry.y;
-        return entry.x === id || entry.y === id ? (winner === id ? 'favoured' : 'unfavoured') : '';
-      });
-      expect(sides, id).toContain('favoured');
-      expect(sides, id).toContain('unfavoured');
-    }
+  it('gives every ball a favoured and an unfavoured matchup, except the safe picks and the listed', () => {
+    const without = (side: 'favoured' | 'unfavoured') =>
+      BALLS.filter(({ id }) => !SAFE_PICKS.includes(id))
+        .filter(({ id }) =>
+          COUNTER_MAP.every((entry) => {
+            if (entry.intended === 'even' || (entry.x !== id && entry.y !== id)) return true;
+            const winner = entry.intended === 'x' ? entry.x : entry.y;
+            return (winner === id) !== (side === 'favoured');
+          }),
+        )
+        .map(({ id }) => id);
+    expect(without('favoured')).toStrictEqual(WITHOUT_FAVOURED);
+    expect(without('unfavoured')).toStrictEqual(WITHOUT_UNFAVOURED);
   });
 
   it('keeps every safe pick even against everyone but its one counter (docs/vision.md)', () => {
@@ -96,10 +101,11 @@ describe('checkCounter', () => {
     expect(checkCounter(favoured, 0.75, 0.25)).toBe('short');
   });
 
-  it('keeps a kind counter’s floor at 58% while the redesign ships group by group', () => {
-    expect(KIND_FLOOR_DURING_REDESIGN).toStrictEqual([0.58, 0.8]);
-    expect(checkCounter(kind, 0.6, 0.4)).toBe('short');
+  it('holds a kind counter to its 66% floor: a pair has to win enough to count (ADR 0045)', () => {
+    expect(checkCounter(kind, 0.67, 0.33)).toBe('short');
     expect(checkCounter(kind, 0.79, 0.21)).toBe('short');
+    expect(checkCounter(kind, 0.645, 0.355)).toBe('near');
+    expect(checkCounter(kind, 0.6, 0.4)).toBe('miss');
   });
 
   it('calls a favoured result up to 2 points outside its floor NEAR, and further out MISS', () => {

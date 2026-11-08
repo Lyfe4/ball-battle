@@ -63,9 +63,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'berserker',
     y: 'speedster',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Its huge health soaks the stacked rush.',
+    intended: 'even',
+    reason: 'Its huge health soaks the rush, but the fastest ball lands more often.',
   },
   {
     x: 'berserker',
@@ -88,9 +87,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'berserker',
-    intended: 'y',
-    band: 'kind',
-    reason: 'Its raging hits come one at a time, and each lands whole.',
+    intended: 'even',
+    reason: 'A fade misses a raging hit now and then, but its huge health outlasts the fade.',
   },
   {
     x: 'magnet',
@@ -107,9 +105,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'thorns',
     y: 'berserker',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Its raging bumps hurt it back.',
+    intended: 'even',
+    reason: 'Its bumps come back off the spikes, but its huge health soaks them.',
   },
   {
     x: 'titan',
@@ -126,9 +123,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'vampire',
-    intended: 'x',
-    band: 'kind',
-    reason: 'It can’t drink from an arrow.',
+    intended: 'even',
+    reason: 'It can’t drink from an arrow, but every bump on the frail Archer heals it.',
   },
   {
     x: 'brawler',
@@ -193,9 +189,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'boomerang',
-    intended: 'y',
-    band: 'kind',
-    reason: 'It can’t drink from a boomerang.',
+    intended: 'even',
+    reason: 'It can’t drink from the boomerang, but every bump on the thrower heals it.',
   },
   {
     x: 'vampire',
@@ -218,9 +213,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'titan',
-    intended: 'x',
-    band: 'movement',
-    reason: 'A growing giant is a bigger target: more of its bumps land, and each one heals it.',
+    intended: 'even',
+    reason: 'A bigger target means more bumps to drink from, and harder ones back.',
   },
   {
     x: 'vampire',

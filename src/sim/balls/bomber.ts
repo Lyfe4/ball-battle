@@ -13,11 +13,11 @@ export const FUSE_TICKS = 210;
 /** It arms this long after it lands, once the Bomber is well clear of it. */
 export const ARM_TICKS = 18;
 /** World units: the bomb's body, which an enemy ball sets off by touching it. */
-export const BOMB_RADIUS = 36;
+export const BOMB_RADIUS = 44;
 /** World units: everything inside goes up with it. */
 export const BLAST_RADIUS = 100;
 /** Ability damage to each enemy ball in the blast. Below the Storm's strike (identity rule). */
-export const BLAST_DAMAGE = 11;
+export const BLAST_DAMAGE = 12;
 
 /** The Bomber's next drop tick, read from any ball state (undefined for other balls). */
 export function nextDropTickOf(ball: BallState): number | undefined {
@@ -34,13 +34,13 @@ export function nextDropTickOf(ball: BallState): number | undefined {
 export const bomber = defineBall<BomberState>({
   id: 'bomber',
   name: 'Bomber',
-  description: 'Leaves bombs that blow when touched, or after 3.5 s.',
+  description: 'Leaves bombs behind it that blow when touched, or soon after.',
   color: '#f91fce',
   ability: { name: 'Bombs', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 70,
-  contactDamage: 13,
+  maxHealth: 69,
+  contactDamage: 11,
   initialAbilityState: { nextDropTick: FIRST_DROP_TICK },
   hooks: {
     onTick: ({ world, self }) => {

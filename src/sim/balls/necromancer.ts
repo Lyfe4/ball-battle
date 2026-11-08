@@ -6,8 +6,11 @@ export type NecromancerState = Readonly<{ nextSummonTick: number }>;
 
 /** The first minion comes on this tick. */
 export const FIRST_SUMMON_TICK = 45;
-/** Ticks between summons. */
-export const SUMMON_TICKS = 88;
+/**
+ * Ticks between summons: a skull that pops or is shot is soon back, so one is nearly always out to
+ * draw aimed attacks, and an area strike that clears it buys only a moment (ADR 0045).
+ */
+export const SUMMON_TICKS = 55;
 /** Most minions it has in play at once; a summon over the cap waits for the next one. */
 export const MAX_MINIONS = 1;
 /** World units per second: steady, below every ball's speed. */
@@ -15,7 +18,7 @@ export const MINION_SPEED = 640;
 /** World units. Sized to read as a skull at phone size (ADR 0026). */
 export const MINION_RADIUS = 26;
 /** Ability damage when a minion pops on an enemy ball. */
-export const MINION_DAMAGE = 13;
+export const MINION_DAMAGE = 11;
 /** Ticks before a minion that never found an enemy crumbles (10 s). */
 export const MINION_LIFETIME_TICKS = 600;
 
@@ -50,12 +53,12 @@ export function randomDirection(random: () => number): Vec2 {
 export const necromancer = defineBall<NecromancerState>({
   id: 'necromancer',
   name: 'Necromancer',
-  description: 'Raises skeleton minions that pop on its enemy.',
+  description: 'Keeps a skeleton out that bites its enemy and draws aimed shots.',
   color: '#4d7c0f',
   ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 66,
+  maxHealth: 70,
   contactDamage: 14,
   initialAbilityState: { nextSummonTick: FIRST_SUMMON_TICK },
   hooks: {

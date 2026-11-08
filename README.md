@@ -91,29 +91,29 @@ definitions and the counter map, so they never go stale.
 In a match, two balls collide elastically and deal damage scaled by how directly
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball        | Ability                                                                            |
-| ----------- | ---------------------------------------------------------------------------------- |
-| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.         |
-| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.    |
-| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches. |
-| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.   |
-| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.       |
-| Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s.                             |
-| Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.                 |
-| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.       |
-| Berserker   | The most health, and hits harder the more it has lost.                             |
-| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.        |
-| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.              |
-| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.    |
-| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.            |
-| Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.           |
-| Chrono      | Rewinds a big hit (a shot, a strike, or a knockout), then recharges for 10 s.      |
-| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.     |
-| Inferno     | Leaves a trail of fire that burns enemies who cross it, and burns up skulls.       |
-| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.  |
-| Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.  |
-| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.    |
-| Bloom       | Always regrowing: heals a little, three times a second, all match long.            |
+| Ball        | Ability                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.                     |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                |
+| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches.             |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.               |
+| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                   |
+| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                          |
+| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.             |
+| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                   |
+| Berserker   | The most health, and hits harder the more it has lost.                                         |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                    |
+| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.                          |
+| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                |
+| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.                        |
+| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after. |
+| Chrono      | Rewinds a big hit (a shot, a strike, or a knockout), then recharges for 10 s.                  |
+| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.                 |
+| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls. |
+| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.              |
+| Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.              |
+| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.                |
+| Bloom       | Always regrowing: heals a little, three times a second, all match long.                        |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.

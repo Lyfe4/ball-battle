@@ -22,7 +22,6 @@ import {
   COUNTER_BANDS,
   counterFor,
   HARD_WORST_MATCHUP,
-  KIND_FLOOR_DURING_REDESIGN,
   outsideFinalBand,
   type CounterVerdict,
 } from './counter-map.ts';
@@ -245,7 +244,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map: target kind ${band(COUNTER_BANDS.kind)}, movement ${band(COUNTER_BANDS.movement)}, even ${band(COUNTER_BANDS.even)}; floor kind ${band(KIND_FLOOR_DURING_REDESIGN)} while the redesign ships (final ${band(COUNTER_BANDS.kindFloor)}), movement ${band(COUNTER_BANDS.movementFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
+  `\n  Counter map: target kind ${band(COUNTER_BANDS.kind)}, movement ${band(COUNTER_BANDS.movement)}, even ${band(COUNTER_BANDS.even)}; floor kind ${band(COUNTER_BANDS.kindFloor)}, movement ${band(COUNTER_BANDS.movementFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
 );
 console.log(counterLines.join('\n'));
 

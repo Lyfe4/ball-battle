@@ -50,7 +50,7 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     x: 'necromancer',
     y: 'bomber',
     intended: 'even',
-    reason: 'Skulls pass over the bombs, but a blast clears any skull inside it.',
+    reason: 'A blast clears a skull, but a new one rises soon after: neither side gains.',
   },
   {
     x: 'titan',

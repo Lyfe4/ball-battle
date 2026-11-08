@@ -62,9 +62,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'inferno',
-    intended: 'x',
-    band: 'kind',
-    reason: 'It fades after a burn, so the rest of the fire misses.',
+    intended: 'even',
+    reason: 'It fades after a burn, but the trail keeps burning once the fade ends.',
   },
   {
     x: 'ghost',
@@ -93,9 +92,9 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'frost',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The cold slows the fight, and a long fight is all regrowth.',
+    intended: 'even',
+    reason:
+      'The cold slows the fight and regrowth likes a long one, but the Frost’s hits are heavy.',
   },
   {
     x: 'bloom',
@@ -121,7 +120,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     y: 'necromancer',
     intended: 'x',
     band: 'kind',
-    reason: 'Regrows faster than the skeletons bite.',
+    reason: 'Regrows faster than the skeleton bites.',
   },
   {
     x: 'bloom',
