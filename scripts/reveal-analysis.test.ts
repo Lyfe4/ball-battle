@@ -45,7 +45,9 @@ describe('reveal analysis', () => {
       expect(best).toBeGreaterThanOrEqual(worst);
       if (best - worst >= 0.03) moved++;
     }
-    expect(moved / sample.length).toBeGreaterThan(0.8);
+    // Three quarters, not four fifths, since a pair counts as a counter only if it wins enough (ADR
+    // 0045, group 3): fewer favoured pairs leave fewer choices that move the odds.
+    expect(moved / sample.length).toBeGreaterThan(0.75);
   });
 
   it('makes the player’s choices count whoever wins the toss, and averages the two', () => {

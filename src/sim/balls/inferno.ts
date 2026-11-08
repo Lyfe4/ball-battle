@@ -25,7 +25,7 @@ export const CATCH_TICKS = 20;
 export const inferno = defineBall({
   id: 'inferno',
   name: 'Inferno',
-  description: 'Leaves a trail of fire that burns whoever crosses it, one burn at a time.',
+  description: 'Leaves a trail of fire that burns. Its burns never stack.',
   color: '#fdba74',
   ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,

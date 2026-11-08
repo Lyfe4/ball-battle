@@ -1,6 +1,6 @@
 # 0045: The roster redesign
 
-- Status: Accepted (groups 1 and 2 of 4 shipped; this ADR is updated with each group)
+- Status: Accepted (groups 1 to 3 of 4 shipped; this ADR is updated with each group)
 - Date: 2026-11-08
 - Amends: ADR 0009 (no shock), ADR 0010 and 0028 (two favoured bands), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
@@ -203,3 +203,112 @@ within noise, the roster fails fewer pairs overall (34 to 30) and every hard rul
   even and the Vampire's edge is now over the Titan (55%, a movement counter by size: a bigger
   target, so more of its bumps land and heal it). Thorns over the Berserker stays a full-run MISS
   (53%) inside CI's allowance, as in group 1.
+
+## Group 3: chip and hazards (ruleset 10)
+
+The Inferno, Necromancer, Bomber, Frost and Thorns, and a new rule for the whole counter map.
+
+### The counter rule: a counter has to win enough
+
+A pair counts as a counter only if it actually wins enough. A kind counter is held to its final floor
+of 66-80% now (`KIND_FLOOR_DURING_REDESIGN` is gone), a movement counter to 58-76%. A designed counter
+that measures 58% or less is marked even: no ▲▼, an even reason, and the bot reads it as even. One
+stuck between 58% and its floor is pushed into its band or tuned to even. Applied to the whole map
+first, it turned 21 favoured pairs even (among them Vampire over Titan 55% and Thorns over Berserker
+53%). Under it ruleset 9 fails 24 pairs, not 30.
+
+Five pairs with no ball of this group land in no band at all, too high to be even and too low to be
+a kind counter: Archer vs Vampire 62.7%, Guardian vs Speedster 62.1%, Boomerang vs Chrono 62.1%,
+Bloom vs Guardian 61.1% and Ghost vs Boomerang 60.8%. They are marked even and left failing for group
+4's whole-map pass, by the owner's decision.
+
+Balls left without a counter on one side are listed in `scripts/counter-map.ts`
+(`WITHOUT_FAVOURED`, `WITHOUT_UNFAVOURED`), so losing a ball's last counter is a decision: no
+favoured matchup for the Vampire, Storm, Berserker, Quake and Boomerang; no unfavoured one for the
+Vampire, Frost, Berserker, Ghost, Titan and Guardian. With fewer counters, choices move the odds in
+fewer lineups: the reveal analysis now expects three quarters of lineup pairs to move by 3 points or
+more, not four fifths (79% and 76% measured).
+
+### What each ball does now
+
+| Ball        | Now                                                                           | Was (ruleset 9)                             |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
+| Inferno     | A patch every 26 ticks, radius 62, burns 3 every 13 for 130; never stacks; 75 | Every 20, radius 55, 3 every 15 for 120; 70 |
+| Necromancer | One skull, back within 55 ticks of popping; health 70                         | One skull, every 88 ticks; 66               |
+| Bomber      | Bomb body 44, blast 12; bumps 11, health 69                                   | Body 36, blast 11; bumps 13, health 70      |
+| Frost       | A slowed ball loses 45% of its speed                                          | 30%                                         |
+| Thorns      | Reflects 36% of a bump; bumps 18, health 78                                   | 35%; bumps 19, health 77                    |
+
+**One owner's fire never stacks.** The Inferno's trail overlapped up to six patches, each burning on
+its own rhythm, so a ball inside several took several burns, and that capped how strong armor, fade
+and regrowth could be (group 2). Now one owner's lasting zones never stack: a ball they all overlap on
+a tick is burned once (`src/sim/zones/resolve.ts`, a rule of lasting zones, not of two balls), and
+the Inferno drops a patch every two burns so the whole trail burns on one beat. On screen the trail
+flares together, and a ball in the fire takes one burn per beat however much fire it stands in. The
+steady drip makes the defenders' counters land: the Guardian 71.9% and the Bloom 67.4% (both kind).
+
+**The Necromancer's skull is nearly always out.** A skull that pops or is shot is soon back, so it
+draws aimed attacks all match: it beats the Archer 73.3%, the Boomerang 69.4% and the Sniper 60.5%.
+Two skulls at once crushed the Archer (85-98%); one skull that comes back quickly keeps the shooters
+inside the movement band. It loses to the Magnet (61.2%), the Inferno (65.0%) and the Bloom (64.5%,
+kind, near the floor).
+
+**The Frost's slow bites.** A slowed ball crawls, which cuts what speed feeds: it beats the Speedster
+67.5% and the Quake 61.4% (a new counter: slowed, it hits fewer walls, so it sends fewer
+shockwaves). Frost vs Magnet is even (57.5% / 40.9%), with plain wording.
+
+**Thorns** beats the Brawler 68.5% and the Magnet 67.3%, and loses to the Archer (64.2%, near), the
+Sniper 66.3%, the Venom 70.1% and the Inferno (65.5%, near): everything that never touches it.
+
+### What did not work
+
+- **Thorns over the Titan and the Berserker** (aim 2): reflection scales with the hit, and the Titan,
+  Frost, Guardian and Chrono all bump for about 22, so the spikes lift them together. Either the
+  Titan and Berserker stay under 66% or the Frost and Guardian go over 58%; both pairs are even. The
+  five balls that never touch Thorns sit within a few points of each other, so no setting puts the
+  Archer above 64% and the Boomerang under 60% (59.9%, a full-run MISS as an even pair).
+- **Bomber over the Necromancer** (decision 2): a blast clears the skull, but it is soon back, and
+  skulls setting off bombs added only 2 points. It measures about 52-55%: even. The Bomber keeps one
+  edge (Speedster 58.4%) and one weakness (Titan 60.4%).
+- **The Berserker has no real edge** (aim 4). Its best pairs with this group, the Necromancer (57.9%)
+  and the Speedster (60.7%), are below a kind counter's floor. Rage 6 instead of 7 removed one
+  failing pair but sent Berserker vs Bloom to 68% in CI's sample, so it keeps ruleset 9's numbers.
+- **The Inferno's other pairs:** the Ghost's fade misses only part of a steady drip (60.5%, even, a
+  full-run MISS as in ruleset 9). Over the Titan (56.3%) and under the Speedster (57.8%) the fire's
+  edges are 58% or less: even. Over the Thorns (65.5%) is near the kind floor.
+- **A config with 23 failing pairs** (one under ruleset 9) had the Inferno's fire reach less far and
+  the Berserker's rage at 6, but in CI's 150 seeds the Inferno fell to 22.7% against the Bloom (under
+  the 25% hard floor) and the Berserker to 31.7%. The shipped config fails 25 pairs; the owner
+  accepted it as within noise of 24, since every hard rule and CI's balance check pass.
+
+### Measured (500 seeds per slot order, whole roster)
+
+| Gate                                     | Ruleset 9 | Ruleset 10 (group 3) |
+| ---------------------------------------- | --------- | -------------------- |
+| Each ball 40-60%                         | 47.0-53.5 | 47.0-53.5            |
+| No side of any pair under 25%            | 25.1      | 25.1                 |
+| Median fight 12-30 s                     | 17.0 s    | 17.3 s               |
+| Draws under 5%                           | 0.6%      | 0.6%                 |
+| Sensitivity (±5% health), fail above 20  | 15.6 pts  | 15.6 pts             |
+| Pairs failing the bands, new rule        | 24        | 25                   |
+| Favoured pairs (inside their target)     | 59        | 38 (16)              |
+| Comebacks (loser once led by 25+) 10-20% | 16.6%     | 16.5%                |
+| CI's balance check (150 seeds)           | passes    | passes               |
+
+Pairs failing the bands under the new rule, per ball of the group (ruleset 9 → 10): Inferno 1 → 2,
+Necromancer 1 → 1, Bomber 0 → 1, Frost 2 → 2, Thorns 5 → 3, Berserker 3 → 3. The Inferno's second is
+over the Thorns at 65.5% (0.5 under the floor) and the Bomber's is vs the Chrono at 58.3% (0.3 over):
+both within a point of the line.
+
+### Other effects
+
+- `pnpm balance` holds kind counters to 66%; the summary's below-target section says so.
+- The bot reads the map, so its picks change with it (ruleset 10); `docs/series-measurements.md`.
+- Phone frame timing (`scripts/frame-timing.ts`, over Inferno vs Necromancer, Bomber vs
+  Necromancer, Frost vs Speedster, Thorns vs Brawler and Inferno vs Bloom): no frame over 16.7 ms.
+
+  | Refresh               | Frames | Median |    p95 |    Max | Over 16.7 ms |
+  | --------------------- | -----: | -----: | -----: | -----: | -----------: |
+  | 60 Hz (native rAF)    |  7,035 | 0.0 ms | 0.2 ms | 2.5 ms |            0 |
+  | 90 Hz (fixed driver)  |  8,489 | 0.0 ms | 0.1 ms | 2.3 ms |            0 |
+  | 120 Hz (fixed driver) |  8,731 | 0.0 ms | 0.2 ms | 2.4 ms |            0 |

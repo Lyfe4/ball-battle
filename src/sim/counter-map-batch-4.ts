@@ -99,6 +99,6 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'titan',
     intended: 'even',
-    reason: 'TBD The bigger the body, the more fire it c',
+    reason: 'The bigger the body, the more fire it covers, but its huge bumps pay it back.',
   },
 ];

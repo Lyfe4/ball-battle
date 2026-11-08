@@ -35,7 +35,8 @@ are checked today (see Decisions); the rest waits for the round structure.
 - Every ball has **at least one matchup around 60% or better** and **at least one around 40% or
   worse**, so each has something to fear and something to hunt. **One exception: the Brawler**
   is the deliberate safe pick, even against everyone except its one counter, Thorns (see
-  Decisions).
+  Decisions). While the roster redesign ships, a pair counts only if it really wins enough (ADR 0045), and
+  the balls whose designed edges measured too soft are listed in `scripts/counter-map.ts`.
 - **No matchup worse than about 25/75** (today's limit is 20/80).
 - **Every ball wins 40-60% overall** (unchanged).
 

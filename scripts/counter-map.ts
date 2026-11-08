@@ -67,6 +67,7 @@ export const WITHOUT_UNFAVOURED: readonly string[] = [
   'frost',
   'berserker',
   'ghost',
+  'titan',
   'guardian',
 ];
 

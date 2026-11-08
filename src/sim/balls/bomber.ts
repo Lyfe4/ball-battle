@@ -34,7 +34,7 @@ export function nextDropTickOf(ball: BallState): number | undefined {
 export const bomber = defineBall<BomberState>({
   id: 'bomber',
   name: 'Bomber',
-  description: 'Leaves bombs behind it that blow when touched, or soon after.',
+  description: 'Leaves bombs that blow when touched, or soon after.',
   color: '#f91fce',
   ability: { name: 'Bombs', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,

@@ -53,7 +53,7 @@ export function randomDirection(random: () => number): Vec2 {
 export const necromancer = defineBall<NecromancerState>({
   id: 'necromancer',
   name: 'Necromancer',
-  description: 'Keeps a skeleton out that bites its enemy and draws aimed shots.',
+  description: 'Keeps a skeleton out that bites and draws aimed shots.',
   color: '#4d7c0f',
   ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
   radius: STANDARD_BALL_RADIUS,
