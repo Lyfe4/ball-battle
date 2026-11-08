@@ -1,6 +1,7 @@
 # 0045: The roster redesign
 
-- Status: Accepted (group 1 of 4 shipped; this ADR is updated with each group)
+- Status: Accepted (group 1 of 4 shipped; group 2 measured but not merged: see its section; this ADR
+  is updated with each group)
 - Date: 2026-11-08
 - Amends: ADR 0009 (no shock), ADR 0010 and 0028 (two favoured bands), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
@@ -132,3 +133,71 @@ the Storm and Sniper; the Ghost's fade and the Guardian's armor (group 2).
 - Series measurements (`docs/series-measurements.md`) moved by about a point at most with measured
   odds; with the map's odds, fewer favoured pairs make choices matter a little less against the Easy
   and Hard bots in Showdown.
+
+## Group 2: the kind-of-hit defenders (ruleset 9)
+
+The Chrono, Guardian, Ghost, Bloom and Venom. One universal definition query replaces the shield:
+`incomingDamageOf(self, amount, tick)` ("what a hit does to me"), applied on both damage paths
+(`src/sim/defence.ts`) and shown by a `hitReduced` event. The `shielded` status, `SHIELD_SOAK`,
+`shield.ts` and the `shieldBroken` event are gone. Timed phasing stays in the engine (`phasedOf`,
+tested with a test-only ball) though no roster ball phases now.
+
+### What each ball does now
+
+| Ball     | Now                                                                                     | Was (ruleset 8)                                 |
+| -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Chrono   | Rewinds an ability hit of 20+ (a shot, a strike) or a knockout, then recharges 10 s; 61 | Rewinds one knockout a match; 78 health         |
+| Guardian | Armor: every hit does 1 less (never under half); 74 health, bumps 22                    | A shield soaks up to 10 of a hit, regrows 7.5 s |
+| Ghost    | Fades 56 ticks after a hit, at most once every 205; nothing hurts it then; 67, bumps 24 | Phases 1 s in 4; spectral hit                   |
+| Bloom    | Heals 1 every 26 ticks, all match; 48 health, bumps 21                                  | Regrows up to 6 after 1.5 s without a hit; 68   |
+| Venom    | Bumps poison: 3 ticks of 5, 34 ticks apart; 73 health                                   | 2 every 30 ticks for 4.5 s; 76 health           |
+
+On screen: a gold ring bursts in pieces whenever a hit glances off a defence (armor took part of it,
+or a fade took all of it); a faded Ghost is see-through with a broken outline; the Chrono's clock
+stops and dims while it recharges; the Bloom's flower stays open and every regrowth is the heal
+pulse; poison keeps its ring of dots. Hints read "Armor!", "Fade!", "Rewind!", "Regrowth!".
+
+### Why the fade has a wait
+
+A fade on every hit was all or nothing against a steady rhythm: longer than the poison's interval
+it missed every other tick (Ghost vs Venom 95-99%), shorter it missed none (about 50%). The fade
+waits 205 ticks before it can come again, so it misses about one tick in six of a steady drip and
+the counter lands in the band (72%). The same wait keeps the Inferno's overlapping burns from
+crushing it (Ghost vs Inferno 64%, 84% in the prototype). Venom's poison became fewer, bigger
+ticks (5 every 34) so armor takes a share (a fifth) rather than half of each.
+
+### Measured (500 seeds per slot order, whole roster)
+
+| Gate                                     | Ruleset 8 | Ruleset 9 (group 2) |
+| ---------------------------------------- | --------- | ------------------- |
+| Each ball 40-60%                         | 46.3-53.0 | 47.0-53.5           |
+| No side of any pair under 25%            | 28.6      | 25.1                |
+| Median fight 12-30 s                     | 18.0 s    | 17.0 s              |
+| Draws under 5%                           | 0.6%      | 0.6%                |
+| Sensitivity (±5% health), fail above 20  | 14.0 pts  | 15.6 pts            |
+| Pairs outside the final bands            | 34        | 30                  |
+| Comebacks (loser once led by 25+) 10-20% | 15.0%     | 16.6%               |
+
+Pairs outside the final bands, per ball of the group (ruleset 8 → 9): Chrono 5 → 5, Guardian
+3 → 4, Ghost 8 → 5, Bloom 5 → 4, Venom 2 → 1. **The Guardian fails one pair more than before**, so
+this group does not pass its gate and was not merged. Its fourth pair sits on the line (Boomerang vs
+Guardian 58.0% against an even floor of 58); one less health moved a different pair over it
+(Berserker vs Guardian 41.5%), and its shape always leaves one pair near an edge.
+
+### What did not work
+
+- **Berserker's "burst beats sustain" (decision 5) is not reachable with simple numbers.** Inside its
+  identity (the most health, softer than the Brawler even at the edge of defeat) it loses to the new
+  Bloom (33%); a glass-cannon Berserker (66 health, bumps 19 + rage 16) only reached even (Bloom
+  53%, Guardian 56%) and broke both identity rules. It keeps ruleset 8's numbers; Berserker vs
+  Guardian and vs Bloom are even.
+- **Poison and fire beating rewind, and regrowth beating chip, reach only partway.** A Bloom sharp
+  enough to beat Venom 66%+ beat the Inferno past the 25% hard floor (79%), so Bloom vs Venom is even
+  (55%). Chrono's small-hitter pairs sit at 58-64%; only Venom (67%) and Inferno (69%) reach the
+  kind band, while the Storm (73%) and Sniper (75%) are in it.
+- **New honest edges by measurement:** the Guardian over the Speedster (armor takes a bit off both
+  its bump and its speed hit), the Titan over the Bomber (needed so the Bomber keeps a weak
+  matchup), the Ghost over the Quake and Boomerang (the next shockwave, the return, misses), the
+  Berserker over the Ghost (each raging hit lands whole). Vampire over Chrono keeps its true reason
+  (a rewind never gives back what was drunk) but measures 51%: a MISS in the full run, as Thorns
+  over the Berserker is (53%), both inside CI's allowance.
