@@ -200,9 +200,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'chrono',
-    intended: 'x',
-    band: 'kind',
-    reason: 'A rewind gives back the Chrono’s health, never what the Vampire drank.',
+    intended: 'even',
+    reason: 'A rewind never undoes what the Vampire drank, but bumps decide it.',
   },
   {
     x: 'vampire',
@@ -219,8 +218,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'titan',
-    intended: 'even',
-    reason: 'More meetings give it more to drink, but the Titan hits hard at every one.',
+    intended: 'x',
+    band: 'movement',
+    reason: 'A growing giant is a bigger target: more of its bumps land, and each one heals it.',
   },
   {
     x: 'vampire',

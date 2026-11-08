@@ -198,6 +198,8 @@ within noise, the roster fails fewer pairs overall (34 to 30) and every hard rul
 - **New honest edges by measurement:** the Guardian over the Speedster (armor takes a bit off both
   its bump and its speed hit), the Titan over the Bomber (needed so the Bomber keeps a weak
   matchup), the Ghost over the Quake and Boomerang (the next shockwave, the return, misses), the
-  Berserker over the Ghost (each raging hit lands whole). Vampire over Chrono keeps its true reason
-  (a rewind never gives back what was drunk) but measures 51%: a MISS in the full run, as Thorns
-  over the Berserker is (53%), both inside CI's allowance.
+  Berserker over the Ghost (each raging hit lands whole). The Vampire's one edge was over the old once-a-match Chrono; against the
+  rechargeable rewind it measures 51% (48% in CI's 150 seeds, a clear miss), so Vampire vs Chrono is
+  even and the Vampire's edge is now over the Titan (55%, a movement counter by size: a bigger
+  target, so more of its bumps land and heal it). Thorns over the Berserker stays a full-run MISS
+  (53%) inside CI's allowance, as in group 1.

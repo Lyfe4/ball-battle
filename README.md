@@ -132,8 +132,8 @@ abilities meet: every ability works the same on any ball.
   never touch the spikes, and an arrow is too small to rewind.
 - **Storm is strong vs Frost and Bloom**: the slowest ball can't leave the warning circle, and big
   strikes outpace regrowth.
-- **Vampire is strong vs Chrono**: a rewind gives back the Chrono's health, never what the Vampire
-  drank.
+- **Vampire is strong vs Titan**: the growing giant is a bigger target, so more of its bumps land
+  and each one heals it.
 - **Frost is strong vs Speedster**: slowed, it builds no speed.
 - **Thorns is strong vs Brawler, Berserker and Magnet**: the hardest bumps, raging ones too, come
   back off the spikes.
