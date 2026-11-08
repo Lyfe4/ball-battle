@@ -1,7 +1,6 @@
 # 0045: The roster redesign
 
-- Status: Accepted (group 1 of 4 shipped; group 2 measured but not merged: see its section; this ADR
-  is updated with each group)
+- Status: Accepted (groups 1 and 2 of 4 shipped; this ADR is updated with each group)
 - Date: 2026-11-08
 - Amends: ADR 0009 (no shock), ADR 0010 and 0028 (two favoured bands), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
@@ -179,10 +178,11 @@ ticks (5 every 34) so armor takes a share (a fifth) rather than half of each.
 | Comebacks (loser once led by 25+) 10-20% | 15.0%     | 16.6%               |
 
 Pairs outside the final bands, per ball of the group (ruleset 8 → 9): Chrono 5 → 5, Guardian
-3 → 4, Ghost 8 → 5, Bloom 5 → 4, Venom 2 → 1. **The Guardian fails one pair more than before**, so
-this group does not pass its gate and was not merged. Its fourth pair sits on the line (Boomerang vs
-Guardian 58.0% against an even floor of 58); one less health moved a different pair over it
-(Berserker vs Guardian 41.5%), and its shape always leaves one pair near an edge.
+3 → 4, Ghost 8 → 5, Bloom 5 → 4, Venom 2 → 1. **The Guardian fails one pair more than before**, which
+misses the per-ball gate strictly. Its fourth pair sits on the line (Boomerang vs Guardian 58.0%
+against an even floor of 58); one less health moved a different pair over it (Berserker vs Guardian
+41.5%), and its shape always leaves one pair near an edge. Merged by the owner's decision: the miss is
+within noise, the roster fails fewer pairs overall (34 to 30) and every hard rule passes.
 
 ### What did not work
 
