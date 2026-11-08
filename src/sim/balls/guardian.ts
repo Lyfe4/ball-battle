@@ -1,52 +1,33 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
-import { isShielded, SHIELD_TICKS } from '../shield.ts';
-import type { BallState } from '../types.ts';
 
-export type GuardianState = Readonly<{
-  /** The shield grows back on this tick; null while it is up (or has just broken). */
-  regrowTick: number | null;
-}>;
+/** How much armor takes off every hit. */
+export const ARMOR = 1;
 
-/** Ticks from a shield breaking to the next one growing back (7.5 s). */
-export const REGROW_TICKS = 450;
-
-/** The tick a Guardian's shield grows back, read from any ball state (undefined if none is due). */
-export function regrowTickOf(ball: BallState): number | undefined {
-  const regrow = ball.abilityState['regrowTick'];
-  return typeof regrow === 'number' ? regrow : undefined;
+/**
+ * What armor leaves of a hit of `amount`: ARMOR less, but never less than half of it (rounded up),
+ * so a tiny hit still does something. A big hit loses only a little; a small one loses a big share.
+ */
+export function armoredHit(amount: number): number {
+  return Math.max(amount - ARMOR, Math.ceil(amount / 2));
 }
 
 /**
- * Starts the match behind a shield (ADR 0043): a `shielded` status that blocks the next hit on it
- * completely, of any kind, and breaks. REGROW_TICKS after it breaks, a new one grows. One big hit
- * is wasted on it; many small ones (a stacked rush's second hit, poison ticks, skulls) strip it and
- * the rest land.
+ * Armor (ADR 0045): every hit it takes, of any kind, does a bit less (`armoredHit`). The same few
+ * points off a big hit are a small share of it and most of a small one, so it beats balls that deal
+ * their damage in many small hits (poison ticks, burns) and shrugs little off a heavy blow.
  */
-export const guardian = defineBall<GuardianState>({
+export const guardian = defineBall({
   id: 'guardian',
   name: 'Guardian',
-  description: 'A shield soaks up to 10 of the next hit, then regrows in 7.5 s.',
+  description: 'Every hit it takes does a bit less.',
   color: '#fef3c7',
-  ability: { name: 'Shield', shownBy: { kind: 'shieldBroken' } },
+  ability: { name: 'Armor', shownBy: { kind: 'hitReduced' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 63,
-  contactDamage: 21,
-  initialAbilityState: { regrowTick: 1 },
-  hooks: {
-    onTick: ({ world, self }) => {
-      if (isShielded(self)) return [];
-      const { regrowTick } = self.abilityState;
-      // It broke since the last tick: the next one grows REGROW_TICKS from now.
-      if (regrowTick === null) {
-        return [{ kind: 'setAbilityState', state: { regrowTick: world.tick + REGROW_TICKS } }];
-      }
-      if (world.tick < regrowTick) return [];
-      return [
-        { kind: 'applyStatus', targetId: self.id, status: 'shielded', durationTicks: SHIELD_TICKS },
-        { kind: 'setAbilityState', state: { regrowTick: null } },
-      ];
-    },
-  },
+  maxHealth: 74,
+  contactDamage: 22,
+  initialAbilityState: {},
+  incomingDamageOf: (_self, amount) => armoredHit(amount),
+  hooks: {},
 });

@@ -228,7 +228,7 @@ export function arenaAbilityState(ball: BallState): BallState['abilityState'] {
     case 'magnet':
       return { nextPullTick: TICK + 100, pullUntilTick: TICK + 10 };
     case 'ghost':
-      return { phased: true, nextChangeTick: TICK + 10 };
+      return { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 };
     default:
       return ball.abilityState;
   }

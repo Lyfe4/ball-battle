@@ -3,63 +3,44 @@ import { defineBall } from '../define-ball.ts';
 import type { BallState } from '../types.ts';
 
 export type BloomState = Readonly<{
-  /** The last tick it took damage (0 before its first hit): its rest counts from here. */
-  lastHitTick: number;
-  /** Health regrown since that hit; it stops at REGROW_PER_REST. */
-  regrown: number;
+  /** The tick it next regrows. */
+  nextHealTick: number;
 }>;
 
-/** Ticks without taking damage before it starts to regrow: its petals open. */
-export const CALM_TICKS = 90;
-/** Once calm, it heals HEAL_AMOUNT every this many ticks. */
-export const HEAL_EVERY_TICKS = 15;
-export const HEAL_AMOUNT = 2;
-/** The most it regrows in one rest, before the next hit starts a new one. */
-export const REGROW_PER_REST = 6;
+/** It heals HEAL_AMOUNT every this many ticks, the whole match. */
+export const HEAL_EVERY_TICKS = 26;
+export const HEAL_AMOUNT = 1;
+/** Its first regrowth comes this tick. */
+export const FIRST_HEAL_TICK = HEAL_EVERY_TICKS;
 
-/** True when a Bloom that last took damage on `lastHitTick` is calm on `tick`: petals open. */
-export function isCalm(lastHitTick: number, tick: number): boolean {
-  return tick - lastHitTick >= CALM_TICKS;
-}
-
-/** A Bloom's state, read from any ball state (undefined for other balls). */
-export function bloomStateOf(ball: BallState): BloomState | undefined {
-  const { lastHitTick, regrown } = ball.abilityState;
-  return typeof lastHitTick === 'number' && typeof regrown === 'number'
-    ? { lastHitTick, regrown }
-    : undefined;
+/** The tick a Bloom next regrows, read from any ball state (undefined for other balls). */
+export function nextHealTickOf(ball: BallState): number | undefined {
+  const next = ball.abilityState['nextHealTick'];
+  return typeof next === 'number' ? next : undefined;
 }
 
 /**
- * Regrows (ADR 0043): once it has gone CALM_TICKS without taking damage, it heals HEAL_AMOUNT every
- * HEAL_EVERY_TICKS, up to REGROW_PER_REST, and any damage at all starts a new rest. Small hits with
- * time between them are healed back whole; a heavy hit is mostly kept, and a steady drip (poison,
- * fire it stands in) never lets it rest.
+ * Regrows (ADR 0045): HEAL_AMOUNT every HEAL_EVERY_TICKS, all match long, whatever is happening.
+ * A long fight of small hits is healed back as it goes; a few big hits outpace it.
  */
 export const bloom = defineBall<BloomState>({
   id: 'bloom',
   name: 'Bloom',
-  description: 'Regrows a little if left alone after a hit.',
+  description: 'Always regrowing: it heals a little at a time.',
   color: '#f472b6',
   ability: { name: 'Regrowth', shownBy: { kind: 'healed' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 68,
+  maxHealth: 48,
   contactDamage: 21,
-  initialAbilityState: { lastHitTick: 0, regrown: 0 },
+  initialAbilityState: { nextHealTick: FIRST_HEAL_TICK },
   hooks: {
-    onTick: ({ world, self, stats }) => {
-      const { lastHitTick, regrown } = self.abilityState;
-      const calmFor = world.tick - lastHitTick - CALM_TICKS;
-      if (calmFor < 0 || calmFor % HEAL_EVERY_TICKS !== 0) return [];
-      if (regrown >= REGROW_PER_REST || self.health >= stats.maxHealth) return [];
+    onTick: ({ world, self }) => {
+      if (world.tick < self.abilityState.nextHealTick) return [];
       return [
         { kind: 'heal', targetId: self.id, amount: HEAL_AMOUNT },
-        { kind: 'setAbilityState', state: { lastHitTick, regrown: regrown + HEAL_AMOUNT } },
+        { kind: 'setAbilityState', state: { nextHealTick: world.tick + HEAL_EVERY_TICKS } },
       ];
     },
-    onDamageTaken: ({ world }) => [
-      { kind: 'setAbilityState', state: { lastHitTick: world.tick, regrown: 0 } },
-    ],
   },
 });

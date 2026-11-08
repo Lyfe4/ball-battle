@@ -141,8 +141,8 @@ export const theme = {
   magnetPullAlpha: 0.6,
   magnetPullDash: [14, 12] as readonly number[],
   /**
-   * A phased ball (the Ghost, ADR 0026) is drawn see-through, with a broken outline, so a viewer
-   * can see why hits pass through it. Its status rings and health bar stay solid.
+   * A phased ball (ADR 0026) or a faded Ghost (ADR 0045) is drawn see-through, with a broken
+   * outline, so a viewer can see why hits miss it. Its status rings and health bar stay solid.
    */
   phasedAlpha: 0.38,
   phasedOutline: '#ede9fe',
@@ -150,11 +150,11 @@ export const theme = {
   phasedDash: [10, 8] as readonly number[],
   /**
    * The Chrono (ADR 0034): clock hands as thick as this share of r at small size, and the face
-   * faded to this once its rewind is spent. The rewind itself: a dotted trail from where it was
+   * faded to this while its rewind recharges (ADR 0045). The rewind itself: a dotted trail from where it was
    * knocked out to where it lands, and a fading ghost of it at the spot it left.
    */
   chronoHandSimple: 0.14,
-  chronoSpentAlpha: 0.45,
+  chronoRechargingAlpha: 0.45,
   rewindTrail: '#fde68a',
   rewindTrailWidth: 6,
   rewindTrailDash: [4, 12] as readonly number[],
@@ -204,15 +204,15 @@ export const theme = {
   blastRing: '#fb923c',
   blastRingWidth: 10,
   /**
-   * The Guardian's shield (a `shielded` status): a bright gold ring hugging the ball. When it
-   * breaks, its pieces fly out and fade.
+   * A hit glancing off a defence (the Guardian's armor, the Ghost's fade, ADR 0045): a bright gold
+   * ring just outside the ball, already in pieces, flying out and fading.
    */
-  shieldRing: '#fde047',
-  shieldRingWidth: 7,
-  shieldRingGap: 5,
-  shieldBreakMs: 450,
-  shieldShards: 6,
-  shieldShardFlight: 30,
+  glanceRing: '#fde047',
+  glanceRingWidth: 7,
+  glanceRingGap: 5,
+  glanceMs: 450,
+  glanceShards: 6,
+  glanceShardFlight: 30,
   /** The Bloom's flower: petals that open wide while it rests and regrows, and a pale centre. */
   bloomCentre: '#fef9c3',
   /** The Necromancer's eyes, glowing out of its hood. */

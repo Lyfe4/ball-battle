@@ -44,8 +44,8 @@ import type {
  * replay. `definitions` must be the same lookup every tick of a match.
  *
  * Order within a tick (ADR 0003, 0004, 0005, 0006, 0008, 0009, 0012, 0043); events come out in
- * the same order. Wherever damage is dealt below, a shielded ball's shield takes the hit first: it
- * soaks up to SHIELD_SOAK of it and breaks, and only the rest lands (ADR 0043):
+ * the same order. Wherever damage is dealt below, the target's `incomingDamageOf` (armor, a fade)
+ * takes its share first, and only the rest lands (ADR 0045):
  *  1. A finished match is returned as is, with no events.
  *  2. Statuses whose expiry tick is this tick are removed (ADR 0009), so every hook below already
  *     sees them gone.
@@ -177,7 +177,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   const combat = applyContactDamage(balls, newContacts, definitions, tick);
   balls = combat.balls;
-  events.push(...combat.damage, ...combat.blocked);
+  events.push(...combat.reduced, ...combat.damage);
 
   const phasedIds = new Set(balls.filter(isPhasedBall).map((ball) => ball.id));
   phase(hitBallInvocations(newContacts, (id) => phasedIds.has(id)));

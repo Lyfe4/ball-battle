@@ -1,8 +1,6 @@
-// The style guide's tiles for batch 5 (ADR 0043), kept apart so each file stays readable.
+// The style guide's tiles for batch 5 (ADR 0043, 0045), kept apart so each file stays readable.
 // sections.ts lists them in roster order with the rest.
-import { CALM_TICKS } from '../sim/balls/bloom.ts';
 import type { Tile } from './sections.ts';
-import { TICK } from './tick.ts';
 
 export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
   [
@@ -24,23 +22,19 @@ export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Guardian: a heater shield; a gold ring while its shield is up',
+    'Guardian: a heater shield; a hit on its armor glances off in a broken gold ring (see the phone arena)',
     [
-      { label: 'shield up', id: 'guardian', statuses: ['shielded'] },
-      { label: 'shield down', id: 'guardian' },
-      { label: 'mirror B', id: 'guardian', repeat: true, statuses: ['shielded'] },
+      { label: 'idle', id: 'guardian' },
+      { label: 'hit flash', id: 'guardian', flash: 0.6 },
+      { label: 'mirror B', id: 'guardian', repeat: true },
       { label: 'defeated', id: 'guardian', defeated: true },
     ],
   ],
   [
-    'Bloom: a flower; petals open while it rests and regrows, a bud just after a hit',
+    'Bloom: a flower, always open; every regrowth is a heal pulse',
     [
-      {
-        label: 'resting',
-        id: 'bloom',
-        abilityState: { lastHitTick: TICK - CALM_TICKS, regrown: 0 },
-      },
-      { label: 'just hit', id: 'bloom', abilityState: { lastHitTick: TICK, regrown: 0 } },
+      { label: 'idle', id: 'bloom' },
+      { label: 'regrowing', id: 'bloom', heal: 0.6, healShare: 0.05 },
       { label: 'mirror B', id: 'bloom', repeat: true },
       { label: 'defeated', id: 'bloom', defeated: true },
     ],

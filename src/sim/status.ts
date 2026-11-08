@@ -7,10 +7,8 @@ import type { BallState } from './types.ts';
  * without touching balls that never apply it.
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
- * - shielded: the next hit on the ball, of any kind, is blocked completely and breaks the shield
- *   (ADR 0043, `shield.ts`).
  */
-export type StatusKind = 'slowed' | 'poisoned' | 'shielded';
+export type StatusKind = 'slowed' | 'poisoned';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -85,9 +83,9 @@ export function slowedSpeed(speed: number): number {
 }
 
 /** Ability damage each poison tick deals (ADR 0012). The Venom's lever. */
-export const POISON_DAMAGE = 2;
+export const POISON_DAMAGE = 5;
 /** Ticks between poison ticks, counted from when the poison was first applied. */
-export const POISON_INTERVAL_TICKS = 30;
+export const POISON_INTERVAL_TICKS = 34;
 
 /** True when a poison first applied on `sinceTick` ticks on `tick`: every interval after it. */
 export function isPoisonTick(sinceTick: number, tick: number): boolean {

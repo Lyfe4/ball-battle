@@ -79,8 +79,8 @@ export interface Effects {
   heal(ballId: string, nowMs: number): number;
   /** Health restored by the ball's latest heal (0 when it has none), so the pulse scales with it. */
   healAmount(ballId: string): number;
-  /** A shield just broke on the ball (ADR 0043): 1 down to 0 over theme.shieldBreakMs. */
-  shieldBreak(ballId: string, nowMs: number): number;
+  /** A hit just glanced off the ball's defence (ADR 0045): 1 down to 0 over theme.glanceMs. */
+  glance(ballId: string, nowMs: number): number;
   sparks(nowMs: number): readonly Spark[];
   strikes(nowMs: number): readonly Strike[];
   squash(ballId: string, nowMs: number): Squash | undefined;
@@ -126,7 +126,7 @@ export function createEffects(): Effects {
   const flashStarts = new Map<string, number>();
   const healStarts = new Map<string, number>();
   const healAmounts = new Map<string, number>();
-  const shieldBreakStarts = new Map<string, number>();
+  const glanceStarts = new Map<string, number>();
   const squashes = new Map<string, { normal: Vec2; amount: number; startMs: number }>();
   const ghosts = new Map<string, GhostEntry>();
   let sparkStarts: { readonly point: Vec2; readonly start: number }[] = [];
@@ -142,8 +142,8 @@ export function createEffects(): Effects {
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
-  const shieldBreak = (ballId: string, nowMs: number): number =>
-    fade(shieldBreakStarts.get(ballId), nowMs, theme.shieldBreakMs);
+  const glance = (ballId: string, nowMs: number): number =>
+    fade(glanceStarts.get(ballId), nowMs, theme.glanceMs);
   const heal = (ballId: string, nowMs: number): number =>
     fade(healStarts.get(ballId), nowMs, HEAL_MS);
   const squashActive = (nowMs: number): boolean =>
@@ -183,7 +183,7 @@ export function createEffects(): Effects {
           healStarts.set(event.ballId, nowMs);
           healAmounts.set(event.ballId, before + event.amount);
         }
-        if (event.type === 'shieldBroken') shieldBreakStarts.set(event.ballId, nowMs);
+        if (event.type === 'hitReduced') glanceStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit' || event.type === 'minionHit') {
           sparkStarts.push({ point: event.point, start: nowMs });
         }
@@ -227,7 +227,7 @@ export function createEffects(): Effects {
     flash,
     heal,
     healAmount: (ballId) => healAmounts.get(ballId) ?? 0,
-    shieldBreak,
+    glance,
     sparks(nowMs) {
       // Drop finished sparks so the list never grows over a long match.
       sparkStarts = sparkStarts.filter(({ start }) => fade(start, nowMs, SPARK_MS) > 0);
@@ -290,7 +290,7 @@ export function createEffects(): Effects {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
         [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
-        [...shieldBreakStarts.keys()].some((ballId) => shieldBreak(ballId, nowMs) > 0) ||
+        [...glanceStarts.keys()].some((ballId) => glance(ballId, nowMs) > 0) ||
         sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0) ||
         strikeStarts.some(({ start }) => fade(start, nowMs, STRIKE_MS) > 0) ||
         particles.some((particle) => particleAt(particle, nowMs) !== undefined) ||
@@ -306,7 +306,7 @@ export function createEffects(): Effects {
       flashStarts.clear();
       healStarts.clear();
       healAmounts.clear();
-      shieldBreakStarts.clear();
+      glanceStarts.clear();
       squashes.clear();
       ghosts.clear();
       sparkStarts = [];

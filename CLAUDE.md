@@ -174,8 +174,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   (ADR 0012), onDamageDealt, onDamageTaken (ADR 0012; damage from its actions fires no further
   hooks), onKnockedOut for balls just brought to 0 (a `rewind` puts one back, ADR 0034), defeat,
   cruise speed (ADR 0008, reduced while slowed) then size (`radiusOf`, ADR 0034), match end. Events are emitted in that order. Every hook in a phase sees the
-  same snapshot; actions are applied afterwards. Wherever damage lands, a shield takes the hit
-  first (ADR 0043). The full order is documented on `step`.
+  same snapshot; actions are applied afterwards. Wherever damage lands, the target's `incomingDamageOf`
+  (armor, a fade) takes its share first (ADR 0045). The full order is documented on `step`.
 - Status effects (ADR 0009) live on `BallState.statuses`, come only from the `applyStatus` action
   or a zone's `status`, refresh rather than stack, and expire at the start of their expiry tick.
   A new kind extends `StatusKind` in `src/sim/status.ts`. A ball that shrugs a status off declares
@@ -188,9 +188,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   that passes through others declares `phasedOf(self)`; summoned objects are minions
   (`src/sim/minions/`), not balls. Aimed attacks pick their target with `nearestTarget`, which
   includes enemy minions, so every aimed ball treats them alike.
-- A ball that takes hits for itself gets the `shielded` status (it soaks up to `SHIELD_SOAK` of the
-  next hit, any kind, and breaks; ADR 0043) rather than checking damage in a hook. A projectile that
-  comes back uses `returnAfterTicks`; a zone an enemy ball can set off declares a `trigger` (swept,
+- A ball that takes less of a hit declares `incomingDamageOf(self, amount, tick)` (ADR 0045: the
+  Guardian's armor, the Ghost's fade), applied on both damage paths and shown by a `hitReduced`
+  event, rather than healing damage back in a hook. A projectile that comes back uses
+  `returnAfterTicks`; a zone an enemy ball can set off declares a `trigger` (swept,
   so no speed skips it).
 - An ability that changes how hard a ball hits declares `contactDamageOf(self, stats)` (ADR 0015)
   rather than adding a `damage` action on hit: contact damage goes through directness, the

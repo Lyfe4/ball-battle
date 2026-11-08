@@ -45,12 +45,12 @@ export function batchFourExtras(balls: readonly BallState[]): {
 
 /**
  * Batch 5 in the phone arena (ADR 0043): a bomb lying beside the Bomber, part-way down its fuse, a
- * boomerang in flight beside the Boomerang, and the Guardian behind its shield.
+ * boomerang in flight beside the Boomerang, and a hit glancing off the Guardian's armor.
  */
 export function batchFiveExtras(balls: readonly BallState[]): {
   readonly zones: readonly ZoneState[];
   readonly projectiles: readonly ProjectileState[];
-  readonly shieldedId: string | undefined;
+  readonly glancedId: string | undefined;
 } {
   const bomber = balls.find((ball) => ball.definitionId === 'bomber');
   const zones: ZoneState[] =
@@ -84,6 +84,6 @@ export function batchFiveExtras(balls: readonly BallState[]): {
             returning: { turnTick: TICK, back: true, hitIds: [] },
           },
         ];
-  const shieldedId = balls.find((ball) => ball.definitionId === 'guardian')?.id;
-  return { zones, projectiles, shieldedId };
+  const glancedId = balls.find((ball) => ball.definitionId === 'guardian')?.id;
+  return { zones, projectiles, glancedId };
 }

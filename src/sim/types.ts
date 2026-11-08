@@ -3,7 +3,7 @@ import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts
 import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
 import type { ReturnFlight } from './projectiles/returning.ts';
 import type { SpawnRequest } from './projectiles/spawn.ts';
-import type { ShieldBrokenEvent } from './shield.ts';
+import type { HitReducedEvent } from './defence.ts';
 import type { ZoneLinger, ZoneTriggerRequest } from './zones/spawn.ts';
 import type {
   StatusAppliedEvent,
@@ -105,6 +105,13 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    * status is applied, so it works the same for actions and zones.
    */
   readonly statusResistance?: Readonly<Partial<Record<StatusKind, number>>>;
+  /**
+   * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Guardian's
+   * armor takes a little off every hit, the Ghost's fade takes all of it. A pure query of its own
+   * state, applied on both damage paths before the hit lands and rounded to a whole number between
+   * 0 and `amount`. Defaults to the whole hit.
+   */
+  readonly incomingDamageOf?: (self: BallView<S>, amount: number, tick: number) => number;
 }
 
 /** A ball as its own hooks see it: its ability state has the definition's type. */
@@ -550,7 +557,7 @@ export type SimEvent =
   | StatusAppliedEvent
   | StatusExpiredEvent
   | RewoundEvent
-  | ShieldBrokenEvent
+  | HitReducedEvent
   | MinionEvent;
 
 export interface StepResult {

@@ -18,16 +18,20 @@ export const BATCH_THREE_AND_FOUR: readonly (readonly [string, readonly Tile[]])
     ],
   ],
   [
-    'Ghost: a ghost’s face; see-through with a broken outline while phased',
+    'Ghost: a ghost’s face; see-through with a broken outline while faded',
     [
       { label: 'solid', id: 'ghost' },
-      { label: 'phased', id: 'ghost', abilityState: { phased: true, nextChangeTick: TICK + 10 } },
+      {
+        label: 'faded',
+        id: 'ghost',
+        abilityState: { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 },
+      },
       { label: 'mirror B', id: 'ghost', repeat: true },
       {
-        label: 'phased, mirror B',
+        label: 'faded, mirror B',
         id: 'ghost',
         repeat: true,
-        abilityState: { phased: true, nextChangeTick: TICK + 10 },
+        abilityState: { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 },
       },
     ],
   ],
@@ -44,7 +48,7 @@ export const BATCH_THREE_AND_FOUR: readonly (readonly [string, readonly Tile[]])
     'Chrono: a clock face whose minute hand sweeps; stopped and faded once its rewind is spent',
     [
       { label: 'running', id: 'chrono' },
-      { label: 'spent', id: 'chrono', abilityState: { history: [], used: true } },
+      { label: 'recharging', id: 'chrono', abilityState: { history: [], readyTick: TICK + 100 } },
       { label: 'mirror B', id: 'chrono', repeat: true },
       { label: 'defeated', id: 'chrono', defeated: true },
     ],

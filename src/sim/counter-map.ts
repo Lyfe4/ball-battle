@@ -6,8 +6,9 @@
 import { BATCH_THREE_ENTRIES } from './counter-map-batch-3.ts';
 import { BATCH_FOUR_ENTRIES } from './counter-map-batch-4.ts';
 import { BATCH_FIVE_ENTRIES } from './counter-map-batch-5.ts';
-import { BATCH_FIVE_DEFENDER_ENTRIES } from './counter-map-batch-5-defenders.ts';
 import { FIRST_ENTRIES } from './counter-map-first.ts';
+import { HIT_KIND_CHRONO_GUARDIAN_ENTRIES } from './counter-map-hit-kinds-chrono-guardian.ts';
+import { HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES } from './counter-map-hit-kinds-ghost-bloom-venom.ts';
 import { RULES_OUT_ARCHER_SNIPER_ENTRIES } from './counter-map-rules-out-archer-sniper.ts';
 import { RULES_OUT_BERSERKER_VAMPIRE_ENTRIES } from './counter-map-rules-out-berserker-vampire.ts';
 import { RULES_OUT_BOOMERANG_ENTRIES } from './counter-map-rules-out-boomerang.ts';
@@ -39,11 +40,12 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
   ...BATCH_THREE_ENTRIES,
   ...BATCH_FOUR_ENTRIES,
   ...BATCH_FIVE_ENTRIES,
-  ...BATCH_FIVE_DEFENDER_ENTRIES,
   ...RULES_OUT_STORM_QUAKE_ENTRIES,
   ...RULES_OUT_BERSERKER_VAMPIRE_ENTRIES,
   ...RULES_OUT_ARCHER_SNIPER_ENTRIES,
   ...RULES_OUT_BOOMERANG_ENTRIES,
+  ...HIT_KIND_CHRONO_GUARDIAN_ENTRIES,
+  ...HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */

@@ -8,7 +8,7 @@ import type { BallState, DamageEvent, DefinitionLookup, SimEvent } from './types
 export interface PoisonResult {
   readonly balls: readonly BallState[];
   readonly damage: readonly DamageEvent[];
-  /** Everything the ticks produced, in order: damage, and any shield a tick broke (ADR 0043). */
+  /** Everything the ticks produced, in order: damage, and any defence that took some of a tick (ADR 0045). */
   readonly events: readonly SimEvent[];
 }
 

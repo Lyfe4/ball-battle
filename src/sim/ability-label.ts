@@ -9,7 +9,7 @@ export type AbilitySign =
   | { readonly kind: 'zoneSpawned' }
   | { readonly kind: 'minionSpawned' }
   | { readonly kind: 'rewound' }
-  | { readonly kind: 'shieldBroken' }
+  | { readonly kind: 'hitReduced' }
   | { readonly kind: 'healed' }
   | { readonly kind: 'status'; readonly status: StatusKind }
   | { readonly kind: 'hookDamage'; readonly hook: HookName }

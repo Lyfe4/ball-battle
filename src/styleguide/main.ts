@@ -16,7 +16,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { batchFiveExtras, batchFourExtras } from './arena-extras.ts';
-import { SHIELD_TICKS } from '../sim/shield.ts';
+import { isFaded } from '../sim/balls/ghost.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
@@ -84,7 +84,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
-    phased: definition.phasedOf?.(shown) ?? false,
+    phased: (definition.phasedOf?.(shown) ?? false) || isFaded(shown, TICK),
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
     cssPixelsPerUnit: radiusPx / ball.radius,
@@ -151,24 +151,17 @@ function phoneArena(): HTMLElement {
         ];
   // A heal on the Vampire, to check it reads at phone size (ADR 0028).
   const healed = balls.find((ball) => ball.definitionId === 'vampire')?.id;
+  const { zones, rewinds } = batchFourExtras(balls);
+  const late = batchFiveExtras(balls);
+  // A hit glancing off the Guardian's armor (ADR 0045).
   const effects = {
     ...NO_EFFECTS,
     heal: (id: string) => (id === healed ? 0.7 : 0),
     healAmount: (id: string) => (id === healed ? 9 : 0),
+    glance: (id: string) => (id === late.glancedId ? 0.7 : 0),
   };
-  const { zones, rewinds } = batchFourExtras(balls);
-  const late = batchFiveExtras(balls);
-  const shield = {
-    kind: 'shielded',
-    sourceId: '',
-    expiresTick: SHIELD_TICKS,
-    sinceTick: 0,
-  } as const;
-  const shown = balls.map((ball) =>
-    ball.id === late.shieldedId ? { ...ball, statuses: [shield] } : ball,
-  );
   const extras = { zones: [...zones, ...late.zones], projectiles: late.projectiles };
-  drawWorld(ctx, { ...world, tick: TICK, balls: shown, minions, ...extras }, BALL_LOOKUP, view, {
+  drawWorld(ctx, { ...world, tick: TICK, balls, minions, ...extras }, BALL_LOOKUP, view, {
     ...effects,
     rewinds,
   });
