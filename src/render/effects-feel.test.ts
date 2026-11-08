@@ -4,7 +4,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, SimEvent } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { createEffects, CUE_MS } from './effects.ts';
+import { createEffects } from './effects.ts';
 import { wallBounces } from './impact.ts';
 import { theme } from './theme.ts';
 
@@ -72,43 +72,6 @@ describe('battle feel effects', () => {
     expect(effects.resultVisible(theme.resultDelayMs)).toBe(true);
     // Still listed once the shards are gone, so the broken ball stays hidden.
     expect(effects.knockouts(theme.shardMs * 2)).toHaveLength(1);
-  });
-
-  it('shows a heal a status cut as a smaller heal, and the rule cue on the ball that cut it', () => {
-    const effects = createEffects();
-    // The Vampire (ball-0) is shocked by the Storm (ball-1): the cue goes on the Storm (ADR 0041).
-    const start = createWorld(1, [
-      getDefinition(BALL_LOOKUP, 'vampire'),
-      getDefinition(BALL_LOOKUP, 'storm'),
-    ]);
-    const shock = { kind: 'shocked', sourceId: 'ball-1', expiresTick: 90, sinceTick: 0 } as const;
-    const balls = start.balls.map((ball) =>
-      ball.id === 'ball-0' ? { ...ball, statuses: [shock] } : ball,
-    );
-    const reduced: SimEvent = {
-      type: 'healReduced',
-      tick: 40,
-      ballId: 'ball-0',
-      sourceId: 'ball-0',
-      lost: 5,
-      status: 'shocked',
-    };
-    const cue: SimEvent = { type: 'ruleApplied', tick: 40, ballId: 'ball-0', rule: 'healCut' };
-    const healed: SimEvent = {
-      type: 'healed',
-      tick: 40,
-      ballId: 'ball-0',
-      sourceId: 'ball-0',
-      amount: 4,
-      healthAfter: 30,
-    };
-    effects.apply([reduced, cue, healed], 0, balls);
-    expect(effects.heal('ball-0', 0)).toBe(1);
-    // The pulse is sized by what was restored, not by what the heal would have been.
-    expect(effects.healAmount('ball-0')).toBe(4);
-    expect([effects.cue('ball-1', 0), effects.cue('ball-0', 0)]).toStrictEqual([1, 0]);
-    expect(effects.isActive(CUE_MS - 1)).toBe(true);
-    expect(effects.cue('ball-1', CUE_MS)).toBe(0);
   });
 
   it('adds up heals in the same instant into one pulse, and starts afresh later', () => {

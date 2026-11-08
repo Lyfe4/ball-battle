@@ -118,8 +118,7 @@ blind picks. See Decisions below.
   the attacker's hit, so the hardest hitter hurts itself the most on the spikes. A safe pick also
   needs one known counter, so that it isn't a dominant blind pick. The counter-map test names
   Thorns explicitly as the Brawler's only non-even matchup.
-- The map is data in `src/sim/counter-map-*.ts` (a bot reads it, ADR 0019); the reasoning and results are in ADR 0010. The
-  Storm's edge over the Vampire comes from its shock (ADR 0009): shocked balls heal less.
+- The map is data in `src/sim/counter-map-*.ts` (a bot reads it, ADR 0019); the reasoning and results are in ADR 0010.
 - **Later balls** (ADR 0012-0015) each bring one favoured and one unfavoured matchup from their
   mechanics: Frost > Speedster, Storm > Frost; Venom > Thorns, Vampire > Venom; Berserker >
   Speedster, Vampire > Berserker; Speedster > Sniper, Sniper > Thorns; Quake > Speedster,
@@ -160,6 +159,11 @@ blind picks. See Decisions below.
   Necromancer, Bomber; Venom and Thorns over it). A full-block shield and uncapped regrowth were
   measured first and capped, because contact hits are rare and heavy here: a full block
   hard-countered every heavy hitter, the Brawler most of all. The Brawler stays even with all four.
+- **Roster redesign** (2026-11-08, ADR 0045, `docs/roster-redesign.md`): every ball does one
+  clear thing that works the same on any ball, and the three interaction rules (shock, stagger,
+  numbed rage) are gone with their spark. Favoured pairs come in two bands: a kind of hit decides
+  the sharp ones (72-78%), movement the softer ones (62-72%). It ships in four groups; group 1
+  brings the Storm, Quake, Berserker, Vampire, Archer, Sniper and Boomerang to their new abilities.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

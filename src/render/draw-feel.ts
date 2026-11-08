@@ -151,74 +151,22 @@ export function drawWinnerRing(
 
 /**
  * Status effects on a ball (ADR 0009, 0012), read from its state, as thin rings just outside the
- * edge, one per status, each further out than the last:
- * - shocked: dashed, pale storm blue; the dashes step with the sim tick for a faint crackle (still
- *   with reduced motion);
- * - slowed: solid, pale ice, with short frost ticks pointing outwards; always still;
- * - poisoned: a ring of round pale-lime dots, like drops; always still.
- * - staggered: a broken ring of a few pale-stone arcs, like a dazed halo; always still.
+ * edge, one per status, each further out than the last; all hold still:
+ * - slowed: solid, pale ice, with short frost ticks pointing outwards;
+ * - poisoned: a ring of round pale-lime dots, like drops.
  * A shield (ADR 0043) hugs the ball inside them all: a solid gold ring.
  */
-export function drawStatuses(
-  ctx: CanvasRenderingContext2D,
-  ball: BallState,
-  tick: number,
-  reducedMotion: boolean,
-): void {
-  let radius = ball.radius + theme.shockRingGap;
+export function drawStatuses(ctx: CanvasRenderingContext2D, ball: BallState): void {
+  let radius = ball.radius + theme.statusRingGap;
   if (hasStatus(ball, 'shielded')) {
     drawShieldRing(ctx, ball);
-    radius += theme.statusRingSpacing;
-  }
-  if (hasStatus(ball, 'shocked')) {
-    drawShockRing(ctx, ball, radius, reducedMotion ? 0 : Math.floor(tick / theme.shockStepTicks));
     radius += theme.statusRingSpacing;
   }
   if (hasStatus(ball, 'slowed')) {
     drawSlowRing(ctx, ball, radius);
     radius += theme.statusRingSpacing;
   }
-  if (hasStatus(ball, 'poisoned')) {
-    drawPoisonRing(ctx, ball, radius);
-    radius += theme.statusRingSpacing;
-  }
-  if (hasStatus(ball, 'staggered')) drawStaggerRing(ctx, ball, radius);
-}
-
-function drawStaggerRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: number): void {
-  ctx.save();
-  ctx.globalAlpha = theme.staggerRingAlpha;
-  ctx.strokeStyle = theme.staggerRing;
-  ctx.lineWidth = theme.staggerRingWidth;
-  ctx.lineCap = 'round';
-  // Equal arcs and gaps, so the ring reads as broken rather than dashed.
-  const segment = (Math.PI * radius) / theme.staggerArcs;
-  ctx.setLineDash([segment, segment]);
-  ctx.beginPath();
-  ctx.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawShockRing(
-  ctx: CanvasRenderingContext2D,
-  ball: BallState,
-  radius: number,
-  step: number,
-): void {
-  const dash = theme.shockDash;
-  const period = dash.reduce((sum, length) => sum + length, 0);
-  ctx.save();
-  ctx.globalAlpha = theme.shockRingAlpha;
-  ctx.strokeStyle = theme.shockRing;
-  ctx.lineWidth = theme.shockRingWidth;
-  ctx.setLineDash([...dash]);
-  // Half a dash period per step: the gaps jump, which reads as crackle rather than spin.
-  ctx.lineDashOffset = (step * period) / 2;
-  ctx.beginPath();
-  ctx.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
+  if (hasStatus(ball, 'poisoned')) drawPoisonRing(ctx, ball, radius);
 }
 
 function drawSlowRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: number): void {

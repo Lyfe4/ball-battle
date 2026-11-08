@@ -32,7 +32,7 @@ import {
   FUSE_TICKS,
 } from './bomber.ts';
 import { guardian, REGROW_TICKS } from './guardian.ts';
-import { bloom, CALM_TICKS, HEAL_AMOUNT, REGROW_PER_REST } from './bloom.ts';
+import { bloom, CALM_TICKS, REGROW_PER_REST } from './bloom.ts';
 import { SHIELD_SOAK } from '../shield.ts';
 import { speedForStacks } from './speedster.ts';
 import { TICK_RATE } from '../constants.ts';
@@ -108,10 +108,9 @@ describe('the ball roster: identity rules', () => {
     expect(Object.keys(guardian.hooks)).toStrictEqual(['onTick']);
   });
 
-  it('Bloom regrows only after a rest, a little at a time, and shock halves it exactly', () => {
+  it('Bloom regrows only after a rest, a little at a time', () => {
     expect(CALM_TICKS).toBeGreaterThanOrEqual(TICK_RATE);
     expect(REGROW_PER_REST).toBeLessThanOrEqual(bloom.maxHealth / 10);
-    expect(HEAL_AMOUNT % 2).toBe(0);
   });
 
   it('Speedster is the fastest ball at base speed', () => {

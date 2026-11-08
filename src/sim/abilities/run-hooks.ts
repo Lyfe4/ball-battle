@@ -138,7 +138,7 @@ export function wallHitInvocations(bounces: ReadonlyMap<string, number>): Invoca
 /**
  * Both balls of each new contact, in contact order. A pass through a phased ball (ADR 0026) is no
  * hit for the other ball, so only the phased ball's own hook runs: on-touch effects (slow, poison,
- * shock, a Speedster's cash-in) need contact.
+ * a Speedster's cash-in) need contact.
  */
 export function hitBallInvocations(
   newContacts: readonly {

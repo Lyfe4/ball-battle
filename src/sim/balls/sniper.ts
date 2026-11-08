@@ -1,7 +1,5 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
-import { heldAim } from '../rules.ts';
-import { hasStatus } from '../status.ts';
 import type { BallState } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
 
@@ -43,13 +41,11 @@ export function chargeOf(ball: BallState): SniperCharge | undefined {
  * one fast, heavy shot down it. The aim is the enemy's position when the charge starts, with no
  * leading and no spread: a target that keeps moving is usually off the line by the time the shot
  * comes, so the faster the target, the more often it misses. Shots never touch Thorns' spikes.
- * Staggered (by a Quake's shockwave), it can't aim: a lock in progress breaks without a shot, and
- * the next one starts once the stagger ends (ADR 0016).
  */
 export const sniper = defineBall<SniperState>({
   id: 'sniper',
   name: 'Sniper',
-  description: 'Locks on and fires one heavy shot; stagger breaks the lock.',
+  description: 'Locks on and fires one heavy shot every 2 s.',
   color: '#818cf8',
   ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
@@ -60,14 +56,6 @@ export const sniper = defineBall<SniperState>({
   hooks: {
     onTick: ({ world, self, isPhased }) => {
       const { charge, nextChargeTick } = self.abilityState;
-      if (hasStatus(self, 'staggered')) {
-        if (charge === null) return heldAim(world.tick, nextChargeTick);
-        // The lock breaks without a shot, and the arena shows why (ADR 0028).
-        return [
-          { kind: 'setAbilityState', state: { nextChargeTick: world.tick, charge: null } },
-          { kind: 'ruleApplied', rule: 'aimHeld' },
-        ];
-      }
       if (charge !== null) {
         if (world.tick < charge.fireTick) return [];
         return [

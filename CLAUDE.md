@@ -139,7 +139,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0041-the-spark-marks-the-counter.md`,
 `docs/decisions/0042-reload-safe-series.md`,
 `docs/decisions/0043-boomerang-bomber-guardian-bloom.md` and
-`docs/decisions/0044-one-story-look-and-settings-off-the-court.md`.
+`docs/decisions/0044-one-story-look-and-settings-off-the-court.md` and
+`docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
+`docs/roster-redesign.md`).
 
 ## Workflow
 
@@ -203,10 +205,14 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
   (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
   Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
-  inside its counter-map floor (`scripts/counter-map.ts`, ADR 0010, 0028): the target is favoured
-  62-72% and even 45-55%; a pair between the target and the floor (favoured 58-72%, even 42-58%)
-  is a WARN listed as below target, not a failure; within 2 points outside the floor passes as NEAR;
-  further out is a MISS. Re-check after any stat or ability change.
+  inside its counter-map floor (`scripts/counter-map.ts`, ADR 0010, 0028, 0045). Every favoured
+  pair names its band: `kind` (a kind of hit decides it: spikes against bumps, a rewind against a
+  big hit) targets 72-78% with a floor of 66-80%, `movement` (speed, size, range, a pull, minions
+  in the way) targets 62-72% with a floor of 58-76%; even targets 45-55% with a floor of 42-58%.
+  A pair between the target and the floor is a WARN listed as below target, not a failure; within
+  2 points outside the floor passes as NEAR; further out is a MISS. `pnpm balance` also counts the
+  pairs outside the final bands and checks comebacks (the ball once behind by a quarter of its
+  health wins 10-20% of games). Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
   `src/sim/counter-map-*.ts` data file for its batch; the bands are checked in
   `scripts/counter-map.ts`), and each
@@ -217,17 +223,12 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   Ball identity rules are pinned in `src/sim/balls/identity.test.ts` (read from the definitions)
   and `ability-share.slow.test.ts` (measured); breaking one is a design decision, not a tuning
   step. Longer fights make matchups steeper (ADR 0004).
-- Interaction rules that exist to create a counter (one ball's effect meeting another ball's
-  mechanic, like "poison numbs rage", ADR 0016) are limited to about one per ball, prefer a general
-  rule about a kind of ball ("shocked balls heal less", "a staggered ball can't aim", "a phased
-  ball can't be touched, gripped or aimed at") over a pair trick, and must be visible the moment
-  they act: return a `ruleApplied` action (or emit the event) so the arena shows the rule cue
-  (ADR 0028). The cue sits on the ball whose ability caused the rule, read in the render layer
-  from the status the rule is about (`RULE_STATUS`, `ruleCauserId` in `src/render/rule-cue.ts`,
-  ADR 0041); a new rule adds its status there, its words in `src/ui/rule-words.ts` and its cast in
-  `src/ui/rule-cast.ts`, and every ball it involves names it in its description and in the
-  counter reasons it decides (`rule-text.test.ts`). Today there are three (`src/sim/rules.ts`):
-  heal cut, aim held, rage numbed. Fill counter gaps with new balls rather than more rules.
+- No interaction rules (ADR 0045): every ability does one clear thing that works the same on any
+  ball (a kind of hit, a kind of movement), and no rule exists only where two specific abilities
+  meet. The three rules of ADR 0016/0028 (heal cut, aim held, rage numbed), their statuses and the
+  spark that marked them are gone. A counter comes from what the balls already do and must be
+  guessable by watching. The roster redesign (`docs/roster-redesign.md`) ships in four groups;
+  until the last, `KIND_FLOOR_DURING_REDESIGN` keeps a kind counter's floor at 58%.
 - The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.

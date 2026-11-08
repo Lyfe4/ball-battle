@@ -1,5 +1,3 @@
-import { ruleCuePoints } from '../render/rule-cue.ts';
-import { theme } from '../render/theme.ts';
 import { element } from './dom.ts';
 import { SYMBOL_KEYS, SYMBOLS } from './symbols.ts';
 
@@ -10,30 +8,8 @@ export interface SymbolLegend {
   readonly panel: HTMLElement;
 }
 
-/** Symbols drawn as a swatch (a colour, a ring, the cue) rather than as plain text. */
-const SWATCHES = new Set(['favoured', 'unfavoured', 'even', 'won', 'lost', 'cue']);
-
-const SVG = 'http://www.w3.org/2000/svg';
-
-/** The arena's rule cue as a small SVG, the same path the canvas draws (ADR 0028). */
-function cueMark(): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '-1.3 -1.3 2.6 2.6');
-  svg.setAttribute('class', 'symbol-legend-cue');
-  const path = document.createElementNS(SVG, 'polygon');
-  path.setAttribute(
-    'points',
-    ruleCuePoints()
-      .map(([x, y]) => `${String(x)},${String(y)}`)
-      .join(' '),
-  );
-  path.setAttribute('fill', theme.ruleCueFill);
-  path.setAttribute('stroke', theme.ruleCueOutline);
-  path.setAttribute('stroke-width', '0.22');
-  path.setAttribute('stroke-linejoin', 'round');
-  svg.append(path);
-  return svg;
-}
+/** Symbols drawn as a swatch (a colour or a ring) rather than as plain text. */
+const SWATCHES = new Set(['favoured', 'unfavoured', 'even', 'won', 'lost']);
 
 let legends = 0;
 
@@ -63,8 +39,7 @@ export function createSymbolLegend(): SymbolLegend {
       const item = element('li', 'symbol-legend-item');
       const mark = element('span', 'symbol-legend-mark', symbol);
       mark.setAttribute('aria-hidden', 'true');
-      if (key === 'cue') mark.append(cueMark());
-      else if (SWATCHES.has(key)) mark.dataset['swatch'] = key;
+      if (SWATCHES.has(key)) mark.dataset['swatch'] = key;
       const words = legendNote === undefined ? meaning : `${meaning} (${legendNote})`;
       item.append(mark, element('span', '', words));
       return item;

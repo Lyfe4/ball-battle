@@ -5,11 +5,10 @@
 import type { Lean } from './balls/matchups.ts';
 import { MARKS } from './balls/marks.ts';
 
-export type SymbolKey =
-  Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more' | 'cue';
+export type SymbolKey = Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more';
 
 export interface SymbolEntry {
-  /** The symbol as text; empty for one drawn as a swatch (a ring, a dimmed ball, the rule cue). */
+  /** The symbol as text; empty for one drawn as a swatch (a colour or a ring). */
   readonly mark: string;
   /** What it means: the legend's line and the tooltip's text. */
   readonly meaning: string;
@@ -40,7 +39,6 @@ export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
     meaning: 'Opens the full series track',
     legendNote: 'on the score line during a round',
   },
-  cue: { mark: '', meaning: 'In a fight: this ball’s ability just countered the other ball' },
 };
 
 export const SYMBOL_KEYS = Object.keys(SYMBOLS) as readonly SymbolKey[];

@@ -1,4 +1,4 @@
-import type { BallState, SimEvent, Vec2 } from '../sim/types.ts';
+import type { SimEvent, Vec2 } from '../sim/types.ts';
 import { impactsOf, impactStrength, shakeOf, type WallBounce } from './impact.ts';
 import {
   ghostDone,
@@ -10,7 +10,6 @@ import {
   type GhostEntry,
 } from './motion.ts';
 import { burst, burstSeed, particleAt, type Dot, type Particle } from './particles.ts';
-import { ruleCauserId } from './rule-cue.ts';
 import { theme } from './theme.ts';
 
 /** How long a damage flash lasts, in effect-time milliseconds. */
@@ -18,9 +17,6 @@ export const FLASH_MS = 200;
 
 /** How long a heal pulse lasts, in effect-time milliseconds. */
 export const HEAL_MS = 520;
-
-/** How long a rule cue shows, in effect-time milliseconds (ADR 0028). */
-export const CUE_MS = 750;
 
 /** How long a projectile hit spark lasts, in effect-time milliseconds. */
 export const SPARK_MS = 250;
@@ -72,8 +68,7 @@ export interface WinnerRing {
  * from the final blow still fades out after the match has stopped ticking.
  */
 export interface Effects {
-  /** `balls`: the world after these events, to put each rule cue on the ball that caused it. */
-  apply(events: readonly SimEvent[], nowMs: number, balls?: readonly BallState[]): void;
+  apply(events: readonly SimEvent[], nowMs: number): void;
   /** Wall bounces read from consecutive worlds (see wallBounces). */
   bounced(bounces: readonly WallBounce[], nowMs: number): void;
   /** Reduced motion: no shake, squash, particles or shards; a static winner ring. */
@@ -84,11 +79,6 @@ export interface Effects {
   heal(ballId: string, nowMs: number): number;
   /** Health restored by the ball's latest heal (0 when it has none), so the pulse scales with it. */
   healAmount(ballId: string): number;
-  /**
-   * Rule cue strength for a ball, from 1 (an interaction rule just acted on it, ADR 0028) down to
-   * 0.
-   */
-  cue(ballId: string, nowMs: number): number;
   /** A shield just broke on the ball (ADR 0043): 1 down to 0 over theme.shieldBreakMs. */
   shieldBreak(ballId: string, nowMs: number): number;
   sparks(nowMs: number): readonly Spark[];
@@ -136,7 +126,6 @@ export function createEffects(): Effects {
   const flashStarts = new Map<string, number>();
   const healStarts = new Map<string, number>();
   const healAmounts = new Map<string, number>();
-  const cueStarts = new Map<string, number>();
   const shieldBreakStarts = new Map<string, number>();
   const squashes = new Map<string, { normal: Vec2; amount: number; startMs: number }>();
   const ghosts = new Map<string, GhostEntry>();
@@ -153,7 +142,6 @@ export function createEffects(): Effects {
 
   const flash = (ballId: string, nowMs: number): number =>
     fade(flashStarts.get(ballId), nowMs, FLASH_MS);
-  const cue = (ballId: string, nowMs: number): number => fade(cueStarts.get(ballId), nowMs, CUE_MS);
   const shieldBreak = (ballId: string, nowMs: number): number =>
     fade(shieldBreakStarts.get(ballId), nowMs, theme.shieldBreakMs);
   const heal = (ballId: string, nowMs: number): number =>
@@ -180,7 +168,7 @@ export function createEffects(): Effects {
   };
 
   return {
-    apply(events, nowMs, balls = []) {
+    apply(events, nowMs) {
       for (const event of events) {
         if (event.type === 'damage') {
           flashStarts.set(event.targetId, nowMs);
@@ -195,8 +183,6 @@ export function createEffects(): Effects {
           healStarts.set(event.ballId, nowMs);
           healAmounts.set(event.ballId, before + event.amount);
         }
-        // On the ball whose ability caused the rule (ADR 0041).
-        if (event.type === 'ruleApplied') cueStarts.set(ruleCauserId(event, balls), nowMs);
         if (event.type === 'shieldBroken') shieldBreakStarts.set(event.ballId, nowMs);
         if (event.type === 'projectileHit' || event.type === 'minionHit') {
           sparkStarts.push({ point: event.point, start: nowMs });
@@ -241,7 +227,6 @@ export function createEffects(): Effects {
     flash,
     heal,
     healAmount: (ballId) => healAmounts.get(ballId) ?? 0,
-    cue,
     shieldBreak,
     sparks(nowMs) {
       // Drop finished sparks so the list never grows over a long match.
@@ -305,7 +290,6 @@ export function createEffects(): Effects {
       return (
         [...flashStarts.keys()].some((ballId) => flash(ballId, nowMs) > 0) ||
         [...healStarts.keys()].some((ballId) => heal(ballId, nowMs) > 0) ||
-        [...cueStarts.keys()].some((ballId) => cue(ballId, nowMs) > 0) ||
         [...shieldBreakStarts.keys()].some((ballId) => shieldBreak(ballId, nowMs) > 0) ||
         sparkStarts.some(({ start }) => fade(start, nowMs, SPARK_MS) > 0) ||
         strikeStarts.some(({ start }) => fade(start, nowMs, STRIKE_MS) > 0) ||
@@ -322,7 +306,6 @@ export function createEffects(): Effects {
       flashStarts.clear();
       healStarts.clear();
       healAmounts.clear();
-      cueStarts.clear();
       shieldBreakStarts.clear();
       squashes.clear();
       ghosts.clear();

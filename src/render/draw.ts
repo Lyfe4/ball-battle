@@ -16,7 +16,7 @@ import {
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
-import { drawHealPulse, drawRuleCue, drawSourceChip } from './draw-cues.ts';
+import { drawHealPulse, drawSourceChip } from './draw-cues.ts';
 import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
@@ -53,15 +53,13 @@ export interface FrameEffects {
   readonly winner: WinnerRing | undefined;
   /** Intro scale and opacity for the ball at an index. */
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
-  /** Rule cue strength for a ball, 0 to 1 (ADR 0028). */
-  readonly cue: (ballId: string) => number;
   /** A shield just broke on this ball: 1 down to 0 (ADR 0043). */
   readonly shieldBreak: (ballId: string) => number;
   /** Rewinds being shown: the Chrono's trail back and its ghost (ADR 0034). */
   readonly rewinds: readonly RewindTrail[];
   /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
   readonly chips: readonly SourceChip[];
-  /** Holds animated details (the shock ring's crackle, the cue's pop) still. */
+  /** Holds animated details (a heal's swelling ring, a shield's shards, the chip's pop) still. */
   readonly reducedMotion: boolean;
 }
 
@@ -79,7 +77,6 @@ export const NO_EFFECTS: FrameEffects = {
   knockouts: [],
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
-  cue: () => 0,
   shieldBreak: () => 0,
   rewinds: [],
   chips: [],
@@ -148,7 +145,7 @@ export function drawWorld(
       const maxHealth = definition?.maxHealth ?? 1;
       const pulse = { strength: heal, amount: effects.healAmount(ball.id), maxHealth };
       drawHealPulse(ctx, ball, pulse, effects.reducedMotion);
-      drawStatuses(ctx, ball, world.tick, effects.reducedMotion);
+      drawStatuses(ctx, ball);
       drawShieldBreak(ctx, ball, effects.shieldBreak(ball.id), effects.reducedMotion);
     }
   });
@@ -173,10 +170,6 @@ export function drawWorld(
     if (ball === undefined || ball.health <= 0) continue;
     const color = ownerColor(world.balls, definitions, sourceId);
     drawSourceChip(ctx, ball, color, strength, effects.reducedMotion, size);
-  }
-  // Rule cues go on top of everything: they say why something just happened (ADR 0028).
-  for (const ball of world.balls) {
-    if (ball.health > 0) drawRuleCue(ctx, ball, effects.cue(ball.id), effects.reducedMotion, size);
   }
 }
 

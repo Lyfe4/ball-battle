@@ -11,7 +11,6 @@ import {
   MAX_OFFSET,
   nextStrikeTickOf,
   randomOffset,
-  SHOCK_TICKS,
   storm,
   WARNING_TICKS,
   ZONE_DAMAGE,
@@ -56,47 +55,22 @@ describe('Storm', () => {
     expect(events.filter((event) => event.type === 'abilityTriggered')).toHaveLength(4);
   });
 
-  it('shocks every ball its strike hits for SHOCK_TICKS, never itself', () => {
+  it('only hurts: no status on a ball its strike hits or a ball that touches it (ADR 0045)', () => {
     const strikeTick = FIRST_STRIKE_DELAY_TICKS + WARNING_TICKS;
-    const shockedOn: number[] = [];
-    play(standoff(), strikeTick + SHOCK_TICKS + 5, (world) => {
-      expect(world.balls[0]?.statuses).toStrictEqual([]);
-      const [status] = world.balls[1]?.statuses ?? [];
-      if (status === undefined) return;
-      expect(status).toStrictEqual({
-        kind: 'shocked',
-        sourceId: 'ball-0',
-        expiresTick: strikeTick + SHOCK_TICKS,
-        sinceTick: strikeTick,
-      });
-      shockedOn.push(world.tick);
-    });
-    expect(shockedOn[0]).toBe(strikeTick);
-    expect(shockedOn).toHaveLength(SHOCK_TICKS);
-  });
-
-  it('shocks a ball that touches it, from the contact tick, for SHOCK_TICKS', () => {
+    const struck = play(standoff(), strikeTick + 5).events;
+    expect(struck).toContainEqual(
+      expect.objectContaining({ type: 'damage', targetId: 'ball-1', amount: ZONE_DAMAGE }),
+    );
     // Head-on, well before the first strike is even called.
     const charge = withBalls(createWorld(1, [storm, blue]), [
       { position: { x: 380, y: 500 }, velocity: { x: storm.speed, y: 0 } },
       { position: { x: 640, y: 500 }, velocity: { x: 0, y: 0 } },
     ]);
-    let contactTick: number | undefined;
-    const { world } = play(charge, 40, (after) => {
-      contactTick ??= after.balls[1]?.statuses.length === 1 ? after.tick : undefined;
-    });
-    const hit = play(charge, 40).events.find((event) => event.type === 'collision');
-    expect(hit?.tick).toBeLessThan(FIRST_STRIKE_DELAY_TICKS);
-    expect(contactTick).toBe(hit?.tick);
-    expect(world.balls[1]?.statuses).toStrictEqual([
-      {
-        kind: 'shocked',
-        sourceId: 'ball-0',
-        expiresTick: (hit?.tick ?? 0) + SHOCK_TICKS,
-        sinceTick: hit?.tick,
-      },
-    ]);
-    expect(world.balls[0]?.statuses).toStrictEqual([]);
+    const touched = play(charge, 40).events;
+    expect(touched.some((event) => event.type === 'collision')).toBe(true);
+    for (const events of [struck, touched]) {
+      expect(events.some((event) => event.type === 'statusApplied')).toBe(false);
+    }
   });
 
   it('marks a zone near the target that strikes after the warning', () => {

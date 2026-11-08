@@ -14,13 +14,16 @@ import { createWorld } from '../src/sim/world.ts';
 
 const base = process.argv[2] ?? 'http://localhost:5199/';
 
-/** The matches to time: the newest balls' busiest moments, each played to its end. */
+/**
+ * The matches to time: the busiest moments of the balls changed last (ADR 0045: strikes, shockwaves
+ * and throws among skulls and bombs), each played to its end.
+ */
 const MATCHES: readonly (readonly [string, string, number])[] = [
-  ['bomber', 'speedster', 3],
+  ['storm', 'necromancer', 3],
+  ['quake', 'bomber', 3],
   ['boomerang', 'necromancer', 3],
-  ['guardian', 'venom', 6],
-  ['bloom', 'storm', 2],
-  ['bomber', 'boomerang', 4],
+  ['archer', 'inferno', 2],
+  ['sniper', 'bomber', 4],
 ];
 
 /**

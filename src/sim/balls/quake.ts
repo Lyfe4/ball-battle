@@ -8,18 +8,9 @@ export type QuakeState = Readonly<{ readyTick: number }>;
 export const COOLDOWN_TICKS = 30;
 /** Warning before a shockwave strikes (0.2 s): too short for speed to get a ball out. */
 export const WARNING_TICKS = 12;
-export const ZONE_RADIUS = 180;
-/**
- * Per hit; below the Storm's zone damage, which stays the biggest single ability hit. Softer since
- * ADR 0028 (13 before), so the shockwave's edge sits in the stagger, not in raw damage.
- */
-export const ZONE_DAMAGE = 12;
-/**
- * Every ball a shockwave hits is staggered for this long (4.5 s): it can't aim, so an Archer, Storm
- * or Sniper loses its next attack until it ends (ADR 0016, 3.5 s until ADR 0028). Long, because
- * shockwaves rarely hit.
- */
-export const STAGGER_TICKS = 270;
+export const ZONE_RADIUS = 200;
+/** Per hit; below the Storm's strike, which stays the biggest single ability hit. */
+export const ZONE_DAMAGE = 11;
 
 /** The tick the Quake's next shockwave is ready on, read from any ball state (undefined for others). */
 export function readyTickOf(ball: BallState): number | undefined {
@@ -29,19 +20,19 @@ export function readyTickOf(ball: BallState): number | undefined {
 
 /**
  * Every wall bounce sets off a shockwave where it hit: a zone at the impact point that strikes
- * WARNING_TICKS later (ADR 0006). Then nothing for COOLDOWN_TICKS. The sim clamps the zone into the
- * arena. It needs walls: a slowed Quake reaches them less often, which is why the Frost beats it.
- * A shockwave staggers what it hits, so the balls that aim (Archer, Storm, Sniper) lose attacks.
+ * WARNING_TICKS later (ADR 0006) and hurts any enemy near it, minions too. Then nothing for
+ * COOLDOWN_TICKS. The sim clamps the zone into the arena. It needs walls: a slowed Quake reaches them
+ * less often. Damage only (ADR 0045): a shockwave no longer staggers.
  */
 export const quake = defineBall<QuakeState>({
   id: 'quake',
   name: 'Quake',
-  description: 'Wall hits send shockwaves that stagger: no aim for 4.5 s.',
+  description: 'Wall hits send shockwaves that hurt anything close by.',
   color: '#78716c',
   ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 71,
+  maxHealth: 70,
   contactDamage: 15,
   initialAbilityState: { readyTick: 0 },
   hooks: {
@@ -54,7 +45,6 @@ export const quake = defineBall<QuakeState>({
           radius: ZONE_RADIUS,
           damage: ZONE_DAMAGE,
           delayTicks: WARNING_TICKS,
-          status: { kind: 'staggered', durationTicks: STAGGER_TICKS },
         },
         { kind: 'setAbilityState', state: { readyTick: world.tick + COOLDOWN_TICKS } },
       ];

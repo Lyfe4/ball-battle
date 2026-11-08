@@ -3,13 +3,7 @@ import { getDefinition } from '../definitions.ts';
 import { spawnMinion } from '../minions/spawn.ts';
 import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
-import {
-  assertStatusDuration,
-  hasStatus,
-  resistedDuration,
-  shockedHeal,
-  withStatus,
-} from '../status.ts';
+import { assertStatusDuration, resistedDuration, withStatus } from '../status.ts';
 import { isShielded, soakHit } from '../shield.ts';
 import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
@@ -135,26 +129,9 @@ export function applyActions(
         update(action.targetId, (target) => {
           const { maxHealth } = getDefinition(definitions, target.definitionId);
           const requested = Math.max(0, action.amount);
-          const fullAmount = Math.min(maxHealth, target.health + requested) - target.health;
-          if (fullAmount <= 0) return undefined;
-          // Shocked (ADR 0009): the heal is reduced, and says by how much before `healed`.
-          const shocked = hasStatus(target, 'shocked');
-          const healthAfter = shocked
-            ? Math.min(maxHealth, target.health + shockedHeal(requested))
-            : target.health + fullAmount;
-          const amount = healthAfter - target.health;
-          if (shocked && fullAmount > amount) {
-            events.push({
-              type: 'healReduced',
-              tick,
-              ballId: target.id,
-              sourceId: ownerId,
-              lost: fullAmount - amount,
-              status: 'shocked',
-            });
-            events.push({ type: 'ruleApplied', tick, ballId: target.id, rule: 'healCut' });
-          }
+          const amount = Math.min(maxHealth, target.health + requested) - target.health;
           if (amount <= 0) return undefined;
+          const healthAfter = target.health + amount;
           events.push({
             type: 'healed',
             tick,
@@ -235,9 +212,6 @@ export function applyActions(
           events.push(applied.event);
           return applied.ball;
         });
-        break;
-      case 'ruleApplied':
-        events.push({ type: 'ruleApplied', tick, ballId: ownerId, rule: action.rule });
         break;
       case 'rewind': {
         // The one action that acts on an owner at 0 health (onKnockedOut, ADR 0034).

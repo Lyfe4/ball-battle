@@ -93,12 +93,6 @@
   color: var(--color-text-muted);
 }
 
-/* The arena's rule cue (ADR 0028), drawn from the same path as on the canvas. */
-.symbol-legend-cue {
-  width: 100%;
-  height: 100%;
-}
-
 /* The track's two looks for a played round, drawn as a small disc. */
 .symbol-legend-mark[data-swatch='won'],
 .symbol-legend-mark[data-swatch='lost'] {

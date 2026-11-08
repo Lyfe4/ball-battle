@@ -1,21 +1,19 @@
-// The interaction rules (ADR 0016, 0028): poison numbs rage, shockwaves stagger the balls that aim,
-// and each shows its cue the moment it acts. Rage can no longer shrug off the cold, nor the cold
-// shorten poison (both removed by ADR 0028).
+// No interaction rules (ADR 0045): every ball's ability works the same on any ball. Poison leaves
+// rage whole, a shockwave only hurts, and a ball that was hit still aims on time. Rage can't shrug
+// off the cold, nor the cold shorten poison (ADR 0028).
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { StatusAppliedEvent, StatusKind, StatusState } from '../status.ts';
-import type { RuleAppliedEvent } from '../rules.ts';
 import type { BallDefinition, DamageEvent, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
-import { berserker, POISON_NUMB, rageFor } from './berserker.ts';
+import { berserker, rageFor } from './berserker.ts';
 import { frost } from './frost.ts';
-import { quake, STAGGER_TICKS } from './quake.ts';
-import { chargeOf, FIRST_CHARGE_TICK, sniper } from './sniper.ts';
-import { FIRST_STRIKE_DELAY_TICKS, storm } from './storm.ts';
-import { FIRST_SHOT_DELAY_TICKS } from './archer.ts';
+import { quake, ZONE_DAMAGE } from './quake.ts';
+import { sniper } from './sniper.ts';
+import { storm } from './storm.ts';
 import { POISON_TICKS, venom } from './venom.ts';
 
 function play(
@@ -53,16 +51,13 @@ const status = (kind: StatusKind, expiresTick: number): StatusState => ({
   sinceTick: 0,
 });
 
-const cues = (events: readonly SimEvent[]): RuleAppliedEvent[] =>
-  events.filter((event): event is RuleAppliedEvent => event.type === 'ruleApplied');
-
 const applied = (events: readonly SimEvent[], kind: StatusKind): StatusAppliedEvent[] =>
   events.filter(
     (event): event is StatusAppliedEvent => event.type === 'statusApplied' && event.status === kind,
   );
 
-describe('poison numbs rage', () => {
-  it('cuts a poisoned Berserker’s rage bonus by POISON_NUMB, and only the bonus', () => {
+describe('poison leaves rage whole', () => {
+  it('a poisoned Berserker hits with its full rage bonus', () => {
     const health = Math.round(berserker.maxHealth / 2);
     const hit = (statuses: readonly StatusState[]): number[] => {
       const start = withBalls(headOn(berserker, blue, health), [{ statuses }]);
@@ -73,24 +68,9 @@ describe('poison numbs rage', () => {
         )
         .map((event) => event.amount);
     };
-    const rage = rageFor(health, berserker.maxHealth);
-    expect(hit([])).toStrictEqual([Math.round(berserker.contactDamage + rage)]);
-    expect(hit([status('poisoned', 1000)])).toStrictEqual([
-      Math.round(berserker.contactDamage + rage * (1 - POISON_NUMB)),
-    ]);
-  });
-
-  it('shows the cue on the Berserker for a hit poison softens, and only then', () => {
-    const health = Math.round(berserker.maxHealth / 2);
-    const cuesFor = (statuses: readonly StatusState[]): RuleAppliedEvent[] =>
-      cues(
-        play(withBalls(headOn(berserker, blue, health), [{ statuses }]), [berserker, blue], 25)
-          .events,
-      );
-    expect(cuesFor([status('poisoned', 1000)])).toStrictEqual([
-      expect.objectContaining({ ballId: 'ball-0', rule: 'rageNumbed' }),
-    ]);
-    expect(cuesFor([])).toStrictEqual([]);
+    const full = [Math.round(berserker.contactDamage + rageFor(health, berserker.maxHealth))];
+    expect(hit([])).toStrictEqual(full);
+    expect(hit([status('poisoned', 1000)])).toStrictEqual(full);
   });
 });
 
@@ -108,73 +88,50 @@ describe('no status resistance left (ADR 0028)', () => {
   });
 });
 
-describe('shockwaves stagger', () => {
-  it('staggers every ball a shockwave hits for STAGGER_TICKS', () => {
+describe('a shockwave only hurts', () => {
+  it('deals its damage to a ball it hits and puts no status on it', () => {
     const start = withBalls(createWorld(1, [quake, blue]), [
       { position: { x: 80, y: 500 }, velocity: { x: -quake.speed, y: 0 } },
       { position: { x: 250, y: 620 }, velocity: { x: 0, y: 0 }, health: 1_000_000 },
     ]);
     const { events } = play(start, [quake, blue], 30);
     const struck = events.find((event) => event.type === 'zoneStruck');
-    const [staggered] = applied(events, 'staggered');
-    expect(staggered).toMatchObject({ ballId: 'ball-1', sourceId: 'ball-0' });
-    expect(staggered?.tick).toBe(struck?.tick);
-    expect((staggered?.expiresTick ?? 0) - (staggered?.tick ?? 0)).toBe(STAGGER_TICKS);
+    expect(struck).toBeDefined();
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'damage', targetId: 'ball-1', amount: ZONE_DAMAGE }),
+    );
+    expect(events.some((event) => event.type === 'statusApplied')).toBe(false);
   });
 
-  /** A parked aimer with a parked target far away, staggered until `until`. */
-  function aimer(definition: BallDefinition, until: number): WorldState {
-    return withBalls(createWorld(1, [definition, blue]), [
-      {
-        position: { x: 200, y: 500 },
-        velocity: { x: 0, y: 0 },
-        statuses: until > 0 ? [status('staggered', until)] : [],
-      },
-      { position: { x: 800, y: 500 }, velocity: { x: 0, y: 0 }, health: 1_000_000 },
+  /** A parked aimer, with `other` running into the wall beside it (a Quake sets off a shockwave). */
+  function beside(definition: BallDefinition, other: BallDefinition): WorldState {
+    return withBalls(createWorld(1, [definition, other]), [
+      { position: { x: 200, y: 500 }, velocity: { x: 0, y: 0 }, health: 1_000_000 },
+      { position: { x: 80, y: 520 }, velocity: { x: -other.speed, y: 0 }, health: 1_000_000 },
     ]);
   }
-  const firstTick = (events: readonly SimEvent[], type: SimEvent['type']): number | undefined =>
-    events.find((event) => event.type === type)?.tick;
 
   it.each([
     ['Archer', archer, 'projectileFired'],
     ['Storm', storm, 'zoneSpawned'],
     ['Sniper', sniper, 'projectileFired'],
-  ] as const)('holds the %s’s attack until the stagger ends', (_name, definition, type) => {
-    const free = firstTick(play(aimer(definition, 0), [definition, blue], 150).events, type);
-    expect(free).toBeLessThan(100);
-    const held = firstTick(play(aimer(definition, 200), [definition, blue], 300).events, type);
-    expect(held).toBeGreaterThanOrEqual(200);
-  });
-
-  it.each([
-    ['Archer', archer, FIRST_SHOT_DELAY_TICKS],
-    ['Storm', storm, FIRST_STRIKE_DELAY_TICKS],
-    ['Sniper', sniper, FIRST_CHARGE_TICK],
-  ] as const)(
-    'shows the cue once, on the tick the %s’s attack is held',
-    (_name, definition, due) => {
-      const held = cues(play(aimer(definition, 200), [definition, blue], 199).events);
-      expect(held).toStrictEqual([
-        { type: 'ruleApplied', tick: due, ballId: 'ball-0', rule: 'aimHeld' },
-      ]);
-      expect(cues(play(aimer(definition, 0), [definition, blue], 150).events)).toStrictEqual([]);
-    },
-  );
-
-  it('breaks a Sniper’s lock in progress without a shot', () => {
-    // The lock starts on FIRST_CHARGE_TICK; stagger it a few ticks into the charge.
-    const locked = play(aimer(sniper, 0), [sniper, blue], FIRST_CHARGE_TICK + 3).world;
-    const sniperBall = locked.balls[0];
-    if (sniperBall === undefined || chargeOf(sniperBall) === undefined) {
-      throw new Error('expected a lock in progress');
-    }
-    const staggered = withBalls(locked, [{ statuses: [status('staggered', locked.tick + 60)] }]);
-    const { world, events } = play(staggered, [sniper, blue], 50);
-    expect(events.some((event) => event.type === 'projectileFired')).toBe(false);
-    expect(cues(events)).toStrictEqual([
-      expect.objectContaining({ ballId: 'ball-0', rule: 'aimHeld' }),
-    ]);
-    expect(world.balls[0] && chargeOf(world.balls[0])).toBeUndefined();
+  ] as const)('the %s attacks on time after a shockwave hits it', (_name, definition, type) => {
+    const firstAttack = (other: BallDefinition) => {
+      const { events } = play(beside(definition, other), [definition, other], 150);
+      const shaken = events.some(
+        (event) =>
+          event.type === 'damage' && event.targetId === 'ball-0' && event.cause === 'ability',
+      );
+      return {
+        shaken,
+        tick: events.find((event) => event.type === type && event.ownerId === 'ball-0')?.tick,
+      };
+    };
+    const calm = firstAttack(blue);
+    const shaken = firstAttack(quake);
+    expect(calm.shaken).toBe(false);
+    expect(shaken.shaken).toBe(true);
+    expect(calm.tick).toBeLessThan(100);
+    expect(shaken.tick).toBe(calm.tick);
   });
 });

@@ -5,7 +5,7 @@ import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import { ballColor } from '../render/ball-colors.ts';
 import { drawStatuses } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
-import { drawHealPulse, drawRuleCue } from '../render/draw-cues.ts';
+import { drawHealPulse } from '../render/draw-cues.ts';
 import { drawAimLines } from '../render/projectiles.ts';
 import { drawStrikes } from '../render/zones.ts';
 import { theme } from '../render/theme.ts';
@@ -61,10 +61,9 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
 function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
   // Room for the status rings outside the edge when there are any.
   const rings = tile.statuses?.length ?? 0;
-  // Room for rings, a heal's swelling ring, and a rule cue beside the ball.
+  // Room for rings and a heal's swelling ring.
   const extra = Math.max(rings === 0 ? 12 : 16 + rings * 16, tile.heal === undefined ? 0 : 44);
-  const cueRoom = tile.cue === undefined ? 0 : radiusPx * 1.6;
-  const cssSize = Math.ceil(radiusPx * 2 + extra + cueRoom);
+  const cssSize = Math.ceil(radiusPx * 2 + extra);
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
   const definition = getDefinition(BALL_LOOKUP, tile.id);
@@ -73,7 +72,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
   const scale = (radiusPx / ball.radius) * (canvas.width / cssSize);
   ctx.setTransform(scale, 0, 0, scale, canvas.width / 2, canvas.height / 2);
   drawAimLines(ctx, world);
-  // The ball as the game sees it, statuses included (a design can react to one: the Berserker).
+  // The ball as the game sees it, statuses included (its definition can react to one).
   const statuses = (tile.statuses ?? []).map((kind) => ({
     kind,
     sourceId: 'ball-1',
@@ -99,8 +98,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     };
     drawHealPulse(ctx, shown, pulse, false);
   }
-  if (rings > 0) drawStatuses(ctx, shown, TICK, false);
-  if (tile.cue !== undefined) drawRuleCue(ctx, shown, tile.cue, false, Number.POSITIVE_INFINITY);
+  if (rings > 0) drawStatuses(ctx, shown);
   return canvas;
 }
 
@@ -151,17 +149,12 @@ function phoneArena(): HTMLElement {
             ticksLeft: 1,
           },
         ];
-  // A heal on the Vampire and the rule cue on the Archer and Berserker, to check both read at phone
-  // size (ADR 0028).
-  const idOf = (definitionId: string) =>
-    balls.find((ball) => ball.definitionId === definitionId)?.id;
-  const healed = idOf('vampire');
-  const cued = new Set([idOf('archer'), idOf('berserker')]);
+  // A heal on the Vampire, to check it reads at phone size (ADR 0028).
+  const healed = balls.find((ball) => ball.definitionId === 'vampire')?.id;
   const effects = {
     ...NO_EFFECTS,
     heal: (id: string) => (id === healed ? 0.7 : 0),
     healAmount: (id: string) => (id === healed ? 9 : 0),
-    cue: (id: string) => (cued.has(id) ? 0.6 : 0),
   };
   const { zones, rewinds } = batchFourExtras(balls);
   const late = batchFiveExtras(balls);

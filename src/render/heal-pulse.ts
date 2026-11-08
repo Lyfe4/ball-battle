@@ -11,8 +11,7 @@ export interface HealPulse {
 
 /**
  * How big a heal looks, from `theme.healMinSize` up to 1: the heal as a share of max health,
- * reaching full size at `theme.healFullShare`. A heal cut by a status restores less, so it simply
- * looks smaller; nothing else marks it (the rule cue says why).
+ * reaching full size at `theme.healFullShare`.
  */
 export function healSize(amount: number, maxHealth: number): number {
   if (amount <= 0 || maxHealth <= 0) return 0;

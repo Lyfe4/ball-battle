@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { isShielded, SHIELD_SOAK } from '../shield.ts';
-import { SHOCK_HEAL_REDUCTION } from '../status.ts';
 import type { StatusState } from '../status.ts';
 import { step } from '../step.ts';
 import { blue, red, withBalls } from '../test-support.ts';
@@ -73,21 +72,6 @@ describe('Boomerang', () => {
     };
     const { events } = play(away, COOLDOWN_TICKS + 10);
     expect(ofType(events, 'projectileFired')).toStrictEqual([]);
-  });
-
-  it('holds its throw while staggered, and says so once', () => {
-    const stagger: StatusState = {
-      kind: 'staggered',
-      sourceId: 'ball-1',
-      expiresTick: FIRST_THROW_TICK + 30,
-      sinceTick: 0,
-    };
-    const dazed = withBalls(parked(boomerang), [{ statuses: [stagger] }]);
-    const { events } = play(dazed, FIRST_THROW_TICK + 40);
-    expect(ofType(events, 'ruleApplied')).toStrictEqual([
-      expect.objectContaining({ tick: FIRST_THROW_TICK, rule: 'aimHeld' }),
-    ]);
-    expect(ofType(events, 'projectileFired')[0]?.tick).toBe(FIRST_THROW_TICK + 30);
   });
 });
 
@@ -178,16 +162,5 @@ describe('Bloom', () => {
     expect(hitTick).toBeDefined();
     const healsAfterHit = ofType(events, 'healed').filter((heal) => heal.tick > (hitTick ?? 0));
     expect(healsAfterHit).toStrictEqual([]);
-  });
-
-  it('regrows half as much while shocked', () => {
-    const shock: StatusState = {
-      kind: 'shocked',
-      sourceId: 'ball-1',
-      expiresTick: 10_000,
-      sinceTick: 0,
-    };
-    const heals = ofType(play(hurt([shock]), CALM_TICKS + 1).events, 'healed');
-    expect(heals[0]?.amount).toBe(HEAL_AMOUNT * (1 - SHOCK_HEAL_REDUCTION));
   });
 });

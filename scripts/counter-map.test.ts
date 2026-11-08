@@ -4,6 +4,8 @@ import {
   checkCounter,
   ciAllowance,
   COUNTER_BANDS,
+  KIND_FLOOR_DURING_REDESIGN,
+  outsideFinalBand,
   COUNTER_MAP,
   counterFor,
   SAFE_PICK_COUNTERS,
@@ -11,7 +13,8 @@ import {
   type CounterEntry,
 } from './counter-map.ts';
 
-const favoured: CounterEntry = { x: 'a', y: 'b', intended: 'x', reason: '' };
+const favoured: CounterEntry = { x: 'a', y: 'b', intended: 'x', band: 'movement', reason: '' };
+const kind: CounterEntry = { ...favoured, band: 'kind' };
 const even: CounterEntry = { x: 'a', y: 'b', intended: 'even', reason: '' };
 
 describe('the counter map', () => {
@@ -24,6 +27,14 @@ describe('the counter map', () => {
       expect(entry.x).not.toBe(entry.y);
       expect(ids).toContain(entry.x);
       expect(ids).toContain(entry.y);
+    }
+  });
+
+  it('labels every favoured pair with its band, and no even pair', () => {
+    for (const entry of COUNTER_MAP) {
+      const label = `${entry.x} vs ${entry.y}`;
+      if (entry.intended === 'even') expect(entry.band, label).toBeUndefined();
+      else expect(['kind', 'movement'], label).toContain(entry.band);
     }
   });
 
@@ -59,22 +70,36 @@ describe('the counter map', () => {
 });
 
 describe('checkCounter', () => {
-  it('checks the favoured side against its 62-72% target, warning near the edges', () => {
+  it('checks a movement counter against its 62-72% target, warning near the edges', () => {
     expect(checkCounter(favoured, 0.67, 0.32)).toBe('ok');
     expect(checkCounter(favoured, 0.63, 0.36)).toBe('warn');
     expect(checkCounter(favoured, 0.71, 0.28)).toBe('warn');
     expect(checkCounter({ ...favoured, intended: 'y' }, 0.32, 0.67)).toBe('ok');
   });
 
+  it('checks a kind counter against its sharper 72-78% target', () => {
+    expect(checkCounter(kind, 0.75, 0.25)).toBe('ok');
+    expect(checkCounter(kind, 0.73, 0.27)).toBe('warn');
+    expect(checkCounter(kind, 0.67, 0.33)).toBe('short');
+  });
+
   it('counts the target edges themselves as in the target', () => {
     expect(checkCounter(favoured, 0.62, 0.38)).toBe('warn');
     expect(checkCounter(favoured, 0.72, 0.28)).toBe('warn');
+    expect(checkCounter(kind, 0.78, 0.22)).toBe('warn');
     expect(checkCounter(even, 0.45, 0.55)).toBe('warn');
   });
 
   it('calls a favoured side between the 58% floor and the target below target, not a miss', () => {
     expect(checkCounter(favoured, 0.61, 0.39)).toBe('short');
     expect(checkCounter(favoured, 0.58, 0.42)).toBe('short');
+    expect(checkCounter(favoured, 0.75, 0.25)).toBe('short');
+  });
+
+  it('keeps a kind counter’s floor at 58% while the redesign ships group by group', () => {
+    expect(KIND_FLOOR_DURING_REDESIGN).toStrictEqual([0.58, 0.8]);
+    expect(checkCounter(kind, 0.6, 0.4)).toBe('short');
+    expect(checkCounter(kind, 0.79, 0.21)).toBe('short');
   });
 
   it('calls a favoured result up to 2 points outside its floor NEAR, and further out MISS', () => {
@@ -82,15 +107,17 @@ describe('checkCounter', () => {
     expect(checkCounter(favoured, 0.575, 0.42)).toBe('near');
     expect(checkCounter(favoured, 0.56, 0.44)).toBe('near');
     expect(checkCounter(favoured, 0.5599, 0.44)).toBe('miss');
-    // Above the target, which is also the floor's top (72%).
-    expect(checkCounter(favoured, 0.74, 0.26)).toBe('near');
-    expect(checkCounter(favoured, 0.7401, 0.25)).toBe('miss');
+    // Above a movement counter's floor (76%) and a kind counter's (80%).
+    expect(checkCounter(favoured, 0.78, 0.22)).toBe('near');
+    expect(checkCounter(favoured, 0.7801, 0.21)).toBe('miss');
+    expect(checkCounter(kind, 0.82, 0.18)).toBe('near');
+    expect(checkCounter(kind, 0.8201, 0.17)).toBe('miss');
   });
 
   it('treats a rate exactly 2 points out as NEAR despite floating-point rounding', () => {
-    // 280/500 = 0.56, 370/500 = 0.74 and 200/500 = 0.4, computed the way pnpm balance computes rates.
+    // 280/500 = 0.56, 390/500 = 0.78 and 200/500 = 0.4, computed the way pnpm balance computes rates.
     expect(checkCounter(favoured, 280 / 500, 220 / 500)).toBe('near');
-    expect(checkCounter(favoured, 370 / 500, 130 / 500)).toBe('near');
+    expect(checkCounter(favoured, 390 / 500, 110 / 500)).toBe('near');
     expect(checkCounter(even, 200 / 500, 300 / 500)).toBe('near');
   });
 
@@ -109,6 +136,19 @@ describe('checkCounter', () => {
     expect(checkCounter(favoured, 0.52, 0.48)).toBe('miss');
     expect(checkCounter(favoured, 0.52, 0.48, 0.087)).toBe('near');
     expect(checkCounter(favoured, 0.49, 0.51, 0.087)).toBe('miss');
+  });
+});
+
+describe('outsideFinalBand', () => {
+  it('uses the final floors with no allowance: kind 66-80%, movement 58-76%, even 42-58%', () => {
+    expect(outsideFinalBand(kind, 0.65, 0.35)).toBe(true);
+    expect(outsideFinalBand(kind, 0.66, 0.34)).toBe(false);
+    expect(outsideFinalBand(kind, 0.81, 0.19)).toBe(true);
+    expect(outsideFinalBand(favoured, 0.58, 0.42)).toBe(false);
+    expect(outsideFinalBand(favoured, 0.57, 0.43)).toBe(true);
+    expect(outsideFinalBand({ ...kind, intended: 'y' }, 0.3, 0.7)).toBe(false);
+    expect(outsideFinalBand(even, 0.58, 0.42)).toBe(false);
+    expect(outsideFinalBand(even, 0.41, 0.59)).toBe(true);
   });
 });
 

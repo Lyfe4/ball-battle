@@ -47,34 +47,11 @@ export const theme = {
   healFullShare: 0.15,
   /** The smallest a heal pulse is drawn, as a share of full size, so even a 1-point heal shows. */
   healMinSize: 0.3,
-  /**
-   * The rule cue (ADR 0028): a small four-point spark beside a ball the moment an interaction rule
-   * acts on it (a heal cut by shock, an aimed attack held by a stagger, rage numbed by poison).
-   * One shape and colour for every rule, so players learn "a rule just kicked in". Pale gold with a
-   * dark outline, so it reads on every ball colour and on the arena.
-   */
-  ruleCueFill: '#fef08a',
-  ruleCueOutline: '#1c1917',
-  /** Spark size as a share of the ball's radius, and its outline width in world units. */
-  ruleCueSize: 0.42,
-  ruleCueOutlineWidth: 5,
-  /** How far the spark's inner corners sit from its centre, as a share of its size. */
-  ruleCueWaist: 0.3,
-  /** The pop: grows to this scale, then settles to 1. */
-  ruleCuePop: 1.25,
-  /**
-   * A shocked ball (ADR 0009): a thin dashed ring just outside its edge, in a pale storm blue. The
-   * dashes step along every few sim ticks for a faint crackle, and hold still with reduced motion.
-   */
-  shockRing: '#bfdbfe',
-  shockRingWidth: 3,
-  shockRingAlpha: 0.7,
-  shockRingGap: 7,
-  shockDash: [9, 7] as readonly number[],
-  shockStepTicks: 4,
+  /** How far outside a ball's edge its first status ring sits. */
+  statusRingGap: 7,
   /**
    * A slowed ball (ADR 0012): a thin solid ring in pale ice, with short frost ticks pointing
-   * outwards. Still, like ice. Further out than the shock ring when a ball has both.
+   * outwards. Still, like ice.
    */
   slowRing: '#e0f2fe',
   slowRingWidth: 3,
@@ -83,20 +60,12 @@ export const theme = {
   slowTickLength: 7,
   /**
    * A poisoned ball (ADR 0012, 0014): a still ring of round dots in pale lime, like drops. Outside
-   * the shock and slow rings when a ball has more than one.
+   * the slow ring when a ball has both.
    */
   poisonRing: '#d9f99d',
   poisonRingWidth: 5,
   poisonRingAlpha: 0.8,
   poisonDotGap: 11,
-  /**
-   * A staggered ball (ADR 0016): a broken ring of a few pale-stone arcs, the Quake's colour family,
-   * like a dazed halo. Still. Outermost when a ball has several statuses.
-   */
-  staggerRing: '#e7e5e4',
-  staggerRingWidth: 4,
-  staggerRingAlpha: 0.8,
-  staggerArcs: 4,
   /** Each further status ring sits this much further out than the one inside it. */
   statusRingSpacing: 9,
   /**
@@ -135,11 +104,6 @@ export const theme = {
    * dropped, main shape thicker. About a phone-sized arena; desktop balls stay above it.
    */
   simpleDesignBelowPx: 24,
-  /**
-   * The Berserker's cracks while it is poisoned (poison numbs its rage, ADR 0016): faded to this
-   * opacity, so the rage visibly goes quiet while the poison ring shows.
-   */
-  numbedRageAlpha: 0.3,
   /** Small highlights: the Vampire's fangs, the Storm's bolt. */
   highlight: '#ffffff',
   /** The Vampire's collar edge flushes this colour when it heals. */

@@ -3,20 +3,32 @@
 // to counter-pick (ADR 0019); `pnpm balance` checks each pair against its band
 // (scripts/counter-map.ts). A new ball adds one entry per existing ball in the file for its batch;
 // a test checks the map covers every pair.
-import { BATCH_TWO_ENTRIES } from './counter-map-batch-2.ts';
 import { BATCH_THREE_ENTRIES } from './counter-map-batch-3.ts';
 import { BATCH_FOUR_ENTRIES } from './counter-map-batch-4.ts';
 import { BATCH_FIVE_ENTRIES } from './counter-map-batch-5.ts';
 import { BATCH_FIVE_DEFENDER_ENTRIES } from './counter-map-batch-5-defenders.ts';
 import { FIRST_ENTRIES } from './counter-map-first.ts';
+import { RULES_OUT_ARCHER_SNIPER_ENTRIES } from './counter-map-rules-out-archer-sniper.ts';
+import { RULES_OUT_BERSERKER_VAMPIRE_ENTRIES } from './counter-map-rules-out-berserker-vampire.ts';
+import { RULES_OUT_BOOMERANG_ENTRIES } from './counter-map-rules-out-boomerang.ts';
+import { RULES_OUT_STORM_QUAKE_ENTRIES } from './counter-map-rules-out-storm-quake.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
 export type Intended = 'x' | 'y' | 'even';
+
+/**
+ * How sharp a favoured pair is meant to be (ADR 0045): `kind` when a kind of hit decides it (spikes
+ * against bumps, a rewind against a big hit, lifesteal against shots), `movement` when speed, size,
+ * range, a pull or minions in the way do. Kind counters are binary and sharper.
+ */
+export type CounterBand = 'kind' | 'movement';
 
 export interface CounterEntry {
   readonly x: string;
   readonly y: string;
   readonly intended: Intended;
+  /** Set on every favoured pair, never on an even one (a test checks). */
+  readonly band?: CounterBand;
   /** Why, in one line, from the two balls' identities. */
   readonly reason: string;
 }
@@ -24,11 +36,14 @@ export interface CounterEntry {
 /** Every pair of balls exactly once, with its intended result and why (a test checks coverage). */
 export const COUNTER_MAP: readonly CounterEntry[] = [
   ...FIRST_ENTRIES,
-  ...BATCH_TWO_ENTRIES,
   ...BATCH_THREE_ENTRIES,
   ...BATCH_FOUR_ENTRIES,
   ...BATCH_FIVE_ENTRIES,
   ...BATCH_FIVE_DEFENDER_ENTRIES,
+  ...RULES_OUT_STORM_QUAKE_ENTRIES,
+  ...RULES_OUT_BERSERKER_VAMPIRE_ENTRIES,
+  ...RULES_OUT_ARCHER_SNIPER_ENTRIES,
+  ...RULES_OUT_BOOMERANG_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */

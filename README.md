@@ -47,7 +47,7 @@ strict Content Security Policy.
   every push. That is what lets a link replay a fight exactly, and a future server verify a result.
 - **Counters built from mechanics, held by an automated balance suite.** Stats can't make a ball
   beat one opponent without beating everyone (ADR 0010). So each favoured matchup needs a written
-  mechanical reason, like "lightning shocks the Vampire, and shocked balls heal less". `pnpm balance`
+  mechanical reason, like "arrows never touch the spikes". `pnpm balance`
   plays every matchup headlessly across all CPU cores and checks it against its band. A reduced run
   gates every pull request in CI.
 - **Ruleset versioning, so shared links never silently change.** Every link records the ruleset it
@@ -95,15 +95,15 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | ----------- | ----------------------------------------------------------------------------------- |
 | Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.          |
 | Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.     |
-| Vampire     | Heals for 45% of the damage it deals.                                               |
+| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches.  |
 | Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.    |
-| Storm       | Lightning every 2 s, landing 0.8 s later. Its strikes and touch cut healing.        |
+| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.        |
 | Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s.                              |
 | Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.                  |
 | Venom       | Light hits that poison its enemy for over 4 s, chipping away between contacts.      |
-| Berserker   | The most health, and hits harder the more it has lost. Poison numbs its rage.       |
+| Berserker   | The most health, and hits harder the more it has lost.                              |
 | Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.         |
-| Quake       | Every wall it hits sends out a shockwave that stops its enemy aiming for 4.5 s.     |
+| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.               |
 | Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.     |
 | Ghost       | Phases out every few seconds: hits, pulls and skulls pass through; none aim at it.  |
 | Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.            |
@@ -113,64 +113,60 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.   |
 | Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.   |
 | Guardian    | A shield soaks the next hit (up to 10, so small hits whole), then regrows in 7.5 s. |
-| Bloom       | After 1.5 s without a hit, regrows a little health (up to 6). Shock halves it.      |
+| Bloom       | After 1.5 s without a hit, regrows a little health (up to 6).                       |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
 
-Picks matter: most pairs lean one way. A counter is _favoured_ (it aims to win 62-72% of the
-time), never decided, and each one comes from something you can watch happen:
+Picks matter: most pairs lean one way. A counter is _favoured_, never decided, and each one comes
+from something you can watch happen. When a kind of hit decides it (spikes against bumps, a rewind
+against a big hit) it aims to win 72-78% of the time; when speed, size, range or a pull decides it,
+62-72% ([ADR 0045](docs/decisions/0045-roster-redesign.md)). No rule exists only where two
+abilities meet: every ability works the same on any ball.
 
-- **Speedster is strong vs Archer, Storm and Sniper**: it closes on arrows, outruns lightning
-  warnings and is off the Sniper's locked line before the shot.
-- **Archer is strong vs Vampire, Frost, Thorns and Ghost**: arrows chip from range where lifesteal and
-  spikes can't answer, land most on the slowest ball, and an arrow already flying still hits a phased Ghost.
-- **Storm is strong vs Vampire, Frost, Thorns and Necromancer**: its strike and touch shock the
-  Vampire so it heals less; the slow can't leave a warning; a strike clears the skull and its owner.
-- **Vampire is strong vs Venom, Berserker and Quake**: lifesteal heals back the chip of poison and
-  shockwaves, and the biggest health pool gives it the most to drink.
-- **Frost is strong vs Speedster and Quake**: slowed, they lose their speed and the walls they need.
-- **Thorns is strong vs Brawler and Magnet**: the hardest hits come back off the spikes.
+- **Speedster is strong vs Archer, Storm, Sniper and Boomerang**: it closes on arrows and throws,
+  outruns lightning warnings and is off the Sniper's locked line before the shot.
+- **Archer is strong vs Vampire, Thorns and Ghost**: lifesteal can't drink from an arrow, arrows
+  never touch the spikes, and an arrow already flying still hits a phased Ghost.
+- **Storm is strong vs Frost**: the slowest ball can't leave the warning circle.
+- **Vampire is strong vs Chrono**: the rewind gives back health, not what the Vampire drank.
+- **Frost is strong vs Speedster**: slowed, it builds no speed.
+- **Thorns is strong vs Brawler, Berserker and Magnet**: the hardest bumps, raging ones too, come
+  back off the spikes.
 - **Venom and Sniper are strong vs Thorns**: poison and shots never touch the spikes.
-- **Venom is strong vs Berserker**: poison numbs its rage.
-- **Berserker is strong vs Speedster, Quake and Necromancer**: every wound, from a burst, a shockwave
-  or a skull, makes its hits harder.
-- **Quake is strong vs Archer and Sniper**: a shockwave staggers them, and a staggered ball can't aim.
-- **Magnet is strong vs the balls weak up close** (Speedster, Venom, Sniper, Quake, Necromancer):
-  its pull drags them into a brawl.
+- **Berserker is strong vs Speedster**: its huge health soaks the stacked rush.
+- **Quake is strong vs Necromancer**: every shockwave clears the skulls.
+- **Magnet is strong vs the balls weak up close** (Speedster, Venom, Archer, Sniper, Storm, Quake,
+  Boomerang, Necromancer): its pull drags them into a brawl.
 - **Ghost is strong vs Speedster, Magnet and Necromancer**: a phased ball can't be touched, gripped or
-  aimed at, so rushes, pulls and skulls pass through it. **Sniper is strong vs the Ghost**: a shot
-  still hits it.
-- **Necromancer is strong vs Archer and Sniper**: a skull nearer than its owner draws the arrow or shot.
+  aimed at, so rushes, pulls and skulls pass through it. **Sniper and Boomerang are strong vs the
+  Ghost**: a shot or boomerang already flying still hits it.
+- **Necromancer is strong vs Archer, Sniper and Boomerang**: a skull nearer than its owner draws the
+  arrow, shot or throw.
 - **Chrono is strong vs Speedster, Storm and Sniper**: a stacked rush, a strike or a shot is one big
-  hit, and its rewind undoes it. **Vampire and Venom are strong vs the Chrono**: what was drunk and
-  poison still on it aren't rewound.
-- **Titan is strong vs Speedster, Archer, Venom and Necromancer**: its growing body meets them more
-  often and their light hits lose the trade. **Thorns and Inferno are strong vs the Titan**: a bigger
-  body meets more spikes and covers more fire.
+  hit, and its rewind undoes it. **Venom is strong vs the Chrono**: poison still on it isn't rewound.
+- **Titan is strong vs Speedster, Archer, Boomerang, Venom and Necromancer**: its growing body meets
+  them more often and their light hits lose the trade. **Thorns and Inferno are strong vs the
+  Titan**: a bigger body meets more spikes and covers more fire.
 - **Inferno is strong vs Ghost, Necromancer, Titan and Thorns**: fire burns a phased ball, burns up
-  skulls, covers a big body and never touches the spikes. **Speedster and Archer are strong vs the
-  Inferno**: one outruns the fire, the other never has to cross it.
-- **Boomerang is strong vs Vampire, Ghost and Inferno**: it chips from range, still hits a phased
-  ball and never crosses the fire. **Speedster, Quake, Titan, Necromancer and Bloom are strong vs
-  the Boomerang**: it is outrun, staggered, out-traded, stopped by a skull, and its small hits
-  regrow.
+  skulls, covers a big body and never touches the spikes. **Speedster is strong vs the Inferno**: it
+  outruns the fire.
+- **Boomerang is strong vs Vampire and Ghost**: lifesteal can't drink from a boomerang, and one in
+  flight still hits a phased ball.
 - **Bomber is strong vs Speedster**: the fastest ball covers the most ground and runs into the most
-  bombs. **Archer is strong vs the Bomber**: it shoots from range and crosses them least.
-- **Guardian is strong vs Vampire**: its shield soaks part of each heavy hit, and lifesteal drinks
-  only what lands. **Venom, Inferno and Thorns are strong vs the Guardian**: poison ticks, burns and
-  reflections break the shield, and the rest lands.
+  bombs.
+- **Guardian is strong vs Vampire**: its shield soaks part of each heavy bump, and lifesteal drinks
+  only what lands. **Venom, Inferno and Thorns are strong vs the Guardian**: poison ticks, burns
+  and reflections break the shield, and the rest lands.
 - **Bloom is strong vs Boomerang, Necromancer and Bomber**: their hits come with gaps between, and
   it regrows in every gap. **Venom and Thorns are strong vs the Bloom**: poison never lets it rest,
   and spiked, heavy hits cost more than it regrows.
 
-Three rules between balls show a small spark on the ball whose ability just countered the other,
-the moment they act: the Storm's shock halves a heal (the Vampire's lifesteal, the Bloom's
-regrowth), the Quake's shockwave staggers a ball so it can't aim (the Archer, Storm, Sniper and
-Boomerang), the Venom's poison numbs the Berserker's rage
-([ADR 0041](docs/decisions/0041-the-spark-marks-the-counter.md)). Every heal
+The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) ships in four groups; the
+first removed the three rules between balls (shock, stagger and numbed rage) and the spark that
+marked them, so a counter is only ever what the two balls already do. Every heal
 shows as a green pulse sized by the heal.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
@@ -337,9 +333,10 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md)
 , [ADR 0039: The phone arena is the screen](docs/decisions/0039-the-phone-arena-is-the-screen.md)
 , [ADR 0040: Settings](docs/decisions/0040-settings.md)
-, [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md)
+, [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md) (removed by ADR 0045)
 , [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md)
-and [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md).
+, [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)
+and [ADR 0045: The roster redesign](docs/decisions/0045-roster-redesign.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the

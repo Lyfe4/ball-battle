@@ -144,7 +144,6 @@ export function createArena(
       knockouts: effects.knockouts(now),
       winner: effects.winner(now),
       intro: (index) => introLook(index, now, reduced),
-      cue: (ballId) => effects.cue(ballId, now),
       shieldBreak: (ballId) => effects.shieldBreak(ballId, now),
       rewinds: rewinds.trails(now),
       chips: sourceChips.chips(now),
@@ -201,7 +200,7 @@ export function createArena(
       );
       playback = outcome.playback;
       for (const { previous, result } of outcome.ticks) {
-        effects.apply(result.events, playback.effectMs, result.world.balls);
+        effects.apply(result.events, playback.effectMs);
         rewinds.apply(result.events, playback.effectMs);
         sourceChips.apply(result.events, playback.effectMs);
         tips.apply(result.events, result.world, playback.effectMs);
