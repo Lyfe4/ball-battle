@@ -17,9 +17,17 @@ export interface PairResult {
   readonly wins: [number, number];
   draws: number;
   games: number;
+  /**
+   * Games won by the ball that was once behind by COMEBACK_LEAD or more of max health (each side's
+   * health as a share of its own max): how often a fight turns around.
+   */
+  comebacks: number;
   readonly lengths: number[];
   readonly totals: [BallTotals, BallTotals];
 }
+
+/** A lead this big (a share of max health) that is lost counts as a comeback. */
+export const COMEBACK_LEAD = 0.25;
 
 const emptyTotals = (): BallTotals => ({
   contactDamage: 0,
@@ -46,8 +54,10 @@ function playMatch(
   seed: number,
   lookup: DefinitionLookup,
   totals: readonly [BallTotals, BallTotals],
-): { winner: 0 | 1 | 'draw'; seconds: number } {
+): { winner: 0 | 1 | 'draw'; seconds: number; comeback: boolean } {
   let world: WorldState = createWorld(seed, [a, b]);
+  // The biggest lead each slot ever had, in shares of max health.
+  const lead = [0, 0];
   // The time limit guarantees an end; the extra tick only guards against a sim bug looping forever.
   for (let i = 0; i <= MATCH_TIME_LIMIT_TICKS && world.match.status === 'running'; i++) {
     const result = step(world, lookup);
@@ -56,13 +66,18 @@ function playMatch(
     // memory traffic, which is what limits running many matches in parallel.
     addEvents(totals[0], 'ball-0', result.events);
     addEvents(totals[1], 'ball-1', result.events);
+    const [first, second] = world.balls;
+    const gap = (first?.health ?? 0) / a.maxHealth - (second?.health ?? 0) / b.maxHealth;
+    if (gap > (lead[0] ?? 0)) lead[0] = gap;
+    if (-gap > (lead[1] ?? 0)) lead[1] = -gap;
   }
   if (world.match.status !== 'finished') {
     throw new Error(`${a.id} vs ${b.id}, seed ${seed}: did not finish within the time limit`);
   }
   const { result, endTick } = world.match;
   const winner = result.kind === 'draw' ? 'draw' : result.winnerId === 'ball-0' ? 0 : 1;
-  return { winner, seconds: endTick / TICK_RATE };
+  const loserLead = winner === 'draw' ? 0 : (lead[winner === 0 ? 1 : 0] ?? 0);
+  return { winner, seconds: endTick / TICK_RATE, comeback: loserLead >= COMEBACK_LEAD };
 }
 
 /**
@@ -86,6 +101,7 @@ export function playPair(
     wins: [0, 0],
     draws: 0,
     games: 0,
+    comebacks: 0,
     lengths: [],
     totals: [emptyTotals(), emptyTotals()],
   };
@@ -105,6 +121,7 @@ export function playPair(
       ]);
       result.games++;
       result.lengths.push(match.seconds);
+      if (match.comeback) result.comebacks++;
       if (match.winner === 'draw') result.draws++;
       else result.wins[match.winner === 0 ? first : second]++;
     }
@@ -140,6 +157,7 @@ export function mergePairResults(parts: readonly PairResult[]): PairResult {
     wins: [0, 0],
     draws: 0,
     games: 0,
+    comebacks: 0,
     lengths: [],
     totals: [emptyTotals(), emptyTotals()],
   };
@@ -148,6 +166,7 @@ export function mergePairResults(parts: readonly PairResult[]): PairResult {
     merged.wins[1] += part.wins[1];
     merged.draws += part.draws;
     merged.games += part.games;
+    merged.comebacks += part.comebacks;
     merged.lengths.push(...part.lengths);
     for (const index of [0, 1] as const) {
       merged.totals[index].contactDamage += part.totals[index].contactDamage;

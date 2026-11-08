@@ -44,9 +44,11 @@ describe('matchups', () => {
     const brawler = matchupsOf('brawler', ids);
     expect(brawler.strong).toStrictEqual([]);
     expect(brawler.weak.map((line) => line.opponent)).toStrictEqual(['thorns']);
-    expect(favouredOf('storm', 'vampire')).toBe('storm');
-    expect(favouredOf('vampire', 'storm')).toBe('storm');
-    expect(favouredOf('archer', 'storm')).toBeUndefined();
+    // Every pair as the map has it, whichever order it is asked in.
+    for (const { x, y, intended } of COUNTER_MAP) {
+      const favoured = intended === 'even' ? undefined : intended === 'x' ? x : y;
+      expect([favouredOf(x, y), favouredOf(y, x)]).toStrictEqual([favoured, favoured]);
+    }
     expect(favouredOf('storm', 'storm')).toBeUndefined();
   });
 

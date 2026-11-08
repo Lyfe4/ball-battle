@@ -7,7 +7,8 @@ import type { CounterEntry } from './counter-map.ts';
  * Measured before kept, like the first half. The shield soaks part of one hit and takes seconds to
  * regrow, so a steady drip (poison, burns, reflections) strips it, while a heavy hit that heals
  * its owner loses a slice. Regrowth heals a small hit back after a short rest, so drip and heavy
- * hits outweigh it, and rare or small hits (skulls, blasts, a boomerang) do not.
+ * hits outweigh it, and rare or small hits (skulls, blasts, a boomerang) do not. Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
+ * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules.
  */
 export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
   // The Guardian.
@@ -24,24 +25,6 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     reason: 'Its rush is a hit and a bonus: the shield soaks the hit, and the bonus lands.',
   },
   {
-    x: 'guardian',
-    y: 'vampire',
-    intended: 'x',
-    reason: 'The shield soaks part of its heavy hit, and lifesteal drinks only what lands.',
-  },
-  {
-    x: 'archer',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'Arrows come often enough to strip the shield, but each one is light.',
-  },
-  {
-    x: 'storm',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'The shield soaks part of a strike, and the shock has no heal to cut.',
-  },
-  {
     x: 'frost',
     y: 'guardian',
     intended: 'even',
@@ -51,6 +34,7 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'guardian',
     intended: 'x',
+    band: 'kind',
     reason:
       'Its hard hits come back off the spikes, and the shield blunts only one hit in a while.',
   },
@@ -58,25 +42,8 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'guardian',
     intended: 'x',
+    band: 'kind',
     reason: 'Poison ticks every half second: the first tick breaks the shield, the rest land.',
-  },
-  {
-    x: 'berserker',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'The shield blunts a raging hit, and every hit that lands feeds the rage.',
-  },
-  {
-    x: 'sniper',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'The shield soaks part of a shot, and the next shot lands whole.',
-  },
-  {
-    x: 'quake',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'A shockwave breaks the shield, but the Quake’s own hits are no harder for it.',
   },
   {
     x: 'magnet',
@@ -112,6 +79,7 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'guardian',
     intended: 'x',
+    band: 'kind',
     reason: 'Burns tick often: the first breaks the shield, and the rest land.',
   },
   // The Bloom.
@@ -129,24 +97,6 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     reason: 'Its rush lands often, and the Bloom regrows a little between rushes.',
   },
   {
-    x: 'vampire',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Lifesteal heals the Vampire on every heavy hit, and the Bloom regrows between them.',
-  },
-  {
-    x: 'archer',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Arrows leave time to regrow between them, but each takes more than it regrows.',
-  },
-  {
-    x: 'storm',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Shock halves its regrowth, but strikes are rare enough to regrow between.',
-  },
-  {
     x: 'frost',
     y: 'bloom',
     intended: 'even',
@@ -156,31 +106,15 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'bloom',
     intended: 'x',
+    band: 'kind',
     reason: 'Its own hits come back off the spikes, and each heavy hit costs more than it regrows.',
   },
   {
     x: 'venom',
     y: 'bloom',
     intended: 'x',
+    band: 'kind',
     reason: 'Poison ticks every half second, so it never rests long enough to regrow.',
-  },
-  {
-    x: 'berserker',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Its huge health makes a long fight to regrow in, and every hit feeds its rage.',
-  },
-  {
-    x: 'sniper',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Shots leave time to regrow between them, but each takes more than it regrows.',
-  },
-  {
-    x: 'quake',
-    y: 'bloom',
-    intended: 'even',
-    reason: 'Shockwaves chip and reset its rest, but each one is small enough to regrow.',
   },
   {
     x: 'magnet',
@@ -198,6 +132,7 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'necromancer',
     intended: 'x',
+    band: 'kind',
     reason: 'Skulls come one at a time, and it regrows between them.',
   },
   {
@@ -220,24 +155,6 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
   },
   // The new balls with each other.
   {
-    x: 'boomerang',
-    y: 'bomber',
-    intended: 'even',
-    reason: 'It throws from range and seldom crosses the bombs, but its hits are light.',
-  },
-  {
-    x: 'boomerang',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'The throw breaks the shield and the catch lands, but each hit is light.',
-  },
-  {
-    x: 'bloom',
-    y: 'boomerang',
-    intended: 'x',
-    reason: 'Each boomerang hit is small, and it regrows it back before the next throw.',
-  },
-  {
     x: 'bomber',
     y: 'guardian',
     intended: 'even',
@@ -247,6 +164,7 @@ export const BATCH_FIVE_DEFENDER_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'bomber',
     intended: 'x',
+    band: 'kind',
     reason: 'Blasts come with gaps between, and it regrows in every gap.',
   },
   {

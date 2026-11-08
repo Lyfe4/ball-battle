@@ -16,7 +16,7 @@ export const POISON_TICKS = 270;
 export const venom = defineBall({
   id: 'venom',
   name: 'Venom',
-  description: 'Light hits poison for 4.5 s: it chips away and numbs rage.',
+  description: 'Light hits poison for 4.5 s: it chips away between hits.',
   color: '#84cc16',
   ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' } },
   radius: STANDARD_BALL_RADIUS,

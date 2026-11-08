@@ -3,11 +3,9 @@ import type { MinionEvent, MinionRequest, MinionState } from './minions/types.ts
 import type { RewindRequest, RewoundEvent } from './abilities/rewind.ts';
 import type { ReturnFlight } from './projectiles/returning.ts';
 import type { SpawnRequest } from './projectiles/spawn.ts';
-import type { RuleAppliedEvent, RuleId } from './rules.ts';
 import type { ShieldBrokenEvent } from './shield.ts';
 import type { ZoneLinger, ZoneTriggerRequest } from './zones/spawn.ts';
 import type {
-  HealReducedEvent,
   StatusAppliedEvent,
   StatusExpiredEvent,
   StatusKind,
@@ -236,8 +234,6 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly status: StatusKind;
       readonly durationTicks: number;
     }
-  /** Says an interaction rule just acted on this ball (ADR 0028). Changes nothing in the world. */
-  | { readonly kind: 'ruleApplied'; readonly rule: RuleId }
   /**
    * Puts the hook owner back at an earlier position, velocity and health (the Chrono, ADR 0034).
    * The only action that acts on an owner at 0 health, from `onKnockedOut`.
@@ -553,8 +549,6 @@ export type SimEvent =
   | MatchEndedEvent
   | StatusAppliedEvent
   | StatusExpiredEvent
-  | HealReducedEvent
-  | RuleAppliedEvent
   | RewoundEvent
   | ShieldBrokenEvent
   | MinionEvent;

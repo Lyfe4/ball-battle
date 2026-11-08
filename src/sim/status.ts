@@ -5,15 +5,12 @@ import type { BallState } from './types.ts';
 /**
  * Every kind of status. An open union: a new kind is added here and in the code that reads it,
  * without touching balls that never apply it.
- * - shocked: heals are reduced (ADR 0009).
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
- * - staggered: can't aim. A ball that aims (the Archer, Storm and Sniper) holds its next attack
- *   until the stagger ends, and a Sniper's locked aim breaks (ADR 0016).
  * - shielded: the next hit on the ball, of any kind, is blocked completely and breaks the shield
  *   (ADR 0043, `shield.ts`).
  */
-export type StatusKind = 'shocked' | 'slowed' | 'poisoned' | 'staggered' | 'shielded';
+export type StatusKind = 'slowed' | 'poisoned' | 'shielded';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -77,25 +74,6 @@ export interface StatusExpiredEvent {
   readonly tick: number;
   readonly ballId: string;
   readonly status: StatusKind;
-}
-
-/** A heal a status reduced. Comes just before the `healed` event of what it still restored. */
-export interface HealReducedEvent {
-  readonly type: 'healReduced';
-  readonly tick: number;
-  readonly ballId: string;
-  readonly sourceId: string;
-  /** Health the status took away from the heal. */
-  readonly lost: number;
-  readonly status: StatusKind;
-}
-
-/** Share of every heal a shocked ball loses (ADR 0009). The Storm's lever against the Vampire. */
-export const SHOCK_HEAL_REDUCTION = 0.5;
-
-/** What a heal of `amount` restores to a shocked ball, before the max-health cap. Whole numbers. */
-export function shockedHeal(amount: number): number {
-  return Math.round(amount * (1 - SHOCK_HEAL_REDUCTION));
 }
 
 /** Share of its cruise speed a slowed ball loses (ADR 0012). The Frost's lever. */

@@ -187,7 +187,7 @@ describe('the bot model', () => {
   });
 
   it('values a decided series as won or lost, and a last round by its odds', () => {
-    const base = { format: 'reveal' as const, own: ['storm'], opponent: ['vampire'] };
+    const base = { format: 'reveal' as const, own: ['thorns'], opponent: ['brawler'] };
     expect(seriesValue({ ...base, wins: 2, losses: 0 }, 'bot')).toBe(1);
     expect(seriesValue({ ...base, wins: 0, losses: 2 }, 'bot')).toBe(0);
     expect(seriesValue({ ...base, wins: 1, losses: 1 }, 'bot')).toBe(0.64);

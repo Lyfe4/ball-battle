@@ -1,7 +1,6 @@
 // The style guide's tiles: every ball in each ability state, then every status ring. One
 // section per ball design; a new ball adds its section here.
 import { COOLDOWN_TICKS as ARCHER_COOLDOWN } from '../sim/balls/archer.ts';
-import { BALLS } from '../sim/balls/index.ts';
 import { CHARGE_TICKS } from '../sim/balls/sniper.ts';
 import { COOLDOWN_TICKS as STORM_COOLDOWN } from '../sim/balls/storm.ts';
 import type { StatusKind } from '../sim/status.ts';
@@ -25,8 +24,6 @@ export interface Tile {
   readonly heal?: number;
   /** The heal's size as a share of max health (ADR 0028); 0.15 or more is a full-size pulse. */
   readonly healShare?: number;
-  /** Rule cue strength (ADR 0028): 1 just shown, then fading. */
-  readonly cue?: number;
   readonly flash?: number;
   /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
   readonly statuses?: readonly StatusKind[];
@@ -152,7 +149,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Berserker: cracks run in from the edge, more and heavier as its health drops; poisoned, they fade (rage numbed)',
+    'Berserker: cracks run in from the edge, more and heavier as its health drops',
     [
       ...[1, 0.75, 0.5, 0.25, 0.05].map((health): Tile => ({
         label: `${health * 100}% health`,
@@ -160,12 +157,6 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
         health,
       })),
       { label: 'mirror B, 50%', id: 'berserker', health: 0.5, repeat: true },
-      {
-        label: 'poisoned, 25%: rage numbed',
-        id: 'berserker',
-        health: 0.25,
-        statuses: ['poisoned'],
-      },
     ],
   ],
   [
@@ -194,34 +185,8 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     [
       { label: 'big heal', id: 'vampire', heal: 0.75, healShare: 0.15 },
       { label: 'small heal', id: 'vampire', heal: 0.75, healShare: 0.03 },
-      {
-        label: 'shock-cut heal',
-        id: 'vampire',
-        heal: 0.75,
-        healShare: 0.075,
-        statuses: ['shocked'],
-        cue: 0.75,
-      },
       { label: 'another ball', id: 'brawler', heal: 0.75, healShare: 0.1 },
     ],
-  ],
-  [
-    'Rule cue (ADR 0028): one spark for every interaction rule, the moment it acts',
-    [
-      { label: 'pop', id: 'archer', statuses: ['staggered'], cue: 0.9 },
-      { label: 'settled', id: 'archer', statuses: ['staggered'], cue: 0.6 },
-      { label: 'fading', id: 'archer', statuses: ['staggered'], cue: 0.2 },
-      { label: 'numbed rage', id: 'berserker', health: 0.4, statuses: ['poisoned'], cue: 0.6 },
-      { label: 'on yellow', id: 'speedster', cue: 0.6 },
-    ],
-  ],
-  [
-    'Shocked (ADR 0009): a dashed ring just outside the edge; it heals less',
-    BALLS.map(({ id }): Tile => ({
-      label: id,
-      id,
-      statuses: ['shocked'],
-    })),
   ],
   [
     'Slowed (ADR 0012): a still ice ring with frost ticks; it cruises slower',
@@ -231,7 +196,6 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
         id,
         statuses: ['slowed'],
       })),
-      { label: 'shocked + slowed', id: 'vampire', statuses: ['shocked', 'slowed'] },
     ],
   ],
   [
@@ -242,22 +206,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
         id,
         statuses: ['poisoned'],
       })),
-      { label: 'all three', id: 'storm', statuses: ['shocked', 'slowed', 'poisoned'] },
-    ],
-  ],
-  [
-    'Staggered (ADR 0016): a broken ring of pale-stone arcs; it can’t aim',
-    [
-      ...['archer', 'storm', 'sniper', 'brawler'].map((id): Tile => ({
-        label: id,
-        id,
-        statuses: ['staggered'],
-      })),
-      {
-        label: 'all four',
-        id: 'sniper',
-        statuses: ['shocked', 'slowed', 'poisoned', 'staggered'],
-      },
+      { label: 'slowed + poisoned', id: 'storm', statuses: ['slowed', 'poisoned'] },
     ],
   ],
 ];

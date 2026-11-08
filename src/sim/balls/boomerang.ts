@@ -38,13 +38,12 @@ export function hasBoomerangOut(world: WorldState, ownerId: string): boolean {
  * that turns back after TURN_TICKS or at a wall and homes on the Boomerang, which catches it. A hit
  * doesn't stop it, so it can hit the same ball going out and coming back: the way back crosses
  * whatever is near the Boomerang. It throws again once COOLDOWN_TICKS have passed and the last one
- * is home (or lost to a skull, which a boomerang can't fly through). Staggered (by a Quake's
- * shockwave), it can't aim: a throw that comes due waits until the stagger ends (ADR 0016).
+ * is home (or lost to a skull, which a boomerang can't fly through).
  */
 export const boomerang = defineBall<BoomerangState>({
   id: 'boomerang',
   name: 'Boomerang',
-  description: 'Its boomerang hits out and back. Stagger stops its aim.',
+  description: 'Its boomerang hits on the way out and on the way back.',
   color: '#2dd4bf',
   ability: { name: 'Boomerang', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
@@ -56,15 +55,6 @@ export const boomerang = defineBall<BoomerangState>({
     onTick: ({ world, self, isPhased }) => {
       const due = self.abilityState.nextThrowTick;
       if (world.tick < due || hasBoomerangOut(world, self.id)) return [];
-      const stagger = self.statuses.find((status) => status.kind === 'staggered');
-      if (stagger !== undefined) {
-        // Held until the stagger ends, and shown once (ADR 0028): its throw can come due while the
-        // last boomerang is still out, so it is held from the moment it is ready, not the due tick.
-        return [
-          { kind: 'ruleApplied', rule: 'aimHeld' },
-          { kind: 'setAbilityState', state: { nextThrowTick: stagger.expiresTick } },
-        ];
-      }
       const target = nearestTarget(self, world.balls, world.minions, isPhased);
       if (target === undefined) return [];
       const aimAt = leadTarget(self.position, target.position, target.velocity, BOOMERANG_SPEED);

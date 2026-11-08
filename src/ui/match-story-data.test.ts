@@ -89,17 +89,22 @@ describe('how it was won (ADR 0036, 0037)', () => {
     }
   });
 
-  it('chooses moments by what decided the round: finish, comeback, rules, then the big hit', () => {
+  it('chooses moments by what decided the round: finish, comeback, rewinds, then the big hit', () => {
     const at = (tick: number, kind: Moment['kind']): Moment => ({ tick, kind, text: kind });
     const all = [
       at(5, 'bigHit'),
-      at(1, 'rule'),
-      at(2, 'rule'),
+      at(1, 'rewind'),
+      at(2, 'rewind'),
       at(9, 'finish'),
-      at(3, 'rule'),
+      at(3, 'rewind'),
       at(6, 'lead'),
     ];
-    expect(chooseMoments(all).map((m) => m.kind)).toStrictEqual(['rule', 'rule', 'lead', 'finish']);
+    expect(chooseMoments(all).map((m) => m.kind)).toStrictEqual([
+      'rewind',
+      'rewind',
+      'lead',
+      'finish',
+    ]);
     expect(chooseMoments(all, 6).map((m) => m.tick)).toStrictEqual([1, 2, 3, 5, 6, 9]);
     expect(chooseMoments([at(9, 'finish'), at(4, 'bigHit')]).map((m) => m.kind)).toStrictEqual([
       'bigHit',
@@ -148,20 +153,18 @@ describe('how it was won (ADR 0036, 0037)', () => {
       dealt: 61,
       sources: [{ label: 'Hits', amount: 61, ability: false }],
       healed: 0,
-      healsCut: 0,
     };
     expect(sourceWords(side)).toBe('all hits');
     expect(
       sourceWords({
         ...side,
         healed: 12,
-        healsCut: 2,
         sources: [
           { label: 'Poison', amount: 40, ability: true },
           { label: 'Hits', amount: 21, ability: false },
         ],
       }),
-    ).toBe('Poison 40 · Hits 21 · healed 12, 2 cut by shock');
+    ).toBe('Poison 40 · Hits 21 · healed 12');
   });
 
   it('names each slot by its label when given, so a mirror reads plainly', () => {

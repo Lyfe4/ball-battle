@@ -22,6 +22,8 @@ import {
   COUNTER_BANDS,
   counterFor,
   HARD_WORST_MATCHUP,
+  KIND_FLOOR_DURING_REDESIGN,
+  outsideFinalBand,
   type CounterVerdict,
 } from './counter-map.ts';
 import { median, withMaxHealth, type BallTotals, type PairResult } from './balance-stats.ts';
@@ -43,6 +45,8 @@ const TARGETS = {
   worstMatchup: 0.2,
   drawRate: 0.05,
   medianSeconds: [12, 30],
+  /** Share of games won by the ball that was once behind by a quarter of its health (ADR 0045). */
+  comebacks: [0.1, 0.2],
   /**
    * Largest win-rate swing, in points, from a ±5% change to one ball's max health. Above
    * `warn` is worth a look; above `fail` is a miss. The gap allows for ±2-3 points of noise.
@@ -115,6 +119,7 @@ const ballTotals = new Map<string, BallTotals & { games: number; wins: number }>
 );
 const lengths: number[] = [];
 let draws = 0;
+let comebacks = 0;
 let games = 0;
 let worstShare = 1;
 let worstSensitivity = 0;
@@ -148,6 +153,8 @@ const counterLines: string[] = [];
 /** Pairs between their floor and their target (ADR 0028 addendum): warned, listed, not failed. */
 const belowTarget: BelowTarget[] = [];
 let counterMapOk = true;
+/** Pairs outside the redesign's final bands (ADR 0045): a count each redesign group brings down. */
+const outsideFinal: string[] = [];
 
 const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
   ok: 'ok  ',
@@ -177,14 +184,16 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
   const intended =
     entry.intended === 'even'
       ? 'even'
-      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured`;
+      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured (${entry.band ?? 'movement'})`;
   const rates =
     entry.intended === 'even'
       ? `${pct(xRate).trim()} / ${pct(yRate).trim()}`
       : pct(entry.intended === 'x' ? xRate : yRate).trim();
   const pair = `${name(entry.x)} vs ${name(entry.y)}`;
   if (verdict === 'short') belowTarget.push({ pair, intended, rates });
-  const note = verdict === 'short' ? '  below target' : '';
+  const final = outsideFinalBand(entry, xRate, yRate);
+  if (final) outsideFinal.push(pair);
+  const note = `${verdict === 'short' ? '  below target' : ''}${final ? '  outside final band' : ''}`;
   return `  ${VERDICT_LABEL[verdict]} ${pair.padEnd(24)} ${intended.padEnd(20)} ${rates}${note}`;
 }
 
@@ -193,6 +202,7 @@ for (const [x, y] of pairs) {
   record(x, base, 0);
   record(y, base, 1);
   draws += base.draws;
+  comebacks += base.comebacks;
   games += base.games;
   lengths.push(...base.lengths);
   const xRate = base.wins[0] / base.games;
@@ -235,7 +245,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map: target favoured ${band(COUNTER_BANDS.favoured)}, even ${band(COUNTER_BANDS.even)}; floor favoured ${band(COUNTER_BANDS.favouredFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
+  `\n  Counter map: target kind ${band(COUNTER_BANDS.kind)}, movement ${band(COUNTER_BANDS.movement)}, even ${band(COUNTER_BANDS.even)}; floor kind ${band(KIND_FLOOR_DURING_REDESIGN)} while the redesign ships (final ${band(COUNTER_BANDS.kindFloor)}), movement ${band(COUNTER_BANDS.movementFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
 );
 console.log(counterLines.join('\n'));
 
@@ -277,6 +287,8 @@ if (writeSummary) {
 }
 
 const drawRate = draws / games;
+const comebackRate = comebacks / games;
+const comebacksOk = comebackRate >= TARGETS.comebacks[0] && comebackRate <= TARGETS.comebacks[1];
 const medianLength = median(lengths);
 console.log(`\n  ${'Draws'.padEnd(28)} ${pct(drawRate)}`);
 console.log(`  ${'Median match length'.padEnd(28)} ${medianLength.toFixed(1)} s\n`);
@@ -294,7 +306,13 @@ console.log(`  ${check(counterMapOk)} every pair inside its counter-map floor`);
 console.log(
   `  ${belowTarget.length === 0 ? 'ok  ' : 'WARN'} every pair in its target band${belowTarget.length === 0 ? '' : `: ${String(belowTarget.length)} below target (marked above)`}`,
 );
+console.log(
+  `  ${outsideFinal.length === 0 ? 'ok  ' : 'WARN'} pairs outside the redesign's final bands (ADR 0045): ${String(outsideFinal.length)}`,
+);
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
+console.log(
+  `  ${check(comebacksOk)} comebacks 10-20%: the ball once behind by a quarter of its health won ${pct(comebackRate).trim()}`,
+);
 console.log(
   `  ${check(medianLength >= TARGETS.medianSeconds[0] && medianLength <= TARGETS.medianSeconds[1])} median match 12-30 s`,
 );
@@ -325,6 +343,7 @@ const missed = [
   worstShare < HARD_WORST_MATCHUP,
   !counterMapOk,
   drawRate >= TARGETS.drawRate,
+  !comebacksOk,
   medianLength < TARGETS.medianSeconds[0] || medianLength > TARGETS.medianSeconds[1],
   !ci && sensitivityGrade === 'MISS',
   checksVampire && !healingOk,

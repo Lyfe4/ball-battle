@@ -1,8 +1,6 @@
 // "How it was won" (ADR 0036, 0037): a finished match retold from its own events, as pure data. The
 // match is replayed headlessly from its opening world, which is (seed, balls), so the story is
 // the fight itself and can never disagree with what was on screen (ADR 0001).
-import { ruleCauserId } from '../render/rule-cue.ts';
-import { RULE_WORDS } from './rule-words.ts';
 import { TICK_RATE } from '../sim/constants.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
@@ -25,12 +23,10 @@ export interface SideStory {
   /** Largest first. */
   readonly sources: readonly DamageShare[];
   readonly healed: number;
-  /** Heals cut by shock (ADR 0028's rule cue). */
-  readonly healsCut: number;
 }
 
 /** Why a moment is a key moment, in the order they are kept when there are too many. */
-export type MomentKind = 'finish' | 'lead' | 'rule' | 'bigHit';
+export type MomentKind = 'finish' | 'lead' | 'rewind' | 'bigHit';
 
 export interface Moment {
   readonly tick: number;
@@ -52,7 +48,7 @@ export const MAX_MOMENTS = 4;
 /** A hit this big is a key moment on its own. */
 export const BIG_HIT = 20;
 /** Kept in this order when there are more than MAX_MOMENTS. */
-const PRIORITY: readonly MomentKind[] = ['finish', 'lead', 'rule', 'bigHit'];
+const PRIORITY: readonly MomentKind[] = ['finish', 'lead', 'rewind', 'bigHit'];
 
 /** One ball's damage in words: its sources only when they say more than the total. */
 export function sourceWords(side: SideStory): string {
@@ -60,10 +56,7 @@ export function sourceWords(side: SideStory): string {
   const words = many
     ? side.sources.map((share) => `${share.label} ${String(share.amount)}`)
     : side.sources.map((share) => (share.label === 'Hits' ? 'all hits' : `all ${share.label}`));
-  if (side.healed > 0) {
-    const cut = side.healsCut > 0 ? `, ${String(side.healsCut)} cut by shock` : '';
-    words.push(`healed ${String(side.healed)}${cut}`);
-  }
+  if (side.healed > 0) words.push(`healed ${String(side.healed)}`);
   return words.join(' · ');
 }
 
@@ -75,8 +68,8 @@ export function clockOf(tick: number): string {
 
 /**
  * The key moments to show (ADR 0037): what decided the round, at most `max`, in time order. Kept by
- * kind first (the finish; the winner taking the lead for good after trailing; each counter rule or
- * rewind the first time it acted; the round's biggest hit), then by time within a kind.
+ * kind first (the finish; the winner taking the lead for good after trailing; each rewind; the
+ * round's biggest hit), then by time within a kind.
  */
 export function chooseMoments(candidates: readonly Moment[], max = MAX_MOMENTS): Moment[] {
   const ranked = [...candidates].sort(
@@ -194,7 +187,6 @@ export function storyOf(
       dealt: dealt.reduce((sum, damage) => sum + damage.amount, 0),
       sources: [...byLabel.values()].sort((x, y) => y.amount - x.amount),
       healed,
-      healsCut: events.filter((e) => e.type === 'healReduced' && e.ballId === ball.id).length,
     };
   });
   sides.sort((x, y) => Number(y.won) - Number(x.won));
@@ -235,24 +227,12 @@ export function storyOf(
       });
     }
   }
-  const rulesSeen = new Set<string>();
   let biggest: DamageEvent | undefined;
   for (const event of events) {
-    if (event.type === 'ruleApplied' && !rulesSeen.has(`${event.ballId}:${event.rule}`)) {
-      rulesSeen.add(`${event.ballId}:${event.rule}`);
-      candidates.push({
-        tick: event.tick,
-        kind: 'rule',
-        text: RULE_WORDS[event.rule](
-          nameOf(ruleCauserId(event, start.balls)),
-          nameOf(event.ballId),
-        ),
-      });
-    }
     if (event.type === 'rewound') {
       candidates.push({
         tick: event.tick,
-        kind: 'rule',
+        kind: 'rewind',
         text: `${nameOf(event.ballId)} rewound its own knockout.`,
       });
     }

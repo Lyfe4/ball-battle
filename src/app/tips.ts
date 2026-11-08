@@ -22,7 +22,7 @@ export interface Tips {
   /** The ready moment's "what to watch" card ("Don't show these again" turns it off). */
   readyCards(): boolean;
   setReadyCards(on: boolean): void;
-  /** True the first time this device sees `key` (a ball's ability, or a rule) while hints are on. */
+  /** True the first time this device sees `key` (a ball's ability) while hints are on. */
   takeHint(key: string): boolean;
   /**
    * True the first time this device meets the pairing of `a` and `b` (either order), while the

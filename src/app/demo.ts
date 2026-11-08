@@ -1,5 +1,5 @@
 // The home screen's demo: matches that each show a counter from the counter map, so the first thing a
-// visitor watches is the idea the game is built on ("Storm is favoured against Vampire, because...").
+// visitor watches is the idea the game is built on ("Thorns is favoured against the Brawler, because...").
 import { COUNTER_MAP } from '../sim/counter-map.ts';
 import type { Matchup } from './matchup.ts';
 

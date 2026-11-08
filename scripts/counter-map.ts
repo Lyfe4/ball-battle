@@ -6,33 +6,48 @@ import type { CounterEntry } from '../src/sim/counter-map.ts';
 export {
   COUNTER_MAP,
   counterFor,
+  type CounterBand,
   type CounterEntry,
   type Intended,
 } from '../src/sim/counter-map.ts';
 
 /**
  * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`), in
- * two levels (ADR 0028 addendum): a **target** each pair aims for, and a wider **floor** below
- * which it fails.
- * - Favoured: the target is 62-72%; the floor is 58%. The upper edge stays at 72%.
+ * two levels (ADR 0028 addendum): a **target** each pair aims for, and a wider **floor** outside
+ * which it fails. A favoured pair has one of two bands by what decides it (ADR 0045, the entry's
+ * `band`):
+ * - Kind (a kind of hit decides it: spikes against bumps, a rewind against a big hit): the target
+ *   is 72-78%; the floor is 66-80%.
+ * - Movement (speed, size, range, a pull or minions in the way): the target is 62-72%; the floor
+ *   is 58-76%.
  * - Even: the target is 45-55% for both sides; the floor is 42-58%.
  *
  * One pair at 500 seeds has about ±1.6 points of standard error, so:
  * - inside the target but within `warnWithin` of an edge is flagged (WARN, passes);
  * - between the target and the floor is below target (SHORT, printed as a WARN, passes): a pair to
  *   sharpen, not a failure;
- * - outside the floor (or above 72%) by at most `nearWithin` is a near-miss (NEAR, passes): the
- *   noise allowance ADR 0010 accepted, written into the check;
+ * - outside the floor by at most `nearWithin` is a near-miss (NEAR, passes): the noise allowance
+ *   ADR 0010 accepted, written into the check;
  * - anything further out is a miss (MISS, fails the counter-map target).
  */
 export const COUNTER_BANDS = {
-  favoured: [0.62, 0.72],
+  kind: [0.72, 0.78],
+  movement: [0.62, 0.72],
   even: [0.45, 0.55],
-  favouredFloor: [0.58, 0.72],
+  kindFloor: [0.66, 0.8],
+  movementFloor: [0.58, 0.76],
   evenFloor: [0.42, 0.58],
   warnWithin: 0.02,
   nearWithin: 0.02,
 } as const;
+
+/**
+ * The floor a kind counter is checked against while the roster redesign ships group by group
+ * (ADR 0045): the movement floor's lower edge, so each group can merge on its own while kind
+ * counters whose other ball changes in a later group are still soft. The redesign's last group
+ * sets this to `COUNTER_BANDS.kindFloor`. `outsideFinalBand` counts the pairs that would fail then.
+ */
+export const KIND_FLOOR_DURING_REDESIGN: readonly [number, number] = [0.58, 0.8];
 
 /**
  * Win rates are ratios of whole counts, so a rate exactly on a 2-point line can land a hair either
@@ -103,13 +118,40 @@ export function checkCounter(
   yRate: number,
   nearWithin: number = COUNTER_BANDS.nearWithin,
 ): CounterVerdict {
-  const { favoured, favouredFloor, even, evenFloor } = COUNTER_BANDS;
-  if (entry.intended === 'x') return inBand(xRate, favoured, favouredFloor, nearWithin);
-  if (entry.intended === 'y') return inBand(yRate, favoured, favouredFloor, nearWithin);
+  const { even, evenFloor } = COUNTER_BANDS;
+  if (entry.intended !== 'even') {
+    const [target, floor] = favouredBands(entry, KIND_FLOOR_DURING_REDESIGN);
+    return inBand(entry.intended === 'x' ? xRate : yRate, target, floor, nearWithin);
+  }
   return worse(
     inBand(xRate, even, evenFloor, nearWithin),
     inBand(yRate, even, evenFloor, nearWithin),
   );
+}
+
+/** A favoured entry's target and floor, with `kindFloor` as the floor of a kind counter. */
+function favouredBands(
+  entry: CounterEntry,
+  kindFloor: readonly [number, number],
+): readonly [readonly [number, number], readonly [number, number]] {
+  return entry.band === 'kind'
+    ? [COUNTER_BANDS.kind, kindFloor]
+    : [COUNTER_BANDS.movement, COUNTER_BANDS.movementFloor];
+}
+
+/**
+ * True when a pair is outside its final floor (ADR 0045): the kind floor of 66-80% for a kind
+ * counter, the movement floor for a movement one, 42-58% for both sides of an even pair. No noise
+ * allowance: a count to bring down group by group, reported by `pnpm balance`.
+ */
+export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: number): boolean {
+  const out = (rate: number, [low, high]: readonly [number, number]) =>
+    rate < low - EDGE_EPSILON || rate > high + EDGE_EPSILON;
+  if (entry.intended === 'even') {
+    return out(xRate, COUNTER_BANDS.evenFloor) || out(yRate, COUNTER_BANDS.evenFloor);
+  }
+  const [, floor] = favouredBands(entry, COUNTER_BANDS.kindFloor);
+  return out(entry.intended === 'x' ? xRate : yRate, floor);
 }
 
 /**

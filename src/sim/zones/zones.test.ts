@@ -155,7 +155,7 @@ describe('zones', () => {
   it('applies its status to every ball it hit, after the damage, and to no one else', () => {
     // As above: owner at the centre, two enemies inside, one outside, plus one inside that the
     // strike defeats, which gets no status.
-    const status = { kind: 'shocked', durationTicks: 40 } as const;
+    const status = { kind: 'slowed', durationTicks: 40 } as const;
     const { world, lookup } = arena(
       [{ tick: spawnTick, position: centre, status }],
       [
@@ -170,8 +170,8 @@ describe('zones', () => {
     const expiresTick = strikeTick + status.durationTicks;
     expect(after.balls.map((ball) => ball.statuses)).toStrictEqual([
       [],
-      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
-      [{ kind: 'shocked', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
+      [{ kind: 'slowed', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
+      [{ kind: 'slowed', sourceId: 'ball-0', expiresTick, sinceTick: strikeTick }],
       [],
     ]);
     const order = events.flatMap((event) => {

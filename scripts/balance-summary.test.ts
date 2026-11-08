@@ -28,16 +28,16 @@ describe('intendedGroup', () => {
 });
 
 describe('summarise', () => {
-  // Thorns is favoured over the Brawler by the map; the Brawler is even with the Storm.
+  // Thorns is favoured over the Brawler by the map; the Brawler is even with the Archer.
   const balls = [
     { id: 'brawler', name: 'Brawler' },
     { id: 'thorns', name: 'Thorns' },
-    { id: 'storm', name: 'Storm' },
+    { id: 'archer', name: 'Archer' },
   ];
   const pairs = [
     { x: 'brawler', y: 'thorns', xRate: 0.38, yRate: 0.6 },
-    { x: 'brawler', y: 'storm', xRate: 0.5, yRate: 0.49 },
-    { x: 'thorns', y: 'storm', xRate: 0.3, yRate: 0.68 },
+    { x: 'brawler', y: 'archer', xRate: 0.5, yRate: 0.49 },
+    { x: 'thorns', y: 'archer', xRate: 0.3, yRate: 0.68 },
   ];
   const [brawler, thorns] = summarise(balls, () => 0.5, pairs);
 
@@ -46,7 +46,7 @@ describe('summarise', () => {
     expect(brawler?.byMap.groups.even).toStrictEqual({ count: 1, average: 0.5 });
     expect(brawler?.byMap.groups.strong).toStrictEqual({ count: 0, average: undefined });
     expect(brawler?.measured.groups.weak.count).toBe(1);
-    // Thorns: strong vs the Brawler by the map and the result; Storm is weak for it only measured.
+    // Thorns: strong vs the Brawler by the map and the result; the Archer is weak for it by the map and the result.
     expect(thorns?.byMap.groups.strong).toStrictEqual({ count: 1, average: 0.6 });
     expect(thorns?.byMap.groups.weak.count).toBe(1);
     expect(thorns?.measured.groups.strong.count).toBe(1);

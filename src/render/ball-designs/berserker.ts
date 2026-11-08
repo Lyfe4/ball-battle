@@ -1,6 +1,6 @@
 import { berserker } from '../../sim/balls/berserker.ts';
 import { theme } from '../theme.ts';
-import { crackCount, rageMarkAlpha, simpleCrackCount } from './state.ts';
+import { crackCount, simpleCrackCount } from './state.ts';
 import type { BallDesign } from './types.ts';
 
 /**
@@ -48,8 +48,7 @@ const CRACKS: readonly (readonly (readonly [number, number])[])[] = [
 
 /**
  * A ball cracking under its rage: dark cracks run in from the edge, more of them and heavier as
- * its health drops, so the danger reads at a glance. At small size fewer, thicker cracks. While it
- * is poisoned the cracks fade: poison numbs its rage.
+ * its health drops, so the danger reads at a glance. At small size fewer, thicker cracks.
  */
 export const berserkerDesign: BallDesign = {
   facing: 'none',
@@ -58,8 +57,6 @@ export const berserkerDesign: BallDesign = {
     const count = simple ? simpleCrackCount(share) : crackCount(share, CRACKS.length);
     const weight = (simple ? 1.7 : 0.8) + (1 - Math.min(1, Math.max(0, share))) * 0.7;
     p.save();
-    // Poison numbs its rage (ADR 0016): the cracks fade while it is poisoned.
-    p.globalAlpha *= rageMarkAlpha(ball);
     p.strokeStyle = accent;
     p.lineWidth = r * theme.markLine * weight;
     p.lineCap = 'round';

@@ -8,7 +8,8 @@ import type { CounterEntry } from './counter-map.ts';
  * drip: what a Vampire drank and poison still on it are not rewound. The Titan's growing body
  * meets its enemy more often and shrugs light balls off, so light hitters lose the trade; spikes
  * and fire get more of it. The Inferno's fire burns what lingers or crosses it, phased or not, and
- * burns skulls up; a fast ball outruns it and a ranged one never crosses it.
+ * burns skulls up; a fast ball outruns it and a ranged one never crosses it. Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
+ * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules.
  */
 export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   // The Chrono.
@@ -22,25 +23,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'speedster',
     intended: 'x',
+    band: 'kind',
     reason: 'Its stacked rush is one big hit, and the rewind undoes it.',
-  },
-  {
-    x: 'vampire',
-    y: 'chrono',
-    intended: 'x',
-    reason: 'The rewind gives back the Chrono’s health, not what the Vampire drank.',
-  },
-  {
-    x: 'archer',
-    y: 'chrono',
-    intended: 'even',
-    reason: 'Arrows chip steadily, and a rewind undoes about one of them.',
-  },
-  {
-    x: 'chrono',
-    y: 'storm',
-    intended: 'x',
-    reason: 'A strike is one big hit, and the rewind undoes it.',
   },
   {
     x: 'chrono',
@@ -58,25 +42,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'chrono',
     intended: 'x',
+    band: 'kind',
     reason: 'Poison isn’t rewound: it keeps ticking, so a rewind gives back little.',
-  },
-  {
-    x: 'chrono',
-    y: 'berserker',
-    intended: 'even',
-    reason: 'A rewind undoes a raging hit, and the rage stays as high as ever.',
-  },
-  {
-    x: 'chrono',
-    y: 'sniper',
-    intended: 'x',
-    reason: 'A shot is one big hit, and the rewind undoes it.',
-  },
-  {
-    x: 'chrono',
-    y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves chip rather than strike hard, so a rewind undoes little.',
   },
   {
     x: 'chrono',
@@ -107,25 +74,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'titan',
     y: 'speedster',
     intended: 'x',
+    band: 'movement',
     reason: 'Light and fast, it bounces off the growing body, and its light hits lose the trade.',
-  },
-  {
-    x: 'vampire',
-    y: 'titan',
-    intended: 'even',
-    reason: 'More meetings give it more to drink, but the Titan hits hard at every one.',
-  },
-  {
-    x: 'titan',
-    y: 'archer',
-    intended: 'x',
-    reason: 'The growing body meets it more often, and its light hits lose every trade.',
-  },
-  {
-    x: 'titan',
-    y: 'storm',
-    intended: 'even',
-    reason: 'A bigger target for lightning, but the Storm’s touch is light.',
   },
   {
     x: 'titan',
@@ -137,31 +87,15 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'titan',
     intended: 'x',
+    band: 'kind',
     reason: 'The growing body meets the spikes more often, and every hard hit comes back.',
   },
   {
     x: 'titan',
     y: 'venom',
     intended: 'x',
+    band: 'movement',
     reason: 'Poison only refreshes, so more meetings just mean more of its heavy hits.',
-  },
-  {
-    x: 'titan',
-    y: 'berserker',
-    intended: 'even',
-    reason: 'Every heavy hit feeds the rage, and the rage pays it back.',
-  },
-  {
-    x: 'titan',
-    y: 'sniper',
-    intended: 'even',
-    reason: 'A bigger target for the shot, but the Sniper is weak up close.',
-  },
-  {
-    x: 'titan',
-    y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves stagger, and the Titan never aims anyway.',
   },
   {
     x: 'titan',
@@ -179,6 +113,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'titan',
     y: 'necromancer',
     intended: 'x',
+    band: 'movement',
     reason: 'The growing body meets it and its skulls often, and light hits lose the trade.',
   },
   // The Inferno.
@@ -192,25 +127,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'speedster',
     y: 'inferno',
     intended: 'x',
+    band: 'movement',
     reason: 'It outruns the flames, and crosses a patch before it burns twice.',
-  },
-  {
-    x: 'vampire',
-    y: 'inferno',
-    intended: 'even',
-    reason: 'It heals back the burns off its own hits, as fast as the fire takes them.',
-  },
-  {
-    x: 'archer',
-    y: 'inferno',
-    intended: 'x',
-    reason: 'It shoots from range and never has to cross the fire.',
-  },
-  {
-    x: 'storm',
-    y: 'inferno',
-    intended: 'even',
-    reason: 'Both burn from afar: lightning against the trail of fire.',
   },
   {
     x: 'inferno',
@@ -222,6 +140,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'thorns',
     intended: 'x',
+    band: 'kind',
     reason: 'Fire never touches the spikes, so there is nothing to reflect.',
   },
   {
@@ -229,24 +148,6 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     y: 'venom',
     intended: 'even',
     reason: 'Poison and fire: both chip away, neither needs a hard hit.',
-  },
-  {
-    x: 'berserker',
-    y: 'inferno',
-    intended: 'even',
-    reason: 'Every burn is a wound that feeds its rage, and the fire keeps burning.',
-  },
-  {
-    x: 'inferno',
-    y: 'sniper',
-    intended: 'even',
-    reason: 'The shot is heavy, but the Sniper lingers in the fire while it locks on.',
-  },
-  {
-    x: 'inferno',
-    y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves stagger, and the fire never needed aiming.',
   },
   {
     x: 'magnet',
@@ -258,12 +159,14 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'ghost',
     intended: 'x',
+    band: 'kind',
     reason: 'Fire never needed contact: a phased ball still burns.',
   },
   {
     x: 'inferno',
     y: 'necromancer',
     intended: 'x',
+    band: 'movement',
     reason: 'The fire burns up the skulls, and the Necromancer behind them.',
   },
   // The three with each other.
@@ -283,6 +186,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'titan',
     intended: 'x',
+    band: 'movement',
     reason: 'The bigger the body, the more fire it covers.',
   },
 ];

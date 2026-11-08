@@ -4,7 +4,6 @@ import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { shockedHeal } from '../status.ts';
 import { LIFESTEAL, lifestealFor, vampire } from './vampire.ts';
 
 const lookup = indexDefinitions([vampire, blue]);
@@ -80,40 +79,16 @@ describe('Vampire', () => {
     );
   });
 
-  it('heals less while shocked, reporting the lifesteal it lost', () => {
-    const start = 40;
-    const shocked = withBalls(headOn(start), [
-      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 1000, sinceTick: 0 }] },
+  it('drinks only from bumps, never from ability damage (ADR 0045)', () => {
+    const drink = vampire.hooks.onDamageDealt;
+    if (drink === undefined) throw new Error('the Vampire drinks in onDamageDealt');
+    const self = headOn(40).balls[0];
+    const context = (cause: 'contact' | 'ability') =>
+      ({ self, amount: 20, cause }) as unknown as Parameters<typeof drink>[0];
+    expect(drink(context('contact'))).toStrictEqual([
+      { kind: 'heal', targetId: 'ball-0', amount: lifestealFor(20) },
     ]);
-    const { world, events } = play(shocked, 30);
-    const taken = events.find((event) => event.type === 'damage' && event.targetId === 'ball-0');
-    const full = lifestealFor(vampire.contactDamage);
-    const restored = shockedHeal(full);
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        type: 'healReduced',
-        ballId: 'ball-0',
-        sourceId: 'ball-0',
-        lost: full - restored,
-        status: 'shocked',
-      }),
-    );
-    expect(events).toContainEqual(
-      expect.objectContaining({ type: 'healed', ballId: 'ball-0', amount: restored }),
-    );
-    expect(world.balls[0]?.health).toBe(
-      start - (taken?.type === 'damage' ? taken.amount : 0) + restored,
-    );
-  });
-
-  it('heals again once the shock has expired', () => {
-    // Expires on tick 5, well before the hit.
-    const shocked = withBalls(headOn(40), [
-      { statuses: [{ kind: 'shocked', sourceId: 'ball-1', expiresTick: 5, sinceTick: 0 }] },
-    ]);
-    const { events } = play(shocked, 30);
-    expect(events.some((event) => event.type === 'healReduced')).toBe(false);
-    expect(events).toContainEqual(expect.objectContaining({ type: 'healed', ballId: 'ball-0' }));
+    expect(drink(context('ability'))).toStrictEqual([]);
   });
 
   it('does not heal when it deals no damage', () => {
