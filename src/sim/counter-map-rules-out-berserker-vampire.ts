@@ -22,7 +22,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'bloom',
     intended: 'even',
-    reason: 'Its huge health makes a long fight to regrow in, and every hit feeds its rage.',
+    reason: 'Its huge health makes a long fight to regrow in, and its rage grows as it goes.',
   },
   {
     x: 'berserker',
@@ -46,7 +46,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'guardian',
     intended: 'even',
-    reason: 'The shield blunts its heaviest hit, and every hit that lands feeds its rage.',
+    reason: 'Raging hits lose little to armor, but the rage takes wounds to build.',
   },
   {
     x: 'berserker',
@@ -83,13 +83,14 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'berserker',
     intended: 'even',
-    reason: 'A rewind undoes a raging hit, and the rage stays as high as ever.',
+    reason: 'A raging bump is never big enough to rewind: plain trades decide it.',
   },
   {
     x: 'ghost',
     y: 'berserker',
-    intended: 'even',
-    reason: 'Phasing dodges its rage hits, but its health outlasts the spectral ones.',
+    intended: 'y',
+    band: 'kind',
+    reason: 'Its raging hits come one at a time, and each lands whole.',
   },
   {
     x: 'magnet',
@@ -145,14 +146,13 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'vampire',
     intended: 'even',
-    reason: 'Phasing denies the Vampire hits to heal off, but it heals off the rest.',
+    reason: 'Bumps come one at a time and land whole: plain trades decide it.',
   },
   {
     x: 'guardian',
     y: 'vampire',
-    intended: 'x',
-    band: 'kind',
-    reason: 'The shield soaks part of each heavy bump, and lifesteal drinks only what lands.',
+    intended: 'even',
+    reason: 'Armor takes little off a heavy bump, and the Vampire drinks what lands.',
   },
   {
     x: 'magnet',
@@ -182,7 +182,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'vampire',
     y: 'bloom',
     intended: 'even',
-    reason: 'Lifesteal heals the Vampire on every heavy hit, and the Bloom regrows between them.',
+    reason: 'Both heal: the Vampire from its bumps, the Bloom all the time.',
   },
   {
     x: 'vampire',
@@ -202,7 +202,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'chrono',
     intended: 'x',
     band: 'kind',
-    reason: 'The rewind gives back the Chrono’s health, not what the Vampire drank.',
+    reason: 'A rewind gives back the Chrono’s health, never what the Vampire drank.',
   },
   {
     x: 'vampire',
@@ -226,6 +226,6 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'vampire',
     y: 'venom',
     intended: 'even',
-    reason: 'Lifesteal heals back what the poison chips, but the poison keeps ticking.',
+    reason: 'Lifesteal heals back some of the poison, but the poison keeps ticking.',
   },
 ];

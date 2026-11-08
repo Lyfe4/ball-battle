@@ -133,17 +133,20 @@ describe('poisoned', () => {
   });
 
   it('refreshes rather than stacks: one entry, one damage per interval, the same rhythm', () => {
-    const definition = applier('poisoned', 40, [2, 20, 25, 40, 61]);
-    const { events } = play(parked(definition), definition, 200);
-    // First applied on tick 2; every refresh keeps that rhythm and extends to 61 + 40 = 101.
-    expect(poisonTicks(events)).toStrictEqual([32, 62, 92]);
+    const every = POISON_INTERVAL_TICKS;
+    const refreshes = [2, every - 10, every - 5, every + 6, 2 * every - 1];
+    const definition = applier('poisoned', every + 10, refreshes);
+    const { events } = play(parked(definition), definition, 6 * every);
+    // First applied on tick 2; every refresh keeps that rhythm and extends it to the last
+    // refresh + every + 10, so it ticks three times.
+    expect(poisonTicks(events)).toStrictEqual([2 + every, 2 + 2 * every, 2 + 3 * every]);
     const applied = events.filter((event) => event.type === 'statusApplied');
     expect(applied.map((event) => event.refreshed)).toStrictEqual([false, true, true, true, true]);
   });
 
   it('fires its source’s onDamageDealt with the poison damage', () => {
-    const definition = applier('poisoned', 100, [1]);
-    const { world, events } = play(parked(definition), definition, 100);
+    const definition = applier('poisoned', POISON_INTERVAL_TICKS * 3 + 5, [1]);
+    const { world, events } = play(parked(definition), definition, POISON_INTERVAL_TICKS * 4);
     expect(world.balls[0]?.abilityState['dealt']).toBe(3 * POISON_DAMAGE);
     expect(events.filter((event) => event.type === 'abilityTriggered')).toContainEqual({
       type: 'abilityTriggered',
@@ -154,10 +157,13 @@ describe('poisoned', () => {
   });
 
   it('never takes a defeated ball below 0 or keeps ticking on it', () => {
-    const definition = applier('poisoned', 200, [1]);
+    const definition = applier('poisoned', POISON_INTERVAL_TICKS * 6, [1]);
     const world = withBalls(parked(definition), [{}, { health: POISON_DAMAGE + 1 }]);
-    const { events, world: after } = play(world, definition, 200);
-    expect(poisonTicks(events)).toStrictEqual([31, 61]);
+    const { events, world: after } = play(world, definition, POISON_INTERVAL_TICKS * 6);
+    expect(poisonTicks(events)).toStrictEqual([
+      1 + POISON_INTERVAL_TICKS,
+      1 + 2 * POISON_INTERVAL_TICKS,
+    ]);
     expect(after.balls[1]?.health).toBe(0);
   });
 });

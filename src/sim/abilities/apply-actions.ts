@@ -4,7 +4,7 @@ import { spawnMinion } from '../minions/spawn.ts';
 import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
 import { assertStatusDuration, resistedDuration, withStatus } from '../status.ts';
-import { isShielded, soakHit } from '../shield.ts';
+import { defendHit } from '../defence.ts';
 import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
 import { rewindBall } from './rewind.ts';
@@ -97,32 +97,26 @@ export function applyActions(
     switch (action.kind) {
       case 'damage':
         update(action.targetId, (target) => {
-          const amount = Math.min(target.health, Math.max(0, action.amount));
+          const requested = Math.max(0, action.amount);
+          // The target's defence (armor, a fade) takes its share first (ADR 0045).
+          const defended = defendHit(target, ownerId, requested, definitions, tick);
+          if (defended.event !== undefined) events.push(defended.event);
+          const amount = Math.min(target.health, defended.rest);
           if (amount <= 0) return undefined;
-          // A shield takes the hit first: it soaks up to SHIELD_SOAK and breaks (ADR 0043).
-          let struck = target;
-          let hit = amount;
-          if (isShielded(target)) {
-            const soaked = soakHit(target, ownerId, amount, tick);
-            events.push(soaked.event);
-            if (soaked.rest <= 0) return soaked.ball;
-            struck = soaked.ball;
-            hit = soaked.rest;
-          }
-          const healthAfter = struck.health - hit;
+          const healthAfter = target.health - amount;
           events.push({
             type: 'damage',
             tick,
-            targetId: struck.id,
+            targetId: target.id,
             sourceId: ownerId,
             cause: 'ability',
-            amount: hit,
+            amount,
             healthAfter,
             multiplier: 1,
             survivedLethal: false,
             ...(via === undefined ? {} : { via }),
           });
-          return { ...struck, health: healthAfter };
+          return { ...target, health: healthAfter };
         });
         break;
       case 'heal':
@@ -247,8 +241,8 @@ export function applyActions(
  * Ability damage from `ownerId` to one ball, through the same path as the `damage` action. Used
  * by projectile hits, zone strikes, minions and poison, each naming itself as `via`. `damage` is
  * the event, or undefined if nothing was removed (the target was already defeated, the amount was
- * 0, or a shield blocked it). `events` is what the hit produced: its damage event, or the
- * `shieldBroken` of a blocked hit (ADR 0043).
+ * 0, or a defence took it all). `events` is what the hit produced: its damage event, and the
+ * `hitReduced` of a defence that took any of it (ADR 0045).
  */
 export function dealAbilityDamage(
   balls: readonly BallState[],

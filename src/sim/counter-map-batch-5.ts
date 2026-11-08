@@ -1,14 +1,16 @@
 // Counter-map entries for batch 5, first half: the Boomerang and the Bomber with every earlier ball
-// (ADR 0043). The rest of the batch is in counter-map-batch-5-defenders.ts; the map is in
-// counter-map.ts; its checks in scripts/counter-map.ts.
+// (ADR 0043). The map is in counter-map.ts; its checks in scripts/counter-map.ts.
 import type { CounterEntry } from './counter-map.ts';
 
 /**
  * Each counter was measured before it was kept (ADR 0043). A boomerang chips twice a throw from
  * range, so phasing and fire answer it poorly; a fast ball outruns it, a bigger body wins the
  * trades and a skull stops it dead. Bombs punish whoever covers the most ground, and a ball that
- * shoots from range crosses them least. Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
- * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules.
+ * shoots from range crosses them least.
+ * Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
+ * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules, and every
+ * other pair with the Chrono, Guardian, Ghost, Bloom or Venom to counter-map-hit-kinds-*.ts with
+ * the redesign's second group.
  */
 export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
   // The Boomerang.
@@ -39,22 +41,10 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     reason: 'A blast never touches the spikes, but the Bomber’s own hits are light.',
   },
   {
-    x: 'venom',
-    y: 'bomber',
-    intended: 'even',
-    reason: 'Poison ticks on between blasts, and a blast hurts it like anyone.',
-  },
-  {
     x: 'magnet',
     y: 'bomber',
     intended: 'even',
     reason: 'The pull drags it across the bombs, and its heavy hits pay them back.',
-  },
-  {
-    x: 'ghost',
-    y: 'bomber',
-    intended: 'even',
-    reason: 'Phased, it passes over bombs without setting them off, but a blast still catches it.',
   },
   {
     x: 'necromancer',
@@ -63,16 +53,11 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     reason: 'Skulls pass over the bombs, but a blast clears any skull inside it.',
   },
   {
-    x: 'chrono',
-    y: 'bomber',
-    intended: 'even',
-    reason: 'A rewind can undo one blast, and it hits hard back.',
-  },
-  {
     x: 'titan',
     y: 'bomber',
-    intended: 'even',
-    reason: 'The bigger body sets off more bombs, and hits back harder for it.',
+    intended: 'x',
+    band: 'movement',
+    reason: 'A growing giant sets off more bombs, but its huge bumps win the trade.',
   },
   {
     x: 'inferno',

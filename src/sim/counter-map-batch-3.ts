@@ -10,8 +10,11 @@ import type { CounterEntry } from './counter-map.ts';
  * and loses to every ball whose attacks never needed contact. Minions draw aimed attacks, so the
  * Necromancer beats the Archer and Sniper; an area strike clears its minion. ADR 0028 made phasing
  * one rule (a phased ball can't be touched, gripped or aimed at), so the Ghost is favoured over the
- * Magnet and the Necromancer. Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
- * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules.
+ * Magnet and the Necromancer.
+ * Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
+ * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules, and every
+ * other pair with the Chrono, Guardian, Ghost, Bloom or Venom to counter-map-hit-kinds-*.ts with
+ * the redesign's second group.
  */
 export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   // The Magnet.
@@ -41,53 +44,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     band: 'kind',
     reason: 'The Magnet drags the spikes into itself, and every hard hit comes back.',
   },
-  {
-    x: 'magnet',
-    y: 'venom',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The pull forces a brawl, and Venom’s light hits lose it before the poison works.',
-  },
   // The Ghost.
-  {
-    x: 'brawler',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'No tricks either way: plain hits decide it.',
-  },
-  {
-    x: 'ghost',
-    y: 'speedster',
-    intended: 'x',
-    band: 'kind',
-    reason: 'It runs through the Ghost most often, and its rush lands on nothing.',
-  },
-  {
-    x: 'ghost',
-    y: 'frost',
-    intended: 'even',
-    reason: 'Phasing dodges its slowing hits, but the Frost outlasts the spectral ones.',
-  },
-  {
-    x: 'ghost',
-    y: 'thorns',
-    intended: 'even',
-    reason: 'Spectral hits slip past the spikes, but the spikes still punish its solid hits.',
-  },
-  {
-    x: 'ghost',
-    y: 'venom',
-    intended: 'even',
-    reason: 'Phasing dodges poisoned hits, but poison already on it keeps ticking.',
-  },
-  {
-    x: 'magnet',
-    y: 'ghost',
-    intended: 'y',
-    band: 'kind',
-    reason:
-      'A phased ball can’t be gripped: the pull slips, and the Magnet charges straight through it.',
-  },
   // The Necromancer.
   {
     x: 'brawler',
@@ -114,23 +71,10 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     reason: 'Minion pops never touch the spikes, but Thorns wins the contacts.',
   },
   {
-    x: 'necromancer',
-    y: 'venom',
-    intended: 'even',
-    reason: 'Minions and poison both chip from a distance.',
-  },
-  {
     x: 'magnet',
     y: 'necromancer',
     intended: 'x',
     band: 'movement',
     reason: 'The pull drags it into a brawl, where its light hits lose.',
-  },
-  {
-    x: 'necromancer',
-    y: 'ghost',
-    intended: 'y',
-    band: 'kind',
-    reason: 'Phased, it passes through the skulls: a pop needs a touch, like any hit.',
   },
 ];

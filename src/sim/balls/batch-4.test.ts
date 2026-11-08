@@ -5,7 +5,16 @@ import { step } from '../step.ts';
 import { blue, red, withBalls } from '../test-support.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { chrono, hasRewound, historyOf, MOMENT_EVERY_TICKS, REWIND_MOMENTS } from './chrono.ts';
+import { defineBall } from '../define-ball.ts';
+import {
+  BIG_HIT,
+  chrono,
+  historyOf,
+  isCharged,
+  MOMENT_EVERY_TICKS,
+  RECHARGE_TICKS,
+  REWIND_MOMENTS,
+} from './chrono.ts';
 import {
   BURN_DAMAGE,
   BURN_EVERY_TICKS,
@@ -31,6 +40,18 @@ function play(world: WorldState, ticks: number) {
 
 const still = { x: 0, y: 0 };
 
+/** A test-only ball that deals `amount` of ability damage to its enemy once, on tick HIT_TICK. */
+const HIT_TICK = 60;
+const hitter = (amount: number) =>
+  defineBall({
+    ...red,
+    id: `hitter-${amount}`,
+    hooks: {
+      onTick: ({ world }) =>
+        world.tick === HIT_TICK ? [{ kind: 'damage', targetId: 'ball-0', amount }] : [],
+    },
+  });
+
 describe('Chrono', () => {
   it('keeps its last few moments, a fixed rhythm apart', () => {
     const world = withBalls(createWorld(1, [chrono, blue]), [
@@ -39,9 +60,43 @@ describe('Chrono', () => {
     ]);
     const self = play(world, 100).world.balls[0];
     if (self === undefined) throw new Error('no Chrono');
-    const history = historyOf(self);
-    expect(history).toHaveLength(REWIND_MOMENTS);
-    expect(history.map((moment) => moment.tick)).toStrictEqual([90 - MOMENT_EVERY_TICKS, 90]);
+    expect(historyOf(self)).toHaveLength(REWIND_MOMENTS);
+    expect(historyOf(self)[0]).toMatchObject({ x: 200, y: 200, health: chrono.maxHealth });
+  });
+
+  /** The Chrono parked and charged, struck once by an ability hit of `amount`. */
+  function struck(amount: number) {
+    const ball = hitter(amount);
+    const world = withBalls(createWorld(1, [chrono, ball]), [
+      { position: { x: 200, y: 200 }, velocity: still },
+      { position: { x: 800, y: 800 }, velocity: still },
+    ]);
+    let current = world;
+    const events: SimEvent[] = [];
+    const hitLookup = indexDefinitions([chrono, ball]);
+    for (let i = 0; i < HIT_TICK + 2; i++) {
+      const result = step(current, hitLookup);
+      current = result.world;
+      events.push(...result.events);
+    }
+    return { world: current, events };
+  }
+
+  it('rewinds a big ability hit, back to its health a moment earlier, then recharges', () => {
+    const { world, events } = struck(BIG_HIT);
+    expect(events.find((event) => event.type === 'rewound')).toMatchObject({
+      healthAfter: chrono.maxHealth,
+    });
+    const self = world.balls[0];
+    expect(self?.health).toBe(chrono.maxHealth);
+    expect(self !== undefined && isCharged(self, world.tick)).toBe(false);
+    expect(self !== undefined && isCharged(self, HIT_TICK + RECHARGE_TICKS)).toBe(true);
+  });
+
+  it('never rewinds a small hit', () => {
+    const { world, events } = struck(BIG_HIT - 1);
+    expect(events.some((event) => event.type === 'rewound')).toBe(false);
+    expect(world.balls[0]?.health).toBe(chrono.maxHealth - (BIG_HIT - 1));
   });
 
   /** The Chrono on 1 health, about to meet red head-on, having stood still at (300, 300). */
@@ -57,16 +112,14 @@ describe('Chrono', () => {
     ]);
   }
 
-  it('rewinds once, when knocked out: back to an earlier moment with its health then', () => {
-    const { world, events } = play(knockout(), 5);
+  it('rewinds a knockout too: back to an earlier moment with its health then', () => {
+    const { events } = play(knockout(), 5);
     const rewound = events.find((event) => event.type === 'rewound');
     expect(rewound).toMatchObject({ to: { x: 300, y: 300 }, healthAfter: chrono.maxHealth });
     expect(events.some((event) => event.type === 'ballDefeated')).toBe(false);
-    const self = world.balls[0];
-    expect(self !== undefined && hasRewound(self)).toBe(true);
   });
 
-  it('is knocked out for good the second time', () => {
+  it('is knocked out for good while it recharges', () => {
     const once = play(knockout(), 5).world;
     const again = withBalls(once, [
       { position: { x: 440, y: 500 }, velocity: { x: chrono.speed, y: 0 }, health: 1 },

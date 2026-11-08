@@ -9,7 +9,7 @@ import { archer, ARROW_DAMAGE } from './archer.ts';
 import { berserker, RAGE_DAMAGE } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
-import { ghost, SPECTRAL_DAMAGE } from './ghost.ts';
+import { FADE_EVERY_TICKS, FADE_TICKS, ghost } from './ghost.ts';
 import { BALLS } from './index.ts';
 import { magnet } from './magnet.ts';
 import { MAX_MINIONS, MINION_DAMAGE, MINION_RADIUS, necromancer } from './necromancer.ts';
@@ -19,7 +19,7 @@ import { DAMAGE_PER_STACK, MAX_STACKS, speedster } from './speedster.ts';
 import { storm, ZONE_DAMAGE, ZONE_RADIUS as STORM_ZONE_RADIUS } from './storm.ts';
 import { reflectFor } from './thorns.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
-import { chrono, MOMENT_EVERY_TICKS, REWIND_MOMENTS } from './chrono.ts';
+import { BIG_HIT, chrono, MOMENT_EVERY_TICKS, RECHARGE_TICKS, REWIND_MOMENTS } from './chrono.ts';
 import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
 import { MAX_RADIUS, titanRadius } from './titan.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
@@ -31,9 +31,8 @@ import {
   DROP_TICKS,
   FUSE_TICKS,
 } from './bomber.ts';
-import { guardian, REGROW_TICKS } from './guardian.ts';
-import { bloom, CALM_TICKS, REGROW_PER_REST } from './bloom.ts';
-import { SHIELD_SOAK } from '../shield.ts';
+import { ARMOR, guardian } from './guardian.ts';
+import { bloom, HEAL_AMOUNT, HEAL_EVERY_TICKS } from './bloom.ts';
 import { speedForStacks } from './speedster.ts';
 import { TICK_RATE } from '../constants.ts';
 
@@ -69,11 +68,18 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Chrono rewinds once a match, about half a second back, and has no other ability', () => {
+  it('Chrono rewinds only the big hits (a shot, a strike), about half a second back', () => {
     expect(MOMENT_EVERY_TICKS * REWIND_MOMENTS).toBeLessThanOrEqual(30);
+    // Every other ability hit is small: arrows, blasts, bites, burns, poison, shockwaves.
+    const small = [ARROW_DAMAGE, BLAST_DAMAGE, MINION_DAMAGE, BURN_DAMAGE, POISON_DAMAGE];
+    for (const hit of [...small, SHOCKWAVE_DAMAGE, BOOMERANG_DAMAGE, MAX_STACKS * DAMAGE_PER_STACK])
+      expect(hit).toBeLessThan(BIG_HIT);
+    expect(SHOT_DAMAGE).toBeGreaterThanOrEqual(BIG_HIT);
+    expect(ZONE_DAMAGE).toBeGreaterThanOrEqual(BIG_HIT);
+    // It recharges for seconds, so it can't undo every shot.
+    expect(RECHARGE_TICKS).toBeGreaterThanOrEqual(5 * TICK_RATE);
     expect(chrono.hooks.onHitBall).toBeUndefined();
     expect(chrono.hooks.onDamageDealt).toBeUndefined();
-    expect(chrono.initialAbilityState['used']).toBe(false);
   });
 
   it('Inferno’s fire is small and short-lived, and its own hits are the second lightest', () => {
@@ -100,17 +106,15 @@ describe('the ball roster: identity rules', () => {
     expect(Object.keys(bomber.hooks)).toStrictEqual(['onTick']);
   });
 
-  it('Guardian’s shield blunts a heavy hit rather than stopping it, and regrows in seconds', () => {
-    // A full block beat every heavy hitter, the Brawler most of all (ADR 0043).
-    expect(SHIELD_SOAK).toBeLessThan(brawler.contactDamage / 2);
-    expect(REGROW_TICKS).toBeGreaterThanOrEqual(3 * TICK_RATE);
-    expect(REGROW_TICKS).toBeLessThanOrEqual(8 * TICK_RATE);
-    expect(Object.keys(guardian.hooks)).toStrictEqual(['onTick']);
+  it('Guardian’s armor takes only a bit off a hit, and is its only ability', () => {
+    // A bit off a heavy hit, a big share of a small one (ADR 0045).
+    expect(ARMOR).toBeLessThanOrEqual(brawler.contactDamage / 10);
+    expect(ARMOR).toBeGreaterThanOrEqual(POISON_DAMAGE / 5);
+    expect(Object.keys(guardian.hooks)).toStrictEqual([]);
   });
 
-  it('Bloom regrows only after a rest, a little at a time', () => {
-    expect(CALM_TICKS).toBeGreaterThanOrEqual(TICK_RATE);
-    expect(REGROW_PER_REST).toBeLessThanOrEqual(bloom.maxHealth / 10);
+  it('Bloom regrows a little at a time: under a tenth of its health a second', () => {
+    expect((HEAL_AMOUNT * TICK_RATE) / HEAL_EVERY_TICKS).toBeLessThan(bloom.maxHealth / 10);
   });
 
   it('Speedster is the fastest ball at base speed', () => {
@@ -154,7 +158,8 @@ describe('the ball roster: identity rules', () => {
       quake: SHOCKWAVE_DAMAGE,
       // Its pull only steers; its hits are contact hits.
       magnet: 0,
-      ghost: SPECTRAL_DAMAGE,
+      // A fade deals nothing; its hits are contact hits.
+      ghost: 0,
       necromancer: MINION_DAMAGE,
       // A rewind heals nothing it didn't have; it is no hit.
       chrono: 0,
@@ -163,7 +168,7 @@ describe('the ball roster: identity rules', () => {
       // One hit each way; each is its own hit.
       boomerang: BOOMERANG_DAMAGE,
       bomber: BLAST_DAMAGE,
-      // A shield and regrowth deal nothing.
+      // Armor and regrowth deal nothing.
       guardian: 0,
       bloom: 0,
     };
@@ -199,11 +204,11 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Ghost’s spectral hit is weaker than its own solid hit, and it is never always phased', () => {
-    expect(SPECTRAL_DAMAGE).toBeLessThan(ghost.contactDamage);
-    expect(ghost.phasedOf?.({ ...stateOf(ghost), abilityState: ghost.initialAbilityState })).toBe(
-      false,
-    );
+  it('Ghost fades briefly, now and then, and never passes through balls', () => {
+    expect(FADE_TICKS).toBeLessThanOrEqual(1.5 * TICK_RATE);
+    expect(FADE_EVERY_TICKS).toBeGreaterThan(2 * FADE_TICKS);
+    expect(ghost.phasedOf).toBeUndefined();
+    expect(ghost.hooks.onHitBall).toBeUndefined();
   });
 
   it('Necromancer’s minions are small, few, and its only ability', () => {
@@ -213,17 +218,3 @@ describe('the ball roster: identity rules', () => {
     expect(Object.keys(necromancer.hooks)).toStrictEqual(['onTick']);
   });
 });
-
-/** A ball state for a definition, for asking its pure queries. */
-function stateOf(definition: (typeof BALLS)[number]) {
-  return {
-    id: 'ball-0',
-    definitionId: definition.id,
-    position: { x: 500, y: 500 },
-    velocity: { x: definition.speed, y: 0 },
-    radius: definition.radius,
-    health: definition.maxHealth,
-    abilityState: definition.initialAbilityState,
-    statuses: [],
-  };
-}

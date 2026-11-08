@@ -6,7 +6,6 @@ import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import type { Knockout, Squash, WinnerRing } from './effects.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
 import { shardAt, shardPieces, type Dot } from './particles.ts';
-import { drawShieldRing } from './shield-ring.ts';
 import { theme } from './theme.ts';
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -154,14 +153,9 @@ export function drawWinnerRing(
  * edge, one per status, each further out than the last; all hold still:
  * - slowed: solid, pale ice, with short frost ticks pointing outwards;
  * - poisoned: a ring of round pale-lime dots, like drops.
- * A shield (ADR 0043) hugs the ball inside them all: a solid gold ring.
  */
 export function drawStatuses(ctx: CanvasRenderingContext2D, ball: BallState): void {
   let radius = ball.radius + theme.statusRingGap;
-  if (hasStatus(ball, 'shielded')) {
-    drawShieldRing(ctx, ball);
-    radius += theme.statusRingSpacing;
-  }
   if (hasStatus(ball, 'slowed')) {
     drawSlowRing(ctx, ball, radius);
     radius += theme.statusRingSpacing;

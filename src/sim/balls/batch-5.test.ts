@@ -1,16 +1,16 @@
-// The Boomerang, Bomber, Guardian and Bloom (ADR 0043): each ball's own mechanic, on fixed scenes.
+// The Boomerang, Bomber, Guardian and Bloom (ADR 0043, 0045): each ball's own mechanic, on fixed
+// scenes.
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
-import { isShielded, SHIELD_SOAK } from '../shield.ts';
-import type { StatusState } from '../status.ts';
 import { step } from '../step.ts';
 import { blue, red, withBalls } from '../test-support.ts';
+import { POISON_DAMAGE, POISON_INTERVAL_TICKS } from '../status.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { bloom, CALM_TICKS, HEAL_AMOUNT, HEAL_EVERY_TICKS, REGROW_PER_REST } from './bloom.ts';
+import { bloom, FIRST_HEAL_TICK, HEAL_AMOUNT, HEAL_EVERY_TICKS } from './bloom.ts';
 import { BLAST_DAMAGE, bomber, DROP_TICKS, FIRST_DROP_TICK, FUSE_TICKS } from './bomber.ts';
 import { boomerang, COOLDOWN_TICKS, FIRST_THROW_TICK } from './boomerang.ts';
-import { guardian, REGROW_TICKS } from './guardian.ts';
+import { ARMOR, armoredHit, guardian } from './guardian.ts';
 
 const lookup = indexDefinitions([boomerang, bomber, guardian, bloom, red, blue]);
 
@@ -103,64 +103,66 @@ describe('Bomber', () => {
 });
 
 describe('Guardian', () => {
-  it('starts behind a shield', () => {
-    const self = play(parked(guardian), 1).world.balls[0];
-    expect(self === undefined ? false : isShielded(self)).toBe(true);
+  it('takes ARMOR off every hit, but never more than half of a small one', () => {
+    expect(armoredHit(26)).toBe(26 - ARMOR);
+    expect(armoredHit(5)).toBe(5 - ARMOR);
+    expect(armoredHit(2)).toBe(1);
+    expect(armoredHit(1)).toBe(1);
   });
 
-  it('grows a new shield REGROW_TICKS after one breaks', () => {
-    const shielded = play(parked(guardian), 2).world;
-    // As if a hit broke it on tick 2: the next one grows REGROW_TICKS after the following tick.
-    const struck = withBalls(shielded, [{ statuses: [] }]);
-    const later = play(struck, REGROW_TICKS + 2).world.balls[0];
-    expect(later === undefined ? false : isShielded(later)).toBe(true);
-    const early = play(struck, REGROW_TICKS - 1).world.balls[0];
-    expect(early === undefined ? true : isShielded(early)).toBe(false);
+  /** `target` parked in the middle and blue charging into it head-on. */
+  function charge(target: typeof red): WorldState {
+    return withBalls(createWorld(1, [target, blue]), [
+      { position: { x: 400, y: 500 }, velocity: still },
+      { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
+    ]);
+  }
+
+  it('takes ARMOR less of a contact hit than the same ball without armor, and shows it', () => {
+    const { incomingDamageOf, ...bare } = guardian;
+    expect(incomingDamageOf).toBeDefined();
+    const plain = { ...bare, id: 'plain' };
+    const plainLookup = indexDefinitions([plain, blue]);
+    let unarmored = charge(plain);
+    for (let i = 0; i < 20; i++) unarmored = step(unarmored, plainLookup).world;
+    const { world, events } = play(charge(guardian), 20);
+    const lost = guardian.maxHealth - (world.balls[0]?.health ?? 0);
+    expect(plain.maxHealth - (unarmored.balls[0]?.health ?? 0) - lost).toBe(ARMOR);
+    expect(ofType(events, 'hitReduced')).toStrictEqual([
+      expect.objectContaining({ ballId: 'ball-0', sourceId: 'ball-1', reduced: ARMOR, rest: lost }),
+    ]);
   });
 
-  it('soaks part of a heavy contact hit, so it takes less than an unshielded ball', () => {
-    const charge = (shielded: boolean) => {
-      const world = play(parked(guardian), 1).world;
-      return withBalls(world, [
-        {
-          position: { x: 400, y: 500 },
-          velocity: { x: guardian.speed, y: 0 },
-          ...(shielded ? {} : { statuses: [] }),
-        },
-        { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
-      ]);
-    };
-    const withShield = play(charge(true), 20).world.balls[0]?.health ?? 0;
-    const without = play(charge(false), 20).world.balls[0]?.health ?? 0;
-    expect(withShield - without).toBe(SHIELD_SOAK);
+  it('takes a share off ability damage too: a poison tick does less', () => {
+    const poisoned = withBalls(parked(guardian), [
+      { statuses: [{ kind: 'poisoned', sourceId: 'ball-1', expiresTick: 500, sinceTick: 0 }] },
+    ]);
+    const { events } = play(poisoned, POISON_INTERVAL_TICKS);
+    const tick = ofType(events, 'damage').find((event) => event.targetId === 'ball-0');
+    expect(tick?.amount).toBe(armoredHit(POISON_DAMAGE));
   });
 });
 
 describe('Bloom', () => {
-  /** A Bloom down 20 health with nothing near it. */
-  function hurt(statuses: readonly StatusState[] = []): WorldState {
-    return withBalls(parked(bloom), [{ health: bloom.maxHealth - 20, statuses }]);
-  }
-
-  it('regrows once it has rested, a little at a time, up to its cap for the rest', () => {
-    const { events } = play(hurt(), CALM_TICKS + HEAL_EVERY_TICKS * 10);
+  it('regrows a little on a fixed rhythm, all match long', () => {
+    const hurt = withBalls(parked(bloom), [{ health: bloom.maxHealth - 20 }]);
+    const { events } = play(hurt, FIRST_HEAL_TICK + HEAL_EVERY_TICKS * 3);
     const heals = ofType(events, 'healed');
-    expect(heals[0]?.tick).toBe(CALM_TICKS);
+    expect(heals.map((heal) => heal.tick)).toStrictEqual(
+      [0, 1, 2, 3].map((n) => FIRST_HEAL_TICK + HEAL_EVERY_TICKS * n),
+    );
     expect(heals.every((heal) => heal.amount === HEAL_AMOUNT)).toBe(true);
-    expect(heals.reduce((sum, heal) => sum + heal.amount, 0)).toBe(REGROW_PER_REST);
   });
 
-  it('starts a new rest with every hit it takes', () => {
-    const rested = play(hurt(), CALM_TICKS + 1).world;
-    // Blue runs into it: the rest starts over, and the regrowth with it.
-    const bumped = withBalls(rested, [
-      { position: { x: 400, y: 500 }, velocity: still },
+  it('keeps regrowing right after a hit', () => {
+    const bumped = withBalls(parked(bloom), [
+      { position: { x: 400, y: 500 }, velocity: still, health: bloom.maxHealth - 20 },
       { position: { x: 600, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
     ]);
-    const { events } = play(bumped, CALM_TICKS);
+    const { events } = play(bumped, FIRST_HEAL_TICK + HEAL_EVERY_TICKS);
     const hitTick = ofType(events, 'damage').find((event) => event.targetId === 'ball-0')?.tick;
     expect(hitTick).toBeDefined();
     const healsAfterHit = ofType(events, 'healed').filter((heal) => heal.tick > (hitTick ?? 0));
-    expect(healsAfterHit).toStrictEqual([]);
+    expect(healsAfterHit.length).toBeGreaterThan(0);
   });
 });

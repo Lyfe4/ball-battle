@@ -16,7 +16,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'bloom',
     intended: 'even',
-    reason: 'Arrows leave time to regrow between them, but each takes more than it regrows.',
+    reason: 'Arrows take more than it regrows, but leave time to regrow between them.',
   },
   {
     x: 'archer',
@@ -33,21 +33,21 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'chrono',
-    intended: 'even',
-    reason: 'Arrows chip steadily, and a rewind undoes about one of them.',
+    intended: 'x',
+    band: 'kind',
+    reason: 'Arrows are too small to rewind.',
   },
   {
     x: 'archer',
     y: 'ghost',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Arrows in flight still hit it phased; phasing only delays the next.',
+    intended: 'even',
+    reason: 'Arrows come one at a time, each after the fade ends.',
   },
   {
     x: 'archer',
     y: 'guardian',
     intended: 'even',
-    reason: 'Arrows come often enough to strip the shield, but each one is light.',
+    reason: 'Armor takes a bit off every arrow, but arrows keep coming.',
   },
   {
     x: 'archer',
@@ -112,7 +112,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'archer',
     intended: 'even',
-    reason: 'Arrows chip Venom from range, but every contact poisons the fragile Archer.',
+    reason: 'Arrows chip Venom from range, but every contact poisons the frail Archer.',
   },
   {
     x: 'brawler',
@@ -125,7 +125,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     y: 'sniper',
     intended: 'x',
     band: 'kind',
-    reason: 'A shot is one big hit, and the rewind undoes it.',
+    reason: 'A shot is a big hit, and the rewind undoes it.',
   },
   {
     x: 'inferno',
@@ -151,7 +151,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'sniper',
     y: 'bloom',
     intended: 'even',
-    reason: 'Shots leave time to regrow between them, but each takes more than it regrows.',
+    reason: 'Shots are big, but they come with time to regrow between.',
   },
   {
     x: 'sniper',
@@ -174,15 +174,14 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'sniper',
     y: 'ghost',
-    intended: 'x',
-    band: 'kind',
-    reason: 'A shot locked before it phases still hits it.',
+    intended: 'even',
+    reason: 'One heavy shot at a time: each lands whole, after the fade ends.',
   },
   {
     x: 'sniper',
     y: 'guardian',
     intended: 'even',
-    reason: 'The shield soaks part of a shot, and the next shot lands whole.',
+    reason: 'Armor takes only a little off a heavy shot.',
   },
   {
     x: 'sniper',

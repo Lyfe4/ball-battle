@@ -20,7 +20,8 @@ import { drawHealPulse, drawSourceChip } from './draw-cues.ts';
 import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
-import { drawShieldBreak } from './shield-ring.ts';
+import { isFaded } from '../sim/balls/ghost.ts';
+import { drawGlance } from './glance-ring.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 
@@ -53,13 +54,13 @@ export interface FrameEffects {
   readonly winner: WinnerRing | undefined;
   /** Intro scale and opacity for the ball at an index. */
   readonly intro: (index: number) => { readonly scale: number; readonly alpha: number };
-  /** A shield just broke on this ball: 1 down to 0 (ADR 0043). */
-  readonly shieldBreak: (ballId: string) => number;
+  /** A hit just glanced off this ball's defence: 1 down to 0 (ADR 0045). */
+  readonly glance: (ballId: string) => number;
   /** Rewinds being shown: the Chrono's trail back and its ghost (ADR 0034). */
   readonly rewinds: readonly RewindTrail[];
   /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
   readonly chips: readonly SourceChip[];
-  /** Holds animated details (a heal's swelling ring, a shield's shards, the chip's pop) still. */
+  /** Holds animated details (a heal's swelling ring, a glance's shards, the chip's pop) still. */
   readonly reducedMotion: boolean;
 }
 
@@ -77,7 +78,7 @@ export const NO_EFFECTS: FrameEffects = {
   knockouts: [],
   winner: undefined,
   intro: () => ({ scale: 1, alpha: 1 }),
-  shieldBreak: () => 0,
+  glance: () => 0,
   rewinds: [],
   chips: [],
   reducedMotion: false,
@@ -129,7 +130,8 @@ export function drawWorld(
     const definition = definitions.get(ball.definitionId);
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
-    const phased = definition?.phasedOf?.(ball) ?? false;
+    // A faded Ghost looks phased: hits miss it (ADR 0045).
+    const phased = (definition?.phasedOf?.(ball) ?? false) || isFaded(ball, world.tick);
     withBallTransform(ctx, ball, effects.squash(ball.id), effects.intro(index), () => {
       drawBall(ctx, world, ball, {
         color,
@@ -146,7 +148,7 @@ export function drawWorld(
       const pulse = { strength: heal, amount: effects.healAmount(ball.id), maxHealth };
       drawHealPulse(ctx, ball, pulse, effects.reducedMotion);
       drawStatuses(ctx, ball);
-      drawShieldBreak(ctx, ball, effects.shieldBreak(ball.id), effects.reducedMotion);
+      drawGlance(ctx, ball, effects.glance(ball.id), effects.reducedMotion);
     }
   });
   drawKnockouts(ctx, world, definitions, effects.knockouts);
@@ -205,7 +207,7 @@ export interface BallLook {
   readonly cssPixelsPerUnit: number;
   /** Forces a detail level (the style guide shows both); otherwise chosen by on-screen size. */
   readonly detail?: 'full' | 'simple';
-  /** Phased (ADR 0026): drawn see-through with a broken outline, as hits pass through it. */
+  /** Phased (ADR 0026) or faded (ADR 0045): drawn see-through with a broken outline. */
   readonly phased?: boolean;
 }
 

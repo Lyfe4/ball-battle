@@ -35,7 +35,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     y: 'storm',
     intended: 'x',
     band: 'kind',
-    reason: 'A strike is one big hit, and the rewind undoes it.',
+    reason: 'A strike is a big hit, and the rewind undoes it.',
   },
   {
     x: 'magnet',
@@ -86,13 +86,13 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'storm',
     y: 'ghost',
     intended: 'even',
-    reason: 'Lightning needs a target to call: it waits while the Ghost is phased.',
+    reason: 'One strike at a time: each lands whole, after the fade ends.',
   },
   {
     x: 'storm',
     y: 'guardian',
     intended: 'even',
-    reason: 'The shield soaks part of a strike, but the next strike lands whole.',
+    reason: 'Armor takes only a little off a big strike.',
   },
   {
     x: 'storm',
@@ -152,7 +152,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'quake',
     intended: 'even',
-    reason: 'Shockwaves chip rather than strike hard, so a rewind undoes little.',
+    reason: 'Shockwaves are too small to rewind, but each one only chips.',
   },
   {
     x: 'frost',
@@ -183,7 +183,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'bloom',
     intended: 'even',
-    reason: 'Shockwaves chip and reset its rest, but each one is small enough to regrow.',
+    reason: 'Shockwaves are small enough to regrow, but they keep coming.',
   },
   {
     x: 'quake',
@@ -200,14 +200,15 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'ghost',
-    intended: 'even',
-    reason: 'Shockwaves still hit it phased, but phased, it passes through the Quake.',
+    intended: 'y',
+    band: 'kind',
+    reason: 'It fades after a shockwave, so the next ones miss.',
   },
   {
     x: 'quake',
     y: 'guardian',
     intended: 'even',
-    reason: 'A shockwave breaks the shield, but the shield grows back.',
+    reason: 'Armor takes a bit off every shockwave, but they keep coming.',
   },
   {
     x: 'quake',

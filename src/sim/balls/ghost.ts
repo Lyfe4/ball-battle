@@ -3,63 +3,55 @@ import { defineBall } from '../define-ball.ts';
 import type { BallState } from '../types.ts';
 
 export type GhostState = Readonly<{
-  /** True while phased: it passes through balls and contact damage can't touch it either way. */
-  phased: boolean;
-  /** The tick it next phases in or out. */
-  nextChangeTick: number;
+  /** It is faded on every tick before this one (0 before its first hit). */
+  fadedUntil: number;
+  /** A hit from this tick on fades it again. */
+  nextFadeTick: number;
 }>;
 
-/** The first phase starts on this tick. */
-export const FIRST_PHASE_TICK = 90;
-/** How long it stays phased. */
-export const PHASE_TICKS = 60;
-/** How long it stays solid between phases. */
-export const SOLID_TICKS = 180;
-/** Ability damage of passing through an enemy while phased: weaker than a contact hit. */
-export const SPECTRAL_DAMAGE = 10;
+/** How long it stays faded after a hit. */
+export const FADE_TICKS = 56;
+/** It fades at most once every this many ticks, counted from the start of a fade. */
+export const FADE_EVERY_TICKS = 205;
 
-/** True while a Ghost is phased, read from any ball state (false for other balls). */
-export function isGhostPhased(ball: BallState): boolean {
-  return ball.abilityState['phased'] === true;
+/** True while a Ghost is faded on `tick`, read from any ball state (false for other balls). */
+export function isFaded(ball: BallState, tick: number): boolean {
+  const until = ball.abilityState['fadedUntil'];
+  return typeof until === 'number' && tick < until;
 }
 
 /**
- * Phases out for PHASE_TICKS of every PHASE_TICKS + SOLID_TICKS (ADR 0026). A phased ball can't be
- * touched, gripped or aimed at (ADR 0028): it passes through balls (no contact damage either way
- * and no on-touch effects for the other ball) and through skulls, the Magnet's pull slips, and an
- * aimed attack waits for it to turn solid. Its own pass through an enemy deals a weaker spectral hit
- * (ability damage). What is already on its way still hits it: arrows and shots in flight,
- * lightning and shockwaves already called, and poison.
+ * Fades (ADR 0045): a hit that lands on it fades it for FADE_TICKS, and while it is faded nothing
+ * hurts it, of any kind. It still bumps and is bumped as usual; only the damage misses. It fades at
+ * most once every FADE_EVERY_TICKS: a fade that came on every hit was all or nothing against a
+ * steady rhythm (it missed every other poison tick, or none), so the wait sets how much of a drip
+ * it misses. One big hit lands whole; the small hits just after a hit (the next poison tick, the
+ * next burn, the next shockwave, a boomerang's return) miss.
  */
 export const ghost = defineBall<GhostState>({
   id: 'ghost',
   name: 'Ghost',
-  description: 'Phases out 1 s in 4: hits, skulls, pulls and new aim miss it.',
+  description: 'Fades for a moment after a hit: nothing hurts it then.',
   color: '#c4b5fd',
-  ability: { name: 'Spectral hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
+  ability: { name: 'Fade', shownBy: { kind: 'hitReduced' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
-  maxHealth: 77,
-  contactDamage: 20,
-  initialAbilityState: { phased: false, nextChangeTick: FIRST_PHASE_TICK },
-  phasedOf: (self) => self.abilityState.phased,
+  maxHealth: 67,
+  contactDamage: 24,
+  initialAbilityState: { fadedUntil: 0, nextFadeTick: 0 },
+  incomingDamageOf: (self, amount, tick) => (tick < self.abilityState.fadedUntil ? 0 : amount),
   hooks: {
-    onTick: ({ world, self }) => {
-      const { phased, nextChangeTick } = self.abilityState;
-      if (world.tick < nextChangeTick) return [];
-      return [
-        {
-          kind: 'setAbilityState',
-          state: {
-            phased: !phased,
-            nextChangeTick: world.tick + (phased ? SOLID_TICKS : PHASE_TICKS),
-          },
-        },
-      ];
-    },
-    onHitBall: ({ self, other }) =>
-      self.abilityState.phased
-        ? [{ kind: 'damage', targetId: other.id, amount: SPECTRAL_DAMAGE }]
-        : [],
+    onDamageTaken: ({ world, self }) =>
+      world.tick < self.abilityState.nextFadeTick
+        ? []
+        : [
+            {
+              kind: 'setAbilityState',
+              state: {
+                fadedUntil: world.tick + FADE_TICKS,
+                nextFadeTick: world.tick + FADE_EVERY_TICKS,
+              },
+            },
+          ],
   },
 });

@@ -86,7 +86,7 @@ export function resolveZones(
         zone.endTick === undefined ? 'zone' : 'zonePulse',
       );
       current = result.balls;
-      // A shield that blocks the strike breaks, and the ball takes no status either (ADR 0043).
+      // A defence that takes the whole strike (a fade) keeps the status off too (ADR 0045).
       damage.push(...result.events);
       if (result.damage === undefined) continue;
       hitIds.push(ball.id);

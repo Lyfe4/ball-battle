@@ -15,9 +15,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'boomerang',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Each boomerang hit is small, and it regrows it back before the next throw.',
+    intended: 'even',
+    reason: 'Regrows each light hit, but the boomerang hits twice a throw.',
   },
   {
     x: 'boomerang',
@@ -28,15 +27,15 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'boomerang',
     y: 'ghost',
-    intended: 'x',
+    intended: 'y',
     band: 'kind',
-    reason: 'A boomerang in flight still hits it phased, and comes back to hit again.',
+    reason: 'It fades after the throw hits, so the return misses.',
   },
   {
     x: 'boomerang',
     y: 'guardian',
     intended: 'even',
-    reason: 'The throw breaks the shield and the catch lands, but each hit is light.',
+    reason: 'Armor takes a share off each light hit, but the boomerang hits twice a throw.',
   },
   {
     x: 'boomerang',
@@ -53,8 +52,9 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Two light hits a throw, and a rewind undoes about one of them.',
+    intended: 'y',
+    band: 'kind',
+    reason: 'The boomerang’s light hits are too small to rewind.',
   },
   {
     x: 'frost',

@@ -7,8 +7,11 @@ import type { CounterEntry } from './counter-map.ts';
  * The Brawler as the safe pick, even against everyone but Thorns, its one designed counter
  * (docs/vision.md, ADR 0013). Frost (ADR 0012) slows, so it beats the Speedster; Venom (ADR 0014)
  * is favoured against Thorns. The Frost and Venom are even again since ADR 0028 removed the cold's
- * resistance to poison. Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
- * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules.
+ * resistance to poison.
+ * Every pair with the Storm, Quake, Berserker, Vampire, Archer, Sniper or Boomerang moved to the
+ * counter-map-rules-out-*.ts files with ADR 0045, which removed the interaction rules, and every
+ * other pair with the Chrono, Guardian, Ghost, Bloom or Venom to counter-map-hit-kinds-*.ts with
+ * the redesign's second group.
  */
 export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
@@ -48,30 +51,5 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     y: 'frost',
     intended: 'even',
     reason: 'Two contact balls: the Frost hits hard into the spikes, but slows Thorns.',
-  },
-  {
-    x: 'venom',
-    y: 'thorns',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Poison never touches the spikes, and its light hits leave little to reflect.',
-  },
-  {
-    x: 'brawler',
-    y: 'venom',
-    intended: 'even',
-    reason: 'No tricks either way: plain hits decide it.',
-  },
-  {
-    x: 'venom',
-    y: 'speedster',
-    intended: 'even',
-    reason: 'Poison works between the Speedster bursts, but Venom’s own hits are light.',
-  },
-  {
-    x: 'venom',
-    y: 'frost',
-    intended: 'even',
-    reason: 'Poison wears it down between contacts, and every touch slows Venom in turn.',
   },
 ];

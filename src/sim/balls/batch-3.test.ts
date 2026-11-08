@@ -1,11 +1,12 @@
-// The Magnet, Ghost and Necromancer (ADR 0026): each ball's own mechanic, on fixed scenes.
+// The Magnet, Ghost and Necromancer (ADR 0026, 0045): each ball's own mechanic, on fixed scenes.
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { ghost, FIRST_PHASE_TICK, PHASE_TICKS, SOLID_TICKS, SPECTRAL_DAMAGE } from './ghost.ts';
+import { POISON_INTERVAL_TICKS } from '../status.ts';
+import { FADE_EVERY_TICKS, FADE_TICKS, ghost } from './ghost.ts';
 import { FIRST_PULL_TICK, isPulling, magnet, PULL_PERIOD_TICKS, PULL_TICKS } from './magnet.ts';
 import {
   FIRST_SUMMON_TICK,
@@ -62,46 +63,53 @@ describe('Magnet', () => {
 });
 
 describe('Ghost', () => {
-  it('phases for PHASE_TICKS of every PHASE_TICKS + SOLID_TICKS', () => {
-    const phasedTicks: number[] = [];
-    const world = withBalls(createWorld(1, [ghost, blue]), [
-      { position: { x: 200, y: 200 } },
-      { position: { x: 800, y: 800 }, health: 10_000 },
-    ]);
-    play(world, FIRST_PHASE_TICK + PHASE_TICKS + SOLID_TICKS + 5, (current) => {
-      const self = current.balls[0];
-      if (self !== undefined && ghost.phasedOf?.(self) === true) phasedTicks.push(current.tick);
-    });
-    expect(phasedTicks[0]).toBe(FIRST_PHASE_TICK);
-    expect(phasedTicks).toContain(FIRST_PHASE_TICK + PHASE_TICKS - 1);
-    expect(phasedTicks).not.toContain(FIRST_PHASE_TICK + PHASE_TICKS);
-    expect(phasedTicks).toContain(FIRST_PHASE_TICK + PHASE_TICKS + SOLID_TICKS);
-  });
-
-  /** A phased Ghost and blue heading straight at each other. */
-  const meeting = (phased: boolean): WorldState =>
+  /** A parked Ghost poisoned from tick 0 by a far-off blue: a small hit every interval. */
+  const poisoned = (): WorldState =>
     withBalls(createWorld(1, [ghost, blue]), [
       {
-        position: { x: 300, y: 500 },
-        velocity: { x: ghost.speed, y: 0 },
-        abilityState: { phased, nextChangeTick: 10_000 },
+        position: { x: 200, y: 200 },
+        velocity: { x: 0, y: 0 },
+        statuses: [{ kind: 'poisoned', sourceId: 'ball-1', expiresTick: 10_000, sinceTick: 0 }],
       },
-      { position: { x: 700, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
+      { position: { x: 800, y: 800 }, velocity: { x: 0, y: 0 } },
     ]);
 
-  it('passing through an enemy while phased deals only its spectral hit, and takes nothing', () => {
-    const { world, events } = play(meeting(true), 40);
-    const damage = events.filter((event) => event.type === 'damage');
-    expect(damage).toStrictEqual([
-      expect.objectContaining({ targetId: 'ball-1', cause: 'ability', amount: SPECTRAL_DAMAGE }),
-    ]);
-    expect(world.balls[0]?.health).toBe(ghost.maxHealth);
+  it('fades after a hit, so the next small hit misses, and fades at most once in a while', () => {
+    // The fade outlasts one poison interval but not two, and the next fade waits for its cooldown.
+    const every = POISON_INTERVAL_TICKS;
+    expect(FADE_TICKS).toBeGreaterThan(every);
+    expect(FADE_TICKS).toBeLessThan(2 * every);
+    expect(FADE_EVERY_TICKS).toBeGreaterThan(3 * every);
+    const { events } = play(poisoned(), 4 * every);
+    const landed = events.flatMap((event) => (event.type === 'damage' ? [event.tick] : []));
+    const missed = events.flatMap((event) =>
+      event.type === 'hitReduced' && event.rest === 0 ? [event.tick] : [],
+    );
+    expect(landed).toStrictEqual([every, 3 * every, 4 * every]);
+    expect(missed).toStrictEqual([2 * every]);
   });
 
-  it('fights by contact like any ball while solid', () => {
-    const { events } = play(meeting(false), 40);
-    const causes = events.flatMap((event) => (event.type === 'damage' ? [event.cause] : []));
-    expect(causes).toStrictEqual(['contact', 'contact']);
+  it('takes no contact damage while faded, and still hits back', () => {
+    const meeting = (fadedUntil: number): WorldState =>
+      withBalls(createWorld(1, [ghost, blue]), [
+        {
+          position: { x: 300, y: 500 },
+          velocity: { x: ghost.speed, y: 0 },
+          abilityState: { fadedUntil, nextFadeTick: 10_000 },
+        },
+        { position: { x: 700, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
+      ]);
+    const faded = play(meeting(10_000), 40);
+    const targets = faded.events.flatMap((event) =>
+      event.type === 'damage' ? [event.targetId] : [],
+    );
+    expect(targets).toStrictEqual(['ball-1']);
+    expect(faded.world.balls[0]?.health).toBe(ghost.maxHealth);
+    const solid = play(meeting(0), 40);
+    const causes = solid.events.flatMap((event) =>
+      event.type === 'damage' ? [event.targetId] : [],
+    );
+    expect(causes.sort()).toStrictEqual(['ball-0', 'ball-1']);
   });
 });
 
