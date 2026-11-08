@@ -44,30 +44,30 @@ series.
 | Format   | Bot       | Best  | Worst | Random | Gap      | Moved | Round 1 decides (best / random) |
 | -------- | --------- | ----- | ----- | ------ | -------- | ----- | ------------------------------- |
 | Reveal   | Easy      | 54.7% | 46.1% | 50.4%  | 8.6 pts  | 96.6% | 74.9% / 75.0%                   |
-| Reveal   | Normal    | 54.6% | 44.8% | 49.4%  | 9.8 pts  | 97.3% | 74.9% / 75.0%                   |
+| Reveal   | Normal    | 54.5% | 44.8% | 49.4%  | 9.7 pts  | 97.3% | 74.9% / 75.0%                   |
 | Reveal   | Hard      | 52.5% | 43.3% | 47.7%  | 9.2 pts  | 95.3% | 74.9% / 75.0%                   |
 | Reveal   | first bot | 54.6% | 43.5% | 48.7%  | 11.1 pts | 97.8% | 74.9% / 75.0%                   |
 | Showdown | Easy      | 52.7% | 48.2% | 50.4%  | 4.5 pts  | 75.9% | 72.6% / 75.0%                   |
 | Showdown | Normal    | 53.9% | 46.1% | 50.0%  | 7.8 pts  | 90.1% | 73.3% / 74.6%                   |
-| Showdown | Hard      | 52.3% | 45.7% | 49.3%  | 6.6 pts  | 92.9% | 72.5% / 73.9%                   |
+| Showdown | Hard      | 52.2% | 45.7% | 49.3%  | 6.6 pts  | 92.9% | 72.5% / 73.8%                   |
 
 ### Counter-map odds
 
 | Format   | Bot    | Best  | Worst | Random | Gap     | Moved | Round 1 decides (best / random) |
 | -------- | ------ | ----- | ----- | ------ | ------- | ----- | ------------------------------- |
-| Reveal   | Easy   | 53.6% | 46.5% | 50.0%  | 7.1 pts | 90.1% | 75.0% / 75.0%                   |
-| Reveal   | Normal | 53.3% | 45.1% | 48.8%  | 8.1 pts | 90.1% | 74.9% / 75.0%                   |
-| Reveal   | Hard   | 50.0% | 44.0% | 46.8%  | 6.0 pts | 71.4% | 74.9% / 75.0%                   |
-| Showdown | Easy   | 51.9% | 48.2% | 50.0%  | 3.7 pts | 49.8% | 73.0% / 75.0%                   |
-| Showdown | Normal | 52.9% | 46.3% | 49.6%  | 6.6 pts | 90.1% | 73.4% / 74.5%                   |
-| Showdown | Hard   | 50.0% | 46.2% | 48.7%  | 3.8 pts | 49.6% | 72.2% / 73.6%                   |
+| Reveal   | Easy   | 53.6% | 46.5% | 50.0%  | 7.1 pts | 90.2% | 75.0% / 75.0%                   |
+| Reveal   | Normal | 53.2% | 45.2% | 48.8%  | 8.1 pts | 90.2% | 74.9% / 75.0%                   |
+| Reveal   | Hard   | 50.0% | 44.0% | 46.9%  | 6.0 pts | 71.5% | 74.9% / 75.0%                   |
+| Showdown | Easy   | 51.9% | 48.2% | 50.0%  | 3.7 pts | 49.2% | 73.1% / 75.0%                   |
+| Showdown | Normal | 52.9% | 46.3% | 49.6%  | 6.6 pts | 90.2% | 73.5% / 74.5%                   |
+| Showdown | Hard   | 50.0% | 46.2% | 48.7%  | 3.8 pts | 49.0% | 72.2% / 73.6%                   |
 
 ### Whole series played (a random player, 1,000 series per row, ± 2 standard errors)
 
 | Format   | Easy        | Normal      | Hard        |
 | -------- | ----------- | ----------- | ----------- |
-| Reveal   | 51.0% ± 3.2 | 50.2% ± 3.2 | 47.9% ± 3.2 |
-| Showdown | 50.2% ± 3.2 | 49.6% ± 3.2 | 50.5% ± 3.2 |
+| Reveal   | 51.0% ± 3.2 | 50.5% ± 3.2 | 47.9% ± 3.2 |
+| Showdown | 50.2% ± 3.2 | 49.7% ± 3.2 | 50.5% ± 3.2 |
 
 The played series agree with the model's random play within their noise in every row (ruleset
 8). Against ruleset 7, measured odds moved by about a point at most. With the map's odds, the

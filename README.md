@@ -137,8 +137,7 @@ abilities meet: every ability works the same on any ball.
   back off the spikes.
 - **Venom and Sniper are strong vs Thorns**: poison and shots never touch the spikes.
 - **Berserker is strong vs Speedster**: its huge health soaks the stacked rush.
-- **Quake is strong vs Speedster and Necromancer**: the fastest ball runs into the most shockwaves,
-  and every shockwave clears the skulls.
+- **Quake is strong vs Necromancer**: every shockwave clears the skulls.
 - **Magnet is strong vs the balls weak up close** (Speedster, Venom, Archer, Sniper, Storm, Quake,
   Boomerang, Necromancer): its pull drags them into a brawl.
 - **Ghost is strong vs Speedster, Magnet and Necromancer**: a phased ball can't be touched, gripped or

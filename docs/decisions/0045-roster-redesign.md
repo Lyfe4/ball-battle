@@ -74,15 +74,15 @@ balls leave it and the slowest and biggest don't: its edge is now movement, not 
 | Median fight 12-30 s                     | 18.1 s    | 18.0 s              |
 | Draws under 5%                           | 0.6%      | 0.6%                |
 | Sensitivity (±5% health), fail above 20  | -         | 14.0 pts            |
-| Pairs outside the final bands            | 40        | 35                  |
-| (every counter given the lenient band)   | 18        | 16                  |
+| Pairs outside the final bands            | 40        | 34                  |
+| (every counter given the lenient band)   | 18        | 15                  |
 | Comebacks (loser once led by 25+) 10-20% | 14.6%     | 15.0%               |
 
-Pairs outside the final bands, per ball of the group (ruleset 7 → 8): Storm 3 → 1, Quake 4 → 3,
+Pairs outside the final bands, per ball of the group (ruleset 7 → 8): Storm 3 → 1, Quake 4 → 2,
 Berserker 2 → 2, Vampire 6 → 4, Archer 4 → 4, Sniper 5 → 4, Boomerang 5 → 3. No ball of the group
 fails more pairs than before.
 
-Most of the 35 are kind counters below 66% whose sharp side comes in a later group: Thorns
+Most of the 34 are kind counters below 66% whose sharp side comes in a later group: Thorns
 (group 3) against the Berserker, Titan and others; the Chrono's repeatable rewind (group 2) against
 the Storm and Sniper; the Ghost's fade and the Guardian's armor (group 2).
 
@@ -100,17 +100,19 @@ the Storm and Sniper; the Ghost's fade and the Guardian's armor (group 2).
   so the full run reports one MISS (the CI run's noise allowance passes it). Thorns is tuned in
   group 3; a slower Berserker only moved its losses to the shooters.
 - **The Quake:** shockwaves from bumps as well as walls ("every bounce") were measured and blurred
-  its edges, so it keeps wall shockwaves. It now beats the Necromancer (59%, every shockwave clears
-  the skulls) and the Speedster (56%, the fastest ball runs into the most shockwaves). "Punish
-  brawlers" holds only for the Speedster's rush: the Brawler stays even by design, and the Magnet
-  still beats it (57%, its pull drags the Quake away from the walls). Quake over the Magnet stays
-  the other way round, as decision 2 allows.
+  its edges, so it keeps wall shockwaves. It beats the Necromancer (59%, every shockwave clears the
+  skulls). "Punish brawlers" did not come true: the Speedster's rush runs into the most shockwaves,
+  but only to 56%, so the pair is even (a favoured Quake also gave the Speedster an eighth Weak vs
+  row, more than a manual entry fits on a laptop); the Brawler stays even by design, and the
+  Magnet still beats the Quake (57%, its pull drags it away from the walls). Quake over the Magnet
+  stays the other way round, as decision 2 allows. Group 4 revisits the Quake with the Magnet and
+  Speedster.
 - **Wrong-way and soft pairs marked even by measurement:** Storm vs Vampire, Thorns, Titan,
-  Necromancer and Bloom; Quake vs Archer, Sniper, Boomerang and Frost; Berserker vs Venom, Guardian
+  Necromancer and Bloom; Quake vs Speedster, Archer, Sniper, Boomerang and Frost; Berserker vs Venom, Guardian
   and Bloom; Archer vs Frost, Inferno and Bomber; Boomerang vs Inferno; Sniper vs Titan. Each has a
   reason that says why it is even.
 - **New favoured pairs:** the Magnet over the Archer and the Boomerang (its pull drags the frail
-  shooter into a brawl), the Quake over the Speedster.
+  shooter into a brawl).
 
 ### Other effects
 

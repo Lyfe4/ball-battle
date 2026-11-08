@@ -65,7 +65,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'speedster',
     intended: 'x',
     band: 'kind',
-    reason: 'Its huge health soaks the stacked rush, and every hit soaked makes it hit harder.',
+    reason: 'Its huge health soaks the stacked rush.',
   },
   {
     x: 'berserker',

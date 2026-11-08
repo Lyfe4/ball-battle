@@ -43,7 +43,7 @@ export function hasBoomerangOut(world: WorldState, ownerId: string): boolean {
 export const boomerang = defineBall<BoomerangState>({
   id: 'boomerang',
   name: 'Boomerang',
-  description: 'Its boomerang hits on the way out and on the way back.',
+  description: 'Its boomerang hits going out and coming back.',
   color: '#2dd4bf',
   ability: { name: 'Boomerang', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,

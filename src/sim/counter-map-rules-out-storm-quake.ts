@@ -225,9 +225,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'speedster',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The fastest ball runs into the most shockwaves.',
+    intended: 'even',
+    reason: 'The fastest ball runs into the most shockwaves, but rushes in hard between them.',
   },
   {
     x: 'quake',
