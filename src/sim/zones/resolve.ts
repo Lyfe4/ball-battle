@@ -43,7 +43,8 @@ function isSpent(zone: ZoneState, tick: number): boolean {
  * falls on it (ADR 0034). Each one deals its damage to every
  * live ball other than its owner that overlaps it now, then is removed; the rest are kept as they
  * are. Zones strike in spawn order and each strike is applied before the next, so a ball brought
- * to 0 health by one zone is not hit by the next. A zone with a status applies it to each ball it
+ * to 0 health by one zone is not hit by the next. One owner's lasting zones never stack (ADR 0045): a
+ * ball they all overlap on one tick is burned by the first only. A zone with a status applies it to each ball it
  * hit, right after that ball's damage (ADR 0009); a ball the strike defeated gets none. Then it
  * destroys every enemy minion inside it (ADR 0026). A zone with a trigger (ADR 0043) also strikes
  * early, on the tick a solid enemy ball first touches its body once it is armed, swept on its
@@ -61,6 +62,9 @@ export function resolveZones(
   let standing = minions;
   const remaining: ZoneState[] = [];
   const events: SimEvent[] = [];
+  // Balls a lasting zone already burned this tick, by owner: one owner's lasting zones never
+  // stack (ADR 0045), so a ball standing in several of them is burned once.
+  const burned = new Set<string>();
 
   for (const zone of zones) {
     const setOffBy = triggeredBy(zone, tick, current, startPositions, definitions);
@@ -76,6 +80,10 @@ export function resolveZones(
     for (const ball of current) {
       // Current health, so a ball defeated by an earlier zone this tick is not hit again.
       if (ball.id === zone.ownerId || !isAlive(ball) || !overlaps(zone, ball)) continue;
+      const lasting = zone.endTick !== undefined;
+      const burnKey = `${zone.ownerId}>${ball.id}`;
+      if (lasting && burned.has(burnKey)) continue;
+      if (lasting) burned.add(burnKey);
       const result = dealAbilityDamage(
         current,
         zone.ownerId,

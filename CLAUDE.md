@@ -228,8 +228,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   ball (a kind of hit, a kind of movement), and no rule exists only where two specific abilities
   meet. The three rules of ADR 0016/0028 (heal cut, aim held, rage numbed), their statuses and the
   spark that marked them are gone. A counter comes from what the balls already do and must be
-  guessable by watching. The roster redesign (`docs/roster-redesign.md`) ships in four groups;
-  until the last, `KIND_FLOOR_DURING_REDESIGN` keeps a kind counter's floor at 58%.
+  guessable by watching. The roster redesign (`docs/roster-redesign.md`) ships in four groups.
+  A pair only counts as a counter if it wins enough (ADR 0045, group 3): a kind counter needs 66%,
+  a movement counter 58%; a designed counter that measures 58% or less is marked even (no ▲▼, an
+  even reason), and one between 58% and its floor is pushed into its band or tuned to even.
 - The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.

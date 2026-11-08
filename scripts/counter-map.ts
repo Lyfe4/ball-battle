@@ -42,14 +42,6 @@ export const COUNTER_BANDS = {
 } as const;
 
 /**
- * The floor a kind counter is checked against while the roster redesign ships group by group
- * (ADR 0045): the movement floor's lower edge, so each group can merge on its own while kind
- * counters whose other ball changes in a later group are still soft. The redesign's last group
- * sets this to `COUNTER_BANDS.kindFloor`. `outsideFinalBand` counts the pairs that would fail then.
- */
-export const KIND_FLOOR_DURING_REDESIGN: readonly [number, number] = [0.58, 0.8];
-
-/**
  * Win rates are ratios of whole counts, so a rate exactly on a 2-point line can land a hair either
  * side of it in floating point. This tolerance keeps such a rate on the lenient side.
  */
@@ -57,6 +49,27 @@ const EDGE_EPSILON = 1e-9;
 
 /** Hard limit on top of the map: no side of any matchup wins less than this (docs/vision.md). */
 export const HARD_WORST_MATCHUP = 0.25;
+
+/**
+ * Balls left with no favoured matchup, or no unfavoured one, because a pair only counts as a counter
+ * if it wins enough (ADR 0045, group 3): their designed edges measured too soft and are even until a
+ * later redesign group gives them a real one. Listed so a ball losing its last counter is a decision.
+ */
+export const WITHOUT_FAVOURED: readonly string[] = [
+  'vampire',
+  'storm',
+  'berserker',
+  'quake',
+  'boomerang',
+];
+export const WITHOUT_UNFAVOURED: readonly string[] = [
+  'vampire',
+  'frost',
+  'berserker',
+  'ghost',
+  'titan',
+  'guardian',
+];
 
 /**
  * Balls deliberately even against everyone but one known counter, the one exception to "every
@@ -120,7 +133,7 @@ export function checkCounter(
 ): CounterVerdict {
   const { even, evenFloor } = COUNTER_BANDS;
   if (entry.intended !== 'even') {
-    const [target, floor] = favouredBands(entry, KIND_FLOOR_DURING_REDESIGN);
+    const [target, floor] = favouredBands(entry);
     return inBand(entry.intended === 'x' ? xRate : yRate, target, floor, nearWithin);
   }
   return worse(
@@ -129,13 +142,16 @@ export function checkCounter(
   );
 }
 
-/** A favoured entry's target and floor, with `kindFloor` as the floor of a kind counter. */
+/**
+ * A favoured entry's target and floor. A pair only counts as a counter if it wins enough (ADR 0045,
+ * group 3): a kind counter is held to 66-80% and a movement counter to 58-76%; a designed counter
+ * that measures 58% or less is marked even in the map instead.
+ */
 function favouredBands(
   entry: CounterEntry,
-  kindFloor: readonly [number, number],
 ): readonly [readonly [number, number], readonly [number, number]] {
   return entry.band === 'kind'
-    ? [COUNTER_BANDS.kind, kindFloor]
+    ? [COUNTER_BANDS.kind, COUNTER_BANDS.kindFloor]
     : [COUNTER_BANDS.movement, COUNTER_BANDS.movementFloor];
 }
 
@@ -150,7 +166,7 @@ export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: numb
   if (entry.intended === 'even') {
     return out(xRate, COUNTER_BANDS.evenFloor) || out(yRate, COUNTER_BANDS.evenFloor);
   }
-  const [, floor] = favouredBands(entry, COUNTER_BANDS.kindFloor);
+  const [, floor] = favouredBands(entry);
   return out(entry.intended === 'x' ? xRate : yRate, floor);
 }
 

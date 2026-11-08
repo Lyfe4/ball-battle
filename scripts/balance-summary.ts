@@ -3,7 +3,7 @@
 // (what the fights do), with its average win rate in each group. Pure, so it is tested without
 // playing matches; `pnpm balance --write-summary` writes it to docs/balance-summary.md.
 import { isFavoured } from '../src/sim/counter-map.ts';
-import { COUNTER_BANDS, KIND_FLOOR_DURING_REDESIGN } from './counter-map.ts';
+import { COUNTER_BANDS } from './counter-map.ts';
 
 export type Group = 'strong' | 'even' | 'weak';
 export const GROUPS: readonly Group[] = ['strong', 'even', 'weak'];
@@ -164,12 +164,12 @@ const band = ([low, high]: readonly [number, number]): string =>
 
 /** The below-target section of docs/balance-summary.md: every such pair, or "None.". */
 export function belowTargetLines(pairs: readonly BelowTarget[]): string[] {
-  const { kind, movement, even, movementFloor, evenFloor } = COUNTER_BANDS;
+  const { kind, movement, even, kindFloor, movementFloor, evenFloor } = COUNTER_BANDS;
   const intro = [
     '## Below target',
     '',
-    `Counter-map pairs inside their floor (kind ${band(KIND_FLOOR_DURING_REDESIGN)} while the`,
-    `redesign ships, movement ${band(movementFloor)}, even ${band(evenFloor)}) but outside their`,
+    `Counter-map pairs inside their floor (kind ${band(kindFloor)}, movement`,
+    `${band(movementFloor)}, even ${band(evenFloor)}) but outside their`,
     `target (kind ${band(kind)}, movement ${band(movement)}, even ${band(even)}): a WARN in`,
     '`pnpm balance`, a pair to sharpen rather than a failure (ADR 0028 addendum, ADR 0045).',
     '',

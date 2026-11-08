@@ -74,8 +74,8 @@ export interface StatusExpiredEvent {
   readonly status: StatusKind;
 }
 
-/** Share of its cruise speed a slowed ball loses (ADR 0012). The Frost's lever. */
-export const SLOW_FACTOR = 0.3;
+/** Share of its cruise speed a slowed ball loses (ADR 0012, 0045). The Frost's lever. */
+export const SLOW_FACTOR = 0.45;
 
 /** A slowed ball's cruise speed. */
 export function slowedSpeed(speed: number): number {

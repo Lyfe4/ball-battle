@@ -27,9 +27,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'boomerang',
     y: 'ghost',
-    intended: 'y',
-    band: 'kind',
-    reason: 'It fades after the throw hits, so the return misses.',
+    intended: 'even',
+    reason: 'It fades after the throw lands, but the next throw comes after the fade.',
   },
   {
     x: 'boomerang',
@@ -52,9 +51,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'boomerang',
-    intended: 'y',
-    band: 'kind',
-    reason: 'The boomerang’s light hits are too small to rewind.',
+    intended: 'even',
+    reason: 'The boomerang’s hits are too small to rewind, but its hits are light.',
   },
   {
     x: 'frost',

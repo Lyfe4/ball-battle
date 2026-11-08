@@ -99,9 +99,8 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'guardian',
     y: 'speedster',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Armor takes a bit off both its bump and its speed hit.',
+    intended: 'even',
+    reason: 'Armor takes a bit off its bumps, but the fastest ball still lands plenty.',
   },
   {
     x: 'guardian',
@@ -112,9 +111,8 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'guardian',
     y: 'thorns',
-    intended: 'y',
-    band: 'kind',
-    reason: 'Its bumps come back off the spikes, and armor takes only a little off.',
+    intended: 'even',
+    reason: 'Its bumps come back off the spikes, but armor takes a bit off the reflection too.',
   },
   {
     x: 'guardian',
@@ -163,8 +161,7 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'guardian',
     y: 'bloom',
-    intended: 'y',
-    band: 'kind',
-    reason: 'Armor only slows the damage, and the Bloom regrows it.',
+    intended: 'even',
+    reason: 'Armor slows the damage and regrowth heals it back: neither side pulls ahead.',
   },
 ];

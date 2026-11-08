@@ -2,7 +2,7 @@ import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 
 /** Share of the contact damage Thorns takes that it reflects back at the attacker. */
-export const REFLECT_SHARE = 0.35;
+export const REFLECT_SHARE = 0.36;
 
 /** Damage reflected for taking `amount` contact damage. Rounded so health stays whole. */
 export function reflectFor(amount: number): number {
@@ -19,13 +19,13 @@ export function reflectFor(amount: number): number {
 export const thorns = defineBall({
   id: 'thorns',
   name: 'Thorns',
-  description: 'Spiked: every contact hit it takes hurts the attacker.',
+  description: 'Spiked: every bump it takes hurts the attacker back.',
   color: '#16a34a',
   ability: { name: 'Spikes', shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
-  maxHealth: 77,
-  contactDamage: 19,
+  maxHealth: 78,
+  contactDamage: 18,
   initialAbilityState: {},
   hooks: {
     onDamageTaken: ({ attacker, amount, cause }) => {

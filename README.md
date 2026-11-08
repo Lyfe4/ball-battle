@@ -91,29 +91,29 @@ definitions and the counter map, so they never go stale.
 In a match, two balls collide elastically and deal damage scaled by how directly
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball        | Ability                                                                            |
-| ----------- | ---------------------------------------------------------------------------------- |
-| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.         |
-| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.    |
-| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches. |
-| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.   |
-| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.       |
-| Frost       | Slowest and sturdy. Every hit slows its enemy for 3 s.                             |
-| Thorns      | Spiked: every contact hit it takes hurts the attacker back by 35%.                 |
-| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.       |
-| Berserker   | The most health, and hits harder the more it has lost.                             |
-| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.        |
-| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.              |
-| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.    |
-| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.            |
-| Necromancer | Raises a skeleton minion that pops on its enemy and draws aimed attacks.           |
-| Chrono      | Rewinds a big hit (a shot, a strike, or a knockout), then recharges for 10 s.      |
-| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.     |
-| Inferno     | Leaves a trail of fire that burns enemies who cross it, and burns up skulls.       |
-| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.  |
-| Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.  |
-| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.    |
-| Bloom       | Always regrowing: heals a little, three times a second, all match long.            |
+| Ball        | Ability                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.                     |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                |
+| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches.             |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.               |
+| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                   |
+| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                          |
+| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.             |
+| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                   |
+| Berserker   | The most health, and hits harder the more it has lost.                                         |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                    |
+| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.                          |
+| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                |
+| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.                        |
+| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after. |
+| Chrono      | Rewinds a big hit (a shot, a strike, or a knockout), then recharges for 10 s.                  |
+| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.                 |
+| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls. |
+| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.              |
+| Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.              |
+| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.                |
+| Bloom       | Always regrowing: heals a little, three times a second, all match long.                        |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
@@ -128,52 +128,41 @@ abilities meet: every ability works the same on any ball.
 
 - **Speedster is strong vs Archer, Storm, Sniper and Boomerang**: it closes on arrows and throws,
   outruns lightning warnings and is off the Sniper's locked line before the shot.
-- **Archer is strong vs Vampire, Thorns and Chrono**: lifesteal can't drink from an arrow, arrows
-  never touch the spikes, and an arrow is too small to rewind.
-- **Storm is strong vs Frost and Bloom**: the slowest ball can't leave the warning circle, and big
-  strikes outpace regrowth.
-- **Vampire is strong vs Titan**: the growing giant is a bigger target, so more of its bumps land
-  and each one heals it.
-- **Frost is strong vs Speedster**: slowed, it builds no speed.
-- **Thorns is strong vs Brawler, Berserker and Magnet**: the hardest bumps, raging ones too, come
-  back off the spikes.
-- **Venom and Sniper are strong vs Thorns**: poison and shots never touch the spikes. **Venom is
-  also strong vs Chrono**: poison ticks are too small to rewind.
-- **Berserker is strong vs Speedster and Ghost**: its huge health soaks the stacked rush, and its
-  raging hits come one at a time, each landing whole on a Ghost.
-- **Quake is strong vs Necromancer**: every shockwave clears the skulls.
-- **Magnet is strong vs the balls weak up close** (Speedster, Archer, Sniper, Storm, Quake,
-  Boomerang, Necromancer): its pull drags them into a brawl. It also drags the Bloom into hard bumps
-  faster than it regrows.
-- **Ghost is strong vs Venom, Inferno, Quake and Boomerang**: it fades after a hit, so the next small
-  hit misses: a poison tick, a burn, a shockwave, the boomerang's return.
-- **Necromancer is strong vs Archer, Sniper and Boomerang**: a skull nearer than its owner draws the
-  arrow, shot or throw.
+- **Frost is strong vs Speedster and Quake**: slowed right down, they build no speed and hit fewer
+  walls, so fewer stacks and fewer shockwaves.
+- **Thorns is strong vs Brawler and Magnet**: the hardest bumps come back off the spikes hardest.
+  **Archer, Sniper, Venom and Inferno are strong vs Thorns**: arrows, shots, poison and fire never
+  touch the spikes.
+- **Venom is strong vs Chrono**: poison ticks are too small to rewind.
+- **Magnet is strong vs the balls weak up close** (Speedster, Archer, Sniper, Storm, Boomerang,
+  Necromancer): its pull drags them into a brawl. It also drags the Bloom into hard bumps faster
+  than it regrows.
+- **Ghost is strong vs Venom**: it fades after a poison tick, so the next ones miss.
+- **Necromancer is strong vs Archer, Sniper and Boomerang**: its skeleton is nearer than its owner,
+  so it draws the arrow, shot or throw, and a new one rises soon after.
 - **Chrono is strong vs Storm and Sniper**: a strike or a shot is a big hit, and its rewind undoes
-  it. **Archer, Venom, Inferno and Boomerang are strong vs the Chrono**: their hits are too small to
-  rewind.
-- **Titan is strong vs Speedster, Archer, Boomerang, Necromancer and Bloom**: its growing body meets
-  them more often, their light hits lose the trade, and its huge bumps outpace regrowth. **Thorns and Inferno are strong vs the
-  Titan**: a bigger body meets more spikes and covers more fire.
-- **Inferno is strong vs Necromancer, Titan, Thorns and Chrono**: fire burns up skulls, covers a big
-  body, never touches the spikes and burns too small to rewind. **Speedster is strong vs the Inferno**: it
-  outruns the fire.
-- **Boomerang is strong vs Vampire and Chrono**: lifesteal can't drink from a boomerang, and its
-  light hits are too small to rewind.
+  it. **Venom and Inferno are strong vs the Chrono**: their hits are too small to rewind.
+- **Titan is strong vs Speedster, Archer, Boomerang, Bomber and Bloom**: its growing body meets them
+  more often, their light hits lose the trade, and its huge bumps outpace regrowth.
+- **Inferno is strong vs Necromancer**: the fire burns up the skeleton and the Necromancer behind it.
 - **Bomber is strong vs Speedster**: the fastest ball covers the most ground and runs into the most
   bombs.
-- **Guardian is strong vs Venom, Inferno and Speedster**: armor takes a bit off every hit, a big
-  share of a poison tick, a burn or a speed hit. **Thorns is strong vs the Guardian**: its bumps
-  come back off the spikes.
-- **Bloom is strong vs Guardian, Inferno, Necromancer, Bomber and Frost**: it regrows faster than
-  small hits hurt, and armor or cold only make the fight longer.
-- **Berserker is not strong vs Guardian and Bloom** as the redesign hoped: its huge health makes
-  long fights, and armor and regrowth do well in those ([ADR 0045](docs/decisions/0045-roster-redesign.md)).
+- **Guardian is strong vs Venom and Inferno**: armor takes a big share off every poison tick and
+  burn.
+- **Bloom is strong vs Inferno and Necromancer**: it regrows faster than burns and bites hurt.
+
+A pair counts as a counter only if it really wins enough: 66% for a kind of hit, 58% for movement
+([ADR 0045](docs/decisions/0045-roster-redesign.md), group 3). Edges that measured softer are even,
+so some balls have none on one side for now: the Vampire and Berserker have no counter either way;
+the Storm, Quake and Boomerang have no favoured matchup, and the Frost, Ghost, Titan and Guardian
+no unfavoured one. The last redesign group revisits them.
 
 The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) ships in four groups; the
 first removed the three rules between balls (shock, stagger and numbed rage) and the spark that
 marked them, so a counter is only ever what the two balls already do; the second gave the Chrono,
-Guardian, Ghost, Bloom and Venom abilities that act on a kind of hit (big or small). Every heal
+Guardian, Ghost, Bloom and Venom abilities that act on a kind of hit (big or small); the third
+made the Inferno's fire never stack (the whole trail burns on one beat) and tuned the Necromancer,
+Bomber, Frost and Thorns to what their abilities beat. Every heal
 shows as a green pulse sized by the heal.
 
 The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.

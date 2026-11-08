@@ -39,9 +39,9 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'thorns',
     y: 'titan',
-    intended: 'x',
-    band: 'kind',
-    reason: 'The growing body meets the spikes more often, and every hard hit comes back.',
+    intended: 'even',
+    reason:
+      'Every bump comes back off the spikes, but the giant’s health soaks it: plain trades decide it.',
   },
   {
     x: 'titan',
@@ -52,9 +52,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'necromancer',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The growing body meets it and its skulls often, and light hits lose the trade.',
+    intended: 'even',
+    reason: 'The growing body meets the skull often, but the Necromancer keeps raising another.',
   },
   // The Inferno.
   {
@@ -66,9 +65,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'speedster',
     y: 'inferno',
-    intended: 'x',
-    band: 'movement',
-    reason: 'It outruns the flames, and crosses a patch before it burns twice.',
+    intended: 'even',
+    reason: 'It crosses the fire quickly, but it crosses it often: neither side gains.',
   },
   {
     x: 'inferno',
@@ -100,8 +98,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'titan',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The bigger the body, the more fire it covers.',
+    intended: 'even',
+    reason: 'The bigger the body, the more fire it covers, but its huge bumps pay it back.',
   },
 ];

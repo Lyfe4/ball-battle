@@ -33,9 +33,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'chrono',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Arrows are too small to rewind.',
+    intended: 'even',
+    reason: 'Arrows are too small to rewind, but the Chrono’s heavy bumps finish a frail Archer.',
   },
   {
     x: 'archer',

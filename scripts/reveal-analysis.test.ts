@@ -45,7 +45,9 @@ describe('reveal analysis', () => {
       expect(best).toBeGreaterThanOrEqual(worst);
       if (best - worst >= 0.03) moved++;
     }
-    expect(moved / sample.length).toBeGreaterThan(0.8);
+    // Three quarters, not four fifths, since a pair counts as a counter only if it wins enough (ADR
+    // 0045, group 3): fewer favoured pairs leave fewer choices that move the odds.
+    expect(moved / sample.length).toBeGreaterThan(0.75);
   });
 
   it('makes the player’s choices count whoever wins the toss, and averages the two', () => {
@@ -59,7 +61,9 @@ describe('reveal analysis', () => {
       expect(toss.best).toBeCloseTo((first.best + second.best) / 2, 12);
       expect(toss.worst).toBeCloseTo((first.worst + second.worst) / 2, 12);
     }
-    expect(moved / sample.length).toBeGreaterThan(0.8);
+    // Three quarters, not four fifths, since a pair counts as a counter only if it wins enough (ADR
+    // 0045, group 3): fewer favoured pairs leave fewer choices that move the odds when showing first.
+    expect(moved / sample.length).toBeGreaterThan(0.75);
   });
 
   it('gives a player who shows first and plays perfectly against even odds exactly half', () => {
