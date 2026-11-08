@@ -4,6 +4,8 @@
 - Date: 2026-11-07
 - Amends: ADR 0028 (the rule cue sits on the ball that caused the rule; its words), ADR 0029 (the
   coin toss is said in the pick banner; the strip is gone), ADR 0036 (a rule gets a one-time hint)
+- Amended by: ADR 0045 (the spark and the rule words are removed with the rules they marked;
+  the counter reasons stay)
 
 ## Context
 
