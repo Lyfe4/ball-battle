@@ -60,6 +60,25 @@
   opacity: 0.8;
 }
 
+/*
+ * Play, and New series while a series is held (ADR 0046): the link sits right under the button's end,
+ * so Play keeps its full width and its line of format and score never wraps on a phone.
+ */
+.home-play-row {
+  display: grid;
+  justify-items: stretch;
+}
+
+.home-new-series {
+  justify-self: end;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small);
+}
+
+.home-new-series[hidden] {
+  display: none;
+}
+
 .home-more {
   display: flex;
   gap: var(--space-small);

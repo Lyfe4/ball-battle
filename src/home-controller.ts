@@ -5,6 +5,7 @@ import { demoAt } from './app/demo.ts';
 import type { Matchup } from './app/matchup.ts';
 import { generateSeed } from './app/seed.ts';
 import { getDefinition } from './sim/definitions.ts';
+import type { SeriesState } from './sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHome } from './ui/home.ts';
@@ -18,6 +19,12 @@ export interface HomeHost {
   play(): void;
   /** Other modes: every other way to play. */
   modes(): void;
+  /** An undecided series held (a Back, or saved before a reload): Play resumes it instead. */
+  held(): SeriesState | undefined;
+  /** Carries on with the held series. */
+  resume(): void;
+  /** Forgets the held series and opens the main mode's lineup. */
+  newSeries(): void;
   manual(): void;
 }
 
@@ -49,7 +56,11 @@ export function createHomeController(
 
   const home = createHome(root, balls, {
     onPlay: () => {
-      host.play();
+      if (host.held() === undefined) host.play();
+      else host.resume();
+    },
+    onNewSeries: () => {
+      host.newSeries();
     },
     onModes: () => {
       host.modes();
@@ -86,6 +97,7 @@ export function createHomeController(
       home.setVisible(visible);
     },
     open() {
+      home.setHeld(host.held());
       waiting = reducedMotion.matches;
       home.setWaiting(waiting);
       startDemo();

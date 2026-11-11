@@ -40,6 +40,8 @@ export interface SeriesScreens {
   readonly play: SeriesController;
   /** The router's handler for a series URL: a setup step, or a round. */
   readonly screen: ScreenHandler<'series'>;
+  /** Carries on with the held series: its own entry again (the setup's and home's Resume). */
+  resume(): void;
 }
 
 export function createSeriesScreens(
@@ -67,10 +69,7 @@ export function createSeriesScreens(
     },
     held: () => play.held(),
     resume: () => {
-      // The series' own entry again; the route carries on with the held series.
-      host.go((url) => {
-        writeSeriesModeParams(url, play.held()?.setup.format, 'play');
-      });
+      resume();
     },
     start: (series, firstPick) => {
       // From the round-1 answer this replaces it: the series is one entry, so Back can't reopen
@@ -151,5 +150,12 @@ export function createSeriesScreens(
     },
   };
 
-  return { setup, play, screen };
+  /** The series' own entry again; the route carries on with the held series. */
+  function resume(): void {
+    host.go((url) => {
+      writeSeriesModeParams(url, play.held()?.setup.format, 'play');
+    });
+  }
+
+  return { setup, play, screen, resume };
 }

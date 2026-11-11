@@ -113,6 +113,14 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
   modes: () => {
     go(writeModesParams);
   },
+  held: () => series.held(),
+  resume: () => {
+    seriesScreens.resume();
+  },
+  newSeries: () => {
+    series.forget();
+    go(writeMainModeParams);
+  },
   manual: () => {
     go((url) => {
       writeManualParams(url);
@@ -163,11 +171,7 @@ const quick = createQuickController(
   },
 );
 
-const {
-  setup: seriesSetup,
-  play: series,
-  screen: seriesScreen,
-} = createSeriesScreens(
+const seriesScreens = createSeriesScreens(
   {
     setup: getElement('series-setup', HTMLElement),
     play: {
@@ -202,6 +206,8 @@ const {
     },
   },
 );
+
+const { setup: seriesSetup, play: series } = seriesScreens;
 
 const router = createRouter(
   {
@@ -240,7 +246,7 @@ const router = createRouter(
         quick.showMatch(route, from);
       },
     },
-    series: seriesScreen,
+    series: seriesScreens.screen,
   },
   initialRoute.screen,
   showControls,

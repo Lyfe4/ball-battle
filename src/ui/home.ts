@@ -2,11 +2,15 @@ import { createSettingsToggle } from './settings-menu.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
-import { MAIN_PLAY } from './modes-text.ts';
+import type { SeriesState } from '../sim/series.ts';
+import { MAIN_PLAY, RESUME_PLAY, resumeLine, resumeSpoken } from './modes-text.ts';
 
 export interface HomeActions {
-  /** The main mode (ADR 0046): Best of 3, Reveal, vs the bot, straight to the lineup. */
+  /** The main mode (ADR 0046): Best of 3, Reveal, vs the bot, straight to the lineup; or, with a
+   * series held, carry on with it. */
   readonly onPlay: () => void;
+  /** With a series held: forget it and start a fresh one. */
+  readonly onNewSeries: () => void;
   /** Every other way to play: Showdown, Blind, Free play. */
   readonly onModes: () => void;
   readonly onManual: () => void;
@@ -20,7 +24,9 @@ export interface Home {
   showDemo(a: string, b: string): void;
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
-  /** Moves focus to Play: the one obvious first action. */
+  /** Play, or Resume series with its format and score while one is held, and New series. */
+  setHeld(held: SeriesState | undefined): void;
+  /** Moves focus to Play (or Resume series): the one obvious first action. */
   focus(): void;
 }
 
@@ -57,12 +63,16 @@ export function createHome(
   // one tap further, behind Other modes (ADR 0046).
   const play = element('button', 'hud-button hud-button-primary home-play');
   play.type = 'button';
-  play.setAttribute('aria-label', MAIN_PLAY.spoken);
-  play.append(
-    element('span', 'home-play-label', MAIN_PLAY.label),
-    element('span', 'home-play-meta', MAIN_PLAY.meta),
-  );
+  const playLabel = element('span', 'home-play-label');
+  const playMeta = element('span', 'home-play-meta');
+  play.append(playLabel, playMeta);
   play.addEventListener('click', actions.onPlay);
+  // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
+  const fresh = element('button', 'text-link home-new-series', 'New series');
+  fresh.type = 'button';
+  fresh.addEventListener('click', actions.onNewSeries);
+  const playRow = element('div', 'home-play-row');
+  playRow.append(play, fresh);
   const modes = element('button', 'hud-button', 'Other modes');
   modes.type = 'button';
   modes.addEventListener('click', actions.onModes);
@@ -95,7 +105,7 @@ export function createHome(
   // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
   const head = element('div', 'home-head');
   head.append(title, createSettingsToggle());
-  root.append(demo, head, pitch, play, more, strip, footer);
+  root.append(demo, head, pitch, playRow, more, strip, footer);
 
   return {
     setVisible(visible) {
@@ -107,6 +117,12 @@ export function createHome(
     },
     setWaiting(waiting) {
       watch.hidden = !waiting;
+    },
+    setHeld(held) {
+      setText(playLabel, held === undefined ? MAIN_PLAY.label : RESUME_PLAY.label);
+      setText(playMeta, held === undefined ? MAIN_PLAY.meta : resumeLine(held));
+      play.setAttribute('aria-label', held === undefined ? MAIN_PLAY.spoken : resumeSpoken(held));
+      fresh.hidden = held === undefined;
     },
     focus() {
       play.focus();

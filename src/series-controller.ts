@@ -75,6 +75,8 @@ export interface SeriesController {
   address(): SeriesSetup | undefined;
   /** Leaves the series' screen but keeps it, undecided, so it can be resumed. */
   hold(): void;
+  /** Forgets the series in hand, saved one included: home's New series (ADR 0046). */
+  forget(): void;
   /**
    * Where the series on screen is: a round being fought, between rounds, or decided. Undefined
    * when none is on screen. Between rounds and at the end the arena makes way (ADR 0025).
@@ -225,6 +227,10 @@ export function createSeriesController(
       if (session === undefined) return undefined;
       const address = seriesAddress(session);
       return 'setup' in address ? address.setup : undefined;
+    },
+    forget() {
+      onScreen = false;
+      keep(undefined);
     },
     hold() {
       onScreen = false;
