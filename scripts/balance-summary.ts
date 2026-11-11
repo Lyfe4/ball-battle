@@ -3,24 +3,26 @@
 // (what the fights do), with its average win rate in each group. Pure, so it is tested without
 // playing matches; `pnpm balance --write-summary` writes it to docs/balance-summary.md.
 import { isFavoured } from '../src/sim/counter-map.ts';
-import { COUNTER_BANDS } from './counter-map.ts';
+import { COUNTER_BANDS, EVEN_PICKS, SHAPE, SHAPE_EXCEPTIONS } from './counter-map.ts';
 
 export type Group = 'strong' | 'even' | 'weak';
 export const GROUPS: readonly Group[] = ['strong', 'even', 'weak'];
 
 /**
- * A ball is lopsided when its strong and weak counts differ by this many or more, out of 13
- * opponents (about 30% of them). A warning, not a failure: one-sided shapes are worth a look (they
- * make a ball a near-default pick, or a ball few would pick) but can be deliberate, like the
- * Brawler's all-even shape. At the time of writing the map flags the Magnet (+6), Quake (+4) and
- * Ghost (-4), matching what ADR 0026 called out; every other ball is within 3.
+ * A ball is lopsided when its strong and weak counts differ by this many or more: the shape rule
+ * wants them within 1 (ADR 0045, group 4). A warning, not a failure; the map's own shape is pinned
+ * by scripts/counter-map.test.ts.
  */
-export const LOPSIDED_GAP = 4;
+export const LOPSIDED_GAP = 2;
 
-/** The measured group of a win rate: outside the even band (45-55%) is strong or weak. */
+/**
+ * The measured group of a win rate: a counter's 62% or more is strong, 38% or less weak (the other
+ * side near 62%), everything between even (ADR 0045, group 4).
+ */
 export function measuredGroup(rate: number): Group {
-  if (rate > COUNTER_BANDS.even[1]) return 'strong';
-  if (rate < COUNTER_BANDS.even[0]) return 'weak';
+  const counterAt = COUNTER_BANDS.counterFloor[0];
+  if (rate >= counterAt) return 'strong';
+  if (rate <= 1 - counterAt) return 'weak';
   return 'even';
 }
 
@@ -45,6 +47,9 @@ export interface BallSummary {
   readonly byMap: Shape;
   /** Grouped by the measured win rate against each opponent. */
   readonly measured: Shape;
+  /** The map's counters for the ball, each with its measured win rate, sharpest first. */
+  readonly beats: readonly MatchupRate[];
+  readonly losesTo: readonly MatchupRate[];
 }
 
 export interface MatchupRate {
@@ -82,6 +87,8 @@ export function summariseBall(
     winRate,
     byMap: shapeOf(matchups.map(({ rate, intended }) => ({ rate, group: intended }))),
     measured: shapeOf(matchups.map(({ rate }) => ({ rate, group: measuredGroup(rate) }))),
+    beats: matchups.filter((m) => m.intended === 'strong').sort((p, q) => q.rate - p.rate),
+    losesTo: matchups.filter((m) => m.intended === 'weak').sort((p, q) => p.rate - q.rate),
   };
 }
 
@@ -164,14 +171,14 @@ const band = ([low, high]: readonly [number, number]): string =>
 
 /** The below-target section of docs/balance-summary.md: every such pair, or "None.". */
 export function belowTargetLines(pairs: readonly BelowTarget[]): string[] {
-  const { kind, movement, even, kindFloor, movementFloor, evenFloor } = COUNTER_BANDS;
+  const { counter, even, counterFloor, evenFloor } = COUNTER_BANDS;
   const intro = [
     '## Below target',
     '',
-    `Counter-map pairs inside their floor (kind ${band(kindFloor)}, movement`,
-    `${band(movementFloor)}, even ${band(evenFloor)}) but outside their`,
-    `target (kind ${band(kind)}, movement ${band(movement)}, even ${band(even)}): a WARN in`,
-    '`pnpm balance`, a pair to sharpen rather than a failure (ADR 0028 addendum, ADR 0045).',
+    `Counter-map pairs inside their floor (counter ${band(counterFloor)}, even ${band(evenFloor)})`,
+    `but outside their target (counter ${band(counter)}, even ${band(even)}): a WARN in`,
+    '`pnpm balance`, a pair to sharpen rather than a failure. An even pair with a side over 58%',
+    'is in the grey zone (ADR 0045, group 4).',
     '',
   ];
   if (pairs.length === 0) return [...intro, 'None.', ''];
@@ -204,8 +211,8 @@ export function summaryMarkdown(
     '',
     'Each group is a count of opponents, with the ball’s average win rate against them in brackets.',
     '**By map** groups opponents by the counter map (favoured, even, unfavoured; ADR 0010).',
-    `**Measured** groups them by the result: above ${percent(COUNTER_BANDS.even[1])} is strong, below`,
-    `${percent(COUNTER_BANDS.even[0])} weak. **Gap** is strong minus weak; WARN marks a lopsided`,
+    `**Measured** groups them by the result: ${percent(COUNTER_BANDS.counterFloor[0])} or more is strong,`,
+    `${percent(1 - COUNTER_BANDS.counterFloor[0])} or less weak. **Gap** is strong minus weak; WARN marks a lopsided`,
     `shape (a gap of ${String(LOPSIDED_GAP)} or more either way), a prompt to look rather than a`,
     'failure.',
     '',
@@ -217,6 +224,54 @@ export function summaryMarkdown(
       ? 'No ball is lopsided.'
       : `Lopsided: ${flagged.map((ball) => ball.name).join(', ')}.`,
     '',
+    ...counterLines(summaries),
+    ...gapLines(),
     ...belowTargetLines(belowTarget),
   ].join('\n');
+}
+
+/** The counters section of docs/balance-summary.md: each ball's ▲ and ▼ by the map, measured. */
+export function counterLines(summaries: readonly BallSummary[]): string[] {
+  const nameOf = (id: string) => summaries.find((ball) => ball.id === id)?.name ?? id;
+  const list = (matchups: readonly MatchupRate[]) =>
+    matchups.length === 0
+      ? '-'
+      : matchups.map(({ opponent, rate }) => `${nameOf(opponent)} ${percent(rate)}`).join(', ');
+  return [
+    '## Counters',
+    '',
+    'Each ball’s counters by the map, with its measured win rate against each.',
+    '',
+    '| Ball | Beats (▲) | Loses to (▼) |',
+    '| ---- | --------- | ------------ |',
+    ...summaries.map((ball) => `| ${ball.name} | ${list(ball.beats)} | ${list(ball.losesTo)} |`),
+    '',
+  ];
+}
+
+/**
+ * The known gaps section of docs/balance-summary.md: the balls allowed off the roster's shape
+ * (scripts/counter-map.ts), each a gap for a future ball to fill (ADR 0045, docs/vision.md).
+ */
+export function gapLines(): string[] {
+  const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+  const evenPicks = Object.entries(EVEN_PICKS).map(
+    ([id, { beats, losesTo }]) =>
+      `${name(id)} beats ${beats.map(name).join(', ') || 'nobody'} and loses to ${losesTo.map(name).join(', ')}`,
+  );
+  return [
+    '## Known gaps',
+    '',
+    `Every ball has ${String(SHAPE.fewest)}-${String(SHAPE.most)} counters each way, the two counts within ${String(SHAPE.within)}, except`,
+    'these, which `pnpm balance` allows by name and nothing else: gaps for future balls to fill',
+    `(ADR 0045, docs/vision.md). The even picks have exactly their counters: ${evenPicks.join('; ')}.`,
+    '',
+    '| Ball | Counters each way | Wins and losses within |',
+    '| ---- | ----------------: | ---------------------: |',
+    ...Object.entries(SHAPE_EXCEPTIONS).map(
+      ([id, { fewest, most, within }]) =>
+        `| ${name(id)} | ${String(fewest)}-${String(most)} | ${String(within)} |`,
+    ),
+    '',
+  ];
 }

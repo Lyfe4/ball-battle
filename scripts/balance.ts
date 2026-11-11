@@ -22,12 +22,13 @@ import {
   COUNTER_BANDS,
   counterFor,
   HARD_WORST_MATCHUP,
+  inGreyZone,
   outsideFinalBand,
-  type CounterVerdict,
+  shapeProblems,
+  VERDICT_LABEL,
 } from './counter-map.ts';
 import { median, withMaxHealth, type BallTotals, type PairResult } from './balance-stats.ts';
 import {
-  lopsidedBalls,
   summarise,
   summaryLines,
   summaryMarkdown,
@@ -39,9 +40,7 @@ const SENSITIVITY_FACTORS = [0.95, 1.05] as const;
 
 /** Balance targets; the summary marks each one as met or not. */
 const TARGETS = {
-  ballWinRate: [0.4, 0.6],
-  /** Counters are allowed, but must stay soft: no matchup worse than this for either side. */
-  worstMatchup: 0.2,
+  ballWinRate: [0.45, 0.55],
   drawRate: 0.05,
   medianSeconds: [12, 30],
   /** Share of games won by the ball that was once behind by a quarter of its health (ADR 0045). */
@@ -152,16 +151,8 @@ const counterLines: string[] = [];
 /** Pairs between their floor and their target (ADR 0028 addendum): warned, listed, not failed. */
 const belowTarget: BelowTarget[] = [];
 let counterMapOk = true;
-/** Pairs outside the redesign's final bands (ADR 0045): a count each redesign group brings down. */
-const outsideFinal: string[] = [];
-
-const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
-  ok: 'ok  ',
-  warn: 'WARN',
-  short: 'WARN',
-  near: 'NEAR',
-  miss: 'MISS',
-};
+const outsideFinal: string[] = []; // outside their final floor (ADR 0045): a full run has none
+const greyZone: string[] = []; // even pairs with a side 58-62% (ADR 0045): warned, never failed
 
 /**
  * One counter-map line for a pair. Only MISS fails the target: WARN (in the target near an edge,
@@ -183,7 +174,7 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
   const intended =
     entry.intended === 'even'
       ? 'even'
-      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured (${entry.band ?? 'movement'})`;
+      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured`;
   const rates =
     entry.intended === 'even'
       ? `${pct(xRate).trim()} / ${pct(yRate).trim()}`
@@ -192,7 +183,8 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
   if (verdict === 'short') belowTarget.push({ pair, intended, rates });
   const final = outsideFinalBand(entry, xRate, yRate);
   if (final) outsideFinal.push(pair);
-  const note = `${verdict === 'short' ? '  below target' : ''}${final ? '  outside final band' : ''}`;
+  const grey = inGreyZone(entry, xRate, yRate) && greyZone.push(pair) > 0;
+  const note = `${verdict === 'short' ? '  below target' : ''}${grey ? '  grey zone' : ''}${final ? '  outside final band' : ''}`;
   return `  ${VERDICT_LABEL[verdict]} ${pair.padEnd(24)} ${intended.padEnd(20)} ${rates}${note}`;
 }
 
@@ -244,7 +236,7 @@ for (const ball of mirrors) {
 const band = ([low, high]: readonly [number, number]) =>
   `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
 console.log(
-  `\n  Counter map: target kind ${band(COUNTER_BANDS.kind)}, movement ${band(COUNTER_BANDS.movement)}, even ${band(COUNTER_BANDS.even)}; floor kind ${band(COUNTER_BANDS.kindFloor)}, movement ${band(COUNTER_BANDS.movementFloor)}, even ${band(COUNTER_BANDS.evenFloor)}.\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
+  `\n  Counter map: target counter ${band(COUNTER_BANDS.counter)}, even ${band(COUNTER_BANDS.even)}; floor counter ${band(COUNTER_BANDS.counterFloor)}, even ${band(COUNTER_BANDS.evenFloor)} (an even side over ${Math.round(COUNTER_BANDS.greyFrom * 100)}% is the grey zone).\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
 );
 console.log(counterLines.join('\n'));
 
@@ -294,19 +286,19 @@ console.log(`  ${'Median match length'.padEnd(28)} ${medianLength.toFixed(1)} s\
 
 console.log('  Targets');
 const who = ballId === undefined ? 'every ball wins' : `${focus[0]?.name ?? ballId} wins`;
-console.log(`  ${check(ballsInRange)} ${who} 40-60% overall`);
+console.log(`  ${check(ballsInRange)} ${who} 45-55% overall`);
 console.log(
-  `  ${check(worstShare >= TARGETS.worstMatchup)} no matchup worse than 20/80 (worst side ${pct(worstShare).trim()})`,
-);
-console.log(
-  `  ${check(worstShare >= HARD_WORST_MATCHUP)} no matchup worse than 25/75 (hard limit, docs/vision.md)`,
+  `  ${check(worstShare >= HARD_WORST_MATCHUP)} no matchup worse than 22/78 (hard limit, ADR 0045; worst side ${pct(worstShare).trim()})`,
 );
 console.log(`  ${check(counterMapOk)} every pair inside its counter-map floor`);
 console.log(
   `  ${belowTarget.length === 0 ? 'ok  ' : 'WARN'} every pair in its target band${belowTarget.length === 0 ? '' : `: ${String(belowTarget.length)} below target (marked above)`}`,
 );
 console.log(
-  `  ${outsideFinal.length === 0 ? 'ok  ' : 'WARN'} pairs outside the redesign's final bands (ADR 0045): ${String(outsideFinal.length)}`,
+  `  ${outsideFinal.length === 0 ? 'ok  ' : 'WARN'} pairs outside their final floor (counter 62-78%, even under 62%): ${String(outsideFinal.length)}`,
+);
+console.log(
+  `  ${greyZone.length === 0 ? 'ok  ' : 'WARN'} even pairs in the grey zone (a side 58-62%): ${String(greyZone.length)}`,
 );
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
@@ -325,9 +317,13 @@ console.log(
     ? '  --   win rates for ±5% health: not measured in the CI check'
     : `  ${sensitivityGrade} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
 );
-const lopsided = lopsidedBalls(summaries).map((ball) => ball.name);
+const shapes = shapeProblems(
+  focus.map(({ id }) => id),
+  pairRates,
+  ci,
+);
 console.log(
-  `  ${lopsided.length === 0 ? 'ok  ' : 'WARN'} no lopsided shape (strong and weak within 3)${lopsided.length === 0 ? '' : `: ${lopsided.join(', ')}`}`,
+  `  ${check(shapes.length === 0)} every ball's shape (counter-map.ts: SHAPE, its named exceptions)${shapes.length === 0 ? '' : `: ${shapes.join('; ')}`}`,
 );
 const checksVampire = focus.some((ball) => ball.id === 'vampire');
 if (checksVampire) {
@@ -338,11 +334,11 @@ console.error(
 );
 const missed = [
   !ballsInRange,
-  worstShare < TARGETS.worstMatchup,
   worstShare < HARD_WORST_MATCHUP,
   !counterMapOk,
   drawRate >= TARGETS.drawRate,
   !comebacksOk,
+  shapes.length > 0,
   medianLength < TARGETS.medianSeconds[0] || medianLength > TARGETS.medianSeconds[1],
   !ci && sensitivityGrade === 'MISS',
   checksVampire && !healingOk,
