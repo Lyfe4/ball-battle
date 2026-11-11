@@ -7,7 +7,8 @@ code quality matters as much as features.
 Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
 against a bot is built (ADR 0017), with three draft formats (blind, reveal with turns showing
 first after a seeded coin toss, and showdown; ADR 0019, 0021, 0029, 0035) and three bot levels
-(ADR 0035, `src/sim/bot.ts`): the rules and the bots are pure sim code in `src/sim/series.ts` and
+(ADR 0035, `src/sim/bot.ts`). Reveal is the main mode (ADR 0046): home's Play opens its lineup in
+one tap, and every other way to play is on Other modes (`src/app/modes.ts`). The rules and the bots are pure sim code in `src/sim/series.ts` and
 `src/sim/bot.ts`, the same functions a server would run to verify a series, so keep them
 deterministic and DOM-free.
 
@@ -91,7 +92,8 @@ CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job, `tes
    keep `main.ts` to wiring. The match on screen and the frame loop are `src/arena.ts`; history is
    `src/app/navigation.ts` (given `window`, so it is tested with a fake history). Each screen's wiring has its own module: `home-controller.ts`,
    `quick-controller.ts`, `series-setup.ts` and `series-controller.ts` (joined in
-   `series-screens.ts`), `manual-screen.ts`. A new screen gets its own module like them, a route in
+   `series-screens.ts`, which is also the router's series handler), `manual-screen.ts`,
+   `modes-screen.ts`. A new screen gets its own module like them, a route in
    `src/app/route.ts` (ADR 0020) and a test for its link.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`, created with
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus
@@ -141,7 +143,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0043-boomerang-bomber-guardian-bloom.md` and
 `docs/decisions/0044-one-story-look-and-settings-off-the-court.md` and
 `docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
-`docs/roster-redesign.md`).
+`docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md`.
 
 ## Workflow
 
@@ -285,6 +287,13 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   rendered look too: no context rule restyles a shared part on one screen (`look-checks.ts`
   compares computed styles, ADR 0044). The legend and settings are one info panel
   (`info-panel.css`, `.panel-close`). Escape only ever closes things; it never starts or picks.
+- **One tap to the main mode** (ADR 0046). Home's Play goes straight to Reveal's lineup against
+  the remembered bot level; the lineup step shows what it is for and the level, changed in place
+  (no history step). Every other way to play is a card on Other modes (`OTHER_MODE_SECTIONS` in
+  `src/app/modes.ts`, sections of modes); a new mode or a Best of 5 is data there, not a new
+  screen. A lineup's in-app Back without history goes to its parent (`lineupParentOf`): home for
+  Reveal, Other modes otherwise. `?mode=bo3` links still open the rules step. A lineup URL's
+  format is the URL's (none is Blind).
 - **Settings** (ADR 0040) is one menu (`settings-menu.ts`) behind a gear at the top right of every
   screen, just before the `?` where there is one; exactly one gear per screen. It floats by its
   gear inside the visible screen and never moves the layout; the gear, Close, Escape and a tap
