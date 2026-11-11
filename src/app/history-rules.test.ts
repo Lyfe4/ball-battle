@@ -9,8 +9,10 @@ import {
   writeHomeParams,
   writeManualParams,
   writeMatchUrl,
+  writeModesParams,
   writePickParams,
 } from './route.ts';
+import { writeMainModeParams } from './modes.ts';
 import { writeSeriesModeParams } from './series-url.ts';
 
 const keyOf = (url: URL) => screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false));
@@ -47,6 +49,10 @@ describe('screenKeyOf', () => {
     expect(key('?view=manual&tab=chart')).toBe('manual');
     expect(key('?view=manual&ball=frost')).toBe('manual-entry');
     expect(key('?view=manual&ball=quake')).toBe('manual-entry');
+  });
+
+  it('gives Other modes its own key, apart from home and the setups it opens', () => {
+    expect(key('?view=modes')).toBe('modes');
   });
 });
 
@@ -149,6 +155,49 @@ describe('Back through whole flows', () => {
     });
     // The pending rewrite applies the format the new series keeps.
     expect(at()).toBe('?mode=bo3&step=lineup');
+    back();
+    expect(at()).toBe('');
+  });
+
+  it('goes from home to Reveal’s lineup in one move, and one Back returns home (ADR 0046)', () => {
+    const { navigation, back, at, entries } = app();
+    navigation.go(writeMainModeParams);
+    expect(at()).toBe('?mode=bo3&fmt=reveal&step=lineup');
+    expect(entries.length).toBe(2);
+    back();
+    expect(at()).toBe('');
+  });
+
+  it('walks Other modes: each mode one step in, one Back out, and one more Back home', () => {
+    const { navigation, back, at } = app();
+    navigation.go(writeModesParams);
+    expect(at()).toBe('?view=modes');
+    const ways: readonly (readonly [(url: URLSearchParams) => void, string])[] = [
+      [
+        (url) => {
+          writeSeriesModeParams(url, 'showdown', 'lineup');
+        },
+        '?mode=bo3&fmt=showdown&step=lineup',
+      ],
+      [
+        (url) => {
+          writeSeriesModeParams(url, 'blind', 'lineup');
+        },
+        '?mode=bo3&step=lineup',
+      ],
+      [
+        (url) => {
+          writePickParams(url, pair);
+        },
+        '?view=pick&a=brawler&b=quake',
+      ],
+    ];
+    for (const [write, landed] of ways) {
+      navigation.go(write);
+      expect(at()).toBe(landed);
+      back();
+      expect(at()).toBe('?view=modes');
+    }
     back();
     expect(at()).toBe('');
   });

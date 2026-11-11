@@ -5,7 +5,7 @@
 - Replaces: Loser picks next (ADR 0019 §3, the bot's `pickNext`)
 - Amends: ADR 0017 §4 (the bot), ADR 0021 §3 and §5 (the bot's answer, the round-2 rows), ADR 0022
   §5 (the opponent names a level), ADR 0025 §4 (pick rows), ADR 0030 §4 (touch)
-- Amended by: ADR 0038 (the series bar also sits over round 1's pick), ADR 0039 (the series bar did shrink the arena on a phone, in Safari: see its Context)
+- Amended by: ADR 0038 (the series bar also sits over round 1's pick), ADR 0039 (the series bar did shrink the arena on a phone, in Safari: see its Context), ADR 0046 (Reveal is the main mode; the level is also chosen on the lineup step)
 
 ## Context
 
@@ -152,7 +152,8 @@ whole series per row, played with the game's simulation, as a check.
 
 **Recommendation: keep Reveal as the main mode.** It has more skill against every level and the same
 fairness. Showdown is the better story for player against player (no coin, a dramatic opener) and
-stays as the second format. The decision is open until both have been played.
+stays as the second format. ~~The decision is open until both have been played.~~ Decided: see the
+addendum.
 
 ## Consequences
 
@@ -166,3 +167,22 @@ stays as the second format. The decision is open until both have been played.
 - Negative: the series panel has one more row (the bar) under the arena on a phone. The arena's size
   is unchanged.
 - Open: whether Showdown or Reveal becomes the PvP default, once both have been played.
+
+## Addendum (2026-11-12): Reveal is the main mode
+
+The recommendation above is now the decision for play against the bot. The Best of 5 measurements
+(`docs/best-of-5-measurements.md`, on the `measure/best-of-5` branch, ruleset 11, measured odds)
+confirmed it at Best of 3 with today's roster:
+
+- **The biggest skill gap.** Best play beats worst play by 12.5 points against Normal in Reveal,
+  9.9 in Showdown and 0 in Blind (11.8 against 8.3 at Hard).
+- **The most reads.** Half of Reveal's decisions are reads of a shown ball, against a quarter in
+  Showdown, whose opener is a simultaneous guess.
+- **The bot levels differ most.** For a player choosing at random, the levels spread 3.6 points in
+  Reveal and 1.6 in Showdown, so the level choice means more there.
+
+So home's main button plays Best of 3, Reveal, against the remembered level, straight to the
+lineup (ADR 0046). Showdown and Blind stay, one tap further, on Other modes. The level is also
+shown and changed on the lineup step, since that path skips the rules step; it is the same
+remembered choice (`ballbattle.botLevel`). The rules, the bots and the ruleset are unchanged.
+Which format leads player against player stays open.

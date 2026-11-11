@@ -2,6 +2,8 @@
 // (series-controller.ts), with their moves between screens. main.ts hands over what they need. A
 // series saved before a reload is taken back here, held until the route shows it (ADR 0042).
 import { clearSeries, loadSeries, saveSeries, type SaveStorage } from './app/series-save.ts';
+import type { ScreenHandler } from './app/router.ts';
+import { seriesRound } from './app/screen-rules.ts';
 import { writeSeriesModeParams } from './app/series-url.ts';
 import type { Navigation } from './app/navigation.ts';
 import { createSeriesController, type SeriesController } from './series-controller.ts';
@@ -29,11 +31,15 @@ export interface SeriesScreensHost {
   redraw(): void;
   /** Home in place of this entry: the first step's Back, arriving from a link. */
   exitToHome(): void;
+  /** Other modes in place of this entry: a lineup's Back, arriving from a link (ADR 0046). */
+  exitToModes(): void;
 }
 
 export interface SeriesScreens {
   readonly setup: SeriesSetupFlow;
   readonly play: SeriesController;
+  /** The router's handler for a series URL: a setup step, or a round. */
+  readonly screen: ScreenHandler<'series'>;
 }
 
 export function createSeriesScreens(
@@ -55,6 +61,9 @@ export function createSeriesScreens(
     },
     exit: () => {
       host.exitToHome();
+    },
+    toModes: () => {
+      host.exitToModes();
     },
     held: () => play.held(),
     resume: () => {
@@ -103,10 +112,10 @@ export function createSeriesScreens(
         writeSeriesModeParams(url, last.format, 'lineup');
       });
     },
-    leave: () => {
+    leave: (format) => {
       navigation.back(() => {
         host.replaceWith((url) => {
-          writeSeriesModeParams(url, undefined, 'lineup');
+          writeSeriesModeParams(url, format, 'lineup');
         });
       });
     },
@@ -117,5 +126,30 @@ export function createSeriesScreens(
   const saved = loadSeries(host.storage, lookup);
   if (saved !== undefined) play.adopt(saved);
 
-  return { setup, play };
+  const screen: ScreenHandler<'series'> = {
+    show: (route) => {
+      if (route.step !== 'play') {
+        // Back (or Leave) keeps an undecided series to resume, with every choice made.
+        play.hold();
+        host.layoutChanged();
+        setup.show(route.step, route.link);
+        return;
+      }
+      const round = seriesRound(route.link, { has: play.hasSeries(), address: play.address() });
+      if (round === 'carry on') {
+        play.resume();
+      } else if (round === 'lineup') {
+        host.replaceWith((url) => {
+          writeSeriesModeParams(url, route.link.format, 'lineup');
+        });
+      } else {
+        play.start(round.replay, true);
+      }
+    },
+    leave: () => {
+      play.hold();
+    },
+  };
+
+  return { setup, play, screen };
 }

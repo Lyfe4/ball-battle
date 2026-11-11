@@ -12,6 +12,7 @@ import {
   writeHomeParams,
   writeManualParams,
   writeMatchUrl,
+  writeModesParams,
   writePickParams,
   writeTodaysRuleset,
 } from './route.ts';
@@ -156,6 +157,14 @@ describe('parseRoute', () => {
       screen: 'match',
       matchup: { a: 'frost' },
     });
+  });
+
+  it('opens Other modes from its own view, with nothing else in the URL (ADR 0046)', () => {
+    expect(route('view=modes')).toStrictEqual({ screen: 'modes' });
+    expect(route('view=Modes&a=storm')).toStrictEqual({ screen: 'modes' });
+    const params = new URLSearchParams('mode=bo3&fmt=showdown&step=lineup');
+    writeModesParams(params);
+    expect(params.toString()).toBe('view=modes');
   });
 
   it('opens the manual on the roster, a ball, or the chart, and ignores an unknown ball', () => {

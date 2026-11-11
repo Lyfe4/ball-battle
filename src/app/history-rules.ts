@@ -14,6 +14,7 @@ import type { Route } from './route.ts';
 
 export type ScreenKey =
   | 'home'
+  | 'modes'
   | 'pick'
   | 'match'
   | 'manual'

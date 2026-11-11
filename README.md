@@ -16,8 +16,9 @@ arena until one wins, and every decision is made before the fight starts.
 - **21 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that fades, a necromancer's skull minions, a boomerang, bombs,
   armor and more.
-- **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Blind,
-  Reveal (take turns showing first, after a coin toss) and Showdown.
+- **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
+  (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
+  Blind.
 - **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
   starts.
 - **Teaching in the arena:** a ready moment before a fight (both balls where they start, what to
@@ -72,8 +73,11 @@ strict Content Security Policy.
 
 ## How it plays
 
-The home screen plays a demo match behind the pitch. Its main button, **Best of 3 vs bot**, is the
-game; **Free play** lets you choose both balls of one match, to try things out. Every screen is designed for a phone first and has a
+The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: a Best
+of 3 against the bot in Reveal, straight to choosing your lineup. **Other modes** holds every other
+way to play: Showdown, Blind, and **Free play**, where you choose both balls of one match to try
+things out ([ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)). The **Ball
+manual** sits beside it. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
@@ -169,8 +173,8 @@ The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map
 
 ## Best of 3
 
-Choose **Best of 3** on the home screen to play a series against a bot: pick three different
-balls in order
+Tap **Play** on the home screen to play a series against a bot (Showdown and Blind are under
+**Other modes**): pick three different balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
 takes the series. A track shows every round at a glance, the winner ringed and the loser dimmed,
 and a series left with Back (easy to do by accident on a phone) can be resumed where it was. A
@@ -187,19 +191,24 @@ with the same rule a server would use: the bot's lineup and picks must be the on
 choose, so an edited link opens the lineup instead
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
-Choose the **rules** before a series ([ADR 0019](docs/decisions/0019-draft-formats.md),
+There are three sets of rules ([ADR 0019](docs/decisions/0019-draft-formats.md),
 [ADR 0021](docs/decisions/0021-reveal-take-turns.md)):
 
-- **Blind**: as above, both orders set without seeing the other lineup.
-- **Reveal**: both lineups are revealed, then the sides take turns showing first. A seeded coin toss
-  decides who shows first in round 1 and the other side answers; in round 2 the other side shows
-  first; round 3 is what is left. Your choices are worth
-  about 12 points of series chance whoever wins the toss
-  ([ADR 0029](docs/decisions/0029-reveal-coin-toss.md), [measurements](docs/reveal-measurements.md)).
-- **Showdown**: both lineups are revealed, both sides open round 1 at the same time, then the winner
-  shows first and the loser answers.
+- **Reveal**, the main mode (**Play**): both lineups are revealed, then the sides take turns
+  showing first. A seeded coin toss decides who shows first in round 1 and the other side answers;
+  in round 2 the other side shows first; round 3 is what is left. It has the most skill of the
+  three: good play beats bad play by about 12 points of series chance at every bot level
+  ([ADR 0029](docs/decisions/0029-reveal-coin-toss.md), [measurements](docs/reveal-measurements.md),
+  [ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)).
+- **Showdown** (Other modes): both lineups are revealed, both sides open round 1 at the same time,
+  then the winner shows first and the loser answers.
+- **Blind** (Other modes): set your order, then watch. Both orders are set without seeing the
+  other lineup, as above; there are no choices after that.
 
-In Reveal and Showdown, choose how the bot plays: **Easy** picks at random, **Normal** usually
+An older `?mode=bo3` link still opens the rules step, where the format and level are chosen.
+
+In Reveal and Showdown, choose how the bot plays (**vs Normal bot ▾** above your lineup; the choice
+is remembered): **Easy** picks at random, **Normal** usually
 counters, and **Hard** plays the whole series and mixes its choices so it can't be read. The pick
 screens never show the bot's move, only how each of your balls stands against each of its balls
 ([ADR 0035](docs/decisions/0035-bot-levels-and-showdown.md),
@@ -327,10 +336,11 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md) (removed by ADR 0045)
 , [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md)
 , [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)
-and [ADR 0045: The roster redesign](docs/decisions/0045-roster-redesign.md).
+, [ADR 0045: The roster redesign](docs/decisions/0045-roster-redesign.md)
+and [ADR 0046: Reveal first, every other mode behind Other modes](docs/decisions/0046-reveal-first-home-and-other-modes.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 153.56 kB JS (50.20 kB gzipped), 31.97 kB CSS (6.35 kB gzipped), and the
+Production bundle: 205.75 kB JS (65.69 kB gzipped), 47.20 kB CSS (8.67 kB gzipped), and the
 self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License

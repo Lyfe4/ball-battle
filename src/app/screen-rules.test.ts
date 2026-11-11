@@ -79,6 +79,7 @@ describe('router', () => {
     });
     const handlers: ScreenHandlers = {
       home: handler('home'),
+      modes: handler('modes'),
       manual: handler('manual'),
       pick: handler('pick'),
       match: handler('match'),
