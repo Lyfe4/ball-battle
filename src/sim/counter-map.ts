@@ -17,19 +17,10 @@ import { RULES_OUT_STORM_QUAKE_ENTRIES } from './counter-map-rules-out-storm-qua
 /** Which side of a pair should win more: the first ball, the second, or neither. */
 export type Intended = 'x' | 'y' | 'even';
 
-/**
- * How sharp a favoured pair is meant to be (ADR 0045): `kind` when a kind of hit decides it (spikes
- * against bumps, a rewind against a big hit, lifesteal against shots), `movement` when speed, size,
- * range, a pull or minions in the way do. Kind counters are binary and sharper.
- */
-export type CounterBand = 'kind' | 'movement';
-
 export interface CounterEntry {
   readonly x: string;
   readonly y: string;
   readonly intended: Intended;
-  /** Set on every favoured pair, never on an even one (a test checks). */
-  readonly band?: CounterBand;
   /** Why, in one line, from the two balls' identities. */
   readonly reason: string;
 }

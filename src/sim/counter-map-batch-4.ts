@@ -26,22 +26,22 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'speedster',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Light and fast, it bounces off the growing body, and its light hits lose the trade.',
+    intended: 'even',
+    reason:
+      'Its rush lands while the Titan is small; once grown, the giant’s bumps win: it evens out.',
   },
   {
     x: 'titan',
     y: 'frost',
     intended: 'even',
-    reason: 'Two sturdy balls trading heavy hits; the slow barely matters to the bigger one.',
+    reason: 'Two heavy bumpers: the giant’s growth and the cold’s slow cancel out.',
   },
   {
     x: 'thorns',
     y: 'titan',
-    intended: 'even',
+    intended: 'x',
     reason:
-      'Every bump comes back off the spikes, but the giant’s health soaks it: plain trades decide it.',
+      'The bigger it grows, the harder it bumps, and the harder each bump comes back off the spikes.',
   },
   {
     x: 'titan',
@@ -78,7 +78,6 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'thorns',
     intended: 'x',
-    band: 'kind',
     reason: 'Fire never touches the spikes, so there is nothing to reflect.',
   },
   {
@@ -91,14 +90,13 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'necromancer',
     intended: 'x',
-    band: 'movement',
     reason: 'The fire burns up the skulls, and the Necromancer behind them.',
   },
   // The three with each other.
   {
     x: 'inferno',
     y: 'titan',
-    intended: 'even',
-    reason: 'The bigger the body, the more fire it covers, but its huge bumps pay it back.',
+    intended: 'x',
+    reason: 'The bigger the body, the more fire it crosses: the trail keeps burning it.',
   },
 ];

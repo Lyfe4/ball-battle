@@ -14,7 +14,7 @@ export const COOLDOWN_TICKS = 130;
 export const BOOMERANG_SPEED = 1700;
 export const BOOMERANG_RADIUS = 12;
 /** Ability damage per hit; it can hit the same ball once going out and once coming back. */
-export const BOOMERANG_DAMAGE = 6;
+export const BOOMERANG_DAMAGE = 7;
 /** It turns back this long after it is thrown (about 620 units out), or at a wall. */
 export const TURN_TICKS = 22;
 /** A safety net: a boomerang always comes home well inside this. */
@@ -48,7 +48,7 @@ export const boomerang = defineBall<BoomerangState>({
   ability: { name: 'Boomerang', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
-  maxHealth: 57,
+  maxHealth: 52,
   contactDamage: 10,
   initialAbilityState: { nextThrowTick: FIRST_THROW_TICK },
   hooks: {

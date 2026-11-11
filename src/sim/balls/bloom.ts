@@ -31,7 +31,7 @@ export const bloom = defineBall<BloomState>({
   ability: { name: 'Regrowth', shownBy: { kind: 'healed' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 48,
+  maxHealth: 49,
   contactDamage: 21,
   initialAbilityState: { nextHealTick: FIRST_HEAL_TICK },
   hooks: {

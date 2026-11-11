@@ -7,70 +7,72 @@ import type { CounterEntry } from './counter-map.ts';
 /**
  * The three interaction rules are gone (ADR 0045), so every edge here comes from what one ball does
  * the same way to any ball: lightning and shockwaves strike an area, arrows, shots and boomerangs hit
- * from range, lifesteal drinks only from bumps, and rage grows with every wound. A favoured pair
- * names its band: `kind` when a kind of hit decides it, `movement` when speed, size, range or a pull
- * does.
+ * from range, lifesteal drinks most of what its bumps deal, and rage grows with every hit taken.
  */
 export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'berserker',
     y: 'archer',
-    intended: 'even',
-    reason: 'Arrows chip it from range, but every wound makes its hits on the Archer harder.',
+    intended: 'x',
+    reason: 'Every arrow stores rage, so each bump it lands on the frail Archer hits far harder.',
   },
   {
     x: 'berserker',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Its huge health makes a long fight to regrow in, and its rage grows as it goes.',
+    intended: 'y',
+    reason: 'Regrowth heals back each big raging bump in the long gaps between them.',
   },
   {
     x: 'berserker',
     y: 'bomber',
     intended: 'even',
-    reason: 'Every blast is a wound that feeds its rage, and its huge health soaks them.',
+    reason:
+      'A blast stores just one rage, and its big health soaks the blast: neither pulls ahead.',
   },
   {
     x: 'berserker',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Its huge health soaks the chips, and every chip feeds its rage.',
+    intended: 'x',
+    reason: 'Every boomerang hit stores rage, and the thrower can’t keep away from its bumps.',
   },
   {
     x: 'berserker',
     y: 'frost',
     intended: 'even',
-    reason: 'The cold slows it like any ball, and its huge health outlasts the slow.',
+    reason:
+      'The cold slows it, but each heavy cold bump stores rage it pays back: neither pulls ahead.',
   },
   {
     x: 'berserker',
     y: 'guardian',
     intended: 'even',
-    reason: 'Raging hits lose little to armor, but the rage takes wounds to build.',
+    reason:
+      'Raging bumps lose little to armor, but the rage needs hits taken to build: it evens out.',
   },
   {
     x: 'berserker',
     y: 'inferno',
-    intended: 'even',
-    reason: 'Every burn is a wound that feeds its rage, and the fire keeps burning.',
+    intended: 'x',
+    reason: 'Every burn stores rage, so the Inferno takes a raging bump each time they meet.',
   },
   {
     x: 'berserker',
     y: 'necromancer',
     intended: 'even',
-    reason: 'Skull pops feed its rage, but the Necromancer raises more.',
+    reason:
+      'Every skull bite stores rage, but the Necromancer raises another: neither pulls ahead.',
   },
   {
     x: 'berserker',
     y: 'speedster',
     intended: 'even',
-    reason: 'Its huge health soaks the rush, but the fastest ball lands more often.',
+    reason: 'Every rush stores rage, but the fastest ball lands more often: neither pulls ahead.',
   },
   {
     x: 'berserker',
     y: 'venom',
-    intended: 'even',
-    reason: 'Poison chips its huge health, and every chip feeds its rage.',
+    intended: 'x',
+    reason: 'Every poison tick stores rage, so each bump it lands hits far harder.',
   },
   {
     x: 'brawler',
@@ -88,7 +90,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'berserker',
     intended: 'even',
-    reason: 'A fade misses a raging hit now and then, but its huge health outlasts the fade.',
+    reason: 'A fade misses a raging bump now and then, but its big health outlasts the fade.',
   },
   {
     x: 'magnet',
@@ -100,31 +102,33 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'sniper',
     y: 'berserker',
     intended: 'even',
-    reason: 'Shots wound it from range, but every wound makes its contact hits harder.',
+    reason:
+      'Shots hurt it from range, but each one stores rage for its next bump: neither pulls ahead.',
   },
   {
     x: 'thorns',
     y: 'berserker',
     intended: 'even',
-    reason: 'Its bumps come back off the spikes, but its huge health soaks them.',
+    reason:
+      'Its raging bumps come back off the spikes, but its big health soaks them: neither pulls ahead.',
   },
   {
     x: 'titan',
     y: 'berserker',
     intended: 'even',
-    reason: 'Every heavy hit feeds the rage, and the rage pays it back.',
+    reason: 'Every growing bump stores rage, and the rage pays it back: neither pulls ahead.',
   },
   {
     x: 'vampire',
     y: 'berserker',
-    intended: 'even',
-    reason: 'Lifesteal drinks from the biggest health pool, but its heavy hits pay it back.',
+    intended: 'x',
+    reason: 'The Berserker only bumps, and the Vampire drinks back most of every bump it trades.',
   },
   {
     x: 'archer',
     y: 'vampire',
-    intended: 'even',
-    reason: 'It can’t drink from an arrow, but every bump on the frail Archer heals it.',
+    intended: 'x',
+    reason: 'Arrows never touch it, so it has nothing to drink, and its health is small.',
   },
   {
     x: 'brawler',
@@ -177,20 +181,21 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Both heal: the Vampire from its bumps, the Bloom all the time.',
+    intended: 'x',
+    reason: 'It drinks back most of what its bumps deal; slow regrowth can’t keep up with that.',
   },
   {
     x: 'vampire',
     y: 'bomber',
     intended: 'even',
-    reason: 'A blast costs it, and lifesteal wins some back on every contact.',
+    reason:
+      'A blast takes much of its small health, but it drinks back most of every bump: it evens out.',
   },
   {
     x: 'vampire',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'It can’t drink from the boomerang, but every bump on the thrower heals it.',
+    intended: 'y',
+    reason: 'The boomerang never touches it, so it has nothing to drink, and its health is small.',
   },
   {
     x: 'vampire',

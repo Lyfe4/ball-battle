@@ -13,8 +13,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'brawler',
-    intended: 'even',
-    reason: 'Each hard bump lands whole, and the Ghost hits back as hard.',
+    intended: 'y',
+    reason: 'The fade can’t save it from a plain heavy bump: each one lands whole.',
   },
   {
     x: 'ghost',
@@ -25,8 +25,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'frost',
-    intended: 'even',
-    reason: 'The cold’s hits come one at a time, each after the fade ends.',
+    intended: 'y',
+    reason: 'The cold’s heavy bumps come one at a time, each after the fade ends.',
   },
   {
     x: 'ghost',
@@ -38,7 +38,6 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'venom',
     intended: 'x',
-    band: 'kind',
     reason: 'It fades after a poison tick, so the next one misses.',
   },
   {
@@ -62,8 +61,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'inferno',
-    intended: 'even',
-    reason: 'It fades after a burn, but the trail keeps burning once the fade ends.',
+    intended: 'x',
+    reason: 'It fades as the fire bites, so part of every burn misses.',
   },
   {
     x: 'ghost',
@@ -92,9 +91,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'frost',
-    intended: 'even',
-    reason:
-      'The cold slows the fight and regrowth likes a long one, but the Frost’s hits are heavy.',
+    intended: 'x',
+    reason: 'The cold’s bumps come slowly, and regrowth heals each one back between them.',
   },
   {
     x: 'bloom',
@@ -111,29 +109,25 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'magnet',
-    intended: 'y',
-    band: 'movement',
-    reason: 'Its pull drags the Bloom into hard bumps faster than it regrows.',
+    intended: 'even',
+    reason: 'Its pull drags the Bloom into hard bumps, but regrowth keeps up: neither pulls ahead.',
   },
   {
     x: 'bloom',
     y: 'necromancer',
     intended: 'x',
-    band: 'kind',
     reason: 'Regrows faster than the skeleton bites.',
   },
   {
     x: 'bloom',
     y: 'titan',
     intended: 'y',
-    band: 'movement',
     reason: 'Grows too big: its huge bumps outpace the regrowth.',
   },
   {
     x: 'bloom',
     y: 'inferno',
     intended: 'x',
-    band: 'kind',
     reason: 'Regrows faster than the fire burns.',
   },
   {
@@ -163,9 +157,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'thorns',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Poison does the work, never the spikes.',
+    intended: 'even',
+    reason: 'Poison never touches the spikes, but its bumps do: neither pulls ahead.',
   },
   {
     x: 'venom',
@@ -183,7 +176,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'titan',
     intended: 'even',
-    reason: 'Poison chips its huge health, and the giant’s bumps hit hard.',
+    reason: 'Poison chips the giant, and its bumps grow harder: neither pulls ahead.',
   },
   {
     x: 'venom',

@@ -12,7 +12,7 @@ export type GhostState = Readonly<{
 /** How long it stays faded after a hit. */
 export const FADE_TICKS = 56;
 /** It fades at most once every this many ticks, counted from the start of a fade. */
-export const FADE_EVERY_TICKS = 205;
+export const FADE_EVERY_TICKS = 145;
 
 /** True while a Ghost is faded on `tick`, read from any ball state (false for other balls). */
 export function isFaded(ball: BallState, tick: number): boolean {
@@ -36,7 +36,7 @@ export const ghost = defineBall<GhostState>({
   ability: { name: 'Fade', shownBy: { kind: 'hitReduced' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
-  maxHealth: 67,
+  maxHealth: 63,
   contactDamage: 24,
   initialAbilityState: { fadedUntil: 0, nextFadeTick: 0 },
   incomingDamageOf: (self, amount, tick) => (tick < self.abilityState.fadedUntil ? 0 : amount),

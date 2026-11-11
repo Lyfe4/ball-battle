@@ -23,7 +23,7 @@ import {
   inferno,
   PATCH_TICKS,
 } from './inferno.ts';
-import { MAX_RADIUS, titan } from './titan.ts';
+import { GROWN_HIT, MAX_RADIUS, titan } from './titan.ts';
 
 const lookup = indexDefinitions([chrono, titan, inferno, red, blue]);
 
@@ -138,6 +138,18 @@ describe('Titan', () => {
     const late = play(withBalls(world, [{ health: 1e6 }, { health: 1e6 }]), 3000).world;
     expect(late.balls[0]?.radius).toBe(MAX_RADIUS);
     expect(late.balls[1]?.radius).toBe(red.radius);
+  });
+
+  it('bumps harder as it grows: its contact damage at the start, GROWN_HIT times it at its cap', () => {
+    const hitOf = titan.contactDamageOf;
+    if (hitOf === undefined) throw new Error('the Titan declares contactDamageOf');
+    const [start] = createWorld(2, [titan, red]).balls;
+    if (start === undefined) throw new Error('expected the Titan');
+    const at = (radius: number) => hitOf({ ...start, radius }, titan);
+    const halfway = (titan.radius + MAX_RADIUS) / 2;
+    expect(at(titan.radius)).toBe(titan.contactDamage);
+    expect(at(halfway)).toBeCloseTo((titan.contactDamage * (1 + GROWN_HIT)) / 2, 9);
+    expect(at(MAX_RADIUS)).toBeCloseTo(titan.contactDamage * GROWN_HIT, 9);
   });
 });
 

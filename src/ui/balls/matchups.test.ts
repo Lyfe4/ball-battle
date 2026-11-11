@@ -40,9 +40,9 @@ describe('matchups', () => {
     }
   });
 
-  it('follows the map: the Brawler is even with everyone but Thorns, which is strong vs it', () => {
+  it('follows the map: the Brawler beats only the Ghost and loses only to Thorns', () => {
     const brawler = matchupsOf('brawler', ids);
-    expect(brawler.strong).toStrictEqual([]);
+    expect(brawler.strong.map((line) => line.opponent)).toStrictEqual(['ghost']);
     expect(brawler.weak.map((line) => line.opponent)).toStrictEqual(['thorns']);
     // Every pair as the map has it, whichever order it is asked in.
     for (const { x, y, intended } of COUNTER_MAP) {

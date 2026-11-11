@@ -24,7 +24,6 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'frost',
     y: 'speedster',
     intended: 'x',
-    band: 'movement',
     reason: 'Slowed, it loses its speed and the wall bounces that build its stacks.',
   },
   {
@@ -37,7 +36,6 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'brawler',
     intended: 'x',
-    band: 'kind',
     reason: 'The hardest hitter hurts itself the most on the spikes.',
   },
   {
