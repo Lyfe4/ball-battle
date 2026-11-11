@@ -38,7 +38,6 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'venom',
     intended: 'y',
-    band: 'kind',
     reason: 'Poison ticks are too small to rewind.',
   },
   {
@@ -69,14 +68,13 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'inferno',
     intended: 'y',
-    band: 'kind',
     reason: 'Burns are too small to rewind.',
   },
   {
     x: 'chrono',
     y: 'bomber',
-    intended: 'even',
-    reason: 'Blasts are too small to rewind, but they are rare.',
+    intended: 'x',
+    reason: 'Each big blast is big enough to rewind.',
   },
   {
     x: 'chrono',
@@ -99,14 +97,15 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'guardian',
     y: 'speedster',
-    intended: 'even',
-    reason: 'Armor takes a bit off its bumps, but the fastest ball still lands plenty.',
+    intended: 'x',
+    reason: 'Armor takes a bit off every bump and rush, and the Speedster lives on many of them.',
   },
   {
     x: 'guardian',
     y: 'frost',
-    intended: 'even',
-    reason: 'Armor takes little off the cold’s heavy hits: plain trades decide it.',
+    intended: 'y',
+    reason:
+      'Armor takes little off the cold’s heavy bumps, and slowed, the Guardian can’t get away.',
   },
   {
     x: 'guardian',
@@ -118,7 +117,6 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
     x: 'guardian',
     y: 'venom',
     intended: 'x',
-    band: 'kind',
     reason: 'Armor takes a share off every small poison tick.',
   },
   {
@@ -148,20 +146,20 @@ export const HIT_KIND_CHRONO_GUARDIAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'guardian',
     y: 'inferno',
-    intended: 'x',
-    band: 'kind',
-    reason: 'Armor takes a share off every small burn.',
+    intended: 'even',
+    reason:
+      'Armor takes a share off every small burn, but the fire keeps burning: neither pulls ahead.',
   },
   {
     x: 'guardian',
     y: 'bomber',
-    intended: 'even',
-    reason: 'Armor takes a bit off each blast, but blasts are rare.',
+    intended: 'y',
+    reason: 'A big blast loses little to armor, and the Guardian’s bumps can’t stop the bombs.',
   },
   {
     x: 'guardian',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Armor slows the damage and regrowth heals it back: neither side pulls ahead.',
+    intended: 'y',
+    reason: 'The Guardian’s plain bumps come slowly enough for regrowth to heal them back.',
   },
 ];

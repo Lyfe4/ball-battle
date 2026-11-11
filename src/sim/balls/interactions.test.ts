@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
-import type { StatusAppliedEvent, StatusKind, StatusState } from '../status.ts';
-import type { BallDefinition, DamageEvent, SimEvent, WorldState } from '../types.ts';
+import type { StatusAppliedEvent, StatusKind } from '../status.ts';
+import type { BallDefinition, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
 import { archer } from './archer.ts';
-import { berserker, rageFor } from './berserker.ts';
+import { berserker } from './berserker.ts';
 import { frost } from './frost.ts';
 import { quake, ZONE_DAMAGE } from './quake.ts';
 import { sniper } from './sniper.ts';
@@ -44,35 +44,10 @@ function headOn(attacker: BallDefinition, target: BallDefinition, health?: numbe
   ]);
 }
 
-const status = (kind: StatusKind, expiresTick: number): StatusState => ({
-  kind,
-  sourceId: 'ball-1',
-  expiresTick,
-  sinceTick: 0,
-});
-
 const applied = (events: readonly SimEvent[], kind: StatusKind): StatusAppliedEvent[] =>
   events.filter(
     (event): event is StatusAppliedEvent => event.type === 'statusApplied' && event.status === kind,
   );
-
-describe('poison leaves rage whole', () => {
-  it('a poisoned Berserker hits with its full rage bonus', () => {
-    const health = Math.round(berserker.maxHealth / 2);
-    const hit = (statuses: readonly StatusState[]): number[] => {
-      const start = withBalls(headOn(berserker, blue, health), [{ statuses }]);
-      return play(start, [berserker, blue], 25)
-        .events.filter(
-          (event): event is DamageEvent =>
-            event.type === 'damage' && event.sourceId === 'ball-0' && event.cause === 'contact',
-        )
-        .map((event) => event.amount);
-    };
-    const full = [Math.round(berserker.contactDamage + rageFor(health, berserker.maxHealth))];
-    expect(hit([])).toStrictEqual(full);
-    expect(hit([status('poisoned', 1000)])).toStrictEqual(full);
-  });
-});
 
 describe('no status resistance left (ADR 0028)', () => {
   it('slows the Berserker like any ball the Frost touches', () => {

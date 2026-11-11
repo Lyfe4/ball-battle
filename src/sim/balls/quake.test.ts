@@ -58,7 +58,7 @@ describe('Quake', () => {
       { position: { x: 70, y: 70 }, velocity: { x: -500, y: -560 } },
       { position: { x: 800, y: 800 }, velocity: { x: 0, y: 0 } },
     ]);
-    const ticks = spawnedIn(play(corner, COOLDOWN_TICKS * 10)).map((event) => event.tick);
+    const ticks = spawnedIn(play(corner, 300)).map((event) => event.tick);
     expect(ticks.length).toBeGreaterThan(1);
     for (let index = 1; index < ticks.length; index++) {
       expect((ticks[index] ?? 0) - (ticks[index - 1] ?? 0)).toBeGreaterThanOrEqual(COOLDOWN_TICKS);

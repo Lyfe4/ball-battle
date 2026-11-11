@@ -1,35 +1,45 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 
-/**
- * Extra contact damage at the edge of defeat: the bonus grows in step with the share of max health
- * the Berserker has lost. Its base contact damage plus this stays below the Brawler's, so the
- * Brawler still hits hardest (an identity rule).
- */
-export const RAGE_DAMAGE = 7;
+export type BerserkerState = Readonly<{ rage: number }>;
 
-/** Rage bonus for a ball on `health` of `maxHealth`: 0 at full health, RAGE_DAMAGE at 0. */
-export function rageFor(health: number, maxHealth: number): number {
-  const missing = Math.min(1, Math.max(0, 1 - health / maxHealth));
-  return RAGE_DAMAGE * missing;
+/** Bonus contact damage per stored hit of rage. */
+export const RAGE_PER_HIT = 3;
+/** Most hits of rage it stores. */
+export const MAX_RAGE = 3;
+/** The most its rage can add to one bump. */
+export const RAGE_DAMAGE = RAGE_PER_HIT * MAX_RAGE;
+
+/** The Berserker's stored rage, read from any ball state (0 for other balls). */
+export function rageOf(state: Readonly<Record<string, unknown>>): number {
+  const rage = state['rage'];
+  return typeof rage === 'number' ? rage : 0;
 }
 
 /**
- * The biggest health pool in the roster, and the more of it it has lost, the harder it hits:
- * its contact damage grows with its missing health (ADR 0015). Rage hits are contact hits, so
- * directness scales them, Thorns reflects them and the lethal-exchange tiebreak counts them.
- * Nothing numbs the rage any more (ADR 0045).
+ * The most health in the roster (ADR 0015). Every hit it takes, of any kind, stores a point of rage
+ * (up to MAX_RAGE); its next bump spends it all as extra contact damage (ADR 0045, group 4). Many small hits (poison ticks, burns, a boomerang, skull bites) fill
+ * it fast; a few big ones barely do. Rage hits are contact hits: directness scales them and Thorns
+ * reflects them.
  */
-export const berserker = defineBall({
+export const berserker = defineBall<BerserkerState>({
   id: 'berserker',
   name: 'Berserker',
-  description: 'Huge health; the more hurt it is, the harder it hits.',
+  description: 'Every hit it takes builds rage; its next bump lets it out.',
   color: '#f97316',
+  ability: { name: 'Rage', shownBy: { kind: 'hook', hook: 'onHitBall' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 86,
-  contactDamage: 18,
-  initialAbilityState: {},
-  contactDamageOf: (self, stats) => stats.contactDamage + rageFor(self.health, stats.maxHealth),
-  hooks: {},
+  contactDamage: 18.2,
+  initialAbilityState: { rage: 0 },
+  contactDamageOf: (self, stats) => stats.contactDamage + RAGE_PER_HIT * self.abilityState.rage,
+  hooks: {
+    onHitBall: ({ self }) =>
+      self.abilityState.rage === 0 ? [] : [{ kind: 'setAbilityState', state: { rage: 0 } }],
+    onDamageTaken: ({ self }) =>
+      self.abilityState.rage >= MAX_RAGE
+        ? []
+        : [{ kind: 'setAbilityState', state: { rage: self.abilityState.rage + 1 } }],
+  },
 });

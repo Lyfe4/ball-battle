@@ -58,9 +58,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   without a bump are a bug to find, not a record to update.
 - `pnpm balance:summary`: a full `pnpm balance` that also writes each ball's shape (win rate;
   strong, even and weak matchups by the map and measured, with average win rates) to
-  `docs/balance-summary.md`. Regenerate and commit it after any change to a ball or the combat
-  rules. `pnpm balance` prints the same summary and warns (never fails) on a lopsided shape
-  (ADR 0027).
+  `docs/balance-summary.md`, with each ball's counters and the known gaps. Regenerate and commit it
+  after any change to a ball or the combat rules. `pnpm balance` prints the same summary and fails
+  on any ball off its shape (ADR 0045, group 4).
 - `pnpm balance:ci`: the reduced check CI runs: 150 seeds, no sensitivity runs, and a counter-map
   pair fails only when clearly outside its band (ADR 0011 addendum). A full `pnpm balance` still
   judges borderline pairs.
@@ -202,25 +202,25 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Sim tests share helpers from `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`) and
   its fixture balls `red` and `blue`, which have no abilities and fixed stats, so core tests don't
   change when real balls are rebalanced. Test-only balls with hooks are declared in the test.
-- Balance targets (`pnpm balance`): every ball wins 40-60% overall, no matchup worse than 20/80 (soft counters are fine),
-  draws under 5%, median match 12-30 s, win rates move at most 15 points (warning) or 20 points
-  (failure) for ±5% max health, since the measurement has ±2-3 points of noise,
-  Vampire heals at least 25% of max health per match, no matchup worse than 25/75, and every pair
-  inside its counter-map floor (`scripts/counter-map.ts`, ADR 0010, 0028, 0045). Every favoured
-  pair names its band: `kind` (a kind of hit decides it: spikes against bumps, a rewind against a
-  big hit) targets 72-78% with a floor of 66-80%, `movement` (speed, size, range, a pull, minions
-  in the way) targets 62-72% with a floor of 58-76%; even targets 45-55% with a floor of 42-58%.
-  A pair between the target and the floor is a WARN listed as below target, not a failure; within
-  2 points outside the floor passes as NEAR; further out is a MISS. `pnpm balance` also counts the
-  pairs outside the final bands and checks comebacks (the ball once behind by a quarter of its
-  health wins 10-20% of games). Re-check after any stat or ability change.
+- Balance targets (`pnpm balance`, ADR 0045 group 4): every ball wins 45-55% overall, no matchup
+  worse than 22/78, draws under 5%, median match 12-30 s, win rates move at most 15 points
+  (warning) or 20 points (failure) for ±5% max health, since the measurement has ±2-3 points of
+  noise, Vampire heals at least 25% of max health per match, comebacks 10-20% (the ball once behind
+  by a quarter of its health wins), every pair inside its counter-map floor and every ball's shape
+  (`scripts/counter-map.ts`). A counter (▲▼) targets 65-72% with a floor of 62-78%; even targets
+  45-55% with no side above 62% (or under 22%), and an even side over 58% is the grey zone (counted and warned,
+  never failed). A pair between target and floor is a WARN; within 2 points outside the floor
+  passes as NEAR; further out is a MISS. The shape: every ball 2-4 counters each way, the counts
+  within 1, except the even picks (`EVEN_PICKS`, exactly their listed counters) and the known gaps
+  (`SHAPE_EXCEPTIONS`, by name: gaps for future balls, `docs/vision.md`). A full run judges the
+  measured shape, CI's reduced run the map's. Re-check after any stat or ability change.
 - Counters come from mechanics (ADR 0010): a new ball adds an entry for every pair (in the
   `src/sim/counter-map-*.ts` data file for its batch; the bands are checked in
   `scripts/counter-map.ts`), and each
   favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
   counter is, never whether it exists. Measure what a ball's mechanic moves before choosing its
-  counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler is the only safe pick: even against all
-  except Thorns, its one designed counter (ADR 0013).
+  counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler and Magnet are the even picks: the
+  Brawler beats only the Ghost and loses only to Thorns (ADR 0013), the Magnet loses only to Thorns.
   Ball identity rules are pinned in `src/sim/balls/identity.test.ts` (read from the definitions)
   and `ability-share.slow.test.ts` (measured); breaking one is a design decision, not a tuning
   step. Longer fights make matchups steeper (ADR 0004).
@@ -228,10 +228,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   ball (a kind of hit, a kind of movement), and no rule exists only where two specific abilities
   meet. The three rules of ADR 0016/0028 (heal cut, aim held, rage numbed), their statuses and the
   spark that marked them are gone. A counter comes from what the balls already do and must be
-  guessable by watching. The roster redesign (`docs/roster-redesign.md`) ships in four groups.
-  A pair only counts as a counter if it wins enough (ADR 0045, group 3): a kind counter needs 66%,
-  a movement counter 58%; a designed counter that measures 58% or less is marked even (no ▲▼, an
-  even reason), and one between 58% and its floor is pushed into its band or tuned to even.
+  guessable by watching. The roster redesign (`docs/roster-redesign.md`) shipped in four groups.
+  A pair only counts as a counter if it wins 62% or more (ADR 0045, group 4): the map is labelled
+  from the full run, and a designed counter that measures less is marked even (no ▲▼, an even
+  reason).
 - The pass-through property test in `src/sim/balls/pass-through.slow.test.ts` (closing speed below 0.6 of the
   `(rA + rB) / DT` detection limit) must not be loosened again. If a ball pushes past it, implement
   swept ball-to-ball collision instead.

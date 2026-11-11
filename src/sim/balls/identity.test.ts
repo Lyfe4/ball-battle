@@ -21,7 +21,7 @@ import { reflectFor } from './thorns.ts';
 import { LIFESTEAL, vampire } from './vampire.ts';
 import { BIG_HIT, chrono, MOMENT_EVERY_TICKS, RECHARGE_TICKS, REWIND_MOMENTS } from './chrono.ts';
 import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
-import { MAX_RADIUS, titanRadius } from './titan.ts';
+import { GROWN_HIT, MAX_RADIUS, titan, titanRadius } from './titan.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -68,14 +68,16 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Chrono rewinds only the big hits (a shot, a strike), about half a second back', () => {
+  it('Chrono rewinds only the big hits (a shot, a strike, a blast), about half a second back', () => {
     expect(MOMENT_EVERY_TICKS * REWIND_MOMENTS).toBeLessThanOrEqual(30);
-    // Every other ability hit is small: arrows, blasts, bites, burns, poison, shockwaves.
-    const small = [ARROW_DAMAGE, BLAST_DAMAGE, MINION_DAMAGE, BURN_DAMAGE, POISON_DAMAGE];
+    // Every other ability hit is small: arrows, bites, burns, poison, shockwaves.
+    const small = [ARROW_DAMAGE, MINION_DAMAGE, BURN_DAMAGE, POISON_DAMAGE];
     for (const hit of [...small, SHOCKWAVE_DAMAGE, BOOMERANG_DAMAGE, MAX_STACKS * DAMAGE_PER_STACK])
       expect(hit).toBeLessThan(BIG_HIT);
     expect(SHOT_DAMAGE).toBeGreaterThanOrEqual(BIG_HIT);
     expect(ZONE_DAMAGE).toBeGreaterThanOrEqual(BIG_HIT);
+    // The Bomber's one big blast is rewound too (ADR 0045, group 4).
+    expect(BLAST_DAMAGE).toBeGreaterThanOrEqual(BIG_HIT);
     // It recharges for seconds, so it can't undo every shot.
     expect(RECHARGE_TICKS).toBeGreaterThanOrEqual(5 * TICK_RATE);
     expect(chrono.hooks.onHitBall).toBeUndefined();
@@ -107,8 +109,9 @@ describe('the ball roster: identity rules', () => {
   });
 
   it('Guardian’s armor takes only a bit off a hit, and is its only ability', () => {
-    // A bit off a heavy hit, a big share of a small one (ADR 0045).
-    expect(ARMOR).toBeLessThanOrEqual(brawler.contactDamage / 10);
+    // A bit off a heavy hit (an eighth of the hardest plain bump at most), a big share of a small one
+    // (ADR 0045).
+    expect(ARMOR).toBeLessThanOrEqual(brawler.contactDamage / 8);
     expect(ARMOR).toBeGreaterThanOrEqual(POISON_DAMAGE / 5);
     expect(Object.keys(guardian.hooks)).toStrictEqual([]);
   });
@@ -147,9 +150,14 @@ describe('the ball roster: identity rules', () => {
       archer: ARROW_DAMAGE,
       storm: ZONE_DAMAGE,
       frost: 0,
-      // Reflection of the hardest contact hit in the roster, a raging Berserker's included.
+      // Reflection of the hardest contact hit in the roster, a raging Berserker's and a fully grown
+      // Titan's included.
       thorns: reflectFor(
-        Math.max(...BALLS.map((ball) => ball.contactDamage), berserker.contactDamage + RAGE_DAMAGE),
+        Math.max(
+          ...BALLS.map((ball) => ball.contactDamage),
+          berserker.contactDamage + RAGE_DAMAGE,
+          titan.contactDamage * GROWN_HIT,
+        ),
       ),
       venom: POISON_DAMAGE,
       // Its rage is contact damage, not an ability hit.
@@ -188,12 +196,11 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Brawler hits hardest and has no ability', () => {
+  it('Brawler has the hardest plain bump and no ability', () => {
+    // Only the plain bump: a raging Berserker and a grown Titan can hit harder (ADR 0045, group 4).
     for (const ball of others(brawler.id)) {
       expect(brawler.contactDamage).toBeGreaterThan(ball.contactDamage);
     }
-    // Even a Berserker at the edge of defeat hits softer.
-    expect(brawler.contactDamage).toBeGreaterThan(berserker.contactDamage + RAGE_DAMAGE);
     expect(Object.keys(brawler.hooks)).toStrictEqual([]);
     expect(brawler.initialAbilityState).toStrictEqual({});
   });

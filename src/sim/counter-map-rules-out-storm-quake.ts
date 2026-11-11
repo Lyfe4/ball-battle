@@ -7,9 +7,7 @@ import type { CounterEntry } from './counter-map.ts';
 /**
  * The three interaction rules are gone (ADR 0045), so every edge here comes from what one ball does
  * the same way to any ball: lightning and shockwaves strike an area, arrows, shots and boomerangs hit
- * from range, lifesteal drinks only from bumps, and rage grows with every wound. A favoured pair
- * names its band: `kind` when a kind of hit decides it, `movement` when speed, size, range or a pull
- * does.
+ * from range, lifesteal drinks most of what its bumps deal, and rage grows with every hit taken.
  */
 export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
@@ -22,7 +20,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'storm',
     intended: 'even',
-    reason: 'Lightning is never answered, but the biggest health pool outlasts it.',
+    reason:
+      'A strike stores only one rage, and its big health outlasts the lightning: neither pulls ahead.',
   },
   {
     x: 'brawler',
@@ -34,15 +33,14 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'storm',
     intended: 'x',
-    band: 'kind',
     reason: 'A strike is a big hit, and the rewind undoes it.',
   },
   {
     x: 'magnet',
     y: 'storm',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Pulls the caller into a brawl.',
+    intended: 'even',
+    reason:
+      'The pull drags the caller into a brawl, but the strikes still land: neither pulls ahead.',
   },
   {
     x: 'necromancer',
@@ -53,9 +51,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'speedster',
     y: 'storm',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Too fast to stay in the warning circle.',
+    intended: 'even',
+    reason: 'Fast enough to leave some warning circles, not all of them: neither pulls ahead.',
   },
   {
     x: 'storm',
@@ -120,8 +117,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'storm',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Lightning gives it nothing to drink, but it drinks from every bump with the Storm.',
+    intended: 'x',
+    reason: 'One strike takes most of its small health, and lightning gives it nothing to drink.',
   },
   {
     x: 'titan',
@@ -150,15 +147,15 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves are too small to rewind, but each one only chips.',
+    intended: 'y',
+    reason: 'Shockwaves are far too small to rewind, and they keep coming.',
   },
   {
     x: 'frost',
     y: 'quake',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Slowed, it hits fewer walls, so it sends out fewer shockwaves.',
+    intended: 'even',
+    reason:
+      'Slowed, it hits fewer walls, but the Frost still meets its shockwaves: neither pulls ahead.',
   },
   {
     x: 'inferno',
@@ -175,8 +172,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'berserker',
-    intended: 'even',
-    reason: 'Shockwaves wear down its huge health, and every wound makes its hits harder.',
+    intended: 'y',
+    reason: 'Every small shockwave stores rage, so its next bump hits far harder.',
   },
   {
     x: 'quake',
@@ -205,14 +202,14 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'guardian',
-    intended: 'even',
-    reason: 'Armor takes a bit off every shockwave, but they keep coming.',
+    intended: 'y',
+    reason: 'Armor takes half of every small shockwave.',
   },
   {
     x: 'quake',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'A shockwave clears the skull, but a new one rises soon after.',
+    intended: 'x',
+    reason: 'Wide shockwaves keep popping the skull before it reaches the Quake.',
   },
   {
     x: 'quake',

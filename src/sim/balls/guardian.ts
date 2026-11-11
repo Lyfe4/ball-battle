@@ -2,7 +2,7 @@ import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 
 /** How much armor takes off every hit. */
-export const ARMOR = 1;
+export const ARMOR = 3;
 
 /**
  * What armor leaves of a hit of `amount`: ARMOR less, but never less than half of it (rounded up),
@@ -25,7 +25,7 @@ export const guardian = defineBall({
   ability: { name: 'Armor', shownBy: { kind: 'hitReduced' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 74,
+  maxHealth: 59,
   contactDamage: 22,
   initialAbilityState: {},
   incomingDamageOf: (_self, amount) => armoredHit(amount),

@@ -77,7 +77,7 @@ describe('Boomerang', () => {
 
 describe('Bomber', () => {
   it('drops a bomb on a fixed rhythm that goes off by itself after its fuse', () => {
-    const { events } = play(parked(bomber), FIRST_DROP_TICK + FUSE_TICKS + 1);
+    const { events } = play(parked(bomber), FIRST_DROP_TICK + Math.max(FUSE_TICKS, DROP_TICKS) + 1);
     const dropped = ofType(events, 'zoneSpawned');
     expect(dropped.map((zone) => zone.tick).slice(0, 2)).toStrictEqual([
       FIRST_DROP_TICK,
@@ -105,7 +105,8 @@ describe('Bomber', () => {
 describe('Guardian', () => {
   it('takes ARMOR off every hit, but never more than half of a small one', () => {
     expect(armoredHit(26)).toBe(26 - ARMOR);
-    expect(armoredHit(5)).toBe(5 - ARMOR);
+    expect(armoredHit(10)).toBe(10 - ARMOR);
+    expect(armoredHit(5)).toBe(Math.ceil(5 / 2));
     expect(armoredHit(2)).toBe(1);
     expect(armoredHit(1)).toBe(1);
   });

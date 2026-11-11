@@ -23,8 +23,8 @@ export const venom = defineBall({
   ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 73,
-  contactDamage: 8,
+  maxHealth: 66,
+  contactDamage: 11,
   initialAbilityState: {},
   hooks: {
     onHitBall: ({ other }) => [

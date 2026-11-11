@@ -29,16 +29,34 @@ if matchups lean:
 
 ## Future balance targets for this mode
 
-These are where the targets in `pnpm balance` are heading. The counter map and the 25/75 limit
-are checked today (see Decisions); the rest waits for the round structure.
+These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4).
 
-- Every ball has **at least one matchup around 60% or better** and **at least one around 40% or
-  worse**, so each has something to fear and something to hunt. **One exception: the Brawler**
-  is the deliberate safe pick, even against everyone except its one counter, Thorns (see
-  Decisions). While the roster redesign ships, a pair counts only if it really wins enough (ADR 0045), and
-  the balls whose designed edges measured too soft are listed in `scripts/counter-map.ts`.
-- **No matchup worse than about 25/75** (today's limit is 20/80).
-- **Every ball wins 40-60% overall** (unchanged).
+- Every ball has **two to four counters it wins (62% or more) and two to four it loses**, the two
+  counts within one, so each has something to fear and something to hunt. **The even picks are
+  the exception:** the Brawler (beats only the Ghost, loses only to Thorns) and the Magnet (loses
+  only to Thorns) never lose the guess badly and never win it big.
+- **No matchup worse than 22/78.**
+- **Every ball wins 45-55% overall.**
+
+### Gaps for future balls
+
+The roster has known gaps in that shape, allowed by name in `scripts/counter-map.ts` and listed in
+`docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
+kind of hit is new. When balls are next added, these are the kinds to look for:
+
+- **Something that beats the Storm, the Titan or the Bomber.** Only the Chrono's rewind blunts a
+  big strike or blast, and only Thorns and fire hold the grown Titan. A ball that dodges or soaks
+  one big hit (a shield that blocks exactly one hit, a dash out of a warning circle) would give
+  each a second weakness.
+- **Something Venom beats.** Poison wins only where small ticks can't be answered (the rewind). A
+  ball that leans on one big heal or one big shield, which poison keeps chipping after, would give
+  it a second win.
+- **Something that punishes the Berserker and the Bloom.** Both beat nearly every ball that deals
+  many small hits. A ball that deals one heavy hit now and then (feeding the rage once, outpacing
+  regrowth) would be strong against both.
+- **The Magnet is the candidate to replace.** Its pull is movement too soft to decide a pair, so it
+  is an even pick by accident rather than design; a new ball filling one of the gaps above could
+  take its slot.
 
 Draws matter more in a best-of-3: a round needs a winner, and mirror matches will be common with
 blind picks. See Decisions below.
@@ -111,10 +129,10 @@ blind picks. See Decisions below.
 - One soft triangle, which comes from the balls' mechanics: **Speedster > Archer > Vampire >
   Speedster**. Plus **Storm > Vampire** (ranged damage denies lifesteal, as the Archer's does)
   and **Speedster > Storm** (it outruns the warnings). Archer vs Storm is even.
-- **The Brawler is the safe pick: even (45-55%) against every ball except Thorns.** It is the one
-  exception to "every ball has a favoured and an unfavoured matchup": a blind pick that never
-  loses the guess badly and never wins it big. The counter-map test lists it as an explicit
-  exception.
+- **The Brawler is the safe pick: even (45-55%) against every ball except Thorns** (and, since ADR
+  0045 group 4, the Ghost, which it beats: a fade can't save it from a plain heavy bump). It is an
+  even pick: a blind pick that never loses the guess badly and never wins it big. The counter-map
+  test lists its counters exactly.
 - **Thorns is the Brawler's one designed counter** (2026-11-04, ADR 0013). Reflection scales with
   the attacker's hit, so the hardest hitter hurts itself the most on the spikes. A safe pick also
   needs one known counter, so that it isn't a dominant blind pick. The counter-map test names

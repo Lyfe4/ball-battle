@@ -27,9 +27,8 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'speedster',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The pull drags it into a brawl, where its light hits lose.',
+    intended: 'even',
+    reason: 'The pull drags it into a brawl, but its rush hits back hard: neither pulls ahead.',
   },
   {
     x: 'magnet',
@@ -41,7 +40,6 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'magnet',
     intended: 'x',
-    band: 'kind',
     reason: 'The Magnet drags the spikes into itself, and every hard hit comes back.',
   },
   // The Ghost.
@@ -73,8 +71,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'necromancer',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The pull drags it into a brawl, where its light hits lose.',
+    intended: 'even',
+    reason: 'The pull drags it into a brawl, but the skull keeps biting: neither pulls ahead.',
   },
 ];

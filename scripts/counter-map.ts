@@ -1,42 +1,40 @@
 // Checks for the counter map (ADR 0010): the bands each pair's win rate must land in, and the
 // safe-pick rules. The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
 // re-exported here for the balance script and its tests.
-import type { CounterEntry } from '../src/sim/counter-map.ts';
+import { counterFor, type CounterEntry } from '../src/sim/counter-map.ts';
 
 export {
   COUNTER_MAP,
   counterFor,
-  type CounterBand,
   type CounterEntry,
   type Intended,
 } from '../src/sim/counter-map.ts';
 
 /**
  * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`), in
- * two levels (ADR 0028 addendum): a **target** each pair aims for, and a wider **floor** outside
- * which it fails. A favoured pair has one of two bands by what decides it (ADR 0045, the entry's
- * `band`):
- * - Kind (a kind of hit decides it: spikes against bumps, a rewind against a big hit): the target
- *   is 72-78%; the floor is 66-80%.
- * - Movement (speed, size, range, a pull or minions in the way): the target is 62-72%; the floor
- *   is 58-76%.
- * - Even: the target is 45-55% for both sides; the floor is 42-58%.
+ * two levels (ADR 0028 addendum, ADR 0045 group 4): a **target** each pair aims for, and a wider
+ * **floor** outside which it fails.
+ * - A counter (▲▼, favoured in the map): the target is 65-72%; the floor is 62-78%. A pair that
+ *   wins less than 62% is not a counter, however it is designed.
+ * - Even: the target is 45-55% for both sides; the floor is no side above 62% (a side that wins
+ *   more is a counter) and none under the 22% hard limit, whatever draws do to the other side. A
+ *   side between 58% and 62% is the grey zone: shown as even, but too soft to be even and too weak
+ *   to be a counter. It is counted and warned about, never failed.
  *
  * One pair at 500 seeds has about ±1.6 points of standard error, so:
  * - inside the target but within `warnWithin` of an edge is flagged (WARN, passes);
- * - between the target and the floor is below target (SHORT, printed as a WARN, passes): a pair to
- *   sharpen, not a failure;
+ * - between the target and the floor is below target (SHORT, printed as a WARN, passes);
  * - outside the floor by at most `nearWithin` is a near-miss (NEAR, passes): the noise allowance
  *   ADR 0010 accepted, written into the check;
  * - anything further out is a miss (MISS, fails the counter-map target).
  */
 export const COUNTER_BANDS = {
-  kind: [0.72, 0.78],
-  movement: [0.62, 0.72],
+  counter: [0.65, 0.72],
   even: [0.45, 0.55],
-  kindFloor: [0.66, 0.8],
-  movementFloor: [0.58, 0.76],
-  evenFloor: [0.42, 0.58],
+  counterFloor: [0.62, 0.78],
+  evenFloor: [0.22, 0.62],
+  /** Above this, a side of an even pair is in the grey zone (up to the counter floor). */
+  greyFrom: 0.58,
   warnWithin: 0.02,
   nearWithin: 0.02,
 } as const;
@@ -47,50 +45,95 @@ export const COUNTER_BANDS = {
  */
 const EDGE_EPSILON = 1e-9;
 
-/** Hard limit on top of the map: no side of any matchup wins less than this (docs/vision.md). */
-export const HARD_WORST_MATCHUP = 0.25;
+/** Hard limit on top of the map: no side of any matchup wins less than this (ADR 0045, group 4). */
+export const HARD_WORST_MATCHUP = 0.22;
 
 /**
- * Balls left with no favoured matchup, or no unfavoured one, because a pair only counts as a counter
- * if it wins enough (ADR 0045, group 3): their designed edges measured too soft and are even until a
- * later redesign group gives them a real one. Listed so a ball losing its last counter is a decision.
+ * Every ball's shape in the map (ADR 0045, group 4): 2-4 counters it wins and 2-4 it loses, the two
+ * counts within 1 of each other, so every pick has a clear edge and a clear weakness.
  */
-export const WITHOUT_FAVOURED: readonly string[] = [
-  'vampire',
-  'storm',
-  'berserker',
-  'quake',
-  'boomerang',
-];
-export const WITHOUT_UNFAVOURED: readonly string[] = [
-  'vampire',
-  'frost',
-  'berserker',
-  'ghost',
-  'titan',
-  'guardian',
-];
+export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
 
 /**
- * Balls deliberately even against everyone but one known counter, the one exception to "every
- * ball has a favoured and an unfavoured matchup" (docs/vision.md). Adding one is a design
- * decision.
+ * The even picks, the exception to the shape (docs/vision.md): even against nearly everyone, with
+ * exactly these counters. The Brawler, the plain bump, loses to the Thorns (reflection scales with
+ * the hit, ADR 0013) and beats only the Ghost (a fade can't save it from a plain heavy bump). The
+ * Magnet's pull is movement too soft to decide a pair; it is a candidate for replacement
+ * (docs/vision.md). Adding one is a design decision.
  */
-export const SAFE_PICKS: readonly string[] = ['brawler'];
+export const EVEN_PICKS: Readonly<
+  Record<string, { readonly beats: readonly string[]; readonly losesTo: readonly string[] }>
+> = {
+  brawler: { beats: ['ghost'], losesTo: ['thorns'] },
+  magnet: { beats: [], losesTo: ['thorns'] },
+};
+
+/** How far a ball may stray from SHAPE: its own fewest and most counters a side, and gap. */
+export interface ShapeAllowance {
+  readonly fewest: number;
+  readonly most: number;
+  readonly within: number;
+}
 
 /**
- * Each safe pick's one designed counter, favoured against it (ADR 0013). Thorns beats the Brawler:
- * reflection scales with the hit, so the hardest hitter hurts itself the most on the spikes. A
- * safe pick needs one known counter so it isn't a dominant blind pick. Changing it is a design
- * decision.
+ * The known gaps in the roster's shape (ADR 0045, group 4), each a gap for a future ball to fill
+ * (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on any
+ * other ball, and on these beyond their allowance.
+ * - The Storm, Titan and Bomber have one counter on a side: nothing in the roster beats one big
+ *   strike but the rewind, the growing giant or the big blast.
+ * - Venom wins only where poison's small ticks are unanswerable, so it has one win to three losses.
+ * - The Berserker and Bloom beat nearly every ball that deals many small hits: up to 5 wins.
  */
-export const SAFE_PICK_COUNTERS: Readonly<Record<string, string>> = { brawler: 'thorns' };
+export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
+  storm: { ...SHAPE, fewest: 1 },
+  titan: { ...SHAPE, fewest: 1 },
+  bomber: { ...SHAPE, fewest: 1 },
+  venom: { ...SHAPE, fewest: 1, within: 2 },
+  berserker: { ...SHAPE, most: 5, within: 3 },
+  bloom: { ...SHAPE, most: 5, within: 3 },
+};
+
+/**
+ * What is wrong with a ball's shape, given the balls it beats and loses to, or undefined when it
+ * fits: an even pick must have exactly its listed counters, every other ball SHAPE or its
+ * SHAPE_EXCEPTIONS allowance.
+ */
+export function shapeProblem(
+  id: string,
+  beats: readonly string[],
+  losesTo: readonly string[],
+): string | undefined {
+  const even = EVEN_PICKS[id];
+  if (even !== undefined) {
+    const same = (a: readonly string[], b: readonly string[]) =>
+      a.length === b.length && a.every((other) => b.includes(other));
+    return same(beats, even.beats) && same(losesTo, even.losesTo)
+      ? undefined
+      : `an even pick beats ${even.beats.join(', ') || 'nobody'} and loses to ${even.losesTo.join(', ')} only`;
+  }
+  const { fewest, most, within } = SHAPE_EXCEPTIONS[id] ?? SHAPE;
+  for (const count of [beats.length, losesTo.length]) {
+    if (count < fewest || count > most) return `needs ${fewest}-${most} counters each way`;
+  }
+  return Math.abs(beats.length - losesTo.length) > within
+    ? `wins and losses must be within ${within}`
+    : undefined;
+}
 
 /**
  * From best to worst. Only `miss` fails the counter-map target; `short` is a pair inside its floor
  * but outside its target (printed as a WARN).
  */
 export type CounterVerdict = 'ok' | 'warn' | 'short' | 'near' | 'miss';
+
+/** How `pnpm balance` prints each verdict: `short` is a WARN, only MISS fails. */
+export const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
+  ok: 'ok  ',
+  warn: 'WARN',
+  short: 'WARN',
+  near: 'NEAR',
+  miss: 'MISS',
+};
 
 const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'short', 'near', 'miss'];
 
@@ -133,8 +176,8 @@ export function checkCounter(
 ): CounterVerdict {
   const { even, evenFloor } = COUNTER_BANDS;
   if (entry.intended !== 'even') {
-    const [target, floor] = favouredBands(entry);
-    return inBand(entry.intended === 'x' ? xRate : yRate, target, floor, nearWithin);
+    const { counter, counterFloor } = COUNTER_BANDS;
+    return inBand(entry.intended === 'x' ? xRate : yRate, counter, counterFloor, nearWithin);
   }
   return worse(
     inBand(xRate, even, evenFloor, nearWithin),
@@ -143,22 +186,9 @@ export function checkCounter(
 }
 
 /**
- * A favoured entry's target and floor. A pair only counts as a counter if it wins enough (ADR 0045,
- * group 3): a kind counter is held to 66-80% and a movement counter to 58-76%; a designed counter
- * that measures 58% or less is marked even in the map instead.
- */
-function favouredBands(
-  entry: CounterEntry,
-): readonly [readonly [number, number], readonly [number, number]] {
-  return entry.band === 'kind'
-    ? [COUNTER_BANDS.kind, COUNTER_BANDS.kindFloor]
-    : [COUNTER_BANDS.movement, COUNTER_BANDS.movementFloor];
-}
-
-/**
- * True when a pair is outside its final floor (ADR 0045): the kind floor of 66-80% for a kind
- * counter, the movement floor for a movement one, 42-58% for both sides of an even pair. No noise
- * allowance: a count to bring down group by group, reported by `pnpm balance`.
+ * True when a pair is outside its final floor (ADR 0045, group 4): a counter outside 62-78%, or an
+ * even pair with a side above 62% (it is a counter, so label it one) or under 22%. No noise
+ * allowance: `pnpm balance` lists these, and a full run must have none.
  */
 export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: number): boolean {
   const out = (rate: number, [low, high]: readonly [number, number]) =>
@@ -166,8 +196,20 @@ export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: numb
   if (entry.intended === 'even') {
     return out(xRate, COUNTER_BANDS.evenFloor) || out(yRate, COUNTER_BANDS.evenFloor);
   }
-  const [, floor] = favouredBands(entry);
-  return out(entry.intended === 'x' ? xRate : yRate, floor);
+  return out(entry.intended === 'x' ? xRate : yRate, COUNTER_BANDS.counterFloor);
+}
+
+/**
+ * True when an even pair has a side in the grey zone, above 58% but not over the 62% a counter
+ * needs: shown as even, counted and warned about by `pnpm balance` (ADR 0045, group 4).
+ */
+export function inGreyZone(entry: CounterEntry, xRate: number, yRate: number): boolean {
+  const top = Math.max(xRate, yRate);
+  return (
+    entry.intended === 'even' &&
+    top > COUNTER_BANDS.greyFrom + EDGE_EPSILON &&
+    top <= COUNTER_BANDS.counterFloor[0] + EDGE_EPSILON
+  );
 }
 
 /**
@@ -179,4 +221,46 @@ export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: numb
  */
 export function ciAllowance(games: number): number {
   return Math.max(COUNTER_BANDS.nearWithin, (3 * 0.5) / Math.sqrt(games));
+}
+
+/** One measured pair: each side's win rate (draws count as games). */
+interface MeasuredPair {
+  readonly x: string;
+  readonly y: string;
+  readonly xRate: number;
+  readonly yRate: number;
+}
+
+/**
+ * Every shape problem among `ids` in a run, as "ball: problem". A full run judges the measured
+ * counters (62% or more, the same seeds the map was labelled from); a reduced run (CI's 150 seeds)
+ * is too noisy to call a pair near 62%, so it judges the map's counters, each already checked
+ * against its band.
+ */
+export function shapeProblems(
+  ids: readonly string[],
+  pairs: readonly MeasuredPair[],
+  fromMap: boolean,
+): string[] {
+  const counterAt = COUNTER_BANDS.counterFloor[0] - EDGE_EPSILON;
+  return ids.flatMap((id) => {
+    const beats: string[] = [];
+    const losesTo: string[] = [];
+    for (const { x, y, xRate, yRate } of pairs) {
+      if (x !== id && y !== id) continue;
+      const other = x === id ? y : x;
+      const [own, theirs] = x === id ? [xRate, yRate] : [yRate, xRate];
+      const entry = fromMap ? counterFor(x, y) : undefined;
+      const winner =
+        entry === undefined || entry.intended === 'even'
+          ? undefined
+          : entry.intended === 'x'
+            ? entry.x
+            : entry.y;
+      if (fromMap ? winner === id : own >= counterAt) beats.push(other);
+      if (fromMap ? winner === other : theirs >= counterAt) losesTo.push(other);
+    }
+    const problem = shapeProblem(id, beats, losesTo);
+    return problem === undefined ? [] : [`${id}: ${problem}`];
+  });
 }

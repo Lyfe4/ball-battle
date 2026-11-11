@@ -126,7 +126,7 @@ export const theme = {
    * edge as it fades, instead of a flash and a bolt.
    */
   shockwaveRing: '#e7e5e4',
-  shockwaveWidth: 9,
+  shockwaveWidth: 6,
   shockwaveStart: 0.35,
   /**
    * The Magnet (ADR 0026): a horseshoe as thick as this share of r (heavier at phone size), with
@@ -162,6 +162,8 @@ export const theme = {
   rewindGhostAlpha: 0.5,
   /** The Titan's crest, as a share of r (heavier at small size). */
   titanCrest: 0.12,
+  /** The Titan's visor slit, as a fraction of r: it widens as the Titan grows and hits harder. */
+  titanVisor: [0.2, 0.36] as readonly [number, number],
   titanCrestSimple: 0.18,
   /**
    * The Inferno (ADR 0034): its flame's pale heart and how far the tip flickers (a share of r). Its
@@ -200,9 +202,9 @@ export const theme = {
   bombUnarmedAlpha: 0.45,
   /** A bomb going off: a warm flash over its reach and a ring sweeping out to its edge. */
   blastFlash: '#fed7aa',
-  blastFlashMaxAlpha: 0.55,
+  blastFlashMaxAlpha: 0.7,
   blastRing: '#fb923c',
-  blastRingWidth: 10,
+  blastRingWidth: 15,
   /**
    * A hit glancing off a defence (the Guardian's armor, the Ghost's fade, ADR 0045): a bright gold
    * ring just outside the ball, already in pieces, flying out and fading.

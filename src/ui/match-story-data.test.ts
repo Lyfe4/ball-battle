@@ -110,6 +110,11 @@ describe('how it was won (ADR 0036, 0037)', () => {
       'bigHit',
       'finish',
     ]);
+    // The knockout itself can be the round's biggest hit: the finish still closes the story.
+    expect(chooseMoments([at(9, 'finish'), at(9, 'bigHit')]).map((m) => m.kind)).toStrictEqual([
+      'bigHit',
+      'finish',
+    ]);
     expect(BIG_HIT).toBe(20);
   });
 
@@ -168,7 +173,7 @@ describe('how it was won (ADR 0036, 0037)', () => {
   });
 
   it('names each slot by its label when given, so a mirror reads plainly', () => {
-    const story = storyOf(start('titan', 'titan', 1), BALL_LOOKUP, [
+    const story = storyOf(start('titan', 'titan', 2), BALL_LOOKUP, [
       'your Titan',
       'the bot’s Titan',
     ]);

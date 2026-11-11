@@ -7,8 +7,7 @@ import { BALL_DESIGNS } from './index.ts';
 import {
   aimHeading,
   chargeFraction,
-  crackCount,
-  simpleCrackCount,
+  rageCrackCount,
   simpleStreakCount,
   stormFlicker,
   streakCount,
@@ -93,22 +92,15 @@ describe('ball designs', () => {
     });
   });
 
-  describe('crackCount', () => {
-    it('shows one crack at full health and every crack at none, one more per step lost', () => {
-      expect(crackCount(1, 6)).toBe(1);
-      expect(crackCount(0.8, 6)).toBe(2);
-      expect(crackCount(0.5, 6)).toBe(3);
-      expect(crackCount(0.2, 6)).toBe(5);
-      expect(crackCount(0, 6)).toBe(6);
+  describe('rageCrackCount', () => {
+    it('shows one crack when calm and every crack at full rage, evenly between', () => {
+      expect([0, 1, 2, 3].map((rage) => rageCrackCount(rage, 3, 6))).toStrictEqual([1, 3, 4, 6]);
+      expect([0, 1, 2, 3].map((rage) => rageCrackCount(rage, 3, 4))).toStrictEqual([1, 2, 3, 4]);
     });
 
-    it('clamps health outside 0 to 1', () => {
-      expect(crackCount(1.5, 6)).toBe(1);
-      expect(crackCount(-1, 6)).toBe(6);
-    });
-
-    it('shows at most three at small size', () => {
-      expect([1, 0.6, 0.3, 0].map(simpleCrackCount)).toStrictEqual([1, 2, 3, 3]);
+    it('clamps rage outside 0 to its most', () => {
+      expect(rageCrackCount(-1, 3, 6)).toBe(1);
+      expect(rageCrackCount(9, 3, 6)).toBe(6);
     });
   });
 });

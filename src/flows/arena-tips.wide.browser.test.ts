@@ -32,7 +32,7 @@ describe('tips in the arena', () => {
     const body = new DOMParser().parseFromString(page, 'text/html').body;
     document.body.replaceChildren(...body.children);
     const start = new URL(location.href);
-    start.search = `?a=venom&b=thorns&seed=4&v=${String(RULESET_VERSION)}`;
+    start.search = `?a=venom&b=chrono&seed=4&v=${String(RULESET_VERSION)}`;
     history.replaceState(null, '', start);
     await import('../main.ts');
     await settle();
@@ -40,10 +40,10 @@ describe('tips in the arena', () => {
     // The ready card names both balls, who is favoured and what to watch.
     const card = visible('.ready-card')[0];
     expect(card?.textContent).toContain('Venom');
-    expect(card?.textContent).toContain('Thorns');
+    expect(card?.textContent).toContain('Chrono');
     expect(card?.querySelector('.ready-edge')?.textContent).toBe('▲ Venom is favoured');
     expect(card?.querySelector('.ready-reason')?.textContent).toMatch(/^What to watch: \S/);
-    expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('thorns|venom');
+    expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('chrono|venom');
 
     // Held: nothing moves, however long the player reads.
     await wait(900);
@@ -67,7 +67,7 @@ describe('tips in the arena', () => {
     const story = visible('.hud .match-story')[0];
     expect(story?.hasAttribute('open')).toBe(false);
     expect(story?.querySelector('.match-story-result')?.textContent).toMatch(
-      /^(Venom|Thorns) knocked out (Venom|Thorns) at \d:\d\d$|^Time up: /,
+      /^(Venom|Chrono) knocked out (Venom|Chrono) at \d:\d\d$|^Time up: /,
     );
     story?.querySelector('summary')?.click();
     await settle();
@@ -99,7 +99,7 @@ describe('tips in the arena', () => {
     button('Start match').click();
     await settle();
     expect(visible('.ready-card')).toHaveLength(0);
-    expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('thorns|venom');
+    expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('chrono|venom');
     window.localStorage.removeItem('ballbattle.speed');
     window.localStorage.removeItem(TIPS_STORAGE_KEY);
   }, 90_000);

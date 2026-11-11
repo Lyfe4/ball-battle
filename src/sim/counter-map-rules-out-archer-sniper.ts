@@ -7,9 +7,7 @@ import type { CounterEntry } from './counter-map.ts';
 /**
  * The three interaction rules are gone (ADR 0045), so every edge here comes from what one ball does
  * the same way to any ball: lightning and shockwaves strike an area, arrows, shots and boomerangs hit
- * from range, lifesteal drinks only from bumps, and rage grows with every wound. A favoured pair
- * names its band: `kind` when a kind of hit decides it, `movement` when speed, size, range or a pull
- * does.
+ * from range, lifesteal drinks most of what its bumps deal, and rage grows with every hit taken.
  */
 export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
@@ -64,7 +62,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'thorns',
     intended: 'x',
-    band: 'kind',
     reason: 'Arrows never touch the spikes.',
   },
   {
@@ -82,30 +79,28 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'archer',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Pulls the frail shooter into a brawl.',
+    intended: 'even',
+    reason:
+      'The pull drags the shooter into a brawl, but arrows land on the way: neither pulls ahead.',
   },
   {
     x: 'necromancer',
     y: 'archer',
     intended: 'x',
-    band: 'movement',
     reason: 'A minion nearer than its owner draws the arrows.',
   },
   {
     x: 'speedster',
     y: 'archer',
     intended: 'x',
-    band: 'movement',
     reason: 'Closes the distance faster than arrows can stop it.',
   },
   {
     x: 'titan',
     y: 'archer',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The growing body meets it more often, and its light hits lose every trade.',
+    intended: 'even',
+    reason:
+      'Arrows land while the Titan is small; once grown, its bumps hit back hard: it evens out.',
   },
   {
     x: 'venom',
@@ -123,7 +118,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'sniper',
     intended: 'x',
-    band: 'kind',
     reason: 'A shot is a big hit, and the rewind undoes it.',
   },
   {
@@ -135,16 +129,16 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'sniper',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The pull drags the Sniper into contact, where it is weakest.',
+    intended: 'even',
+    reason:
+      'The pull drags the Sniper into contact, but its heavy shot still lands: neither pulls ahead.',
   },
   {
     x: 'necromancer',
     y: 'sniper',
-    intended: 'x',
-    band: 'movement',
-    reason: 'A minion nearer than its owner draws the shot.',
+    intended: 'even',
+    reason:
+      'The skull draws some shots, but the heavy shot wins when it lands: neither pulls ahead.',
   },
   {
     x: 'sniper',
@@ -179,14 +173,13 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'sniper',
     y: 'guardian',
-    intended: 'even',
+    intended: 'x',
     reason: 'Armor takes only a little off a heavy shot.',
   },
   {
     x: 'sniper',
     y: 'thorns',
     intended: 'x',
-    band: 'kind',
     reason: 'The shot never touches the spikes.',
   },
   {
@@ -199,7 +192,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'speedster',
     y: 'sniper',
     intended: 'x',
-    band: 'movement',
     reason: 'The fastest ball, faster still with stacks, is off the locked line before the shot.',
   },
   {

@@ -80,7 +80,9 @@ jobs:
 
   browsers:
     name: Known match results in Chromium, Firefox and WebKit
-    runs-on: ubuntu-latest
+    # Pinned: Playwright's browser builds follow the OS, and ubuntu-latest moving to 26.04 left the
+    # cached WebKit (built for 24.04) without its ICU library. Move it deliberately, not by default.
+    runs-on: ubuntu-24.04
     # The reload flows (ADR 0042) play three whole series per size and engine, which took the job
     # past 10 minutes.
     timeout-minutes: 25
@@ -106,7 +108,8 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          # Keyed on the image too, so a new OS never reuses browsers built for another.
+          key: playwright-${{ env.ImageOS }}-${{ steps.playwright.outputs.version }}
 
       - name: Install the browsers and their system libraries
         if: steps.browser-cache.outputs.cache-hit != 'true'

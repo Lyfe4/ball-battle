@@ -7,9 +7,7 @@ import type { CounterEntry } from './counter-map.ts';
 /**
  * The three interaction rules are gone (ADR 0045), so every edge here comes from what one ball does
  * the same way to any ball: lightning and shockwaves strike an area, arrows, shots and boomerangs hit
- * from range, lifesteal drinks only from bumps, and rage grows with every wound. A favoured pair
- * names its band: `kind` when a kind of hit decides it, `movement` when speed, size, range or a pull
- * does.
+ * from range, lifesteal drinks most of what its bumps deal, and rage grows with every hit taken.
  */
 export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
@@ -33,8 +31,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'boomerang',
     y: 'guardian',
-    intended: 'even',
-    reason: 'Armor takes a share off each light hit, but the boomerang hits twice a throw.',
+    intended: 'y',
+    reason: 'Armor takes a big share of each light boomerang hit.',
   },
   {
     x: 'boomerang',
@@ -51,34 +49,32 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'The boomerang’s hits are too small to rewind, but its hits are light.',
+    intended: 'y',
+    reason: 'Its light hits are far too small to rewind, and it hits twice a throw.',
   },
   {
     x: 'frost',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'The slowest ball is the easiest to hit twice, and its heavy hits pay it back.',
+    intended: 'y',
+    reason: 'The slowest ball is the easiest to hit twice a throw, and it can’t catch the thrower.',
   },
   {
     x: 'magnet',
     y: 'boomerang',
-    intended: 'x',
-    band: 'movement',
-    reason: 'Pulls the frail thrower into a brawl.',
+    intended: 'even',
+    reason:
+      'The pull drags the thrower into a brawl, but the boomerang keeps hitting: neither pulls ahead.',
   },
   {
     x: 'necromancer',
     y: 'boomerang',
     intended: 'x',
-    band: 'movement',
     reason: 'A skull nearer than its owner draws the throw, and a skull stops a boomerang dead.',
   },
   {
     x: 'speedster',
     y: 'boomerang',
     intended: 'x',
-    band: 'movement',
     reason: 'It outruns the throw and closes in while the boomerang is away.',
   },
   {
@@ -90,9 +86,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'boomerang',
-    intended: 'x',
-    band: 'movement',
-    reason: 'The growing body meets it more often, and its light hits lose every trade.',
+    intended: 'even',
+    reason: 'Its throws land while the Titan is small; once grown, its bumps win: it evens out.',
   },
   {
     x: 'venom',

@@ -18,7 +18,7 @@ export const PULL_PERIOD_TICKS = 120;
 /** How long each pull lasts. */
 export const PULL_TICKS = 36;
 /** How far each tick of a pull turns the enemy's heading toward the Magnet (ADR 0026). */
-export const PULL_SHARE = 0.03;
+export const PULL_SHARE = 0.025;
 
 /** True while a Magnet is pulling, read from any ball state (false for other balls). */
 export function isPulling(ball: BallState, tick: number): boolean {
@@ -39,7 +39,7 @@ export const magnet = defineBall<MagnetState>({
   ability: { name: 'Pull', shownBy: { kind: 'hook', hook: 'onTick' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 69,
+  maxHealth: 68,
   contactDamage: 25,
   initialAbilityState: { nextPullTick: FIRST_PULL_TICK, pullUntilTick: 0 },
   hooks: {

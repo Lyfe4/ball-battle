@@ -25,7 +25,6 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     x: 'bomber',
     y: 'speedster',
     intended: 'x',
-    band: 'movement',
     reason: 'The fastest ball covers the most ground, so it runs into the most bombs.',
   },
   {
@@ -55,9 +54,8 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'bomber',
-    intended: 'x',
-    band: 'movement',
-    reason: 'A growing giant sets off more bombs, but its huge bumps win the trade.',
+    intended: 'even',
+    reason: 'A growing giant sets off more bombs, and its growing bumps pay them back.',
   },
   {
     x: 'inferno',

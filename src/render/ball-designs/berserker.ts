@@ -1,11 +1,11 @@
-import { berserker } from '../../sim/balls/berserker.ts';
+import { MAX_RAGE, rageOf } from '../../sim/balls/berserker.ts';
 import { theme } from '../theme.ts';
-import { crackCount, simpleCrackCount } from './state.ts';
+import { rageCrackCount } from './state.ts';
 import type { BallDesign } from './types.ts';
 
 /**
  * Cracks from the edge inwards, as [x, y] fractions of r, in the order they appear as the
- * Berserker loses health. Each one stays inside the ball, so its outline stays round.
+ * Berserker stores rage. Each one stays inside the ball, so its outline stays round.
  */
 const CRACKS: readonly (readonly (readonly [number, number])[])[] = [
   [
@@ -47,15 +47,17 @@ const CRACKS: readonly (readonly (readonly [number, number])[])[] = [
 ];
 
 /**
- * A ball cracking under its rage: dark cracks run in from the edge, more of them and heavier as
- * its health drops, so the danger reads at a glance. At small size fewer, thicker cracks.
+ * A ball cracking under its rage (ADR 0045): one crack when calm, and every hit it takes runs more
+ * cracks in from the edge, heavier, until its next bump lets the rage out and they close again. So
+ * the stored rage, and the big bump coming, read at a glance. At small size fewer, thicker cracks.
  */
+const SIMPLE_CRACKS = 4;
 export const berserkerDesign: BallDesign = {
   facing: 'none',
   draw(p, { ball, radius: r, accent, simple }) {
-    const share = ball.health / berserker.maxHealth;
-    const count = simple ? simpleCrackCount(share) : crackCount(share, CRACKS.length);
-    const weight = (simple ? 1.7 : 0.8) + (1 - Math.min(1, Math.max(0, share))) * 0.7;
+    const rage = rageOf(ball.abilityState);
+    const count = rageCrackCount(rage, MAX_RAGE, simple ? SIMPLE_CRACKS : CRACKS.length);
+    const weight = (simple ? 1.7 : 0.8) + Math.min(1, Math.max(0, rage / MAX_RAGE)) * 0.9;
     p.save();
     p.strokeStyle = accent;
     p.lineWidth = r * theme.markLine * weight;

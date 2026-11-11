@@ -69,13 +69,15 @@ export function clockOf(tick: number): string {
 /**
  * The key moments to show (ADR 0037): what decided the round, at most `max`, in time order. Kept by
  * kind first (the finish; the winner taking the lead for good after trailing; each rewind; the
- * round's biggest hit), then by time within a kind.
+ * round's biggest hit), then by time within a kind. The finish closes the story, even when the
+ * biggest hit was the knockout itself and shares its tick.
  */
 export function chooseMoments(candidates: readonly Moment[], max = MAX_MOMENTS): Moment[] {
   const ranked = [...candidates].sort(
     (x, y) => PRIORITY.indexOf(x.kind) - PRIORITY.indexOf(y.kind) || x.tick - y.tick,
   );
-  return ranked.slice(0, max).sort((x, y) => x.tick - y.tick);
+  const last = (moment: Moment) => Number(moment.kind === 'finish');
+  return ranked.slice(0, max).sort((x, y) => x.tick - y.tick || last(x) - last(y));
 }
 
 /** Every event of the match, and each tick's health as a share of max health, by ball id. */

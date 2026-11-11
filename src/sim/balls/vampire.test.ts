@@ -37,7 +37,8 @@ describe('Vampire', () => {
   });
 
   it('heals by its lifesteal share of the damage it deals', () => {
-    const start = 40;
+    // Low enough that the heal never reaches max health.
+    const start = 10;
     const { world, events } = play(headOn(start), 30);
     const dealt = events.find((event) => event.type === 'damage' && event.sourceId === 'ball-0');
     const taken = events.find((event) => event.type === 'damage' && event.targetId === 'ball-0');
@@ -56,7 +57,7 @@ describe('Vampire', () => {
   });
 
   it('heals after taking the contact hit, in the onDamageDealt phase', () => {
-    const { events } = play(headOn(40), 30);
+    const { events } = play(headOn(10), 30);
     const hitTick = events.find((event) => event.type === 'collision')?.tick;
     expect(
       events.filter((event) => event.tick === hitTick).map((event) => event.type),
@@ -73,7 +74,7 @@ describe('Vampire', () => {
   });
 
   it('heals on the killing blow, for the damage actually dealt', () => {
-    const { events } = play(headOn(40, 5), 30);
+    const { events } = play(headOn(10, 5), 30);
     expect(events).toContainEqual(
       expect.objectContaining({ type: 'healed', ballId: 'ball-0', amount: lifestealFor(5) }),
     );
