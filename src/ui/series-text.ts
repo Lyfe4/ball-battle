@@ -34,7 +34,7 @@ export const LEVEL_NAMES: Readonly<Record<string, string>> = {
 
 /** A few words on how each format plays, on its card in the rules step (ADR 0025: short). */
 export const FORMAT_LINES: Readonly<Record<Format, string>> = {
-  blind: 'Set your order. The bot’s stays hidden.',
+  blind: 'Set your order, then watch.',
   reveal: 'See both lineups. Take turns showing first.',
   showdown: 'Open together. Winners show, losers answer.',
 };

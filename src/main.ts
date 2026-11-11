@@ -5,19 +5,20 @@ import {
   parseRoute,
   writeHomeParams,
   writeManualParams,
-  writePickParams,
+  writeModesParams,
   type Route,
   type Screen,
 } from './app/route.ts';
+import { writeMainModeParams } from './app/modes.ts';
 import { createRouter } from './app/router.ts';
-import { initialAppState, seriesRound } from './app/screen-rules.ts';
+import { initialAppState } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
-import { writeSeriesModeParams } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './home-controller.ts';
 import { createBallLink, createManualScreen } from './manual-screen.ts';
+import { createModesScreen } from './modes-screen.ts';
 import { createOutdatedController } from './outdated-screen.ts';
 import { createQuickController } from './quick-controller.ts';
 import { createSeriesScreens } from './series-screens.ts';
@@ -61,6 +62,7 @@ let matchOver = false;
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
+  modes: 'Other modes · BallBattle',
   pick: 'Free play · BallBattle',
   match: 'Free play · BallBattle',
   series: 'Best of 3 · BallBattle',
@@ -105,17 +107,11 @@ const ballLink = createBallLink(go);
 
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
   showWorld,
-  play: (chosen) => {
-    // The setup opens with Start focused, ready for the pair just watched.
-    go((url) => {
-      writePickParams(url, chosen);
-    });
-    quick.open(chosen, 'start');
+  play: () => {
+    go(writeMainModeParams);
   },
-  series: () => {
-    go((url) => {
-      writeSeriesModeParams(url);
-    });
+  modes: () => {
+    go(writeModesParams);
   },
   manual: () => {
     go((url) => {
@@ -131,6 +127,16 @@ const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
       goHome('replace');
     });
   },
+});
+
+const modes = createModesScreen(getElement('modes', HTMLElement), {
+  go,
+  back: () => {
+    navigation.back(() => {
+      goHome('replace');
+    });
+  },
+  freePlay: () => home.demo(),
 });
 
 const outdated = createOutdatedController(getElement('outdated', HTMLElement), {
@@ -157,7 +163,11 @@ const quick = createQuickController(
   },
 );
 
-const { setup: seriesSetup, play: series } = createSeriesScreens(
+const {
+  setup: seriesSetup,
+  play: series,
+  screen: seriesScreen,
+} = createSeriesScreens(
   {
     setup: getElement('series-setup', HTMLElement),
     play: {
@@ -187,6 +197,9 @@ const { setup: seriesSetup, play: series } = createSeriesScreens(
     exitToHome: () => {
       goHome('replace');
     },
+    exitToModes: () => {
+      replaceWith(writeModesParams);
+    },
   },
 );
 
@@ -198,6 +211,11 @@ const router = createRouter(
       },
       leave: () => {
         home.leave();
+      },
+    },
+    modes: {
+      show: () => {
+        modes.show();
       },
     },
     manual: {
@@ -222,34 +240,7 @@ const router = createRouter(
         quick.showMatch(route, from);
       },
     },
-    series: {
-      show: (route) => {
-        if (route.step !== 'play') {
-          // Back (or Leave) keeps an undecided series to resume, with every choice made.
-          series.hold();
-          showControls();
-          seriesSetup.show(route.step, route.link);
-          return;
-        }
-        const round = seriesRound(route.link, {
-          has: series.hasSeries(),
-          address: series.address(),
-        });
-        if (round === 'carry on') {
-          series.resume();
-        } else if (round === 'lineup') {
-          navigation.replace((url) => {
-            writeSeriesModeParams(url, route.link.format, 'lineup');
-          });
-          showCurrentRoute();
-        } else {
-          series.start(round.replay, true);
-        }
-      },
-      leave: () => {
-        series.hold();
-      },
-    },
+    series: seriesScreen,
   },
   initialRoute.screen,
   showControls,
@@ -318,7 +309,7 @@ function showWorld(world: WorldState, shownSeed: number, finished = false): void
 function isSetup(): boolean {
   const screen = router.current();
   if (screen === 'series') return !series.isPlaying();
-  return screen === 'pick' || screen === 'manual' || screen === 'outdated';
+  return screen === 'pick' || screen === 'manual' || screen === 'modes' || screen === 'outdated';
 }
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
@@ -330,6 +321,7 @@ function showControls(): void {
   stage.dataset['screen'] = screen;
   home.setVisible(screen === 'home');
   manual.setVisible(screen === 'manual');
+  modes.setVisible(screen === 'modes');
   outdated.setVisible(screen === 'outdated');
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);

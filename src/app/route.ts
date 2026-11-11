@@ -17,6 +17,8 @@ import {
 export type Route =
   /** The front door: a demo match and the way in. A URL with nothing for any other screen. */
   | { readonly screen: 'home' }
+  /** Every way to play but home's main one (ADR 0046): `?view=modes`. */
+  | { readonly screen: 'modes' }
   /**
    * The ball manual: the roster, or one ball's entry (`ball`), or the matchup chart (`chart`).
    */
@@ -65,6 +67,12 @@ export function writeManualParams(
   else if (page.chart === true) params.set(TAB, 'chart');
 }
 
+/** Other modes (ADR 0046): `?view=modes`, nothing else. */
+export function writeModesParams(params: URLSearchParams): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  params.set(VIEW, 'modes');
+}
+
 /** The quick-match setup with these two balls: `?view=pick&a=&b=`, nothing else. */
 export function writePickParams(params: URLSearchParams, matchup: Matchup): void {
   for (const key of [...params.keys()]) params.delete(key);
@@ -108,6 +116,7 @@ export function parseRoute(
 ): Route {
   const validIds = [...definitions.keys()];
   const view = params.get(VIEW)?.trim().toLowerCase();
+  if (view === 'modes') return { screen: 'modes' };
   if (view === 'pick') return { screen: 'pick', matchup: parseMatchup(params, validIds) };
   if (view === 'manual') {
     const ball = params.get(BALL)?.trim().toLowerCase();

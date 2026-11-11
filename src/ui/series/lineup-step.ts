@@ -1,3 +1,4 @@
+import { botChooses } from '../../app/modes.ts';
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import { LINEUP_SIZE, type Format, type Lineup } from '../../sim/series.ts';
 import type { BallDefinition } from '../../sim/types.ts';
@@ -12,12 +13,17 @@ import {
   toggleInDraft,
   type Draft,
 } from '../lineup-draft.ts';
+import { setupLine } from '../modes-text.ts';
 import { createScreenHeader } from '../screen-header.ts';
+import { createLevelChoice } from './level-choice.ts';
 
 export interface LineupStep {
   readonly element: HTMLElement;
-  /** Shows the lineup step for `format`, with `draft` in the tray, and focuses the heading. */
-  open(format: Format, draft: Draft): void;
+  /**
+   * Shows the lineup step for `format`, with `draft` in the tray and the bot's `level` (where it
+   * makes choices), and focuses the heading.
+   */
+  open(format: Format, draft: Draft, level: string): void;
   /** The lineup in the tray, complete or not. */
   draft(): Draft;
 }
@@ -28,6 +34,8 @@ export interface LineupActions {
   readonly onDone: (lineup: Lineup) => void;
   /** The tray changed, so the setup keeps it if the player leaves for the manual and comes back. */
   readonly onChange: (draft: Draft) => void;
+  /** The player chose the bot's level here (ADR 0046), without leaving the step. */
+  readonly onLevel: (level: string) => void;
 }
 
 const TRAY_ICON_PX = 36;
@@ -38,7 +46,9 @@ const TRAY_ICON_PX = 36;
  * button to go on. A tap on a ball fills the next empty slot (the
  * order of taps is the order they play). A tap on a filled slot, or on that ball's tile in the grid
  * (marked "Slot N ✕"), takes it out and leaves the slot empty for the next pick, so a swap keeps
- * the order. The rules of a draft are in lineup-draft.ts.
+ * the order. The rules of a draft are in lineup-draft.ts. Under the header, what the lineup is for
+ * ("Best of 3 · Reveal") and the bot's level, changed in place (ADR 0046): home's one tap skips
+ * the rules step, so this is where both are seen.
  */
 export function createLineupStep(
   balls: readonly BallDefinition[],
@@ -49,6 +59,11 @@ export function createLineupStep(
   const header = createScreenHeader('Your lineup', 'Back', actions.onBack);
   let draft: Draft = [];
   let format: Format = 'blind';
+
+  const mode = element('div', 'lineup-mode');
+  const modeName = element('p', 'lineup-mode-name');
+  const level = createLevelChoice(actions.onLevel);
+  mode.append(modeName, level.element);
 
   const tray = element('ol', 'lineup-tray');
   tray.setAttribute('aria-label', 'Your lineup');
@@ -91,7 +106,7 @@ export function createLineupStep(
   });
   const footer = element('div', 'screen-footer');
   footer.append(done);
-  root.append(header.element, tray, grid.element, footer);
+  root.append(header.element, mode, tray, grid.element, footer);
 
   /** Reveal and Showdown pick each round's ball as they go, so the lineup has no order. */
   const unordered = () => format !== 'blind';
@@ -144,8 +159,12 @@ export function createLineupStep(
 
   return {
     element: root,
-    open(nextFormat, nextDraft) {
+    open(nextFormat, nextDraft, nextLevel) {
       format = nextFormat;
+      setText(modeName, setupLine(format));
+      // Blind has no choices a level changes (ADR 0035), so no level to show.
+      level.element.hidden = !botChooses(format);
+      level.show(nextLevel);
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
       tray.classList.toggle('lineup-tray-unordered', unordered());
       update(draftOf(nextDraft, (id) => byId.has(id)));

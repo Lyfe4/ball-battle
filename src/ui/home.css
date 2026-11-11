@@ -1,6 +1,6 @@
 /*
- * Home: under the demo arena on a phone, beside it on a wide screen. One large Best of 3; Free play
- * and the manual are visibly secondary.
+ * Home: under the demo arena on a phone, beside it on a wide screen. One large Play (Reveal, ADR
+ * 0046); Other modes and the manual are visibly secondary.
  */
 .home {
   display: grid;
@@ -39,10 +39,25 @@
   line-height: 1.45;
 }
 
+/* Play, with what it plays under it (ADR 0046): the word large, the mode a quiet second line. */
 .home-play {
-  min-height: calc(var(--tap-target) + 12px);
-  font-size: 1.15rem;
-  font-weight: 700;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: calc(var(--tap-target) + 20px);
+  padding-block: var(--space-small);
+}
+
+.home-play-label {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.home-play-meta {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .home-more {

@@ -20,7 +20,7 @@ import {
   type SeriesSession,
 } from './app/series-session.ts';
 import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
-import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
+import { awaitingPick, type Format, type SeriesSetup, type SeriesState } from './sim/series.ts';
 import { matchWorld, playToEnd } from './sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from './ui/series-panel.ts';
@@ -47,8 +47,8 @@ export interface SeriesHost {
   redraw(): void;
   /** After a series: set up the next one, with this one's lineup and format kept. */
   newSeries(last: SeriesSetup): void;
-  /** Leaves the series for its setup. */
-  leave(): void;
+  /** Leaves the series for its setup, in the series' format. */
+  leave(format: Format | undefined): void;
 }
 
 export interface SeriesController {
@@ -143,8 +143,9 @@ export function createSeriesController(
     onLeave: () => {
       // Leaving on purpose forgets the series: there is nothing to resume (ADR 0042). A Back,
       // which can be an accident, holds it instead.
+      const format = session?.state.setup.format;
       keep(undefined);
-      host.leave();
+      host.leave(format);
     },
   });
 

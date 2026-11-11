@@ -230,6 +230,9 @@ export async function runConsistencyFlow(): Promise<void> {
   await checkSettings('manual');
   await open('?view=manual&ball=storm');
   noteHeaderTop('manual ball');
+  await open('?view=modes');
+  noteHeaderTop('Other modes');
+  await checkSettings('Other modes');
   checkHeaderTops();
 
   await open('?');

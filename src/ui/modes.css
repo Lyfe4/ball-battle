@@ -1,0 +1,107 @@
+/*
+ * Other modes (ADR 0046): titled sections of mode cards, phone first. A card is the rules step's
+ * card (name, one line) with the bot's level, where it applies, as a quiet tag under them.
+ */
+.modes {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.modes-section {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.modes-section-title {
+  margin: var(--space-small) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.modes-list {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modes-item {
+  display: grid;
+}
+
+.modes-card {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 2px;
+  min-height: var(--tap-target);
+  margin-bottom: var(--press-depth);
+  padding: var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.modes-card:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.modes-card-name {
+  font-size: var(--font-size-lead);
+  font-weight: 700;
+}
+
+.modes-card-line {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.modes-card-level {
+  margin-top: 6px;
+  padding: 2px var(--space-small);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: var(--font-size-tiny);
+  font-weight: 700;
+}
+
+/*
+ * Desktop (ADR 0031): a sheet no wider than the rules step, three cards to a row. Each section
+ * spans one column per mode (`--modes-count`, set by modes.ts), so Best of 3 and One match sit
+ * side by side under their titles, and a further section (a Best of 5) starts the next row.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .modes {
+    justify-self: center;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    column-gap: var(--space-small);
+    width: 100%;
+    max-width: 52rem;
+  }
+
+  .modes > .screen-header {
+    grid-column: 1 / -1;
+  }
+
+  .modes-section {
+    grid-column: span var(--modes-count, 1);
+    grid-template-rows: auto 1fr;
+  }
+
+  .modes-list {
+    grid-template-columns: repeat(var(--modes-count, 1), minmax(0, 1fr));
+  }
+
+  .modes-card {
+    padding: var(--space-gap) calc(var(--space-gap) + 4px);
+  }
+}

@@ -2,11 +2,13 @@ import { createSettingsToggle } from './settings-menu.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
+import { MAIN_PLAY } from './modes-text.ts';
 
 export interface HomeActions {
-  /** Free play: choose both balls, open testing rather than the game. */
+  /** The main mode (ADR 0046): Best of 3, Reveal, vs the bot, straight to the lineup. */
   readonly onPlay: () => void;
-  readonly onSeries: () => void;
+  /** Every other way to play: Showdown, Blind, Free play. */
+  readonly onModes: () => void;
   readonly onManual: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
@@ -18,7 +20,7 @@ export interface Home {
   showDemo(a: string, b: string): void;
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
-  /** Moves focus to Best of 3: the one obvious first action. */
+  /** Moves focus to Play: the one obvious first action. */
   focus(): void;
 }
 
@@ -28,8 +30,8 @@ const SOURCE_URL = 'https://github.com/Lyfe4/ball-battle';
 /**
  * The front door, phone first: the live demo match on the arena above, then which balls are
  * playing, the name, the pitch (a strategy game about building a lineup; counters are for the
- * manual to reveal, not the headline), a large Best of 3 (the game), and Free play and the manual
- * beside it. On a wide screen it sits beside the arena with the roster's drawings as a strip.
+ * manual to reveal, not the headline), a large Play (Best of 3, Reveal, vs the bot: the game,
+ * ADR 0046), and Other modes and the manual under it. On a wide screen it sits beside the arena with the roster's drawings as a strip.
  */
 export function createHome(
   root: HTMLElement,
@@ -51,18 +53,24 @@ export function createHome(
   const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
-  // Best of 3 is the game, so it leads; Free play (both balls yours to choose) is for trying things.
-  const series = element('button', 'hud-button hud-button-primary home-play', 'Best of 3 vs bot');
-  series.type = 'button';
-  series.addEventListener('click', actions.onSeries);
-  const play = element('button', 'hud-button', 'Free play');
+  // The main mode leads, one tap to its lineup, saying what it plays; every other way to play is
+  // one tap further, behind Other modes (ADR 0046).
+  const play = element('button', 'hud-button hud-button-primary home-play');
   play.type = 'button';
+  play.setAttribute('aria-label', MAIN_PLAY.spoken);
+  play.append(
+    element('span', 'home-play-label', MAIN_PLAY.label),
+    element('span', 'home-play-meta', MAIN_PLAY.meta),
+  );
   play.addEventListener('click', actions.onPlay);
+  const modes = element('button', 'hud-button', 'Other modes');
+  modes.type = 'button';
+  modes.addEventListener('click', actions.onModes);
   const manual = element('button', 'hud-button', 'Ball manual');
   manual.type = 'button';
   manual.addEventListener('click', actions.onManual);
   const more = element('div', 'home-more');
-  more.append(play, manual);
+  more.append(modes, manual);
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -87,7 +95,7 @@ export function createHome(
   // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
   const head = element('div', 'home-head');
   head.append(title, createSettingsToggle());
-  root.append(demo, head, pitch, series, more, strip, footer);
+  root.append(demo, head, pitch, play, more, strip, footer);
 
   return {
     setVisible(visible) {
@@ -101,7 +109,7 @@ export function createHome(
       watch.hidden = !waiting;
     },
     focus() {
-      series.focus();
+      play.focus();
     },
   };
 }

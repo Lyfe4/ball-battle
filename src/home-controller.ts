@@ -1,6 +1,6 @@
 // The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
-// pairs from the counter map, not announced as counters); and where Free play leads. main.ts owns the arena and hands this module
-// what it needs through `HomeHost`.
+// pairs from the counter map, not announced as counters); Play, Other modes and the manual (ADR
+// 0046). main.ts owns the arena and hands this module what it needs through `HomeHost`.
 import { demoAt } from './app/demo.ts';
 import type { Matchup } from './app/matchup.ts';
 import { generateSeed } from './app/seed.ts';
@@ -14,15 +14,16 @@ const NEXT_DEMO_MS = 2500;
 
 export interface HomeHost {
   showWorld(world: WorldState, seed: number): void;
-  /** Free play: the setup for choosing both balls, prefilled. */
-  play(matchup: Matchup): void;
-  series(): void;
+  /** The main mode (ADR 0046): Reveal's lineup, one tap from home. */
+  play(): void;
+  /** Other modes: every other way to play. */
+  modes(): void;
   manual(): void;
 }
 
 export interface HomeController {
   setVisible(visible: boolean): void;
-  /** Shows home with a demo running (or waiting, under reduced motion) and focuses Best of 3. */
+  /** Shows home with a demo running (or waiting, under reduced motion) and focuses Play. */
   open(): void;
   /** True while the demo waits on a still frame for Watch (reduced motion). */
   isWaiting(): boolean;
@@ -30,6 +31,8 @@ export interface HomeController {
   drawn(resultShown: boolean): void;
   /** Leaving home: no demo is queued behind the next screen. */
   leave(): void;
+  /** The demo's pair, the favoured ball first: Free play opens on the counter just watched. */
+  demo(): Matchup;
 }
 
 export function createHomeController(
@@ -46,11 +49,10 @@ export function createHomeController(
 
   const home = createHome(root, balls, {
     onPlay: () => {
-      // The demo's pair, the favoured ball yours: the counter just watched, ready to try.
-      host.play(demoAt(index).matchup);
+      host.play();
     },
-    onSeries: () => {
-      host.series();
+    onModes: () => {
+      host.modes();
     },
     onManual: () => {
       host.manual();
@@ -102,5 +104,6 @@ export function createHomeController(
       }, NEXT_DEMO_MS);
     },
     leave: cancel,
+    demo: () => demoAt(index).matchup,
   };
 }

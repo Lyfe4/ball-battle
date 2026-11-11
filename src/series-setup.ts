@@ -7,6 +7,7 @@
 // the device's storage (so a reload keeps round 1's pick where it was, ADR 0042) until the series
 // starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from './app/bot-level.ts';
+import { lineupParentOf } from './app/modes.ts';
 import { loadSetup, saveSetup } from './app/series-save.ts';
 import { generateSeed } from './app/seed.ts';
 import { beginSession, botOf, resolvePicks } from './app/series-session.ts';
@@ -46,8 +47,10 @@ export interface SeriesSetupHost {
   replace(write: (params: URLSearchParams) => void): void;
   /** In-app Back: the previous screen, or `toParent` when the visitor arrived here from a link. */
   back(toParent: () => void): void;
-  /** Leaves Best of 3 for the parent screen (the first step's Back, arriving from a link). */
+  /** Leaves Best of 3 for home (the first step's Back, arriving from a link). */
   exit(): void;
+  /** Other modes in place of this entry: the parent of a lineup it leads to (ADR 0046). */
+  toModes(): void;
   /** The setup is complete: play the series (Reveal and Showdown: with the player's round-1 pick). */
   start(setup: SeriesSetup, firstPick?: string): void;
   /** An undecided series left with Back, which the rules and lineup offer to resume. */
@@ -89,16 +92,19 @@ export function createSeriesSetup(
     writeSeriesModeParams(params, format, step === 'rules' ? undefined : step);
   };
 
+  /** Remembers the level chosen on the rules step or the lineup step (ADR 0035, 0046). */
+  function chooseLevel(chosen: string): void {
+    level = chosen;
+    saveBotLevel(storage, chosen);
+  }
+
   const rules = createRulesStep({
     onBack: () => {
       host.back(() => {
         host.exit();
       });
     },
-    onLevel: (chosen) => {
-      level = chosen;
-      saveBotLevel(storage, chosen);
-    },
+    onLevel: chooseLevel,
     onNext: (chosen) => {
       format = chosen;
       host.move(to('lineup'));
@@ -109,11 +115,14 @@ export function createSeriesSetup(
   const lineup = createLineupStep(balls, {
     onBack: () => {
       draft = lineup.draft();
+      // Arriving from a link: the screen that leads to this lineup (ADR 0046). Reveal's is home;
+      // the other formats' is Other modes. A lineup reached from the rules step goes back to it.
       host.back(() => {
-        host.replace(to('rules'));
-        open('rules');
+        if (lineupParentOf(format) === 'home') host.exit();
+        else host.toModes();
       });
     },
+    onLevel: chooseLevel,
     onChange: (tray) => {
       draft = tray;
       remember();
@@ -185,7 +194,7 @@ export function createSeriesSetup(
     } else if (step === 'lineup') {
       revealed = undefined;
       remember();
-      lineup.open(format, draft);
+      lineup.open(format, draft, level);
     } else if (revealed !== undefined) {
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
       // choices the series makes when it starts, so what is shown here is what plays.
@@ -198,7 +207,8 @@ export function createSeriesSetup(
       root.hidden = !visible;
     },
     show(step, link) {
-      if (link.format !== undefined) format = link.format;
+      // The URL names the format (none is Blind), whatever was on screen before.
+      format = link.format ?? 'blind';
       if (link.lineup !== undefined) draft = link.lineup;
       // The bot's revealed lineup isn't in the URL but on the device: without it (or with a series
       // in another format than the URL names) round 1's pick goes back to the lineup.
