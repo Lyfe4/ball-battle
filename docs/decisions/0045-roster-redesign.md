@@ -1,8 +1,8 @@
 # 0045: The roster redesign
 
-- Status: Accepted (groups 1 to 3 of 4 shipped; this ADR is updated with each group)
+- Status: Accepted (all four groups shipped; group 4 with named gaps, see below)
 - Date: 2026-11-08
-- Amends: ADR 0009 (no shock), ADR 0010 and 0028 (two favoured bands), ADR 0016 (no numbed rage,
+- Amends: ADR 0009 (no shock), ADR 0010 and 0028 (one counter band, group 4), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
 - Design: `docs/roster-redesign.md` (approved 2026-11-08 with the decisions in its section 0)
 
@@ -312,3 +312,126 @@ both within a point of the line.
   | 60 Hz (native rAF)    |  7,035 | 0.0 ms | 0.2 ms | 2.5 ms |            0 |
   | 90 Hz (fixed driver)  |  8,489 | 0.0 ms | 0.1 ms | 2.3 ms |            0 |
   | 120 Hz (fixed driver) |  8,731 | 0.0 ms | 0.2 ms | 2.4 ms |            0 |
+
+## Group 4: the last reworks and the final counter rule (ruleset 11)
+
+The Berserker, Titan, Quake, Bomber and Vampire become kinds of hit of their own; Venom, Brawler,
+Magnet and the defenders are retuned; and the whole map is held to one final counter rule. Proposal
+and prototype: `docs/roster-redesign-group-4.md`, approved 2026-11-09 with the decisions below.
+
+### The final counter rule
+
+- **A counter (▲ ▼) wins 62% or more**, aiming for 65-72%, never above 78%. The kind and movement
+  bands are gone: one band for every counter.
+- **58-62% is the grey zone**: shown as even, no ▲ ▼ and no counter reason. `pnpm balance` counts
+  and warns about it, never fails it: a 4-point band in the busiest part of the spread catches about
+  a sixth of the pairs whatever the numbers are.
+- **Even is everything else**, ideally 45-55%.
+- **Every ball wins 45-55% overall; no side of any pair under 22%.**
+- **Shape:** every ball has 2-4 counters it wins and 2-4 it loses, the counts within 1, except the
+  even picks and the known gaps below. `pnpm balance` enforces it by name
+  (`SHAPE`, `EVEN_PICKS`, `SHAPE_EXCEPTIONS` in `scripts/counter-map.ts`): any other ball going
+  off-shape fails, and so does a named one beyond its allowance. A full run judges the measured
+  shape; CI's 150-seed run, too noisy to call a pair near 62%, judges the map's.
+
+The map is labelled from the full run: every pair at 62% or more is a counter, everything else even.
+
+### What each ball does now
+
+| Ball      | Now                                                                                               | Was (ruleset 10)                                   |
+| --------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Berserker | Every hit it takes stores a rage (up to 3); its next bump lets out 3 a rage. 86 health, bump 18.2 | Bumps 18 plus up to 7 as it lost health; 86 health |
+| Titan     | Grows as before; its bumps grow with it, from 14.5 to 1.85 times that at full size. 77 health     | Grew bigger and heavier, bumps 22; 85 health       |
+| Quake     | A small, wide shockwave (6, radius 250) on a wall hit, at most every 0.2 s; 71 health             | 11, radius 200, at most every 0.5 s; 70 health     |
+| Bomber    | One big bomb (blast 26) every 3.7 s; 62 health                                                    | Blast 12 every 2.2 s; 69 health                    |
+| Vampire   | Heals 90% of what its bumps deal; 39 health, bump 23                                              | Half; 54 health, bump 22                           |
+| Venom     | Bumps 11 on 66 health (poison unchanged)                                                          | Bumps 8 on 73 health                               |
+| Guardian  | Armor 3 (still never under half a hit); 59 health                                                 | Armor 1; 74 health                                 |
+| Ghost     | Fades at most every 145 ticks; 63 health                                                          | Every 205; 67 health                               |
+| Frost     | Slow lasts 4.5 s; 79 health                                                                       | 3 s; 80 health                                     |
+| Thorns    | Reflects 37%; 80 health                                                                           | 36%; 78 health                                     |
+| Storm     | Strike 40; 74 health                                                                              | 36; 79 health                                      |
+| Others    | Boomerang hits 7 on 52 health; Magnet 68 (pull 0.025); Bloom 49 health                            | 6 on 57; 69 (0.03); 48                             |
+
+The Brawler is unchanged and now has the hardest plain bump only: a raging Berserker and a grown
+Titan can hit harder (an identity rule, changed by the owner's decision). The Chrono now rewinds the
+Bomber's blast, a big hit.
+
+On screen: the Berserker's cracks show its stored rage (one when calm, more and heavier with every
+hit it takes, closing again when its bump lets the rage out) and its hint reads "Rage!" when it does;
+the Titan's visor widens as it grows and hits harder; the Quake's rings are thinner and come often;
+the Bomber's blast flashes brighter with a wider ring.
+
+### Why Venom bumps harder
+
+Armor and rage both feed on many small hits, so Venom's poison ticks made the Guardian (80%) and the
+Berserker (78%) crush it. Fewer, bigger ticks were tried and failed: the Ghost's fade then swallowed
+both ticks after a bump (83%). Moving its damage into the bump instead (11, not 8) cut both to 74%
+while poison stays its edge over the rewind.
+
+### The known gaps (exceptions to the shape, by the owner's decision)
+
+Numbers alone could not give every ball 2-4 counters each way. 210 pairs spread continuously, many
+sit at 60-62%, and every tuning step that pushed one ball's pair over 62% pushed a neighbour's
+back (three optimizer runs and four coordinated rounds plateaued at 5-8 balls off-shape). The owner
+accepted the closest config with these named exceptions, each a gap for a future ball to fill
+(`docs/vision.md`, "Gaps for future balls"):
+
+- **The Storm, Titan and Bomber have one counter on a side.** Only the rewind blunts one big strike
+  or blast, and only spikes and fire hold the grown Titan.
+- **Venom has one win** (the Chrono): poison's small ticks beat only what can't answer small hits.
+- **The Berserker and Bloom beat up to five balls:** both beat nearly everything that deals many
+  small hits.
+- **The Brawler and Magnet are the even picks:** the Brawler beats only the Ghost (a fade can't save
+  it from a plain heavy bump) and loses only to Thorns; the Magnet loses only to Thorns. The Magnet
+  is the candidate to replace when balls are next added.
+
+### Measured (500 seeds per slot order, whole roster)
+
+| Gate                                     | Ruleset 7 | Ruleset 10 (group 3) | Ruleset 11 (group 4) |
+| ---------------------------------------- | --------- | -------------------- | -------------------- |
+| Each ball overall                        | 46.0-52.6 | 47.0-53.5            | 45.6-53.5 (45-55)    |
+| Weakest side of any pair                 | 28.6      | 25.1                 | 24.4 (22)            |
+| Median fight 12-30 s                     | 18.1 s    | 17.3 s               | 16.2 s               |
+| Draws under 5%                           | 0.6%      | 0.6%                 | 0.5%                 |
+| Sensitivity (±5% health), fail above 20  | -         | 15.6 pts             | 11.7 pts             |
+| Counters (62% or more)                   | -         | 31                   | 51                   |
+| Balls missing a side (no win or no loss) | -         | 9                    | 1 (the Magnet)       |
+| Grey-zone pairs (58-62%, warned)         | -         | -                    | 34                   |
+| Every ball's shape (with the gaps)       | -         | -                    | passes               |
+| Comebacks (loser once led by 25+) 10-20% | 14.6%     | 16.5%                | 18.6%                |
+| Reveal analysis (choices move the odds)  | 80%+      | 79% / 76%            | 89% / 87% (80)       |
+
+The reveal analysis's two thresholds are back at four fifths. Each ball's counters with their win
+rates are in `docs/balance-summary.md`.
+
+### What did not work
+
+- **Fewer, bigger poison ticks** for Venom (2 of 8): the Ghost's fade covered both ticks after a
+  bump (83%), so Venom's damage moved into its bump instead.
+- **A longer, rarer fade** for the Ghost, to sharpen it against drips and soften it against heavy
+  bumps: all or nothing against Venom again (78-87%), or no wins at all.
+- **A longer Storm warning**, so fast balls leave the circle: balls don't steer, so no ball
+  systematically gets out; the Storm keeps its one loss to the rewind.
+- **A bigger blast to make the Guardian beat the Bomber:** a big blast loses little to armor, so
+  the Bomber beats the Guardian instead and keeps its one loss to the rewind.
+- **Thorns over the Berserker:** reflection lifts every bumper together (as in group 3); the pair
+  sits in the grey zone (61%).
+
+### Other effects
+
+- The bot reads the map, so its picks change with it (ruleset 11). Series measurements
+  (`docs/series-measurements.md`): with measured odds the player's choices are worth more than at
+  ruleset 10 (Reveal gaps 11-12 points, from 9-10); with the map's odds Showdown against the Easy
+  and Hard bots moves fewer lineup pairs (46%, from 61%).
+- Phone frame timing (`scripts/frame-timing.ts`, over Berserker vs Venom, Titan vs Bloom, Quake vs
+  Chrono, Bomber vs Speedster and Vampire vs Storm): no frame over 16.7 ms.
+
+  | Refresh               | Frames | Median |    p95 |    Max | Over 16.7 ms |
+  | --------------------- | -----: | -----: | -----: | -----: | -----------: |
+  | 60 Hz (native rAF)    |  5,730 | 0.0 ms | 0.2 ms | 2.4 ms |            0 |
+  | 90 Hz (fixed driver)  |  6,853 | 0.0 ms | 0.2 ms | 2.3 ms |            0 |
+  | 120 Hz (fixed driver) |  7,049 | 0.0 ms | 0.2 ms | 2.5 ms |            0 |
+
+- "How it was won" now always ends with the finish, also when the knockout is the round's biggest
+  hit (a bug the Storm's bigger strike showed).

@@ -2,7 +2,7 @@
 
 Measured 2026-11-07 for ADR 0035 (ruleset 6, 17 balls), for ADR 0043 (ruleset 7, 21 balls) and
 again on 2026-11-08 for ADR 0045 (ruleset 8, the roster redesign's first group, and ruleset 9, its
-second group, and ruleset 10, its third: the tables below): the three bot levels in Reveal and Showdown. Scripts: `scripts/series-analysis.ts` (the maths, unit-tested) and
+second group, ruleset 10, its third, and on 2026-11-12 ruleset 11, its fourth: the tables below): the three bot levels in Reveal and Showdown. Scripts: `scripts/series-analysis.ts` (the maths, unit-tested) and
 `scripts/series-measure.ts` (runs it). Reveal's earlier measurements are in
 `docs/reveal-measurements.md`.
 
@@ -44,38 +44,39 @@ series.
 
 | Format   | Bot       | Best  | Worst | Random | Gap      | Moved | Round 1 decides (best / random) |
 | -------- | --------- | ----- | ----- | ------ | -------- | ----- | ------------------------------- |
-| Reveal   | Easy      | 54.7% | 45.6% | 50.2%  | 9.1 pts  | 97.6% | 74.9% / 75.0%                   |
-| Reveal   | Normal    | 54.5% | 44.1% | 49.0%  | 10.4 pts | 98.3% | 74.9% / 75.0%                   |
-| Reveal   | Hard      | 52.4% | 42.5% | 47.2%  | 9.9 pts  | 96.6% | 74.9% / 75.0%                   |
-| Reveal   | first bot | 54.5% | 42.6% | 48.2%  | 11.9 pts | 98.7% | 74.8% / 75.0%                   |
-| Showdown | Easy      | 52.6% | 47.8% | 50.2%  | 4.8 pts  | 80.8% | 72.4% / 75.0%                   |
-| Showdown | Normal    | 53.9% | 45.5% | 49.7%  | 8.4 pts  | 94.1% | 73.2% / 74.5%                   |
-| Showdown | Hard      | 52.0% | 45.2% | 48.9%  | 6.8 pts  | 93.7% | 72.3% / 73.7%                   |
+| Reveal   | Easy      | 56.1% | 45.2% | 50.6%  | 10.9 pts | 98.2% | 74.9% / 75.0%                   |
+| Reveal   | Normal    | 55.8% | 43.4% | 49.3%  | 12.4 pts | 98.4% | 74.9% / 75.0%                   |
+| Reveal   | Hard      | 53.2% | 41.5% | 47.0%  | 11.7 pts | 97.3% | 74.9% / 74.9%                   |
+| Reveal   | first bot | 55.8% | 41.7% | 48.4%  | 14.1 pts | 98.6% | 74.8% / 75.0%                   |
+| Showdown | Easy      | 53.5% | 47.7% | 50.6%  | 5.8 pts  | 87.2% | 71.9% / 75.0%                   |
+| Showdown | Normal    | 55.0% | 45.1% | 50.1%  | 9.9 pts  | 93.6% | 72.6% / 74.4%                   |
+| Showdown | Hard      | 52.9% | 44.6% | 49.1%  | 8.3 pts  | 97.0% | 71.7% / 73.5%                   |
 
 ### Counter-map odds
 
 | Format   | Bot    | Best  | Worst | Random | Gap     | Moved | Round 1 decides (best / random) |
 | -------- | ------ | ----- | ----- | ------ | ------- | ----- | ------------------------------- |
-| Reveal   | Easy   | 54.1% | 46.0% | 50.0%  | 8.1 pts | 94.4% | 74.9% / 75.0%                   |
-| Reveal   | Normal | 53.7% | 44.4% | 48.6%  | 9.3 pts | 94.4% | 74.9% / 75.0%                   |
-| Reveal   | Hard   | 50.0% | 43.0% | 46.4%  | 7.1 pts | 79.8% | 74.9% / 75.0%                   |
-| Showdown | Easy   | 52.2% | 47.9% | 50.0%  | 4.3 pts | 61.5% | 72.7% / 75.0%                   |
-| Showdown | Normal | 53.3% | 45.7% | 49.5%  | 7.6 pts | 94.4% | 73.2% / 74.4%                   |
-| Showdown | Hard   | 50.0% | 45.6% | 48.5%  | 4.4 pts | 60.9% | 71.8% / 73.4%                   |
+| Reveal   | Easy   | 53.3% | 46.6% | 49.9%  | 6.7 pts | 89.5% | 75.0% / 75.0%                   |
+| Reveal   | Normal | 53.1% | 45.3% | 48.8%  | 7.7 pts | 89.5% | 74.9% / 75.0%                   |
+| Reveal   | Hard   | 50.0% | 44.2% | 46.9%  | 5.8 pts | 71.0% | 74.9% / 75.0%                   |
+| Showdown | Easy   | 51.7% | 48.2% | 49.9%  | 3.5 pts | 46.2% | 73.2% / 75.0%                   |
+| Showdown | Normal | 52.7% | 46.4% | 49.5%  | 6.2 pts | 89.5% | 73.5% / 74.5%                   |
+| Showdown | Hard   | 50.0% | 46.3% | 48.7%  | 3.6 pts | 46.0% | 72.2% / 73.7%                   |
 
 ### Whole series played (a random player, 1,000 series per row, ± 2 standard errors)
 
 | Format   | Easy        | Normal      | Hard        |
 | -------- | ----------- | ----------- | ----------- |
-| Reveal   | 49.9% ± 3.2 | 50.6% ± 3.2 | 47.5% ± 3.2 |
-| Showdown | 50.0% ± 3.2 | 50.1% ± 3.2 | 50.4% ± 3.2 |
+| Reveal   | 52.0% ± 3.2 | 50.3% ± 3.2 | 47.1% ± 3.2 |
+| Showdown | 52.4% ± 3.2 | 51.7% ± 3.2 | 51.2% ± 3.2 |
 
 The played series agree with the model's random play within their noise in every row (ruleset
-10, the redesign's third group). Against ruleset 9 every figure moved by about a point at most with
-measured odds. With the map's odds, fewer favoured pairs (38, from 59) changed the gaps less than
-expected: choices still move Showdown's odds against the Easy and Hard bots in about 61% of lineup
-pairs (50% before), since the remaining counters are spread more evenly. The levels and round-1
-shares below still hold.
+11, the redesign's fourth group). With measured odds the choices are worth more than at ruleset 10:
+the Reveal gaps grow from 9-10 to 11-12 points and Showdown's from 5-8 to 6-10, since every ball
+now has counters both ways. With the map's odds the gaps shrink a little and Showdown against the
+Easy and Hard bots moves fewer lineup pairs (46%, from 61%): those bots read the map, and with 51
+counters spread across every ball they leave fewer lineups where one choice stands out. The levels
+and round-1 shares below still hold.
 
 ## What it says
 
@@ -101,5 +102,5 @@ shares below still hold.
 - "Best play" knows the bot's weights. A real player learns them only roughly, so real results sit
   between best and random play.
 - Hard models the odds with the counter map, not measured odds. Where the two differ, a
-  best-playing player can find a little more against it (51.9% with measured odds, 50.0% with the
+  best-playing player can find a little more against it (Showdown 52.9% and Reveal 53.2% with measured odds, 50.0% with the
   map's).

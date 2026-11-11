@@ -91,86 +91,81 @@ definitions and the counter map, so they never go stale.
 In a match, two balls collide elastically and deal damage scaled by how directly
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball        | Ability                                                                                        |
-| ----------- | ---------------------------------------------------------------------------------------------- |
-| Brawler     | None. Hits the hardest. The safe pick: even against every ball but Thorns.                     |
-| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                |
-| Vampire     | Heals for half of the damage its bumps deal; nothing from a ball it never touches.             |
-| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.               |
-| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                   |
-| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                          |
-| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.             |
-| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                   |
-| Berserker   | The most health, and hits harder the more it has lost.                                         |
-| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                    |
-| Quake       | Every wall it hits sends out a shockwave that hurts anything near it.                          |
-| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                |
-| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.                        |
-| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after. |
-| Chrono      | Rewinds a big hit (a shot, a strike, or a knockout), then recharges for 10 s.                  |
-| Titan       | Grows bigger and heavier as the match goes on. The one ball that changes size.                 |
-| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls. |
-| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.              |
-| Bomber      | Leaves bombs that blow up when an enemy runs into one, or when the fuse runs out.              |
-| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.                |
-| Bloom       | Always regrowing: heals a little, three times a second, all match long.                        |
+| Ball        | Ability                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------ |
+| Brawler     | None. The hardest plain bump. An even pick: beats only the Ghost, loses only to Thorns.          |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                  |
+| Vampire     | Heals most of what its bumps deal, on little health; nothing from a ball it never touches.       |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.                 |
+| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                     |
+| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                            |
+| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.               |
+| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                     |
+| Berserker   | The most health. Every hit it takes builds rage (up to 3); its next bump lets it all out.        |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                      |
+| Quake       | Every wall it hits sends out a small, wide shockwave, as often as five times a second.           |
+| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                  |
+| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.                          |
+| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after.   |
+| Chrono      | Rewinds a big hit (a shot, a strike, a blast or a knockout), then recharges for 10 s.            |
+| Titan       | Grows bigger as the match goes on, and its bumps grow with it. The one ball that changes size.   |
+| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls.   |
+| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.                |
+| Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out. |
+| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.                  |
+| Bloom       | Always regrowing: heals a little, three times a second, all match long.                          |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
 
-Picks matter: most pairs lean one way. A counter is _favoured_, never decided, and each one comes
-from something you can watch happen. When a kind of hit decides it (spikes against bumps, a rewind
-against a big hit) it aims to win 72-78% of the time; when speed, size, range or a pull decides it,
-62-72% ([ADR 0045](docs/decisions/0045-roster-redesign.md)). No rule exists only where two
-abilities meet: every ability works the same on any ball.
+Picks matter: many pairs lean one way. A counter (▲ ▼) is _favoured_, never decided: it wins at
+least 62% of the time and aims for 65-72%, and each one comes from something you can watch happen
+([ADR 0045](docs/decisions/0045-roster-redesign.md)). No rule exists only where two abilities
+meet: every ability works the same on any ball.
 
-- **Speedster is strong vs Archer, Storm, Sniper and Boomerang**: it closes on arrows and throws,
-  outruns lightning warnings and is off the Sniper's locked line before the shot.
-- **Frost is strong vs Speedster and Quake**: slowed right down, they build no speed and hit fewer
-  walls, so fewer stacks and fewer shockwaves.
-- **Thorns is strong vs Brawler and Magnet**: the hardest bumps come back off the spikes hardest.
-  **Archer, Sniper, Venom and Inferno are strong vs Thorns**: arrows, shots, poison and fire never
-  touch the spikes.
-- **Venom is strong vs Chrono**: poison ticks are too small to rewind.
-- **Magnet is strong vs the balls weak up close** (Speedster, Archer, Sniper, Storm, Boomerang,
-  Necromancer): its pull drags them into a brawl. It also drags the Bloom into hard bumps faster
-  than it regrows.
-- **Ghost is strong vs Venom**: it fades after a poison tick, so the next ones miss.
-- **Necromancer is strong vs Archer, Sniper and Boomerang**: its skeleton is nearer than its owner,
-  so it draws the arrow, shot or throw, and a new one rises soon after.
-- **Chrono is strong vs Storm and Sniper**: a strike or a shot is a big hit, and its rewind undoes
-  it. **Venom and Inferno are strong vs the Chrono**: their hits are too small to rewind.
-- **Titan is strong vs Speedster, Archer, Boomerang, Bomber and Bloom**: its growing body meets them
-  more often, their light hits lose the trade, and its huge bumps outpace regrowth.
-- **Inferno is strong vs Necromancer**: the fire burns up the skeleton and the Necromancer behind it.
-- **Bomber is strong vs Speedster**: the fastest ball covers the most ground and runs into the most
-  bombs.
-- **Guardian is strong vs Venom and Inferno**: armor takes a big share off every poison tick and
-  burn.
-- **Bloom is strong vs Inferno and Necromancer**: it regrows faster than burns and bites hurt.
+- **Bumps against spikes:** Thorns beats the Brawler, Magnet and Titan; the harder a ball bumps,
+  the harder it is hurt back. Archer, Sniper and Inferno beat Thorns: they never touch it.
+- **Lifesteal:** the Vampire beats the bumpers that trade with it (Berserker, Bloom) and loses to
+  what never touches it (Archer, Storm, Boomerang).
+- **Rage:** every hit the Berserker takes builds rage, so many small hits feed it: it beats the
+  Archer, Venom, Quake, Inferno and Boomerang. Regrowth (Bloom) and lifesteal heal its big bumps back.
+- **Big hits against the rewind:** the Chrono rewinds a strike, a shot or a blast, so it beats the
+  Storm, Sniper and Bomber; Venom, Quake, Inferno and Boomerang hit too small to rewind.
+- **Small hits against armor:** the Guardian takes a big share off every small hit (Venom, Quake,
+  Boomerang, the Speedster's many bumps) and loses to heavy ones (Frost, Sniper, Bomber) and to
+  regrowth (Bloom).
+- **Regrowth:** the Bloom heals back slow damage: it beats the Frost, Berserker, Necromancer,
+  Inferno and Guardian, and loses to the Vampire's drinking and the grown Titan's huge bumps.
+- **The fade:** the Ghost fades after a hit, so a poison tick or a burn just after misses: it beats
+  Venom and Inferno. The Brawler's and Frost's heavy bumps land whole.
+- **The skull:** the Necromancer's skeleton draws arrows and throws (Archer, Boomerang); wide
+  shockwaves, fire and regrowth deal with it (Quake, Inferno, Bloom).
+- **Speed and the slow:** the Speedster outruns arrows, shots and throws (Archer, Sniper,
+  Boomerang); the Frost slows it right down, the Bomber's blasts catch it, armor blunts it.
+- **One big hit:** the Storm's strike takes most of the Vampire's small health; the Bomber's blast
+  catches the Speedster and loses little to armor; the growing Titan crushes the Bloom late.
 
-A pair counts as a counter only if it really wins enough: 66% for a kind of hit, 58% for movement
-([ADR 0045](docs/decisions/0045-roster-redesign.md), group 3). Edges that measured softer are even,
-so some balls have none on one side for now: the Vampire and Berserker have no counter either way;
-the Storm, Quake and Boomerang have no favoured matchup, and the Frost, Ghost, Titan and Guardian
-no unfavoured one. The last redesign group revisits them.
+Every other pair is even. Even pairs with a side between 58% and 62% sit in a grey zone, shown as
+even and counted by `pnpm balance`.
 
-The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) ships in four groups; the
-first removed the three rules between balls (shock, stagger and numbed rage) and the spark that
-marked them, so a counter is only ever what the two balls already do; the second gave the Chrono,
-Guardian, Ghost, Bloom and Venom abilities that act on a kind of hit (big or small); the third
-made the Inferno's fire never stack (the whole trail burns on one beat) and tuned the Necromancer,
-Bomber, Frost and Thorns to what their abilities beat. Every heal
-shows as a green pulse sized by the heal.
+Every ball has two to four counters each way, the two counts within one, except known gaps for
+future balls to fill (listed in [docs/balance-summary.md](docs/balance-summary.md)): the Storm,
+Titan, Bomber and Venom have one counter on a side, and the Berserker and Bloom beat up to five
+balls. The **Brawler** and **Magnet** are the even picks: the Brawler beats only the Ghost and
+loses only to Thorns, the Magnet loses only to Thorns.
 
-The **Brawler** is the safe pick: even against everyone except Thorns. Every other pair is even.
+The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) shipped in four groups:
+the first removed the three rules between balls (shock, stagger and numbed rage) and the spark
+that marked them; the second gave the Chrono, Guardian, Ghost, Bloom and Venom abilities that act
+on a kind of hit (big or small); the third made the Inferno's fire never stack and tuned the
+Necromancer, Bomber, Frost and Thorns; the fourth reworked the Berserker, Titan, Quake, Bomber and
+Vampire so their hits are a kind of their own. Every heal shows as a green pulse sized by the heal.
 The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
-[ADR 0016](docs/decisions/0016-counter-density.md),
 [ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md),
-[ADR 0028](docs/decisions/0028-counter-pass.md),
-[ADR 0043](docs/decisions/0043-boomerang-bomber-guardian-bloom.md)).
+[ADR 0043](docs/decisions/0043-boomerang-bomber-guardian-bloom.md),
+[ADR 0045](docs/decisions/0045-roster-redesign.md)).
 
 ## Best of 3
 
