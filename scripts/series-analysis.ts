@@ -4,7 +4,7 @@
 // what plays; no matches are played here.
 //
 // Rounds are independent and a drawn round counts as half a win (it is replayed). The series is
-// first to two. The player chooses best, worst or at random; "best" knows how the bot weighs its
+// first to a majority of the lineup: two of three, or three of five for a Best of 5 (winsNeededOf). The player chooses best, worst or at random; "best" knows how the bot weighs its
 // choices, which is the most a player can learn about it.
 import type { BotRole, BotView, LineupBot } from '../src/sim/bot.ts';
 import type { Format, Side } from '../src/sim/series.ts';
@@ -14,9 +14,9 @@ import type { Odds } from './reveal-analysis.ts';
 export type Play = 'best' | 'worst' | 'random';
 
 /** Who chooses first in a round: a side, or both at once (Showdown's round 1). */
-type Lead = Side | 'both';
+export type Lead = Side | 'both';
 
-interface Position {
+export interface Position {
   readonly you: readonly string[];
   readonly bot: readonly string[];
   /** The player's round wins, then the bot's. */
@@ -32,6 +32,13 @@ export interface Outlook {
 }
 
 const without = (balls: readonly string[], ball: string) => balls.filter((id) => id !== ball);
+
+/** Round wins that take a series from a position: a majority of the lineup size. */
+export const winsNeededOf = (at: {
+  readonly you: readonly string[];
+  readonly wins: number;
+  readonly losses: number;
+}) => Math.floor((at.you.length + at.wins + at.losses) / 2) + 1;
 const mean = (values: readonly number[]) => values.reduce((s, v) => s + v, 0) / values.length;
 
 function pickBy(play: Play, values: readonly number[]): number {
@@ -55,63 +62,73 @@ export function seriesChance(
   from: Position,
   lead: Lead,
 ): number {
+  return evaluator(format, bot, odds, play).value(from, lead);
+}
+
+export interface Evaluator {
+  /** The player's series chance from `at`, with `lead` choosing first this round. */
+  value(at: Position, lead: Lead): number;
+  /**
+   * The player's series chance for each ball they could choose now, in `at.you`'s order: answering
+   * `shown` when the bot showed first (lead `b`), else showing first or opening.
+   */
+  choices(at: Position, lead: Lead, shown?: string): number[];
+}
+
+/**
+ * Series chances with one memo for a format, bot, odds and play, so a caller asking about many
+ * positions of the same lineup pair (a played-out series) reuses the work.
+ */
+export function evaluator(format: Format, bot: LineupBot, odds: Odds, play: Play): Evaluator {
   const memo = new Map<string, number>();
-  const value = (at: Position, leads: Lead): number => {
-    if (at.wins >= 2) return 1;
-    if (at.losses >= 2) return 0;
+  const afterOf = (at: Position, leads: Lead) => (mine: string, theirs: string) => {
+    const chance = odds(mine, theirs);
+    const rest = { you: without(at.you, mine), bot: without(at.bot, theirs), round: at.round + 1 };
+    const won = value(
+      { ...rest, wins: at.wins + 1, losses: at.losses },
+      nextLead(format, leads, true),
+    );
+    const lost = value(
+      { ...rest, wins: at.wins, losses: at.losses + 1 },
+      nextLead(format, leads, false),
+    );
+    return chance * won + (1 - chance) * lost;
+  };
+  const choices = (at: Position, leads: Lead, shown?: string): number[] => {
+    const after = afterOf(at, leads);
+    const weights = (role: BotRole, s?: string) => bot.weights(viewOf(format, at, role, s));
+    if (leads === 'b') {
+      if (shown === undefined) throw new Error('Answering needs the ball shown');
+      return at.you.map((mine) => after(mine, shown));
+    }
+    if (leads === 'a') {
+      return at.you.map((mine) =>
+        weights('answer', mine).reduce((sum, [ball, w]) => sum + w * after(mine, ball), 0),
+      );
+    }
+    const opener = weights('open');
+    return at.you.map((mine) => opener.reduce((sum, [ball, w]) => sum + w * after(mine, ball), 0));
+  };
+  function value(at: Position, leads: Lead): number {
+    const need = winsNeededOf(at);
+    if (at.wins >= need) return 1;
+    if (at.losses >= need) return 0;
     const [y, b] = [at.you[0], at.bot[0]];
     if (at.you.length === 1 && y !== undefined && b !== undefined) return odds(y, b);
     const key = `${at.you.join()}|${at.bot.join()}|${String(at.wins)}${String(at.losses)}|${leads}`;
     const known = memo.get(key);
     if (known !== undefined) return known;
-    const after = (mine: string, theirs: string) => {
-      const chance = odds(mine, theirs);
-      const rest = {
-        you: without(at.you, mine),
-        bot: without(at.bot, theirs),
-        round: at.round + 1,
-      };
-      const won = value(
-        { ...rest, wins: at.wins + 1, losses: at.losses },
-        nextLead(format, leads, true),
-      );
-      const lost = value(
-        { ...rest, wins: at.wins, losses: at.losses + 1 },
-        nextLead(format, leads, false),
-      );
-      return chance * won + (1 - chance) * lost;
-    };
-    const weights = (role: BotRole, shown?: string) => bot.weights(viewOf(format, at, role, shown));
-    let result: number;
-    if (leads === 'b') {
-      result = weights('show').reduce(
-        (sum, [ball, w]) =>
-          sum +
-          w *
-            pickBy(
-              play,
-              at.you.map((mine) => after(mine, ball)),
-            ),
-        0,
-      );
-    } else if (leads === 'a') {
-      result = pickBy(
-        play,
-        at.you.map((mine) =>
-          weights('answer', mine).reduce((sum, [ball, w]) => sum + w * after(mine, ball), 0),
-        ),
-      );
-    } else {
-      const opener = weights('open');
-      result = pickBy(
-        play,
-        at.you.map((mine) => opener.reduce((sum, [ball, w]) => sum + w * after(mine, ball), 0)),
-      );
-    }
+    // The bot showing first: average over what it shows, the player answering each.
+    const result =
+      leads === 'b'
+        ? bot
+            .weights(viewOf(format, at, 'show'))
+            .reduce((sum, [ball, w]) => sum + w * pickBy(play, choices(at, leads, ball)), 0)
+        : pickBy(play, choices(at, leads));
     memo.set(key, result);
     return result;
-  };
-  return value(from, lead);
+  }
+  return { value, choices };
 }
 
 function viewOf(format: Format, at: Position, role: BotRole, shown?: string): BotView {
