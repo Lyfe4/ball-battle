@@ -76,7 +76,8 @@ strict Content Security Policy.
 The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: a Best
 of 3 against the bot in Reveal, straight to choosing your lineup. **Other modes** holds every other
 way to play: Showdown, Blind, and **Free play**, where you choose both balls of one match to try
-things out ([ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)). The **Ball
+things out. While a series is held (left with Back, or after a reload), Play becomes **Resume
+series**, with its format and score, and a quiet **New series** starts afresh ([ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)). The **Ball
 manual** sits beside it. Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained

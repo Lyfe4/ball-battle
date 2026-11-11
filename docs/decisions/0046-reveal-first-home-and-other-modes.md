@@ -110,9 +110,8 @@ and one return.
   player and their first lineup, with the format already decided.
 - **The level on home** (a chip beside Play). Rejected: a second decision on the front door, and
   the level means nothing until the player is about to play.
-- **A Resume button on home** when a series is held. Not added: Resume is one tap away on the
-  lineup Play opens, and a held series is rare outside a Back. Worth adding if players lose
-  series that way.
+- **A Resume button on home** when a series is held. Not added at first; added the same day (see
+  the addendum).
 
 ### Browser and library behaviour relied on
 
@@ -184,3 +183,34 @@ Before and after, phone (375 × 812) and desktop (1920 × 1080), in `docs/decisi
 - Negative: Showdown, Blind and Free play are one tap further from home than before.
 - Negative: the lineup step on a phone is one row taller, so the grid starts about 60 px lower.
 - Negative: the rules step is now reached only from older `?mode=bo3` links; it stays for them.
+
+## Addendum (2026-11-12): home resumes a held series
+
+A series left with Back, or put back after a reload (ADR 0042), was one tap further away than a new
+one: Play, then Resume on the lineup.
+
+- **While a series is held, home's main button is Resume series**, with the series' format and
+  score under it ("Best of 3 · Reveal · You 1–0 Bot"; to a screen reader "Resume series: Best of
+  3, Reveal, you 1, bot 0"). One tap carries on where it was, as the lineup's Resume does (the
+  same `resume` in `series-screens.ts`). It takes focus, like Play.
+- **A quiet "New series" link** sits under the button's end. It forgets the held series (as Leave
+  series does, ADR 0042: a deliberate exit clears the save) and opens Reveal's lineup with nothing
+  to resume. It is not asked twice: unlike Leave, it never sits by the in-fight controls, it is a
+  small link apart from the big button, and the series lost is against the bot.
+- **Held means undecided.** It is the controller's `held()`: an undecided series off screen,
+  whether left with Back or saved before a reload. A decided series has nothing to resume, so home
+  says Play.
+- **Why under the button, not beside it:** beside it, the button would lose about a quarter of its
+  width on a phone, and its line of format and score would wrap. Under its end it reads as the
+  button's alternative without competing with it.
+- **Tests** (`home-resume-flow.ts`, a framed page it can reload, in Chromium, Firefox and WebKit at
+  375 × 812 and 1280 × 800), seen failing first (home said Play): with nothing held, Play and no
+  New series; after round 1 of a Reveal series and two Backs, Resume series with the format and
+  the score round 1 left, its spoken name, New series, and focus on it; one tap resumes between
+  rounds with the same score, and Back returns home; after a reload the same, and Resume still
+  carries on; New series clears the save, opens the lineup with no Resume card, and home says
+  Play again, also after a reload. Unit tests cover the words.
+
+| Phone                                 | Desktop                                 |
+| ------------------------------------- | --------------------------------------- |
+| ![](0046/after-home-resume-phone.png) | ![](0046/after-home-resume-desktop.png) |

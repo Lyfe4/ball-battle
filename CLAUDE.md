@@ -293,7 +293,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   `src/app/modes.ts`, sections of modes); a new mode or a Best of 5 is data there, not a new
   screen. A lineup's in-app Back without history goes to its parent (`lineupParentOf`): home for
   Reveal, Other modes otherwise. `?mode=bo3` links still open the rules step. A lineup URL's
-  format is the URL's (none is Blind).
+  format is the URL's (none is Blind). While a series is held (`held()`: undecided, off screen,
+  after a Back or a reload) home's Play is Resume series with its format and score, and New series
+  forgets it (`forget()`).
 - **Settings** (ADR 0040) is one menu (`settings-menu.ts`) behind a gear at the top right of every
   screen, just before the `?` where there is one; exactly one gear per screen. It floats by its
   gear inside the visible screen and never moves the layout; the gear, Close, Escape and a tap
