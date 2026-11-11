@@ -200,6 +200,8 @@ export function writeSeriesModeParams(
 ): void {
   clearMatchParams(params);
   params.delete(KEYS.step);
+  // A named screen (`view=modes`, the manual) would open instead of the series (route.ts).
+  params.delete('view');
   params.set(KEYS.mode, SERIES_MODE);
   if (format !== undefined && format !== 'blind') params.set(KEYS.format, format);
   if (step !== undefined) params.set(KEYS.step, step);
