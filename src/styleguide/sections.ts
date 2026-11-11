@@ -19,7 +19,7 @@ export interface Tile {
   readonly toward?: Vec2;
   readonly repeat?: boolean;
   readonly defeated?: boolean;
-  /** Health as a share of max (the Berserker's cracks); full by default. */
+  /** Health as a share of max; full by default. */
   readonly health?: number;
   readonly heal?: number;
   /** The heal's size as a share of max health (ADR 0028); 0.15 or more is a full-size pulse. */
@@ -149,14 +149,14 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Berserker: cracks run in from the edge, more and heavier as its health drops',
+    'Berserker: every hit it takes runs more cracks in, heavier; its next bump lets them out',
     [
-      ...[1, 0.75, 0.5, 0.25, 0.05].map((health): Tile => ({
-        label: `${health * 100}% health`,
+      ...[0, 1, 2, 3].map((rage): Tile => ({
+        label: rage === 0 ? 'calm' : `rage ${rage}`,
         id: 'berserker',
-        health,
+        abilityState: { rage },
       })),
-      { label: 'mirror B, 50%', id: 'berserker', health: 0.5, repeat: true },
+      { label: 'mirror B, rage 2', id: 'berserker', abilityState: { rage: 2 }, repeat: true },
     ],
   ],
   [

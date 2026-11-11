@@ -23,17 +23,12 @@ export function simpleStreakCount(stacks: number): number {
 }
 
 /**
- * Berserker cracks for a health share from 1 (full) to 0: one at full health, one more for every
- * equal step of health lost, up to `max` at 0. Out-of-range shares are clamped.
+ * Berserker cracks for `rage` stored of `maxRage`: one when calm, every one of `max` at full rage,
+ * evenly between. Out-of-range rage is clamped.
  */
-export function crackCount(share: number, max: number): number {
-  const lost = 1 - Math.min(1, Math.max(0, share));
-  return Math.min(max, 1 + Math.floor(lost * (max - 1) + 1e-9));
-}
-
-/** Berserker cracks at small size: one, two below two thirds health, three below one third. */
-export function simpleCrackCount(share: number): number {
-  return Math.min(3, crackCount(share, 4));
+export function rageCrackCount(rage: number, maxRage: number, max: number): number {
+  const fill = maxRage <= 0 ? 0 : Math.min(1, Math.max(0, rage / maxRage));
+  return 1 + Math.round(fill * (max - 1));
 }
 
 /** True when a ball this many CSS pixels in radius should use its simplified design. */
