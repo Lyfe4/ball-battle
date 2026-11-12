@@ -56,7 +56,7 @@ export const spartan = defineBall<SpartanState>({
   id: 'spartan',
   name: 'Spartan',
   description: 'Plants its shield, then throws its spear.',
-  color: '#fef3c7',
+  color: '#dc2626',
   ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 730,

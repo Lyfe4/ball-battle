@@ -24,7 +24,7 @@ export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Spartan: a round shield planted in front with the spear readied; once thrown, the shield slung behind (open). A hit on the planted shield glances off in a broken gold ring (see the phone arena)',
+    'Spartan: a bronze crested helmet in profile on crimson, looking at the enemy, its cream crest past the edge; while planted, a thick rimmed bronze arc on the side facing the enemy, clear of the helmet, gone once the spear is thrown (open). The spear shows only in flight, and a hit on the planted shield glances off in a broken gold ring (see the phone arena)',
     [
       { label: 'shield planted', id: 'spartan', abilityState: { phase: 0, raised: true } },
       { label: 'open', id: 'spartan', abilityState: { phase: 0, raised: false } },
