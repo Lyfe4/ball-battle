@@ -5,7 +5,8 @@ bars until one wins. No player control; you pick balls and watch. This is a port
 code quality matters as much as features.
 
 Where it's heading (PvP best-of-3 with blind lineups, soft counters): `docs/vision.md`. Best of 3
-against a bot is built (ADR 0017), with three draft formats (blind, reveal with turns showing
+against a bot is built (ADR 0017), and Best of 5 beside it (ADR 0048: five balls, first to three,
+chosen and remembered on Other modes), with three draft formats (blind, reveal with turns showing
 first after a seeded coin toss, and showdown; ADR 0019, 0021, 0029, 0035) and three bot levels
 (ADR 0035, `src/sim/bot.ts`). Reveal is the main mode (ADR 0046): home's Play opens its lineup in
 one tap, and every other way to play is on Other modes (`src/app/modes.ts`). The rules and the bots are pure sim code in `src/sim/series.ts` and
@@ -144,7 +145,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0044-one-story-look-and-settings-off-the-court.md` and
 `docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
 `docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md` and
-`docs/decisions/0047-spartan-and-bloom-pause.md`.
+`docs/decisions/0047-spartan-and-bloom-pause.md` and `docs/decisions/0048-best-of-5.md`.
 
 ## Workflow
 
@@ -291,8 +292,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - **One tap to the main mode** (ADR 0046). Home's Play goes straight to Reveal's lineup against
   the remembered bot level; the lineup step shows what it is for and the level, changed in place
   (no history step). Every other way to play is a card on Other modes (`OTHER_MODE_SECTIONS` in
-  `src/app/modes.ts`, sections of modes); a new mode or a Best of 5 is data there, not a new
-  screen. A lineup's in-app Back without history goes to its parent (`lineupParentOf`): home for
+  `src/app/modes.ts`, sections of modes); a new mode is data there, not a new screen. The series
+  section opens with a remembered Best of 3 / Best of 5 choice (ADR 0048); a series' length is
+  `SeriesSetup.bestOf` (absent is 3, `mode=bo5` in a link), never a constant. A lineup's in-app Back without history goes to its parent (`lineupParentOf`): home for
   Reveal, Other modes otherwise. `?mode=bo3` links still open the rules step. A lineup URL's
   format is the URL's (none is Blind). While a series is held (`held()`: undecided, off screen,
   after a Back or a reload) home's Play is Resume series with its format and score, and New series

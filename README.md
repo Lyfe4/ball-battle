@@ -18,7 +18,8 @@ arena until one wins, and every decision is made before the fight starts.
   a shield and spear, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
-  Blind.
+  Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option on Other
+  modes ([ADR 0048](docs/decisions/0048-best-of-5.md)).
 - **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
   starts.
 - **Teaching in the arena:** a ready moment before a fight (both balls where they start, what to
@@ -75,7 +76,7 @@ strict Content Security Policy.
 
 The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: a Best
 of 3 against the bot in Reveal, straight to choosing your lineup. **Other modes** holds every other
-way to play: Showdown, Blind, and **Free play**, where you choose both balls of one match to try
+way to play: a Best of 3 or Best of 5 (remembered) in Reveal, Showdown or Blind, and **Free play**, where you choose both balls of one match to try
 things out. While a series is held (left with Back, or after a reload), Play becomes **Resume
 series**, with its format and score, and a quiet **New series** starts afresh ([ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)). The **Ball
 manual** sits beside it. Every screen is designed for a phone first and has a
