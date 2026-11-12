@@ -92,7 +92,9 @@
 }
 
 .series-track-pool {
+  flex-wrap: wrap;
   gap: 2px;
+  max-width: 100%;
   border-radius: var(--radius);
 }
 

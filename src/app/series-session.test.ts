@@ -72,7 +72,7 @@ describe('series session, showdown', () => {
   it('has no current match while a pick is due, and plays the picked ball after it', () => {
     let session = beginSession(showdown);
     expect(session.current).toBeUndefined();
-    session = pickInSession(pickInSession(session, showdown.a[0]), showdown.b[0]);
+    session = pickInSession(pickInSession(session, showdown.a[0] ?? ''), showdown.b[0] ?? '');
     // Play round 1 to its end, whatever its result.
     for (;;) {
       const current = session.current;
@@ -173,7 +173,7 @@ describe('series session, picks and the address bar', () => {
 
   it('keeps the bot’s lineup out of the address bar until the series is decided', () => {
     const live = resolvePicks(beginSession(reveal), randomBot);
-    expect(seriesAddress(live)).toStrictEqual({ format: 'reveal' });
+    expect(seriesAddress(live)).toStrictEqual({ format: 'reveal', bestOf: undefined });
     expect(seriesAddress(beginSession(decided, true))).toStrictEqual({ setup: decided });
     // Play it live as the game does, the player making the same picks as in `decided`.
     const own = playLikeTheGame(reveal, BALL_LOOKUP)
@@ -181,7 +181,7 @@ describe('series session, picks and the address bar', () => {
       .map((pick) => pick.ball);
     let session = live;
     while (session.state.winner === undefined) {
-      expect(seriesAddress(session)).toStrictEqual({ format: 'reveal' });
+      expect(seriesAddress(session)).toStrictEqual({ format: 'reveal', bestOf: undefined });
       const ball = own[0];
       if (awaitingPick(session.state) === 'a' && ball !== undefined) {
         own.shift();

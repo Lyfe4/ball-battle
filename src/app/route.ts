@@ -151,5 +151,9 @@ export function parseRoute(
 function replayable(link: SeriesLink, definitions: DefinitionLookup): SeriesLink {
   const { setup } = link;
   if (setup === undefined || verifySeries(setup, definitions).ok) return link;
-  return { lineup: setup.a, ...(setup.format === undefined ? {} : { format: setup.format }) };
+  return {
+    lineup: setup.a,
+    ...(setup.format === undefined ? {} : { format: setup.format }),
+    ...(setup.bestOf === undefined ? {} : { bestOf: setup.bestOf }),
+  };
 }

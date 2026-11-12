@@ -4,12 +4,15 @@
 // the ruleset it was played under (ADR 0022). Side B is always a bot: `bot=` names its level
 // (ADR 0035; absent is the first bot, which every older link played), its lineup picked from the
 // series seed, or from `bs=` after a rematch kept the lineup (ADR 0022). That is everything that decides a series, so the link
-// replays it exactly under that ruleset. A link with only `mode=bo3` (and perhaps `fmt`), or with
+// replays it exactly under that ruleset. `mode=bo5` is the same for a Best of 5 (ADR 0048): five
+// balls a lineup, up to eight picks. A link with only `mode=bo3` (and perhaps `fmt`), or with
 // anything invalid, opens the lineup builder instead.
 import {
+  DEFAULT_BEST_OF,
   FORMATS,
   isValidLineup,
-  LINEUP_SIZE,
+  winsNeededOf,
+  type BestOf,
   type Format,
   type Lineup,
   type Opponent,
@@ -19,6 +22,15 @@ import { randomBot } from '../sim/bot.ts';
 import { parseSeed, parseVersion } from './seed.ts';
 
 export const SERIES_MODE = 'bo3';
+/** `mode=` for each length; Best of 3's is the one every older link has. */
+const MODES: Readonly<Record<BestOf, string>> = { 3: SERIES_MODE, 5: 'bo5' };
+
+/** The series length a `mode=` names, or undefined when it names no series. */
+export function readMode(raw: string | null): BestOf | undefined {
+  const name = raw?.trim().toLowerCase();
+  if (name === MODES[3]) return 3;
+  return name === MODES[5] ? 5 : undefined;
+}
 const KEYS = {
   mode: 'mode',
   a: 'la',
@@ -55,6 +67,8 @@ export interface SeriesLink {
   readonly lineup?: Lineup;
   /** The draft format, when the link names a valid one: preselects it in the builder. */
   readonly format?: Format;
+  /** Best of 5 (`mode=bo5`, ADR 0048); absent is Best of 3. */
+  readonly bestOf?: BestOf;
   /** The setup step, when the link names one. */
   readonly step?: SeriesStep;
   /**
@@ -66,10 +80,14 @@ export interface SeriesLink {
 
 const ids = (raw: string): string[] => raw.split(',').map((id) => id.trim().toLowerCase());
 
-function readLineup(raw: string | null, validIds: readonly string[]): Lineup | undefined {
+function readLineup(
+  raw: string | null,
+  validIds: readonly string[],
+  bestOf: BestOf,
+): Lineup | undefined {
   if (raw === null) return undefined;
   const list = ids(raw);
-  return isValidLineup(list, validIds) ? list : undefined;
+  return isValidLineup(list, validIds, bestOf) ? list : undefined;
 }
 
 /** The format named in the link: blind when absent, undefined when unknown (invalid). */
@@ -84,14 +102,18 @@ function replacementFormat(raw: string | null): Format | undefined {
   return RETIRED_FORMATS[raw?.trim().toLowerCase() ?? ''];
 }
 
-/** Picks a whole series of each format records (ADR 0019, 0021); a blind series has none. */
-const PICKS: Readonly<Record<Format, { readonly min: number; readonly max: number }>> = {
-  blind: { min: 0, max: 0 },
-  // Reveal and Showdown: both sides pick in rounds 1 and 2, and a series is never decided before
-  // round 2.
-  reveal: { min: 4, max: 4 },
-  showdown: { min: 4, max: 4 },
-};
+/**
+ * Picks a whole series of each format records (ADR 0019, 0021, 0048); a blind series has none.
+ * Reveal and Showdown: both sides pick in every round but the last, and a series lasts at least
+ * as many rounds as the wins it needs (Best of 3: always 4 picks; Best of 5: 6 to 8).
+ */
+function picksRange(
+  format: Format,
+  bestOf: BestOf,
+): { readonly min: number; readonly max: number } {
+  if (format === 'blind') return { min: 0, max: 0 };
+  return { min: 2 * winsNeededOf(bestOf), max: 2 * (bestOf - 1) };
+}
 
 /**
  * The picks in a link, each a ball from one of the two lineups. Whether each pick was legal is
@@ -100,7 +122,8 @@ const PICKS: Readonly<Record<Format, { readonly min: number; readonly max: numbe
 function readPicks(raw: string | null, a: Lineup, b: Lineup): string[] | undefined {
   if (raw === null || raw.trim() === '') return [];
   const list = ids(raw);
-  if (list.length > LINEUP_SIZE + 1) return undefined;
+  // More than any series records: refused before reading each one.
+  if (list.length > 2 * (a.length - 1)) return undefined;
   return list.every((id) => a.includes(id) || b.includes(id)) ? list : undefined;
 }
 
@@ -112,17 +135,20 @@ export function parseSeriesParams(
   params: URLSearchParams,
   validIds: readonly string[],
 ): SeriesLink | undefined {
-  if (params.get(KEYS.mode)?.trim().toLowerCase() !== SERIES_MODE) return undefined;
-  const a = readLineup(params.get(KEYS.a), validIds);
-  const b = readLineup(params.get(KEYS.b), validIds);
+  const bestOf = readMode(params.get(KEYS.mode));
+  if (bestOf === undefined) return undefined;
+  const a = readLineup(params.get(KEYS.a), validIds, bestOf);
+  const b = readLineup(params.get(KEYS.b), validIds, bestOf);
   const seed = parseSeed(params.get(KEYS.seed));
   const format = readFormat(params.get(KEYS.format)) ?? replacementFormat(params.get(KEYS.format));
   const retired = replacementFormat(params.get(KEYS.format)) !== undefined;
   const stepName = params.get(KEYS.step)?.trim().toLowerCase();
   const step = STEPS.find((name) => name === stepName);
+  const length = bestOf === DEFAULT_BEST_OF ? {} : { bestOf };
   const named = {
     ...(format === undefined || format === 'blind' ? {} : { format }),
     ...(step === undefined ? {} : { step }),
+    ...length,
   };
   if (
     a !== undefined &&
@@ -134,7 +160,7 @@ export function parseSeriesParams(
     const picks = readPicks(params.get(KEYS.picks), a, b);
     // A reveal link from before ADR 0021 has no picks: it can't replay under the new rules, so it
     // falls back to the lineup, prefilled, like any other link that doesn't hold a whole series.
-    const { min, max } = PICKS[format];
+    const { min, max } = picksRange(format, bestOf);
     const valid = picks !== undefined && picks.length >= min && picks.length <= max;
     if (valid) {
       const extra = format === 'blind' ? {} : { format };
@@ -150,7 +176,7 @@ export function parseSeriesParams(
       const bot = named === '' ? randomBot.id : named;
       if (lineupSeed !== undefined) {
         const opponent: Opponent = { kind: 'bot', bot, lineupSeed };
-        return { setup: { ruleset, seed, a, b, opponent, ...extra, ...withPicks } };
+        return { setup: { ruleset, seed, a, b, opponent, ...extra, ...withPicks, ...length } };
       }
     }
   }
@@ -161,7 +187,7 @@ export function parseSeriesParams(
 
 /** Writes a whole series into URL parameters, replacing any quick-match ones. */
 export function writeSeriesParams(params: URLSearchParams, setup: SeriesSetup): void {
-  writeSeriesModeParams(params, setup.format);
+  writeSeriesModeParams(params, setup.format, undefined, setup.bestOf);
   params.delete(KEYS.step);
   params.set(KEYS.a, setup.a.join(','));
   params.set(KEYS.b, setup.b.join(','));
@@ -189,20 +215,21 @@ export function sameSeries(first: SeriesSetup, second: SeriesSetup): boolean {
 }
 
 /**
- * Best-of-3 mode with nothing decided yet (building a lineup, or a series in progress), and the
- * chosen format. The bot's lineup is not written until the series ends, so the address bar never
- * gives it away.
+ * Series mode with nothing decided yet (building a lineup, or a series in progress): its length
+ * (Best of 3 unless named) and the chosen format. The bot's lineup is not written until the series
+ * ends, so the address bar never gives it away.
  */
 export function writeSeriesModeParams(
   params: URLSearchParams,
   format?: Format,
   step?: SeriesStep,
+  bestOf: BestOf = DEFAULT_BEST_OF,
 ): void {
   clearMatchParams(params);
   params.delete(KEYS.step);
   // A named screen (`view=modes`, the manual) would open instead of the series (route.ts).
   params.delete('view');
-  params.set(KEYS.mode, SERIES_MODE);
+  params.set(KEYS.mode, MODES[bestOf]);
   if (format !== undefined && format !== 'blind') params.set(KEYS.format, format);
   if (step !== undefined) params.set(KEYS.step, step);
 }

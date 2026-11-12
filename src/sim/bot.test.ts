@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from './balls/index.ts';
-import { afterRound, maximinMix, seriesValue } from './bot-model.ts';
+import { afterRound, seriesValue } from './bot-model.ts';
+import { maximinMix } from './maximin.ts';
 import {
   BOT_LEVELS,
   botFor,
@@ -138,7 +139,7 @@ describe('the levels', () => {
         for (const y of ids) {
           if (x === y || x === shown || y === shown) continue;
           const v = view({ own: [x, y], shown, opponent: [shown, 'brawler'] });
-          const position = { ...v, own: v.own, opponent: v.opponent };
+          const position = { ...v, own: v.own, opponent: v.opponent, winsNeeded: 2 };
           const value = (ball: string) => afterRound(position, 'opponent', ball, shown);
           const best = Math.max(value(x), value(y));
           for (const [ball] of hardBot.weights(v)) expect(value(ball)).toBeCloseTo(best, 9);
@@ -150,7 +151,14 @@ describe('the levels', () => {
   it('Hard mixes its Showdown opener so no opener of the player’s can exploit it', () => {
     const own = ['storm', 'frost', 'quake'];
     const opponent = ['speedster', 'vampire', 'archer'];
-    const position = { format: 'showdown' as const, own, opponent, wins: 0, losses: 0 };
+    const position = {
+      format: 'showdown' as const,
+      own,
+      opponent,
+      wins: 0,
+      losses: 0,
+      winsNeeded: 2,
+    };
     const weights = new Map(hardBot.weights(choosing({ ...position, round: 0, role: 'open' })));
     const against = (y: string) =>
       own.reduce((sum, b) => sum + (weights.get(b) ?? 0) * afterRound(position, 'bot', b, y), 0);
@@ -187,7 +195,12 @@ describe('the bot model', () => {
   });
 
   it('values a decided series as won or lost, and a last round by its odds', () => {
-    const base = { format: 'reveal' as const, own: ['thorns'], opponent: ['brawler'] };
+    const base = {
+      format: 'reveal' as const,
+      own: ['thorns'],
+      opponent: ['brawler'],
+      winsNeeded: 2,
+    };
     expect(seriesValue({ ...base, wins: 2, losses: 0 }, 'bot')).toBe(1);
     expect(seriesValue({ ...base, wins: 0, losses: 2 }, 'bot')).toBe(0);
     expect(seriesValue({ ...base, wins: 1, losses: 1 }, 'bot')).toBe(0.64);

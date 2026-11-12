@@ -105,3 +105,46 @@
     padding: var(--space-gap) calc(var(--space-gap) + 4px);
   }
 }
+
+/*
+ * The series length (ADR 0048): Best of 3 or Best of 5 over the series cards, and the rule the
+ * chosen one plays by, quiet under it. The two buttons share the row on a phone.
+ */
+.modes-length {
+  display: grid;
+  gap: 4px;
+}
+
+.modes-length-choice .segmented-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.modes-length-choice .segmented-button {
+  flex: 1 1 0;
+}
+
+.modes-length-rule {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .modes-length-choice {
+    justify-self: start;
+  }
+
+  .modes-length-choice .segmented-button {
+    min-width: 8rem;
+  }
+
+  .modes-section {
+    grid-template-rows: auto;
+    align-content: start;
+  }
+}

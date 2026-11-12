@@ -1,9 +1,11 @@
-// The words of the best-of-3 scoreboard, as pure functions so they are tested without a DOM.
+// The words of the series scoreboard, as pure functions so they are tested without a DOM.
 import {
+  bestOfOf,
   formatOf,
-  LINEUP_SIZE,
   MAX_ATTEMPTS,
+  winsNeededOf,
   scoreOf,
+  type BestOf,
   type Format,
   type NextMatch,
   type RoundRecord,
@@ -46,6 +48,9 @@ export const FORMAT_SHORT: Readonly<Record<Format, string>> = {
   showdown: 'Showdown',
 };
 
+/** "Best of 3": a series length (ADR 0048), as every line that names one says it. */
+export const bestOfName = (bestOf: BestOf): string => `Best of ${String(bestOf)}`;
+
 /** "Best of 3 · Reveal · Hard": what is being played, over the series (ADR 0035). */
 export function aboutLine(setup: SeriesSetup): string {
   return aboutParts(setup).join(' · ');
@@ -55,14 +60,16 @@ export function aboutLine(setup: SeriesSetup): string {
 export function aboutParts(setup: SeriesSetup): readonly string[] {
   const level = setup.opponent.kind === 'bot' ? LEVEL_NAMES[setup.opponent.bot] : undefined;
   const format = formatOf(setup);
-  const parts = ['Best of 3', FORMAT_SHORT[format]];
+  const parts = [bestOfName(bestOfOf(setup)), FORMAT_SHORT[format]];
   // Blind has no choices a level changes, and the first bot (old links) has no level.
   if (level !== undefined && format !== 'blind') parts.push(level);
   return parts;
 }
 
-/** The series rule every format shares, said once above the format cards. */
-export const SERIES_RULE = '3 balls each · first to 2 wins';
+/** The series rule every format shares, said once above the format cards: "3 balls each · first to 2 wins". */
+export function seriesRule(bestOf: BestOf): string {
+  return `${String(bestOf)} balls each · first to ${String(winsNeededOf(bestOf))} wins`;
+}
 
 /** A replayed link makes the next pick itself: the player only moves on. */
 export function linkPickLine(round: number): string {
@@ -156,17 +163,17 @@ export function roundLine(record: RoundRecord, nameOf: NameOf): string {
     : `${head}${theirs} beat ${yours}${after}`;
 }
 
-/** The round being played: both balls are revealed only now. */
-export function playingLine(match: NextMatch, nameOf: NameOf): string {
+/** The round being played (of the series' `bestOf`): both balls are revealed only now. */
+export function playingLine(match: NextMatch, nameOf: NameOf, bestOf: BestOf = 3): string {
   const replay =
     match.attempt > 0 ? ` (replay ${String(match.attempt + 1)} of ${String(MAX_ATTEMPTS)})` : '';
-  return `Round ${String(match.round + 1)} of ${String(LINEUP_SIZE)}: your ${nameOf(match.a)} vs the bot’s ${nameOf(match.b)}${replay}`;
+  return `Round ${String(match.round + 1)} of ${String(bestOf)}: your ${nameOf(match.a)} vs the bot’s ${nameOf(match.b)}${replay}`;
 }
 
 /**
  * Between plays: what just happened and what comes next. The bot's next ball stays hidden until
  * the round starts, except in Reveal and Showdown, where both lineups are shown and the round's balls are known
- * (round 3 is what each side has left).
+ * (the last round is what each side has left).
  */
 export function betweenLine(state: SeriesState, next: NextMatch, nameOf: NameOf): string {
   if (state.pending.length > 0) {

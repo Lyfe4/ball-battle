@@ -19,13 +19,17 @@ import {
 
 const ROSTER = [...BALL_LOOKUP.keys()];
 
-/** A series as the setup screens start one: the bot's lineup picked from the series seed. */
+/**
+ * A series as the setup screens start one: the bot's lineup picked from the series seed. Five
+ * balls in `a` make it a Best of 5 (ADR 0048).
+ */
 export function seriesAgainst(
   format: Format,
   bot: string,
   seed: number,
-  a: readonly [string, string, string] = ['frost', 'thorns', 'sniper'],
+  a: readonly string[] = ['frost', 'thorns', 'sniper'],
 ): SeriesSetup {
+  const bestOf = a.length === 5 ? 5 : 3;
   // Blind has no choices for a bot to make, so the setup screens always play it with the default.
   const level = format === 'blind' ? DEFAULT_BOT.id : bot;
   const opponent = { kind: 'bot', bot: level, lineupSeed: seed } as const;
@@ -33,9 +37,10 @@ export function seriesAgainst(
     ruleset: RULESET_VERSION,
     seed,
     a,
-    b: botFor(opponent).pickLineup(seed, ROSTER),
+    b: botFor(opponent).pickLineup(seed, ROSTER, bestOf),
     opponent,
     ...(format === 'blind' ? {} : { format }),
+    ...(bestOf === 5 ? { bestOf } : {}),
   };
 }
 

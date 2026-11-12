@@ -15,6 +15,10 @@ export interface PickRows {
 }
 
 const OWN_PX = 36;
+/** A Best of 5's wide chart (ADR 0048): the player's ball smaller, its name under it. */
+const OWN_WIDE_PX = 28;
+/** More columns than a Best of 3 ever shows: the chart lays each row out narrower. */
+const WIDE_FROM = 4;
 const HEAD_PX = 26;
 const KEY_ORDER: readonly Lean[] = ['favoured', 'even', 'unfavoured'];
 
@@ -76,7 +80,8 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
     pick.type = 'button';
     const own = element('span', 'pick-row-own');
     own.setAttribute('aria-hidden', 'true');
-    own.append(icon(ball, OWN_PX), element('span', 'pick-row-name', nameOf(ball)));
+    const px = choice.opponents.length >= WIDE_FROM ? OWN_WIDE_PX : OWN_PX;
+    own.append(icon(ball, px), element('span', 'pick-row-name', nameOf(ball)));
     pick.append(own);
     const leans = choice.opponents.map(
       (face) => `${LEAN_WORDS[leanOf(ball, face)]} ${nameOf(face)}`,
@@ -110,6 +115,8 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
       if (next === shown) return;
       shown = next;
       root.style.setProperty('--pick-columns', String(choice.opponents.length));
+      // Four or five of the bot's balls (a Best of 5, ADR 0048): the narrower rows (pick-rows.css).
+      root.classList.toggle('pick-rows-wide', choice.opponents.length >= WIDE_FROM);
       heads(choice);
       rows.replaceChildren(...choice.options.map((ball) => row(choice, ball)));
     },

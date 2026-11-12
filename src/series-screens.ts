@@ -75,7 +75,7 @@ export function createSeriesScreens(
       // From the round-1 answer this replaces it: the series is one entry, so Back can't reopen
       // the answer (ADR 0025).
       navigation.go((url) => {
-        writeSeriesModeParams(url, series.format, 'play');
+        writeSeriesModeParams(url, series.format, 'play', series.bestOf);
       });
       play.start(series, false, firstPick);
       // After the start, so the arena is on screen to take focus.
@@ -108,13 +108,13 @@ export function createSeriesScreens(
       setup.keep(last);
       // Back to the lineup this series came from, when it did (ADR 0025).
       host.go((url) => {
-        writeSeriesModeParams(url, last.format, 'lineup');
+        writeSeriesModeParams(url, last.format, 'lineup', last.bestOf);
       });
     },
-    leave: (format) => {
+    leave: (left) => {
       navigation.back(() => {
         host.replaceWith((url) => {
-          writeSeriesModeParams(url, format, 'lineup');
+          writeSeriesModeParams(url, left?.format, 'lineup', left?.bestOf);
         });
       });
     },
@@ -139,7 +139,7 @@ export function createSeriesScreens(
         play.resume();
       } else if (round === 'lineup') {
         host.replaceWith((url) => {
-          writeSeriesModeParams(url, route.link.format, 'lineup');
+          writeSeriesModeParams(url, route.link.format, 'lineup', route.link.bestOf);
         });
       } else {
         play.start(round.replay, true);
@@ -153,7 +153,8 @@ export function createSeriesScreens(
   /** The series' own entry again; the route carries on with the held series. */
   function resume(): void {
     host.go((url) => {
-      writeSeriesModeParams(url, play.held()?.setup.format, 'play');
+      const held = play.held()?.setup;
+      writeSeriesModeParams(url, held?.format, 'play', held?.bestOf);
     });
   }
 

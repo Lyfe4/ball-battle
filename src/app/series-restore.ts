@@ -61,8 +61,16 @@ export function savedOf(session: SeriesSession): SavedSeries {
 
 /** The setup without its picks: a live series' own setup, before any were made. */
 function withoutPicks(setup: SeriesSetup): SeriesSetup {
-  const { ruleset, seed, a, b, opponent, format } = setup;
-  return { ruleset, seed, a, b, opponent, ...(format === undefined ? {} : { format }) };
+  const { ruleset, seed, a, b, opponent, format, bestOf } = setup;
+  return {
+    ruleset,
+    seed,
+    a,
+    b,
+    opponent,
+    ...(format === undefined ? {} : { format }),
+    ...(bestOf === undefined ? {} : { bestOf }),
+  };
 }
 
 /**

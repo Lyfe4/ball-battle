@@ -16,7 +16,10 @@ import { botFor, DEFAULT_BOT } from './sim/bot.ts';
 import { indexDefinitions } from './sim/definitions.ts';
 import { RULESET_VERSION } from './sim/ruleset.ts';
 import {
+  bestOfOf,
+  DEFAULT_BEST_OF,
   formatOf,
+  type BestOf,
   type Format,
   type Opponent,
   type SeriesSetup,
@@ -75,6 +78,8 @@ export function createSeriesSetup(
   const ballIds = balls.map((ball) => ball.id);
   const lookup = indexDefinitions(balls);
   let format: Format = 'blind';
+  /** The series length the URL names (ADR 0048): Best of 3 unless it says `mode=bo5`. */
+  let bestOf: BestOf = DEFAULT_BEST_OF;
   /** The bot's level, as last chosen on this device. */
   let level = loadBotLevel(storage);
   // The tray and the revealed series as they were before a reload (ADR 0042).
@@ -89,7 +94,7 @@ export function createSeriesSetup(
   }
 
   const to = (step: SetupStep) => (params: URLSearchParams) => {
-    writeSeriesModeParams(params, format, step === 'rules' ? undefined : step);
+    writeSeriesModeParams(params, format, step === 'rules' ? undefined : step, bestOf);
   };
 
   /** Remembers the level chosen on the rules step or the lineup step (ADR 0035, 0046). */
@@ -118,7 +123,7 @@ export function createSeriesSetup(
       // Arriving from a link: the screen that leads to this lineup (ADR 0046). Reveal's is home;
       // the other formats' is Other modes. A lineup reached from the rules step goes back to it.
       host.back(() => {
-        if (lineupParentOf(format) === 'home') host.exit();
+        if (lineupParentOf(format, bestOf) === 'home') host.exit();
         else host.toModes();
       });
     },
@@ -137,9 +142,11 @@ export function createSeriesSetup(
         ruleset: RULESET_VERSION,
         seed,
         a: own,
-        b: botFor(opponent).pickLineup(seed, ballIds),
+        b: botFor(opponent).pickLineup(seed, ballIds, bestOf),
         opponent,
         ...(format === 'blind' ? {} : { format }),
+        // Best of 3 writes no length, as every series before ADR 0048.
+        ...(bestOf === DEFAULT_BEST_OF ? {} : { bestOf }),
       };
       if (format !== 'blind') {
         revealed = setup;
@@ -190,11 +197,11 @@ export function createSeriesSetup(
     if (step === 'rules') {
       revealed = undefined;
       remember();
-      rules.open(format, level);
+      rules.open(format, level, bestOf);
     } else if (step === 'lineup') {
       revealed = undefined;
       remember();
-      lineup.open(format, draft, level);
+      lineup.open(format, draft, level, bestOf);
     } else if (revealed !== undefined) {
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
       // choices the series makes when it starts, so what is shown here is what plays.
@@ -209,10 +216,13 @@ export function createSeriesSetup(
     show(step, link) {
       // The URL names the format (none is Blind), whatever was on screen before.
       format = link.format ?? 'blind';
+      bestOf = link.bestOf ?? DEFAULT_BEST_OF;
       if (link.lineup !== undefined) draft = link.lineup;
       // The bot's revealed lineup isn't in the URL but on the device: without it (or with a series
       // in another format than the URL names) round 1's pick goes back to the lineup.
-      if (step === 'answer' && (revealed === undefined || formatOf(revealed) !== format)) {
+      const other =
+        revealed === undefined || formatOf(revealed) !== format || bestOfOf(revealed) !== bestOf;
+      if (step === 'answer' && other) {
         host.replace(to('lineup'));
         open('lineup');
         return;
@@ -222,6 +232,7 @@ export function createSeriesSetup(
     keep(setup) {
       draft = setup.a;
       format = setup.format ?? 'blind';
+      bestOf = bestOfOf(setup);
       remember();
     },
   };

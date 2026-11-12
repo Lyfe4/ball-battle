@@ -1,17 +1,20 @@
-// Opponents for a best-of-3 series (ADR 0017, 0019, 0021, 0035): three levels, Easy, Normal and
+// Opponents for a series (ADR 0017, 0019, 0021, 0035, 0048): three levels, Easy, Normal and
 // Hard, plus the original bot kept for old links. Each level is a weighting of its balls for every
 // kind of choice, drawn on a seeded stream, so a choice is a pure function of the series and a
 // verifier makes the same one (ADR 0022). The measurement scripts read the same weights, so what
 // they measure is what plays. Pure and seeded, like the rest of the sim.
-import { afterRound, maximinMix, type Position } from './bot-model.ts';
+import { afterRound, type Memo, type Position } from './bot-model.ts';
+import { maximinMix } from './maximin.ts';
 import { isFavoured } from './counter-map.ts';
 import { createStream, deriveSeed } from './rng.ts';
 import {
   formatOf,
   awaitingPick,
-  LINEUP_SIZE,
+  DEFAULT_BEST_OF,
   remainingOf,
+  winsNeededOf,
   scoreOf,
+  type BestOf,
   type Format,
   type Lineup,
   type Opponent,
@@ -44,6 +47,8 @@ export interface BotView {
   /** Round wins so far: the bot's, then the opponent's. */
   readonly wins: number;
   readonly losses: number;
+  /** The series length; undefined is Best of 3 (ADR 0048). */
+  readonly bestOf?: BestOf;
 }
 
 /** A ball and how likely the bot is to choose it. Weights are positive and sum to 1. */
@@ -51,8 +56,11 @@ export type Weights = readonly (readonly [string, number])[];
 
 export interface LineupBot {
   readonly id: string;
-  /** Three different ids from `roster`, in order. The same seed always gives the same lineup. */
-  pickLineup(seed: number, roster: readonly string[]): Lineup;
+  /**
+   * `size` different ids from `roster` (three unless named), in order. The same seed always gives
+   * the same lineup, and a longer one starts with the shorter one's balls.
+   */
+  pickLineup(seed: number, roster: readonly string[], size?: BestOf): Lineup;
   /** How likely each of its balls is for this choice. */
   weights(view: BotView): Weights;
   /** The ball it chooses: a seeded draw from `weights`. */
@@ -81,27 +89,22 @@ export const NORMAL_COUNTER_SHARE = 0.6;
 /** Hard mixes the balls it may show first whose value is this close to its best (ADR 0035). */
 export const HARD_SHOW_MARGIN = 0.03;
 
-function asLineup(ids: readonly string[]): Lineup {
-  const [first, second, third] = ids;
-  if (ids.length !== LINEUP_SIZE || first === undefined || second === undefined || !third) {
-    throw new Error('Expected three balls');
-  }
-  return [first, second, third];
-}
-
-/** Three different balls uniformly at random, in a random order: every level picks this way. */
-function pickLineup(seed: number, roster: readonly string[]): Lineup {
-  if (new Set(roster).size < LINEUP_SIZE) {
-    throw new Error(`A lineup needs ${String(LINEUP_SIZE)} different balls`);
+/**
+ * Different balls uniformly at random, in a random order: every level picks this way. Each ball is
+ * one draw on the stream, so a Best of 5 lineup is its Best of 3 lineup and two more.
+ */
+function pickLineup(seed: number, roster: readonly string[], size = DEFAULT_BEST_OF): Lineup {
+  if (new Set(roster).size < size) {
+    throw new Error(`A lineup needs ${String(size)} different balls`);
   }
   const random = createStream(deriveSeed([seed, BOT_SALT]));
   const pool = [...new Set(roster)];
   const picked: string[] = [];
-  while (picked.length < LINEUP_SIZE) {
+  while (picked.length < size) {
     const index = Math.floor(random() * pool.length);
     picked.push(...pool.splice(index, 1));
   }
-  return asLineup(picked);
+  return picked;
 }
 
 const uniform = (balls: readonly string[]): Weights =>
@@ -154,6 +157,7 @@ const positionOf = (view: BotView): Position => ({
   opponent: view.opponent,
   wins: view.wins,
   losses: view.losses,
+  winsNeeded: winsNeededOf(view.bestOf ?? DEFAULT_BEST_OF),
 });
 
 function shownOf(view: BotView): string {
@@ -193,24 +197,28 @@ export const normalBot = level('normal', (view) => {
 
 /**
  * Hard: plays the whole series, not just the round (ADR 0035), valuing positions by the counter
- * map (bot-model.ts). Answering, the ball that leaves it the best series chance, round 3 included.
+ * map (bot-model.ts), at any length (ADR 0048: the bot the Best of 5 measurement played, whose Best
+ * of 3 choices are the ones Hard always made). Answering, the ball that leaves it the best series
+ * chance, the last round included.
  * Showing first, a ball whose worst answer leaves it within HARD_SHOW_MARGIN of its best, at random
  * among them. Opening a Showdown, the mix of balls that no opener of the opponent's can exploit.
  */
 export const hardBot = level('hard', (view) => {
   const position = positionOf(view);
+  // One memo per choice: positions repeat within a choice, never across series (bot-model.ts).
+  const memo: Memo = new Map();
   if (view.role === 'answer') {
     const shown = shownOf(view);
-    return uniform(bestBy(view.own, (ball) => afterRound(position, 'opponent', ball, shown)));
+    return uniform(bestBy(view.own, (ball) => afterRound(position, 'opponent', ball, shown, memo)));
   }
   if (view.role === 'show') {
     const worstAnswer = (ball: string) =>
-      Math.min(...view.opponent.map((y) => afterRound(position, 'bot', ball, y)));
+      Math.min(...view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)));
     return uniform(bestBy(view.own, worstAnswer, HARD_SHOW_MARGIN));
   }
   // Round 1 of a Showdown: both open at once, so neither leads; the winner leads round 2.
   const matrix = view.own.map((ball) =>
-    view.opponent.map((y) => afterRound(position, 'bot', ball, y)),
+    view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)),
   );
   const mix = maximinMix(matrix);
   return view.own
@@ -270,6 +278,8 @@ export function botViewOf(state: SeriesState): BotView | undefined {
     opponent: remainingOf(state, 'a'),
     wins: score.b,
     losses: score.a,
+    // Best of 3 views name no length, as before ADR 0048.
+    ...(state.setup.bestOf === undefined ? {} : { bestOf: state.setup.bestOf }),
   };
   if (format === 'showdown' && round === 0) return { ...base, role: 'open' };
   const shown = state.picks.find((pick) => pick.round === round && pick.side === 'a');

@@ -5,6 +5,7 @@ import { BOTS, botPick } from './bot.ts';
 import { getDefinition } from './definitions.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import {
+  asBestOf,
   awaitingPick,
   isValidLineup,
   nextMatch,
@@ -45,7 +46,8 @@ const fail = (reason: string): SeriesVerdict => ({ ok: false, reason });
 
 /**
  * Plays the whole series and says whether its setup is one the rules allow. Valid means: played
- * under today's ruleset; two lineups of three different balls from the roster; for a bot opponent,
+ * under today's ruleset; a length the game plays (Best of 3 or 5, ADR 0048); two lineups of that
+ * many different balls from the roster; for a bot opponent,
  * the lineup that bot picks from its lineup seed and, at every pick it was due, the pick it makes;
  * every pick legal when it was made, none missing and none left over. The roster is the lookup's
  * ids in insertion order (the order the bot picks from), which `indexDefinitions` keeps.
@@ -56,15 +58,18 @@ export function verifySeries(setup: SeriesSetup, definitions: DefinitionLookup):
   }
   const roster = [...definitions.keys()];
   if (!isSeed(setup.seed)) return fail('The seed is not a 32-bit unsigned integer');
-  if (!isValidLineup(setup.a, roster) || !isValidLineup(setup.b, roster)) {
-    return fail('A lineup is not three different balls from the roster');
+  // Undefined is Best of 3; anything else must be a length the game plays.
+  const bestOf = setup.bestOf === undefined ? 3 : asBestOf(setup.bestOf);
+  if (bestOf === undefined) return fail('The series is not Best of 3 or Best of 5');
+  if (!isValidLineup(setup.a, roster, bestOf) || !isValidLineup(setup.b, roster, bestOf)) {
+    return fail(`A lineup is not ${String(bestOf)} different balls from the roster`);
   }
   const { opponent } = setup;
   const bot = opponent.kind === 'bot' ? BOTS.get(opponent.bot) : undefined;
   if (opponent.kind === 'bot') {
     if (bot === undefined) return fail(`No bot "${opponent.bot}"`);
     if (!isSeed(opponent.lineupSeed)) return fail('The lineup seed is not a 32-bit integer');
-    const picked = bot.pickLineup(opponent.lineupSeed, roster);
+    const picked = bot.pickLineup(opponent.lineupSeed, roster, bestOf);
     if (picked.some((id, index) => setup.b[index] !== id)) {
       return fail(`Side B is not the lineup the ${opponent.bot} bot picks`);
     }

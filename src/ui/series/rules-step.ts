@@ -1,14 +1,17 @@
 import { BOT_LEVELS } from '../../sim/bot.ts';
-import { FORMATS, type Format } from '../../sim/series.ts';
+import { FORMATS, type BestOf, type Format } from '../../sim/series.ts';
 import { element } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
 import { createSegmented } from '../segmented.ts';
-import { FORMAT_LINES, FORMAT_NAMES, LEVEL_NAMES, SERIES_RULE } from '../series-text.ts';
+import { bestOfName, FORMAT_LINES, FORMAT_NAMES, LEVEL_NAMES, seriesRule } from '../series-text.ts';
 
 export interface RulesStep {
   readonly element: HTMLElement;
-  /** Shows `format` and the bot's `level` as chosen and moves focus to the heading. */
-  open(format: Format, level: string): void;
+  /**
+   * Shows `format` and the bot's `level` as chosen, for a series of `bestOf` (the link's length),
+   * and moves focus to the heading.
+   */
+  open(format: Format, level: string, bestOf: BestOf): void;
 }
 
 export interface RulesActions {
@@ -27,8 +30,8 @@ export interface RulesActions {
  */
 export function createRulesStep(actions: RulesActions): RulesStep {
   const root = element('section', 'series-step rules-step');
-  const header = createScreenHeader('Best of 3', 'Back', actions.onBack);
-  const intro = element('p', 'series-step-hint', SERIES_RULE);
+  const header = createScreenHeader(bestOfName(3), 'Back', actions.onBack);
+  const intro = element('p', 'series-step-hint', seriesRule(3));
   const group = element('div', 'rules-cards');
   group.setAttribute('role', 'group');
   group.setAttribute('aria-label', 'How orders are set');
@@ -86,9 +89,11 @@ export function createRulesStep(actions: RulesActions): RulesStep {
 
   return {
     element: root,
-    open(format, current) {
+    open(format, current, bestOf) {
       chosen = format;
       level = current;
+      header.setTitle(bestOfName(bestOf));
+      intro.textContent = seriesRule(bestOf);
       render();
       header.focus();
     },
