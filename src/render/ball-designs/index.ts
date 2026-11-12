@@ -18,7 +18,7 @@ import { vampireDesign } from './vampire.ts';
 import { venomDesign } from './venom.ts';
 import { boomerangDesign } from './boomerang.ts';
 import { bomberDesign } from './bomber.ts';
-import { guardianDesign } from './guardian.ts';
+import { spartanDesign } from './spartan.ts';
 import { bloomDesign } from './bloom.ts';
 
 /**
@@ -45,6 +45,6 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['inferno', infernoDesign],
   ['boomerang', boomerangDesign],
   ['bomber', bomberDesign],
-  ['guardian', guardianDesign],
+  ['spartan', spartanDesign],
   ['bloom', bloomDesign],
 ]);

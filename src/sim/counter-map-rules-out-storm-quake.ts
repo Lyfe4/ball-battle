@@ -86,12 +86,6 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'storm',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'Armor takes only a little off a big strike.',
-  },
-  {
-    x: 'storm',
     y: 'inferno',
     intended: 'even',
     reason: 'Both burn from afar: lightning against the trail of fire.',
@@ -179,7 +173,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'bloom',
     intended: 'even',
-    reason: 'Shockwaves are small enough to regrow, but they keep coming.',
+    reason: 'Each shockwave stops the regrowth, but they are small: neither pulls ahead.',
   },
   {
     x: 'quake',
@@ -198,12 +192,6 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     y: 'ghost',
     intended: 'even',
     reason: 'It fades after a shockwave, but the next wall comes after the fade.',
-  },
-  {
-    x: 'quake',
-    y: 'guardian',
-    intended: 'y',
-    reason: 'Armor takes half of every small shockwave.',
   },
   {
     x: 'quake',

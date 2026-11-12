@@ -92,7 +92,7 @@ export const theme = {
     inferno: '#7c2d12',
     boomerang: '#134e4a',
     bomber: '#2e0627',
-    guardian: '#92400e',
+    spartan: '#92400e',
     bloom: '#831843',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
@@ -206,8 +206,8 @@ export const theme = {
   blastRing: '#fb923c',
   blastRingWidth: 15,
   /**
-   * A hit glancing off a defence (the Guardian's armor, the Ghost's fade, ADR 0045): a bright gold
-   * ring just outside the ball, already in pieces, flying out and fading.
+   * A hit glancing off a defence (the Spartan's shield, the Ghost's fade, ADR 0045, 0047): a bright
+   * gold ring just outside the ball, already in pieces, flying out and fading.
    */
   glanceRing: '#fde047',
   glanceRingWidth: 7,
@@ -239,6 +239,10 @@ export const theme = {
   /** Projectiles are drawn as a short streak behind a round head, in the owner's colour. */
   projectileTrail: 30,
   projectileTrailWidth: 4,
+  /** The Spartan's spear in flight: its shaft behind the head, in world units, and its head's length as a multiple of the shot's radius. */
+  spearLength: 84,
+  spearShaftWidth: 8,
+  spearHeadLength: 2.6,
   /** Burst of short rays where a projectile hits. */
   sparkColor: '#f59e0b',
   sparkRays: 8,

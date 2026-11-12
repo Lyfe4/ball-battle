@@ -26,7 +26,7 @@ export const titan = defineBall({
   color: '#86efac',
   radius: STANDARD_BALL_RADIUS,
   speed: 740,
-  maxHealth: 77,
+  maxHealth: 78,
   contactDamage: 14.5,
   initialAbilityState: {},
   contactDamageOf: (self, stats) =>

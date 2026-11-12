@@ -20,7 +20,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'bloom',
     intended: 'y',
-    reason: 'Regrowth heals back each big raging bump in the long gaps between them.',
+    reason: 'Its raging bumps come with long gaps between, and the regrowth heals each one back.',
   },
   {
     x: 'berserker',
@@ -41,13 +41,6 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     intended: 'even',
     reason:
       'The cold slows it, but each heavy cold bump stores rage it pays back: neither pulls ahead.',
-  },
-  {
-    x: 'berserker',
-    y: 'guardian',
-    intended: 'even',
-    reason:
-      'Raging bumps lose little to armor, but the rage needs hits taken to build: it evens out.',
   },
   {
     x: 'berserker',
@@ -149,12 +142,6 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     reason: 'Bumps come one at a time and land whole: plain trades decide it.',
   },
   {
-    x: 'guardian',
-    y: 'vampire',
-    intended: 'even',
-    reason: 'Armor takes little off a heavy bump, and the Vampire drinks what lands.',
-  },
-  {
     x: 'magnet',
     y: 'vampire',
     intended: 'even',
@@ -181,8 +168,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'bloom',
-    intended: 'x',
-    reason: 'It drinks back most of what its bumps deal; slow regrowth can’t keep up with that.',
+    intended: 'even',
+    reason:
+      'Each bump stops the regrowth and is drunk back, but on little health it can’t pull away.',
   },
   {
     x: 'vampire',

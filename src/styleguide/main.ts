@@ -153,7 +153,7 @@ function phoneArena(): HTMLElement {
   const healed = balls.find((ball) => ball.definitionId === 'vampire')?.id;
   const { zones, rewinds } = batchFourExtras(balls);
   const late = batchFiveExtras(balls);
-  // A hit glancing off the Guardian's armor (ADR 0045).
+  // A hit glancing off a defence (ADR 0045).
   const effects = {
     ...NO_EFFECTS,
     heal: (id: string) => (id === healed ? 0.7 : 0),

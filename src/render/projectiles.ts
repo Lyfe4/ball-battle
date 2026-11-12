@@ -5,6 +5,7 @@ import { aimLineOf, laserAlpha } from './aim-line.ts';
 import { ownerColor } from './ball-colors.ts';
 import type { Spark } from './effects.ts';
 import { drawBoomerangBar } from './ball-designs/boomerang.ts';
+import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { theme } from './theme.ts';
 
 /** Arrows and other projectiles: a short streak behind a round head, in the owner's colour. */
@@ -22,6 +23,12 @@ export function drawProjectiles(
 
     const { x, y } = projectile.position;
     const speed = Math.hypot(projectile.velocity.x, projectile.velocity.y);
+    const owner = world.balls.find((ball) => ball.id === projectile.ownerId);
+    const shot = owner === undefined ? undefined : BALL_DESIGNS.get(owner.definitionId)?.shot;
+    if (shot === 'spear' && speed > 0) {
+      drawSpear(ctx, projectile.position, projectile.velocity, projectile.radius, color);
+      continue;
+    }
     if (speed > 0) {
       const back = theme.projectileTrail / speed;
       ctx.beginPath();
@@ -37,6 +44,47 @@ export function drawProjectiles(
     ctx.fillStyle = color;
     ctx.fill();
   }
+}
+
+/**
+ * A spear in flight (the Spartan): a long shaft behind a pointed head, in the owner's colour and
+ * outlined, so the throw reads as a spear and not a shot.
+ */
+function drawSpear(
+  ctx: CanvasRenderingContext2D,
+  { x, y }: { readonly x: number; readonly y: number },
+  velocity: { readonly x: number; readonly y: number },
+  radius: number,
+  color: string,
+): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.atan2(velocity.y, velocity.x));
+  const head = radius * theme.spearHeadLength;
+  const back = -theme.spearLength;
+  ctx.lineCap = 'round';
+  for (const [stroke, width] of [
+    [theme.ballOutline, theme.spearShaftWidth + 4],
+    [color, theme.spearShaftWidth],
+  ] as const) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(back, 0);
+    ctx.lineTo(0, 0);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(head, 0);
+  ctx.lineTo(-head * 0.2, -radius);
+  ctx.lineTo(-head * 0.2, radius);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = theme.ballOutline;
+  ctx.lineWidth = 3;
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 /**

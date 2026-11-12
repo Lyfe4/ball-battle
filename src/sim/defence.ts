@@ -1,5 +1,5 @@
 // What a hit does to the ball it lands on (ADR 0045): a ball whose definition declares
-// `incomingDamageOf` (the Guardian's armor, the Ghost's fade) takes less of every hit, whatever
+// `incomingDamageOf` (the Spartan's shield, the Ghost's fade) takes less of every hit, whatever
 // delivered it (a contact hit, a projectile, a strike, a burn, a skull, a poison tick, a hook's
 // damage). One rule in one place for both damage paths: contact damage (combat.ts) and ability
 // damage (the `damage` action every other source goes through).

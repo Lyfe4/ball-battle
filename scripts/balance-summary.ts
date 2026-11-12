@@ -251,7 +251,7 @@ export function counterLines(summaries: readonly BallSummary[]): string[] {
 
 /**
  * The known gaps section of docs/balance-summary.md: the balls allowed off the roster's shape
- * (scripts/counter-map.ts), each a gap for a future ball to fill (ADR 0045, docs/vision.md).
+ * (scripts/counter-map.ts), each a gap for a future ball to fill (ADR 0045, 0047, docs/vision.md).
  */
 export function gapLines(): string[] {
   const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
@@ -264,7 +264,7 @@ export function gapLines(): string[] {
     '',
     `Every ball has ${String(SHAPE.fewest)}-${String(SHAPE.most)} counters each way, the two counts within ${String(SHAPE.within)}, except`,
     'these, which `pnpm balance` allows by name and nothing else: gaps for future balls to fill',
-    `(ADR 0045, docs/vision.md). The even picks have exactly their counters: ${evenPicks.join('; ')}.`,
+    `(ADR 0045, 0047, docs/vision.md). The even picks have exactly their counters: ${evenPicks.join('; ')}.`,
     '',
     '| Ball | Counters each way | Wins and losses within |',
     '| ---- | ----------------: | ---------------------: |',

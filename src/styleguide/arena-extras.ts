@@ -3,6 +3,7 @@
 import { PATCH_RADIUS } from '../sim/balls/inferno.ts';
 import { BLAST_RADIUS, BOMB_RADIUS, FUSE_TICKS } from '../sim/balls/bomber.ts';
 import { BOOMERANG_RADIUS } from '../sim/balls/boomerang.ts';
+import { SPEAR_RADIUS } from '../sim/balls/spartan.ts';
 import type { BallState, ProjectileState, ZoneState } from '../sim/types.ts';
 import type { RewindTrail } from '../render/rewind.ts';
 import { TICK } from './tick.ts';
@@ -45,7 +46,8 @@ export function batchFourExtras(balls: readonly BallState[]): {
 
 /**
  * Batch 5 in the phone arena (ADR 0043): a bomb lying beside the Bomber, part-way down its fuse, a
- * boomerang in flight beside the Boomerang, and a hit glancing off the Guardian's armor.
+ * boomerang in flight beside the Boomerang, a spear just thrown by the Spartan (open, its shield
+ * slung), and a hit glancing off the faded Ghost (ADR 0045, 0047).
  */
 export function batchFiveExtras(balls: readonly BallState[]): {
   readonly zones: readonly ZoneState[];
@@ -84,6 +86,21 @@ export function batchFiveExtras(balls: readonly BallState[]): {
             returning: { turnTick: TICK, back: true, hitIds: [] },
           },
         ];
-  const glancedId = balls.find((ball) => ball.definitionId === 'guardian')?.id;
-  return { zones, projectiles, glancedId };
+  const spartan = balls.find((ball) => ball.definitionId === 'spartan');
+  if (spartan !== undefined) {
+    projectiles.push({
+      id: 'projectile-1',
+      ownerId: spartan.id,
+      position: { x: spartan.position.x - 110, y: spartan.position.y + 20 },
+      velocity: { x: -1, y: 0.2 },
+      radius: SPEAR_RADIUS,
+      damage: 0,
+      ticksLeft: 1,
+    });
+  }
+  return {
+    zones,
+    projectiles,
+    glancedId: balls.find((ball) => ball.definitionId === 'ghost')?.id,
+  };
 }
