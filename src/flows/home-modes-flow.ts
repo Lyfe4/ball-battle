@@ -125,17 +125,21 @@ async function otherModes(): Promise<void> {
   expect(visible('.modes .symbol-legend-toggle')).toHaveLength(0);
   checkStop('Other modes');
   expect(visible('.modes-section-title').map((title) => title.textContent)).toStrictEqual([
-    'Best of 3 vs bot',
+    'Series vs bot',
     'One match',
   ]);
+  // The series length (ADR 0048): Best of 3 unless chosen, with the rule it plays by.
+  expect(button('Best of 3').getAttribute('aria-pressed')).toBe('true');
+  expect(visible('.modes-length-rule')[0]?.textContent).toBe('3 balls each · first to 2 wins');
   const cards = () => visible('.modes-card');
   expect(cards().map((card) => card.querySelector('.modes-card-name')?.textContent)).toStrictEqual([
+    'Reveal',
     'Showdown',
     'Blind',
     'Free play',
   ]);
   const levels = cards().map((card) => card.querySelector('.modes-card-level')?.textContent);
-  expect(levels).toStrictEqual(['vs Easy bot', undefined, undefined]);
+  expect(levels).toStrictEqual(['vs Easy bot', 'vs Easy bot', undefined, undefined]);
   // Within the screen, and side by side on a desktop.
   for (const card of cards()) {
     expect(card.getBoundingClientRect().right).toBeLessThanOrEqual(window.innerWidth);
