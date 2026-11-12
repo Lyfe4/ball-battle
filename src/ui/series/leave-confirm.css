@@ -7,10 +7,7 @@
 }
 
 .leave-confirm-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  display: grid;
   gap: var(--space-small);
   padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
@@ -21,8 +18,8 @@
   display: none;
 }
 
+/* The question on its own line, then Stay and Leave side by side, the same size. */
 .leave-confirm-question {
-  flex-basis: 100%;
   margin: 0;
   color: var(--color-text);
   font-size: var(--font-size-small);
@@ -30,8 +27,11 @@
   text-align: center;
 }
 
-.leave-confirm-row .hud-button {
-  flex: 0 1 8rem;
+/* Side by side while both fit at a comfortable width; stacked, full width, when they don't. */
+.leave-confirm-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--space-small);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -43,13 +43,5 @@
 @keyframes leave-confirm-in {
   from {
     opacity: 0;
-  }
-}
-
-@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  /* Room on a desktop for the question and both buttons on one line. */
-  .leave-confirm-question {
-    flex-basis: auto;
-    margin-inline-end: var(--space-small);
   }
 }

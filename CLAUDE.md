@@ -143,7 +143,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0043-boomerang-bomber-guardian-bloom.md` and
 `docs/decisions/0044-one-story-look-and-settings-off-the-court.md` and
 `docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
-`docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md`.
+`docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md` and
+`docs/decisions/0047-spartan-and-bloom-pause.md`.
 
 ## Workflow
 
@@ -191,7 +192,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   (`src/sim/minions/`), not balls. Aimed attacks pick their target with `nearestTarget`, which
   includes enemy minions, so every aimed ball treats them alike.
 - A ball that takes less of a hit declares `incomingDamageOf(self, amount, tick)` (ADR 0045: the
-  Guardian's armor, the Ghost's fade), applied on both damage paths and shown by a `hitReduced`
+  Spartan's planted shield, ADR 0047; the Ghost's fade), applied on both damage paths and shown by a `hitReduced`
   event, rather than healing damage back in a hook. A projectile that comes back uses
   `returnAfterTicks`; a zone an enemy ball can set off declares a `trigger` (swept,
   so no speed skips it).

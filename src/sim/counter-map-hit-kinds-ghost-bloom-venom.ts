@@ -73,8 +73,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Single bumps either way: the fade has little to stop, and regrowth little to heal.',
+    intended: 'y',
+    reason: 'The Ghost’s bumps come slowly, so the regrowth heals each one back between them.',
   },
   {
     x: 'bloom',
@@ -86,7 +86,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'speedster',
     intended: 'even',
-    reason: 'A rush takes more than it regrows, but rushes are rare.',
+    reason: 'A rush stops the regrowth, but rushes are rare: neither pulls ahead.',
   },
   {
     x: 'bloom',
@@ -98,25 +98,25 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'thorns',
     intended: 'even',
-    reason: 'Its bumps come back off the spikes, and it regrows the spikes’ damage.',
+    reason: 'Its bumps come back off the spikes, and it regrows between them: neither pulls ahead.',
   },
   {
     x: 'bloom',
     y: 'venom',
-    intended: 'even',
-    reason: 'Regrowth heals some of the poison back, but the poison keeps coming.',
+    intended: 'y',
+    reason: 'Every poison tick stops the regrowth again, so it hardly regrows at all.',
   },
   {
     x: 'bloom',
     y: 'magnet',
     intended: 'even',
-    reason: 'Its pull drags the Bloom into hard bumps, but regrowth keeps up: neither pulls ahead.',
+    reason: 'Its pull drags the Bloom into hard bumps, but they come slowly: neither pulls ahead.',
   },
   {
     x: 'bloom',
     y: 'necromancer',
     intended: 'x',
-    reason: 'Regrows faster than the skeleton bites.',
+    reason: 'The skeleton’s bites come slowly enough for the regrowth to heal them back.',
   },
   {
     x: 'bloom',
@@ -127,8 +127,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'inferno',
-    intended: 'x',
-    reason: 'Regrows faster than the fire burns.',
+    intended: 'even',
+    reason: 'Every burn stops the regrowth, but the burns are small: neither pulls ahead.',
   },
   {
     x: 'bloom',

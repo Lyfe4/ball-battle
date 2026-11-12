@@ -11,8 +11,8 @@ export interface LeaveConfirm {
 
 /**
  * Leave series, asked once (ADR 0042): leaving forgets the series, so a tap on the link turns its
- * row into "Leave? You’ll lose this series · Leave · Stay". No modal: the fight goes on behind it.
- * Stay is the default (focused, and Escape means Stay); only Leave leaves.
+ * row into the question with Stay and Leave under it. No modal: the fight goes on behind it. Stay is
+ * the default (first, primary, focused, and Escape means Stay); only Leave leaves.
  */
 export function createLeaveConfirm(onLeave: () => void): LeaveConfirm {
   const root = element('div', 'leave-confirm');
@@ -28,7 +28,9 @@ export function createLeaveConfirm(onLeave: () => void): LeaveConfirm {
   leave.type = 'button';
   const stay = element('button', 'hud-button hud-button-primary leave-confirm-stay', 'Stay');
   stay.type = 'button';
-  row.append(question, leave, stay);
+  const buttons = element('div', 'leave-confirm-buttons');
+  buttons.append(stay, leave);
+  row.append(question, buttons);
   row.hidden = true;
   root.append(link, row);
 

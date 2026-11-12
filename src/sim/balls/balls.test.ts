@@ -26,7 +26,7 @@ import { venom } from './venom.ts';
 import { BOMB_RADIUS, bomber } from './bomber.ts';
 import { bloom } from './bloom.ts';
 import { boomerang } from './boomerang.ts';
-import { guardian } from './guardian.ts';
+import { spartan } from './spartan.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -72,8 +72,8 @@ describe('the ball roster', () => {
       // Its boomerang is a projectile, swept like an arrow (ADR 0005, 0043); the ball keeps its speed.
       boomerang: boomerang.speed,
       bomber: bomber.speed,
-      // A shield changes how much a hit takes, never a speed.
-      guardian: guardian.speed,
+      // Its planted shield only slows it; its spear is a projectile, swept (ADR 0005).
+      spartan: spartan.speed,
       bloom: bloom.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());

@@ -76,21 +76,25 @@ export interface ShapeAllowance {
 }
 
 /**
- * The known gaps in the roster's shape (ADR 0045, group 4), each a gap for a future ball to fill
- * (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on any
- * other ball, and on these beyond their allowance.
+ * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
+ * fill (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on
+ * any other ball, and on these beyond their allowance.
  * - The Storm, Titan and Bomber have one counter on a side: nothing in the roster beats one big
  *   strike but the rewind, the growing giant or the big blast.
- * - Venom wins only where poison's small ticks are unanswerable, so it has one win to three losses.
- * - The Berserker and Bloom beat nearly every ball that deals many small hits: up to 5 wins.
+ * - The Berserker and Bloom beat nearly every ball that hits rarely: up to 5 wins.
+ * - Since the Guardian left (ADR 0047): the Spartan's half shield beats only the Vampire, the Sniper
+ *   and Quake each lost a counter to it, and the Vampire gained the Spartan as a fourth loss.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
   storm: { ...SHAPE, fewest: 1 },
   titan: { ...SHAPE, fewest: 1 },
   bomber: { ...SHAPE, fewest: 1 },
-  venom: { ...SHAPE, fewest: 1, within: 2 },
   berserker: { ...SHAPE, most: 5, within: 3 },
-  bloom: { ...SHAPE, most: 5, within: 3 },
+  bloom: { ...SHAPE, most: 5 },
+  spartan: { ...SHAPE, fewest: 1 },
+  sniper: { ...SHAPE, fewest: 1 },
+  quake: { ...SHAPE, fewest: 1 },
+  vampire: { ...SHAPE, fewest: 1, within: 3 },
 };
 
 /**

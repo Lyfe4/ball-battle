@@ -4,7 +4,7 @@
 // opens the full track, so the court keeps the screen.
 import type { SeriesSetup } from '../../sim/series.ts';
 import { element, setText } from '../dom.ts';
-import { aboutLine, SIDE_NAMES } from '../series-text.ts';
+import { aboutLine, aboutParts, SIDE_NAMES } from '../series-text.ts';
 import { createSettingsToggle } from '../settings-menu.ts';
 import { createSymbolLegend } from '../symbol-legend.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
@@ -39,6 +39,28 @@ export function scoreText({ round, you, bot }: ScoreLine): string {
   return `Round ${String(round + 1)} · ${SIDE_NAMES.a} ${String(you)}–${String(bot)} ${SIDE_NAMES.b}`;
 }
 
+/**
+ * What is played, as phrases that never break inside ("Best of 3 ·", "Reveal ·", "Hard"): the line
+ * wraps only after a dot when the panel is too narrow for it. Called every frame, so it is only
+ * rebuilt when the line changes; its text stays "Best of 3 · Reveal · Hard".
+ */
+function showAbout(about: HTMLElement, setup: SeriesSetup): void {
+  const line = aboutLine(setup);
+  if (about.dataset['line'] === line) return;
+  about.dataset['line'] = line;
+  const parts = aboutParts(setup);
+  about.replaceChildren(
+    ...parts.flatMap((part, index) => {
+      const phrase = element(
+        'span',
+        'series-bar-phrase',
+        index < parts.length - 1 ? `${part} ·` : part,
+      );
+      return index === 0 ? [phrase] : [' ', phrase];
+    }),
+  );
+}
+
 function setAttribute(node: HTMLElement, name: string, value: string): void {
   if (node.getAttribute(name) !== value) node.setAttribute(name, value);
 }
@@ -71,7 +93,7 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
     element: bar,
     legend: legend.panel,
     show(setup, line) {
-      setText(about, aboutLine(setup));
+      showAbout(about, setup);
       score.hidden = line === undefined;
       if (line === undefined) return;
       // Called every frame: only changed attributes are written.

@@ -15,16 +15,18 @@ import { createWorld } from '../src/sim/world.ts';
 const base = process.argv[2] ?? 'http://localhost:5199/';
 
 /**
- * The matches to time: the busiest moments of the balls changed last (ADR 0045, group 4: the
- * Berserker's rage cracks under poison, the Titan grown to full size against regrowth, the Quake's
- * frequent small shockwaves, the Bomber's big blasts, the Storm's strike), each played to its end.
+ * The matches to time: the busiest moments of the balls changed last (ADR 0047: the Spartan's
+ * shield and spear in flight, the Bloom's petals closing under a stream of poison and arrows) and
+ * of ADR 0045's group 4 (the Berserker's rage cracks, the Bomber's big blasts, the Storm's strike),
+ * each played to its end.
  */
 const MATCHES: readonly (readonly [string, string, number])[] = [
-  ['berserker', 'venom', 3],
-  ['titan', 'bloom', 2],
-  ['quake', 'chrono', 3],
+  ['spartan', 'vampire', 3],
+  ['spartan', 'storm', 2],
+  ['bloom', 'venom', 3],
+  ['bloom', 'archer', 2],
+  ['berserker', 'venom', 2],
   ['bomber', 'speedster', 2],
-  ['vampire', 'storm', 4],
 ];
 
 /**

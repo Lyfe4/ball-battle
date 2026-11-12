@@ -77,8 +77,9 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'thorns',
-    intended: 'x',
-    reason: 'Fire never touches the spikes, so there is nothing to reflect.',
+    intended: 'even',
+    reason:
+      'Fire never touches the spikes, but small burns can’t outlast its health: neither pulls far ahead.',
   },
   {
     x: 'magnet',
@@ -96,7 +97,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'titan',
-    intended: 'x',
-    reason: 'The bigger the body, the more fire it crosses: the trail keeps burning it.',
+    intended: 'even',
+    reason:
+      'The giant crosses more fire as it grows, but its bumps grow too: neither pulls far ahead.',
   },
 ];

@@ -15,7 +15,7 @@ arena until one wins, and every decision is made before the fight starts.
 
 - **21 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that fades, a necromancer's skull minions, a boomerang, bombs,
-  armor and more.
+  a shield and spear, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind.
@@ -117,8 +117,8 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls.   |
 | Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.                |
 | Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out. |
-| Guardian    | Armor: every hit it takes does a bit less, which is a big share of a small hit.                  |
-| Bloom       | Always regrowing: heals a little, three times a second, all match long.                          |
+| Spartan     | Plants its shield (half speed, every hit does half) for 2 s, then throws its spear.              |
+| Bloom       | Always regrowing, about four times a second, but every hit it takes stops it for a second.       |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
@@ -127,50 +127,58 @@ on how directly it lands, not how fast.
 
 Picks matter: many pairs lean one way. A counter (▲ ▼) is _favoured_, never decided: it wins at
 least 62% of the time and aims for 65-72%, and each one comes from something you can watch happen
-([ADR 0045](docs/decisions/0045-roster-redesign.md)). No rule exists only where two abilities
+([ADR 0045](docs/decisions/0045-roster-redesign.md),
+[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md)). No rule exists only where two abilities
 meet: every ability works the same on any ball.
 
 - **Bumps against spikes:** Thorns beats the Brawler, Magnet and Titan; the harder a ball bumps,
-  the harder it is hurt back. Archer, Sniper and Inferno beat Thorns: they never touch it.
-- **Lifesteal:** the Vampire beats the bumpers that trade with it (Berserker, Bloom) and loses to
-  what never touches it (Archer, Storm, Boomerang).
+  the harder it is hurt back. The Archer and Sniper beat Thorns: they never touch it.
+- **Lifesteal:** the Vampire beats the Berserker, whose big bumps it drinks back, and loses to
+  what never touches it (Archer, Storm, Boomerang) and to the Spartan's shield, which halves its
+  bumps and so what it drinks.
 - **Rage:** every hit the Berserker takes builds rage, so many small hits feed it: it beats the
   Archer, Venom, Quake, Inferno and Boomerang. Regrowth (Bloom) and lifesteal heal its big bumps back.
 - **Big hits against the rewind:** the Chrono rewinds a strike, a shot or a blast, so it beats the
-  Storm, Sniper and Bomber; Venom, Quake, Inferno and Boomerang hit too small to rewind.
-- **Small hits against armor:** the Guardian takes a big share off every small hit (Venom, Quake,
-  Boomerang, the Speedster's many bumps) and loses to heavy ones (Frost, Sniper, Bomber) and to
-  regrowth (Bloom).
-- **Regrowth:** the Bloom heals back slow damage: it beats the Frost, Berserker, Necromancer,
-  Inferno and Guardian, and loses to the Vampire's drinking and the grown Titan's huge bumps.
+  Storm, Sniper, Bomber and the Spartan's spear; Venom, Quake, Inferno and Bloom deal no hit big
+  enough to rewind.
+- **Shield and spear:** the Spartan's planted shield halves every hit, whoever deals it, so it
+  only beats the Vampire; it is too slow behind its shield to leave the Storm's circle, and the
+  Chrono rewinds its spear.
+- **Regrowth:** the Bloom heals back damage that comes slowly (Frost, Berserker, Necromancer,
+  Ghost, Chrono), but every hit stops its regrowth for a second, so a stream of small hits
+  (Venom's poison, the Archer's arrows, the Boomerang's two hits a throw) keeps it from regrowing;
+  the grown Titan's huge bumps outpace it.
 - **The fade:** the Ghost fades after a hit, so a poison tick or a burn just after misses: it beats
   Venom and Inferno. The Brawler's and Frost's heavy bumps land whole.
 - **The skull:** the Necromancer's skeleton draws arrows and throws (Archer, Boomerang); wide
   shockwaves, fire and regrowth deal with it (Quake, Inferno, Bloom).
 - **Speed and the slow:** the Speedster outruns arrows, shots and throws (Archer, Sniper,
-  Boomerang); the Frost slows it right down, the Bomber's blasts catch it, armor blunts it.
-- **One big hit:** the Storm's strike takes most of the Vampire's small health; the Bomber's blast
-  catches the Speedster and loses little to armor; the growing Titan crushes the Bloom late.
+  Boomerang); the Frost slows it right down and the Bomber's blasts catch it.
+- **One big hit:** the Storm's strike takes most of the Vampire's small health and catches the
+  slowed Spartan; the Bomber's blast catches the Speedster; the growing Titan crushes the Bloom
+  late.
 
 Every other pair is even. Even pairs with a side between 58% and 62% sit in a grey zone, shown as
 even and counted by `pnpm balance`.
 
 Every ball has two to four counters each way, the two counts within one, except known gaps for
 future balls to fill (listed in [docs/balance-summary.md](docs/balance-summary.md)): the Storm,
-Titan, Bomber and Venom have one counter on a side, and the Berserker and Bloom beat up to five
-balls. The **Brawler** and **Magnet** are the even picks: the Brawler beats only the Ghost and
+Titan, Bomber, Spartan, Sniper and Quake have one counter on a side, the Vampire one win to four
+losses, and the Berserker and Bloom beat up to five balls. The **Brawler** and **Magnet** are the even picks: the Brawler beats only the Ghost and
 loses only to Thorns, the Magnet loses only to Thorns.
 
 The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) shipped in four groups:
 the first removed the three rules between balls (shock, stagger and numbed rage) and the spark
 that marked them; the second gave the Chrono, Guardian, Ghost, Bloom and Venom abilities that act
-on a kind of hit (big or small); the third made the Inferno's fire never stack and tuned the
-Necromancer, Bomber, Frost and Thorns; the fourth reworked the Berserker, Titan, Quake, Bomber and
-Vampire so their hits are a kind of their own. Every heal shows as a green pulse sized by the heal.
+on a kind of hit (big or small; the Guardian has since been replaced by the Spartan, ADR 0047);
+the third made the Inferno's fire never stack and tuned the Necromancer, Bomber, Frost and Thorns;
+the fourth reworked the Berserker, Titan, Quake, Bomber and Vampire so their hits are a kind of
+their own. Every heal shows as a green pulse sized by the heal.
 The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
 [ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md),
 [ADR 0043](docs/decisions/0043-boomerang-bomber-guardian-bloom.md),
-[ADR 0045](docs/decisions/0045-roster-redesign.md)).
+[ADR 0045](docs/decisions/0045-roster-redesign.md),
+[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md)).
 
 ## Best of 3
 

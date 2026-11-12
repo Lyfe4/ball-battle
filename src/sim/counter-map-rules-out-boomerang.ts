@@ -13,8 +13,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Regrows each light hit, but the boomerang hits twice a throw.',
+    intended: 'y',
+    reason: 'The boomerang hits twice a throw, and every hit stops the regrowth.',
   },
   {
     x: 'boomerang',
@@ -27,12 +27,6 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
     y: 'ghost',
     intended: 'even',
     reason: 'It fades after the throw lands, but the next throw comes after the fade.',
-  },
-  {
-    x: 'boomerang',
-    y: 'guardian',
-    intended: 'y',
-    reason: 'Armor takes a big share of each light boomerang hit.',
   },
   {
     x: 'boomerang',
@@ -49,8 +43,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'boomerang',
-    intended: 'y',
-    reason: 'Its light hits are far too small to rewind, and it hits twice a throw.',
+    intended: 'even',
+    reason: 'Its light hits are far too small to rewind: plain trades decide it.',
   },
   {
     x: 'frost',

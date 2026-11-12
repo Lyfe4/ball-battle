@@ -65,4 +65,6 @@ export interface BallDesign {
    * bomb's blast: a warm flash with a ring sweeping out (ADR 0043).
    */
   readonly strike?: 'bolt' | 'shockwave' | 'burn' | 'blast';
+  /** How the ball's shots look in flight: a round head with a streak (the default) or a spear. */
+  readonly shot?: 'dot' | 'spear';
 }

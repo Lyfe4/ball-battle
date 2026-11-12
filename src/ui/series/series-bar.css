@@ -7,9 +7,16 @@
 }
 
 .series-bar-about {
+  min-width: 0;
+  text-wrap: balance;
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
+}
+
+/* One phrase of the line ("Best of 3 ·"): the line wraps between phrases, never inside one. */
+.series-bar-phrase {
+  white-space: nowrap;
 }
 
 /* The ? (and the settings gear) at the end of the line. */

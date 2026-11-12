@@ -13,8 +13,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Arrows take more than it regrows, but leave time to regrow between them.',
+    intended: 'x',
+    reason: 'Arrows keep coming, and every one stops the regrowth for a second.',
   },
   {
     x: 'archer',
@@ -39,12 +39,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     y: 'ghost',
     intended: 'even',
     reason: 'Arrows come one at a time, each after the fade ends.',
-  },
-  {
-    x: 'archer',
-    y: 'guardian',
-    intended: 'even',
-    reason: 'Armor takes a bit off every arrow, but arrows keep coming.',
   },
   {
     x: 'archer',
@@ -169,12 +163,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     y: 'ghost',
     intended: 'even',
     reason: 'One heavy shot at a time: each lands whole, after the fade ends.',
-  },
-  {
-    x: 'sniper',
-    y: 'guardian',
-    intended: 'x',
-    reason: 'Armor takes only a little off a heavy shot.',
   },
   {
     x: 'sniper',

@@ -83,6 +83,7 @@
   --press-depth: 4px;
   --shadow-slab: 0 var(--press-depth) 0 var(--color-slab);
   --shadow-accent-slab: 0 var(--press-depth) 0 var(--color-accent-slab);
+  /* The panel beside a fight; wider on a desktop, so "Best of 3 · Reveal · Hard" fits on one line. */
   --hud-width: 16rem;
   /* The side panel on a wide screen during setup, wide enough for four ball tiles. */
   --setup-width: 24rem;
@@ -114,4 +115,15 @@
    * box-shadow, so it follows each control's rounded corners and stands out on any fill.
    */
   --focus-ring: 0 0 0 3px var(--color-page), 0 0 0 6px var(--color-focus);
+}
+
+/*
+ * On a desktop the court is about as wide as the screen is tall, so the room left beside it is about
+ * the width less the height: the panel takes up to 18rem of it (one line for "Best of 3 · Reveal ·
+ * Hard" beside the gear and ?), never less than 16rem, and never squeezes the court.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  :root {
+    --hud-width: clamp(16rem, 100vw - 100dvh, 18rem);
+  }
 }

@@ -19,7 +19,7 @@ import { titan } from './titan.ts';
 import { inferno } from './inferno.ts';
 import { boomerang } from './boomerang.ts';
 import { bomber } from './bomber.ts';
-import { guardian } from './guardian.ts';
+import { spartan } from './spartan.ts';
 import { bloom } from './bloom.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
@@ -43,7 +43,7 @@ export const BALLS: readonly BallDefinition[] = [
   inferno,
   boomerang,
   bomber,
-  guardian,
+  spartan,
   bloom,
 ];
 

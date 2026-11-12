@@ -31,7 +31,7 @@ import {
   DROP_TICKS,
   FUSE_TICKS,
 } from './bomber.ts';
-import { ARMOR, guardian } from './guardian.ts';
+import { SHIELDED_SHARE, spartan, SPEAR_DAMAGE } from './spartan.ts';
 import { bloom, HEAL_AMOUNT, HEAL_EVERY_TICKS } from './bloom.ts';
 import { speedForStacks } from './speedster.ts';
 import { TICK_RATE } from '../constants.ts';
@@ -108,12 +108,11 @@ describe('the ball roster: identity rules', () => {
     expect(Object.keys(bomber.hooks)).toStrictEqual(['onTick']);
   });
 
-  it('Guardian’s armor takes only a bit off a hit, and is its only ability', () => {
-    // A bit off a heavy hit (an eighth of the hardest plain bump at most), a big share of a small one
-    // (ADR 0045).
-    expect(ARMOR).toBeLessThanOrEqual(brawler.contactDamage / 8);
-    expect(ARMOR).toBeGreaterThanOrEqual(POISON_DAMAGE / 5);
-    expect(Object.keys(guardian.hooks)).toStrictEqual([]);
+  it('Spartan’s shield halves every hit, and its spear is lighter than the Storm’s strike', () => {
+    // Half of every hit of any kind, the same rule for all (ADR 0047); one heavy throw a rhythm.
+    expect(SHIELDED_SHARE).toBe(0.5);
+    expect(SPEAR_DAMAGE).toBeLessThan(ZONE_DAMAGE);
+    expect(Object.keys(spartan.hooks)).toStrictEqual(['onTick']);
   });
 
   it('Bloom regrows a little at a time: under a tenth of its health a second', () => {
@@ -176,8 +175,8 @@ describe('the ball roster: identity rules', () => {
       // One hit each way; each is its own hit.
       boomerang: BOOMERANG_DAMAGE,
       bomber: BLAST_DAMAGE,
-      // Armor and regrowth deal nothing.
-      guardian: 0,
+      // One spear a rhythm; regrowth deals nothing.
+      spartan: SPEAR_DAMAGE,
       bloom: 0,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());

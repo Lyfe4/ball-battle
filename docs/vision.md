@@ -45,15 +45,18 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
 - **Something that beats the Storm, the Titan or the Bomber.** Only the Chrono's rewind blunts a
-  big strike or blast, and only Thorns and fire hold the grown Titan. A ball that dodges or soaks
-  one big hit (a shield that blocks exactly one hit, a dash out of a warning circle) would give
-  each a second weakness.
-- **Something Venom beats.** Poison wins only where small ticks can't be answered (the rewind). A
-  ball that leans on one big heal or one big shield, which poison keeps chipping after, would give
-  it a second win.
-- **Something that punishes the Berserker and the Bloom.** Both beat nearly every ball that deals
-  many small hits. A ball that deals one heavy hit now and then (feeding the rage once, outpacing
-  regrowth) would be strong against both.
+  big strike or blast, and only Thorns holds the grown Titan. The Storm got its second win from
+  the Spartan (ADR 0047), slowed behind its shield; it still has one loss. A ball that dodges or
+  soaks one big hit (a dash out of a warning circle) would give each a second weakness.
+- **A second win for the Spartan, Sniper and Quake, and fewer losses for the Vampire (ADR 0047).**
+  The Spartan's half shield halves every hit alike, so it beats only the Vampire. The Guardian's
+  leaving cost the Sniper a win and the Quake a loss, and the Spartan is the Vampire's fourth loss.
+  A ball that loses to one heavy shot, that hits walls often enough for the Quake's shockwaves to
+  wear it down, or that a lifestealer can drink from would close these.
+- **Something that punishes the Berserker and the Bloom.** Both beat nearly every ball that hits
+  rarely. A ball that deals one heavy hit now and then (feeding the rage once, outpacing regrowth)
+  or keeps up a stream of small hits (which stops the Bloom's regrowth, ADR 0047) would be strong
+  against both. Venom's gap closed this way: its poison ticks keep the Bloom from regrowing.
 - **The Magnet is the candidate to replace.** Its pull is movement too soft to decide a pair, so it
   is an even pick by accident rather than design; a new ball filling one of the gaps above could
   take its slot.
@@ -183,6 +186,11 @@ blind picks. See Decisions below.
   numbed rage) are gone with their spark. Favoured pairs come in two bands: a kind of hit decides
   the sharp ones (72-78%), movement the softer ones (62-72%). It ships in four groups; group 1
   brings the Storm, Quake, Berserker, Vampire, Archer, Sniper and Boomerang to their new abilities.
+- **The Spartan and the Bloom's pause** (2026-11-12, ADR 0047): the **Spartan** replaces the
+  Guardian. It plants its shield (every hit does half, and it slows) for about 2 s, then throws its
+  spear (vs Vampire; the Storm and Chrono over it). The **Bloom**'s regrowth pauses for a second
+  after every hit, so it beats balls that hit rarely and loses to streams of small hits (Venom
+  over it now, Venom's second win).
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

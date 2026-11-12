@@ -106,8 +106,8 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly statusResistance?: Readonly<Partial<Record<StatusKind, number>>>;
   /**
-   * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Guardian's
-   * armor takes a little off every hit, the Ghost's fade takes all of it. A pure query of its own
+   * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Spartan's
+   * planted shield takes half of every hit (ADR 0047), the Ghost's fade takes all of it. A pure query of its own
    * state, applied on both damage paths before the hit lands and rounded to a whole number between
    * 0 and `amount`. Defaults to the whole hit.
    */

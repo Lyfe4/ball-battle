@@ -70,7 +70,7 @@ export const chrono = defineBall<ChronoState>({
   ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
-  maxHealth: 61,
+  maxHealth: 62,
   contactDamage: 22,
   initialAbilityState: { history: [], readyTick: 0 },
   hooks: {
