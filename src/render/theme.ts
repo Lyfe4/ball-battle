@@ -218,11 +218,11 @@ export const theme = {
   /** The Bloom's flower: petals that open wide while it rests and regrows, and a pale centre. */
   bloomCentre: '#fef9c3',
   /**
-   * The Spartan: a bronze helmet (its colour) with a red crest over the top, a polished shield band
-   * while planted, and the same polish on its spear's head in flight.
+   * The Spartan (on its crimson body): a bronze helmet, planted shield and spear, and a cream crest
+   * that stands out on the crimson and on the floor where it passes the ball's edge.
    */
-  spartanCrest: '#dc2626',
-  spartanPolish: '#fcd34d',
+  spartanBronze: '#e0a83e',
+  spartanCrest: '#fef3c7',
   /** The Necromancer's eyes, glowing out of its hood. */
   necromancerEyes: '#bef264',
   /**
@@ -251,7 +251,7 @@ export const theme = {
   spearHeadLength: 3.6,
   /** The head's half-width, as a multiple of the shot's radius. */
   spearHeadWidth: 1.5,
-  /** A dark edge round the spear, so the bronze shaft and gold head hold on the dark floor. */
+  /** A dark edge round the spear, so the bronze shaft and head hold on the dark floor. */
   spearOutline: '#1c0a02',
   /** Burst of short rays where a projectile hits. */
   sparkColor: '#f59e0b',

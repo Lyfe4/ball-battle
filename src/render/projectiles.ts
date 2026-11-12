@@ -26,7 +26,7 @@ export function drawProjectiles(
     const owner = world.balls.find((ball) => ball.id === projectile.ownerId);
     const shot = owner === undefined ? undefined : BALL_DESIGNS.get(owner.definitionId)?.shot;
     if (shot === 'spear' && speed > 0) {
-      drawSpear(ctx, projectile.position, projectile.velocity, projectile.radius, color);
+      drawSpear(ctx, projectile.position, projectile.velocity, projectile.radius);
       continue;
     }
     if (speed > 0) {
@@ -47,16 +47,15 @@ export function drawProjectiles(
 }
 
 /**
- * A spear in flight (the Spartan): its main attack, so the boldest thing it draws. A long thick shaft
- * in the owner's colour behind a broad polished head, both outlined so it reads on the floor and on
- * a ball at phone size.
+ * A spear in flight (the Spartan): its main attack, so the boldest thing it draws. A long thick
+ * bronze shaft behind a broad bronze head, both outlined so it reads on the floor and on a ball at
+ * phone size.
  */
 function drawSpear(
   ctx: CanvasRenderingContext2D,
   { x, y }: { readonly x: number; readonly y: number },
   velocity: { readonly x: number; readonly y: number },
   radius: number,
-  color: string,
 ): void {
   ctx.save();
   ctx.translate(x, y);
@@ -68,7 +67,7 @@ function drawSpear(
   ctx.lineJoin = 'round';
   for (const [stroke, width] of [
     [theme.spearOutline, theme.spearShaftWidth + 6],
-    [color, theme.spearShaftWidth],
+    [theme.spartanBronze, theme.spearShaftWidth],
   ] as const) {
     ctx.strokeStyle = stroke;
     ctx.lineWidth = width;
@@ -83,7 +82,7 @@ function drawSpear(
   ctx.lineTo(base, 0);
   ctx.lineTo(head * 0.2, half);
   ctx.closePath();
-  ctx.fillStyle = theme.spartanPolish;
+  ctx.fillStyle = theme.spartanBronze;
   ctx.strokeStyle = theme.spearOutline;
   ctx.lineWidth = 4;
   ctx.stroke();

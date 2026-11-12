@@ -3,7 +3,7 @@ import { drawRewinds } from './draw-rewind.ts';
 import type { RewindTrail } from './rewind.ts';
 import type { BallState, DefinitionLookup, Vec2, WorldState } from '../sim/types.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
-import { aimHeading, useSimpleDesign, velocityHeading } from './ball-designs/state.ts';
+import { designView, paintDesign } from './ball-designs/paint.ts';
 import type { BallDesign } from './ball-designs/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
 import {
@@ -211,13 +211,6 @@ export interface BallLook {
   readonly phased?: boolean;
 }
 
-/** Which way a design faces, in the world it is drawn in. */
-function headingFor(design: BallDesign, ball: BallState, world: WorldState) {
-  if (design.facing === 'velocity') return velocityHeading(ball.velocity);
-  if (design.facing === 'aim') return aimHeading(ball, world.balls, world.minions);
-  return undefined;
-}
-
 /**
  * One ball: its body, its design's markings, the damage flash, the outline and, for a repeat, a
  * ring just inside the edge. Also used by the dev style guide, so it shows exactly what the game
@@ -239,26 +232,8 @@ export function drawBall(
   ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
-  if (design !== undefined) {
-    const heading = headingFor(design, ball, world);
-    ctx.save();
-    ctx.translate(x, y);
-    if (heading !== undefined) ctx.rotate(Math.atan2(heading.y, heading.x));
-    design.draw(ctx, {
-      ball,
-      radius: ball.radius,
-      base: color,
-      accent: theme.ballAccents[ball.definitionId] ?? theme.defaultAccent,
-      tick: world.tick,
-      heading,
-      heal: ball.health > 0 ? look.heal : 0,
-      simple:
-        look.detail === undefined
-          ? useSimpleDesign(ball.radius * look.cssPixelsPerUnit)
-          : look.detail === 'simple',
-    });
-    ctx.restore();
-  }
+  const view = design === undefined ? undefined : designView(design, ball, world, look);
+  if (design !== undefined && view !== undefined) paintDesign(ctx, view, design.draw);
   // The design leaves its own path behind (paths are not part of save/restore), so the flash and
   // outline rebuild the body's.
   ctx.beginPath();
@@ -292,6 +267,8 @@ export function drawBall(
     ctx.lineWidth = theme.repeatRingWidth;
     ctx.stroke();
   }
+  // A part that stands proud of the ball (the Spartan's crest), over its outline.
+  if (design?.over !== undefined && view !== undefined) paintDesign(ctx, view, design.over);
   ctx.restore();
 }
 

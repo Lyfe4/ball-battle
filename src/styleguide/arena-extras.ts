@@ -47,7 +47,7 @@ export function batchFourExtras(balls: readonly BallState[]): {
 /**
  * Batch 5 in the phone arena (ADR 0043): a bomb lying beside the Bomber, part-way down its fuse, a
  * boomerang in flight beside the Boomerang, a spear just thrown by the Spartan (open, its shield
- * band gone), and a hit glancing off the faded Ghost (ADR 0045, 0047).
+ * arc gone), and a hit glancing off the faded Ghost (ADR 0045, 0047).
  */
 export function batchFiveExtras(balls: readonly BallState[]): {
   readonly zones: readonly ZoneState[];

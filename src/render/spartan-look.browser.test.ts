@@ -1,6 +1,7 @@
-// The Spartan's look in a real canvas (`pnpm test:browsers`), at phone and desktop size: a crested
-// helmet face that stays upright, a thick shield band on the side facing the enemy only while its
-// shield is planted, and the spear drawn only in flight, with a polished head. Read from pixels, so
+// The Spartan's look in a real canvas (`pnpm test:browsers`), at phone and desktop size: an upright
+// crested helmet in profile looking at the enemy, its crest past the ball's edge, a thick shield arc
+// clear of the helmet on the side facing the enemy only while planted, and the spear drawn only in
+// flight. Read from pixels, so
 // it checks what a player sees in every engine, not which canvas calls ran.
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
@@ -72,34 +73,37 @@ function scene(scale: number, raised: boolean, enemy: { x: number; y: number }) 
 }
 
 describe.each(SIZES)("the Spartan's look at %s size", (_size, scale) => {
-  it('wears a crested helmet, upright whichever way it faces', () => {
-    for (const enemy of [
-      { x: 900, y: 500 },
-      { x: 500, y: 900 },
-      { x: 100, y: 500 },
-    ]) {
+  const dark = theme.ballAccents['spartan'] ?? '';
+
+  it('wears an upright crested helmet that looks at the enemy', () => {
+    for (const [enemy, side] of [
+      [{ x: 900, y: 500 }, 1],
+      [{ x: 500, y: 900 }, 1],
+      [{ x: 100, y: 500 }, -1],
+    ] as const) {
       const at = scene(scale, false, enemy);
-      expect(at(theme.spartanCrest, 0, -0.8), 'the crest over the top').toBe(true);
-      expect(at(theme.ballAccents['spartan'] ?? '', 0, 0.6), 'the gap down the face').toBe(true);
-      expect(at(spartan.color, -0.5, 0.4), 'the bronze cheek').toBe(true);
+      expect(at(theme.spartanCrest, 0, -0.6), 'the crest over the top').toBe(true);
+      expect(at(dark, 0, -1.07), 'the crest stands past the edge').toBe(true);
+      expect(at(dark, 0.45 * side, -0.05), 'the eye, towards the enemy').toBe(true);
+      expect(at(theme.spartanBronze, -0.25 * side, 0.2), 'the bronze helmet').toBe(true);
     }
   });
 
-  it('holds a thick shield band towards the enemy only while planted', () => {
+  it('holds a thick shield arc towards the enemy only while planted, clear of the helmet', () => {
     const right = scene(scale, true, { x: 900, y: 500 });
-    expect(right(theme.spartanPolish, 0.84, 0), 'the band facing the enemy').toBe(true);
-    expect(right(spartan.color, -0.84, 0.2), 'no band behind it').toBe(true);
+    expect(right(theme.spartanBronze, 0.83, 0), 'the arc facing the enemy').toBe(true);
+    expect(right(theme.spartanBronze, 0.62, 0), 'a gap between arc and helmet').toBe(false);
+    expect(right(spartan.color, -0.83, 0.2), 'no arc behind it').toBe(true);
     const left = scene(scale, true, { x: 100, y: 500 });
-    expect(left(theme.spartanPolish, -0.84, 0), 'the band follows the enemy').toBe(true);
+    expect(left(theme.spartanBronze, -0.83, 0), 'the arc follows the enemy').toBe(true);
     const open = scene(scale, false, { x: 900, y: 500 });
-    expect(open(spartan.color, 0.84, 0), 'open: no band').toBe(true);
-    expect(open(theme.spartanPolish, 0.84, 0), 'open: no band').toBe(false);
+    expect(open(spartan.color, 0.83, 0), 'open: no arc').toBe(true);
   });
 
-  it('draws its spear in flight, with a polished head on a shaft in its colour', () => {
+  it('draws its spear in flight, a bronze head on a bronze shaft', () => {
     const at = scene(scale, true, { x: 900, y: 500 });
     const spear = { x: 500, y: 150 };
-    expect(at(theme.spartanPolish, 0.24, 0, spear), 'the head').toBe(true);
-    expect(at(spartan.color, -1.2, 0, spear), 'the shaft').toBe(true);
+    expect(at(theme.spartanBronze, 0.24, 0, spear), 'the head').toBe(true);
+    expect(at(theme.spartanBronze, -1.2, 0, spear), 'the shaft').toBe(true);
   });
 });

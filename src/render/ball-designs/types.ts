@@ -57,6 +57,11 @@ export interface DesignView {
  */
 export interface BallDesign {
   readonly draw: (painter: Painter, view: DesignView) => void;
+  /**
+   * Painted after the outline, in the same frame: a part that stands proud of the ball and may
+   * break its edge a little (the Spartan's crest), never more than an icon's padding (12% of r).
+   */
+  readonly over?: (painter: Painter, view: DesignView) => void;
   /** Where `heading` comes from: none, the ball's velocity, or its aim at the nearest enemy. */
   readonly facing: 'none' | 'velocity' | 'aim';
   /**

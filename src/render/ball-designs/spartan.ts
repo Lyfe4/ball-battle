@@ -1,116 +1,162 @@
 import { spartanRaisedOf } from '../../sim/balls/spartan.ts';
 import { theme } from '../theme.ts';
-import type { BallDesign, Painter } from './types.ts';
+import type { BallDesign, DesignView, Painter } from './types.ts';
+
+type Point = readonly [number, number];
 
 /**
- * The helmet's face, upright whatever the ball faces, as fractions of r: the T-shaped opening of a
- * crested Greek helmet (almond eye slits either side of a nose guard, and the gap between the cheek
- * guards running down to its lower edge), and a crest arcing over the top. Points run round the
- * opening's right half; the left is its mirror. At small size the opening and the nose guard are
- * bolder, so the eyes still read at phone size.
+ * A bronze Corinthian helmet in profile, looking along +x, as fractions of r: the dome, the face
+ * guard sloping to the chin and the neck guard flaring at the back. Small enough to leave a ring of
+ * the body round it, so the planted shield never touches it.
  */
-const OPENING: readonly (readonly [number, number])[] = [
-  [0.08, -0.3],
-  [0.16, -0.3],
-  [0.66, -0.14],
-  [0.2, 0.04],
-  [0.13, 0.16],
-  [0.22, 1],
+const DOME = { y: 0.04, radius: 0.54, front: Math.PI * 1.85 } as const;
+const HELMET: readonly Point[] = [
+  [0.56, 0.12],
+  [0.4, 0.56],
+  [0.06, 0.58],
+  [-0.08, 0.28],
+  [-0.3, 0.38],
+  [-0.5, 0.44],
 ];
-const OPENING_SIMPLE: readonly (readonly [number, number])[] = [
-  [0.11, -0.32],
-  [0.2, -0.32],
-  [0.7, -0.12],
-  [0.24, 0.08],
-  [0.16, 0.2],
-  [0.24, 1],
+/** The eye: an almond opening looking forward. At small size its front is taller, so it reads. */
+const EYE: readonly Point[] = [
+  [0.06, -0.06],
+  [0.28, -0.17],
+  [0.54, -0.12],
+  [0.54, 0.04],
+  [0.28, 0.04],
 ];
-/** How far down the nose guard reaches between the eyes. */
-const NOSE_GUARD_END = 0.06;
-const CREST = { radius: 0.8, from: Math.PI * 1.14, to: Math.PI * 1.86 } as const;
-const CREST_WIDTH = { full: 0.2, simple: 0.24 } as const;
-/** The planted shield: a thick band hugging the edge that faces the enemy (+x), half-angle in rad. */
-const SHIELD = { outer: 1, inner: 0.64, half: Math.PI * 0.36 } as const;
-const SHIELD_INNER_SIMPLE = 0.58;
-
+const EYE_SIMPLE: readonly Point[] = [
+  [0.06, -0.06],
+  [0.28, -0.19],
+  [0.54, -0.14],
+  [0.54, 0.09],
+  [0.28, 0.07],
+];
 /**
- * Traces the opening from its right-half points, starting at the foot of the nose guard: down the
- * right, back up the mirrored left and down the guard's other side.
+ * The crest: a thick band of horsehair standing on the dome, from the brow over the top to the
+ * back, a little past the ball's edge (drawn over the outline). Angles in radians.
  */
-function traceOpening(p: Painter, r: number, half: readonly (readonly [number, number])[]): void {
-  p.beginPath();
-  const [first] = half;
-  if (first === undefined) return;
-  p.moveTo(first[0] * r, NOSE_GUARD_END * r);
-  for (const [x, y] of half) p.lineTo(x * r, y * r);
-  for (const [x, y] of [...half].reverse()) p.lineTo(-x * r, y * r);
-  p.lineTo(-first[0] * r, NOSE_GUARD_END * r);
+const CREST = {
+  y: -0.1,
+  radius: 0.68,
+  width: 0.48,
+  from: Math.PI * 1.04,
+  to: Math.PI * 1.68,
+} as const;
+/** The planted shield: a thick arc at the edge facing the enemy, its half-angle in radians. */
+const SHIELD = { radius: 0.83, width: 0.26, half: Math.PI * 0.25 } as const;
+/** Dark rims, as fractions of r: thicker at small size so each part keeps its edge on a phone. */
+const RIM = { full: 0.07, simple: 0.1 } as const;
+
+function polygon(p: Painter, r: number, points: readonly Point[]): void {
+  for (const [x, y] of points) p.lineTo(x * r, y * r);
   p.closePath();
 }
 
-/** The opening and crest of the helmet, drawn upright in the ball's frame and kept inside it. */
+/**
+ * Undoes the turn towards the enemy, so the helmet stays upright and only looks left or right:
+ * mirrored when the enemy is to its left.
+ */
+function upright(p: Painter, view: DesignView): void {
+  const { heading } = view;
+  if (heading === undefined) return;
+  p.rotate(-Math.atan2(heading.y, heading.x));
+  if (heading.x < 0) p.scale(-1, 1);
+}
+
 function drawHelmet(p: Painter, r: number, accent: string, simple: boolean): void {
+  p.beginPath();
+  p.moveTo(-0.5 * r, 0.44 * r);
+  p.lineTo(-DOME.radius * r, DOME.y * r);
+  p.arc(0, DOME.y * r, DOME.radius * r, Math.PI, DOME.front);
+  polygon(p, r, HELMET);
+  p.fillStyle = theme.spartanBronze;
+  p.fill();
+  if (!simple) {
+    p.strokeStyle = accent;
+    p.lineWidth = RIM.full * 0.8 * r;
+    p.lineJoin = 'round';
+    p.stroke();
+  }
+  p.fillStyle = accent;
+  p.beginPath();
+  polygon(p, r, simple ? EYE_SIMPLE : EYE);
+  p.fill();
+}
+
+/** A smooth thick bronze arc at the edge facing the enemy (+x), with a dark rim all round. */
+function drawShield(p: Painter, r: number, accent: string, simple: boolean): void {
+  const rim = (simple ? RIM.simple : RIM.full) * r;
   p.save();
   p.beginPath();
   p.arc(0, 0, r, 0, Math.PI * 2);
   p.clip();
-  const crestWidth = (simple ? CREST_WIDTH.simple : CREST_WIDTH.full) * r;
   p.lineCap = 'round';
-  if (!simple) {
-    // A dark edge round the crest, so the red reads apart from the bronze.
-    p.strokeStyle = accent;
-    p.lineWidth = crestWidth + r * 0.08;
+  for (const [color, width] of [
+    [accent, SHIELD.width * r + 2 * rim],
+    [theme.spartanBronze, SHIELD.width * r],
+  ] as const) {
+    p.strokeStyle = color;
+    p.lineWidth = width;
     p.beginPath();
-    p.arc(0, 0, CREST.radius * r, CREST.from, CREST.to);
+    p.arc(0, 0, SHIELD.radius * r, -SHIELD.half, SHIELD.half);
     p.stroke();
   }
-  p.strokeStyle = theme.spartanCrest;
-  p.lineWidth = crestWidth;
-  p.beginPath();
-  p.arc(0, 0, CREST.radius * r, CREST.from, CREST.to);
-  p.stroke();
-
-  p.fillStyle = accent;
-  p.lineJoin = 'round';
-  traceOpening(p, r, simple ? OPENING_SIMPLE : OPENING);
-  p.fill();
   p.restore();
 }
 
-/** The planted shield: a thick polished band on the edge facing the enemy, edged in the accent. */
-function drawShield(p: Painter, r: number, accent: string, simple: boolean): void {
-  const inner = (simple ? SHIELD_INNER_SIMPLE : SHIELD.inner) * r;
-  const outer = SHIELD.outer * r;
-  p.fillStyle = accent;
+/** The crest over the top, in cream with a dark rim, and at full size a few strands of horsehair. */
+function drawCrest(p: Painter, r: number, accent: string, simple: boolean): void {
+  const radius = CREST.radius * r;
+  const y = CREST.y * r;
+  p.lineCap = 'butt';
+  for (const [color, width, pad] of [
+    [accent, (CREST.width + 2 * (simple ? RIM.simple : RIM.full)) * r, 0.03],
+    [theme.spartanCrest, CREST.width * r, 0],
+  ] as const) {
+    p.strokeStyle = color;
+    p.lineWidth = width;
+    p.beginPath();
+    p.arc(0, y, radius, CREST.from - pad, CREST.to + pad);
+    p.stroke();
+  }
+  if (simple) return;
+  p.strokeStyle = accent;
+  p.lineWidth = 0.035 * r;
   p.beginPath();
-  p.arc(0, 0, outer, -SHIELD.half - 0.12, SHIELD.half + 0.12);
-  p.arc(0, 0, inner - r * 0.08, SHIELD.half + 0.12, -SHIELD.half - 0.12, true);
-  p.closePath();
-  p.fill();
-  p.fillStyle = theme.spartanPolish;
-  p.beginPath();
-  p.arc(0, 0, outer, -SHIELD.half, SHIELD.half);
-  p.arc(0, 0, inner, SHIELD.half, -SHIELD.half, true);
-  p.closePath();
-  p.fill();
+  const inner = radius - CREST.width * 0.25 * r;
+  const outer = radius + CREST.width * 0.35 * r;
+  for (let angle = CREST.from + 0.12; angle < CREST.to; angle += 0.16) {
+    const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+    p.moveTo(cos * inner, y + sin * inner);
+    p.lineTo(cos * outer, y + sin * outer);
+  }
+  p.stroke();
 }
 
 /**
- * Shield and spear (the Spartan): the ball is a bronze crested helmet, its T-shaped opening and red
- * crest always upright so the face reads at any size. While its shield is planted a thick polished
- * band hugs the side facing the enemy; once the spear is thrown the band is gone and the ball is
- * open. The spear is only ever drawn in flight (projectiles.ts), never on the ball.
+ * Shield and spear (the Spartan): a bronze crested helmet in profile on a crimson body, looking at
+ * the enemy (it turns only left or right, never upside down), with a cream crest standing over the
+ * top and a little past the ball's edge. While its shield is planted a thick bronze arc, rimmed in
+ * dark and clear of the helmet, hugs the edge facing the enemy; once the spear is thrown the arc is
+ * gone. The spear is only ever drawn in flight (projectiles.ts), never on the ball.
  */
 export const spartanDesign: BallDesign = {
   facing: 'aim',
   shot: 'spear',
-  draw(p, { ball, radius: r, accent, heading, simple }) {
+  draw(p, view) {
+    const { radius: r, accent, simple } = view;
     p.save();
-    // The frame faces the enemy; the face stays upright.
-    if (heading !== undefined) p.rotate(-Math.atan2(heading.y, heading.x));
+    upright(p, view);
     drawHelmet(p, r, accent, simple);
     p.restore();
-    // The shield is held in front of the face.
-    if (spartanRaisedOf(ball) === true) drawShield(p, r, accent, simple);
+    if (spartanRaisedOf(view.ball) === true) drawShield(p, r, accent, simple);
+  },
+  over(p, view) {
+    p.save();
+    upright(p, view);
+    drawCrest(p, view.radius, view.accent, view.simple);
+    p.restore();
   },
 };
