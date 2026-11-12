@@ -4,6 +4,34 @@ Where BallBattle is heading. It guides design and balance decisions so today's w
 the future into a corner. Step 1 of the planned order (best of 3 against a bot) is built
 (ADR 0017); the rest is not.
 
+## Long-term goal
+
+BallBattle is heading towards a real downloadable game: accounts, a backend, asynchronous and
+then live PvP, leaderboards, a game currency, random unlocks and in-app purchases. Everything
+below the draft (the deterministic sim, `verifySeries`, ruleset versions) is built so that this
+can sit on top of it. Rules that hold however it is built:
+
+- **Unlocks and rarities add variety, never power.** A rare ball or skin is a new option or a new
+  look, never a stronger version of something a player already has; every ball stays inside the
+  balance targets.
+- **The server issues seeds and verifies every result with `verifySeries`.** A client never picks
+  a seed and its reported result is never trusted (step 2 of the planned order below).
+- **Currency and unlocks are stored on the server, never trusted from the client.** A client shows
+  what the server says it owns; it never grants itself anything.
+- **Paid random rewards need a legal check before shipping.** In Australia, in-game purchases with
+  random rewards force at least an M rating, and simulated gambling (such as a roulette wheel)
+  forces R18+. Prefer a pack or chest reveal over a roulette wheel, and check every market the game
+  ships in.
+
+Rough order:
+
+1. Accounts and a backend.
+2. Asynchronous PvP and leaderboards.
+3. A free currency and unlocks earned by playing.
+4. An app-store release (likely Capacitor around the web build).
+5. Live PvP.
+6. Paid cosmetics; paid random unlocks only after the legal check.
+
 ## Future mode: player vs player
 
 - Each player picks **3 balls, blind and in order**. Neither sees the other's lineup until the
@@ -48,11 +76,12 @@ kind of hit is new. When balls are next added, these are the kinds to look for:
   big strike or blast, and only Thorns holds the grown Titan. The Storm got its second win from
   the Spartan (ADR 0047), slowed behind its shield; it still has one loss. A ball that dodges or
   soaks one big hit (a dash out of a warning circle) would give each a second weakness.
-- **A second win for the Spartan, Sniper and Quake, and fewer losses for the Vampire (ADR 0047).**
-  The Spartan's half shield halves every hit alike, so it beats only the Vampire. The Guardian's
-  leaving cost the Sniper a win and the Quake a loss, and the Spartan is the Vampire's fourth loss.
-  A ball that loses to one heavy shot, that hits walls often enough for the Quake's shockwaves to
-  wear it down, or that a lifestealer can drink from would close these.
+- **A second win for the Spartan, Sniper and Vampire, a second loss for the Quake, and fewer
+  losses for the Vampire (ADR 0047).** The Spartan's half shield halves every hit alike, so it
+  beats only the Vampire. The Guardian's leaving cost the Sniper a win and the Quake a loss, and
+  the Spartan is the Vampire's fourth loss (it beats only the Berserker). A ball that loses to one
+  heavy shot, that a lifestealer can drink from, or that hits hard enough to outlast the Quake's
+  small shockwaves (as only the Berserker does now) would close these.
 - **Something that punishes the Berserker and the Bloom.** Both beat nearly every ball that hits
   rarely. A ball that deals one heavy hit now and then (feeding the rage once, outpacing regrowth)
   or keeps up a stream of small hits (which stops the Bloom's regrowth, ADR 0047) would be strong
@@ -103,8 +132,8 @@ blind picks. See Decisions below.
      another ruleset is replayed under the server's or rejected, never accepted as reported. The
      known match results checked in Chromium, Firefox and WebKit (ADR 0023) are what let a
      browser's fight and the server's re-simulation be the same fight.
-3. **Progression and unlocks.** Unlocks add **variety, not power**: a new ball is a new option in
-   the guessing game, never a stronger version of an old one.
+3. **Progression and unlocks** (see Long-term goal). Unlocks add **variety, not power**: a new
+   ball is a new option in the guessing game, never a stronger version of an old one.
 
 ## Decisions
 
@@ -194,8 +223,12 @@ blind picks. See Decisions below.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
-- Bands, checked by `pnpm balance`: the favoured side wins **58-70%**, an even pair **45-55%**
-  for both sides, and **no matchup is worse than 25/75**, on top of every existing target.
+- Bands, checked by `pnpm balance` (`COUNTER_BANDS` in `scripts/counter-map.ts`; ADR 0028
+  addendum, ADR 0045 group 4): a counter (▲▼) targets **65-72%** with a floor of **62-78%**, and a
+  pair that wins under 62% is not a counter, however it is designed; an even pair targets
+  **45-55%** for both sides with no side above **62%**, and a side over 58% is the grey zone
+  (counted and warned, never failed); **no matchup is worse than 22/78**. A pair between target
+  and floor is a WARN, within 2 points outside the floor a NEAR (passes), further out a MISS.
 
 ### Mirror draws (2026-11-04)
 
