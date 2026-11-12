@@ -28,9 +28,9 @@ pair from a fixed start):
   lead), then fights in the open for the rest of the rhythm.
 - 44 health, bump 16, speed 730 (above the Frost, which stays the slowest ball).
 
-On screen: while planted, a big bronze round shield faces the enemy with the spear readied along
-its top; once thrown, the shield is slung behind it as an arc and nothing is in front. The spear
-flies as a spear (shaft and head), not a dot.
+On screen (replaced, see the addendum): while planted, a big bronze round shield faces the enemy
+with the spear readied along its top; once thrown, the shield is slung behind it as an arc and
+nothing is in front. The spear flies as a spear (shaft and head), not a dot.
 
 **Its counters:** beats the Vampire (its bumps do half against the shield, so it drinks half);
 loses to the Storm (slowed behind its shield it can't leave the circle) and the Chrono (it rewinds
@@ -137,3 +137,39 @@ Venom and the Archer, Berserker vs Venom and Bomber vs Speedster): no frame over
   "Best of 3 · Reveal · Hard" fits on one line without shrinking the court; the Leave series
   confirm puts the question on its own line and Stay and Leave under it, the same size, Stay
   first (`panel-parts-flow.ts` checks all three at 375, 1280 and 1920 wide).
+
+## Addendum (2026-11-13): the Spartan's look
+
+On an iPhone (about 390 wide) the first look did not read as a Spartan. On a small ball a circle reads
+as an eye: the planted round shield with the spear line over it looked like an eye and an eyebrow,
+the slung shield like an eyeball looking sideways, and the spear line on the ball was too thin to
+see. The cream body read as an egg. Visual only: no sim change, ruleset 12 and the known match results
+unchanged (a ball's colour is outside the fingerprint, ADR 0022).
+
+- **The face is a crested Greek helmet, in both states**: the T-shaped opening (almond eye slits
+  either side of a nose guard, the gap between the cheek guards running down to the lower edge) in
+  the dark accent, and a red crest arcing over the top. It stays upright whichever way the ball
+  faces; only the shield turns. At phone size the opening and crest are bolder.
+- **Planted: a thick polished shield band** hugs the side of the ball facing the enemy, edged in
+  the accent. Thrown: the band is gone. "Thick band = protected" is the one state cue; the gold
+  glance ring (the halved hit) is the same polish.
+- **The spear shows only in flight**, never on the ball. It is the Spartan's main attack (about 55%
+  of its damage, measured below), so it is the boldest thing it draws: a long thick shaft in its
+  colour behind a broad polished head, both outlined.
+- **Colours**: body bronze `#b45309` (the helmet itself), accent `#1c0a02`, crest `#dc2626`,
+  polish `#fcd34d`. A deep crimson body, the first idea, cannot work on the indigo floor: a red dark
+  enough to read as crimson is under 3:1 against it (`#b91c1c` is 2.6:1), and every red that
+  passes (from about `#d4252a`) sits as close to the Brawler and Magnet (CIEDE2000 about 8) as the
+  roster's closest existing pair (Chrono and Inferno, 8.6), making a third red ball. Bronze passes
+  at 3.4:1 and its nearest ball is the Berserker at 16.4 (bright orange, a crack, no helmet); the
+  Chrono (pale tan, about 24) and Inferno and Bloom (further) are far apart. Red stays in the
+  crest, where it says "Spartan".
+- The look is checked in a real canvas in every engine, at phone and desktop size
+  (`src/render/spartan-look.browser.test.ts`): the crest and face upright with the enemy on any
+  side, the band towards the enemy only while planted, and the spear's head and shaft in flight.
+
+The spear, measured over every opponent, 40 seeds, both slot orders (1,680 matches): it does 28
+against a bump of 16 (before directness, which scales only bumps), flies straight at where the
+nearest enemy is (no lead) at 1500 a second until it hits a ball or minion or reaches a wall (its
+2-second life is longer than any flight across the court), and lands about one throw in three
+(2,233 of 6,706). That is 55% of the Spartan's damage (54,400 of 98,884); bumps are the other 45%.
