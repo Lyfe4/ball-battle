@@ -1,5 +1,6 @@
-// The Hard bot (ADR 0035) for a series of any odd lineup size, for the Best of 5 measurement
-// (docs/best-of-5-measurements.md). Not used by the game: src/sim's hardBot is Best of 3 only.
+// The Hard bot (ADR 0035) for a series of any odd lineup size, as the Best of 5 measurement played
+// it (docs/best-of-5-measurements.md). The game's Hard (src/sim/bot.ts) now plays Best of 5 the same
+// way (ADR 0048); this stays as the measured reference, and best-of-n-bot.test.ts checks they agree.
 //
 // Two changes from src/sim/bot.ts and bot-model.ts, nothing else:
 // - wins needed are a majority of the lineup, read from the view (balls left plus rounds played),

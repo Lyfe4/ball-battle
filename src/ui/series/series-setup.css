@@ -56,7 +56,7 @@
 /* The lineup tray: three numbered slots in a row; a filled slot is a button that takes its ball out. */
 .lineup-tray {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--tray-slots, 3), minmax(0, 1fr));
   gap: var(--space-small);
   margin: 0;
   padding: 0;
@@ -116,6 +116,32 @@
 
 .lineup-tray-empty .lineup-tray-name {
   font-weight: 400;
+}
+
+/*
+ * A Best of 5's tray (ADR 0048): five slots share the row on a phone, so a slot is shorter and a
+ * filled one shows its ball alone, larger; its name is in its label and under its tile in the grid.
+ */
+.lineup-tray-compact {
+  gap: 6px;
+}
+
+.lineup-tray-compact .lineup-tray-slot {
+  min-height: 3.5rem;
+  padding: 4px 2px;
+}
+
+.lineup-tray-compact .lineup-tray-slot:not(.lineup-tray-empty) .lineup-tray-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lineup-tray-compact .lineup-tray-empty .lineup-tray-name {
+  font-size: var(--font-size-tiny);
 }
 
 /*

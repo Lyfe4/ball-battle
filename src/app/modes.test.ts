@@ -30,27 +30,43 @@ describe('the main mode (ADR 0046)', () => {
     expect(lineupParentOf('showdown')).toBe('modes');
     expect(lineupParentOf('blind')).toBe('modes');
   });
+
+  it('goes back to Other modes from every Best of 5 lineup, Reveal’s included (ADR 0048)', () => {
+    for (const format of FORMATS) expect(lineupParentOf(format, 5)).toBe('modes');
+    expect(lineupParentOf('reveal', 3)).toBe('home');
+  });
 });
 
 describe('Other modes', () => {
-  it('offers every other way to play exactly once: each format but the main, and Free play', () => {
-    const formats = modes.flatMap((mode) => (mode.kind === 'series' ? [mode.format] : []));
-    expect(new Set(formats).size).toBe(formats.length);
-    expect([...formats].sort()).toStrictEqual(FORMATS.filter((f) => f !== MAIN_FORMAT).sort());
+  it('offers every format once, under a length choice, and Free play once (ADR 0048)', () => {
+    // At Best of 5 nothing else reaches Reveal, so the series section lists every format.
+    const series = OTHER_MODE_SECTIONS.filter((section) => section.lengthChoice === true);
+    expect(series).toHaveLength(1);
+    const formats = (series[0]?.modes ?? []).flatMap((mode) =>
+      mode.kind === 'series' ? [mode.format] : [],
+    );
+    expect([...formats].sort()).toStrictEqual([...FORMATS].sort());
     expect(modes.filter((mode) => mode.kind === 'free')).toHaveLength(1);
+    // Free play is one match: no length to choose.
+    for (const section of OTHER_MODE_SECTIONS) {
+      if (section.modes.some((mode) => mode.kind === 'free')) {
+        expect(section.lengthChoice).toBeUndefined();
+      }
+    }
   });
 
-  it('leads with the format that keeps skill, and keeps Blind as the casual one', () => {
+  it('orders the series by skill: the main format, then Showdown, then Blind as the casual one', () => {
     expect(modes.map((mode) => (mode.kind === 'series' ? mode.format : mode.kind))).toStrictEqual([
+      MAIN_FORMAT,
       'showdown',
       'blind',
       'free',
     ]);
   });
 
-  it('groups modes in titled sections, so a Best of 5 is one more section', () => {
+  it('groups modes in titled sections', () => {
     expect(OTHER_MODE_SECTIONS.map((section) => section.title)).toStrictEqual([
-      'Best of 3 vs bot',
+      'Series vs bot',
       'One match',
     ]);
     for (const section of OTHER_MODE_SECTIONS) expect(section.modes.length).toBeGreaterThan(0);

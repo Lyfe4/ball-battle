@@ -108,7 +108,7 @@ describe('series URL', () => {
 describe('series URL, draft formats', () => {
   // Bot shows, player answers, player shows, bot answers. The parser only checks that each pick
   // is from a lineup; whether it was legal is verifySeries' job.
-  const [b0, b1, b2] = setup.b;
+  const [b0 = '', b1 = '', b2 = ''] = setup.b;
   const reveal: SeriesSetup = {
     ...setup,
     format: 'reveal',

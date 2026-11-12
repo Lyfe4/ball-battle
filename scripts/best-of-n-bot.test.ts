@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../src/sim/balls/index.ts';
-import { maximinMix } from '../src/sim/bot-model.ts';
+import { maximinMix } from '../src/sim/maximin.ts';
 import { hardBot, type BotRole, type BotView } from '../src/sim/bot.ts';
 import { createStream } from '../src/sim/rng.ts';
-import { hardWeightsN, maximinMixN } from './best-of-n-bot.ts';
+import { hardBotN, hardWeightsN, maximinMixN } from './best-of-n-bot.ts';
 import { lineupsOf } from './reveal-analysis.ts';
 import { samplePairs } from './series-analysis.ts';
 
@@ -65,6 +65,58 @@ describe('the Hard bot for any lineup size', () => {
           const mine = Object.fromEntries(hardWeightsN(view));
           for (const [ball, weight] of hardBot.weights(view)) {
             expect(mine[ball] ?? 0).toBeCloseTo(weight, 9);
+          }
+        }
+      }
+    }
+  });
+
+  it('is the game’s Hard in a Best of 5 (ADR 0048): the same choices, every role and score', () => {
+    const random = createStream(5);
+    const take = (pool: string[], n: number) =>
+      Array.from({ length: n }, () => pool.splice(Math.floor(random() * pool.length), 1)[0] ?? '');
+    // Positions met in a Best of 5: round 1, and later rounds with the score so far.
+    const scores = [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [2, 1],
+      [0, 2],
+      [2, 2],
+    ] as const;
+    for (let n = 0; n < 10; n++) {
+      for (const [wins, losses] of scores) {
+        const left = 5 - wins - losses;
+        if (left < 2) continue;
+        const pool = [...roster];
+        const own = take(pool, left);
+        const opponent = take(pool, left);
+        for (const format of ['reveal', 'showdown'] as const) {
+          const roles: [BotRole, string | undefined][] = [
+            ['show', undefined],
+            ['answer', opponent[0]],
+            ...(format === 'showdown' && left === 5
+              ? ([['open', undefined]] as [BotRole, undefined][])
+              : []),
+          ];
+          for (const [role, shown] of roles) {
+            const view: BotView = {
+              format,
+              seed: n,
+              round: wins + losses,
+              role,
+              own,
+              opponent,
+              wins,
+              losses,
+              bestOf: 5,
+              ...(shown === undefined ? {} : { shown }),
+            };
+            const game = Object.fromEntries(hardBot.weights(view));
+            const measured = hardWeightsN(view);
+            expect(Object.keys(game).sort()).toStrictEqual(measured.map(([b]) => b).sort());
+            for (const [ball, weight] of measured) expect(game[ball]).toBeCloseTo(weight, 9);
+            expect(hardBot.choose(view)).toBe(hardBotN.choose(view));
           }
         }
       }

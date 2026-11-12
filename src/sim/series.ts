@@ -1,15 +1,19 @@
-// A best-of-3 series (ADR 0017, docs/vision.md): two lineups of three different balls, first to two
-// round wins. Draft formats (ADR 0019, 0021, 0035) decide who plays when: blind order; reveal, then
+// A series (ADR 0017, docs/vision.md): two lineups of three different balls, first to two round
+// wins; or a Best of 5 (ADR 0048), five balls each, first to three. Draft formats (ADR 0019, 0021, 0035) decide who plays when: blind order; reveal, then
 // take turns showing first; or showdown, where both open at once and then the winner of a round
 // shows first and the loser answers. Pure and deterministic like the rest of the sim, so a server can replay a
 // series from its setup to verify a reported result (series-verify.ts).
 import { deriveSeed, nextFloat } from './rng.ts';
 import type { MatchResult, WorldState } from './types.ts';
 
-/** Balls per lineup, and so the most rounds a series can take. */
-export const LINEUP_SIZE = 3;
-/** Round wins that take the series. */
-export const WINS_NEEDED = 2;
+/**
+ * How long a series is (ADR 0048): balls per lineup, and so the most rounds it can take. A side
+ * needs a majority of them to win. Best of 3 is the default and what every setup without a
+ * `bestOf` means.
+ */
+export type BestOf = 3 | 5;
+export const BEST_OF: readonly BestOf[] = [3, 5];
+export const DEFAULT_BEST_OF: BestOf = 3;
 /** Plays of a round before a draw is settled by sudden death (docs/vision.md, mirror draws). */
 export const MAX_ATTEMPTS = 3;
 
@@ -21,7 +25,8 @@ const SUDDEN_DEATH_SALT = 0x5dde47;
 const TOSS_SALT = 0x70557055;
 
 export type Side = 'a' | 'b';
-export type Lineup = readonly [string, string, string];
+/** A lineup of `bestOf` different balls, in order. */
+export type Lineup = readonly string[];
 
 /**
  * How the order of each lineup is decided (ADR 0019):
@@ -63,6 +68,8 @@ export interface SeriesSetup {
   readonly format?: Format;
   /** `reveal` and `showdown`: every pick made, both sides', in order. A replay takes them from here. */
   readonly picks?: readonly string[];
+  /** Undefined is Best of 3, the only length before ADR 0048. */
+  readonly bestOf?: BestOf;
 }
 
 /** A pick made in a `reveal` or `showdown` series: `side` chose `ball` for round `round` (0-based). */
@@ -94,7 +101,7 @@ export interface SeriesState {
   readonly rounds: readonly RoundRecord[];
   /** Outcomes so far of the round in progress (only draws, since a win ends it). */
   readonly pending: readonly Outcome[];
-  /** Set once a side has WINS_NEEDED round wins. */
+  /** Set once a side has `winsNeededOf` round wins. */
   readonly winner: Side | undefined;
   /** Picks made so far (`reveal` and `showdown` series). */
   readonly picks: readonly PickRecord[];
@@ -110,12 +117,23 @@ export interface NextMatch {
   readonly b: string;
 }
 
-/** True for three different ids, all in `validIds`. */
-export function isValidLineup(ids: readonly string[], validIds: readonly string[]): ids is Lineup {
+export const bestOfOf = (setup: SeriesSetup): BestOf => setup.bestOf ?? DEFAULT_BEST_OF;
+
+/** Round wins that take a series of this length: a majority of its rounds. */
+export const winsNeededOf = (bestOf: BestOf): number => (bestOf + 1) / 2;
+
+/** A length a link or a save names, if it is one the game plays. */
+export const asBestOf = (value: unknown): BestOf | undefined =>
+  BEST_OF.find((length) => length === value);
+
+/** True for `size` different ids, all in `validIds`. */
+export function isValidLineup(
+  ids: readonly string[],
+  validIds: readonly string[],
+  size: BestOf,
+): ids is Lineup {
   return (
-    ids.length === LINEUP_SIZE &&
-    new Set(ids).size === LINEUP_SIZE &&
-    ids.every((id) => validIds.includes(id))
+    ids.length === size && new Set(ids).size === size && ids.every((id) => validIds.includes(id))
   );
 }
 
@@ -164,32 +182,30 @@ export function revealFirst(seriesSeed: number): Side {
 }
 
 /**
- * Who shows first in each round of a `reveal` series, then who answers (ADR 0021, 0029): the toss
- * winner shows first in round 1 and answers in round 2. Round 3 has no picks: each side plays the
- * ball it has left.
+ * Who shows first in each round of a `reveal` series, then who answers (ADR 0021, 0029, 0048): the
+ * toss winner shows first in round 1, then the sides alternate. The last round has no picks: each
+ * side plays the ball it has left.
  */
 export function revealTurnsOf(setup: SeriesSetup): readonly (readonly Side[])[] {
   const first = revealFirst(setup.seed);
-  const second = otherSide(first);
-  return [
-    [first, second],
-    [second, first],
-  ];
+  return Array.from({ length: bestOfOf(setup) - 1 }, (_, round) => {
+    const shows = round % 2 === 0 ? first : otherSide(first);
+    return [shows, otherSide(shows)];
+  });
 }
 
 /**
- * Who picks in each round of a `showdown` series, in the order the picks are recorded (ADR 0035):
- * round 1 both at once (A's recorded first, but neither sees the other's), round 2 the winner of
- * round 1 shows first and the loser answers. Round 3 has no picks.
+ * Who picks in each round of a `showdown` series, in the order the picks are recorded (ADR 0035,
+ * 0048): round 1 both at once (A's recorded first, but neither sees the other's); in every later
+ * round but the last, the winner of the round before shows first and the loser answers. The last
+ * round has no picks. Only rounds whose turns are known yet are listed.
  */
 export function showdownTurnsOf(state: SeriesState): readonly (readonly Side[])[] {
-  const first = state.rounds[0]?.winner;
-  return first === undefined
-    ? [['a', 'b']]
-    : [
-        ['a', 'b'],
-        [first, otherSide(first)],
-      ];
+  const picking = bestOfOf(state.setup) - 1;
+  const later = state.rounds
+    .slice(0, picking - 1)
+    .map((round): readonly Side[] => [round.winner, otherSide(round.winner)]);
+  return [['a', 'b'], ...later];
 }
 
 /**
@@ -243,7 +259,8 @@ export function nextMatch(state: SeriesState): NextMatch | undefined {
 /**
  * Records how the next match ended. A win ends the round; a draw replays it with the next attempt
  * seed, and the MAX_ATTEMPTS-th draw goes to sudden death. The series ends as soon as a side has
- * WINS_NEEDED rounds, so a 2-0 never plays round 3. Throws once the series is decided.
+ * the wins it needs, so a 2-0 never plays round 3 (nor a 3-0 or 3-1 round 5). Throws once the
+ * series is decided.
  */
 export function recordOutcome(state: SeriesState, outcome: Outcome): SeriesState {
   const match = nextMatch(state);
@@ -271,7 +288,8 @@ export function recordOutcome(state: SeriesState, outcome: Outcome): SeriesState
   };
   const next: SeriesState = { ...state, rounds: [...state.rounds, record], pending: [] };
   const score = scoreOf(next);
-  const winner = score.a >= WINS_NEEDED ? 'a' : score.b >= WINS_NEEDED ? 'b' : undefined;
+  const needed = winsNeededOf(bestOfOf(state.setup));
+  const winner = score.a >= needed ? 'a' : score.b >= needed ? 'b' : undefined;
   return { ...next, winner };
 }
 

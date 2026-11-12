@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { OTHER_MODE_SECTIONS } from '../app/modes.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { FORMATS, recordOutcome, startSeries, type Outcome } from '../sim/series.ts';
+import { BEST_OF, FORMATS, recordOutcome, startSeries, type Outcome } from '../sim/series.ts';
 import {
+  lengthChoiceOf,
   levelLine,
   MAIN_PLAY,
   modeLine,
@@ -25,7 +26,7 @@ describe('the words for the ways to play (ADR 0046)', () => {
   });
 
   it('names every other mode and says how it plays in a few words', () => {
-    expect(modes.map(modeName)).toStrictEqual(['Showdown', 'Blind', 'Free play']);
+    expect(modes.map(modeName)).toStrictEqual(['Reveal', 'Showdown', 'Blind', 'Free play']);
     for (const mode of modes) {
       expect(modeLine(mode).split(' ').length).toBeLessThanOrEqual(7);
     }
@@ -45,10 +46,18 @@ describe('the words for the ways to play (ADR 0046)', () => {
   });
 
   it('heads the lineup with what is being set up, since the rules step is skipped', () => {
-    expect(FORMATS.map(setupLine)).toStrictEqual([
+    expect(FORMATS.map((format) => setupLine(format))).toStrictEqual([
       'Best of 3 · Blind',
       'Best of 3 · Reveal',
       'Best of 3 · Showdown',
+    ]);
+    expect(setupLine('reveal', 5)).toBe('Best of 5 · Reveal');
+  });
+
+  it('names each series length and the rule it plays by (ADR 0048)', () => {
+    expect(BEST_OF.map(lengthChoiceOf)).toStrictEqual([
+      { name: 'Best of 3', rule: '3 balls each · first to 2 wins' },
+      { name: 'Best of 5', rule: '5 balls each · first to 3 wins' },
     ]);
   });
 });

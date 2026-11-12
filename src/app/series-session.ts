@@ -13,6 +13,7 @@ import {
   recordPick,
   setupWithPicks,
   startSeries,
+  type BestOf,
   type Format,
   type NextMatch,
   type SeriesSetup,
@@ -129,10 +130,12 @@ export function showBotBallNow(session: SeriesSession, bot: LineupBot): SeriesSe
  */
 export function seriesAddress(
   session: SeriesSession,
-): { readonly setup: SeriesSetup } | { readonly format: Format | undefined } {
+):
+  | { readonly setup: SeriesSetup }
+  | { readonly format: Format | undefined; readonly bestOf: BestOf | undefined } {
   if (session.state.winner !== undefined) return { setup: setupWithPicks(session.state) };
   if (session.replay !== undefined) return { setup: session.state.setup };
-  return { format: session.state.setup.format };
+  return { format: session.state.setup.format, bestOf: session.state.setup.bestOf };
 }
 
 /**
@@ -140,7 +143,7 @@ export function seriesAddress(
  * the lineup it picked, so its opponent (with the seed it picked from) is kept as well.
  */
 export function rematchOf(setup: SeriesSetup, seed: number): SeriesSetup {
-  const { a, b, opponent, format } = setup;
+  const { a, b, opponent, format, bestOf } = setup;
   return {
     ruleset: RULESET_VERSION,
     seed,
@@ -148,5 +151,6 @@ export function rematchOf(setup: SeriesSetup, seed: number): SeriesSetup {
     b,
     opponent,
     ...(format === undefined ? {} : { format }),
+    ...(bestOf === undefined ? {} : { bestOf }),
   };
 }

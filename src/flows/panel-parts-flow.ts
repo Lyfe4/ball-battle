@@ -1,7 +1,8 @@
 // The panel's small parts in a real fight (ADR 0047): the health bars keep both layers inside the
 // track's pill, the series bar never breaks inside a phrase (and fits on one line beside a fight on
 // a desktop), and the Leave series question sits over Stay and Leave, the same size, Stay first.
-// Run at 375 (touch), 1280 (wide) and 1920 (full) wide.
+// The bar is checked again for the longest line a Best of 5 writes (ADR 0048). Run at 375 (touch),
+// 1280 (wide) and 1920 (full) wide.
 import { expect } from 'vitest';
 import page from '../../index.html?raw';
 import { button, pressFight, settle, until, visible } from './page-support.ts';
@@ -35,11 +36,11 @@ function checkHealthBars(): void {
 }
 
 /** Every phrase of "Best of 3 · Reveal · Hard" on one line; the whole line on one beside a fight. */
-function checkSeriesBar(desktop: boolean): void {
+function checkSeriesBar(desktop: boolean, line = 'Best of 3 · Reveal · Hard'): void {
   const about = visible('.series-bar-about')[0];
   // A phone shows the score line in its place while a round is fought.
   if (about === undefined || about.getClientRects().length === 0) return;
-  expect(about.textContent).toBe('Best of 3 · Reveal · Hard');
+  expect(about.textContent).toBe(line);
   for (const phrase of about.querySelectorAll('.series-bar-phrase')) {
     expect(phrase.getClientRects(), phrase.textContent).toHaveLength(1);
   }
@@ -106,4 +107,26 @@ export async function runPanelPartsFlow(desktop: boolean): Promise<void> {
   checkHealthBars();
   checkSeriesBar(desktop);
   await checkLeaveConfirm();
+
+  // A Best of 5 Showdown's line, the longest the bar writes: before round 1 and beside its fight.
+  const longest = 'Best of 5 · Showdown · Hard';
+  const entry: unknown = history.state;
+  history.pushState(entry, '', `${location.pathname}?mode=bo5&fmt=showdown&step=lineup`);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: entry }));
+  await settle();
+  const tiles = () => visible('.lineup-step .ball-tile');
+  for (const tile of tiles()) if (tile.getAttribute('aria-pressed') === 'true') tile.click();
+  for (const id of ['vampire', 'archer', 'brawler', 'storm', 'necromancer']) {
+    tiles()
+      .find((tile) => tile.dataset['ballId'] === id)
+      ?.click();
+  }
+  button('Reveal lineups').click();
+  await settle();
+  checkSeriesBar(desktop, longest);
+  visible('.answer-step .pick-row-pick')[0]?.click();
+  await until(() => visible('.hud-health-track').length === 2, 15_000, false);
+  pressFight();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  checkSeriesBar(desktop, longest);
 }

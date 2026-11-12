@@ -64,10 +64,10 @@ async function liveSeries(
   const label = `${format} (${level})`;
 
   // The lineup: a tray half built survives a reload.
-  tapBall(framed, own[0]);
-  tapBall(framed, own[1]);
+  tapBall(framed, own[0] ?? '');
+  tapBall(framed, own[1] ?? '');
   await reloadsTo(framed, `${label}: lineup`, false);
-  tapBall(framed, own[2]);
+  tapBall(framed, own[2] ?? '');
   shown(framed, '.lineup-step .screen-footer .hud-button-primary')[0]?.click();
   await settle();
 

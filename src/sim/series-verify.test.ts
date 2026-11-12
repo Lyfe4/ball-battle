@@ -73,7 +73,7 @@ describe('verifySeries', () => {
 
   it('refuses a bot lineup the bot would not pick, even reordered', () => {
     const setup = decided('blind', 1);
-    const [x, y, z] = setup.b;
+    const [x = '', y = '', z = ''] = setup.b;
     expect(reasonOf({ ...setup, b: [y, x, z] })).toMatch(/lineup the random bot picks/);
     const other = ids.find((id) => !setup.b.includes(id)) ?? '';
     expect(reasonOf({ ...setup, b: [x, y, other] })).toMatch(/lineup the random bot picks/);
@@ -114,12 +114,14 @@ describe('verifySeries', () => {
       /not a ball side a has left/,
     );
     expect(reasonOf({ ...reveal, picks: picks.slice(0, 3) })).toMatch(/needs a pick/);
-    expect(reasonOf({ ...decided('blind', 2), picks: [reveal.a[0]] })).toMatch(/never used/);
+    expect(reasonOf({ ...decided('blind', 2), picks: [reveal.a[0] ?? ''] })).toMatch(/never used/);
   });
 
   it('refuses an invalid lineup, an unknown bot and a seed out of range', () => {
     const setup = decided('blind', 3);
-    expect(reasonOf({ ...setup, a: [setup.a[0], setup.a[0], setup.a[1]] })).toMatch(/lineup/);
+    expect(
+      reasonOf({ ...setup, a: [setup.a[0] ?? '', setup.a[0] ?? '', setup.a[1] ?? ''] }),
+    ).toMatch(/lineup/);
     expect(reasonOf({ ...setup, opponent: { kind: 'bot', bot: 'genius', lineupSeed: 3 } })).toMatch(
       /No bot/,
     );
@@ -129,7 +131,7 @@ describe('verifySeries', () => {
 
   it('checks only that a player opponent’s picks are legal', () => {
     const setup = decided('showdown', 1);
-    const [x, y, z] = setup.b;
+    const [x = '', y = '', z = ''] = setup.b;
     const player: SeriesSetup = { ...setup, b: [z, y, x], opponent: { kind: 'player' } };
     expect(reasonOf({ ...player, picks: [] })).not.toMatch(/lineup|bot/);
   });

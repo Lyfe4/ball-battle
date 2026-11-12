@@ -40,6 +40,17 @@ const LINEUPS: readonly SeriesSetup['b'][] = [
 /** At most this many draws per series: enough for a replay, two, and sudden death. */
 const MAX_DRAWS = 3;
 
+/**
+ * How widely a walk branches. A Best of 3 is walked in full; a Best of 5 (ADR 0048) has too many
+ * paths for that, so it tries the first two balls of every pick and at most one draw, which still
+ * reaches every round, every score and both forced last rounds.
+ */
+interface Breadth {
+  readonly draws: number;
+  readonly picks: number;
+}
+const FULL: Breadth = { draws: MAX_DRAWS, picks: Infinity };
+
 /** The screen at this moment: settled says whether the match on screen has ended. */
 const screenOf = (session: SeriesSession, settled: boolean): SeriesScreen =>
   seriesScreenOf({
@@ -68,6 +79,7 @@ function walk(
   walked: Walked,
   path: readonly Outcome[],
   outcomes?: readonly Outcome[],
+  breadth: Breadth = FULL,
 ): void {
   const fight = screenOf(session, false);
   walked.moments += 1;
@@ -79,7 +91,7 @@ function walk(
   const tries: readonly Outcome[] =
     outcomes !== undefined
       ? [outcomes[path.length] ?? 'a']
-      : draws < MAX_DRAWS
+      : draws < breadth.draws
         ? ['a', 'b', 'draw']
         : ['a', 'b'];
   for (const outcome of tries) {
@@ -101,11 +113,11 @@ function walk(
       continue;
     }
     if (screen.actions.includes('play')) {
-      walk(resolvePicks(advanceSession(settled), randomBot), walked, now, outcomes);
+      walk(resolvePicks(advanceSession(settled), randomBot), walked, now, outcomes, breadth);
     }
     if (screen.actions.includes('pick')) {
-      for (const ball of screen.choice?.options ?? []) {
-        walk(resolvePicks(pickInSession(settled, ball), randomBot), walked, now, outcomes);
+      for (const ball of (screen.choice?.options ?? []).slice(0, breadth.picks)) {
+        walk(resolvePicks(pickInSession(settled, ball), randomBot), walked, now, outcomes, breadth);
       }
     }
   }
@@ -131,6 +143,40 @@ describe('no dead ends in a series', () => {
       const replayed: Walked = { moments: 0, decided: [], deadEnds: [] };
       for (const { setup, outcomes } of live.decided) {
         walk(resolvePicks(beginSession(setup, true), randomBot), replayed, [], outcomes);
+      }
+      expect(replayed.deadEnds).toStrictEqual([]);
+      expect(replayed.decided).toHaveLength(live.decided.length);
+    });
+  }
+});
+
+describe('no dead ends in a Best of 5 (ADR 0048)', () => {
+  const five = (format: (typeof FORMATS)[number]): SeriesSetup => ({
+    ...setupOf(format, ['thorns', 'speedster', 'frost', 'ghost', 'quake']),
+    a: ['brawler', 'archer', 'magnet', 'storm', 'venom'],
+    bestOf: 5,
+  });
+  const breadth: Breadth = { draws: 1, picks: 2 };
+  for (const format of FORMATS) {
+    it(`${format}: every moment offers a way on, live and replayed from its link`, () => {
+      const live: Walked = { moments: 0, decided: [], deadEnds: [] };
+      const start = resolvePicks(beginSession(five(format)), randomBot);
+      const answers = start.current === undefined ? screenOf(start, false).choice : undefined;
+      if (answers === undefined) walk(start, live, [], undefined, breadth);
+      for (const ball of (answers?.options ?? []).slice(0, breadth.picks)) {
+        walk(resolvePicks(pickInSession(start, ball), randomBot), live, [], undefined, breadth);
+      }
+      expect(live.deadEnds).toStrictEqual([]);
+      // Series that went the distance, and ones over at 3-0.
+      const rounds = live.decided.map(
+        ({ outcomes }) => outcomes.filter((outcome) => outcome !== 'draw').length,
+      );
+      expect(Math.max(...rounds)).toBe(5);
+      expect(Math.min(...rounds)).toBe(3);
+
+      const replayed: Walked = { moments: 0, decided: [], deadEnds: [] };
+      for (const { setup, outcomes } of live.decided) {
+        walk(resolvePicks(beginSession(setup, true), randomBot), replayed, [], outcomes, breadth);
       }
       expect(replayed.deadEnds).toStrictEqual([]);
       expect(replayed.decided).toHaveLength(live.decided.length);

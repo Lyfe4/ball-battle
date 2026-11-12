@@ -1,5 +1,6 @@
 import {
   awaitingPick,
+  bestOfOf,
   formatOf,
   nextMatch,
   remainingOf,
@@ -261,8 +262,9 @@ export function createSeriesPanel(
       leave.setHidden(finished);
 
       let text = '';
-      if (playing && current !== undefined) text = playingLine(current, nameOf);
-      else if (finished) text = finalLine(state);
+      if (playing && current !== undefined) {
+        text = playingLine(current, nameOf, bestOfOf(state.setup));
+      } else if (finished) text = finalLine(state);
       else if (due === 'a' && choice !== undefined) {
         text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf, toss?.first);
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);

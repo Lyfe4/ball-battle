@@ -4,8 +4,8 @@
 import {
   attemptSeed,
   awaitingPick,
+  bestOfOf,
   formatOf,
-  LINEUP_SIZE,
   nextBallOf,
   nextMatch,
   remainingOf,
@@ -45,7 +45,7 @@ const isOpen = (state: SeriesState) => formatOf(state.setup) !== 'blind';
 
 /**
  * The ball a side plays in the round coming up, if the player may know it. In Reveal and Showdown
- * a ball is known once picked, or when it is the last one left (round 3); in a blind series the
+ * a ball is known once picked, or when it is the last one left (the last round); in a blind series the
  * bot's lineup stays hidden and the player knows their own order. A bot's pick is only ever here
  * once it is made, so no screen can show a choice the bot hasn't made.
  */
@@ -60,7 +60,7 @@ export function knownNextBall(state: SeriesState, side: Side): string | undefine
 export function trackOf(state: SeriesState, current: NextMatch | undefined): TrackColumn[] {
   const format = formatOf(state.setup);
   const played = state.rounds.length;
-  const total = state.winner === undefined ? LINEUP_SIZE : played;
+  const total = state.winner === undefined ? bestOfOf(state.setup) : played;
   return Array.from({ length: total }, (_, round): TrackColumn => {
     const record = state.rounds[round];
     if (record !== undefined) {

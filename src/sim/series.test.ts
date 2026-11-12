@@ -125,11 +125,11 @@ describe('series rules', () => {
 
 describe('lineups', () => {
   it('accepts three different known balls only', () => {
-    expect(isValidLineup(['brawler', 'storm', 'venom'], ids)).toBe(true);
-    expect(isValidLineup(['brawler', 'brawler', 'venom'], ids)).toBe(false);
-    expect(isValidLineup(['brawler', 'storm'], ids)).toBe(false);
-    expect(isValidLineup(['brawler', 'storm', 'venom', 'quake'], ids)).toBe(false);
-    expect(isValidLineup(['brawler', 'storm', 'nope'], ids)).toBe(false);
+    expect(isValidLineup(['brawler', 'storm', 'venom'], ids, 3)).toBe(true);
+    expect(isValidLineup(['brawler', 'brawler', 'venom'], ids, 3)).toBe(false);
+    expect(isValidLineup(['brawler', 'storm'], ids, 3)).toBe(false);
+    expect(isValidLineup(['brawler', 'storm', 'venom', 'quake'], ids, 3)).toBe(false);
+    expect(isValidLineup(['brawler', 'storm', 'nope'], ids, 3)).toBe(false);
   });
 
   it('gets a valid, seeded lineup from the random bot, varied across seeds', () => {
@@ -137,7 +137,7 @@ describe('lineups', () => {
     const seen = new Set<string>();
     for (let seed = 0; seed < 200; seed++) {
       const lineup = randomBot.pickLineup(seed, ids);
-      expect(isValidLineup(lineup, ids)).toBe(true);
+      expect(isValidLineup(lineup, ids, 3)).toBe(true);
       lineup.forEach((id) => seen.add(id));
     }
     expect(seen).toStrictEqual(new Set(ids));

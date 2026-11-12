@@ -13,6 +13,7 @@ import { writeMainModeParams } from './app/modes.ts';
 import { createRouter } from './app/router.ts';
 import { initialAppState } from './app/screen-rules.ts';
 import { generateSeed } from './app/seed.ts';
+import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
@@ -340,7 +341,9 @@ function showControls(): void {
   speedRoot.hidden = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
-  document.title = TITLES[screen];
+  // A series screen's title names its length (ADR 0048).
+  const bestOf = readMode(new URLSearchParams(window.location.search).get('mode'));
+  document.title = screen === 'series' && bestOf === 5 ? 'Best of 5 · BallBattle' : TITLES[screen];
 }
 
 navigation.onChange(showCurrentRoute);

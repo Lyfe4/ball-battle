@@ -192,7 +192,7 @@ describe('parseRoute', () => {
     const played = setupWithPicks(playLikeTheGame(base, BALL_LOOKUP));
     const picks = played.picks ?? [];
     const notTheirs = ids.find((id) => !played.a.includes(id) && played.b.includes(id)) ?? '';
-    const [x, y, z] = played.b;
+    const [x = '', y = '', z = ''] = played.b;
     const linkOf = (setup: SeriesSetup) => {
       const params = new URLSearchParams();
       writeSeriesParams(params, setup);

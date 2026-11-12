@@ -8,7 +8,14 @@
 // missing or throw (private windows, blocked site data); then the series simply isn't kept across
 // a reload, as before.
 import { BOTS } from '../sim/bot.ts';
-import { FORMATS, isValidLineup, type SeriesSetup } from '../sim/series.ts';
+import {
+  asBestOf,
+  BEST_OF,
+  DEFAULT_BEST_OF,
+  FORMATS,
+  isValidLineup,
+  type SeriesSetup,
+} from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import type { Draft } from '../ui/lineup-draft.ts';
 import { restoreSeries, savedOf, type SavedSeries } from './series-restore.ts';
@@ -122,7 +129,8 @@ function asIds(value: unknown, roster: readonly string[]): string[] | undefined 
 }
 
 function asDraft(value: unknown, roster: readonly string[]): Draft {
-  if (!Array.isArray(value) || value.length > 3) return [];
+  // The longest tray is a Best of 5's (ADR 0048).
+  if (!Array.isArray(value) || value.length > Math.max(...BEST_OF)) return [];
   const slots = value.map((slot) => (typeof slot === 'string' ? slot : undefined));
   const balls = slots.filter((slot) => slot !== undefined);
   const valid =
@@ -135,12 +143,15 @@ function asDraft(value: unknown, roster: readonly string[]): Draft {
 /** A series setup against a bot, read field by field; undefined if any field is off. */
 function asSetup(value: unknown, roster: readonly string[]): SeriesSetup | undefined {
   if (!isRecord(value)) return undefined;
-  const { ruleset, seed, a, b, opponent, format, picks } = value;
+  const { ruleset, seed, a, b, opponent, format, picks, bestOf } = value;
   if (!isCount(ruleset) || !isCount(seed)) return undefined;
+  // A save from before Best of 5 has no length: it is a Best of 3 (ADR 0048).
+  const length = bestOf === undefined ? DEFAULT_BEST_OF : asBestOf(bestOf);
+  if (length === undefined) return undefined;
   const lineupA = asIds(a, roster);
   const lineupB = asIds(b, roster);
-  if (lineupA === undefined || !isValidLineup(lineupA, roster)) return undefined;
-  if (lineupB === undefined || !isValidLineup(lineupB, roster)) return undefined;
+  if (lineupA === undefined || !isValidLineup(lineupA, roster, length)) return undefined;
+  if (lineupB === undefined || !isValidLineup(lineupB, roster, length)) return undefined;
   if (!isRecord(opponent) || opponent['kind'] !== 'bot') return undefined;
   const { bot, lineupSeed } = opponent;
   if (typeof bot !== 'string' || !BOTS.has(bot) || !isCount(lineupSeed)) return undefined;
@@ -156,6 +167,7 @@ function asSetup(value: unknown, roster: readonly string[]): SeriesSetup | undef
     opponent: { kind: 'bot', bot, lineupSeed },
     ...(named === undefined ? {} : { format: named }),
     ...(made === undefined ? {} : { picks: made }),
+    ...(bestOf === undefined ? {} : { bestOf: length }),
   };
 }
 
