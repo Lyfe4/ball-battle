@@ -106,6 +106,17 @@ The Spartan: 49.4% overall; beats the Vampire 71.7%; loses to the Chrono 72.1% a
 72.0, Frost 71.3, Necromancer 66.7, Ghost 66.4 and Chrono 63.2%; loses to Venom 74.3, the Archer
 65.1, Titan 63.3 and Boomerang 62.4%.
 
+Series (`docs/series-measurements.md`): what the player's choices are worth is unchanged with
+measured odds (Reveal 11-12.5 points, Showdown 6-10). Phone frame timing (`scripts/frame-timing.ts`,
+375 x 812 at 4x CPU throttle, over the Spartan against the Vampire and Storm, the Bloom against
+Venom and the Archer, Berserker vs Venom and Bomber vs Speedster): no frame over 16.7 ms.
+
+| Refresh               | Frames | Median |    p95 |    Max | Over 16.7 ms |
+| --------------------- | -----: | -----: | -----: | -----: | -----------: |
+| 60 Hz (native rAF)    |  7,320 | 0.0 ms | 0.1 ms | 2.0 ms |            0 |
+| 90 Hz (fixed driver)  |  8,995 | 0.0 ms | 0.1 ms | 2.3 ms |            0 |
+| 120 Hz (fixed driver) |  9,149 | 0.0 ms | 0.2 ms | 2.6 ms |            0 |
+
 ## Rejected
 
 - **Flat armor (6 less, never under a quarter), no poison rule:** beats the Inferno 63-68, but
