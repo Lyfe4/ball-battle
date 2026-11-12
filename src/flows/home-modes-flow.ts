@@ -212,7 +212,7 @@ async function oldLinks(): Promise<void> {
   expect(search()).toBe('');
 }
 
-/** A Reveal series left with Back is still held, and resumed from the lineup home leads to. */
+/** A Reveal series left with Back is still held, and home's Play resumes it. */
 async function resume(): Promise<void> {
   await click(button('Play Best of 3, Reveal, against the bot'));
   await settle();
@@ -227,9 +227,10 @@ async function resume(): Promise<void> {
   expect(search()).toBe('?mode=bo3&fmt=reveal&step=lineup');
   await back();
   expect(search()).toBe('');
-  await click(button('Play Best of 3, Reveal, against the bot'));
-  await settle();
-  await click(button('Resume series'));
+  // Home's Play now resumes it (its own flow, home-resume-flow.ts, covers the rest).
+  const play = visible('.home-play')[0];
+  expect(play?.querySelector('.home-play-label')?.textContent).toBe('Resume series');
+  if (play !== undefined) await click(play);
   await until(() => new URL(location.href).searchParams.get('step') === 'play', 5000, false);
   expect(visible('#series')).toHaveLength(1);
 }

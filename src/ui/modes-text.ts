@@ -1,7 +1,7 @@
 // The words for the ways to play (ADR 0046): home's one tap, the Other modes cards, the bot level
 // on the lineup step. Pure, so they are tested without a DOM.
 import type { OtherMode } from '../app/modes.ts';
-import type { Format } from '../sim/series.ts';
+import { formatOf, scoreOf, type Format, type SeriesState } from '../sim/series.ts';
 import { FORMAT_LINES, FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
 
 /** Home's main button: one word, what it plays under it, and the whole of it for screen readers. */
@@ -30,4 +30,20 @@ export function levelLine(level: string): string {
 /** "Best of 3 · Reveal": what the lineup is for, since home's one tap skips the rules step. */
 export function setupLine(format: Format): string {
   return `Best of 3 · ${FORMAT_SHORT[format]}`;
+}
+
+/** Home's main button while a series is held (ADR 0046): it resumes that series. */
+export const RESUME_PLAY = { label: 'Resume series' } as const;
+
+/** "Best of 3 · Reveal · You 1–0 Bot": the held series' format and score, the player first. */
+export function resumeLine(state: SeriesState): string {
+  const { a, b } = scoreOf(state);
+  return `${setupLine(formatOf(state.setup))} · You ${String(a)}–${String(b)} Bot`;
+}
+
+/** The same in words, for the button's accessible name. */
+export function resumeSpoken(state: SeriesState): string {
+  const { a, b } = scoreOf(state);
+  const format = FORMAT_SHORT[formatOf(state.setup)];
+  return `${RESUME_PLAY.label}: Best of 3, ${format}, you ${String(a)}, bot ${String(b)}`;
 }
