@@ -35,30 +35,33 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* A chunky pill (ADR 0032), like the bars over the balls. */
+/*
+ * A chunky pill (ADR 0032), like the bars over the balls. The track is the pill and clips both
+ * layers inside it to its rounded shape, so the fill and the ghost are plain bars: neither has
+ * rounded ends of its own that could leave a pale edge of the ghost showing around the fill's.
+ */
 .hud-health-track {
+  position: relative;
   grid-column: 1 / -1;
   height: 12px;
   border-radius: 999px;
   background: var(--color-health-track);
   overflow: hidden;
+  clip-path: inset(0 round 999px);
 }
 
-.hud-health-track {
-  position: relative;
+.hud-health-fill,
+.hud-health-ghost {
+  position: absolute;
+  inset: 0 auto 0 0;
 }
 
 .hud-health-fill {
-  position: relative;
-  height: 100%;
-  border-radius: 999px;
   background: var(--ball-color, var(--color-health-fill));
 }
 
 /* Health just lost: sits behind the fill and catches up after a short hold. */
 .hud-health-ghost {
-  position: absolute;
-  inset: 0 auto 0 0;
   background: var(--color-health-ghost);
   transition: width 450ms ease-out 300ms;
 }
