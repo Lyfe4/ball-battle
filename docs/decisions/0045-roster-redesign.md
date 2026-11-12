@@ -5,6 +5,8 @@
 - Amends: ADR 0009 (no shock), ADR 0010 and 0028 (one counter band, group 4), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
 - Design: `docs/roster-redesign.md` (approved 2026-11-08 with the decisions in its section 0)
+- Amended by: ADR 0047 (the Guardian replaced by the Spartan, the Bloom's regrowth pauses after a
+  hit, the known gaps)
 
 ## Context
 
