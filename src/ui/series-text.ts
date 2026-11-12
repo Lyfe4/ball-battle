@@ -48,12 +48,17 @@ export const FORMAT_SHORT: Readonly<Record<Format, string>> = {
 
 /** "Best of 3 · Reveal · Hard": what is being played, over the series (ADR 0035). */
 export function aboutLine(setup: SeriesSetup): string {
+  return aboutParts(setup).join(' · ');
+}
+
+/** The phrases of `aboutLine`: "Best of 3", "Reveal", "Hard". */
+export function aboutParts(setup: SeriesSetup): readonly string[] {
   const level = setup.opponent.kind === 'bot' ? LEVEL_NAMES[setup.opponent.bot] : undefined;
   const format = formatOf(setup);
   const parts = ['Best of 3', FORMAT_SHORT[format]];
   // Blind has no choices a level changes, and the first bot (old links) has no level.
   if (level !== undefined && format !== 'blind') parts.push(level);
-  return parts.join(' · ');
+  return parts;
 }
 
 /** The series rule every format shares, said once above the format cards. */
