@@ -71,10 +71,30 @@ export function applyBounceVariance(
     if (bounces === 0 || !isAlive(ball)) return ball;
     const draw = nextRange(state, -BOUNCE_MAX_HALF_TAN, BOUNCE_MAX_HALF_TAN);
     state = draw.state;
-    return {
-      ...ball,
-      velocity: turnBounce(ball.velocity, draw.value, bouncesX > 0, bouncesY > 0),
-    };
+    const turned = turnBounce(ball.velocity, draw.value, bouncesX > 0, bouncesY > 0);
+    return { ...ball, velocity: offNormal(ball.velocity, turned, bouncesX > 0, bouncesY > 0) };
   });
   return { balls, rngState: state };
+}
+
+/** sin 10°: a bounce leaves at least this far off the wall's normal (prototype A). */
+export const MIN_OFF_NORMAL_SIN = 0.17364817766693033;
+
+/**
+ * Prototype A: after a single-wall bounce, the component along the wall keeps the sign it had
+ * before the turn (so the ball never reverses sideways without touching a side wall) and is at
+ * least MIN_OFF_NORMAL_SIN of the speed (no near-perpendicular lanes). Speed is kept.
+ */
+export function offNormal(reflected: Vec2, turned: Vec2, bouncedX: boolean, bouncedY: boolean): Vec2 {
+  if (bouncedX === bouncedY) return turned;
+  const speed = Math.sqrt(turned.x * turned.x + turned.y * turned.y);
+  if (speed === 0) return turned;
+  const along = bouncedY ? 'x' : 'y';
+  const across = bouncedY ? 'y' : 'x';
+  const sign = reflected[along] !== 0 ? Math.sign(reflected[along]) : Math.sign(turned[along]) || 1;
+  const minAlong = MIN_OFF_NORMAL_SIN * speed;
+  const alongValue = sign * Math.max(minAlong, Math.abs(turned[along]) * (Math.sign(turned[along]) === sign ? 1 : 0));
+  const value = Math.abs(alongValue) >= minAlong ? alongValue : sign * minAlong;
+  const acrossValue = Math.sign(turned[across]) * Math.sqrt(Math.max(0, speed * speed - value * value));
+  return (along === 'x' ? { x: value, y: acrossValue } : { x: acrossValue, y: value }) as Vec2;
 }
