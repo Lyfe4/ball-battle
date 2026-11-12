@@ -143,30 +143,38 @@ Venom and the Archer, Berserker vs Venom and Bomber vs Speedster): no frame over
 On an iPhone (about 390 wide) the first look did not read as a Spartan. On a small ball a circle reads
 as an eye: the planted round shield with the spear line over it looked like an eye and an eyebrow,
 the slung shield like an eyeball looking sideways, and the spear line on the ball was too thin to
-see. The cream body read as an egg. Visual only: no sim change, ruleset 12 and the known match results
-unchanged (a ball's colour is outside the fingerprint, ADR 0022).
+see. The cream body read as an egg. Visual only: no sim change, ruleset 12 and the known match
+results unchanged (a ball's colour is outside the fingerprint, ADR 0022).
 
-- **The face is a crested Greek helmet, in both states**: the T-shaped opening (almond eye slits
-  either side of a nose guard, the gap between the cheek guards running down to the lower edge) in
-  the dark accent, and a red crest arcing over the top. It stays upright whichever way the ball
-  faces; only the shield turns. At phone size the opening and crest are bolder.
-- **Planted: a thick polished shield band** hugs the side of the ball facing the enemy, edged in
-  the accent. Thrown: the band is gone. "Thick band = protected" is the one state cue; the gold
-  glance ring (the halved hit) is the same polish.
+The owner chose from three variants on a dev preview page (a front-view helmet on crimson, an
+all-bronze helmet, and a helmet in profile on crimson). A first attempt (a bronze ball with a
+front-view T-slit and an arched crest) read as a keyhole with an eyebrow, its shield's broken end as
+a crack (the Berserker's mark), and the burnt orange too near the Inferno and Chrono.
+
+- **The face is a bronze Corinthian helmet in profile, in both states**: dome, face guard to the
+  chin, flared neck guard, a dark almond eye. It looks at the enemy, turning only left or right,
+  never upside down, so the face is always upright.
+- **A cream crest** with a dark rim runs from the brow over the top to the back and stands a little
+  past the ball's edge, so the silhouette changes. Cream, not red: a red crest disappeared into the
+  crimson body at phone size. It is drawn after the outline through a new optional
+  `BallDesign.over` (kept within an icon's 12% padding); every other design still stays inside its
+  ball.
+- **Planted: a smooth thick bronze arc** with a dark rim all round hugs the edge facing the enemy,
+  with a ring of crimson between it and the helmet, so planted and open differ at a glance at 390
+  wide. Thrown: the arc is gone. No break in the arc: a break read as a crack.
 - **The spear shows only in flight**, never on the ball. It is the Spartan's main attack (about 55%
-  of its damage, measured below), so it is the boldest thing it draws: a long thick shaft in its
-  colour behind a broad polished head, both outlined.
-- **Colours**: body bronze `#b45309` (the helmet itself), accent `#1c0a02`, crest `#dc2626`,
-  polish `#fcd34d`. A deep crimson body, the first idea, cannot work on the indigo floor: a red dark
-  enough to read as crimson is under 3:1 against it (`#b91c1c` is 2.6:1), and every red that
-  passes (from about `#d4252a`) sits as close to the Brawler and Magnet (CIEDE2000 about 8) as the
-  roster's closest existing pair (Chrono and Inferno, 8.6), making a third red ball. Bronze passes
-  at 3.4:1 and its nearest ball is the Berserker at 16.4 (bright orange, a crack, no helmet); the
-  Chrono (pale tan, about 24) and Inferno and Bloom (further) are far apart. Red stays in the
-  crest, where it says "Spartan".
-- The look is checked in a real canvas in every engine, at phone and desktop size
-  (`src/render/spartan-look.browser.test.ts`): the crest and face upright with the enemy on any
-  side, the band towards the enemy only while planted, and the spear's head and shaft in flight.
+  of its damage, measured below), so it is the boldest thing it draws: a long thick bronze shaft and
+  a broad bronze head, both outlined in dark.
+- **Colours, three main ones**: crimson body `#dc2626`, bronze `#e0a83e` (helmet, shield, spear),
+  cream crest `#fef3c7`, with dark rims `#1c0a02`. A deeper crimson cannot be used on the indigo
+  floor: a red dark enough to look deep is under 3:1 against it (`#b91c1c` is 2.6:1). `#dc2626`
+  passes at 3.5:1 but sits near the Brawler and Magnet in colour alone (CIEDE2000 7.6 and 9.2, about
+  as close as the Chrono and Inferno, 8.6); the bronze helmet and cream crest, which neither has,
+  are what tell them apart, checked beside both at phone size.
+- The look is checked in a real canvas in every engine at phone and desktop size
+  (`src/render/spartan-look.browser.test.ts`): the crest upright and past the edge, the eye towards
+  the enemy, the shield arc towards the enemy only while planted and clear of the helmet, and the
+  spear in flight. It fails on both earlier looks.
 
 The spear, measured over every opponent, 40 seeds, both slot orders (1,680 matches): it does 28
 against a bump of 16 (before directness, which scales only bumps), flies straight at where the
