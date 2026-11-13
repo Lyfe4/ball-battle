@@ -40,6 +40,9 @@ Rough order:
   balls, round 3 the third.
 - **Best of 3** decides the match. It stops as soon as one player has two round wins (2-0 ends
   it; round 3 is only played at 1-1).
+- **Best of 5 is the planned default for ranked play against real players** (2026-11-14): five
+  balls, first to three (ADR 0048), so one lucky round decides less when a rating is at stake.
+  Best of 3 Reveal stays the main mode against the bot (ADR 0046), where a quick series suits.
 
 Every round is still an ordinary deterministic match (ADR 0001): two balls and a seed.
 
@@ -61,8 +64,8 @@ These are the targets `pnpm balance` checks since the roster redesign (ADR 0045,
 
 - Every ball has **two to four counters it wins (62% or more) and two to four it loses**, the two
   counts within one, so each has something to fear and something to hunt. **The even picks are
-  the exception:** the Brawler (beats only the Ghost, loses only to Thorns) and the Magnet (loses
-  only to Thorns) never lose the guess badly and never win it big.
+  the exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049)
+  and the Magnet (loses only to Thorns) never lose the guess badly and never win it big.
 - **No matchup worse than 22/78.**
 - **Every ball wins 45-55% overall.**
 
@@ -72,20 +75,34 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
+Known gaps at ruleset 13 (ADR 0049):
+
 - **Something that beats the Storm, the Titan or the Bomber.** Only the Chrono's rewind blunts a
-  big strike or blast, and only Thorns holds the grown Titan. The Storm got its second win from
-  the Spartan (ADR 0047), slowed behind its shield; it still has one loss. A ball that dodges or
-  soaks one big hit (a dash out of a warning circle) would give each a second weakness.
-- **A second win for the Spartan, Sniper and Vampire, a second loss for the Quake, and fewer
-  losses for the Vampire (ADR 0047).** The Spartan's half shield halves every hit alike, so it
-  beats only the Vampire. The Guardian's leaving cost the Sniper a win and the Quake a loss, and
-  the Spartan is the Vampire's fourth loss (it beats only the Berserker). A ball that loses to one
-  heavy shot, that a lifestealer can drink from, or that hits hard enough to outlast the Quake's
-  small shockwaves (as only the Berserker does now) would close these.
-- **Something that punishes the Berserker and the Bloom.** Both beat nearly every ball that hits
-  rarely. A ball that deals one heavy hit now and then (feeding the rage once, outpacing regrowth)
-  or keeps up a stream of small hits (which stops the Bloom's regrowth, ADR 0047) would be strong
-  against both. Venom's gap closed this way: its poison ticks keep the Bloom from regrowing.
+  big strike or blast, and only Thorns holds the grown Titan. The Storm and Bomber have two wins
+  but one loss; the Titan one each. A ball that dodges or soaks one big hit (a dash out of a
+  warning circle) would give each a second weakness.
+- **A second win for the Sniper and the Quake, and fewer losses for the Vampire.** The Sniper
+  beats only Thorns. The Spider gave the Quake its second loss (ADR 0049), but the Quake's win over
+  the Chrono dropped to the grey zone in the same retune. The Vampire beats the Berserker and the
+  Hex and loses to four. A ball that loses to one heavy shot, or that hits hard and rarely enough
+  to lose to small shockwaves, would close these. **Closed in ruleset 13:** the Spartan's second
+  win (the Hex: a small burst, halved again by its shield).
+- **Fewer wins for the Berserker.** It beats five balls that hit rarely. The Hex (one burst, one
+  rage) and the Frost now beat it, so it loses to four (ADR 0049), but it still needs its "up to
+  five wins" allowance.
+- **The Bloom beats seven (accepted until its rework, next as its own job).** Its regrowth heals
+  back hits that come in pieces, so it beats both new balls of ADR 0049 and the phasing Ghost as
+  well as the Frost, Berserker, Necromancer and Chrono. Ideas for the rework, each one rule on
+  screen:
+  - **Limited regrowth per fight:** it can regrow only so much in a match, shown by petals falling
+    as the supply runs out, so a long fight wears it down.
+  - **Regrowth only after a longer untouched stretch:** its pause after a hit grows from 1 s to
+    several, so any steady pressure (not only a stream of small hits) stops it.
+- **A second loss for the Ghost.** While phased nothing touches it, so a quarter of every kind of
+  hit misses alike and only the Bloom beats it (ADR 0049). A ball whose hit can't be phased through
+  in time (a lasting area it can't leave, say) would give it a second weakness.
+- **The Brawler beats nobody (accepted).** It is the plain default, the ball to pick knowing
+  nothing (ADR 0049).
 - **The Magnet is the candidate to replace.** Its pull is movement too soft to decide a pair, so it
   is an even pick by accident rather than design; a new ball filling one of the gaps above could
   take its slot.
@@ -161,8 +178,9 @@ blind picks. See Decisions below.
 - One soft triangle, which comes from the balls' mechanics: **Speedster > Archer > Vampire >
   Speedster**. Plus **Storm > Vampire** (ranged damage denies lifesteal, as the Archer's does)
   and **Speedster > Storm** (it outruns the warnings). Archer vs Storm is even.
-- **The Brawler is the safe pick: even (45-55%) against every ball except Thorns** (and, since ADR
-  0045 group 4, the Ghost, which it beats: a fade can't save it from a plain heavy bump). It is an
+- **The Brawler is the safe pick: even (45-55%) against every ball except Thorns** (from ADR 0045
+  group 4 to ruleset 12 it also beat the fading Ghost; the phasing Ghost of ADR 0049 is even with
+  it, so it beats nobody). It is an
   even pick: a blind pick that never loses the guess badly and never wins it big. The counter-map
   test lists its counters exactly.
 - **Thorns is the Brawler's one designed counter** (2026-11-04, ADR 0013). Reflection scales with
@@ -215,6 +233,14 @@ blind picks. See Decisions below.
   numbed rage) are gone with their spark. Favoured pairs come in two bands: a kind of hit decides
   the sharp ones (72-78%), movement the softer ones (62-72%). It ships in four groups; group 1
   brings the Storm, Quake, Berserker, Vampire, Archer, Sniper and Boomerang to their new abilities.
+- **The Hex, the Spider and the phasing Ghost** (2026-11-14, ADR 0049): the **Hex**'s bump curses,
+  and 3 s later the mark bursts for a quarter of the cursed ball's full health (vs Speedster,
+  Frost, Berserker, Inferno; the Vampire, Ghost, Spartan and Bloom over it). The **Spider** webs
+  the walls it bounces off; a ball that bounces off a web is slowed and nipped (vs Speedster,
+  Quake, Chrono; the Archer, Bomber and Bloom over it). The **Ghost** phases one second in four:
+  nothing touches it then, and passing through a ball hits it (vs Venom and the Hex; the Bloom
+  over it). The rules that a phased ball can't be aimed at or pulled are gone, so phasing is one
+  rule. The lane fix stays parked (below).
 - **The Spartan and the Bloom's pause** (2026-11-12, ADR 0047): the **Spartan** replaces the
   Guardian. It plants its shield (every hit does half, and it slows) for about 2 s, then throws its
   spear (vs Vampire; the Storm and Chrono over it). The **Bloom**'s regrowth pauses for a second
@@ -254,5 +280,10 @@ on the same tick, and equal raw contact damage.
   to 35.1%, and the health that restores it breaks the Brawler's pinned edge over the Ghost. Both
   dropped, as are the face-off charge and a wider wall turn.
 - **Kept: the lane fix** (`proto/contact-A`: no bounce leaves within 10° of the wall's
-  perpendicular). It drops the Storm from 51.5% to 47.3% and puts Storm vs Chrono at 21.6/78.4, so
-  it ships with the next balance change, in the same retune as a Storm buff.
+  perpendicular). It drops the Storm from 51.5% to 47.3% and puts Storm vs Chrono at 21.6/78.4.
+  Measured with the Hex, Spider and Ghost (`docs/new-balls-proposal-3.md`), it knocked eight balls
+  off their shape on its own, so ruleset 13 shipped without it (ADR 0049). It stays parked on
+  `proto/contact-A` for a retune of its own. The Spider does more for quiet stretches: fights with
+  a 10 s+ stretch with no damage fall from 32% to 4% against it.
+- **Timed Ghost phasing came back in a new form** (ADR 0049): with a spectral hit as it passes
+  through, the phasing Ghost is fair (50.3%) where the old phasing measured 35.1%.

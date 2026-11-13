@@ -75,7 +75,6 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'bloom',
     intended: 'y',
-    reason:
-      'No big hit to rewind, and the Chrono’s bumps come slowly: the regrowth heals them back.',
+    reason: 'No big hit to rewind, and its slow bumps are healed back between.',
   },
 ];

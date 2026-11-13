@@ -26,7 +26,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'frost',
     intended: 'x',
-    reason: 'The cold’s bumps come slowly, and regrowth heals each one back between them.',
+    reason: 'The cold’s bumps come slowly, and it regrows between them.',
   },
   {
     x: 'bloom',

@@ -20,7 +20,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'bloom',
     intended: 'y',
-    reason: 'Its raging bumps come with long gaps between, and the regrowth heals each one back.',
+    reason: 'Its raging bumps come with long gaps, and the regrowth heals each back.',
   },
   {
     x: 'berserker',
