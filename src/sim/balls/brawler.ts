@@ -7,6 +7,10 @@ export const brawler = defineBall({
   name: 'Brawler',
   description: 'No tricks. Hits hard and takes a beating.',
   color: '#ef4444',
+  howItWorks: [
+    'No ability: just its bump.',
+    'Like every ball’s, its bump does full damage head-on and less when it glances.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 66,

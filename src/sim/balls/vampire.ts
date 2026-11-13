@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { percentOf } from './how-it-works.ts';
 
 /** Fraction of the damage it deals that the Vampire heals. */
 export const LIFESTEAL = 0.9;
@@ -20,6 +21,10 @@ export const vampire = defineBall({
   description: 'Heals most of what its bumps deal, on little health.',
   color: '#a855f7',
   ability: { name: 'Lifesteal', shownBy: { kind: 'healed' } },
+  howItWorks: [
+    `It heals ${percentOf(LIFESTEAL)} of what its bumps deal, rounded, never past full health.`,
+    'Only bumps heal it: a ball it never touches feeds it nothing.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 750,
   maxHealth: 39,

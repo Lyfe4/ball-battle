@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { percentOf } from './how-it-works.ts';
 
 /** Share of the contact damage Thorns takes that it reflects back at the attacker. */
 export const REFLECT_SHARE = 0.37;
@@ -22,6 +23,10 @@ export const thorns = defineBall({
   description: 'Spiked: every bump it takes hurts the attacker back.',
   color: '#16a34a',
   ability: { name: 'Spikes', shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' } },
+  howItWorks: [
+    `Every bump it takes hurts the attacker back for ${percentOf(REFLECT_SHARE)} of it, rounded.`,
+    'Only bumps meet its spikes: shots, strikes and poison don’t.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
   maxHealth: 80,

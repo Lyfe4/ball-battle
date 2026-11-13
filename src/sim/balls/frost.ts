@@ -1,5 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { SLOW_FACTOR } from '../status.ts';
+import { percentOf, secondsOf } from './how-it-works.ts';
 
 /**
  * Every ball Frost touches is slowed for this long: its cruise speed drops by SLOW_FACTOR
@@ -18,6 +20,10 @@ export const frost = defineBall({
   description: 'Slow and sturdy. Every hit slows its enemy right down.',
   color: '#bae6fd',
   ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' } },
+  howItWorks: [
+    `Its bump slows the other ball by ${percentOf(SLOW_FACTOR)} for ${secondsOf(SLOW_TICKS)} s.`,
+    'Each new bump starts the slow again; it never stacks.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
   maxHealth: 80,

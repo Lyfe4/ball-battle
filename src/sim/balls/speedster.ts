@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { percentOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 
 export type SpeedsterState = Readonly<{ stacks: number }>;
@@ -33,6 +34,10 @@ export const speedster = defineBall<SpeedsterState>({
   description: 'Wall bounces build speed and damage for its next hit.',
   color: '#facc15',
   ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
+  howItWorks: [
+    `Each wall bounce adds a stack, up to ${MAX_STACKS}. Each stack makes it ${percentOf(SPEED_PER_STACK)} faster.`,
+    `Its next bump spends them all: ${DAMAGE_PER_STACK} extra damage a stack, up to ${MAX_STACKS * DAMAGE_PER_STACK}.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 800,
   maxHealth: 70,

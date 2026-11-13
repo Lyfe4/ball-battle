@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState, WorldState } from '../types.ts';
 import { leadTarget } from './archer.ts';
 import { nearestTarget } from './targeting.ts';
@@ -46,6 +47,10 @@ export const boomerang = defineBall<BoomerangState>({
   description: 'Its boomerang hits going out and coming back.',
   color: '#2dd4bf',
   ability: { name: 'Boomerang', shownBy: { kind: 'projectileFired' } },
+  howItWorks: [
+    `Every ${secondsOf(COOLDOWN_TICKS)} s it throws a boomerang at the nearest enemy for ${BOOMERANG_DAMAGE}. It turns back after ${secondsOf(TURN_TICKS)} s or at a wall.`,
+    'It can hit going out and again on the way back, then comes home to be thrown again.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 52,

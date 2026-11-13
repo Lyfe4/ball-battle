@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 
 /** How much the Titan's radius grows each tick, in world units. */
 export const GROWTH_PER_TICK = 0.06;
@@ -24,6 +25,10 @@ export const titan = defineBall({
   name: 'Titan',
   description: 'Grows as the match goes on, and its bumps grow with it.',
   color: '#86efac',
+  howItWorks: [
+    `It grows all match, to ${String(MAX_RADIUS / STANDARD_BALL_RADIUS)} times as wide by ${secondsOf((MAX_RADIUS - STANDARD_BALL_RADIUS) / GROWTH_PER_TICK)} s.`,
+    `Its bump grows with it, to ${String(GROWN_HIT)} times as hard. Heavy, it barely turns when light balls hit it.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 740,
   maxHealth: 78,

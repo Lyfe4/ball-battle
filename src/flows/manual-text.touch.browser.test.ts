@@ -54,6 +54,6 @@ describe('ball descriptions', () => {
       BALLS.filter((ball) => ball.howItWorks !== undefined)
         .map((ball) => ball.id)
         .sort(),
-    ).toStrictEqual(['ghost', 'hex', 'spider']);
+    ).toStrictEqual(BALLS.map((ball) => ball.id).sort());
   }, 60_000);
 });

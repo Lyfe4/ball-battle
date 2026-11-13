@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 
 /**
  * A burning patch is dropped every this many ticks, where the Inferno is: a whole number of burns,
@@ -28,6 +29,10 @@ export const inferno = defineBall({
   description: 'Leaves a trail of fire that burns. Its burns never stack.',
   color: '#fdba74',
   ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' } },
+  howItWorks: [
+    `Every ${secondsOf(DROP_EVERY_TICKS)} s it leaves a patch of fire behind it that burns for ${secondsOf(PATCH_TICKS)} s.`,
+    `An enemy in the fire takes ${BURN_DAMAGE} every ${secondsOf(BURN_EVERY_TICKS)} s, however many patches it is in.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 740,
   maxHealth: 74,

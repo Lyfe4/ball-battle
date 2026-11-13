@@ -79,13 +79,26 @@ jobs:
       - run: pnpm balance:ci
 
   browsers:
-    name: Known match results in Chromium, Firefox and WebKit
+    name: Known match results and flows in ${{ matrix.name }}
+    # One job per engine, in parallel: the three ran one after another in a single job, so the
+    # slowest pull request check was their sum.
+    strategy:
+      # Every engine reports, so a failure in one shows whether the others pass too.
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            name: Chromium
+          - browser: firefox
+            name: Firefox
+          - browser: webkit
+            name: WebKit
     # Pinned: Playwright's browser builds follow the OS, and ubuntu-latest moving to 26.04 left the
     # cached WebKit (built for 24.04) without its ICU library. Move it deliberately, not by default.
     runs-on: ubuntu-24.04
-    # The reload flows (ADR 0042) play three whole series per size and engine, which took the job
-    # past 10 minutes.
-    timeout-minutes: 25
+    # The reload flows (ADR 0042) play three whole series per size and engine, which took the
+    # single three-engine job past 10 minutes.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -109,17 +122,19 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           # Keyed on the image too, so a new OS never reuses browsers built for another.
-          key: playwright-${{ env.ImageOS }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ env.ImageOS }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}
 
       - name: Install the browsers and their system libraries
         if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
       # The browsers come from the cache; the system libraries they need are not cached.
       - name: Install the browsers' system libraries
         if: steps.browser-cache.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps chromium firefox webkit
+        run: pnpm exec playwright install-deps ${{ matrix.browser }}
 
       # The same golden test the unit suite runs in Node, in V8, SpiderMonkey and JavaScriptCore:
       # every recorded match must end the same way, on the same tick, with the same hash (ADR 0023).
-      - run: pnpm test:browsers
+      # Vitest names each engine's copy of a browser project "<project> (<engine>)", so this runs
+      # every browser project (pnpm test:browsers) in this job's engine only.
+      - run: pnpm exec vitest run --project "browsers* (${{ matrix.browser }})"

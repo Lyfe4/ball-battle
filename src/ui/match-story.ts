@@ -2,12 +2,15 @@
 // result in one plain line ("Titan knocked out Venom at 0:20"). Opened, it shows each ball's damage
 // as one bar (its ability in its colour, its contact hits paler), the sources in words only when
 // there is more than one (or a heal), and up to four key moments as plain sentences, chosen by
-// what decided the round (match-story-data.ts). It is worked out only when the result line is first
-// needed, by replaying the match headlessly, so nothing is computed while a round is fought.
+// what decided the round (match-story-data.ts). It is worked out by replaying the match headlessly,
+// never while a round is fought: in short slices between frames from the moment the fight ends
+// (`prepare`, match-story-teller.ts), so no frame pays for the whole match. The line shows once the
+// replay is played.
 import { ballColor } from '../render/ball-colors.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
-import { clockOf, sourceWords, storyOf, type MatchStory } from './match-story-data.ts';
+import { clockOf, sourceWords, type MatchStory } from './match-story-data.ts';
+import { storyTellerFor } from './match-story-teller.ts';
 
 export interface MatchStoryView {
   readonly element: HTMLElement;
@@ -17,6 +20,11 @@ export interface MatchStoryView {
    * names each slot's ball where its name alone could be unclear (storyOf).
    */
   show(start: WorldState | undefined, label?: string, names?: readonly string[]): void;
+  /**
+   * Starts replaying the match from `start` between frames, so its story is ready when `show`
+   * asks for it. Cheap to call every frame with the same world.
+   */
+  prepare(start: WorldState): void;
 }
 
 export function createMatchStory(lookup: DefinitionLookup): MatchStoryView {
@@ -35,6 +43,8 @@ export function createMatchStory(lookup: DefinitionLookup): MatchStoryView {
   let start: WorldState | undefined;
   let story: MatchStory | undefined;
   let rendered = false;
+  let prepared: WorldState | undefined;
+  const teller = storyTellerFor(lookup);
 
   function render(told: MatchStory): void {
     const most = Math.max(1, ...told.sides.map((side) => side.dealt));
@@ -83,14 +93,27 @@ export function createMatchStory(lookup: DefinitionLookup): MatchStoryView {
   return {
     element: root,
     show(next, prefix, names) {
-      root.hidden = next === undefined;
       setText(label, prefix === undefined ? '' : `${prefix}: `);
       if (next === start) return;
       start = next;
       root.open = false;
       rendered = false;
-      story = next === undefined ? undefined : storyOf(next, lookup, names);
-      setText(result, story?.result ?? '');
+      story = undefined;
+      setText(result, '');
+      // Hidden until its replay is played: at once when `prepare` already played it.
+      root.hidden = true;
+      if (next === undefined) return;
+      teller.tell(next, (replay) => {
+        if (start !== next) return;
+        story = replay.story(names);
+        setText(result, story.result);
+        root.hidden = false;
+      });
+    },
+    prepare(next) {
+      if (next === prepared) return;
+      prepared = next;
+      teller.tell(next, () => undefined);
     },
   };
 }

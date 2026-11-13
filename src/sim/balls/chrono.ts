@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { AbilityAction, BallState } from '../types.ts';
 
 /** Where the Chrono was, and how it was doing, at one moment. */
@@ -68,6 +69,10 @@ export const chrono = defineBall<ChronoState>({
   description: 'Rewinds big hits, then recharges.',
   color: '#d4a373',
   ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
+  howItWorks: [
+    `When an ability hits it for ${BIG_HIT} or more, or would knock it out, it jumps back to where it was up to ${secondsOf(MOMENT_EVERY_TICKS * REWIND_MOMENTS)} s earlier, with the health it had then.`,
+    `Then it recharges for ${secondsOf(RECHARGE_TICKS)} s. Bumps and small hits are never rewound.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
   maxHealth: 62,

@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 
 export type BomberState = Readonly<{ nextDropTick: number }>;
@@ -37,6 +38,10 @@ export const bomber = defineBall<BomberState>({
   description: 'Drops a big bomb now and then: it blows when touched.',
   color: '#f91fce',
   ability: { name: 'Bombs', shownBy: { kind: 'zoneSpawned' } },
+  howItWorks: [
+    `Every ${secondsOf(DROP_TICKS)} s it drops a bomb that blows after ${secondsOf(FUSE_TICKS)} s, hitting enemies in the blast for ${BLAST_DAMAGE}.`,
+    'An enemy that runs into an armed bomb sets it off at once.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 62,
