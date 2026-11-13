@@ -1,5 +1,5 @@
-// Times the arena's frame callback in headless Chromium on a throttled phone profile (ADR 0034 and
-// 0043, the method of ADR 0027 and 0028): 375 x 812 at 2x density with 4x CPU throttling, over a few
+// Times the arena's frame callback in headless Chromium on a throttled phone profile (ADR 0034, 0043
+// and 0049, the method of ADR 0027 and 0028): 390 x 844 (an iPhone) at 2x density with 4x CPU throttling, over a few
 // whole matches, at 60 Hz (the browser's own requestAnimationFrame) and at 90 and 120 Hz (a fixed
 // driver that calls the frame callbacks on that rhythm). Prints frames, median, p95, max and the
 // count over 16.7 ms per rate. Needs a running server (pnpm dev or pnpm preview).
@@ -15,18 +15,17 @@ import { createWorld } from '../src/sim/world.ts';
 const base = process.argv[2] ?? 'http://localhost:5199/';
 
 /**
- * The matches to time: the busiest moments of the balls changed last (ADR 0047: the Spartan's
- * shield and spear in flight, the Bloom's petals closing under a stream of poison and arrows) and
- * of ADR 0045's group 4 (the Berserker's rage cracks, the Bomber's big blasts, the Storm's strike),
- * each played to its end.
+ * The matches to time: the busiest moments of the balls changed last (ADR 0049): six webs on the
+ * walls with the Speedster caught again and again, the Hex's curse counting down and bursting on the
+ * Berserker and among the Spider's webs, and the Ghost phasing through the Boomerang's throws and
+ * Venom's poison, each played to its end.
  */
 const MATCHES: readonly (readonly [string, string, number])[] = [
-  ['spartan', 'vampire', 3],
-  ['spartan', 'storm', 2],
-  ['bloom', 'venom', 3],
-  ['bloom', 'archer', 2],
-  ['berserker', 'venom', 2],
-  ['bomber', 'speedster', 2],
+  ['spider', 'speedster', 3],
+  ['hex', 'berserker', 2],
+  ['hex', 'spider', 2],
+  ['ghost', 'boomerang', 2],
+  ['ghost', 'venom', 3],
 ];
 
 /**
@@ -72,13 +71,15 @@ async function timeRate(hz: number): Promise<number[]> {
   const all: number[] = [];
   for (const [a, b, seed] of MATCHES) {
     const page: Page = await browser.newPage({
-      viewport: { width: 375, height: 812 },
+      viewport: { width: 390, height: 844 },
       deviceScaleFactor: 2,
     });
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     await page.addInitScript({ content: timer(hz) });
     await page.goto(`${base}?a=${a}&b=${b}&seed=${String(seed)}&v=${String(RULESET_VERSION)}`);
+    // A new pairing waits on its ready card (ADR 0037): start the fight, or only the card is timed.
+    await page.getByRole('button', { name: 'Fight!' }).click({ timeout: 5000 });
     await page.waitForTimeout((matchSeconds(a, b, seed) + 3) * 1000);
     const times: unknown = await page.evaluate('window.__frameTimes');
     if (Array.isArray(times)) all.push(...times.filter((t): t is number => typeof t === 'number'));
