@@ -83,12 +83,6 @@ export const SPARTAN_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'spartan',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'A fade makes some bumps miss, the shield halves others: neither pulls ahead.',
-  },
-  {
-    x: 'spartan',
     y: 'necromancer',
     intended: 'even',
     reason: 'The shield halves the bites, and the spear clears a skeleton: neither pulls ahead.',

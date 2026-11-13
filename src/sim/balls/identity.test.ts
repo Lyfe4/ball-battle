@@ -9,7 +9,9 @@ import { archer, ARROW_DAMAGE } from './archer.ts';
 import { berserker, RAGE_DAMAGE } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
-import { FADE_EVERY_TICKS, FADE_TICKS, ghost } from './ghost.ts';
+import { ghost, PHASE_CYCLE_TICKS, PHASE_TICKS, SPECTRAL_HIT } from './ghost.ts';
+import { CURSE_FUSE_TICKS, CURSE_SHARE, curseBurstFor, hex } from './hex.ts';
+import { MOST_WEBS, spider, WEB_NIP, WEB_SLOW_TICKS } from './spider.ts';
 import { BALLS } from './index.ts';
 import { magnet } from './magnet.ts';
 import { MAX_MINIONS, MINION_DAMAGE, MINION_RADIUS, necromancer } from './necromancer.ts';
@@ -165,8 +167,8 @@ describe('the ball roster: identity rules', () => {
       quake: SHOCKWAVE_DAMAGE,
       // Its pull only steers; its hits are contact hits.
       magnet: 0,
-      // A fade deals nothing; its hits are contact hits.
-      ghost: 0,
+      // Its spectral hit, once per pass while phased.
+      ghost: SPECTRAL_HIT,
       necromancer: MINION_DAMAGE,
       // A rewind heals nothing it didn't have; it is no hit.
       chrono: 0,
@@ -178,6 +180,9 @@ describe('the ball roster: identity rules', () => {
       // One spear a rhythm; regrowth deals nothing.
       spartan: SPEAR_DAMAGE,
       bloom: 0,
+      // A quarter of the healthiest ball's full health.
+      hex: curseBurstFor(Math.max(...BALLS.map((ball) => ball.maxHealth))),
+      spider: WEB_NIP,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {
@@ -210,11 +215,28 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Ghost fades briefly, now and then, and never passes through balls', () => {
-    expect(FADE_TICKS).toBeLessThanOrEqual(1.5 * TICK_RATE);
-    expect(FADE_EVERY_TICKS).toBeGreaterThan(2 * FADE_TICKS);
-    expect(ghost.phasedOf).toBeUndefined();
-    expect(ghost.hooks.onHitBall).toBeUndefined();
+  it('Ghost phases a quarter of the time, and its spectral hit is lighter than its bump', () => {
+    // One rhythm, the same against any ball (ADR 0049): a second phased in every four.
+    expect(PHASE_TICKS / PHASE_CYCLE_TICKS).toBe(0.25);
+    expect(PHASE_TICKS).toBe(TICK_RATE);
+    expect(ghost.phasedOf).toBeDefined();
+    expect(SPECTRAL_HIT).toBeLessThan(ghost.contactDamage);
+    expect(Object.keys(ghost.hooks).sort()).toStrictEqual(['onHitBall', 'onTick']);
+  });
+
+  it('Hex’s curse is a share of full health, never a Chrono-sized big hit on the Chrono', () => {
+    // The burst scales with the ball it lands on and nothing else (ADR 0049).
+    expect(CURSE_SHARE).toBe(0.25);
+    expect(CURSE_FUSE_TICKS).toBe(3 * TICK_RATE);
+    expect(curseBurstFor(chrono.maxHealth)).toBeLessThan(BIG_HIT);
+    expect(Object.keys(hex.hooks).sort()).toStrictEqual(['onHitBall', 'onTick']);
+  });
+
+  it('Spider’s webs nip lightly and slow for seconds; it spins them only on walls', () => {
+    expect(WEB_NIP).toBeLessThan(ARROW_DAMAGE);
+    expect(WEB_SLOW_TICKS).toBeGreaterThanOrEqual(5 * TICK_RATE);
+    expect(MOST_WEBS).toBeLessThanOrEqual(8);
+    expect(Object.keys(spider.hooks).sort()).toStrictEqual(['onTick', 'onWallHit']);
   });
 
   it('Necromancer’s minions are small, few, and its only ability', () => {

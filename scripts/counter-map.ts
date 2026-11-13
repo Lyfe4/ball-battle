@@ -57,14 +57,14 @@ export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
 /**
  * The even picks, the exception to the shape (docs/vision.md): even against nearly everyone, with
  * exactly these counters. The Brawler, the plain bump, loses to the Thorns (reflection scales with
- * the hit, ADR 0013) and beats only the Ghost (a fade can't save it from a plain heavy bump). The
- * Magnet's pull is movement too soft to decide a pair; it is a candidate for replacement
+ * the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049; the phasing Ghost no
+ * longer loses to it). The Magnet's pull is movement too soft to decide a pair; it is a candidate for replacement
  * (docs/vision.md). Adding one is a design decision.
  */
 export const EVEN_PICKS: Readonly<
   Record<string, { readonly beats: readonly string[]; readonly losesTo: readonly string[] }>
 > = {
-  brawler: { beats: ['ghost'], losesTo: ['thorns'] },
+  brawler: { beats: [], losesTo: ['thorns'] },
   magnet: { beats: [], losesTo: ['thorns'] },
 };
 
@@ -81,17 +81,21 @@ export interface ShapeAllowance {
  * any other ball, and on these beyond their allowance.
  * - The Storm, Titan and Bomber have one counter on a side: nothing in the roster beats one big
  *   strike but the rewind, the growing giant or the big blast.
- * - The Berserker and Bloom beat nearly every ball that hits rarely: up to 5 wins.
- * - Since the Guardian left (ADR 0047): the Spartan's half shield beats only the Vampire, the Sniper
- *   and Quake each lost a counter to it, and the Vampire gained the Spartan as a fourth loss.
+ * - The Berserker beats nearly every ball that hits rarely: up to 5 wins.
+ * - The Bloom regrows between hits that come in pieces, so it beats both new balls of ADR 0049 too:
+ *   up to 7 wins until its rework (docs/vision.md).
+ * - The Ghost (ADR 0049): while phased nothing touches it, so a quarter of every kind of hit misses
+ *   alike, and only the Bloom's regrowth beats it: one loss.
+ * - Since the Guardian left (ADR 0047): the Sniper and Quake each lost a counter, and the Vampire
+ *   gained the Spartan as a fourth loss.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
   storm: { ...SHAPE, fewest: 1 },
   titan: { ...SHAPE, fewest: 1 },
   bomber: { ...SHAPE, fewest: 1 },
   berserker: { ...SHAPE, most: 5, within: 3 },
-  bloom: { ...SHAPE, most: 5 },
-  spartan: { ...SHAPE, fewest: 1 },
+  bloom: { ...SHAPE, most: 7, within: 3 },
+  ghost: { ...SHAPE, fewest: 1 },
   sniper: { ...SHAPE, fewest: 1 },
   quake: { ...SHAPE, fewest: 1 },
   vampire: { ...SHAPE, fewest: 1, within: 3 },

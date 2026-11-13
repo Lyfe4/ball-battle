@@ -49,12 +49,6 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'chrono',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'No big hit to rewind and no quick hits to fade from: plain trades decide it.',
-  },
-  {
-    x: 'chrono',
     y: 'necromancer',
     intended: 'even',
     reason: 'Bites are too small to rewind, but each one is light: plain trades decide it.',

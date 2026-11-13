@@ -38,9 +38,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'berserker',
     y: 'frost',
-    intended: 'even',
+    intended: 'y',
     reason:
-      'The cold slows it, but each heavy cold bump stores rage it pays back: neither pulls ahead.',
+      'Slowed, it reaches the Frost less often, and the Frost’s big health outlasts its rage.',
   },
   {
     x: 'berserker',
@@ -78,12 +78,6 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'berserker',
     intended: 'even',
     reason: 'A raging bump is never big enough to rewind: plain trades decide it.',
-  },
-  {
-    x: 'ghost',
-    y: 'berserker',
-    intended: 'even',
-    reason: 'A fade misses a raging bump now and then, but its big health outlasts the fade.',
   },
   {
     x: 'magnet',
@@ -134,12 +128,6 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'vampire',
     intended: 'even',
     reason: 'Slowing does not change a contact trade, and Frost never stops the healing.',
-  },
-  {
-    x: 'ghost',
-    y: 'vampire',
-    intended: 'even',
-    reason: 'Bumps come one at a time and land whole: plain trades decide it.',
   },
   {
     x: 'magnet',

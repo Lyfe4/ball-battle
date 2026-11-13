@@ -62,6 +62,8 @@ export function runPhase(
   const callCounts = new Map<string, number>();
   const isPhased = (ball: BallState): boolean =>
     phasedOf(ball, getDefinition(definitions, ball.definitionId));
+  const maxHealthOf = (ball: BallState): number =>
+    getDefinition(definitions, ball.definitionId).maxHealth;
 
   for (const invocation of invocations) {
     const ballIndex = snapshot.findIndex((ball) => ball.id === invocation.ballId);
@@ -74,7 +76,7 @@ export function runPhase(
     const random = createStream(
       deriveSeed([world.rngState, world.tick, ballIndex, HOOK_CODES[invocation.hook], call]),
     );
-    const base: HookContext = { world, self, stats: definition, random, isPhased };
+    const base: HookContext = { world, self, stats: definition, random, isPhased, maxHealthOf };
     const actions = invocation.call(definition, base, snapshot);
     if (actions !== undefined && actions.length > 0) {
       collected.push({ ballId: invocation.ballId, hook: invocation.hook, actions });

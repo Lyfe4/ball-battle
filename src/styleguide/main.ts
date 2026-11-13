@@ -16,7 +16,6 @@ import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { batchFiveExtras, batchFourExtras } from './arena-extras.ts';
-import { isFaded } from '../sim/balls/ghost.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
@@ -84,7 +83,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
-    phased: (definition.phasedOf?.(shown) ?? false) || isFaded(shown, TICK),
+    phased: definition.phasedOf?.(shown) ?? false,
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
     cssPixelsPerUnit: radiusPx / ball.radius,

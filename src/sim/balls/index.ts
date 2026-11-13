@@ -21,6 +21,8 @@ import { boomerang } from './boomerang.ts';
 import { bomber } from './bomber.ts';
 import { spartan } from './spartan.ts';
 import { bloom } from './bloom.ts';
+import { hex } from './hex.ts';
+import { spider } from './spider.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
 export const BALLS: readonly BallDefinition[] = [
@@ -45,6 +47,8 @@ export const BALLS: readonly BallDefinition[] = [
   bomber,
   spartan,
   bloom,
+  hex,
+  spider,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);

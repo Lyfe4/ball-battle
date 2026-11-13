@@ -20,10 +20,11 @@ import { drawHealPulse, drawSourceChip } from './draw-cues.ts';
 import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
-import { isFaded } from '../sim/balls/ghost.ts';
 import { drawGlance } from './glance-ring.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
+import { drawCurses } from './curse.ts';
+import { drawWebs } from './webs.ts';
 
 /** How big the canvas is: its backing store, and how large it appears on screen. */
 export interface CanvasView {
@@ -111,6 +112,7 @@ export function drawWorld(
   drawArena(ctx, size);
   // Pending zones go under the balls, so a warning never hides a ball.
   drawZones(ctx, world, definitions);
+  drawWebs(ctx, world);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(
@@ -130,8 +132,7 @@ export function drawWorld(
     const definition = definitions.get(ball.definitionId);
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
-    // A faded Ghost looks phased: hits miss it (ADR 0045).
-    const phased = (definition?.phasedOf?.(ball) ?? false) || isFaded(ball, world.tick);
+    const phased = definition?.phasedOf?.(ball) ?? false;
     withBallTransform(ctx, ball, effects.squash(ball.id), effects.intro(index), () => {
       drawBall(ctx, world, ball, {
         color,
@@ -151,6 +152,7 @@ export function drawWorld(
       drawGlance(ctx, ball, effects.glance(ball.id), effects.reducedMotion);
     }
   });
+  drawCurses(ctx, world, effects.reducedMotion);
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);
   drawMinions(ctx, world, definitions, cssPixelsPerUnit);
@@ -207,7 +209,7 @@ export interface BallLook {
   readonly cssPixelsPerUnit: number;
   /** Forces a detail level (the style guide shows both); otherwise chosen by on-screen size. */
   readonly detail?: 'full' | 'simple';
-  /** Phased (ADR 0026) or faded (ADR 0045): drawn see-through with a broken outline. */
+  /** Phased (ADR 0026, 0049): drawn see-through with a broken outline. */
   readonly phased?: boolean;
 }
 

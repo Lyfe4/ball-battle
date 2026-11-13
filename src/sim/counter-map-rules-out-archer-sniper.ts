@@ -36,12 +36,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'archer',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'Arrows come one at a time, each after the fade ends.',
-  },
-  {
-    x: 'archer',
     y: 'inferno',
     intended: 'even',
     reason: 'Arrows hit from range, but the fire burns the frail Archer wherever it crosses.',
@@ -157,12 +151,6 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     y: 'frost',
     intended: 'even',
     reason: 'The Frost takes several shots to bring down, and wins the contacts in between.',
-  },
-  {
-    x: 'sniper',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'One heavy shot at a time: each lands whole, after the fade ends.',
   },
   {
     x: 'sniper',

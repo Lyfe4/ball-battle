@@ -20,6 +20,8 @@ import { boomerangDesign } from './boomerang.ts';
 import { bomberDesign } from './bomber.ts';
 import { spartanDesign } from './spartan.ts';
 import { bloomDesign } from './bloom.ts';
+import { hexDesign } from './hex.ts';
+import { spiderDesign } from './spider.ts';
 
 /**
  * How each kind of ball looks, keyed by definition id. A ball without an entry is drawn as a
@@ -47,4 +49,6 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['bomber', bomberDesign],
   ['spartan', spartanDesign],
   ['bloom', bloomDesign],
+  ['hex', hexDesign],
+  ['spider', spiderDesign],
 ]);

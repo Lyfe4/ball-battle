@@ -1,5 +1,6 @@
 // A hit glancing off a defence (ADR 0045, 0047): the Spartan's planted shield took half of it, or
-// the Ghost's fade took all of it. A bright gold ring just outside the ball, in pieces that fly out and fade.
+// the phased Ghost took all of it (ADR 0049). A bright gold ring just outside the ball, in pieces
+// that fly out and fade.
 import type { BallState } from '../sim/types.ts';
 import { theme } from './theme.ts';
 

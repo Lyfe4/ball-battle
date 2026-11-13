@@ -72,6 +72,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    * changes a fight. A ball with nothing to point at (the Brawler, a passive like growing) has none.
    */
   readonly ability?: AbilityLabel;
+  /**
+   * The real rules and numbers of its ability, a few short sentences for the manual's "How it
+   * works" (ADR 0049). Built from the constants the ability itself uses, so it never goes stale.
+   * Text only: it never changes a fight. A ball without it shows no such section.
+   */
+  readonly howItWorks?: readonly string[];
   readonly initialAbilityState: S;
   readonly hooks: BallHooks<S>;
   /**
@@ -87,9 +93,10 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
   /**
-   * True while the ball is phased (ADR 0026): it passes through other balls, and contact damage
-   * is dealt neither to it nor by it. Its own `onHitBall` still runs when it starts overlapping a
-   * ball. A pure query of its own state, like `cruiseSpeed`. Defaults to never phased.
+   * True while the ball is phased (ADR 0026, 0049): nothing touches it. It passes through other
+   * balls, shots, skulls and bombs, and contact damage is dealt neither to it nor by it. Its own
+   * `onHitBall` still runs when it starts overlapping a ball. A pure query of its own state, like
+   * `cruiseSpeed`. Defaults to never phased.
    */
   readonly phasedOf?: (self: BallView<S>) => boolean;
   /**
@@ -107,8 +114,8 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
   readonly statusResistance?: Readonly<Partial<Record<StatusKind, number>>>;
   /**
    * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Spartan's
-   * planted shield takes half of every hit (ADR 0047), the Ghost's fade takes all of it. A pure query of its own
-   * state, applied on both damage paths before the hit lands and rounded to a whole number between
+   * planted shield takes half of every hit (ADR 0047), the phased Ghost all of it (ADR 0049). A pure
+   * query of its own state, applied on both damage paths before the hit lands and rounded to a whole number between
    * 0 and `amount`. Defaults to the whole hit.
    */
   readonly incomingDamageOf?: (self: BallView<S>, amount: number, tick: number) => number;
@@ -146,10 +153,15 @@ export interface HookContext<S extends AbilityState = AbilityState> {
    */
   readonly random: () => number;
   /**
-   * True while `ball` is phased (ADR 0026, 0028): it can't be touched, gripped or aimed at. Read from
-   * its definition's `phasedOf`, so a hook never needs the definitions itself.
+   * True while `ball` is phased (ADR 0026, 0049): nothing touches it. Read from its definition's
+   * `phasedOf`, so a hook never needs the definitions itself.
    */
   readonly isPhased: (ball: BallState) => boolean;
+  /**
+   * A ball's full health, read from its definition (ADR 0049: the Hex's curse bursts for a share of
+   * it), so a hook never needs the definitions itself.
+   */
+  readonly maxHealthOf: (ball: BallState) => number;
 }
 
 export interface WallHitContext<S extends AbilityState = AbilityState> extends HookContext<S> {

@@ -80,12 +80,6 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'storm',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'One strike at a time: each lands whole, after the fade ends.',
-  },
-  {
-    x: 'storm',
     y: 'inferno',
     intended: 'even',
     reason: 'Both burn from afar: lightning against the trail of fire.',
@@ -141,8 +135,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'quake',
-    intended: 'y',
-    reason: 'Shockwaves are far too small to rewind, and they keep coming.',
+    intended: 'even',
+    reason: 'Shockwaves are far too small to rewind, but they come only off walls: plain trades.',
   },
   {
     x: 'frost',
@@ -186,12 +180,6 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     y: 'boomerang',
     intended: 'even',
     reason: 'Shockwaves and a boomerang both chip from afar; neither stops the other.',
-  },
-  {
-    x: 'quake',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'It fades after a shockwave, but the next wall comes after the fade.',
   },
   {
     x: 'quake',

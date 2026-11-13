@@ -60,14 +60,14 @@ export const spartan = defineBall<SpartanState>({
   ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
-  maxHealth: 44,
+  maxHealth: 45,
   contactDamage: 16,
   initialAbilityState: { phase: -1, raised: false },
   cruiseSpeed: (state, stats) => (state.raised ? stats.speed * SHIELDED_SPEED : stats.speed),
   incomingDamageOf: (self, amount, tick) =>
     shieldRaisedAt(tick, self.abilityState.phase) ? shieldedHit(amount) : amount,
   hooks: {
-    onTick: ({ world, self, isPhased, random }) => {
+    onTick: ({ world, self, random }) => {
       const phase =
         self.abilityState.phase >= 0 ? self.abilityState.phase : Math.floor(random() * CYCLE_TICKS);
       const raised = shieldRaisedAt(world.tick, phase);
@@ -76,7 +76,7 @@ export const spartan = defineBall<SpartanState>({
           ? []
           : [{ kind: 'setAbilityState' as const, state: { phase, raised } }];
       if (rhythmAt(world.tick, phase) !== SHIELD_TICKS) return mark;
-      const target = nearestTarget(self, world.balls, world.minions, isPhased);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return mark;
       const dx = target.position.x - self.position.x;
       const dy = target.position.y - self.position.y;

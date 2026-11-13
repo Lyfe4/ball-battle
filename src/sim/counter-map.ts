@@ -13,6 +13,9 @@ import { RULES_OUT_ARCHER_SNIPER_ENTRIES } from './counter-map-rules-out-archer-
 import { RULES_OUT_BERSERKER_VAMPIRE_ENTRIES } from './counter-map-rules-out-berserker-vampire.ts';
 import { RULES_OUT_BOOMERANG_ENTRIES } from './counter-map-rules-out-boomerang.ts';
 import { RULES_OUT_STORM_QUAKE_ENTRIES } from './counter-map-rules-out-storm-quake.ts';
+import { GHOST_ENTRIES } from './counter-map-ghost.ts';
+import { HEX_ENTRIES } from './counter-map-hex.ts';
+import { SPIDER_ENTRIES } from './counter-map-spider.ts';
 import { SPARTAN_ENTRIES } from './counter-map-spartan.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
@@ -39,6 +42,9 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
   ...HIT_KIND_CHRONO_ENTRIES,
   ...HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES,
   ...SPARTAN_ENTRIES,
+  ...HEX_ENTRIES,
+  ...SPIDER_ENTRIES,
+  ...GHOST_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */
