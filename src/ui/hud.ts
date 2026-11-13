@@ -157,6 +157,9 @@ export function createHud(
       }
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
       buttons.hidden = !finished || seriesMode;
+      // Replayed between frames from the moment the fight ends, so it is told by the time the
+      // result shows (and the series panel's copy of the same round is told with it).
+      if (start !== undefined && world.match.status === 'finished') story.prepare(start);
       story.show(finished && !seriesMode ? start : undefined, undefined, mirrorNames(start));
     },
   };

@@ -80,27 +80,53 @@ export function chooseMoments(candidates: readonly Moment[], max = MAX_MOMENTS):
   return ranked.slice(0, max).sort((x, y) => x.tick - y.tick || last(x) - last(y));
 }
 
-/** Every event of the match, and each tick's health as a share of max health, by ball id. */
-function replay(
-  start: WorldState,
-  lookup: DefinitionLookup,
-): { events: SimEvent[]; shares: { tick: number; share: ReadonlyMap<string, number> }[] } {
+type HealthShares = { tick: number; share: ReadonlyMap<string, number> }[];
+
+/**
+ * A finished match played again headlessly, a few ticks at a time, so the caller decides how much
+ * of it any one frame pays for (the whole match at once cost 18-22 ms of a phone frame at the
+ * finish). It collects every event and each tick's health as a share of max health, by ball id.
+ */
+export interface StoryReplay {
+  /** True once the match has ended. */
+  readonly done: boolean;
+  /** Plays up to `ticks` more ticks; returns `done`. */
+  advance(ticks: number): boolean;
+  /** The story, playing whatever is left first. `labels` as for storyOf. */
+  story(labels?: readonly string[]): MatchStory;
+}
+
+export function startReplay(start: WorldState, lookup: DefinitionLookup): StoryReplay {
   let world = start;
   const events: SimEvent[] = [];
-  const shares: { tick: number; share: ReadonlyMap<string, number> }[] = [];
+  const shares: HealthShares = [];
   const max = new Map(
     start.balls.map((ball) => [ball.id, lookup.get(ball.definitionId)?.maxHealth ?? 1]),
   );
-  while (world.match.status === 'running') {
-    const result = step(world, lookup);
-    world = result.world;
-    events.push(...result.events);
-    shares.push({
-      tick: world.tick,
-      share: new Map(world.balls.map((ball) => [ball.id, ball.health / (max.get(ball.id) ?? 1)])),
-    });
-  }
-  return { events, shares };
+  const replay: StoryReplay = {
+    get done() {
+      return world.match.status !== 'running';
+    },
+    advance(ticks) {
+      for (let played = 0; played < ticks && world.match.status === 'running'; played++) {
+        const result = step(world, lookup);
+        world = result.world;
+        events.push(...result.events);
+        shares.push({
+          tick: world.tick,
+          share: new Map(
+            world.balls.map((ball) => [ball.id, ball.health / (max.get(ball.id) ?? 1)]),
+          ),
+        });
+      }
+      return replay.done;
+    },
+    story(labels) {
+      replay.advance(Infinity);
+      return tell(start, lookup, events, shares, labels);
+    },
+  };
+  return replay;
 }
 
 /**
@@ -140,7 +166,16 @@ export function storyOf(
   lookup: DefinitionLookup,
   labels?: readonly string[],
 ): MatchStory {
-  const { events, shares } = replay(start, lookup);
+  return startReplay(start, lookup).story(labels);
+}
+
+function tell(
+  start: WorldState,
+  lookup: DefinitionLookup,
+  events: readonly SimEvent[],
+  shares: HealthShares,
+  labels: readonly string[] | undefined,
+): MatchStory {
   const nameOf = (ballId: string) => {
     const slot = start.balls.findIndex((b) => b.id === ballId);
     const ball = start.balls[slot];
