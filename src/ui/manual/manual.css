@@ -72,6 +72,59 @@
   text-align: right;
 }
 
+/* How its ability works: the summary as a row, the rules one tap away (ADR 0049). */
+.ball-detail-how {
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.ball-detail-how-summary {
+  min-height: var(--tap-target);
+  padding: var(--space-small) var(--space-gap);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.ball-detail-how-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron that turns when the rules are open. */
+.ball-detail-how-summary::after {
+  content: '›';
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  transition: transform 0.15s;
+}
+
+.ball-detail-how[open] > .ball-detail-how-summary::after {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ball-detail-how-summary::after {
+    transition: none;
+  }
+}
+
+.ball-detail-how-rules {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0 var(--space-gap) var(--space-small) calc(var(--space-gap) + 1em);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+}
+
+.ball-detail-how[hidden] {
+  display: none;
+}
+
 .ball-detail-heading {
   margin: var(--space-small) 0 0;
   font-size: 1rem;

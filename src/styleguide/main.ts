@@ -15,7 +15,7 @@ import { ARENA_SIZE } from '../sim/constants.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { batchFiveExtras, batchFourExtras } from './arena-extras.ts';
+import { batchFiveExtras, batchFourExtras, batchSixState } from './arena-extras.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
@@ -119,18 +119,20 @@ function phoneArena(): HTMLElement {
     const [first] = createWorld(4, [definition, definition]).balls;
     if (first === undefined) throw new Error('expected a ball');
     return { ...first, id: `ball-${String(index)}` };
-  }).map((ball, index) => ({
-    ...ball,
-    position: spot(index),
-    // The Titan as big as it is this far into a match (ADR 0034).
-    radius: ball.definitionId === 'titan' ? titanRadius(TICK) : ball.radius,
-    abilityState: arenaAbilityState(ball),
-    // A hurt Berserker, so its cracks show.
-    health:
-      ball.definitionId === 'berserker'
-        ? Math.round(getDefinition(BALL_LOOKUP, 'berserker').maxHealth * 0.3)
-        : ball.health,
-  }));
+  })
+    .map((ball, index) => ({
+      ...ball,
+      position: spot(index),
+      // The Titan as big as it is this far into a match (ADR 0034).
+      radius: ball.definitionId === 'titan' ? titanRadius(TICK) : ball.radius,
+      abilityState: arenaAbilityState(ball),
+      // A hurt Berserker, so its cracks show.
+      health:
+        ball.definitionId === 'berserker'
+          ? Math.round(getDefinition(BALL_LOOKUP, 'berserker').maxHealth * 0.3)
+          : ball.health,
+    }))
+    .map((ball, _index, all) => batchSixState(ball, all));
   const view = { canvasPixels: canvas.width, cssPixels: cssSize };
   // A Necromancer's minion beside it, at the size the game uses, to check it reads at phone size.
   const owner = balls.find((ball) => ball.definitionId === 'necromancer');

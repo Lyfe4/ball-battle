@@ -18,20 +18,16 @@ export const BATCH_THREE_AND_FOUR: readonly (readonly [string, readonly Tile[]])
     ],
   ],
   [
-    'Ghost: a ghost’s face; see-through with a broken outline while faded',
+    'Ghost: a ghost’s face; for one second in four it phases, drawn see-through with a broken outline (a hit on it then glances off)',
     [
       { label: 'solid', id: 'ghost' },
-      {
-        label: 'faded',
-        id: 'ghost',
-        abilityState: { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 },
-      },
+      { label: 'phased', id: 'ghost', abilityState: { phase: 0, phased: true } },
       { label: 'mirror B', id: 'ghost', repeat: true },
       {
-        label: 'faded, mirror B',
+        label: 'phased, mirror B',
         id: 'ghost',
         repeat: true,
-        abilityState: { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 },
+        abilityState: { phase: 0, phased: true },
       },
     ],
   ],

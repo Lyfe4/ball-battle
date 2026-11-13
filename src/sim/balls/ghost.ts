@@ -29,12 +29,12 @@ export function phasedAt(tick: number, phase: number): boolean {
 export const ghost = defineBall<GhostState>({
   id: 'ghost',
   name: 'Ghost',
-  description: 'Phases every few seconds: slips through everything and hits as it passes.',
+  description: 'Phases every 4 s: slips through all, hitting as it goes.',
   color: '#c4b5fd',
   ability: { name: 'Phase', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   howItWorks: [
-    `It is phased for ${String(PHASE_TICKS / TICK_RATE)} s of every ${String(PHASE_CYCLE_TICKS / TICK_RATE)} s. Then nothing touches it: balls, shots, skulls and bombs pass through, and no hit lands.`,
-    `Passing through a ball while phased hits it for ${String(SPECTRAL_HIT)}, once per pass.`,
+    `It is phased for ${PHASE_TICKS / TICK_RATE} s of every ${PHASE_CYCLE_TICKS / TICK_RATE} s. Then nothing touches it: balls, shots, skulls and bombs pass through, and no hit lands.`,
+    `Passing through a ball while phased hits it for ${SPECTRAL_HIT}, once per pass.`,
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,

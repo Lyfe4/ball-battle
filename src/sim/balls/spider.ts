@@ -82,13 +82,13 @@ function bouncedOff(ball: BallState, web: Web, size: number): boolean {
 export const spider = defineBall<SpiderState>({
   id: 'spider',
   name: 'Spider',
-  description: 'Webs every wall it touches: a ball that bounces off a web is slowed and nipped.',
+  description: 'Its webs on the walls slow and nip balls that bounce off.',
   color: '#d4d4d8',
   ability: { name: 'Webs', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
   howItWorks: [
     'Each wall it bounces off gets a web where it touched.',
-    `A ball that bounces off a web takes ${String(WEB_NIP)} and is slowed for ${String(WEB_SLOW_TICKS / TICK_RATE)} s.`,
-    `Up to ${String(MOST_WEBS)} webs at once, each lasting ${String(WEB_TICKS / TICK_RATE)} s.`,
+    `A ball that bounces off a web takes ${WEB_NIP} damage and is slowed for ${WEB_SLOW_TICKS / TICK_RATE} s.`,
+    `Up to ${MOST_WEBS} webs at once, each lasting ${WEB_TICKS / TICK_RATE} s.`,
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,

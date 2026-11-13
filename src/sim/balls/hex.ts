@@ -48,13 +48,13 @@ const NO_CURSE: HexState = { cursedId: '', cursedTick: 0, burstTick: 0 };
 export const hex = defineBall<HexState>({
   id: 'hex',
   name: 'Hex',
-  description: 'Its bump curses: 3 s later the mark bursts for a quarter of its health.',
+  description: 'Its bump curses: 3 s later it takes a quarter of its health.',
   color: '#d946ef',
   ability: { name: 'Curse', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
   howItWorks: [
-    `Its bump puts a mark on the other ball. ${String(CURSE_FUSE_TICKS / TICK_RATE)} s later the mark bursts for a quarter of that ball's full health, rounded.`,
-    'A bump on a ball already marked does nothing; the countdown keeps running.',
-    `So a ${String(80)} health ball takes ${String(curseBurstFor(80))} a burst, a ${String(40)} health one only ${String(curseBurstFor(40))}.`,
+    `Its bump marks the other ball. ${CURSE_FUSE_TICKS / TICK_RATE} s later the mark bursts for ${CURSE_SHARE * 100}% of that ball’s full health.`,
+    'A bump on a ball already marked does nothing: the countdown keeps running.',
+    `So big balls take big bursts: ${curseBurstFor(80)} on an 80-health ball, ${curseBurstFor(40)} on a 40-health one.`,
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,

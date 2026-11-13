@@ -59,6 +59,13 @@ export function createBallDetail(
     return { fill, number };
   });
 
+  // How its ability works, with the real numbers: one tap away (ADR 0025, 0049), shown only for a
+  // ball whose definition says (`howItWorks`).
+  const how = element('details', 'ball-detail-how');
+  const howSummary = element('summary', 'ball-detail-how-summary', 'How it works');
+  const howRules = element('ul', 'ball-detail-how-rules');
+  how.append(howSummary, howRules);
+
   const strongHeading = element('h2', 'ball-detail-heading ball-detail-strong', 'Strong vs');
   const strong = element('ul', 'ball-detail-matchups');
   const weakHeading = element('h2', 'ball-detail-heading ball-detail-weak', 'Weak vs');
@@ -81,7 +88,7 @@ export function createBallDetail(
     return node;
   };
   root.append(
-    group('ball-detail-profile', hero, stats),
+    group('ball-detail-profile', hero, stats, how),
     group('ball-detail-strong-group', strongHeading, strong),
     group('ball-detail-weak-group', weakHeading, weak),
     group('ball-detail-even-group', evenHeading, even),
@@ -134,6 +141,10 @@ export function createBallDetail(
         row.fill.style.width = `${String(Math.round(share * 100))}%`;
         setText(row.number, String(value));
       });
+      const rules = ball.howItWorks ?? [];
+      howRules.replaceChildren(...rules.map((rule) => element('li', 'ball-detail-how-rule', rule)));
+      how.hidden = rules.length === 0;
+      how.open = false;
       const lines = matchupsOf(id, roster);
       strong.replaceChildren(...matchupRows(lines.strong));
       weak.replaceChildren(...matchupRows(lines.weak));
