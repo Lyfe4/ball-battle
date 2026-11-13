@@ -33,7 +33,7 @@ export const quake = defineBall<QuakeState>({
   ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 71,
+  maxHealth: 70,
   contactDamage: 15,
   initialAbilityState: { readyTick: 0 },
   hooks: {

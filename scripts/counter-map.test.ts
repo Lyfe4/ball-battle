@@ -51,15 +51,15 @@ describe('the counter map', () => {
     }
   });
 
-  it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047)', () => {
+  it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047, ADR 0049)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
       [
         'berserker',
         'bloom',
         'bomber',
+        'ghost',
         'quake',
         'sniper',
-        'spartan',
         'storm',
         'titan',
         'vampire',
@@ -97,13 +97,16 @@ describe('shapeProblem', () => {
     expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
     expect(shapeProblem('berserker', some(5), some(2))).toBeUndefined();
     expect(shapeProblem('berserker', some(6), some(2))).toBeDefined();
-    expect(shapeProblem('bloom', some(5), some(4))).toBeUndefined();
-    expect(shapeProblem('bloom', some(5), some(3))).toBeDefined();
+    expect(shapeProblem('bloom', some(7), some(4))).toBeUndefined();
+    expect(shapeProblem('bloom', some(8), some(5))).toBeDefined();
+    expect(shapeProblem('bloom', some(7), some(3))).toBeDefined();
+    expect(shapeProblem('ghost', some(2), some(1))).toBeUndefined();
+    expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
   });
 
   it('holds an even pick to exactly its listed counters', () => {
-    expect(shapeProblem('brawler', ['ghost'], ['thorns'])).toBeUndefined();
-    expect(shapeProblem('brawler', [], ['thorns'])).toBeDefined();
+    expect(shapeProblem('brawler', [], ['thorns'])).toBeUndefined();
+    expect(shapeProblem('brawler', ['ghost'], ['thorns'])).toBeDefined();
     expect(shapeProblem('magnet', [], ['thorns'])).toBeUndefined();
     expect(shapeProblem('magnet', ['ghost'], ['thorns'])).toBeDefined();
   });

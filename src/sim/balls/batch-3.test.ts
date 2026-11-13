@@ -1,12 +1,11 @@
-// The Magnet, Ghost and Necromancer (ADR 0026, 0045): each ball's own mechanic, on fixed scenes.
+// The Magnet and Necromancer (ADR 0026, 0045): each ball's own mechanic, on fixed scenes. The
+// Ghost's phasing is in batch-6.test.ts (ADR 0049).
 import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { POISON_INTERVAL_TICKS } from '../status.ts';
-import { FADE_EVERY_TICKS, FADE_TICKS, ghost } from './ghost.ts';
 import { FIRST_PULL_TICK, isPulling, magnet, PULL_PERIOD_TICKS, PULL_TICKS } from './magnet.ts';
 import {
   FIRST_SUMMON_TICK,
@@ -17,7 +16,7 @@ import {
   SUMMON_TICKS,
 } from './necromancer.ts';
 
-const lookup = indexDefinitions([magnet, ghost, necromancer, blue]);
+const lookup = indexDefinitions([magnet, necromancer, blue]);
 
 function play(world: WorldState, ticks: number, onTick?: (world: WorldState) => void) {
   let current = world;
@@ -59,57 +58,6 @@ describe('Magnet', () => {
     const first = Array.from({ length: PULL_TICKS }, (_, i) => FIRST_PULL_TICK + i);
     const second = FIRST_PULL_TICK + PULL_PERIOD_TICKS;
     expect(pulling).toStrictEqual([...first, ...[0, 1, 2, 3, 4, 5].map((i) => second + i)]);
-  });
-});
-
-describe('Ghost', () => {
-  /** A parked Ghost poisoned from tick 0 by a far-off blue: a small hit every interval. */
-  const poisoned = (): WorldState =>
-    withBalls(createWorld(1, [ghost, blue]), [
-      {
-        position: { x: 200, y: 200 },
-        velocity: { x: 0, y: 0 },
-        statuses: [{ kind: 'poisoned', sourceId: 'ball-1', expiresTick: 10_000, sinceTick: 0 }],
-      },
-      { position: { x: 800, y: 800 }, velocity: { x: 0, y: 0 } },
-    ]);
-
-  it('fades after a hit, so the next small hit misses, and fades at most once in a while', () => {
-    // The fade outlasts one poison interval but not two, and the next fade waits for its cooldown.
-    const every = POISON_INTERVAL_TICKS;
-    expect(FADE_TICKS).toBeGreaterThan(every);
-    expect(FADE_TICKS).toBeLessThan(2 * every);
-    expect(FADE_EVERY_TICKS).toBeGreaterThan(3 * every);
-    const { events } = play(poisoned(), 4 * every);
-    const landed = events.flatMap((event) => (event.type === 'damage' ? [event.tick] : []));
-    const missed = events.flatMap((event) =>
-      event.type === 'hitReduced' && event.rest === 0 ? [event.tick] : [],
-    );
-    expect(landed).toStrictEqual([every, 3 * every, 4 * every]);
-    expect(missed).toStrictEqual([2 * every]);
-  });
-
-  it('takes no contact damage while faded, and still hits back', () => {
-    const meeting = (fadedUntil: number): WorldState =>
-      withBalls(createWorld(1, [ghost, blue]), [
-        {
-          position: { x: 300, y: 500 },
-          velocity: { x: ghost.speed, y: 0 },
-          abilityState: { fadedUntil, nextFadeTick: 10_000 },
-        },
-        { position: { x: 700, y: 500 }, velocity: { x: -blue.speed, y: 0 } },
-      ]);
-    const faded = play(meeting(10_000), 40);
-    const targets = faded.events.flatMap((event) =>
-      event.type === 'damage' ? [event.targetId] : [],
-    );
-    expect(targets).toStrictEqual(['ball-1']);
-    expect(faded.world.balls[0]?.health).toBe(ghost.maxHealth);
-    const solid = play(meeting(0), 40);
-    const causes = solid.events.flatMap((event) =>
-      event.type === 'damage' ? [event.targetId] : [],
-    );
-    expect(causes.sort()).toStrictEqual(['ball-0', 'ball-1']);
   });
 });
 

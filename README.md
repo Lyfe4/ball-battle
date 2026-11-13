@@ -13,9 +13,9 @@ arena until one wins, and every decision is made before the fight starts.
 
 ## Features
 
-- **21 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
-  laser, a magnet's pull, a ghost that fades, a necromancer's skull minions, a boomerang, bombs,
-  a shield and spear, and more.
+- **23 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+  laser, a magnet's pull, a ghost that phases, a necromancer's skull minions, a boomerang, bombs,
+  a shield and spear, a curse, webs on the walls, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option on Other
@@ -99,7 +99,7 @@ they hit; the match ends by knockout or at a 60-second time limit.
 
 | Ball        | Ability                                                                                          |
 | ----------- | ------------------------------------------------------------------------------------------------ |
-| Brawler     | None. The hardest plain bump. An even pick: beats only the Ghost, loses only to Thorns.          |
+| Brawler     | None. The hardest plain bump. The plain default: beats nobody, loses only to Thorns.             |
 | Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                  |
 | Vampire     | Heals most of what its bumps deal, on little health; nothing from a ball it never touches.       |
 | Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.                 |
@@ -111,7 +111,7 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                      |
 | Quake       | Every wall it hits sends out a small, wide shockwave, as often as five times a second.           |
 | Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                  |
-| Ghost       | Fades for a moment after a hit, and nothing hurts it while it is faded.                          |
+| Ghost       | Phases 1 s in every 4: nothing touches it then, and it hits what it passes through.              |
 | Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after.   |
 | Chrono      | Rewinds a big hit (a shot, a strike, a blast or a knockout), then recharges for 10 s.            |
 | Titan       | Grows bigger as the match goes on, and its bumps grow with it. The one ball that changes size.   |
@@ -120,6 +120,8 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out. |
 | Spartan     | Plants its shield (half speed, every hit does half) for 2 s, then throws its spear.              |
 | Bloom       | Always regrowing, about four times a second, but every hit it takes stops it for a second.       |
+| Hex         | Its bump curses; 3 s later the curse bursts for a quarter of that ball's full health.            |
+| Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.              |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
@@ -129,7 +131,8 @@ on how directly it lands, not how fast.
 Picks matter: many pairs lean one way. A counter (▲ ▼) is _favoured_, never decided: it wins at
 least 62% of the time and aims for 65-72%, and each one comes from something you can watch happen
 ([ADR 0045](docs/decisions/0045-roster-redesign.md),
-[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md)). No rule exists only where two abilities
+[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
+[ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md)). No rule exists only where two abilities
 meet: every ability works the same on any ball.
 
 - **Bumps against spikes:** Thorns beats the Brawler, Magnet and Titan; the harder a ball bumps,
@@ -138,19 +141,26 @@ meet: every ability works the same on any ball.
   what never touches it (Archer, Storm, Boomerang) and to the Spartan's shield, which halves its
   bumps and so what it drinks.
 - **Rage:** every hit the Berserker takes builds rage, so many small hits feed it: it beats the
-  Archer, Venom, Quake, Inferno and Boomerang. Regrowth (Bloom) and lifesteal heal its big bumps back.
+  Archer, Venom, Quake, Inferno and Boomerang. Regrowth (Bloom) and lifesteal heal its big bumps back,
+  and the Hex's one big burst gives it one rage, not several.
 - **Big hits against the rewind:** the Chrono rewinds a strike, a shot or a blast, so it beats the
   Storm, Sniper, Bomber and the Spartan's spear; Venom, Quake, Inferno and Bloom deal no hit big
   enough to rewind.
 - **Shield and spear:** the Spartan's planted shield halves every hit, whoever deals it, so it
-  only beats the Vampire; it is too slow behind its shield to leave the Storm's circle, and the
+  beats the Vampire and the Hex (a small burst, halved again); it is too slow behind its shield to leave the Storm's circle, and the
   Chrono rewinds its spear.
-- **Regrowth:** the Bloom heals back damage that comes slowly (Frost, Berserker, Necromancer,
-  Ghost, Chrono), but every hit stops its regrowth for a second, so a stream of small hits
+- **Regrowth:** the Bloom heals back damage that comes slowly or in pieces (Frost, Berserker,
+  Necromancer, Ghost, Chrono, Hex, Spider), but every hit stops its regrowth for a second, so a stream of small hits
   (Venom's poison, the Archer's arrows, the Boomerang's two hits a throw) keeps it from regrowing;
   the grown Titan's huge bumps outpace it.
-- **The fade:** the Ghost fades after a hit, so a poison tick or a burn just after misses: it beats
-  Venom and Inferno. The Brawler's and Frost's heavy bumps land whole.
+- **Phasing:** for one second in four nothing touches the Ghost, so poison ticks and a curse's
+  burst that fall then miss: it beats Venom and the Hex.
+- **The curse:** the Hex's burst is a quarter of the cursed ball's full health, so it beats the
+  sturdy balls (Frost, Berserker, Speedster) and the Inferno, whose light bumps barely hurt back;
+  frail balls take small bursts (Vampire, Spartan, Bloom).
+- **Webs:** the Spider's webs slow a ball that bounces off them, so it beats the balls that live on
+  speed and walls (Speedster, Quake) and the Chrono, which can't rewind a small nip; the Archer and
+  Bomber don't need speed.
 - **The skull:** the Necromancer's skeleton draws arrows and throws (Archer, Boomerang); wide
   shockwaves, fire and regrowth deal with it (Quake, Inferno, Bloom).
 - **Speed and the slow:** the Speedster outruns arrows, shots and throws (Archer, Sniper,
@@ -164,9 +174,10 @@ even and counted by `pnpm balance`.
 
 Every ball has two to four counters each way, the two counts within one, except known gaps for
 future balls to fill (listed in [docs/balance-summary.md](docs/balance-summary.md)): the Storm,
-Titan, Bomber, Spartan, Sniper and Quake have one counter on a side, the Vampire one win to four
-losses, and the Berserker and Bloom beat up to five balls. The **Brawler** and **Magnet** are the even picks: the Brawler beats only the Ghost and
-loses only to Thorns, the Magnet loses only to Thorns.
+Titan, Bomber, Sniper and Quake have one counter on a side, the Ghost one loss, the Vampire two
+wins to four losses, the Berserker beats five and the Bloom seven (until its rework). The
+**Brawler** and **Magnet** are the even picks: the Brawler beats nobody and loses only to Thorns,
+the Magnet loses only to Thorns.
 
 The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) shipped in four groups:
 the first removed the three rules between balls (shock, stagger and numbed rage) and the spark
@@ -179,7 +190,8 @@ The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map
 [ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md),
 [ADR 0043](docs/decisions/0043-boomerang-bomber-guardian-bloom.md),
 [ADR 0045](docs/decisions/0045-roster-redesign.md),
-[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md)).
+[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
+[ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md)).
 
 ## Best of 3
 
@@ -347,7 +359,8 @@ Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-de
 , [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md)
 , [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)
 , [ADR 0045: The roster redesign](docs/decisions/0045-roster-redesign.md)
-and [ADR 0046: Reveal first, every other mode behind Other modes](docs/decisions/0046-reveal-first-home-and-other-modes.md).
+, [ADR 0046: Reveal first, every other mode behind Other modes](docs/decisions/0046-reveal-first-home-and-other-modes.md)
+and [ADR 0049: The Hex, the Spider and the phasing Ghost](docs/decisions/0049-hex-spider-phasing-ghost.md).
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
 Production bundle: 205.75 kB JS (65.69 kB gzipped), 47.20 kB CSS (8.67 kB gzipped), and the

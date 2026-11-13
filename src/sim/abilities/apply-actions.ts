@@ -98,7 +98,7 @@ export function applyActions(
       case 'damage':
         update(action.targetId, (target) => {
           const requested = Math.max(0, action.amount);
-          // The target's defence (armor, a fade) takes its share first (ADR 0045).
+          // The target's defence (a planted shield, phasing) takes its share first (ADR 0045, 0049).
           const defended = defendHit(target, ownerId, requested, definitions, tick);
           if (defended.event !== undefined) events.push(defended.event);
           const amount = Math.min(target.health, defended.rest);

@@ -57,10 +57,10 @@ export const storm = defineBall<StormState>({
   contactDamage: 11,
   initialAbilityState: { nextStrikeTick: FIRST_STRIKE_DELAY_TICKS },
   hooks: {
-    onTick: ({ world, self, random, isPhased }) => {
+    onTick: ({ world, self, random }) => {
       const due = self.abilityState.nextStrikeTick;
       if (world.tick < due) return [];
-      const target = nearestTarget(self, world.balls, world.minions, isPhased);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
       const offset = randomOffset(random, MAX_OFFSET);
       return [

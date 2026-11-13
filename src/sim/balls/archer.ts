@@ -82,10 +82,10 @@ export const archer = defineBall<ArcherState>({
   contactDamage: 6,
   initialAbilityState: { nextShotTick: FIRST_SHOT_DELAY_TICKS },
   hooks: {
-    onTick: ({ world, self, random, isPhased }) => {
+    onTick: ({ world, self, random }) => {
       const due = self.abilityState.nextShotTick;
       if (world.tick < due) return [];
-      const target = nearestTarget(self, world.balls, world.minions, isPhased);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
 
       const aimAt = leadTarget(self.position, target.position, target.velocity, ARROW_SPEED);

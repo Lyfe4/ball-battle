@@ -29,7 +29,7 @@ export const inferno = defineBall({
   color: '#fdba74',
   ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' } },
   radius: STANDARD_BALL_RADIUS,
-  speed: 770,
+  speed: 740,
   maxHealth: 74,
   contactDamage: 7,
   initialAbilityState: {},

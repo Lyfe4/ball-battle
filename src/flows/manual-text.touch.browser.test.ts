@@ -37,4 +37,23 @@ describe('ball descriptions', () => {
     }
     expect(long).toStrictEqual([]);
   }, 60_000);
+
+  it('show How it works, folded, only for a ball whose definition has it (ADR 0049)', async () => {
+    for (const ball of BALLS) {
+      await open(`?view=manual&ball=${ball.id}`);
+      const how = document.querySelector<HTMLDetailsElement>('.ball-detail-how');
+      if (how === null) throw new Error('No How it works section');
+      const rules = [...how.querySelectorAll('.ball-detail-how-rule')].map(
+        (rule) => rule.textContent,
+      );
+      expect(how.hidden, ball.id).toBe(ball.howItWorks === undefined);
+      expect(how.open, ball.id).toBe(false);
+      expect(rules, ball.id).toStrictEqual([...(ball.howItWorks ?? [])]);
+    }
+    expect(
+      BALLS.filter((ball) => ball.howItWorks !== undefined)
+        .map((ball) => ball.id)
+        .sort(),
+    ).toStrictEqual(['ghost', 'hex', 'spider']);
+  }, 60_000);
 });

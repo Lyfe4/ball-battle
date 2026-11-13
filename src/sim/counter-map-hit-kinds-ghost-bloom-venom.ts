@@ -11,72 +11,6 @@ import type { CounterEntry } from './counter-map.ts';
  */
 export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
-    x: 'ghost',
-    y: 'brawler',
-    intended: 'y',
-    reason: 'The fade can’t save it from a plain heavy bump: each one lands whole.',
-  },
-  {
-    x: 'ghost',
-    y: 'speedster',
-    intended: 'even',
-    reason: 'The speed hit lands with the bump, before the fade: plain trades decide it.',
-  },
-  {
-    x: 'ghost',
-    y: 'frost',
-    intended: 'y',
-    reason: 'The cold’s heavy bumps come one at a time, each after the fade ends.',
-  },
-  {
-    x: 'ghost',
-    y: 'thorns',
-    intended: 'even',
-    reason: 'Bumps and spikes land together, before the fade: plain trades decide it.',
-  },
-  {
-    x: 'ghost',
-    y: 'venom',
-    intended: 'x',
-    reason: 'It fades after a poison tick, so the next one misses.',
-  },
-  {
-    x: 'ghost',
-    y: 'magnet',
-    intended: 'even',
-    reason: 'The pull brings single bumps, each after the fade ends.',
-  },
-  {
-    x: 'ghost',
-    y: 'necromancer',
-    intended: 'even',
-    reason: 'A fade can miss the next bite, but skeletons rarely bite together.',
-  },
-  {
-    x: 'ghost',
-    y: 'titan',
-    intended: 'even',
-    reason: 'A giant’s bumps come one at a time, and each lands whole.',
-  },
-  {
-    x: 'ghost',
-    y: 'inferno',
-    intended: 'x',
-    reason: 'It fades as the fire bites, so part of every burn misses.',
-  },
-  {
-    x: 'ghost',
-    y: 'bomber',
-    intended: 'even',
-    reason: 'Blasts come one at a time, each after the fade ends.',
-  },
-  {
-    x: 'ghost',
-    y: 'bloom',
-    intended: 'y',
-    reason: 'The Ghost’s bumps come slowly, so the regrowth heals each one back between them.',
-  },
-  {
     x: 'bloom',
     y: 'brawler',
     intended: 'even',
@@ -92,7 +26,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'frost',
     intended: 'x',
-    reason: 'The cold’s bumps come slowly, and regrowth heals each one back between them.',
+    reason: 'The cold’s bumps come slowly, and it regrows between them.',
   },
   {
     x: 'bloom',

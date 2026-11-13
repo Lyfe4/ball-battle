@@ -43,7 +43,7 @@ export const magnet = defineBall<MagnetState>({
   contactDamage: 25,
   initialAbilityState: { nextPullTick: FIRST_PULL_TICK, pullUntilTick: 0 },
   hooks: {
-    onTick: ({ world, self, isPhased }) => {
+    onTick: ({ world, self }) => {
       const { nextPullTick, pullUntilTick } = self.abilityState;
       const actions = [];
       if (world.tick >= nextPullTick) {
@@ -58,15 +58,12 @@ export const magnet = defineBall<MagnetState>({
       const pulling = world.tick >= nextPullTick || world.tick < pullUntilTick;
       const target = pulling ? nearestEnemy(self, world.balls) : undefined;
       if (target !== undefined) {
-        // A phased ball can't be gripped (ADR 0028): the Magnet still turns toward it.
-        if (!isPhased(target)) {
-          actions.push({
-            kind: 'steer' as const,
-            targetId: target.id,
-            toward: self.position,
-            share: PULL_SHARE,
-          });
-        }
+        actions.push({
+          kind: 'steer' as const,
+          targetId: target.id,
+          toward: self.position,
+          share: PULL_SHARE,
+        });
         // The pull is mutual: the Magnet turns toward its enemy too, so both meet head-on.
         actions.push({
           kind: 'setVelocity' as const,

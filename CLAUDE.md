@@ -145,7 +145,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0044-one-story-look-and-settings-off-the-court.md` and
 `docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
 `docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md` and
-`docs/decisions/0047-spartan-and-bloom-pause.md` and `docs/decisions/0048-best-of-5.md`.
+`docs/decisions/0047-spartan-and-bloom-pause.md` and `docs/decisions/0048-best-of-5.md` and
+`docs/decisions/0049-hex-spider-phasing-ghost.md`.
 
 ## Workflow
 
@@ -189,11 +190,12 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   cruise speed, so collisions only change direction. An ability that changes how fast a ball goes
   declares `cruiseSpeed(state, stats)` on its definition instead of setting velocity in hooks.
 - An ability that turns another ball uses the `steer` action (direction only, ADR 0026); a ball
-  that passes through others declares `phasedOf(self)`; summoned objects are minions
+  that passes through others declares `phasedOf(self)` (nothing touches it then: balls, shots,
+  skulls and bombs pass through, but it is still aimed at and pulled, ADR 0049); summoned objects are minions
   (`src/sim/minions/`), not balls. Aimed attacks pick their target with `nearestTarget`, which
   includes enemy minions, so every aimed ball treats them alike.
 - A ball that takes less of a hit declares `incomingDamageOf(self, amount, tick)` (ADR 0045: the
-  Spartan's planted shield, ADR 0047; the Ghost's fade), applied on both damage paths and shown by a `hitReduced`
+  Spartan's planted shield, ADR 0047; the phased Ghost, ADR 0049), applied on both damage paths and shown by a `hitReduced`
   event, rather than healing damage back in a hook. A projectile that comes back uses
   `returnAfterTicks`; a zone an enemy ball can set off declares a `trigger` (swept,
   so no speed skips it).
@@ -224,7 +226,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   favoured or unfavoured matchup needs a mechanical reason in that entry. Stats tune how strong a
   counter is, never whether it exists. Measure what a ball's mechanic moves before choosing its
   counters; a planned counter that never appears is replaced, not forced with stats (ADR 0015). The Brawler and Magnet are the even picks: the
-  Brawler beats only the Ghost and loses only to Thorns (ADR 0013), the Magnet loses only to Thorns.
+  Brawler beats nobody and loses only to Thorns (ADR 0013, 0049), the Magnet loses only to Thorns.
   Ball identity rules are pinned in `src/sim/balls/identity.test.ts` (read from the definitions)
   and `ability-share.slow.test.ts` (measured); breaking one is a design decision, not a tuning
   step. Longer fights make matchups steeper (ADR 0004).
@@ -269,7 +271,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - **Teach in the arena, once** (ADR 0036). What a newcomer needs is shown at the moment it happens
   and read from sim events (a ball's `ability.shownBy`, a damage event's `via`), never guessed from
   event order; tips show once per device (`src/app/tips.ts`) and are turned off in settings.
-  A new ball with an ability to point at names it and the event that shows it.
+  A new ball with an ability to point at names it and the event that shows it. A ball's manual page
+  shows a folded "How it works" when its definition has `howItWorks` (ADR 0049): the real rules and
+  numbers, written from the constants the ability uses so they never go stale.
 - **Show less by default** (ADR 0025). Information appears when the player wants it (on a tap, a
   `<details>` expander or a "more" link); anything shown is concise; visuals and symbols (ball
   icons, vs layouts, highlights, ▲ ▼ =) beat sentences wherever they're clear. Any symbol must be

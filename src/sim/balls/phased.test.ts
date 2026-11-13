@@ -1,6 +1,6 @@
-// The phasing rule (ADR 0026, extended by ADR 0028): a phased ball can't be touched, gripped or
-// aimed at. Hits and skull pops pass through it, the Magnet's pull slips, and an aimed attack
-// waits for it to turn solid. No roster ball phases now (ADR 0045), so a test-only ball does.
+// The phasing rule (ADR 0026, made one rule by ADR 0049): nothing touches a phased ball. Balls,
+// shots and skull pops pass through it; it is still aimed at and pulled like any ball. A test-only
+// ball phases on demand here; the Ghost's own rhythm is in batch-6.test.ts.
 import { describe, expect, it } from 'vitest';
 import { DT, STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
@@ -33,8 +33,7 @@ function play(
 type PhaserState = Readonly<{ phased: boolean; nextChangeTick: number }>;
 
 /**
- * A test-only ball, phased until its change tick. No ball in the roster phases since the
- * Ghost's fade replaced its timed phasing (ADR 0045); the rule stays for any ball that declares it.
+ * A test-only ball, phased until its change tick, so a test can hold it phased or solid.
  */
 const phaser = defineBall<PhaserState>({
   id: 'phaser',
@@ -93,22 +92,27 @@ describe('a phased ball', () => {
     expect(pops(true)).toStrictEqual([]);
   });
 
-  it('is never aimed at: the Archer holds its arrow until the phased ball turns solid', () => {
+  it('is aimed at like any ball, and the arrow flies through it while it is phased', () => {
     const scene = (abilityState: PhaserState): WorldState =>
       withBalls(createWorld(1, [archer, phaser]), [
         { position: { x: 200, y: 500 }, velocity: { x: 0, y: 0 } },
         { position: { x: 800, y: 500 }, velocity: { x: 0, y: 0 }, abilityState },
       ]);
-    const firstShot = (abilityState: PhaserState) =>
-      play(scene(abilityState), [archer, phaser], 150).events.find(
-        (event) => event.type === 'projectileFired',
-      )?.tick;
-    expect(firstShot(phaserState(false))).toBe(FIRST_SHOT_DELAY_TICKS);
-    // Phased until tick 100: the due arrow waits for it.
-    expect(firstShot(phaserState(true, 100))).toBeGreaterThanOrEqual(100);
+    const shot = (abilityState: PhaserState) => {
+      const { events } = play(scene(abilityState), [archer, phaser], FIRST_SHOT_DELAY_TICKS + 60);
+      return {
+        fired: events.find((event) => event.type === 'projectileFired')?.tick,
+        hits: events.filter((event) => event.type === 'damage' && event.targetId === 'ball-1'),
+      };
+    };
+    // Shot on time either way (ADR 0049): no waiting for it to turn solid.
+    expect(shot(phaserState(false)).fired).toBe(FIRST_SHOT_DELAY_TICKS);
+    expect(shot(phaserState(true)).fired).toBe(FIRST_SHOT_DELAY_TICKS);
+    expect(shot(phaserState(false)).hits).toHaveLength(1);
+    expect(shot(phaserState(true)).hits).toStrictEqual([]);
   });
 
-  it('slips the Magnet’s pull: its heading never turns toward the Magnet', () => {
+  it('is pulled by the Magnet like any ball: its heading turns toward the Magnet', () => {
     const heading = (phased: boolean): Vec2 => {
       const start = withBalls(createWorld(1, [magnet, phaser]), [
         {
@@ -126,8 +130,8 @@ describe('a phased ball', () => {
       if (after === undefined) throw new Error('expected the phased ball');
       return after.velocity;
     };
-    // Pulled while solid: it turns down toward the Magnet. Phased: it keeps its line.
+    // Turned down toward the Magnet, solid or phased (ADR 0049): one rule for every ball.
     expect(heading(false).y).toBeGreaterThan(0);
-    expect(heading(true).y).toBe(0);
+    expect(heading(true).y).toBeGreaterThan(0);
   });
 });

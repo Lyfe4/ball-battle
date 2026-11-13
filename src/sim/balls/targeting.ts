@@ -37,21 +37,16 @@ export interface Target {
 /**
  * The target an aimed attack picks (ADR 0026): the nearest live enemy ball or enemy minion,
  * whichever is closer. One rule for every ball that aims (the Archer, Storm and Sniper), so a
- * minion nearer than its owner draws the arrow, the lightning or the shot. A phased ball is never a
- * target (ADR 0028). Ties go to the ball, then to the earlier one in its array, so the choice is
- * deterministic.
+ * minion nearer than its owner draws the arrow, the lightning or the shot. A phased ball is aimed at
+ * like any other; the shot passes through it (ADR 0049). Ties go to the ball, then to the earlier
+ * one in its array, so the choice is deterministic.
  */
 export function nearestTarget(
   self: Readonly<{ id: string; position: Vec2 }>,
   balls: readonly BallState[],
   minions: readonly MinionState[] = [],
-  isPhased: (ball: BallState) => boolean = () => false,
 ): Target | undefined {
-  // A phased ball can't be aimed at (ADR 0028): the attack waits, or goes to a minion.
-  const ball = nearestEnemy(
-    self,
-    balls.filter((candidate) => !isPhased(candidate)),
-  );
+  const ball = nearestEnemy(self, balls);
   let nearest: Target | undefined =
     ball === undefined ? undefined : { kind: 'ball', ...pick(ball) };
   let nearestDistance =

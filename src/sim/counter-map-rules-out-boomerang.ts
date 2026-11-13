@@ -24,12 +24,6 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   },
   {
     x: 'boomerang',
-    y: 'ghost',
-    intended: 'even',
-    reason: 'It fades after the throw lands, but the next throw comes after the fade.',
-  },
-  {
-    x: 'boomerang',
     y: 'inferno',
     intended: 'even',
     reason: 'It throws from range, but the fire burns it wherever it crosses.',

@@ -52,10 +52,10 @@ export const boomerang = defineBall<BoomerangState>({
   contactDamage: 10,
   initialAbilityState: { nextThrowTick: FIRST_THROW_TICK },
   hooks: {
-    onTick: ({ world, self, isPhased }) => {
+    onTick: ({ world, self }) => {
       const due = self.abilityState.nextThrowTick;
       if (world.tick < due || hasBoomerangOut(world, self.id)) return [];
-      const target = nearestTarget(self, world.balls, world.minions, isPhased);
+      const target = nearestTarget(self, world.balls, world.minions);
       if (target === undefined) return [];
       const aimAt = leadTarget(self.position, target.position, target.velocity, BOOMERANG_SPEED);
       const dx = aimAt.x - self.position.x;

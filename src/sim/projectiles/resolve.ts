@@ -1,6 +1,7 @@
 import { dealAbilityDamage } from '../abilities/apply-actions.ts';
-import { isAlive } from '../combat.ts';
+import { isAlive, isPhased } from '../combat.ts';
 import { DT } from '../constants.ts';
+import { getDefinition } from '../definitions.ts';
 import type { BallState, DefinitionLookup, ProjectileState, SimEvent, Vec2 } from '../types.ts';
 import { addScaled, scale } from '../vec2.ts';
 import type { MinionState } from '../minions/types.ts';
@@ -68,6 +69,8 @@ export function resolveProjectiles(
     for (const ball of current) {
       // Current health, so a ball killed earlier in this phase is not hit again.
       if (ball.id === projectile.ownerId || !isAlive(ball)) continue;
+      // A phased ball lets a shot through, as it does a ball (ADR 0049).
+      if (isPhased(ball, getDefinition(definitions, ball.definitionId))) continue;
       const ballStart = startPositions.get(ball.id) ?? ball.position;
       const s = sweepHitTime(
         subtract(projectile.position, ballStart),

@@ -69,6 +69,33 @@ export const theme = {
   /** Each further status ring sits this much further out than the one inside it. */
   statusRingSpacing: 9,
   /**
+   * The Hex's curse on the ball it marked (ADR 0049): a dark badge on the ball's lower edge, clear
+   * of its health bar, with the Hex's hexagon in pale fuchsia, and a ring outside the ball that
+   * empties as the burst comes. In the last stretch of the fuse it flickers (steady with reduced
+   * motion).
+   */
+  curseRune: '#f0abfc',
+  curseBadge: '#3b0764',
+  curseRingGap: 18,
+  curseRingWidth: 6,
+  /** The badge's radius as a share of the marked ball's. */
+  curseBadgeSize: 0.5,
+  /** Share of the fuse after which the curse flickers, how fast, and how dim it goes. */
+  curseFlickerFrom: 0.8,
+  curseFlickerTicks: 4,
+  curseFlickerDim: 0.45,
+  /**
+   * The Spider's webs (ADR 0049): a fan of pale silk against the wall, under the balls, fading out
+   * over its last webFadeTicks.
+   */
+  web: '#e4e4e7',
+  webAlpha: 0.7,
+  webWidth: 4,
+  webSpokes: 6,
+  /** How far into the court a web reaches, as a share of its half-length along the wall. */
+  webDepth: 0.55,
+  webFadeTicks: 90,
+  /**
    * Ball designs (src/render/ball-designs): flat shapes in the ball's own colour plus one accent
    * per ball, keyed by definition id. White is only for small highlights.
    */
@@ -94,6 +121,8 @@ export const theme = {
     bomber: '#2e0627',
     spartan: '#1c0a02',
     bloom: '#831843',
+    hex: '#3b0764',
+    spider: '#18181b',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -141,7 +170,7 @@ export const theme = {
   magnetPullAlpha: 0.6,
   magnetPullDash: [14, 12] as readonly number[],
   /**
-   * A phased ball (ADR 0026) or a faded Ghost (ADR 0045) is drawn see-through, with a broken
+   * A phased ball (ADR 0026, the Ghost since ADR 0049) is drawn see-through, with a broken
    * outline, so a viewer can see why hits miss it. Its status rings and health bar stay solid.
    */
   phasedAlpha: 0.38,
@@ -206,7 +235,7 @@ export const theme = {
   blastRing: '#fb923c',
   blastRingWidth: 15,
   /**
-   * A hit glancing off a defence (the Spartan's shield, the Ghost's fade, ADR 0045, 0047): a bright
+   * A hit glancing off a defence (the Spartan's shield, the phased Ghost, ADR 0047, 0049): a bright
    * gold ring just outside the ball, already in pieces, flying out and fading.
    */
   glanceRing: '#fde047',

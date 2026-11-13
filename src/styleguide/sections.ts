@@ -7,6 +7,7 @@ import type { StatusKind } from '../sim/status.ts';
 import type { AbilityState, BallState, Vec2 } from '../sim/types.ts';
 import { BATCH_THREE_AND_FOUR } from './sections-late.ts';
 import { BATCH_FIVE } from './sections-batch-5.ts';
+import { BATCH_SIX } from './sections-batch-6.ts';
 import { TICK } from './tick.ts';
 
 export { TICK };
@@ -180,6 +181,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
   ],
   ...BATCH_THREE_AND_FOUR,
   ...BATCH_FIVE,
+  ...BATCH_SIX,
   [
     'Heals (ADR 0028): a green wash and a swelling ring, sized by the heal; any ball',
     [
@@ -228,7 +230,7 @@ export function arenaAbilityState(ball: BallState): BallState['abilityState'] {
     case 'magnet':
       return { nextPullTick: TICK + 100, pullUntilTick: TICK + 10 };
     case 'ghost':
-      return { fadedUntil: TICK + 10, nextFadeTick: TICK + 100 };
+      return { phase: 0, phased: true };
     default:
       return ball.abilityState;
   }

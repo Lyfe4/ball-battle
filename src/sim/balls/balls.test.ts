@@ -27,6 +27,8 @@ import { BOMB_RADIUS, bomber } from './bomber.ts';
 import { bloom } from './bloom.ts';
 import { boomerang } from './boomerang.ts';
 import { spartan } from './spartan.ts';
+import { hex } from './hex.ts';
+import { spider } from './spider.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -62,6 +64,7 @@ describe('the ball roster', () => {
       quake: quake.speed,
       // The pull only steers the enemy; it never changes either ball's speed (ADR 0026).
       magnet: magnet.speed,
+      // Phasing passes through, it never changes speed (ADR 0049).
       ghost: ghost.speed,
       necromancer: necromancer.speed,
       // A rewind puts back a velocity it once had at its own cruise speed (ADR 0034).
@@ -75,6 +78,9 @@ describe('the ball roster', () => {
       // Its planted shield only slows it; its spear is a projectile, swept (ADR 0005).
       spartan: spartan.speed,
       bloom: bloom.speed,
+      hex: hex.speed,
+      // A web slows the ball it catches; it never speeds anyone up (ADR 0049).
+      spider: spider.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {

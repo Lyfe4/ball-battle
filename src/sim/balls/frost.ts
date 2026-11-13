@@ -20,7 +20,7 @@ export const frost = defineBall({
   ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' } },
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
-  maxHealth: 79,
+  maxHealth: 80,
   contactDamage: 22,
   initialAbilityState: {},
   hooks: {
