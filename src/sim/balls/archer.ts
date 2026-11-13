@@ -1,6 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { rotateByHalfTan } from '../bounce-variance.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState, Vec2 } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
 
@@ -76,6 +77,10 @@ export const archer = defineBall<ArcherState>({
   description: 'Leads an arrow every 2 s; frail up close.',
   color: '#22d3ee',
   ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' } },
+  howItWorks: [
+    `Every ${secondsOf(COOLDOWN_TICKS)} s it shoots an arrow at the nearest enemy for ${ARROW_DAMAGE}, aimed where that enemy is heading.`,
+    'Its own bump is weak, so it wins from afar.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 48,

@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 
 export type BloomState = Readonly<{
@@ -40,6 +41,10 @@ export const bloom = defineBall<BloomState>({
   description: 'Always regrowing, but every hit stops it for a second.',
   color: '#f472b6',
   ability: { name: 'Regrowth', shownBy: { kind: 'healed' } },
+  howItWorks: [
+    `It regrows ${HEAL_AMOUNT} health every ${secondsOf(HEAL_EVERY_TICKS)} s, all match long.`,
+    `Every hit it takes, of any kind, stops that for ${secondsOf(PAUSE_TICKS)} s: its petals close.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 49,

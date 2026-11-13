@@ -1,6 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
-import { POISON_INTERVAL_TICKS } from '../status.ts';
+import { secondsOf } from './how-it-works.ts';
+import { POISON_DAMAGE, POISON_INTERVAL_TICKS } from '../status.ts';
 
 /**
  * Every ball Venom touches is poisoned for this long: it takes POISON_DAMAGE of Venom's ability
@@ -21,6 +22,10 @@ export const venom = defineBall({
   description: 'Bumps poison its enemy: a few small hits follow.',
   color: '#84cc16',
   ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' } },
+  howItWorks: [
+    `Its bump poisons: ${POISON_DAMAGE} damage every ${secondsOf(POISON_INTERVAL_TICKS)} s, ${Math.floor(POISON_TICKS / POISON_INTERVAL_TICKS)} times.`,
+    'Each new bump starts the poison again; it never stacks.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 66,

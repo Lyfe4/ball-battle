@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 
 export type QuakeState = Readonly<{ readyTick: number }>;
@@ -31,6 +32,10 @@ export const quake = defineBall<QuakeState>({
   description: 'Every wall hit sends out a small, wide shockwave.',
   color: '#78716c',
   ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
+  howItWorks: [
+    `Every wall bounce sends out a wide shockwave where it hit: ${secondsOf(WARNING_TICKS)} s later, ${ZONE_DAMAGE} to any enemy near it.`,
+    `Then no shockwave for ${secondsOf(COOLDOWN_TICKS)} s.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 70,

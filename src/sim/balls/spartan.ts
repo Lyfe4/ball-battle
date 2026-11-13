@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { percentOf, secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
 
@@ -58,6 +59,10 @@ export const spartan = defineBall<SpartanState>({
   description: 'Plants its shield, then throws its spear.',
   color: '#dc2626',
   ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' } },
+  howItWorks: [
+    `Its rhythm is ${secondsOf(CYCLE_TICKS)} s. For ${secondsOf(SHIELD_TICKS)} s its shield is planted: it moves at ${percentOf(SHIELDED_SPEED)} speed and every hit on it is cut to ${percentOf(SHIELDED_SHARE)}, rounded down.`,
+    `Then it throws its spear where the nearest enemy is, for ${SPEAR_DAMAGE}, and fights in the open.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 730,
   maxHealth: 45,

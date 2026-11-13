@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState, Vec2 } from '../types.ts';
 
 export type NecromancerState = Readonly<{ nextSummonTick: number }>;
@@ -56,6 +57,10 @@ export const necromancer = defineBall<NecromancerState>({
   description: 'Keeps a skeleton out that bites and draws aimed shots.',
   color: '#4d7c0f',
   ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
+  howItWorks: [
+    `Every ${secondsOf(SUMMON_TICKS)} s it raises a skull, up to ${String(MAX_MINIONS)} out at once. A skull bounces around and bites the first enemy it reaches for ${MINION_DAMAGE}.`,
+    `A skull lasts ${secondsOf(MINION_LIFETIME_TICKS)} s. Aimed attacks go for it when it is nearer, and an area hit clears it.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 70,

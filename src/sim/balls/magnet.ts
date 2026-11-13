@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 import { steerToward } from '../steer.ts';
 import { nearestEnemy } from './targeting.ts';
@@ -37,6 +38,10 @@ export const magnet = defineBall<MagnetState>({
   description: 'Every 2 s it pulls its enemy in.',
   color: '#e11d48',
   ability: { name: 'Pull', shownBy: { kind: 'hook', hook: 'onTick' } },
+  howItWorks: [
+    `Every ${secondsOf(PULL_PERIOD_TICKS)} s it pulls the nearest enemy toward it for ${secondsOf(PULL_TICKS)} s.`,
+    'The pull only turns the other ball; it keeps its own speed.',
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
   maxHealth: 68,

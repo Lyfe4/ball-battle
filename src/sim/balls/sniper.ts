@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 import { nearestTarget } from './targeting.ts';
 
@@ -48,6 +49,10 @@ export const sniper = defineBall<SniperState>({
   description: 'Locks on and fires one heavy shot every 2 s.',
   color: '#818cf8',
   ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' } },
+  howItWorks: [
+    `It locks onto where the nearest enemy is, shows a laser for ${secondsOf(CHARGE_TICKS)} s, then fires one shot down it for ${SHOT_DAMAGE}.`,
+    `It doesn’t lead, so a moving ball often slips off the line. One shot about every ${secondsOf(COOLDOWN_TICKS + CHARGE_TICKS)} s.`,
+  ],
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 78,
