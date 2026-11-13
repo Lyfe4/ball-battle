@@ -56,6 +56,19 @@ export function heldFrameMs(clock: PresentationClock, frameMs: number, floorMs: 
 }
 
 /**
+ * A held playback (ADR 0037) with its effect time put exactly where the hold stops it, once the
+ * pop-in has played: `introMs - floorMs`, since a held match starts at effect time 0 with its whole
+ * intro to play. Frames reach that time only within rounding (579.9999999999998 for 580, depending
+ * on how the frames fell), which drew a ball at scale 1.0000000000000002, so a few edge pixels of
+ * the same ready moment differed between two showings of it (a reload, ADR 0042). Exact, the same
+ * opening is drawn every time. Presentation time only (ADR 0007).
+ */
+export function settleHold(playback: Playback, introMs: number, floorMs: number): Playback {
+  if (playback.clock.introMs > floorMs) return playback;
+  return { ...playback, effectMs: introMs - floorMs };
+}
+
+/**
  * How far between `previous` and `world` to draw, 0 to 1: the share of the next tick already
  * banked in the accumulator. A finished match draws its final world (1), since no tick follows;
  * during a hit-stop the banked time can exceed a tick, which clamps to the tick just played.
