@@ -68,7 +68,8 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   judges borderline pairs.
 
 CI runs `format:check`, `lint`, `typecheck`, `test` and `build` in one job, `test:slow` in a second,
-`balance:ci` in a third and `test:browsers` in a fourth. All must pass.
+`balance:ci` in a third and `test:browsers` in one job per browser (Chromium, Firefox, WebKit,
+in parallel). All must pass.
 
 ## Architecture rules
 
@@ -153,9 +154,10 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 - Work on a branch and open a pull request; never commit to `main` directly. Once every CI check on
   the pull request passes, merge it yourself with a merge commit (keep the individual commits, no
   squash), then delete the branch. If a check fails, fix it on the branch first: never merge a red
-  pull request. "Every CI check" means the four CI jobs and Netlify's deploy preview. Netlify's
-  header rules, pages changed and redirect rules checks are informational and can stay pending, so
-  don't wait on them (a failure in one is still worth a look).
+  pull request. "Every CI check" means the CI jobs (six, with the browser job split per engine)
+  and Netlify's deploy preview. Netlify's header rules, pages changed and redirect rules checks
+  are informational and can stay pending, so don't wait on them (a failure in one is still worth a
+  look).
 
 ## Conventions
 
