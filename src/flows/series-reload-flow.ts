@@ -127,8 +127,9 @@ async function liveSeries(
   if (first === undefined) throw new Error('No round 1 saved');
   const shared: Shared = { search: framed.win().location.search, round1: [first.a, first.b] };
   buttonIn(framed, 'New series').click();
-  await settle();
-  expect(paramOf(framed, 'step')).toBe('lineup');
+  // The lineup this series came from is an entry behind it, so New series goes Back to it
+  // (history-rules.ts): a history traversal, which lands when the browser gets to it.
+  await waitFor(() => paramOf(framed, 'step') === 'lineup', 15_000, 'New series to land');
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
   return shared;

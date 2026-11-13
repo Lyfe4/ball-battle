@@ -7,21 +7,13 @@ import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { pressFight, settle, visible } from './page-support.ts';
+import { changes, pressFight, settle, visible } from './page-support.ts';
 
 const canvas = () => document.getElementById('arena') as HTMLCanvasElement;
 const frame = () => canvas().toDataURL();
 
-/** True when the court's picture changes within `ms`. */
-async function courtMoves(ms: number): Promise<boolean> {
-  const before = frame();
-  const end = Date.now() + ms;
-  while (Date.now() < end) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    if (frame() !== before) return true;
-  }
-  return false;
-}
+/** True when the court's picture changes within `ms` (and real frames, page-support.ts). */
+const courtMoves = (ms: number) => changes(frame, ms);
 
 describe('settings over the court', () => {
   it('hold the match while open and let it carry on when closed', async () => {

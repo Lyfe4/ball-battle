@@ -192,7 +192,9 @@ export async function runConsistencyFlow(): Promise<void> {
 
   for (let round = 1; ; round += 1) {
     await checkReady(`series round ${String(round)}`);
-    if (phase() === 'playing') await checkSettings(`series round ${String(round)} fight`, true);
+    if (phase() === 'playing') {
+      await checkSettings(`series round ${String(round)} fight`, () => phase() === 'playing');
+    }
     await until(() => phase() !== 'playing', 90_000);
     await settle();
     const finished = phase() === 'finished';
@@ -219,7 +221,7 @@ export async function runConsistencyFlow(): Promise<void> {
   await checkSettings('Free play setup');
   await click(button('Start match'));
   await checkReady('Free play');
-  await checkSettings('Free play fight', true);
+  await checkSettings('Free play fight', () => visible('.match-story').length === 0);
   await until(() => visible('.match-story').length === 1, 90_000);
   await checkStory('Free play result', /^(?!Round)\S/);
   await checkSettings('Free play result');

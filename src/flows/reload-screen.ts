@@ -4,6 +4,7 @@ import { expect } from 'vitest';
 import { loadSeries } from '../app/series-save.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { formatOf, remainingOf } from '../sim/series.ts';
+import { frames } from './page-support.ts';
 import { paramOf, reload, shown, type Framed } from './reload-support.ts';
 
 export const storage = () => window.localStorage;
@@ -48,11 +49,16 @@ export function screenOf(framed: Framed, court: boolean): Screen {
   };
 }
 
-/** Waits for the screen to stop changing (the ready moment's pop-in, a layout settling). */
+/**
+ * Waits for the screen to stop changing (the ready moment's pop-in, a layout settling): the same
+ * twice, 400 ms and at least two drawn frames apart. Frames, not only time: a loaded browser can
+ * draw nothing for 400 ms, and the court mid-pop-in would then pass for settled.
+ */
 export async function steady(framed: Framed, court: boolean): Promise<Screen> {
   let last = screenOf(framed, court);
   for (let tries = 0; tries < 40; tries += 1) {
     await wait(400);
+    await frames(2, framed.win());
     const now = screenOf(framed, court);
     if (JSON.stringify(now) === JSON.stringify(last)) return now;
     last = now;
