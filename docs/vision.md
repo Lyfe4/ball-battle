@@ -245,3 +245,14 @@ on the same tick, and equal raw contact damage.
 - Rejected for now: a wider sim tiebreak for every same-tick mutual knockout (would resolve
   80-95% of mirror draws but changes the sim), and seeded cooldown offsets (only fixes the Archer
   and Storm pattern).
+
+### Quiet stretches: the shrinking arena and Ghost phasing are dropped (2026-11-12)
+
+- **Measured in prototypes, recorded in `docs/quiet-stretches-experiment.md`.** A shrinking
+  arena cuts late quiet stretches but not the largest source (the first seconds of a fight), and
+  moves 23 pairs by 8+ points (the Bloom 49.8% to 40.2%). Ghost phasing drops the Ghost from 45.4%
+  to 35.1%, and the health that restores it breaks the Brawler's pinned edge over the Ghost. Both
+  dropped, as are the face-off charge and a wider wall turn.
+- **Kept: the lane fix** (`proto/contact-A`: no bounce leaves within 10° of the wall's
+  perpendicular). It drops the Storm from 51.5% to 47.3% and puts Storm vs Chrono at 21.6/78.4, so
+  it ships with the next balance change, in the same retune as a Storm buff.
