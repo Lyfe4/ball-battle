@@ -4,11 +4,14 @@ import { getDefinition } from '../sim/definitions.ts';
 import { step } from '../sim/step.ts';
 import type { SimEvent, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
+import { introLook } from '../render/motion.ts';
+import { theme } from '../render/theme.ts';
 import { TICK_MS } from './fixed-step.ts';
 import {
   advanceFrame,
   heldFrameMs,
   interpolationAlpha,
+  settleHold,
   startPlayback,
   type PlayedTick,
   type TickFeel,
@@ -174,6 +177,36 @@ describe('playback', () => {
 });
 
 describe('the ready moment', () => {
+  it('stops at exactly the same effect time however the frames fell, so it is drawn the same', () => {
+    // The game's own intro: the second ball's pop-in ends exactly where the hold stops time.
+    const floor = theme.introMs - theme.introStaggerMs - theme.introPopMs;
+    const start = matchWorld('chrono', 'storm', 3);
+    let seed = 7;
+    const next = () => {
+      seed = (seed * 48271) % 2147483647;
+      return seed / 2147483647;
+    };
+    const looks = new Set<string>();
+    for (let run = 0; run < 200; run += 1) {
+      let playback = startPlayback(start, theme.introMs);
+      while (playback.clock.introMs > floor) {
+        // Frames near 60 Hz, now and then a long one, as a loaded browser gives them.
+        const frameMs = 16 + next() * 2 + (next() < 0.1 ? next() * 200 : 0);
+        const outcome = advanceFrame(
+          playback,
+          heldFrameMs(playback.clock, frameMs, floor),
+          stepWorld,
+          () => ({ hitStopMs: 0 }),
+        );
+        playback = settleHold(outcome.playback, theme.introMs, floor);
+      }
+      looks.add(JSON.stringify([playback.effectMs, introLook(1, playback.effectMs, false)]));
+    }
+    expect([...looks]).toStrictEqual([
+      JSON.stringify([theme.introStaggerMs + theme.introPopMs, { scale: 1, alpha: 1 }]),
+    ]);
+  });
+
   it('plays the intro up to its floor, then runs no tick however long it is held', () => {
     const start = matchWorld('chrono', 'storm', 3);
     const floor = 500;

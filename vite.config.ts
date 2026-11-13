@@ -27,6 +27,14 @@ const pressAt: BrowserCommand<[x: number, y: number, touch: boolean]> = async (
 };
 
 /**
+ * Firefox headless draws about 180 frames a second where Chromium and WebKit draw 60, so each
+ * Firefox page ran the arena three times as often as the others and was the busiest page on a
+ * loaded machine: its clicks then waited behind its own frames, past their timeout. A 60 Hz
+ * screen, as the other engines have (the game itself plays the same at any refresh rate).
+ */
+const launchOptions = { firefoxUserPrefs: { 'layout.frame_rate': 60 } };
+
+/**
  * A touch phone project (ADR 0037, 0039): a context with touch at a fixed phone size, and a `tap`
  * command that taps like a finger (Playwright's own tap, which sends touch events and lets the
  * browser make the pointer events and click from them).
@@ -44,7 +52,7 @@ function phoneProject(
       include: [`src/**/*.${suffix}.browser.test.ts`],
       browser: {
         enabled: true,
-        provider: playwright({ contextOptions: { hasTouch: true } }),
+        provider: playwright({ launchOptions, contextOptions: { hasTouch: true } }),
         headless: true,
         screenshotFailures: false,
         viewport: { width, height },
@@ -109,7 +117,7 @@ export default defineConfig({
           setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
-            provider: playwright(),
+            provider: playwright({ launchOptions }),
             headless: true,
             // There is no page to see: a failure is a list of matches, not a screenshot.
             screenshotFailures: false,
@@ -129,7 +137,7 @@ export default defineConfig({
           setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
-            provider: playwright(),
+            provider: playwright({ launchOptions }),
             headless: true,
             screenshotFailures: false,
             viewport: { width: 1280, height: 800 },
@@ -148,7 +156,7 @@ export default defineConfig({
           setupFiles: [BROWSER_SETUP],
           browser: {
             enabled: true,
-            provider: playwright(),
+            provider: playwright({ launchOptions }),
             headless: true,
             screenshotFailures: false,
             viewport: { width: 1920, height: 1080 },

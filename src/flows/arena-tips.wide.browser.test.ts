@@ -13,10 +13,9 @@ import {
   TIPS_STORAGE_KEY,
 } from '../app/tips.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { button, settle, until, visible } from './page-support.ts';
+import { atRest, button, changes, settle, until, visible } from './page-support.ts';
 
 const canvasNow = () => document.querySelector('canvas')?.toDataURL() ?? '';
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('tips in the arena', () => {
   it('holds a new pairing on its ready card, hints once, and tells how it was won', async () => {
@@ -45,18 +44,17 @@ describe('tips in the arena', () => {
     expect(card?.querySelector('.ready-reason')?.textContent).toMatch(/^What to watch: \S/);
     expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('chrono|venom');
 
-    // Held: nothing moves, however long the player reads.
-    await wait(900);
-    const held = canvasNow();
-    await wait(900);
-    expect(canvasNow()).toBe(held);
+    // Held: once both balls have popped in, nothing moves, however long the player reads. The
+    // pop-in is waited out in drawn frames, not a fixed time: a loaded browser can take longer
+    // than any guess to draw it, and a picture taken mid-pop-in would then rightly change.
+    await atRest(canvasNow);
+    expect(await changes(canvasNow, 1800)).toBe(false);
     expect(visible('.ability-hint')).toHaveLength(0);
 
     button('Fight!').click();
     await settle();
     expect(visible('.ready-card')).toHaveLength(0);
-    await wait(900);
-    expect(canvasNow()).not.toBe(held);
+    expect(await changes(canvasNow, 900)).toBe(true);
 
     // The first poisoning shows the Venom's hint, and the device remembers it.
     await until(() => visible('.ability-hint')[0]?.textContent === 'Poison!', 20_000, false);
@@ -81,9 +79,7 @@ describe('tips in the arena', () => {
     button('Start match').click();
     await settle();
     expect(visible('.ready-card')).toHaveLength(0);
-    const first = canvasNow();
-    await wait(1600);
-    expect(canvasNow()).not.toBe(first);
+    expect(await changes(canvasNow, 1600)).toBe(true);
 
     // Cards off (the settings' switch, ADR 0040): a new pairing shows no card either.
     button('Change balls').click();

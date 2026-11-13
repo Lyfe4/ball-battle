@@ -4,7 +4,7 @@
 // match is paused while it covers it and resumes on close.
 import { expect } from 'vitest';
 import { commands, userEvent } from 'vitest/browser';
-import { settle, visible } from './page-support.ts';
+import { changes, settle, visible } from './page-support.ts';
 import { notePanelLook } from './look-checks.ts';
 
 declare module 'vitest/browser' {
@@ -63,22 +63,12 @@ const overlaps = (a: DOMRect, b: DOMRect) =>
 
 const frameOf = () => (document.getElementById('arena') as HTMLCanvasElement | null)?.toDataURL();
 
-/** True when the court's picture changes within `ms`. */
-async function courtMoves(ms: number): Promise<boolean> {
-  const before = frameOf();
-  const end = Date.now() + ms;
-  while (Date.now() < end) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    if (frameOf() !== before) return true;
-  }
-  return false;
-}
-
 /**
- * The gear on screen, opened and closed every way. `fight` is set mid-fight: then the menu must
- * keep off the court, or the match must stand still while it covers it and move again on close.
+ * The gear on screen, opened and closed every way. `playing` is given mid-fight, true while the
+ * match is still undecided: then the menu must keep off the court, or the match must stand still
+ * while it covers it and play on when it closes.
  */
-export async function checkSettings(where: string, fight = false): Promise<void> {
+export async function checkSettings(where: string, playing?: () => boolean): Promise<void> {
   const gears = visible('.settings-toggle');
   expect(gears, where).toHaveLength(1);
   const [gear] = gears;
@@ -107,19 +97,25 @@ export async function checkSettings(where: string, fight = false): Promise<void>
     // On a desktop the menu sits over the side panel, never the court.
     if (window.matchMedia(DESKTOP).matches)
       expect({ where, covers }).toStrictEqual({ where, covers: false });
-    if (fight) {
-      // Covering the court pauses the match; clear of it, the match plays on.
-      expect({ where, covers, moves: await courtMoves(covers ? 700 : 3000) }).toStrictEqual({
+    if (playing !== undefined) {
+      // Covering the court pauses the match. Clear of it, the match plays on: the court moves, or
+      // the match has gone on to its end (a finished court rightly stands still).
+      const moves = await changes(frameOf, covers ? 700 : 3000);
+      expect({ where, covers, playsOn: moves || (!covers && !playing()) }).toStrictEqual({
         where,
         covers,
-        moves: !covers,
+        playsOn: !covers,
       });
     }
   }
   await click(gear);
   expect(isOpen(), where).toBe(false);
-  if (fight && court !== undefined) {
-    expect({ where, resumed: await courtMoves(3000) }).toStrictEqual({ where, resumed: true });
+  if (playing !== undefined && court !== undefined) {
+    // Closed, the match plays on: the court moves, or the match has gone on to its end since. A
+    // match held by the menu would do neither. (Free play starts on a random seed, and a short
+    // fight at 2x can end while a loaded browser works through the clicks.)
+    const resumed = (await changes(frameOf, 3000)) || !playing();
+    expect({ where, resumed }).toStrictEqual({ where, resumed: true });
   }
 
   await click(gear);

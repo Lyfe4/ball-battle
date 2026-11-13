@@ -111,6 +111,9 @@ describe('the Best of 3 result screen', () => {
     await open(link);
     await playToResult();
     await browserPage.getByRole('button', { name: 'New series' }).click();
+    // New series may go Back to the lineup entry (history-rules.ts), which lands when the browser
+    // gets to it, not within a fixed time.
+    await until(() => new URL(location.href).searchParams.get('step') === 'lineup', 15_000, false);
     await settle();
     const url = new URL(location.href).searchParams;
     expect(url.get('step')).toBe('lineup');

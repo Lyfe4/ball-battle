@@ -9,7 +9,7 @@ import page from '../../index.html?raw';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, READY_SEEN_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
-import { button, settle, until, visible } from './page-support.ts';
+import { atRest, button, frames, settle, until, visible } from './page-support.ts';
 
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
@@ -39,10 +39,17 @@ function availableWidth(): number {
 let fighting: () => boolean = () => true;
 let foughtChecks = 0;
 
-/** The court, once laid out (it is sized a frame after a change), within 2 px of its full width. */
+/**
+ * The court, once laid out, within 2 px of its full width. It is sized by a ResizeObserver a frame
+ * after a change, so it is measured once real frames have passed and it holds still across them,
+ * not after a fixed time a loaded browser may spend drawing nothing.
+ */
 async function checkCourt(where: string): Promise<void> {
   await wait(300);
-  const court = document.getElementById('arena')?.getBoundingClientRect();
+  await frames(2);
+  const courtBox = () => document.getElementById('arena')?.getBoundingClientRect();
+  await atRest(() => `${String(courtBox()?.width)} of ${String(availableWidth())}`);
+  const court = courtBox();
   if (court === undefined) throw new Error('No court');
   const full = availableWidth();
   if (!fighting()) return;
@@ -62,14 +69,14 @@ function checkFits(where: string): void {
     ...visible('.hud-ball'),
     visible('#hud-speed')[0],
   ];
-  expect(
-    parts.filter((part) => part !== null && part !== undefined),
-    where,
-  ).toHaveLength(4);
+  const shown = parts.filter((part) => part !== null && part !== undefined).length;
   const outside = parts
     .map((part) => part?.getBoundingClientRect())
     .filter((box) => box !== undefined && (box.top < 0 || box.bottom > window.innerHeight));
+  // Every part is counted only while the fight is on: once a round ends, the speed control and
+  // the health bars rightly make way, and a slow browser can get there mid-check.
   if (!fighting()) return;
+  expect(shown, where).toBe(4);
   expect({ where, outside: outside.length, scrollY: window.scrollY }).toStrictEqual({
     where,
     outside: 0,

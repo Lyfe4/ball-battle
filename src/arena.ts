@@ -5,6 +5,7 @@ import {
   advanceFrame,
   interpolationAlpha,
   heldFrameMs,
+  settleHold,
   startPlayback,
   type Playback,
 } from './app/playback.ts';
@@ -198,7 +199,11 @@ export function createArena(
         (world) => step(world, lookup),
         ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
       );
-      playback = outcome.playback;
+      // Held: stopped at exactly the same moment however the frames fell, so the same opening is
+      // drawn every time it is shown.
+      playback = held
+        ? settleHold(outcome.playback, theme.introMs, READY_FLOOR_MS)
+        : outcome.playback;
       for (const { previous, result } of outcome.ticks) {
         effects.apply(result.events, playback.effectMs);
         rewinds.apply(result.events, playback.effectMs);
