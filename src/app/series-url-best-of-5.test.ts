@@ -5,7 +5,7 @@ import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { botFor } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { setupWithPicks, type Format, type SeriesSetup } from '../sim/series.ts';
-import { playLikeTheGame } from '../sim/test-support.ts';
+import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from '../sim/test-support.ts';
 import { parseRoute } from './route.ts';
 import { parseSeriesParams, writeSeriesModeParams, writeSeriesParams } from './series-url.ts';
 
@@ -36,17 +36,21 @@ const linkOf = (setup: SeriesSetup) => {
 };
 
 describe('series URL, Best of 5', () => {
-  it('round-trips a decided series of each format, as mode=bo5', () => {
-    for (const format of ['blind', 'reveal', 'showdown'] as const) {
-      const setup = decided(format, 7);
-      const params = linkOf(setup);
-      expect(params.get('mode')).toBe('bo5');
-      expect(parseSeriesParams(new URLSearchParams(params.toString()), ids)).toStrictEqual({
-        setup,
-      });
-      expect(parseRoute(params, BALL_LOOKUP)).toMatchObject({ screen: 'series', step: 'play' });
-    }
-  });
+  it(
+    'round-trips a decided series of each format, as mode=bo5',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      for (const format of ['blind', 'reveal', 'showdown'] as const) {
+        const setup = decided(format, 7);
+        const params = linkOf(setup);
+        expect(params.get('mode')).toBe('bo5');
+        expect(parseSeriesParams(new URLSearchParams(params.toString()), ids)).toStrictEqual({
+          setup,
+        });
+        expect(parseRoute(params, BALL_LOOKUP)).toMatchObject({ screen: 'series', step: 'play' });
+      }
+    },
+  );
 
   it('writes a Best of 3 link exactly as before: mode=bo3 and no length', () => {
     const params = new URLSearchParams();

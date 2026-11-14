@@ -4,7 +4,7 @@ import { BOT_LEVELS, randomBot } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { revealFirst, setupWithPicks, type Format, type SeriesSetup } from './series.ts';
 import { playSeries, verifySeries } from './series-verify.ts';
-import { playLikeTheGame } from './test-support.ts';
+import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from './test-support.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 
@@ -27,21 +27,25 @@ const reasonOf = (setup: SeriesSetup) => {
 };
 
 describe('verifySeries', () => {
-  it('accepts every series the game plays, in every format, with the state the game reached', () => {
-    for (const format of ['blind', 'reveal', 'showdown'] as const) {
-      for (const bot of [randomBot, ...BOT_LEVELS]) {
-        // Seeds 1-4 give Reveal's toss to the bot, 5 and 6 to the player. Each level plays one of
-        // each, which keeps the test inside its time limit on a busy runner.
-        const seeds = bot === randomBot ? [1, 2, 3, 5, 6] : [2, 5];
-        for (const seed of seeds) {
-          const setup = decided(format, seed, bot.id);
-          const verdict = verifySeries(setup, BALL_LOOKUP);
-          expect(verdict.ok, `${format} ${bot.id} ${String(seed)}`).toBe(true);
-          expect(verdict.ok && verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
+  it(
+    'accepts every series the game plays, in every format, with the state the game reached',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      for (const format of ['blind', 'reveal', 'showdown'] as const) {
+        for (const bot of [randomBot, ...BOT_LEVELS]) {
+          // Seeds 1-4 give Reveal's toss to the bot, 5 and 6 to the player. Each level plays one of
+          // each, which keeps the test inside its time limit on a busy runner.
+          const seeds = bot === randomBot ? [1, 2, 3, 5, 6] : [2, 5];
+          for (const seed of seeds) {
+            const setup = decided(format, seed, bot.id);
+            const verdict = verifySeries(setup, BALL_LOOKUP);
+            expect(verdict.ok, `${format} ${bot.id} ${String(seed)}`).toBe(true);
+            expect(verdict.ok && verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
+          }
         }
       }
-    }
-  });
+    },
+  );
 
   it('replays Reveal’s coin toss from the seed, and refuses picks in the other turn order', () => {
     for (const [seed, first] of [
@@ -82,7 +86,7 @@ describe('verifySeries', () => {
     );
   });
 
-  it('refuses a bot pick the bot would not make', () => {
+  it('refuses a bot pick the bot would not make', { timeout: WHOLE_RUN_TIMEOUT_MS }, () => {
     const reveal = decided('reveal', 1);
     const [shown = '', ...rest] = reveal.picks ?? [];
     const otherBall = reveal.b.find((id) => id !== shown) ?? '';

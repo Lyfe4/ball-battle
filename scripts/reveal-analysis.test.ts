@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WHOLE_RUN_TIMEOUT_MS } from '../src/sim/test-support.ts';
 import { BALLS } from '../src/sim/balls/index.ts';
 import { randomBot } from '../src/sim/bot.ts';
 import {
@@ -38,31 +39,39 @@ describe('reveal analysis', () => {
     }
   });
 
-  it('makes the player’s choices change their odds when the sides take turns', () => {
-    let moved = 0;
-    for (const [you, bot] of sample) {
-      const { best, worst } = takeTurns(you, bot, mapOdds);
-      expect(best).toBeGreaterThanOrEqual(worst);
-      if (best - worst >= 0.03) moved++;
-    }
-    // Four fifths again once group 4 gave every ball counters both ways (ADR 0045).
-    expect(moved / sample.length).toBeGreaterThan(0.8);
-  });
+  it(
+    'makes the player’s choices change their odds when the sides take turns',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      let moved = 0;
+      for (const [you, bot] of sample) {
+        const { best, worst } = takeTurns(you, bot, mapOdds);
+        expect(best).toBeGreaterThanOrEqual(worst);
+        if (best - worst >= 0.03) moved++;
+      }
+      // Four fifths again once group 4 gave every ball counters both ways (ADR 0045).
+      expect(moved / sample.length).toBeGreaterThan(0.8);
+    },
+  );
 
-  it('makes the player’s choices count whoever wins the toss, and averages the two', () => {
-    let moved = 0;
-    for (const [you, bot] of sample) {
-      const first = playerFirst(you, bot, mapOdds);
-      expect(first.best).toBeGreaterThanOrEqual(first.worst);
-      if (first.best - first.worst >= 0.03) moved++;
-      const toss = coinToss(you, bot, mapOdds);
-      const second = takeTurns(you, bot, mapOdds);
-      expect(toss.best).toBeCloseTo((first.best + second.best) / 2, 12);
-      expect(toss.worst).toBeCloseTo((first.worst + second.worst) / 2, 12);
-    }
-    // Four fifths again once group 4 gave every ball counters both ways (ADR 0045).
-    expect(moved / sample.length).toBeGreaterThan(0.8);
-  });
+  it(
+    'makes the player’s choices count whoever wins the toss, and averages the two',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      let moved = 0;
+      for (const [you, bot] of sample) {
+        const first = playerFirst(you, bot, mapOdds);
+        expect(first.best).toBeGreaterThanOrEqual(first.worst);
+        if (first.best - first.worst >= 0.03) moved++;
+        const toss = coinToss(you, bot, mapOdds);
+        const second = takeTurns(you, bot, mapOdds);
+        expect(toss.best).toBeCloseTo((first.best + second.best) / 2, 12);
+        expect(toss.worst).toBeCloseTo((first.worst + second.worst) / 2, 12);
+      }
+      // Four fifths again once group 4 gave every ball counters both ways (ADR 0045).
+      expect(moved / sample.length).toBeGreaterThan(0.8);
+    },
+  );
 
   it('gives a player who shows first and plays perfectly against even odds exactly half', () => {
     const even = () => 0.5;
@@ -70,21 +79,31 @@ describe('reveal analysis', () => {
     expect(playerFirst(you, bot, even)).toStrictEqual({ best: 0.5, worst: 0.5 });
   });
 
-  it('models the bot’s round-2 answer the way the bot makes it', () => {
-    for (const shown of roster) {
-      for (const x of roster) {
-        for (const y of roster) {
-          if (x === y || x === shown || y === shown) continue;
-          const possible = answers([x, y], shown).map(([id]) => id);
-          for (let seed = 0; seed < 4; seed++) {
-            const view = { format: 'reveal' as const, seed, own: [x, y], opponent: [shown], shown };
-            const answer = { ...view, role: 'answer' as const, wins: 0, losses: 1 };
-            expect(possible).toContain(randomBot.choose({ ...answer, round: 1 }));
-            // Round 1, when the player won the toss and showed first, answers the same way.
-            expect(possible).toContain(randomBot.choose({ ...answer, round: 0, losses: 0 }));
+  it(
+    'models the bot’s round-2 answer the way the bot makes it',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      for (const shown of roster) {
+        for (const x of roster) {
+          for (const y of roster) {
+            if (x === y || x === shown || y === shown) continue;
+            const possible = answers([x, y], shown).map(([id]) => id);
+            for (let seed = 0; seed < 4; seed++) {
+              const view = {
+                format: 'reveal' as const,
+                seed,
+                own: [x, y],
+                opponent: [shown],
+                shown,
+              };
+              const answer = { ...view, role: 'answer' as const, wins: 0, losses: 1 };
+              expect(possible).toContain(randomBot.choose({ ...answer, round: 1 }));
+              // Round 1, when the player won the toss and showed first, answers the same way.
+              expect(possible).toContain(randomBot.choose({ ...answer, round: 0, losses: 0 }));
+            }
           }
         }
       }
-    }
-  });
+    },
+  );
 });

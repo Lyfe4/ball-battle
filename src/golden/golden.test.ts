@@ -20,7 +20,8 @@ describe('the known match results', () => {
     expect(golden.results.map(({ a, b, seed }) => ({ a, b, seed }))).toStrictEqual(GOLDEN_CASES);
   });
 
-  it('are what this engine plays', { timeout: 60_000 }, async () => {
+  // 552 matches: about 10 s in CI, but a loaded Firefox ran past 60 s.
+  it('are what this engine plays', { timeout: 120_000 }, async () => {
     const { results } = await computeGolden();
     expect(
       describeDifferences(golden.results, results),

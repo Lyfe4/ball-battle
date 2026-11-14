@@ -112,3 +112,11 @@ export function playLikeTheGame(setup: SeriesSetup, definitions: DefinitionLooku
     state = recordOutcome(state, outcomeOf(end.match.result, end));
   }
 }
+
+/**
+ * The time budget of a unit test that plays whole series or every pair (a fingerprint, every
+ * format against every bot). Each takes 1-7 s on a quiet machine; Vitest's default 5 s failed them
+ * on a busy one (the pre-commit hook beside other work). Roster-wide tests that play every matchup
+ * for whole matches belong in the slow suite instead (ROSTER_TIMEOUT_MS).
+ */
+export const WHOLE_RUN_TIMEOUT_MS = 60_000;

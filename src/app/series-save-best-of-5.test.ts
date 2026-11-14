@@ -1,6 +1,7 @@
 // A Best of 5 survives a reload (ADR 0042, 0048) exactly as a Best of 3 does, a save from before
 // Best of 5 still restores as a Best of 3, and a save whose length was changed is dropped.
 import { describe, expect, it } from 'vitest';
+import { WHOLE_RUN_TIMEOUT_MS } from '../sim/test-support.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import type { Format } from '../sim/series.ts';
 import {
@@ -56,6 +57,7 @@ describe('a saved Best of 5, reloaded', () => {
   ];
   it.each(formats)(
     'comes back exactly where it was at every position (%s, %s bot)',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
     (format, bot) => {
       const positions = pagePositions(seriesAgainst(format, bot, 4242, FIVE));
       expect(positions.at(-1)?.state.rounds.length).toBeGreaterThanOrEqual(3);
