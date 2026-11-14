@@ -4,7 +4,8 @@
 // opens the full track, so the court keeps the screen.
 import type { SeriesSetup } from '../../sim/series.ts';
 import { element, setText } from '../dom.ts';
-import { aboutLine, aboutParts, SIDE_NAMES } from '../series-text.ts';
+import { aboutLine, aboutParts } from '../series-text.ts';
+import { BOT_SEATS, type Seats } from './seats.ts';
 import { createSettingsToggle } from '../settings-menu.ts';
 import { createSymbolLegend } from '../symbol-legend.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
@@ -31,12 +32,12 @@ export interface SeriesBar {
   /** The legend the ? opens, to place right after the bar. */
   readonly legend: HTMLElement;
   /** `score` while a round is fought; the phone shows it in place of what is played. */
-  show(setup: SeriesSetup, score?: ScoreLine): void;
+  show(setup: SeriesSetup, score?: ScoreLine, seats?: Seats): void;
 }
 
 /** "Round 2 · You 1–0 Bot". */
-export function scoreText({ round, you, bot }: ScoreLine): string {
-  return `Round ${String(round + 1)} · ${SIDE_NAMES.a} ${String(you)}–${String(bot)} ${SIDE_NAMES.b}`;
+export function scoreText({ round, you, bot }: ScoreLine, seats: Seats = BOT_SEATS): string {
+  return `Round ${String(round + 1)} · You ${String(you)}–${String(bot)} ${seats.them}`;
 }
 
 /**
@@ -92,12 +93,12 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
   return {
     element: bar,
     legend: legend.panel,
-    show(setup, line) {
+    show(setup, line, seats = BOT_SEATS) {
       showAbout(about, setup);
       score.hidden = line === undefined;
       if (line === undefined) return;
       // Called every frame: only changed attributes are written.
-      const text = scoreText(line);
+      const text = scoreText(line, seats);
       setText(scoreWords, text);
       setAttribute(score, 'aria-expanded', String(line.open));
       setAttribute(score, 'aria-label', `${text}: the series track`);

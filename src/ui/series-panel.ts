@@ -25,6 +25,7 @@ import {
   type SeriesMoment,
   type SeriesPhase,
 } from './series/series-view.ts';
+import { BOT_SEATS, otherSide } from './series/seats.ts';
 import { betweenLine, finalLine, linkPickLine, playingLine, pickLine } from './series-text.ts';
 
 export interface SeriesActions {
@@ -183,6 +184,8 @@ export function createSeriesPanel(
     },
     update(moment) {
       const { state, current, linkState } = moment;
+      const seats = moment.seats ?? BOT_SEATS;
+      const them = otherSide(seats.you);
       // What shows and which controls, from the pure model: never a screen with no way on.
       const screen = seriesScreenOf(moment);
       const { choice, pairing: pair, actions } = screen;
@@ -200,7 +203,13 @@ export function createSeriesPanel(
           state.setup,
           fought === undefined
             ? undefined
-            : { round: fought, you: score.a, bot: score.b, open: trackOpenFor !== undefined },
+            : {
+                round: fought,
+                you: score[seats.you],
+                bot: score[them],
+                open: trackOpenFor !== undefined,
+              },
+          seats,
         );
       };
       drawBar();
@@ -210,23 +219,32 @@ export function createSeriesPanel(
         last === undefined ? undefined : startOf(last),
         last === undefined ? undefined : `Round ${String(last.round + 1)}`,
         // Whose ball is whose, so even a mirror reads plainly.
-        last === undefined ? undefined : [`your ${nameOf(last.a)}`, `the bot’s ${nameOf(last.b)}`],
+        last === undefined
+          ? undefined
+          : (['a', 'b'] as const).map((side) =>
+              side === seats.you
+                ? `your ${nameOf(last[side])}`
+                : `${seats.their} ${nameOf(last[side])}`,
+            ),
       );
-      track.update(state, trackOf(state, playing ? current : undefined));
+      track.update(state, trackOf(state, playing ? current : undefined, seats.you), seats);
 
       const due = playing || linkState !== undefined ? undefined : awaitingPick(state);
       const upcoming = nextMatch(state);
       const roundsPlayed = state.rounds.length;
 
       // The result headline, at the end only.
-      const { a, b } = scoreOf(state);
+      const totals = scoreOf(state);
+      const won = state.winner === seats.you;
+      const headline = won ? 'You win' : `${seats.them} wins`;
       result.hidden = !finished;
-      result.dataset['winner'] = state.winner ?? '';
-      setText(result, state.winner === 'a' ? 'You win' : 'Bot wins');
-      result.setAttribute(
-        'aria-label',
-        `${state.winner === 'a' ? 'You win' : 'Bot wins'} ${String(a)}–${String(b)}`,
-      );
+      // Styled by who won from the player's side: `a` is always the player's colour.
+      result.dataset['winner'] = state.winner === undefined ? '' : won ? 'a' : 'b';
+      setText(result, headline);
+      const [first, second] = won
+        ? [totals[seats.you], totals[them]]
+        : [totals[them], totals[seats.you]];
+      result.setAttribute('aria-label', `${headline} ${String(first)}–${String(second)}`);
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';
@@ -238,8 +256,8 @@ export function createSeriesPanel(
       banner.element.hidden = !actions.includes('pick');
       picks.element.hidden = !actions.includes('pick');
       if (choice !== undefined) {
-        picks.show(choice);
-        banner.show(choice, toss);
+        picks.show(choice, seats);
+        banner.show(choice, toss, seats);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
@@ -263,11 +281,11 @@ export function createSeriesPanel(
 
       let text = '';
       if (playing && current !== undefined) {
-        text = playingLine(current, nameOf, bestOfOf(state.setup));
-      } else if (finished) text = finalLine(state);
-      else if (due === 'a' && choice !== undefined) {
-        text = pickLine(choice, roundsPlayed, remainingOf(state, 'b'), nameOf, toss?.first);
-      } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf);
+        text = playingLine(current, nameOf, bestOfOf(state.setup), seats);
+      } else if (finished) text = finalLine(state, seats);
+      else if (due === seats.you && choice !== undefined) {
+        text = pickLine(choice, roundsPlayed, remainingOf(state, them), nameOf, toss?.first, seats);
+      } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf, seats);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       setText(status, text);
       return phase;

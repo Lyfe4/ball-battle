@@ -4,12 +4,13 @@ import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { leanOf, matchupTip, type Lean } from '../balls/matchups.ts';
 import { element } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
+import { BOT_SEATS, type Seats } from './seats.ts';
 import type { PickChoice } from './series-view.ts';
 
 export interface PickRows {
   readonly element: HTMLElement;
   /** Shows one row per option; rebuilt only when the choice changes. */
-  show(choice: PickChoice): void;
+  show(choice: PickChoice, seats?: Seats): void;
   /** Focuses the first option. */
   focus(): void;
 }
@@ -40,6 +41,8 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
   rows.setAttribute('role', 'group');
   rows.setAttribute('aria-label', 'Your pick');
   const key = element('p', 'pick-key');
+  /** The other side's edge in the key: "bot’s favoured", or "they’re favoured" for a player. */
+  let theirEdge: HTMLElement | undefined;
   // The rows' names already say each lean in words.
   key.setAttribute('aria-hidden', 'true');
   for (const [index, lean] of KEY_ORDER.entries()) {
@@ -48,12 +51,15 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
     mark.dataset['lean'] = lean;
     markSymbol(mark, lean);
     const item = element('span', 'pick-key-item');
-    item.append(mark, ` ${KEY_WORDS[lean]}`);
+    const words = element('span', '', ` ${KEY_WORDS[lean]}`);
+    if (lean === 'unfavoured') theirEdge = words;
+    item.append(mark, words);
     key.append(item);
   }
   root.append(head, rows, key);
   const nameOf = (id: string) => lookup.get(id)?.name ?? id;
   let shown = '';
+  let seats: Seats = BOT_SEATS;
 
   function icon(id: string, px: number, repeat = false): HTMLCanvasElement {
     const canvas = element('canvas', 'pick-row-icon');
@@ -69,7 +75,7 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
       cell.append(icon(face, HEAD_PX));
       return cell;
     });
-    head.replaceChildren(element('span', 'pick-head-label', 'vs the bot’s'), ...cells);
+    head.replaceChildren(element('span', 'pick-head-label', `vs ${seats.their}`), ...cells);
   }
 
   function row(choice: PickChoice, ball: string): HTMLElement {
@@ -110,10 +116,14 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
 
   return {
     element: root,
-    show(choice) {
-      const next = JSON.stringify(choice);
+    show(choice, shownSeats = BOT_SEATS) {
+      seats = shownSeats;
+      const next = JSON.stringify([choice, seats]);
       if (next === shown) return;
       shown = next;
+      if (theirEdge !== undefined) {
+        theirEdge.textContent = ` ${seats.they === BOT_SEATS.they ? KEY_WORDS.unfavoured : 'they’re favoured'}`;
+      }
       root.style.setProperty('--pick-columns', String(choice.opponents.length));
       // Four or five of the bot's balls (a Best of 5, ADR 0048): the narrower rows (pick-rows.css).
       root.classList.toggle('pick-rows-wide', choice.opponents.length >= WIDE_FROM);

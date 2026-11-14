@@ -4,13 +4,14 @@ import { scoreOf } from '../../sim/series.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element, setText } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
-import { roundLine, scoreLine, SIDE_NAMES } from '../series-text.ts';
+import { roundLine, scoreLine } from '../series-text.ts';
+import { BOT_SEATS, otherSide, type Seats } from './seats.ts';
 import type { TrackCell, TrackColumn } from './series-view.ts';
 
 export interface SeriesTrack {
   readonly element: HTMLElement;
   /** Draws the score and the rounds; cheap when nothing changed (it compares first). */
-  update(state: SeriesState, columns: readonly TrackColumn[]): void;
+  update(state: SeriesState, columns: readonly TrackColumn[], seats?: Seats): void;
 }
 
 const BALL_PX = 30;
@@ -27,9 +28,9 @@ export function createSeriesTrack(lookup: DefinitionLookup): SeriesTrack {
   const root = element('section', 'series-track');
   root.setAttribute('aria-label', 'Series');
   const score = element('p', 'series-track-score');
-  const you = element('span', 'series-track-side', SIDE_NAMES.a);
+  const you = element('span', 'series-track-side', 'You');
   const points = element('span', 'series-track-points');
-  const bot = element('span', 'series-track-side', SIDE_NAMES.b);
+  const bot = element('span', 'series-track-side', BOT_SEATS.them);
   score.append(you, points, bot);
   score.setAttribute('aria-hidden', 'true');
   const grid = element('div', 'series-track-grid');
@@ -65,17 +66,20 @@ export function createSeriesTrack(lookup: DefinitionLookup): SeriesTrack {
   let shown = '';
   return {
     element: root,
-    update(state, columns) {
-      const { a, b } = scoreOf(state);
-      const key = JSON.stringify([a, b, columns]);
+    update(state, columns, seats = BOT_SEATS) {
+      const score = scoreOf(state);
+      const mine = score[seats.you];
+      const theirs = score[otherSide(seats.you)];
+      const key = JSON.stringify([mine, theirs, columns, seats]);
       if (key === shown) return;
       shown = key;
-      setText(points, `${String(a)} – ${String(b)}`);
+      setText(points, `${String(mine)} – ${String(theirs)}`);
+      setText(bot, seats.them);
       // Row by row in a grid of (label + one column per round): headers, You, Bot, markers.
       const rows = [
-        [element('span', 'series-track-label', SIDE_NAMES.a), (c: TrackColumn) => cell(c.you)],
+        [element('span', 'series-track-label', 'You'), (c: TrackColumn) => cell(c.you)],
         [
-          element('span', 'series-track-label', SIDE_NAMES.b),
+          element('span', 'series-track-label', seats.them),
           (c: TrackColumn) => cell(c.bot, c.bot.ball !== undefined && c.bot.ball === c.you.ball),
         ],
       ] as const;
@@ -108,8 +112,8 @@ export function createSeriesTrack(lookup: DefinitionLookup): SeriesTrack {
       );
       grid.style.setProperty('--rounds', String(columns.length));
       spoken.replaceChildren(
-        element('li', '', scoreLine(state)),
-        ...state.rounds.map((record) => element('li', '', roundLine(record, nameOf))),
+        element('li', '', scoreLine(state, seats)),
+        ...state.rounds.map((record) => element('li', '', roundLine(record, nameOf, seats))),
       );
     },
   };

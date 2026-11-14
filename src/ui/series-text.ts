@@ -13,6 +13,7 @@ import {
   type SeriesState,
   type Side,
 } from '../sim/series.ts';
+import { BOT_SEATS, capital, labelOf, theirSide, type Seats } from './series/seats.ts';
 import type { PickChoice } from './series/series-view.ts';
 
 /** Display names by ball id. */
@@ -76,21 +77,35 @@ export function linkPickLine(round: number): string {
   return `Next, round ${String(round + 1)}, with the picks from the link.`;
 }
 
-/** The player shows first; the bot answers from what it has left (Reveal, Showdown). */
-export function showLine(round: number, botLeft: readonly string[], nameOf: NameOf): string {
+/** The player shows first; the other side answers from what it has left (Reveal, Showdown). */
+export function showLine(
+  round: number,
+  botLeft: readonly string[],
+  nameOf: NameOf,
+  seats: Seats = BOT_SEATS,
+): string {
   const left = botLeft.map(nameOf).join(' or ');
-  return `Round ${String(round + 1)}: you show first. Pick your ball; the bot answers with ${left}.`;
+  return `Round ${String(round + 1)}: you show first. Pick your ball; ${seats.they} answers with ${left}.`;
 }
 
 /** Showdown, round 1: both pick at the same time. */
-export function openLine(botLeft: readonly string[], nameOf: NameOf): string {
+export function openLine(
+  botLeft: readonly string[],
+  nameOf: NameOf,
+  seats: Seats = BOT_SEATS,
+): string {
   const left = botLeft.map(nameOf).join(', ');
-  return `Round 1: pick your opener. The bot picks from ${left} at the same time.`;
+  return `Round 1: pick your opener. ${capital(seats.they)} picks from ${left} at the same time.`;
 }
 
-/** The bot showed first; the player answers (Reveal, Showdown). */
-export function answerLine(round: number, shown: string, nameOf: NameOf): string {
-  return `Round ${String(round + 1)}: the bot plays ${nameOf(shown)}. Pick your answer.`;
+/** The other side showed first; the player answers (Reveal, Showdown). */
+export function answerLine(
+  round: number,
+  shown: string,
+  nameOf: NameOf,
+  seats: Seats = BOT_SEATS,
+): string {
+  return `Round ${String(round + 1)}: ${seats.they} plays ${nameOf(shown)}. Pick your answer.`;
 }
 
 /**
@@ -103,17 +118,23 @@ export function pickLine(
   botLeft: readonly string[],
   nameOf: NameOf,
   toss?: Side,
+  seats: Seats = BOT_SEATS,
 ): string {
-  const head = toss === undefined ? '' : `${tossLine(toss)} `;
-  if (choice.facing !== undefined) return head + answerLine(round, choice.facing, nameOf);
+  const head = toss === undefined ? '' : `${tossLine(toss, seats)} `;
+  if (choice.facing !== undefined) return head + answerLine(round, choice.facing, nameOf, seats);
   return (
-    head + (choice.kind === 'open' ? openLine(botLeft, nameOf) : showLine(round, botLeft, nameOf))
+    head +
+    (choice.kind === 'open'
+      ? openLine(botLeft, nameOf, seats)
+      : showLine(round, botLeft, nameOf, seats))
   );
 }
 
 /** Reveal's coin toss (ADR 0029, 0041) in words: who shows first in round 1. */
-export function tossLine(first: Side): string {
-  return first === 'a' ? 'Coin toss: you show first.' : 'Coin toss: the bot shows first.';
+export function tossLine(first: Side, seats: Seats = BOT_SEATS): string {
+  return first === seats.you
+    ? 'Coin toss: you show first.'
+    : `Coin toss: ${seats.they} shows first.`;
 }
 
 /** A pick's prompt as two short sentences: what is happening, then what to do (ADR 0037). */
@@ -126,48 +147,63 @@ export interface BannerText {
  * The pick banner's words. On Reveal's round 1 (`toss`, who won the coin toss) the lead says the
  * toss first, so its result is never a bare "You" or "Bot" (ADR 0041).
  */
-export function bannerText(choice: PickChoice, nameOf: NameOf, toss?: Side): BannerText {
+export function bannerText(
+  choice: PickChoice,
+  nameOf: NameOf,
+  toss?: Side,
+  seats: Seats = BOT_SEATS,
+): BannerText {
+  const them = theirSide(seats);
   if (choice.kind === 'answer' && choice.facing !== undefined) {
-    const plays = `${toss === 'b' ? 'It' : 'The bot'} plays ${nameOf(choice.facing)}.`;
-    const lead = toss === 'b' ? `${tossLine('b')} ${plays}` : plays;
+    // After the toss line has named them, the bot is "It"; a player is "They".
+    const pronoun = seats.they === BOT_SEATS.they ? 'It plays' : 'They play';
+    const subject = toss === them ? pronoun : `${capital(seats.they)} plays`;
+    const plays = `${subject} ${nameOf(choice.facing)}.`;
+    const lead = toss === them ? `${tossLine(them, seats)} ${plays}` : plays;
     return { lead, ask: 'Pick your answer.' };
   }
   if (choice.kind === 'open') {
-    return { lead: 'Pick your opener.', ask: 'The bot picks at the same time.' };
+    return { lead: 'Pick your opener.', ask: `${capital(seats.they)} picks at the same time.` };
   }
   return {
-    lead: toss === 'a' ? tossLine('a') : 'You show first.',
-    ask: 'Pick a ball; the bot answers.',
+    lead: toss === seats.you ? tossLine(seats.you, seats) : 'You show first.',
+    ask: `Pick a ball; ${seats.they} answers.`,
   };
 }
 
 /** "You 1 – 0 Bot". */
-export function scoreLine(state: SeriesState): string {
-  const { a, b } = scoreOf(state);
-  return `${SIDE_NAMES.a} ${String(a)} – ${String(b)} ${SIDE_NAMES.b}`;
+export function scoreLine(state: SeriesState, seats: Seats = BOT_SEATS): string {
+  const score = scoreOf(state);
+  return `You ${String(score[seats.you])} – ${String(score[theirSide(seats)])} ${seats.them}`;
 }
 
 /** One finished round, e.g. "Round 2: your Archer beat the bot's Storm, after 1 draw". */
-export function roundLine(record: RoundRecord, nameOf: NameOf): string {
-  const yours = `your ${nameOf(record.a)}`;
-  const theirs = `the bot’s ${nameOf(record.b)}`;
+export function roundLine(record: RoundRecord, nameOf: NameOf, seats: Seats = BOT_SEATS): string {
+  const yours = `your ${nameOf(record[seats.you])}`;
+  const theirs = `${seats.their} ${nameOf(record[theirSide(seats)])}`;
   const head = `Round ${String(record.round + 1)}: `;
+  const won = record.winner === seats.you;
   if (record.suddenDeath) {
     const draws = `${String(record.outcomes.length)} times`;
-    return `${head}${yours} and ${theirs} drew ${draws}; sudden death went to ${record.winner === 'a' ? 'you' : 'the bot'}`;
+    return `${head}${yours} and ${theirs} drew ${draws}; sudden death went to ${won ? 'you' : seats.they}`;
   }
   const draws = record.outcomes.length - 1;
   const after = draws > 0 ? `, after ${String(draws)} draw${draws > 1 ? 's' : ''}` : '';
-  return record.winner === 'a'
-    ? `${head}${yours} beat ${theirs}${after}`
-    : `${head}${theirs} beat ${yours}${after}`;
+  return won ? `${head}${yours} beat ${theirs}${after}` : `${head}${theirs} beat ${yours}${after}`;
 }
 
 /** The round being played (of the series' `bestOf`): both balls are revealed only now. */
-export function playingLine(match: NextMatch, nameOf: NameOf, bestOf: BestOf = 3): string {
+export function playingLine(
+  match: NextMatch,
+  nameOf: NameOf,
+  bestOf: BestOf = 3,
+  seats: Seats = BOT_SEATS,
+): string {
   const replay =
     match.attempt > 0 ? ` (replay ${String(match.attempt + 1)} of ${String(MAX_ATTEMPTS)})` : '';
-  return `Round ${String(match.round + 1)} of ${String(bestOf)}: your ${nameOf(match.a)} vs the bot’s ${nameOf(match.b)}${replay}`;
+  const mine = nameOf(match[seats.you]);
+  const theirs = nameOf(match[theirSide(seats)]);
+  return `Round ${String(match.round + 1)} of ${String(bestOf)}: your ${mine} vs ${seats.their} ${theirs}${replay}`;
 }
 
 /**
@@ -175,19 +211,31 @@ export function playingLine(match: NextMatch, nameOf: NameOf, bestOf: BestOf = 3
  * the round starts, except in Reveal and Showdown, where both lineups are shown and the round's balls are known
  * (the last round is what each side has left).
  */
-export function betweenLine(state: SeriesState, next: NextMatch, nameOf: NameOf): string {
+export function betweenLine(
+  state: SeriesState,
+  next: NextMatch,
+  nameOf: NameOf,
+  seats: Seats = BOT_SEATS,
+): string {
   if (state.pending.length > 0) {
     return `Round ${String(next.round + 1)} drew. It is replayed on a new seed (play ${String(next.attempt + 1)} of ${String(MAX_ATTEMPTS)}); a third draw goes to sudden death.`;
   }
   const against =
-    formatOf(state.setup) === 'blind' ? 'a hidden ball' : `the bot’s ${nameOf(next.b)}`;
-  return `Next, round ${String(next.round + 1)}: your ${nameOf(next.a)} against ${against}.`;
+    formatOf(state.setup) === 'blind'
+      ? 'a hidden ball'
+      : `${seats.their} ${nameOf(next[theirSide(seats)])}`;
+  return `Next, round ${String(next.round + 1)}: your ${nameOf(next[seats.you])} against ${against}.`;
 }
 
 /** The series result. */
-export function finalLine(state: SeriesState): string {
-  const { a, b } = scoreOf(state);
-  return state.winner === 'a'
-    ? `You win the series ${String(a)}–${String(b)}!`
-    : `The bot wins the series ${String(b)}–${String(a)}.`;
+export function finalLine(state: SeriesState, seats: Seats = BOT_SEATS): string {
+  const score = scoreOf(state);
+  const mine = score[seats.you];
+  const theirs = score[theirSide(seats)];
+  return state.winner === seats.you
+    ? `You win the series ${String(mine)}–${String(theirs)}!`
+    : `${capital(seats.they)} wins the series ${String(theirs)}–${String(mine)}.`;
 }
+
+/** "You" or the other side's label, for a side (the coin's faces, the track's rows). */
+export { labelOf };

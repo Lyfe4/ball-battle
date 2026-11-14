@@ -14,6 +14,7 @@ import {
   type SeriesState,
   type Side,
 } from '../../sim/series.ts';
+import { otherSide, type Seats } from './seats.ts';
 
 /** One side of one round on the track. */
 export interface TrackCell {
@@ -30,6 +31,7 @@ export interface TrackColumn {
   /** Played, the one being played or coming next, or later. */
   readonly when: 'played' | 'now' | 'later';
   readonly you: TrackCell;
+  /** The other side: the bot offline, a player online. */
   readonly bot: TrackCell;
   /** Draws replayed in this round (↻). */
   readonly draws: number;
@@ -49,15 +51,20 @@ const isOpen = (state: SeriesState) => formatOf(state.setup) !== 'blind';
  * bot's lineup stays hidden and the player knows their own order. A bot's pick is only ever here
  * once it is made, so no screen can show a choice the bot hasn't made.
  */
-export function knownNextBall(state: SeriesState, side: Side): string | undefined {
+export function knownNextBall(state: SeriesState, side: Side, you: Side = 'a'): string | undefined {
   const round = state.rounds.length;
   const left = remainingOf(state, side);
   if (isOpen(state)) return picked(state, round, side) ?? (left.length === 1 ? left[0] : undefined);
-  return side === 'a' ? nextBallOf(state, 'a') : undefined;
+  return side === you ? nextBallOf(state, you) : undefined;
 }
 
 /** Every round of the series as the track shows it: played, now, later (only rounds to play). */
-export function trackOf(state: SeriesState, current: NextMatch | undefined): TrackColumn[] {
+export function trackOf(
+  state: SeriesState,
+  current: NextMatch | undefined,
+  you: Side = 'a',
+): TrackColumn[] {
+  const them = otherSide(you);
   const format = formatOf(state.setup);
   const played = state.rounds.length;
   const total = state.winner === undefined ? bestOfOf(state.setup) : played;
@@ -68,20 +75,20 @@ export function trackOf(state: SeriesState, current: NextMatch | undefined): Tra
       return {
         round,
         when: 'played',
-        you: { ball: record.a, result: result('a') },
-        bot: { ball: record.b, result: result('b') },
+        you: { ball: record[you], result: result(you) },
+        bot: { ball: record[them], result: result(them) },
         draws: record.suddenDeath ? 0 : record.outcomes.length - 1,
         suddenDeath: record.suddenDeath,
       };
     }
     if (round === played) {
       const match = current?.round === round ? current : undefined;
-      const botBall = match?.b ?? knownNextBall(state, 'b');
-      const pool = remainingOf(state, 'b');
+      const botBall = match?.[them] ?? knownNextBall(state, them, you);
+      const pool = remainingOf(state, them);
       return {
         round,
         when: 'now',
-        you: { ...optional(match?.a ?? knownNextBall(state, 'a')) },
+        you: { ...optional(match?.[you] ?? knownNextBall(state, you, you)) },
         bot: botBall === undefined && format !== 'blind' ? { pool } : { ...optional(botBall) },
         draws: state.pending.length,
         suddenDeath: false,
@@ -89,9 +96,9 @@ export function trackOf(state: SeriesState, current: NextMatch | undefined): Tra
     }
     // Later rounds: in a blind series the player's own order is set; everything else is open,
     // except that in Reveal and Showdown the bot's balls not yet in a column wait under the next round.
-    const own = format === 'blind' ? remainingOf(state, 'a')[round - played] : undefined;
-    const nowBall = current?.round === played ? current.b : knownNextBall(state, 'b');
-    const waiting = remainingOf(state, 'b').filter((id) => id !== nowBall);
+    const own = format === 'blind' ? remainingOf(state, you)[round - played] : undefined;
+    const nowBall = current?.round === played ? current[them] : knownNextBall(state, them, you);
+    const waiting = remainingOf(state, them).filter((id) => id !== nowBall);
     const pool = format !== 'blind' && round === played + 1 && nowBall !== undefined;
     return {
       round,
@@ -125,16 +132,33 @@ export interface PickChoice {
 }
 
 /** The pick the player must make now, if any (a Reveal or Showdown turn). */
-export function pickChoiceOf(state: SeriesState): PickChoice | undefined {
-  if (awaitingPick(state) !== 'a') return undefined;
-  const options = remainingOf(state, 'a');
-  const opponents = remainingOf(state, 'b');
+export function pickChoiceOf(
+  state: SeriesState,
+  you: Side = 'a',
+  due: readonly Side[] = dueOf(state),
+): PickChoice | undefined {
+  if (
+    !due.includes(you) ||
+    state.picks.some((p) => p.round === state.rounds.length && p.side === you)
+  ) {
+    return undefined;
+  }
+  const options = remainingOf(state, you);
+  const opponents = remainingOf(state, otherSide(you));
   const round = state.rounds.length;
-  const facing = picked(state, round, 'b');
+  if (formatOf(state.setup) === 'showdown' && round === 0) {
+    return { kind: 'open', options, opponents };
+  }
+  const facing = picked(state, round, otherSide(you));
   if (facing !== undefined) return { kind: 'answer', facing, options, opponents };
-  const opening = formatOf(state.setup) === 'showdown' && round === 0;
-  return { kind: opening ? 'open' : 'show', options, opponents };
+  return { kind: 'show', options, opponents };
 }
+
+/** Who must pick now, by the series' own rules: the sim's awaitingPick (a series on this device). */
+const dueOf = (state: SeriesState): readonly Side[] => {
+  const due = awaitingPick(state);
+  return due === undefined ? [] : [due];
+};
 
 /** The coming round when nothing is asked of the player: its balls as far as the player knows. */
 export interface Pairing {
@@ -145,13 +169,18 @@ export interface Pairing {
   readonly attempt: number;
 }
 
-export function pairingOf(state: SeriesState): Pairing | undefined {
-  if (state.winner !== undefined || awaitingPick(state) === 'a') return undefined;
+export function pairingOf(
+  state: SeriesState,
+  you: Side = 'a',
+  due: readonly Side[] = dueOf(state),
+): Pairing | undefined {
+  const them = otherSide(you);
+  if (state.winner !== undefined || due.includes(you)) return undefined;
   const next = nextMatch(state);
   return {
     round: state.rounds.length,
-    you: next?.a ?? knownNextBall(state, 'a'),
-    bot: knownNextBall(state, 'b') ?? (isOpen(state) ? next?.b : undefined),
+    you: next?.[you] ?? knownNextBall(state, you, you),
+    bot: knownNextBall(state, them, you) ?? (isOpen(state) ? next?.[them] : undefined),
     attempt: next?.attempt ?? 0,
   };
 }
@@ -191,6 +220,13 @@ export interface SeriesMoment {
    * are made when the next round is played). Undefined when no link pick is due.
    */
   readonly linkState: SeriesState | undefined;
+  /** Who the player is, and the other side's name: the bot offline (`BOT_SEATS`). */
+  readonly seats?: Seats;
+  /**
+   * Who must pick now, when a server says so (an online series, ADR 0052): Showdown's opener is
+   * due from both sides at once, which the sim records A first. Offline it is the sim's own.
+   */
+  readonly due?: readonly Side[];
 }
 
 export interface SeriesScreen {
@@ -207,7 +243,15 @@ export interface SeriesScreen {
 }
 
 /** What a series screen shows and offers at this moment; the panel renders exactly this. */
-export function seriesScreenOf({ state, current, settled, linkState }: SeriesMoment): SeriesScreen {
+export function seriesScreenOf({
+  state,
+  current,
+  settled,
+  linkState,
+  seats,
+  due,
+}: SeriesMoment): SeriesScreen {
+  const you = seats?.you ?? 'a';
   const playing = current !== undefined && !settled;
   const finished = state.winner !== undefined && !playing;
   const phase: SeriesPhase = playing ? 'playing' : finished ? 'finished' : 'between';
@@ -220,9 +264,9 @@ export function seriesScreenOf({ state, current, settled, linkState }: SeriesMom
     };
   }
   // A link's due pick is the link's to make, so the player isn't asked for it: Play round makes it.
-  const choice = linkState === undefined ? pickChoiceOf(state) : undefined;
+  const choice = linkState === undefined ? pickChoiceOf(state, you, due) : undefined;
   // The round Play round leads to: after the link's due picks, when it holds them.
-  const pairing = choice === undefined ? pairingOf(linkState ?? state) : undefined;
+  const pairing = choice === undefined ? pairingOf(linkState ?? state, you, due) : undefined;
   return {
     phase,
     choice,
