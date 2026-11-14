@@ -36,6 +36,7 @@ import {
 
 import {
   checkBotHidden,
+  comesBackTo,
   fightShown,
   reloadsTo,
   steady,
@@ -112,7 +113,7 @@ async function liveSeries(
       await reloadsTo(framed, `${where} held`, false);
       buttonIn(framed, 'Resume series').click();
       await settle();
-      expect({ where, ...(await steady(framed, false)) }).toStrictEqual({ where, ...between });
+      await comesBackTo(framed, `${where} resumed`, false, between);
     }
     const pick = shown(framed, '#series .pick-row-pick')[0];
     if (pick !== undefined) pick.click();

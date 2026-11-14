@@ -13,7 +13,7 @@ import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
 import type { Format } from '../sim/series.ts';
 import { settle } from './page-support.ts';
-import { reloadsTo, steady, storage, tapBall, wait } from './reload-screen.ts';
+import { comesBackTo, reloadsTo, steady, storage, tapBall, wait } from './reload-screen.ts';
 import {
   backIn,
   buttonIn,
@@ -153,7 +153,7 @@ async function playOut(framed: Framed, format: Format): Promise<void> {
       });
       buttonIn(framed, 'Resume series').click();
       await settle();
-      expect(await steady(framed, false)).toStrictEqual(between);
+      await comesBackTo(framed, `${where} resumed`, false, between);
     }
     const pick = shown(framed, '#series .pick-row-pick')[0];
     if (pick !== undefined) {

@@ -104,20 +104,32 @@ export async function steady(framed: Framed, court: boolean): Promise<Screen> {
 export async function reloadsTo(framed: Framed, where: string, court: boolean, expected?: Screen) {
   const before = expected ?? (await steady(framed, court));
   await reload(framed);
-  // Long enough for a busy browser: the page puts the series back at once, but "How it was won" is
-  // worked out between frames (match-story-teller.ts), and a loaded engine runs those late. It
-  // returns as soon as the screen matches.
+  await comesBackTo(framed, where, court, before);
+  return before;
+}
+
+/**
+ * Checks the page comes back to `expected` after a reload or a Resume. Long enough for a busy
+ * browser: the page puts the series back at once, but "How it was won" is worked out between
+ * frames (match-story-teller.ts) and a loaded engine runs those late, while a screen still missing
+ * it holds still like a settled one. It returns as soon as the screen matches.
+ */
+export async function comesBackTo(
+  framed: Framed,
+  where: string,
+  court: boolean,
+  expected: Screen,
+): Promise<void> {
   const end = Date.now() + 45_000;
   let after = screenOf(framed, court);
-  while (!sameScreen(after, before) && Date.now() < end) {
+  while (!sameScreen(after, expected) && Date.now() < end) {
     await wait(300);
     after = screenOf(framed, court);
   }
-  expect({ where, ...compared(after, before) }).toStrictEqual({
+  expect({ where, ...compared(after, expected) }).toStrictEqual({
     where,
-    ...compared(before, before),
+    ...compared(expected, expected),
   });
-  return before;
 }
 
 /**
