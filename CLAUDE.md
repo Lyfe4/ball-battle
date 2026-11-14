@@ -147,7 +147,8 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
 `docs/decisions/0045-roster-redesign.md` (the roster redesign, group by group; the design is
 `docs/roster-redesign.md`) and `docs/decisions/0046-reveal-first-home-and-other-modes.md` and
 `docs/decisions/0047-spartan-and-bloom-pause.md` and `docs/decisions/0048-best-of-5.md` and
-`docs/decisions/0049-hex-spider-phasing-ghost.md`.
+`docs/decisions/0049-hex-spider-phasing-ghost.md` and
+`docs/decisions/0050-bloom-patient-regrowth.md`.
 
 ## Workflow
 

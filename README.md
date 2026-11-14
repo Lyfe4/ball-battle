@@ -119,7 +119,7 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.                |
 | Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out. |
 | Spartan     | Plants its shield (half speed, every hit does half) for 2 s, then throws its spear.              |
-| Bloom       | Always regrowing, about four times a second, but every hit it takes stops it for a second.       |
+| Bloom       | Left alone for 2 s, it regrows five health a second; any hit closes it into a bud to wait again. |
 | Hex         | Its bump curses; 3 s later the curse bursts for a quarter of that ball's full health.            |
 | Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.              |
 
@@ -132,7 +132,8 @@ Picks matter: many pairs lean one way. A counter (▲ ▼) is _favoured_, never 
 least 62% of the time and aims for 65-72%, and each one comes from something you can watch happen
 ([ADR 0045](docs/decisions/0045-roster-redesign.md),
 [ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
-[ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md)). No rule exists only where two abilities
+[ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md),
+[ADR 0050](docs/decisions/0050-bloom-patient-regrowth.md)). No rule exists only where two abilities
 meet: every ability works the same on any ball.
 
 - **Bumps against spikes:** Thorns beats the Brawler, Magnet and Titan; the harder a ball bumps,
@@ -149,20 +150,20 @@ meet: every ability works the same on any ball.
 - **Shield and spear:** the Spartan's planted shield halves every hit, whoever deals it, so it
   beats the Vampire and the Hex (a small burst, halved again); it is too slow behind its shield to leave the Storm's circle, and the
   Chrono rewinds its spear.
-- **Regrowth:** the Bloom heals back damage that comes slowly or in pieces (Frost, Berserker,
-  Necromancer, Ghost, Chrono, Hex, Spider), but every hit stops its regrowth for a second, so a stream of small hits
-  (Venom's poison, the Archer's arrows, the Boomerang's two hits a throw) keeps it from regrowing;
-  the grown Titan's huge bumps outpace it.
+- **Regrowth:** the Bloom regrows only after 2 s untouched, so it heals back damage that comes
+  rarely (Frost, Berserker, Ghost, Chrono), but anything that hits it often keeps it a closed bud
+  (Venom's poison, the Archer's arrows, the Boomerang's two hits a throw, the Inferno's fire); the
+  grown Titan's huge bumps outpace it.
 - **Phasing:** for one second in four nothing touches the Ghost, so poison ticks and a curse's
   burst that fall then miss: it beats Venom and the Hex.
 - **The curse:** the Hex's burst is a quarter of the cursed ball's full health, so it beats the
   sturdy balls (Frost, Berserker, Speedster) and the Inferno, whose light bumps barely hurt back;
-  frail balls take small bursts (Vampire, Spartan, Bloom).
+  frail balls take small bursts (Vampire, Spartan).
 - **Webs:** the Spider's webs slow a ball that bounces off them, so it beats the balls that live on
   speed and walls (Speedster, Quake) and the Chrono, which can't rewind a small nip; the Archer and
   Bomber don't need speed.
 - **The skull:** the Necromancer's skeleton draws arrows and throws (Archer, Boomerang); wide
-  shockwaves, fire and regrowth deal with it (Quake, Inferno, Bloom).
+  shockwaves and fire deal with it (Quake, Inferno).
 - **Speed and the slow:** the Speedster outruns arrows, shots and throws (Archer, Sniper,
   Boomerang); the Frost slows it right down and the Bomber's blasts catch it.
 - **One big hit:** the Storm's strike takes most of the Vampire's small health and catches the
@@ -175,7 +176,7 @@ even and counted by `pnpm balance`.
 Every ball has two to four counters each way, the two counts within one, except known gaps for
 future balls to fill (listed in [docs/balance-summary.md](docs/balance-summary.md)): the Storm,
 Titan, Bomber, Sniper and Quake have one counter on a side, the Ghost one loss, the Vampire two
-wins to four losses, the Berserker beats five and the Bloom seven (until its rework). The
+wins to four losses, the Berserker beats five and the Bloom loses to five. The
 **Brawler** and **Magnet** are the even picks: the Brawler beats nobody and loses only to Thorns,
 the Magnet loses only to Thorns.
 

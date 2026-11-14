@@ -75,7 +75,7 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
-Known gaps at ruleset 13 (ADR 0049):
+Known gaps at ruleset 14 (ADR 0049, 0050):
 
 - **Something that beats the Storm, the Titan or the Bomber.** Only the Chrono's rewind blunts a
   big strike or blast, and only Thorns holds the grown Titan. The Storm and Bomber have two wins
@@ -90,22 +90,25 @@ Known gaps at ruleset 13 (ADR 0049):
 - **Fewer wins for the Berserker.** It beats five balls that hit rarely. The Hex (one burst, one
   rage) and the Frost now beat it, so it loses to four (ADR 0049), but it still needs its "up to
   five wins" allowance.
-- **The Bloom beats seven (accepted until its rework, next as its own job).** Its regrowth heals
-  back hits that come in pieces, so it beats both new balls of ADR 0049 and the phasing Ghost as
-  well as the Frost, Berserker, Necromancer and Chrono. Ideas for the rework, each one rule on
-  screen:
-  - **Limited regrowth per fight:** it can regrow only so much in a match, shown by petals falling
-    as the supply runs out, so a long fight wears it down.
-  - **Regrowth only after a longer untouched stretch:** its pause after a hit grows from 1 s to
-    several, so any steady pressure (not only a stream of small hits) stops it.
+- **Five losses for the Bloom (ruleset 14, ADR 0050).** It regrows only after 2 s untouched, so
+  every ball that hits it often wins: the Archer, Boomerang, Inferno, Venom and the grown Titan.
+  It needs an "up to 5 losses" allowance; a ball that hits rarely but hard enough to beat it would
+  take one of those places.
 - **A second loss for the Ghost.** While phased nothing touches it, so a quarter of every kind of
-  hit misses alike and only the Bloom beats it (ADR 0049). A ball whose hit can't be phased through
+  hit misses alike and only the Bloom beats it (ADR 0049, 0050). A ball whose hit can't be phased through
   in time (a lasting area it can't leave, say) would give it a second weakness.
 - **The Brawler beats nobody (accepted).** It is the plain default, the ball to pick knowing
   nothing (ADR 0049).
 - **The Magnet is the candidate to replace.** Its pull is movement too soft to decide a pair, so it
   is an even pick by accident rather than design; a new ball filling one of the gaps above could
   take its slot.
+- **A ball that stuns or silences, built on the ability clock.** The Glitch (its bump switched the
+  other ball's ability off) was parked in ADR 0050: on its own it turns each fight into a plain
+  stat check. Its engine work is kept on `proto/bloom-glitch`: each ball keeps an ability clock
+  (the match tick less the ticks its ability was off), so every cooldown, rhythm and countdown
+  pauses in one place and the renderer draws paused timers paused. A future stun or silence
+  should start from there, with a counter that comes from its own mechanic rather than from
+  removing the other ball's.
 
 Draws matter more in a best-of-3: a round needs a winner, and mirror matches will be common with
 blind picks. See Decisions below.
@@ -246,6 +249,10 @@ blind picks. See Decisions below.
   spear (vs Vampire; the Storm and Chrono over it). The **Bloom**'s regrowth pauses for a second
   after every hit, so it beats balls that hit rarely and loses to streams of small hits (Venom
   over it now, Venom's second win).
+- **The Bloom's patient regrowth** (2026-11-14, ADR 0050): the **Bloom** regrows only after 2 s
+  untouched, then 1 health every 12 ticks, and stays a closed bud while it waits (vs Frost,
+  Berserker, Ghost, Chrono; the Archer, Boomerang, Inferno, Venom and Titan over it). The Titan
+  goes from speed 740 to 750 to keep its one win. The Glitch, measured alongside, is parked.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
