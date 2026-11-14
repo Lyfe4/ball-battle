@@ -1,0 +1,12 @@
+{
+  // The game server (ADR 0052, section 7): Node types, no DOM. It reaches the sim only through
+  // src/sim/index.ts and shares the contract in src/api (ESLint).
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": ["src/server/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

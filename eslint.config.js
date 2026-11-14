@@ -99,8 +99,12 @@ export default defineConfig(
   },
   {
     files: ['src/**/*.ts'],
-    ignores: ['src/sim/**'],
+    ignores: ['src/sim/**', 'src/server/**'],
     languageOptions: { globals: globals.browser },
+  },
+  {
+    files: ['src/server/**/*.ts'],
+    languageOptions: { globals: globals.node },
   },
   {
     files: ['src/sim/**/*.ts'],
