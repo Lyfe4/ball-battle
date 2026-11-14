@@ -79,15 +79,15 @@ these, which `pnpm balance` allows by name and nothing else: gaps for future bal
 
 | Ball      | Wins | Losses | Wins and losses within |
 | --------- | ---: | -----: | ---------------------: |
-| Storm     |  1-4 |    1-4 |                      1 |
+| Storm     |  2-4 |    1-4 |                      1 |
 | Titan     |  1-4 |    1-4 |                      1 |
-| Bomber    |  1-4 |    1-4 |                      1 |
-| Berserker |  2-5 |    2-5 |                      3 |
+| Bomber    |  2-4 |    1-4 |                      1 |
+| Berserker |  2-5 |    2-4 |                      1 |
 | Bloom     |  2-4 |    2-5 |                      1 |
-| Ghost     |  1-4 |    1-4 |                      1 |
-| Sniper    |  1-4 |    1-4 |                      1 |
-| Quake     |  1-4 |    1-4 |                      1 |
-| Vampire   |  1-4 |    1-4 |                      3 |
+| Ghost     |  2-4 |    1-4 |                      1 |
+| Sniper    |  1-4 |    2-4 |                      1 |
+| Quake     |  1-4 |    2-4 |                      1 |
+| Vampire   |  2-4 |    2-4 |                      2 |
 
 ## Below target
 
