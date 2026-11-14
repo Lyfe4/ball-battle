@@ -1,1 +1,3 @@
 * text=auto eol=lf
+# Frozen rulesets are generated once and never edited (ADR 0052): folded in diffs.
+rulesets/** linguist-generated=true
