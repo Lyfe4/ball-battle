@@ -9,6 +9,9 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
+    // Only syntax Node can strip (no enums, namespaces or parameter properties), so a server runs
+    // the sim and scripts with Node's own type stripping (ADR 0051).
+    "erasableSyntaxOnly": true,
 
     "strict": true,
     "noUncheckedIndexedAccess": true,

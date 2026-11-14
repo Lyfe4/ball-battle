@@ -57,7 +57,9 @@ their own, and the browser suite in two jobs per engine (phones, the rest). All 
 1. **`src/sim/` is a pure, deterministic simulation**: no DOM, no `Date`, no `Math.random`, no
    timers, no transcendental `Math` functions or `**` (they differ between engines; `+ - * /` and
    `Math.sqrt` are exact). Enforced by `tsconfig.sim.json` and ESLint. It imports nothing outside
-   `src/sim`: a server runs it on its own (ADR 0001).
+   `src/sim`: a server runs it on its own (ADR 0001). Its public API is `src/sim/index.ts`, bound to
+   this build's roster (`verifySeries(raw)`, `createWorld(seed, a, b)`); `src/api` and `src/server`
+   import only that file, the client never imports `src/server` (ESLint, ADR 0052).
 2. **Fixed timestep**: ticks of exactly `DT = 1 / 60` s. Same inputs + same seed = identical result.
 3. **Randomness only from the seeded PRNG** (`src/sim/rng.ts`), its state in
    `WorldState.rngState`.

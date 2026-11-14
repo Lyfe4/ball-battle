@@ -23,8 +23,8 @@ const reasonOf = (raw: unknown) => {
   const decoded = decodeSeriesSetup(raw, roster);
   return decoded.ok ? 'ok' : decoded.reason;
 };
-const without = (key: string) =>
-  Object.fromEntries(Object.entries(valid).filter(([name]) => name !== key));
+const without = (...keys: string[]) =>
+  Object.fromEntries(Object.entries(valid).filter(([name]) => !keys.includes(name)));
 const botWith = (fields: Record<string, unknown>) => ({
   ...valid,
   opponent: { kind: 'bot', bot: randomBot.id, lineupSeed: 7, ...fields },
@@ -39,6 +39,20 @@ describe('decodeSeriesSetup', () => {
     expect(reasonOf({ ...valid, format: 'blind' })).toBe('ok');
     expect(reasonOf({ ...without('picks'), bestOf: 3 })).toBe('ok');
     expect(reasonOf({ ...valid, opponent: { kind: 'player' } })).toBe('ok');
+  });
+
+  // A series has one stored form (ADR 0051): a default written out and a default left out are the
+  // same series, so they must store and compare alike.
+  it('leaves out a field that only holds its default', () => {
+    const setupOf = (raw: unknown) => {
+      const decoded = decodeSeriesSetup(raw, roster);
+      return decoded.ok ? decoded.setup : decoded.reason;
+    };
+    const plain = without('picks');
+    expect(setupOf({ ...plain, bestOf: 3 })).toStrictEqual(plain);
+    expect(setupOf({ ...plain, picks: [] })).toStrictEqual(plain);
+    const blind = without('format', 'picks');
+    expect(setupOf({ ...blind, format: 'blind', picks: [] })).toStrictEqual(blind);
   });
 
   it('refuses what is not a setup at all', () => {
