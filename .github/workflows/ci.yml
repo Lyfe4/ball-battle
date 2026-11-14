@@ -79,13 +79,17 @@ jobs:
       - run: pnpm balance:ci
 
   browsers:
-    name: Known match results and flows in ${{ matrix.name }}
-    # One job per engine, in parallel: the three ran one after another in a single job, so the
-    # slowest pull request check was their sum.
+    name: Browsers in ${{ matrix.name }} (${{ matrix.part }})
+    # Two jobs per engine, in parallel: each engine's browser projects took 7-8 minutes in one job,
+    # the whole critical path of a pull request. The phone projects (touch, Safari) are one part
+    # and every other browser project the other; they take about the same time. "Everything else"
+    # is written as an exclusion, so a new browser project always runs somewhere.
     strategy:
-      # Every engine reports, so a failure in one shows whether the others pass too.
+      # Every job reports, so a failure in one shows whether the others pass too.
       fail-fast: false
       matrix:
+        browser: [chromium, firefox, webkit]
+        part: [phones, rest]
         include:
           - browser: chromium
             name: Chromium
@@ -96,9 +100,8 @@ jobs:
     # Pinned: Playwright's browser builds follow the OS, and ubuntu-latest moving to 26.04 left the
     # cached WebKit (built for 24.04) without its ICU library. Move it deliberately, not by default.
     runs-on: ubuntu-24.04
-    # The reload flows (ADR 0042) play three whole series per size and engine, which took the
-    # single three-engine job past 10 minutes.
-    timeout-minutes: 20
+    # The reload flows (ADR 0042) play three whole series per size and engine.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -134,7 +137,16 @@ jobs:
         run: pnpm exec playwright install-deps ${{ matrix.browser }}
 
       # The same golden test the unit suite runs in Node, in V8, SpiderMonkey and JavaScriptCore:
-      # every recorded match must end the same way, on the same tick, with the same hash (ADR 0023).
-      # Vitest names each engine's copy of a browser project "<project> (<engine>)", so this runs
-      # every browser project (pnpm test:browsers) in this job's engine only.
-      - run: pnpm exec vitest run --project "browsers* (${{ matrix.browser }})"
+      # every recorded match must end the same way, on the same tick, with the same hash (ADR 0023),
+      # and the flows through the real page. Vitest names each engine's copy of a browser project
+      # "<project> (<engine>)": the part picks projects, the browser filter keeps this engine only.
+      - name: Run the ${{ matrix.part }} part
+        env:
+          ENGINE: ${{ matrix.browser }}
+          PART: ${{ matrix.part }}
+        run: |
+          if [ "$PART" = phones ]; then
+            pnpm exec vitest run --project "browsers-touch ($ENGINE)" --project "browsers-safari ($ENGINE)"
+          else
+            pnpm exec vitest run --project "browsers* ($ENGINE)"               --project "!browsers-touch ($ENGINE)" --project "!browsers-safari ($ENGINE)"
+          fi
