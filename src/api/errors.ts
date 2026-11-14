@@ -1,0 +1,45 @@
+// The API's error shape (ADR 0052, "API conventions"): `{ error: { code, message } }` with the
+// right HTTP status. The client branches on `code`; `message` is for people and logs.
+
+export const ERROR_CODES = [
+  /** This deploy has online play switched off (production, until launch). */
+  'online_off',
+  'not_found',
+  'method_not_allowed',
+  /** A non-GET request from another origin, or without a JSON body (the CSRF check). */
+  'forbidden_origin',
+  'unsupported_media_type',
+  'bad_request',
+  /** No session, or one that can't be refreshed: the player needs to start (or restart) a guest. */
+  'unauthenticated',
+  /** The 16+ confirmation is missing from a guest's first online action. */
+  'age_unconfirmed',
+  'rate_limited',
+  /** A pick that isn't this side's to make now (not its turn, a stale tab, a finished series). */
+  'not_your_turn',
+  'conflict',
+  'challenge_taken',
+  'challenge_expired',
+  'own_challenge',
+  'too_many_series',
+  /** The series names a ruleset whose frozen bundle this server doesn't have. */
+  'ruleset_missing',
+  'internal',
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
+export interface ErrorBody {
+  readonly error: { readonly code: ErrorCode; readonly message: string };
+}
+
+/** The error in a response body, if it is one of ours; anything else is undefined. */
+export function errorOf(body: unknown): ErrorBody['error'] | undefined {
+  if (typeof body !== 'object' || body === null || !('error' in body)) return undefined;
+  const { error } = body;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const { code, message } = error as Record<string, unknown>;
+  if (typeof message !== 'string') return undefined;
+  const known = ERROR_CODES.find((candidate) => candidate === code);
+  return known === undefined ? undefined : { code: known, message };
+}

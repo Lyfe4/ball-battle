@@ -80,6 +80,30 @@ jobs:
       # it can't flake. A full `pnpm balance` (500 seeds) still judges borderline pairs.
       - run: pnpm balance:ci
 
+  database:
+    name: API against a local Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # Postgres, Auth and the gateway in Docker, with supabase/migrations and supabase/seed.sql
+      # applied (ADR 0052, "Tests and CI"). The services the game doesn't use are left out.
+      - run: >-
+          pnpm exec supabase start
+          -x studio,mailpit,postgres-meta,imgproxy,logflare,vector,edge-runtime,supavisor,realtime,storage-api
+      # The route handlers called with Request objects, against the real database: the schema's
+      # access rules, sessions, the series machine and challenges.
+      - run: pnpm test:db
+
   browsers:
     name: Browsers in ${{ matrix.name }} (${{ matrix.part }})
     # Two jobs per engine, in parallel: each engine's browser projects took 7-8 minutes in one job,

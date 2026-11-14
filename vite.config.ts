@@ -115,7 +115,24 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
-          exclude: [...configDefaults.exclude, '**/*.slow.test.ts', '**/*.browser.test.ts'],
+          exclude: [
+            ...configDefaults.exclude,
+            '**/*.slow.test.ts',
+            '**/*.browser.test.ts',
+            '**/*.db.test.ts',
+          ],
+        },
+      },
+      {
+        // The API against a local Supabase (ADR 0052, "Tests and CI"): `pnpm exec supabase start`
+        // first. Files run one at a time, as two would share the one database.
+        extends: true,
+        test: {
+          name: 'db',
+          include: ['src/server/**/*.db.test.ts'],
+          globalSetup: ['src/server/test/local-supabase.ts'],
+          fileParallelism: false,
+          testTimeout: 20_000,
         },
       },
       {
