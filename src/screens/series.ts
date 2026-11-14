@@ -1,15 +1,15 @@
 // Best of 3's two halves wired to the page: setting a series up (series-setup.ts) and playing it
-// (series-controller.ts), with their moves between screens. main.ts hands over what they need. A
+// (series-play.ts), with their moves between screens. main.ts hands over what they need. A
 // series saved before a reload is taken back here, held until the route shows it (ADR 0042).
-import { clearSeries, loadSeries, saveSeries, type SaveStorage } from './app/series-save.ts';
-import type { ScreenHandler } from './app/router.ts';
-import { seriesRound } from './app/screen-rules.ts';
-import { writeSeriesModeParams } from './app/series-url.ts';
-import type { Navigation } from './app/navigation.ts';
-import { createSeriesController, type SeriesController } from './series-controller.ts';
+import { clearSeries, loadSeries, saveSeries, type SaveStorage } from '../app/series-save.ts';
+import type { ScreenHandler } from '../app/router.ts';
+import { seriesRound } from '../app/screen-rules.ts';
+import { writeSeriesModeParams } from '../app/series-url.ts';
+import type { Navigation } from '../app/navigation.ts';
+import { createSeriesController, type SeriesController } from './series-play.ts';
 import { createSeriesSetup, type SeriesSetupFlow } from './series-setup.ts';
-import type { SeriesPanelRoots } from './ui/series-panel.ts';
-import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
+import type { SeriesPanelRoots } from '../ui/series-panel.ts';
+import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 
 export interface SeriesScreensHost {
   readonly navigation: Navigation;

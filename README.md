@@ -296,7 +296,7 @@ src/
   app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links,
             the series saved across a reload
   arena.ts  the match on screen and the requestAnimationFrame loop
-  *-controller.ts, *-screens.ts, series-setup.ts, manual-screen.ts   each screen's wiring
+  screens/  each screen's wiring: home, quick (Free play), series setup and play, manual, modes
   main.ts   wires the screens together
 ```
 

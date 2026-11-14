@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { DEFAULT_MATCHUP } from './matchup.ts';
 import { createRouter, type ScreenHandlers } from './router.ts';
-import { initialAppState, resumesMatch, seriesRound } from './screen-rules.ts';
+import {
+  initialAppState,
+  isSetupScreen,
+  resumesMatch,
+  screenTitle,
+  seriesRound,
+} from './screen-rules.ts';
 
 const frostQuake = { a: 'frost', b: 'quake' };
 
@@ -102,5 +108,29 @@ describe('router', () => {
       'layout manual',
       'show manual from home',
     ]);
+  });
+});
+
+describe('isSetupScreen', () => {
+  it('is every setup and reading screen, and a series only while nothing is played', () => {
+    for (const screen of ['pick', 'manual', 'modes', 'outdated'] as const) {
+      expect(isSetupScreen(screen, false)).toBe(true);
+    }
+    expect(isSetupScreen('home', false)).toBe(false);
+    expect(isSetupScreen('match', false)).toBe(false);
+    expect(isSetupScreen('series', false)).toBe(true);
+    expect(isSetupScreen('series', true)).toBe(false);
+  });
+});
+
+describe('screenTitle', () => {
+  it('names each screen, a series by its length and a manual entry by its ball', () => {
+    expect(screenTitle('home')).toBe('BallBattle: build a lineup, watch it fight');
+    expect(screenTitle('series')).toBe('Best of 3 · BallBattle');
+    expect(screenTitle('series', 3)).toBe('Best of 3 · BallBattle');
+    expect(screenTitle('series', 5)).toBe('Best of 5 · BallBattle');
+    expect(screenTitle('modes', 5)).toBe('Other modes · BallBattle');
+    expect(screenTitle('manual')).toBe('Ball manual · BallBattle');
+    expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Ball manual · BallBattle');
   });
 });

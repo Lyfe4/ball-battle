@@ -60,3 +60,28 @@ export function seriesRound(link: RouteOf<'series'>['link'], inHand: SeriesInHan
   }
   return inHand.has ? ('carry on' as const) : ('lineup' as const);
 }
+
+/** A setup or reading screen is up (choosing balls, setting up a series): no match is watched. */
+export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
+  if (screen === 'series') return !seriesPlaying;
+  return screen === 'pick' || screen === 'manual' || screen === 'modes' || screen === 'outdated';
+}
+
+const TITLES: Readonly<Record<Screen, string>> = {
+  home: 'BallBattle: build a lineup, watch it fight',
+  modes: 'Other modes · BallBattle',
+  pick: 'Free play · BallBattle',
+  match: 'Free play · BallBattle',
+  series: 'Best of 3 · BallBattle',
+  manual: 'Ball manual · BallBattle',
+  outdated: 'Link from another version · BallBattle',
+};
+
+/**
+ * The page title on `screen`: a series names its length (ADR 0048), and a manual entry its ball.
+ */
+export function screenTitle(screen: Screen, bestOf?: number, ballName?: string): string {
+  if (screen === 'series' && bestOf === 5) return 'Best of 5 · BallBattle';
+  if (screen === 'manual' && ballName !== undefined) return `${ballName} · ${TITLES.manual}`;
+  return TITLES[screen];
+}

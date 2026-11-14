@@ -6,15 +6,15 @@
 // series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here and in
 // the device's storage (so a reload keeps round 1's pick where it was, ADR 0042) until the series
 // starts: it is never written to the URL before the series is decided.
-import { loadBotLevel, saveBotLevel } from './app/bot-level.ts';
-import { lineupParentOf } from './app/modes.ts';
-import { loadSetup, saveSetup } from './app/series-save.ts';
-import { generateSeed } from './app/fresh-seed.ts';
-import { beginSession, botOf, resolvePicks } from './app/series-session.ts';
-import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
-import { botFor, DEFAULT_BOT } from './sim/bot.ts';
-import { indexDefinitions } from './sim/definitions.ts';
-import { RULESET_VERSION } from './sim/ruleset.ts';
+import { loadBotLevel, saveBotLevel } from '../app/bot-level.ts';
+import { lineupParentOf } from '../app/modes.ts';
+import { loadSetup, saveSetup } from '../app/series-save.ts';
+import { generateSeed } from '../app/fresh-seed.ts';
+import { beginSession, botOf, resolvePicks } from '../app/series-session.ts';
+import { writeSeriesModeParams, type SeriesLink } from '../app/series-url.ts';
+import { botFor, DEFAULT_BOT } from '../sim/bot.ts';
+import { indexDefinitions } from '../sim/definitions.ts';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import {
   bestOfOf,
   DEFAULT_BEST_OF,
@@ -24,13 +24,14 @@ import {
   type Opponent,
   type SeriesSetup,
   type SeriesState,
-} from './sim/series.ts';
-import type { BallDefinition } from './sim/types.ts';
-import type { Draft } from './ui/lineup-draft.ts';
-import { createLineupStep } from './ui/series/lineup-step.ts';
-import { createAnswerStep } from './ui/series/answer-step.ts';
-import { createResumeCard } from './ui/series/resume-card.ts';
-import { createRulesStep } from './ui/series/rules-step.ts';
+} from '../sim/series.ts';
+import type { BallDefinition } from '../sim/types.ts';
+import type { Draft } from '../ui/lineup-draft.ts';
+import { createLineupStep } from '../ui/series/lineup-step.ts';
+import { createAnswerStep } from '../ui/series/answer-step.ts';
+import { createResumeCard } from '../ui/series/resume-card.ts';
+import { createRulesStep } from '../ui/series/rules-step.ts';
+import { browserStorage as storage } from '../app/storage.ts';
 
 /** The bot whose lineup was just picked from `seed`, so a verifier can pick it again. */
 const botOpponent = (bot: string, seed: number): Opponent => ({
@@ -38,9 +39,6 @@ const botOpponent = (bot: string, seed: number): Opponent => ({
   bot,
   lineupSeed: seed,
 });
-
-/** Reading `localStorage` can throw; the level helpers catch it. */
-const storage = () => window.localStorage;
 
 export type SetupStep = 'rules' | 'lineup' | 'answer';
 

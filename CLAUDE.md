@@ -96,10 +96,9 @@ in parallel). All must pass.
    helpers that are not sim or rendering (the fixed-step clock, the presentation clock and frame
    driver, seed and matchup parsing, routes) live in `src/app/` as small pure functions with tests;
    keep `main.ts` to wiring. The match on screen and the frame loop are `src/arena.ts`; history is
-   `src/app/navigation.ts` (given `window`, so it is tested with a fake history). Each screen's wiring has its own module: `home-controller.ts`,
-   `quick-controller.ts`, `series-setup.ts` and `series-controller.ts` (joined in
-   `series-screens.ts`, which is also the router's series handler), `manual-screen.ts`,
-   `modes-screen.ts`. A new screen gets its own module like them, a route in
+   `src/app/navigation.ts` (given `window`, so it is tested with a fake history). Each screen's wiring has its own module in `src/screens/`: `home.ts`,
+   `quick.ts`, `series-setup.ts` and `series-play.ts` (joined in `series.ts`, which is also the
+   router's series handler), `manual.ts`, `modes.ts`, `outdated.ts`. A new screen gets its own module like them, a route in
    `src/app/route.ts` (ADR 0020) and a test for its link.
 6. **Balls are data-driven definitions**, one file per ball in `src/sim/balls/`, created with
    `defineBall` and listed in `src/sim/balls/index.ts`. A `BallDefinition` is plain data plus

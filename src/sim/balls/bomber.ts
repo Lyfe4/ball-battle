@@ -1,7 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { secondsOf } from './how-it-works.ts';
-import type { BallState } from '../types.ts';
 
 export type BomberState = Readonly<{ nextDropTick: number }>;
 
@@ -19,12 +18,6 @@ export const BOMB_RADIUS = 44;
 export const BLAST_RADIUS = 100;
 /** Ability damage to each enemy ball in the blast. Below the Storm's strike (identity rule). */
 export const BLAST_DAMAGE = 26;
-
-/** The Bomber's next drop tick, read from any ball state (undefined for other balls). */
-export function nextDropTickOf(ball: BallState): number | undefined {
-  const next = ball.abilityState['nextDropTick'];
-  return typeof next === 'number' ? next : undefined;
-}
 
 /**
  * Drops one big bomb every few seconds (ADR 0043, 0045 group 4): a zone (ADR 0006) with a visible

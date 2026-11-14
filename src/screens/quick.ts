@@ -1,19 +1,19 @@
 // Quick-match wiring: the setup screen where the two balls are chosen, the match screen (starting a
 // match, or carrying on with it), and its own actions (Change balls, Home). main.ts owns the arena
 // and the screens and hands this module what it needs through `QuickHost`.
-import { createSettingsToggle } from './ui/settings-menu.ts';
-import type { Matchup } from './app/matchup.ts';
-import type { Navigation } from './app/navigation.ts';
-import { writeMatchUrl, writePickParams, type Screen } from './app/route.ts';
-import type { RouteOf } from './app/router.ts';
-import { resumesMatch, type AppState } from './app/screen-rules.ts';
-import { generateSeed } from './app/fresh-seed.ts';
-import { getDefinition } from './sim/definitions.ts';
-import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
-import { createWorld } from './sim/world.ts';
-import { element } from './ui/dom.ts';
-import type { BallInfoLink } from './ui/balls/ball-link.ts';
-import { createQuickSetup } from './ui/quick-setup.ts';
+import { createSettingsToggle } from '../ui/settings-menu.ts';
+import type { Matchup } from '../app/matchup.ts';
+import type { Navigation } from '../app/navigation.ts';
+import { writeMatchUrl, writePickParams, type Screen } from '../app/route.ts';
+import type { RouteOf } from '../app/router.ts';
+import { resumesMatch, type AppState } from '../app/screen-rules.ts';
+import { generateSeed } from '../app/fresh-seed.ts';
+import { getDefinition } from '../sim/definitions.ts';
+import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
+import { createWorld } from '../sim/world.ts';
+import { element } from '../ui/dom.ts';
+import type { BallInfoLink } from '../ui/balls/ball-link.ts';
+import { createQuickSetup } from '../ui/quick-setup.ts';
 
 export interface QuickHost {
   readonly navigation: Navigation;

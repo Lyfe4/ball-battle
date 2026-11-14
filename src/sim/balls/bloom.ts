@@ -18,12 +18,6 @@ export const FIRST_HEAL_TICK = HEAL_EVERY_TICKS;
 /** It regrows only after this long untouched (2 s); any hit starts the wait again. Its petals stay shut. */
 export const PAUSE_TICKS = 120;
 
-/** The tick a Bloom next regrows, read from any ball state (undefined for other balls). */
-export function nextHealTickOf(ball: BallState): number | undefined {
-  const next = ball.abilityState['nextHealTick'];
-  return typeof next === 'number' ? next : undefined;
-}
-
 /** The tick a Bloom's regrowth starts again after a hit, read from any ball state. */
 export function pausedUntilOf(ball: BallState): number | undefined {
   const until = ball.abilityState['pausedUntil'];
