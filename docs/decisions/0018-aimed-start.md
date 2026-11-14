@@ -1,5 +1,8 @@
 # 0018: An aimed start, behind an option
 
+> **Scripts:** the measuring scripts this cites (`scripts/aim-*.ts`) were removed from `main` in
+> commit `34f8677`; check that commit's parent out to rerun them. The numbers here are the record.
+
 - Status: Superseded: removed on 2026-11-05 (see the addendum)
 - Date: 2026-11-05
 
@@ -45,7 +48,7 @@ Rules for the aimed start:
 
 ## Consequences
 
-- Positive: aiming can be measured with the real sim (`docs/aiming-measurements.md`) without
+- Positive: aiming can be measured with the real sim (`docs/experiments/aiming-measurements.md`) without
   touching the live game. A future series setup can carry aim points as plain integers.
 - Negative: two start paths in `createWorld`. The aimed one is unused by the game until a UI
   exists.
@@ -53,7 +56,7 @@ Rules for the aimed start:
 
 ## Addendum: removed (2026-11-05)
 
-The measurements (`docs/aiming-measurements.md`) found that aiming didn't create skill, and the
+The measurements (`docs/experiments/aiming-measurements.md`) found that aiming didn't create skill, and the
 game moved the skill into picks instead (ADR 0019, 0021). The aimed start was never used by the
 game. An audit flagged it as dead code in the sim's most important module: every future
 `createWorld` change had to keep a second start path working, with about 1,100 lines of scripts
@@ -63,5 +66,5 @@ So `StartMode`, `AIMED_STARTS`, `aimDirection` and the aimed path in `createWorl
 along with `world-aimed.test.ts` and `scripts/aim-*.ts`. `createWorld(seed, definitions)` is the
 random start alone. Nothing the game plays changed: the ruleset fingerprint (ADR 0022) is the same,
 and `pnpm balance 50` output is byte-identical before and after. The findings stay in
-`docs/aiming-measurements.md`, and the code is in git history (last at `f7eaf8b`). If aiming ever
+`docs/experiments/aiming-measurements.md`, and the code is in git history (last at `f7eaf8b`). If aiming ever
 comes back, it starts from those measurements and gets a new ADR.

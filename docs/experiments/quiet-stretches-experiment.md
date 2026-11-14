@@ -1,5 +1,8 @@
 # Quiet stretches: what was prototyped, what is kept, what was dropped
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Measured on 2026-11-12 at ruleset 12, in prototype branches that were never merged. Contact-only
 pairs often go a long time with no contact and no damage (today: 78% of contact-only games have a
 5 s+ quiet stretch, 29% a 10 s+ one, the worst 50 s). Read this before trying any of these again.

@@ -1,5 +1,5 @@
 // Fight length, collisions per match, and projectile / zone hit rates for every pair on today's
-// random start, across all cores (used in docs/bigger-balls-experiment.md). Writes JSON and prints a
+// random start, across all cores (used in docs/experiments/bigger-balls-experiment.md). Writes JSON and prints a
 // summary.
 // Usage: node scripts/fight-stats.ts --out <file> [--seeds N]   (default 500 per slot order)
 import { writeFileSync } from 'node:fs';

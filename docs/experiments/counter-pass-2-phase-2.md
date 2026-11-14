@@ -1,5 +1,8 @@
 # Counter pass 2, phase 2: not reached (do not merge)
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Measured 2026-11-08 on `feat/counter-pass-2` (21 balls, ruleset 7 code plus the changes below).
 The targets were not met, so nothing ships. This records the closest configuration and what it
 would take.

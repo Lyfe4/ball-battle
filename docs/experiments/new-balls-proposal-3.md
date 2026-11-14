@@ -1,5 +1,8 @@
 # New balls, round 3: the Hex, the Spider, the Ghost rework and the lane fix
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 > **Decided (2026-11-14, ADR 0049):** the Hex, the Spider and the Ghost rework shipped in ruleset 13
 > without the lane fix, retuned from ruleset 12 (four numbers, not the ones below). The harness and
 > runs named here were on `proto/hex-spider-ghost` (commit `b5eaab2`), which is deleted.
@@ -256,12 +259,12 @@ only). Phone: a 358 px court, as on a 390 px iPhone. Large: a 720 px court.
   gets the usual slow ring.
 - **Ghost**: phased, it is drawn see-through with a broken outline (the existing look).
 
-| Look                    | Phone                                                    | Large                                                    |
-| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| Hex curse               | ![](images/new-balls-3/hex-curse-phone.png)              | ![](images/new-balls-3/hex-curse-large.png)              |
-| Hex curse, last stretch | ![](images/new-balls-3/hex-curse-last-stretch-phone.png) | ![](images/new-balls-3/hex-curse-last-stretch-large.png) |
-| Spider webs             | ![](images/new-balls-3/spider-webs-phone.png)            | ![](images/new-balls-3/spider-webs-large.png)            |
-| Ghost phasing through   | ![](images/new-balls-3/ghost-phasing-phone.png)          | ![](images/new-balls-3/ghost-phasing-large.png)          |
+| Look                    | Phone                                                       | Large                                                       |
+| ----------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| Hex curse               | ![](../images/new-balls-3/hex-curse-phone.png)              | ![](../images/new-balls-3/hex-curse-large.png)              |
+| Hex curse, last stretch | ![](../images/new-balls-3/hex-curse-last-stretch-phone.png) | ![](../images/new-balls-3/hex-curse-last-stretch-large.png) |
+| Spider webs             | ![](../images/new-balls-3/spider-webs-phone.png)            | ![](../images/new-balls-3/spider-webs-large.png)            |
+| Ghost phasing through   | ![](../images/new-balls-3/ghost-phasing-phone.png)          | ![](../images/new-balls-3/ghost-phasing-large.png)          |
 
 Notes: the Hex's fuchsia sits between the Vampire's purple and the Bomber's magenta; it reads apart
 in a fight but is the closest colour pair in the picker. A web at a corner draws across the court's

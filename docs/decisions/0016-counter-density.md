@@ -1,6 +1,6 @@
 # 0016: Counter density: status resistance, numbed rage, staggered
 
-- Status: Accepted
+- Status: Accepted in part: ADR 0045 removed numbed rage and stagger; status resistance stays
 - Date: 2026-11-05
 - Amends: ADR 0012 (Frost), 0014 (Venom), 0015 (Berserker, Sniper, Quake)
 - Amended by: ADR 0045 (numbed rage and stagger are removed with every interaction rule)

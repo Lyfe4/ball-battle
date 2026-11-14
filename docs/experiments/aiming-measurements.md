@@ -1,5 +1,8 @@
 # Aiming: does choosing the launch direction create skill?
 
+> **Scripts:** the measuring scripts this cites (`scripts/aim-*.ts`) were removed from `main` in
+> commit `34f8677`; check that commit's parent out to rerun them. The numbers here are the record.
+
 Measured 2026-11-05. Nothing in the game changed: the live game still uses the random start, and
 `pnpm balance` output is byte-identical to before the aimed start existed (ADR 0018).
 

@@ -4,6 +4,8 @@
 - Date: 2026-11-07
 - Amends: ADR 0005 (a projectile that comes back), ADR 0006 (a zone that can be set off), ADR 0009
   (a `shielded` status), ADR 0010 (counter map)
+- Amended by: ADR 0045 (the Guardian's armor and the Bloom's regrowth, group 2), ADR 0047 (the
+  Guardian is replaced by the Spartan)
 
 ## Context
 

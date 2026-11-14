@@ -6,7 +6,7 @@ size); the live game keeps radius 50. This document and the reusable scripts are
 ## Question
 
 Every ball uses `STANDARD_BALL_RADIUS` (50 world units in a 1000-unit arena, ADR 0008). Do bigger
-balls make the game better to watch, and do they rescue aiming (`docs/aiming-measurements.md`,
+balls make the game better to watch, and do they rescue aiming (`docs/experiments/aiming-measurements.md`,
 which found that one side's launch direction barely matters)?
 
 ## What changed
@@ -46,7 +46,7 @@ For each radius, on the same machine and seeds:
 
 To reproduce one radius: set `STANDARD_BALL_RADIUS` locally, then run `pnpm balance 500`,
 `node scripts/fight-stats.ts --out <dir>/fight.json` and the aiming steps from
-`docs/aiming-measurements.md` with `AIM_DIRECTIONS=12` and the seed counts above. (A one-off script
+`docs/experiments/aiming-measurements.md` with `AIM_DIRECTIONS=12` and the seed counts above. (A one-off script
 that laid the three runs side by side was not kept; the tables below are its output.)
 
 ## 1. Fight length and contact
@@ -133,7 +133,7 @@ damage that comes on a timer does not.
 ## 3. Aiming (reduced scale, like for like)
 
 All three sizes at 12 directions and the reduced seed counts above, so r50's numbers differ a
-little from the full run in `docs/aiming-measurements.md` (which found a median gain of +1.7).
+little from the full run in `docs/experiments/aiming-measurements.md` (which found a median gain of +1.7).
 
 | Measure                                             | r50                | r65                | r80                |
 | --------------------------------------------------- | ------------------ | ------------------ | ------------------ |
@@ -183,11 +183,11 @@ under the line.
 
 Archer vs Berserker, seed 12, about 4 s in:
 
-| Radius | Phone                                           | Desktop                                             |
-| ------ | ----------------------------------------------- | --------------------------------------------------- |
-| 50     | ![r50 phone](images/bigger-balls/r50-phone.png) | ![r50 desktop](images/bigger-balls/r50-desktop.png) |
-| 65     | ![r65 phone](images/bigger-balls/r65-phone.png) | ![r65 desktop](images/bigger-balls/r65-desktop.png) |
-| 80     | ![r80 phone](images/bigger-balls/r80-phone.png) | ![r80 desktop](images/bigger-balls/r80-desktop.png) |
+| Radius | Phone                                              | Desktop                                                |
+| ------ | -------------------------------------------------- | ------------------------------------------------------ |
+| 50     | ![r50 phone](../images/bigger-balls/r50-phone.png) | ![r50 desktop](../images/bigger-balls/r50-desktop.png) |
+| 65     | ![r65 phone](../images/bigger-balls/r65-phone.png) | ![r65 desktop](../images/bigger-balls/r65-desktop.png) |
+| 80     | ![r80 phone](../images/bigger-balls/r80-phone.png) | ![r80 desktop](../images/bigger-balls/r80-desktop.png) |
 
 The bigger balls are clearly easier to see, and at r80 the Archer's bow and the Berserker's cracks
 read on a phone. The same frame shows the balance problem: at r80 the Archer is down to 1 of 50

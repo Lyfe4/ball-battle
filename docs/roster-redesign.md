@@ -1,5 +1,8 @@
 # Roster redesign: design
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Approved 2026-11-08 with the decisions below, which override the rest of this document where they
 differ. It ships in four groups, one pull request each (section 5); ADR 0045 records what each group
 changed and measured. The rough prototype measured here is on the branch `roster-redesign/design`
