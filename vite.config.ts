@@ -1,10 +1,31 @@
+import { fileURLToPath } from 'node:url';
 import { playwright } from '@vitest/browser-playwright';
+import { normalizePath, type Plugin } from 'vite';
 import { configDefaults, defineConfig, type TestProjectInlineConfiguration } from 'vitest/config';
 import type { BrowserCommand } from 'vitest/node';
 import { SECURITY_HEADERS } from './scripts/security-headers.ts';
 
 /** Before every browser test file: no series saved by another file's flow (ADR 0042). */
 const BROWSER_SETUP = 'src/flows/browser-setup.ts';
+
+const seedModule = (file: string) => normalizePath(fileURLToPath(new URL(file, import.meta.url)));
+const FRESH_SEED = seedModule('./src/app/fresh-seed.ts');
+const FIXED_SEED = seedModule('./src/flows/fixed-seed.ts');
+
+/**
+ * Pinned seeds in every browser project: the page's fresh-seed module (crypto) is swapped for
+ * fixed-seed.ts, so a flow fights the same series on every run and a failure can be replayed.
+ * Only the test projects use it; the build and the dev server keep real random seeds.
+ */
+const fixedSeeds: Plugin = {
+  name: 'ballbattle-fixed-seeds',
+  enforce: 'pre',
+  async resolveId(source, importer, options) {
+    if (!source.endsWith('fresh-seed.ts')) return null;
+    const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+    return resolved !== null && normalizePath(resolved.id) === FRESH_SEED ? FIXED_SEED : null;
+  },
+};
 
 const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
   await context.iframe.locator(selector).first().tap();
@@ -47,6 +68,7 @@ function phoneProject(
 ): TestProjectInlineConfiguration {
   return {
     extends: true,
+    plugins: [fixedSeeds],
     test: {
       name,
       include: [`src/**/*.${suffix}.browser.test.ts`],
@@ -102,6 +124,7 @@ export default defineConfig({
       },
       {
         extends: true,
+        plugins: [fixedSeeds],
         test: {
           name: 'browsers',
           // The known match results, and flows through the real page (`*.browser.test.ts`).
@@ -128,6 +151,7 @@ export default defineConfig({
       },
       {
         extends: true,
+        plugins: [fixedSeeds],
         test: {
           // Flows that need a desktop screen (a mouse hover, the arena beside a result), at a fixed
           // size: resizing the viewport during a run upset the session history of later files in
@@ -148,6 +172,7 @@ export default defineConfig({
       },
       {
         extends: true,
+        plugins: [fixedSeeds],
         test: {
           // Flows that must also hold on a full HD screen (`*.full.browser.test.ts`, ADR 0038), where
           // the legend bug was found: fixed at 1920 x 1080 for the same reason as browsers-wide.

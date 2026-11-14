@@ -12,7 +12,7 @@ import {
 import { writeMainModeParams } from './app/modes.ts';
 import { createRouter } from './app/router.ts';
 import { initialAppState } from './app/screen-rules.ts';
-import { generateSeed } from './app/seed.ts';
+import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
 import { createTips } from './app/tips.ts';

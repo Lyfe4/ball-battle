@@ -45,7 +45,11 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   `*.safari.browser.test.ts` (project `browsers-safari`, 390 x 664: what Safari leaves of that
   iPhone with its toolbars shown, where a layout that fits the full screen can still squeeze the
   court). Needs the browsers once:
-  `pnpm exec playwright install chromium firefox webkit`.
+  `pnpm exec playwright install chromium firefox webkit`. Browser tests never use a random seed:
+  every file starts as a fresh device (no `ballbattle.*` keys) on a pinned seed
+  (`src/flows/browser-setup.ts`, `fixed-seed.ts`); a flow that needs a particular series pins its
+  own with `pinSeed`. A wait names what it waits for and the page's state, and fails early when
+  the page stops drawing (`waitFor`).
 - `pnpm lint`: ESLint
 - `pnpm typecheck`: `tsc -b` over every tsconfig project
 - `pnpm format` / `pnpm format:check`: Prettier
@@ -326,8 +330,7 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   accepts the whole series; anything else is dropped and the page starts as usual. A new session
   change in the controller goes through `keep` so it is saved; a deliberate exit (Leave series,
   New series) clears it, a Back holds it. A fight under way restarts from its Fight! moment.
-  Browser flows that reload use a frame (`src/flows/reload-support.ts`); every browser test file
-  starts with no saved series (`src/flows/browser-setup.ts`).
+  Browser flows that reload use a frame (`src/flows/reload-support.ts`).
 - Page colours, sizes and type come from roles in `src/styles/tokens.css`, never palette names or
   literals. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP
   `font-src 'self'`), calm platform screens (flat fills, the pink second accent used sparingly) and

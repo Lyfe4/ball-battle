@@ -3,7 +3,7 @@
 // 0046). main.ts owns the arena and hands this module what it needs through `HomeHost`.
 import { demoAt } from './app/demo.ts';
 import type { Matchup } from './app/matchup.ts';
-import { generateSeed } from './app/seed.ts';
+import { generateSeed } from './app/fresh-seed.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { SeriesState } from './sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';

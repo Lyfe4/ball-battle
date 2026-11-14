@@ -7,7 +7,7 @@ import type { Navigation } from './app/navigation.ts';
 import { writeMatchUrl, writePickParams, type Screen } from './app/route.ts';
 import type { RouteOf } from './app/router.ts';
 import { resumesMatch, type AppState } from './app/screen-rules.ts';
-import { generateSeed } from './app/seed.ts';
+import { generateSeed } from './app/fresh-seed.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';

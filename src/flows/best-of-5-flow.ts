@@ -131,11 +131,16 @@ async function playOut(framed: Framed, format: Format): Promise<void> {
   }
   for (let round = 1; ; round += 1) {
     const where = `${format} fight ${String(round)}`;
-    await waitFor(() => shown(framed, '.ready-fight').length === 1, 15_000, `${where} Fight!`);
+    await waitFor(
+      framed,
+      () => shown(framed, '.ready-fight').length === 1,
+      15_000,
+      `${where} Fight!`,
+    );
     shown(framed, '.ready-fight')[0]?.click();
     await wait(500);
     if (seriesPhase(framed) === 'playing') await checkFight(framed, round);
-    await waitFor(() => seriesPhase(framed) !== 'playing', 150_000, `${where} to end`);
+    await waitFor(framed, () => seriesPhase(framed) !== 'playing', 150_000, `${where} to end`);
     if (seriesPhase(framed) === 'finished') break;
     const between = await steady(framed, false);
     if (round === 2) {
@@ -201,7 +206,7 @@ export async function runBestOf5Flow(): Promise<void> {
     if (format === 'reveal') {
       for (const key of [SERIES_STORAGE_KEY, SERIES_SETUP_STORAGE_KEY]) storage().removeItem(key);
       await visit(framed, link);
-      await waitFor(() => seriesPhase(framed) !== 'none', 10_000, 'the link replayed');
+      await waitFor(framed, () => seriesPhase(framed) !== 'none', 10_000, 'the link replayed');
       expect(shown(framed, '#series .series-bar-about')[0]?.textContent).toMatch(/^Best of 5/);
     }
   }

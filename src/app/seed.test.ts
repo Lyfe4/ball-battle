@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateSeed, parseSeed } from './seed.ts';
+import { parseSeed } from './seed.ts';
 
 describe('parseSeed', () => {
   it('accepts decimal integers in the uint32 range', () => {
@@ -13,14 +13,5 @@ describe('parseSeed', () => {
     for (const raw of [null, '', 'abc', '12abc', '-1', '1.5', '1e3', '0x10', '4294967296']) {
       expect(parseSeed(raw)).toBeUndefined();
     }
-  });
-});
-
-describe('generateSeed', () => {
-  it('returns a uint32', () => {
-    const seed = generateSeed();
-    expect(Number.isInteger(seed)).toBe(true);
-    expect(seed).toBeGreaterThanOrEqual(0);
-    expect(seed).toBeLessThanOrEqual(0xffff_ffff);
   });
 });
