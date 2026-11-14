@@ -44,6 +44,14 @@ const SIM_BANNED_GLOBALS = [
   'globalThis',
 ];
 
+/** An import pattern that leaves src/sim from a file at that depth. */
+function leavesSim(group) {
+  return {
+    group: [group],
+    message: `src/sim must not import anything outside it: no app, UI, rendering or wiring. ${ADR}`,
+  };
+}
+
 export default defineConfig(
   { ignores: ['dist', 'coverage'] },
   js.configs.recommended,
@@ -112,18 +120,18 @@ export default defineConfig(
           message: `src/sim must be pure and deterministic. ${ADR}`,
         })),
       ],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/render', '**/render/**', '**/main', '**/main.ts'],
-              message: `The sim must not depend on rendering or app wiring. ${ADR}`,
-            },
-          ],
-        },
-      ],
     },
+  },
+  // Nothing outside src/sim may be imported by it: a server runs the sim on its own (ADR 0022), and
+  // tsconfig.sim.json only catches an outside import that happens to use the DOM. Patterns match the
+  // import text, so the ban counts the levels up to src/sim from each depth of folder.
+  {
+    files: ['src/sim/*.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [leavesSim('../**')] }] },
+  },
+  {
+    files: ['src/sim/*/*.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [leavesSim('../../**')] }] },
   },
   prettier,
 );

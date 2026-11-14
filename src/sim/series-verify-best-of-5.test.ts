@@ -74,7 +74,12 @@ describe('verifySeries, Best of 5', () => {
       expect(reasonOf({ ...setup, b: [y, x, ...rest] })).toMatch(/lineup the normal bot picks/);
       const picks = setup.picks ?? [];
       expect(reasonOf({ ...setup, picks: picks.slice(0, -1) })).toMatch(/needs a pick/);
-      expect(reasonOf({ ...setup, picks: [...picks, setup.a[0] ?? ''] })).toMatch(/never used/);
+      // This series makes the most picks any Best of 5 can (8), so one more is refused by the
+      // decoder's cap before the series is played; under the cap it would be "never used".
+      expect(picks).toHaveLength(8);
+      expect(reasonOf({ ...setup, picks: [...picks, setup.a[0] ?? ''] })).toBe(
+        'More picks than any series makes',
+      );
       // Each bot pick swapped for another ball it had: refused at that pick, or a later one.
       const hard = decided('showdown', 3, 'hard');
       const [mine = '', opener = '', ...later] = hard.picks ?? [];

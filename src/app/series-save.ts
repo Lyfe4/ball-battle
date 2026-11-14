@@ -7,15 +7,8 @@
 // shape is dropped, and a series is only put back if `restoreSeries` accepts it. Storage can be
 // missing or throw (private windows, blocked site data); then the series simply isn't kept across
 // a reload, as before.
-import { BOTS } from '../sim/bot.ts';
-import {
-  asBestOf,
-  BEST_OF,
-  DEFAULT_BEST_OF,
-  FORMATS,
-  isValidLineup,
-  type SeriesSetup,
-} from '../sim/series.ts';
+import { BEST_OF, type SeriesSetup } from '../sim/series.ts';
+import { decodeSeriesSetup, isUint32 } from '../sim/series-decode.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import type { Draft } from '../ui/lineup-draft.ts';
 import { restoreSeries, savedOf, type SavedSeries } from './series-restore.ts';
@@ -119,9 +112,6 @@ export function loadSetup(storage: SaveStorage, definitions: DefinitionLookup): 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const isCount = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xffff_ffff;
-
 function asIds(value: unknown, roster: readonly string[]): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const ids = value.filter((id): id is string => typeof id === 'string' && roster.includes(id));
@@ -140,42 +130,21 @@ function asDraft(value: unknown, roster: readonly string[]): Draft {
   return valid ? slots : [];
 }
 
-/** A series setup against a bot, read field by field; undefined if any field is off. */
+/** A series setup against a bot, read by the sim's decoder; undefined if it isn't one. */
 function asSetup(value: unknown, roster: readonly string[]): SeriesSetup | undefined {
-  if (!isRecord(value)) return undefined;
-  const { ruleset, seed, a, b, opponent, format, picks, bestOf } = value;
-  if (!isCount(ruleset) || !isCount(seed)) return undefined;
-  // A save from before Best of 5 has no length: it is a Best of 3 (ADR 0048).
-  const length = bestOf === undefined ? DEFAULT_BEST_OF : asBestOf(bestOf);
-  if (length === undefined) return undefined;
-  const lineupA = asIds(a, roster);
-  const lineupB = asIds(b, roster);
-  if (lineupA === undefined || !isValidLineup(lineupA, roster, length)) return undefined;
-  if (lineupB === undefined || !isValidLineup(lineupB, roster, length)) return undefined;
-  if (!isRecord(opponent) || opponent['kind'] !== 'bot') return undefined;
-  const { bot, lineupSeed } = opponent;
-  if (typeof bot !== 'string' || !BOTS.has(bot) || !isCount(lineupSeed)) return undefined;
-  const named = FORMATS.find((name) => name === format);
-  if (format !== undefined && (named === undefined || named === 'blind')) return undefined;
-  const made = picks === undefined ? undefined : asIds(picks, roster);
-  if (picks !== undefined && made === undefined) return undefined;
-  return {
-    ruleset,
-    seed,
-    a: lineupA,
-    b: lineupB,
-    opponent: { kind: 'bot', bot, lineupSeed },
-    ...(named === undefined ? {} : { format: named }),
-    ...(made === undefined ? {} : { picks: made }),
-    ...(bestOf === undefined ? {} : { bestOf: length }),
-  };
+  const decoded = decodeSeriesSetup(value, roster);
+  if (!decoded.ok) return undefined;
+  const { setup } = decoded;
+  // Every saved series is against the bot (a player opponent is for a server, ADR 0022), and the
+  // game saves Blind as no format at all, so a revealed setup always names its format.
+  return setup.opponent.kind === 'bot' && setup.format !== 'blind' ? setup : undefined;
 }
 
 function asSavedSeries(value: unknown, roster: readonly string[]): SavedSeries | undefined {
   if (!isRecord(value) || value['save'] !== SAVE_VERSION) return undefined;
   const setup = asSetup(value['setup'], roster);
   const { plays, recorded, link } = value;
-  if (setup === undefined || !isCount(plays) || typeof recorded !== 'boolean') return undefined;
+  if (setup === undefined || !isUint32(plays) || typeof recorded !== 'boolean') return undefined;
   const linkPicks = link === undefined ? undefined : asIds(link, roster);
   if (link !== undefined && linkPicks === undefined) return undefined;
   return { setup, plays, recorded, ...(linkPicks === undefined ? {} : { link: linkPicks }) };

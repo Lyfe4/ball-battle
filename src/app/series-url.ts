@@ -18,6 +18,7 @@ import {
   type Opponent,
   type SeriesSetup,
 } from '../sim/series.ts';
+import { decodeSeriesSetup } from '../sim/series-decode.ts';
 import { randomBot } from '../sim/bot.ts';
 import { parseSeed, parseVersion } from './seed.ts';
 
@@ -176,7 +177,12 @@ export function parseSeriesParams(
       const bot = named === '' ? randomBot.id : named;
       if (lineupSeed !== undefined) {
         const opponent: Opponent = { kind: 'bot', bot, lineupSeed };
-        return { setup: { ruleset, seed, a, b, opponent, ...extra, ...withPicks, ...length } };
+        // Read through the sim's decoder, as a save and verifySeries read a setup.
+        const decoded = decodeSeriesSetup(
+          { ruleset, seed, a, b, opponent, ...extra, ...withPicks, ...length },
+          validIds,
+        );
+        if (decoded.ok) return { setup: decoded.setup };
       }
     }
   }
