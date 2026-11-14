@@ -25,8 +25,9 @@ can sit on top of it. Rules that hold however it is built:
 
 Rough order:
 
-1. Accounts and a backend.
-2. Asynchronous PvP and leaderboards.
+1. A backend and asynchronous PvP: friend challenges and an open queue, guests welcome, unrated
+   (ADR 0052).
+2. Accounts, ranked play with seasons, and leaderboards (then a weekly ladder against the bot).
 3. A free currency and unlocks earned by playing.
 4. An app-store release (likely Capacitor around the web build).
 5. Live PvP.
