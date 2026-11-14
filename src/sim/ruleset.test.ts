@@ -32,6 +32,7 @@ const FINGERPRINTS: Readonly<Record<number, string>> = {
   12: '7ab968db41438c1a1c1b829254541ed65427ff748b2e41e3869d5fc0c9cda11b',
   13: '09d4bbf424cdda0b3d028d839121400bdc76122740e9781ebb3be6eaa1656149',
   14: '2834371c16f112537887a5f72a591a7be971817eba1245e41b51ba077ce7d489',
+  15: '034a9db7261dcc8aad00d7e3299e792be5c3164527069125f041ca110f43b138',
 };
 
 function fingerprint(): string {
@@ -86,7 +87,27 @@ function fingerprint(): string {
       return { rounds: state.rounds, picks: state.picks, winner: state.winner };
     }),
   );
-  const data = JSON.stringify({ matches, lineups, choices, series });
+  // A server series names its own seeds (ADR 0052): every format, each seed its own.
+  const seeded = FORMATS.map((format, index) => {
+    const state = playLikeTheGame(
+      {
+        ruleset: RULESET_VERSION,
+        opponent: { kind: 'bot', bot: 'hard', lineupSeed: 31 + index },
+        seed: 0,
+        a: randomBot.pickLineup(200 + index, ids),
+        b: randomBot.pickLineup(31 + index, ids),
+        format,
+        seeds: {
+          rounds: [11 + index, 12 + index, 13 + index],
+          ...(format === 'reveal' ? { toss: 14 + index } : {}),
+          ...(format === 'blind' ? {} : { bot: 15 + index }),
+        },
+      },
+      BALL_LOOKUP,
+    );
+    return { rounds: state.rounds, picks: state.picks, winner: state.winner };
+  });
+  const data = JSON.stringify({ matches, lineups, choices, series, seeded });
   return createHash('sha256').update(data).digest('hex');
 }
 

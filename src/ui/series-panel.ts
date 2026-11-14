@@ -4,7 +4,7 @@ import {
   formatOf,
   nextMatch,
   remainingOf,
-  revealFirst,
+  firstToShowOf,
   scoreOf,
   type NextMatch,
 } from '../sim/series.ts';
@@ -233,7 +233,7 @@ export function createSeriesPanel(
       // Reveal's coin toss leads round 1's pick when the series opens here, a rematch (ADR 0041).
       const toss =
         reveal && roundsPlayed === 0 && state.pending.length === 0
-          ? { first: revealFirst(state.setup.seed), key: state.setup.seed }
+          ? { first: firstToShowOf(state.setup), key: state.setup.seed }
           : undefined;
       banner.element.hidden = !actions.includes('pick');
       picks.element.hidden = !actions.includes('pick');

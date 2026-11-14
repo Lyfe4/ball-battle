@@ -3,8 +3,24 @@
 // take turns showing first; or showdown, where both open at once and then the winner of a round
 // shows first and the loser answers. Pure and deterministic like the rest of the sim, so a server can replay a
 // series from its setup to verify a reported result (series-verify.ts).
-import { deriveSeed, nextFloat } from './rng.ts';
+import {
+  attemptSeed,
+  firstToShowOf,
+  roundSeedOf,
+  suddenDeathWinner,
+  type SeriesSeeds,
+} from './series-seeds.ts';
 import type { MatchResult, WorldState } from './types.ts';
+
+export {
+  attemptSeed,
+  firstToShowOf,
+  revealFirst,
+  roundSeed,
+  roundSeedOf,
+  suddenDeathWinner,
+} from './series-seeds.ts';
+export type { SeriesSeeds } from './series-seeds.ts';
 
 /**
  * How long a series is (ADR 0048): balls per lineup, and so the most rounds it can take. A side
@@ -16,13 +32,6 @@ export const BEST_OF: readonly BestOf[] = [3, 5];
 export const DEFAULT_BEST_OF: BestOf = 3;
 /** Plays of a round before a draw is settled by sudden death (docs/vision.md, mirror draws). */
 export const MAX_ATTEMPTS = 3;
-
-/** Salts, so a round seed, an attempt seed and a coin flip never share a stream. */
-const ROUND_SALT = 0x5e7105;
-const ATTEMPT_SALT = 0xa77e3b7;
-const SUDDEN_DEATH_SALT = 0x5dde47;
-/** Reveal's coin toss for who shows first in round 1 (ADR 0029). */
-const TOSS_SALT = 0x70557055;
 
 export type Side = 'a' | 'b';
 /** A lineup of `bestOf` different balls, in order. */
@@ -70,6 +79,11 @@ export interface SeriesSetup {
   readonly picks?: readonly string[];
   /** Undefined is Best of 3, the only length before ADR 0048. */
   readonly bestOf?: BestOf;
+  /**
+   * A server series' own seeds (ADR 0052): when given, nothing is derived from `seed`. A local
+   * series and a link have none and derive every seed from `seed` (series-seeds.ts).
+   */
+  readonly seeds?: SeriesSeeds;
 }
 
 /** A pick made in a `reveal` or `showdown` series: `side` chose `ball` for round `round` (0-based). */
@@ -137,21 +151,6 @@ export function isValidLineup(
   );
 }
 
-/** The seed of round `round` (0-based) of a series. 32-bit integer maths only, exact everywhere. */
-export function roundSeed(seriesSeed: number, round: number): number {
-  return deriveSeed([seriesSeed, ROUND_SALT, round]);
-}
-
-/** The seed of play `attempt` (0-based) of a round: the round seed first, then derived ones. */
-export function attemptSeed(seedOfRound: number, attempt: number): number {
-  return attempt === 0 ? seedOfRound : deriveSeed([seedOfRound, ATTEMPT_SALT, attempt]);
-}
-
-/** Who wins a round that drew MAX_ATTEMPTS times: a coin flip seeded from the round seed. */
-export function suddenDeathWinner(seedOfRound: number): Side {
-  return nextFloat(deriveSeed([seedOfRound, SUDDEN_DEATH_SALT])).value < 0.5 ? 'a' : 'b';
-}
-
 export function startSeries(setup: SeriesSetup): SeriesState {
   return { setup, rounds: [], pending: [], winner: undefined, picks: [] };
 }
@@ -174,20 +173,12 @@ export function nextBallOf(state: SeriesState, side: Side): string | undefined {
 }
 
 /**
- * Reveal's coin toss (ADR 0029): the side that shows first in round 1. Seeded from the series seed
- * alone, so a link (which holds the seed) replays it and a verifier recomputes it.
- */
-export function revealFirst(seriesSeed: number): Side {
-  return nextFloat(deriveSeed([seriesSeed, TOSS_SALT])).value < 0.5 ? 'a' : 'b';
-}
-
-/**
  * Who shows first in each round of a `reveal` series, then who answers (ADR 0021, 0029, 0048): the
  * toss winner shows first in round 1, then the sides alternate. The last round has no picks: each
  * side plays the ball it has left.
  */
 export function revealTurnsOf(setup: SeriesSetup): readonly (readonly Side[])[] {
-  const first = revealFirst(setup.seed);
+  const first = firstToShowOf(setup);
   return Array.from({ length: bestOfOf(setup) - 1 }, (_, round) => {
     const shows = round % 2 === 0 ? first : otherSide(first);
     return [shows, otherSide(shows)];
@@ -253,7 +244,7 @@ export function nextMatch(state: SeriesState): NextMatch | undefined {
   const b = nextBallOf(state, 'b');
   if (a === undefined || b === undefined) return undefined;
   const attempt = state.pending.length;
-  return { round, attempt, seed: attemptSeed(roundSeed(state.setup.seed, round), attempt), a, b };
+  return { round, attempt, seed: attemptSeed(roundSeedOf(state.setup, round), attempt), a, b };
 }
 
 /**
@@ -275,7 +266,7 @@ export function recordOutcome(state: SeriesState, outcome: Outcome): SeriesState
   if (outcome === 'draw' && outcomes.length < MAX_ATTEMPTS) {
     return { ...state, pending: outcomes };
   }
-  const seedOfRound = roundSeed(state.setup.seed, match.round);
+  const seedOfRound = roundSeedOf(state.setup, match.round);
   const suddenDeath = outcome === 'draw';
   const record: RoundRecord = {
     round: match.round,

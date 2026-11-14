@@ -9,7 +9,7 @@ import {
   nextBallOf,
   nextMatch,
   remainingOf,
-  roundSeed,
+  roundSeedOf,
   type NextMatch,
   type SeriesState,
   type Side,
@@ -165,7 +165,7 @@ export function lastPlayOf(state: SeriesState): NextMatch | undefined {
   const replay = state.pending.length > 0 ? nextMatch(state) : undefined;
   if (replay !== undefined) {
     const attempt = replay.attempt - 1;
-    const seed = attemptSeed(roundSeed(state.setup.seed, replay.round), attempt);
+    const seed = attemptSeed(roundSeedOf(state.setup, replay.round), attempt);
     return { ...replay, attempt, seed };
   }
   const last = state.rounds.at(-1);

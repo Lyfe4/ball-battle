@@ -57,6 +57,7 @@ export type {
 } from './series.ts';
 export type { SeriesVerdict, StepResult, WorldState };
 export type { SimEvent } from './types.ts';
+export type { SeriesSeeds } from './series-seeds.ts';
 
 /** Every ball id, in the order the bot picks from. */
 export const ROSTER: readonly string[] = [...BALL_LOOKUP.keys()];

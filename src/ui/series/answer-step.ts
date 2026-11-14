@@ -1,4 +1,4 @@
-import { formatOf, revealFirst, remainingOf, type SeriesState } from '../../sim/series.ts';
+import { firstToShowOf, formatOf, remainingOf, type SeriesState } from '../../sim/series.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
@@ -63,7 +63,7 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
       // Reveal's coin toss leads the banner (ADR 0029, 0041).
       const reveal = formatOf(state.setup) === 'reveal';
       const toss = reveal
-        ? { first: revealFirst(state.setup.seed), key: state.setup.seed }
+        ? { first: firstToShowOf(state.setup), key: state.setup.seed }
         : undefined;
       track.update(state, trackOf(state, undefined));
       const choice = pickChoiceOf(state);

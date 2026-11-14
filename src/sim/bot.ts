@@ -7,6 +7,7 @@ import { afterRound, type Memo, type Position } from './bot-model.ts';
 import { maximinMix } from './maximin.ts';
 import { isFavoured } from './counter-map.ts';
 import { createStream, deriveSeed } from './rng.ts';
+import { botSeedOf } from './series-seeds.ts';
 import {
   formatOf,
   awaitingPick,
@@ -33,7 +34,10 @@ export type BotRole = 'show' | 'answer' | 'open';
  */
 export interface BotView {
   readonly format: Format;
-  /** The series seed: every choice is drawn from a stream derived from it. */
+  /**
+   * The seed of its choice stream (`botSeedOf`): the series seed, or a server series' secret bot
+   * seed (ADR 0052). Every choice is drawn from a stream derived from it.
+   */
   readonly seed: number;
   /** 0-based. */
   readonly round: number;
@@ -272,7 +276,7 @@ export function botViewOf(state: SeriesState): BotView | undefined {
   const score = scoreOf(state);
   const base = {
     format,
-    seed: state.setup.seed,
+    seed: botSeedOf(state.setup),
     round,
     own: remainingOf(state, 'b'),
     opponent: remainingOf(state, 'a'),
