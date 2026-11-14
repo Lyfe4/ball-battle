@@ -3,11 +3,9 @@
 // record (`golden-matches.json`) is checked in Node and in Chromium, Firefox and WebKit, so a change
 // that is deterministic but different, or an engine that computes a different fight, fails with the
 // match it changed. It lives outside src/sim because it hashes with Web Crypto; it only reads the sim.
-import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { PAIRS, play } from '../sim/balls/roster-support.ts';
-import { getDefinition } from '../sim/definitions.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { createWorld } from '../sim/world.ts';
+import { PAIRS } from '../sim/balls/roster-support.ts';
+import * as sim from '../sim/index.ts';
+import type { SimEvent, WorldState } from '../sim/index.ts';
 
 export interface GoldenCase {
   readonly a: string;
@@ -60,14 +58,30 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * What playing a case needs from a sim: today's (`src/sim/index.ts`) or a frozen ruleset's bundle
+ * (`rulesets/`), which exposes the same functions.
+ */
+export interface GoldenSim {
+  createWorld(seed: number, a: string, b: string): WorldState;
+  step(world: WorldState): { readonly world: WorldState; readonly events: readonly SimEvent[] };
+}
+
+/** Plays one case to its end, collecting every event. Every match ends (ADR 0002). */
+function play(golden: GoldenCase, on: GoldenSim): { world: WorldState; events: SimEvent[] } {
+  let world = on.createWorld(golden.seed, golden.a, golden.b);
+  const events: SimEvent[] = [];
+  while (world.match.status === 'running') {
+    const next = on.step(world);
+    world = next.world;
+    events.push(...next.events);
+  }
+  return { world, events };
+}
+
 /** Plays one case to its end and records it. */
-export async function playGolden(golden: GoldenCase): Promise<GoldenResult> {
-  const { world, events } = play(
-    createWorld(golden.seed, [
-      getDefinition(BALL_LOOKUP, golden.a),
-      getDefinition(BALL_LOOKUP, golden.b),
-    ]),
-  );
+export async function playGolden(golden: GoldenCase, on: GoldenSim = sim): Promise<GoldenResult> {
+  const { world, events } = play(golden, on);
   if (world.match.status !== 'finished') {
     throw new Error(`${golden.a} v ${golden.b}, seed ${golden.seed}: the match did not end`);
   }
@@ -80,11 +94,19 @@ export async function playGolden(golden: GoldenCase): Promise<GoldenResult> {
   };
 }
 
+/** Plays the cases with a sim (today's unless named), in order. */
+export async function playGoldenCases(
+  cases: readonly GoldenCase[],
+  on: GoldenSim = sim,
+): Promise<GoldenResult[]> {
+  const results: GoldenResult[] = [];
+  for (const { a, b, seed } of cases) results.push(await playGolden({ a, b, seed }, on));
+  return results;
+}
+
 /** Plays every golden case under today's rules. */
 export async function computeGolden(): Promise<GoldenRecord> {
-  const results: GoldenResult[] = [];
-  for (const golden of GOLDEN_CASES) results.push(await playGolden(golden));
-  return { ruleset: RULESET_VERSION, results };
+  return { ruleset: sim.RULESET_VERSION, results: await playGoldenCases(GOLDEN_CASES) };
 }
 
 /** One line per result that differs from the record: which match, and what changed. */

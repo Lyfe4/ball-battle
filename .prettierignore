@@ -1,3 +1,5 @@
 dist
 coverage
 pnpm-lock.yaml
+# Frozen rulesets are generated once and never edited (ADR 0052).
+rulesets

@@ -69,7 +69,7 @@ function sharedWithServer(up, { server }) {
 }
 
 export default defineConfig(
-  { ignores: ['dist', 'coverage'] },
+  { ignores: ['dist', 'coverage', 'rulesets'] },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,

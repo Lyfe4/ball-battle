@@ -1,8 +1,9 @@
 # 0052: The backend: Supabase for accounts and data, Netlify Functions as the game server
 
 - Status: Accepted (2026-11-14), with the decisions in section 11: player vs player comes first
-  (slice 1, guests welcome, unrated), then accounts, ranked play and the bot ladder. Nothing is
-  built yet except batch publishing (section 1, "Publishing in batches").
+  (slice 1, guests welcome, unrated), then accounts, ranked play and the bot ladder. Built so far:
+  batch publishing (section 1, "Publishing in batches") and slice 0 (section 8), including the
+  first frozen ruleset, which section 3 had placed in slice 1.
 - Date: 2026-11-14
 - Builds on: ADR 0051 (secret seeds, pinned rulesets, the checklist before accounts), ADR 0022
   (one gate for a valid series), ADR 0048 (Best of 5), `docs/vision.md` ("Long-term goal")
@@ -618,7 +619,13 @@ rulesets/r15/sim.mjs       frozen bundles (slice 3)
 
 Each slice ships on its own. Sizes: S half a day, M one to two days, L more.
 
-### Slice 0: the sim ready for a server (M, 2 PRs, no visible change)
+### Slice 0: the sim ready for a server (M, 2 PRs, no visible change). Built (2026-11-14)
+
+Built in three PRs: the two below, then the first frozen ruleset (`rulesets/r15/`, `pnpm
+ruleset:freeze`, replayed by `test:slow`) brought forward from slice 1, so every ruleset from
+the explicit seeds on has its bundle. The ESLint ban on deep sim imports covers `src/api` and
+`src/server`; the client keeps its deep imports (the renderer reads per-ball internals that are
+no part of a server's API, the move section 7 judged not worth it for the workspace).
 
 - **PR 1:** `src/sim/index.ts` with a bound `verifySeries`. Also `erasableSyntaxOnly`, the ESLint
   ban on deep sim imports, and normalising `bestOf` defaults before storing.
