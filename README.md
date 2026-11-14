@@ -285,4 +285,5 @@ Production bundle (November 2026, ruleset 14): 231.55 kB JS (73.82 kB gzipped), 
 
 ## License
 
-[MIT](LICENSE)
+All rights reserved. The code is public to read, but not licensed for reuse, copying or
+redistribution; see [LICENSE](LICENSE).
