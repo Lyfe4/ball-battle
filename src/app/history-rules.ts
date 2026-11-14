@@ -22,7 +22,11 @@ export type ScreenKey =
   | 'series-rules'
   | 'series-lineup'
   | 'series'
-  | 'outdated';
+  | 'outdated'
+  | 'online'
+  | 'challenge'
+  | 'challenge-lineup'
+  | 'send';
 
 export type Move = 'push' | 'replace' | 'return';
 
@@ -31,6 +35,8 @@ export function screenKeyOf(route: Route): ScreenKey {
   switch (route.screen) {
     case 'manual':
       return route.ball === undefined ? 'manual' : 'manual-entry';
+    case 'challenge':
+      return route.step === 'lineup' ? 'challenge-lineup' : 'challenge';
     case 'series':
       if (route.step === 'rules') return 'series-rules';
       if (route.step === 'lineup') return 'series-lineup';

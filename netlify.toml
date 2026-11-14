@@ -54,14 +54,13 @@
 [context.branch-deploy.environment]
   VITE_ONLINE = "1"
 
-# `netlify dev`: Vite with the functions on one origin, http://localhost:8888, against a local
-# Supabase (`pnpm exec supabase start`) and the settings in .env (see .env.example).
+# `netlify dev`: an online build (`pnpm build:online`) and the functions on one origin,
+# http://localhost:8888, against a local Supabase (`pnpm exec supabase start`) and the settings in
+# .env (see .env.example). It serves dist/ rather than Vite's dev server: Netlify applies the
+# headers above in dev too, and the production CSP rightly blocks the dev server's inline styles.
+# So online play is checked locally under the real CSP.
 [dev]
-  framework = "#custom"
-  command = "pnpm dev"
-  targetPort = 5199
+  framework = "#static"
+  publish = "dist"
   port = 8888
   autoLaunch = false
-
-[context.dev.environment]
-  VITE_ONLINE = "1"

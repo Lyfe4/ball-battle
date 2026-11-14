@@ -1,7 +1,7 @@
 import { botChooses, OTHER_MODE_SECTIONS, type OtherMode } from '../app/modes.ts';
 import { BEST_OF, DEFAULT_BEST_OF, type BestOf } from '../sim/series.ts';
 import { element, setText } from './dom.ts';
-import { lengthChoiceOf, levelLine, modeLine, modeName } from './modes-text.ts';
+import { CHALLENGE_OPPONENT, lengthChoiceOf, levelLine, modeLine, modeName } from './modes-text.ts';
 import { createScreenHeader } from './screen-header.ts';
 import { createSegmented } from './segmented.ts';
 
@@ -85,6 +85,8 @@ export function createModes(root: HTMLElement, actions: ModesActions): Modes {
           const level = element('span', 'modes-card-level');
           levels.push(level);
           card.append(level);
+        } else if (mode.kind === 'challenge') {
+          card.append(element('span', 'modes-card-level', CHALLENGE_OPPONENT));
         }
         card.addEventListener('click', () => {
           actions.onPick(mode, section.lengthChoice === true ? bestOf : DEFAULT_BEST_OF);

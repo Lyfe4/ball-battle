@@ -30,6 +30,9 @@ export function modeLine(mode: OtherMode): string {
   return mode.kind === 'free' ? FREE_PLAY.line : FORMAT_LINES[mode.format];
 }
 
+/** Who a challenge is played against (ADR 0052), as a bot series names its level. */
+export const CHALLENGE_OPPONENT = 'vs a friend';
+
 /** "vs Normal bot": the level a series is played against. */
 export function levelLine(level: string): string {
   return `vs ${LEVEL_NAMES[level] ?? level} bot`;

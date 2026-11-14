@@ -1,0 +1,245 @@
+// Friend challenges on the page (ADR 0052): sending one (a lineup, then the link to share) and
+// answering one (the card that says who sent it, then a lineup without seeing theirs). The guest
+// is made here, on the first online action only, after the 16+ confirmation: one short card in
+// the flow, never on load. Every state has a way on (ADR 0027).
+import { callApi, type ApiResult } from '../app/api.ts';
+import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
+import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
+import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
+import type { BestOf, Format, Lineup } from '../sim/series.ts';
+import type { BallDefinition } from '../sim/types.ts';
+import type { Draft } from '../ui/lineup-draft.ts';
+import { createNotice, type NoticeContent } from '../ui/notice.ts';
+import { createLineupStep } from '../ui/series/lineup-step.ts';
+import { adultCard, cardFor, shareLink } from './online-challenge-text.ts';
+import { onlineNotice } from './online-text.ts';
+
+export interface ChallengeHost {
+  /** Moves by the Back rules (ADR 0025). */
+  go(write: (params: URLSearchParams) => void): void;
+  /** Shows another screen in place of this entry. */
+  replaceWith(write: (params: URLSearchParams) => void): void;
+  /** In-app Back, or `toParent` when there is no history to go back to. */
+  back(toParent: () => void): void;
+  home(): void;
+  /** Other modes, where challenges are sent from. */
+  modes(): void;
+  readonly storage: DeviceStorage;
+}
+
+export interface ChallengeScreens {
+  setVisible(visible: boolean): void;
+  /** A friend's link: its card, or the lineup that accepts it. */
+  showChallenge(token: string, step: 'card' | 'lineup'): void;
+  /** The lineup for a challenge to send. */
+  showSend(format: Format, bestOf: BestOf): void;
+}
+
+export function createChallengeScreens(
+  roots: { readonly notice: HTMLElement; readonly lineup: HTMLElement },
+  balls: readonly BallDefinition[],
+  host: ChallengeHost,
+): ChallengeScreens {
+  let visible = false;
+  let draft: Draft = [];
+  let info: ChallengeInfo | undefined;
+  let token: string | undefined;
+  /** One id per challenge being sent, so a retry after a lost answer gets the same link. */
+  let requestId = crypto.randomUUID();
+  let sending: { readonly format: Format; readonly bestOf: BestOf } | undefined;
+
+  const notice = createNotice(roots.notice, () => {
+    host.back(() => {
+      host.home();
+    });
+  });
+  const lineup = createLineupStep(balls, {
+    onBack: () => {
+      host.back(() => {
+        if (sending !== undefined || token === undefined) host.modes();
+        else
+          host.replaceWith((url) => {
+            writeChallengeParams(url, token ?? '');
+          });
+      });
+    },
+    onLevel: () => undefined,
+    onChange: (tray) => {
+      draft = tray;
+    },
+    onDone: (own) => {
+      void (sending === undefined ? accept(own) : send(own));
+    },
+  });
+  roots.lineup.classList.add('series-setup');
+  roots.lineup.replaceChildren(lineup.element);
+
+  function show(part: 'notice' | 'lineup', content?: NoticeContent): void {
+    roots.notice.hidden = !visible || part !== 'notice';
+    roots.lineup.hidden = !visible || part !== 'lineup';
+    if (content !== undefined) notice.show(content);
+  }
+
+  const home = () => {
+    host.home();
+  };
+
+  /** A failure as a notice; an `unauthenticated` one first asks for the 16+ confirmation. */
+  function failed(answer: Exclude<ApiResult<unknown>, { ok: true }>, retry: () => void): void {
+    if (answer.kind === 'offline') {
+      show('notice', onlineNotice('offline', retry, home));
+      return;
+    }
+    if (answer.code === 'unauthenticated') {
+      rememberGuest(host.storage, false);
+      show(
+        'notice',
+        adultCard(
+          () => void startGuest(retry),
+          () => {
+            host.back(home);
+          },
+        ),
+      );
+      return;
+    }
+    show('notice', {
+      title: 'That didn’t work',
+      body: [answer.message],
+      buttons: [{ text: 'Home', onClick: home }],
+    });
+  }
+
+  /**
+   * The first online action on a device with no guest asks for the 16+ confirmation before any
+   * request (a device that lost its cookie meets the same card after a 401). True when it asked.
+   */
+  function askFirst(then: () => void): boolean {
+    if (hasGuest(host.storage)) return false;
+    show(
+      'notice',
+      adultCard(
+        () => void startGuest(then),
+        () => {
+          host.back(home);
+        },
+      ),
+    );
+    return true;
+  }
+
+  /** Makes the guest (the first online action), then does what was asked. */
+  async function startGuest(then: () => void): Promise<void> {
+    const made = await callApi<unknown>('POST', 'session', { adult: true });
+    if (!made.ok) {
+      failed(made, () => void startGuest(then));
+      return;
+    }
+    rememberGuest(host.storage, true);
+    then();
+  }
+
+  async function send(own: Lineup): Promise<void> {
+    if (sending === undefined || askFirst(() => void send(own))) return;
+    const body = { ...sending, lineup: own, requestId };
+    const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
+    if (!answer.ok) {
+      failed(answer, () => void send(own));
+      return;
+    }
+    const link = answer.body;
+    if (link === undefined) return;
+    requestId = crypto.randomUUID();
+    // The sender's own card shares the link; this lineup entry becomes it.
+    host.replaceWith((url) => {
+      writeChallengeParams(url, link.token);
+    });
+  }
+
+  async function accept(own: Lineup): Promise<void> {
+    if (token === undefined || askFirst(() => void accept(own))) return;
+    const answer = await callApi<Accepted>('POST', `challenges/${token}/accept`, { lineup: own });
+    if (!answer.ok) {
+      if (answer.kind === 'error' && answer.code !== 'unauthenticated') {
+        // Taken, expired, or the sender's own: the card says so with a way on.
+        await loadCard();
+        return;
+      }
+      failed(answer, () => void accept(own));
+      return;
+    }
+    const seriesId = answer.body?.seriesId;
+    if (seriesId === undefined) return;
+    rememberGuest(host.storage, true);
+    host.replaceWith((url) => {
+      writeOnlineSeriesParams(url, seriesId);
+    });
+  }
+
+  async function loadCard(): Promise<void> {
+    if (token === undefined) return;
+    const answer = await callApi<ChallengeInfo>('GET', `challenges/${token}`);
+    if (!answer.ok || answer.body === undefined) {
+      if (!answer.ok && answer.kind === 'error' && answer.status === 404) {
+        show('notice', cardFor(undefined, cardActions()));
+      } else if (!answer.ok) failed(answer, () => void loadCard());
+      return;
+    }
+    info = answer.body;
+    show('notice', cardFor(info, cardActions()));
+  }
+
+  function cardActions() {
+    const current = token ?? '';
+    return {
+      token: current,
+      home,
+      lineup: () => {
+        host.go((url) => {
+          writeChallengeParams(url, current, 'lineup');
+        });
+      },
+      series: (id: string) => {
+        host.go((url) => {
+          writeOnlineSeriesParams(url, id);
+        });
+      },
+      sendOwn: () => {
+        host.modes();
+      },
+      share: () => shareLink(current),
+    };
+  }
+
+  return {
+    setVisible(next) {
+      visible = next;
+      if (!next) show('notice');
+    },
+    showChallenge(next, step) {
+      sending = undefined;
+      if (token !== next) info = undefined;
+      token = next;
+      if (step === 'lineup' && info?.status === 'open') {
+        show('lineup');
+        lineup.open(info.format, draft, undefined, info.bestOf, 'Accept challenge');
+        return;
+      }
+      if (step === 'lineup') {
+        // Opened straight from a URL: the card first, which knows the format.
+        host.replaceWith((url) => {
+          writeChallengeParams(url, next);
+        });
+        return;
+      }
+      show('notice', { title: 'Loading…', body: [], buttons: [{ text: 'Home', onClick: home }] });
+      void loadCard();
+    },
+    showSend(format, bestOf) {
+      sending = { format, bestOf };
+      token = undefined;
+      show('lineup');
+      lineup.open(format, draft, undefined, bestOf, 'Send challenge');
+    },
+  };
+}

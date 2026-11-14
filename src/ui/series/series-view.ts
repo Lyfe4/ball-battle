@@ -227,6 +227,12 @@ export interface SeriesMoment {
    * due from both sides at once, which the sim records A first. Offline it is the sim's own.
    */
   readonly due?: readonly Side[];
+  /**
+   * An online series (ADR 0052): the series goes on elsewhere, so at the end and while it is the
+   * other side's turn the way on is Home (`newSeries`), and `note` says why it waits ("Waiting
+   * for Player 4821 · 23 h left") or how it ended (a forfeit).
+   */
+  readonly online?: { readonly note: string | undefined };
 }
 
 export interface SeriesScreen {
@@ -235,6 +241,8 @@ export interface SeriesScreen {
   readonly choice: PickChoice | undefined;
   /** The coming round, when Play round is how the player moves on. */
   readonly pairing: Pairing | undefined;
+  /** Online, between rounds with nothing to do but wait for the other side. */
+  readonly waiting: boolean;
   /**
    * The controls that move the player forward. Never empty outside a fight (no dead ends): a fight
    * moves on by itself, every other screen offers a pick, Play round, or Rematch and New series.
@@ -250,6 +258,7 @@ export function seriesScreenOf({
   linkState,
   seats,
   due,
+  online,
 }: SeriesMoment): SeriesScreen {
   const you = seats?.you ?? 'a';
   const playing = current !== undefined && !settled;
@@ -260,17 +269,30 @@ export function seriesScreenOf({
       phase,
       choice: undefined,
       pairing: undefined,
-      actions: finished ? ['rematch', 'newSeries'] : [],
+      waiting: false,
+      actions: finished ? (online === undefined ? ['rematch', 'newSeries'] : ['newSeries']) : [],
     };
   }
   // A link's due pick is the link's to make, so the player isn't asked for it: Play round makes it.
   const choice = linkState === undefined ? pickChoiceOf(state, you, due) : undefined;
   // The round Play round leads to: after the link's due picks, when it holds them.
-  const pairing = choice === undefined ? pairingOf(linkState ?? state, you, due) : undefined;
+  const paired = choice === undefined ? pairingOf(linkState ?? state, you, due) : undefined;
+  // Online, a round can only be played (watched) once the server has played it.
+  const pairing =
+    online !== undefined && nextMatch(linkState ?? state) === undefined ? undefined : paired;
+  const waiting = online !== undefined && choice === undefined && pairing === undefined;
   return {
     phase,
     choice,
     pairing,
-    actions: choice !== undefined ? ['pick'] : pairing !== undefined ? ['play'] : [],
+    waiting,
+    actions:
+      choice !== undefined
+        ? ['pick']
+        : pairing !== undefined
+          ? ['play']
+          : waiting
+            ? ['newSeries']
+            : [],
   };
 }

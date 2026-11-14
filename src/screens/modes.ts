@@ -6,6 +6,7 @@ import { loadBotLevel } from '../app/bot-level.ts';
 import type { Matchup } from '../app/matchup.ts';
 import { writePickParams } from '../app/route.ts';
 import { loadSeriesLength, saveSeriesLength } from '../app/series-length.ts';
+import { writeSendParams } from '../app/online-url.ts';
 import { writeSeriesModeParams } from '../app/series-url.ts';
 import { createModes } from '../ui/modes.ts';
 import { browserStorage as storage } from '../app/storage.ts';
@@ -41,7 +42,8 @@ export function createModesScreen(root: HTMLElement, host: ModesHost): ModesScre
         return;
       }
       host.go((url) => {
-        writeSeriesModeParams(url, mode.format, 'lineup', bestOf);
+        if (mode.kind === 'challenge') writeSendParams(url, mode.format, bestOf);
+        else writeSeriesModeParams(url, mode.format, 'lineup', bestOf);
       });
     },
   });

@@ -91,6 +91,9 @@ describe('router', () => {
       match: handler('match'),
       series: handler('series'),
       outdated: handler('outdated'),
+      online: handler('online'),
+      challenge: handler('challenge'),
+      send: handler('send'),
     };
     return { log, handlers };
   }

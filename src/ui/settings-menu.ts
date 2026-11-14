@@ -21,6 +21,8 @@ export interface SettingsHost {
   readonly setSpeed: (speed: PlaybackSpeed) => void;
   /** The court on screen, if one shows: the menu keeps off it (ADR 0044). */
   readonly court: () => Box | undefined;
+  /** Online play's group ("Forget me"), in builds that have it (ADR 0052). */
+  readonly online?: { readonly element: HTMLElement; refresh(): void };
 }
 
 const PANEL_ID = 'settings-panel';
@@ -123,6 +125,7 @@ function buildMenu(): Menu {
   const foot = element('div', 'settings-foot');
   foot.append(again, close);
   panel.append(title, paused, speedRow, tipsGroup, foot);
+  if (host?.online !== undefined) foot.before(host.online.element);
 
   function render(): void {
     if (host === undefined) return;
@@ -141,6 +144,7 @@ function buildMenu(): Menu {
     speed.select(host.speed());
     hints.setAttribute('aria-checked', String(host.tips.enabled()));
     cards.setAttribute('aria-checked', String(host.tips.readyCards()));
+    host.online?.refresh();
   }
   const probe = element('div', 'settings-safe-probe');
   probe.setAttribute('aria-hidden', 'true');

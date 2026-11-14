@@ -1,6 +1,5 @@
-import { element } from './dom.ts';
+import { createNotice } from './notice.ts';
 import { outdatedText, type OutdatedLink } from './outdated-text.ts';
-import { createScreenHeader } from './screen-header.ts';
 
 export interface OutdatedActions {
   readonly onBack: () => void;
@@ -21,30 +20,19 @@ export interface OutdatedScreen {
  * link plays under today's rules; a newer one (an old page, cached) offers a reload first.
  */
 export function createOutdatedScreen(root: HTMLElement, actions: OutdatedActions): OutdatedScreen {
-  const header = createScreenHeader('', 'Back', actions.onBack);
-  const body = element('p', 'outdated-body');
-  const play = element('button', 'hud-button');
-  play.type = 'button';
-  play.addEventListener('click', actions.onPlay);
-  const reload = element('button', 'hud-button hud-button-primary', 'Reload');
-  reload.type = 'button';
-  reload.addEventListener('click', actions.onReload);
-  const footer = element('div', 'screen-footer');
-  root.classList.add('outdated');
-  root.replaceChildren(header.element, body, footer);
-
+  const notice = createNotice(root, actions.onBack);
   return {
     setVisible(visible) {
       root.hidden = !visible;
     },
     show(link) {
       const text = outdatedText(link);
-      header.setTitle(text.title);
-      body.textContent = text.body;
-      play.textContent = text.play;
-      play.classList.toggle('hud-button-primary', !link.newer);
-      footer.replaceChildren(...(link.newer ? [reload, play] : [play]));
-      header.focus();
+      const play = { text: text.play, onClick: actions.onPlay };
+      notice.show({
+        title: text.title,
+        body: [text.body],
+        buttons: link.newer ? [{ text: 'Reload', onClick: actions.onReload }, play] : [play],
+      });
     },
   };
 }

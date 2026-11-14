@@ -34,9 +34,9 @@ function filesIn(dir: string): string[] {
   );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+/** Checks dist/ and fails the process on any problem; `online` is whether it may call the API. */
+export function reportDist(online: boolean): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
-  const online = process.env['VITE_ONLINE'] === '1';
   const problems = filesIn(dist)
     .filter((file) => /\.(?:js|html|css|json|webmanifest)$/.test(file))
     .flatMap((file) => problemsIn(file.slice(dist.length + 1), readFileSync(file, 'utf8'), online));
@@ -45,4 +45,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
   console.log(`dist/ holds no secret${online ? '' : ' and no online code'}.`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  reportDist(process.env['VITE_ONLINE'] === '1');
 }

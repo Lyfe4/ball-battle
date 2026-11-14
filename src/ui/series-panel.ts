@@ -72,6 +72,11 @@ export function createSeriesPanel(
   roots: SeriesPanelRoots,
   definitions: DefinitionLookup,
   actions: SeriesActions,
+  /**
+   * An online series (ADR 0052): it goes on without this page, so leaving asks nothing, the way
+   * on at the end is Home, and no replay link is offered (the series is on the server).
+   */
+  online = false,
 ): SeriesPanel {
   const { panel: root, exit } = roots;
   root.replaceChildren();
@@ -120,19 +125,26 @@ export function createSeriesPanel(
   const buttons = element('div', 'hud-actions');
   const next = button('Play round', 'hud-button hud-button-primary', actions.onNext);
   const rematch = button('Rematch', 'hud-button', actions.onRematch);
-  const newSeries = button('New series', 'hud-button hud-button-primary', actions.onNewSeries);
+  const newSeries = button(
+    online ? 'Home' : 'New series',
+    'hud-button hud-button-primary',
+    actions.onNewSeries,
+  );
+  // Online: why it waits, or how it ended.
+  const note = element('p', 'series-note');
   buttons.append(next, rematch, newSeries);
   const share = button('Copy link', 'text-link series-share', () => {
     void copyLink();
   });
-  // Leaving forgets the series (ADR 0042), so it is asked once, in place.
-  const leave = createLeaveConfirm(actions.onLeave);
+  // Leaving forgets the series (ADR 0042), so it is asked once, in place. Online it doesn't.
+  const leave = createLeaveConfirm(actions.onLeave, !online);
   root.append(
     heading,
     bar.element,
     bar.legend,
     status,
     result,
+    note,
     track.element,
     banner.element,
     picks.element,
@@ -229,7 +241,8 @@ export function createSeriesPanel(
       );
       track.update(state, trackOf(state, playing ? current : undefined, seats.you), seats);
 
-      const due = playing || linkState !== undefined ? undefined : awaitingPick(state);
+      const dueNow = moment.due ?? [awaitingPick(state)];
+      const due = playing || linkState !== undefined ? undefined : dueNow.includes(seats.you);
       const upcoming = nextMatch(state);
       const roundsPlayed = state.rounds.length;
 
@@ -275,18 +288,22 @@ export function createSeriesPanel(
       rematch.hidden = !actions.includes('rematch');
       newSeries.hidden = !actions.includes('newSeries');
       buttons.hidden = next.hidden && rematch.hidden && newSeries.hidden;
-      share.hidden = !finished;
+      share.hidden = !finished || online;
       if (!finished) setText(share, 'Copy link');
-      leave.setHidden(finished);
+      leave.setHidden(finished || screen.waiting);
+      const said = playing ? undefined : moment.online?.note;
+      note.hidden = said === undefined;
+      setText(note, said ?? '');
 
       let text = '';
       if (playing && current !== undefined) {
         text = playingLine(current, nameOf, bestOfOf(state.setup), seats);
       } else if (finished) text = finalLine(state, seats);
-      else if (due === seats.you && choice !== undefined) {
+      else if (due === true && choice !== undefined) {
         text = pickLine(choice, roundsPlayed, remainingOf(state, them), nameOf, toss?.first, seats);
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf, seats);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
+      else if (said !== undefined) text = said;
       setText(status, text);
       return phase;
     },

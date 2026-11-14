@@ -5,6 +5,7 @@ import {
   lineupParentOf,
   MAIN_FORMAT,
   OTHER_MODE_SECTIONS,
+  sectionsFor,
   writeMainModeParams,
 } from './modes.ts';
 import { parseRoute } from './route.ts';
@@ -76,5 +77,26 @@ describe('Other modes', () => {
     expect(botChooses('reveal')).toBe(true);
     expect(botChooses('showdown')).toBe(true);
     expect(botChooses('blind')).toBe(false);
+  });
+});
+
+describe('Other modes in a build with online play', () => {
+  it('adds the Online section after the series against the bot, with every format', () => {
+    const sections = sectionsFor(true);
+    expect(sections.map((section) => section.title)).toStrictEqual([
+      'Series vs bot',
+      'Online',
+      'One match',
+    ]);
+    expect(sections[1]?.modes).toStrictEqual([
+      { kind: 'challenge', format: 'reveal' },
+      { kind: 'challenge', format: 'showdown' },
+      { kind: 'challenge', format: 'blind' },
+    ]);
+    expect(sections[1]?.lengthChoice).toBe(true);
+  });
+
+  it('has no Online section without it', () => {
+    expect(sectionsFor(false).some((section) => section.title === 'Online')).toBe(false);
   });
 });

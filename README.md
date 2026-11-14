@@ -210,8 +210,8 @@ replaying a different fight
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
 Online play (ADR 0052) runs only in deploy previews and staging. Locally: Docker, then
-`pnpm exec supabase start`, copy `.env.example` to `.env` with the keys `supabase status` prints,
-and `netlify dev` (http://localhost:8888) serves the game and the API on one origin.
+`pnpm exec supabase start`, `node scripts/local-env.ts > .env`, `pnpm build:online` and
+`netlify dev` (http://localhost:8888), which serves the game and the API on one origin.
 
 Two pages exist only under `pnpm dev`: `/styleguide.html` shows every ball design and the shared
 UI parts, and `/brand.html` draws the icons and the link-preview image with the game's own
@@ -231,6 +231,7 @@ displays.
 | `pnpm test:slow`       | Roster-wide tests that play every matchup (a separate CI job)                                               |
 | `pnpm test:browsers`   | Known match results and page flows in Chromium, Firefox, WebKit (own CI job)                                |
 | `pnpm test:db`         | The API against a local Supabase (`pnpm exec supabase start` first; needs Docker)                           |
+| `pnpm test:online`     | Two players through a friend challenge in Chromium, against `netlify dev`                                   |
 | `pnpm golden`          | Record the known match results again after a ruleset bump                                                   |
 | `pnpm lint`            | ESLint                                                                                                      |
 | `pnpm typecheck`       | `tsc -b` across all tsconfig projects                                                                       |
