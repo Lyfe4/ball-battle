@@ -266,11 +266,11 @@ export function gapLines(): string[] {
     'these, which `pnpm balance` allows by name and nothing else: gaps for future balls to fill',
     `(ADR 0045, 0047, docs/vision.md). The even picks have exactly their counters: ${evenPicks.join('; ')}.`,
     '',
-    '| Ball | Counters each way | Wins and losses within |',
-    '| ---- | ----------------: | ---------------------: |',
+    '| Ball | Wins | Losses | Wins and losses within |',
+    '| ---- | ---: | -----: | ---------------------: |',
     ...Object.entries(SHAPE_EXCEPTIONS).map(
-      ([id, { fewest, most, within }]) =>
-        `| ${name(id)} | ${String(fewest)}-${String(most)} | ${String(within)} |`,
+      ([id, { wins, losses, within }]) =>
+        `| ${name(id)} | ${String(wins.fewest)}-${String(wins.most)} | ${String(losses.fewest)}-${String(losses.most)} | ${String(within)} |`,
     ),
     '',
   ];

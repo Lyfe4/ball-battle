@@ -68,12 +68,27 @@ export const EVEN_PICKS: Readonly<
   magnet: { beats: [], losesTo: ['thorns'] },
 };
 
-/** How far a ball may stray from SHAPE: its own fewest and most counters a side, and gap. */
-export interface ShapeAllowance {
+/** The fewest and most counters a ball may have on one side (the balls it beats, or loses to). */
+export interface CounterRange {
   readonly fewest: number;
   readonly most: number;
+}
+
+/** How far a ball may stray from SHAPE: its own range of wins, of losses, and their gap. */
+export interface ShapeAllowance {
+  readonly wins: CounterRange;
+  readonly losses: CounterRange;
   readonly within: number;
 }
+
+/** SHAPE with some of its numbers changed alike on both sides. */
+function bothSides(change: { fewest?: number; most?: number; within?: number }): ShapeAllowance {
+  const { fewest, most, within } = { ...SHAPE, ...change };
+  return { wins: { fewest, most }, losses: { fewest, most }, within };
+}
+
+/** SHAPE as an allowance: what every ball not named in SHAPE_EXCEPTIONS must fit. */
+export const STANDARD_SHAPE: ShapeAllowance = bothSides({});
 
 /**
  * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
@@ -90,15 +105,15 @@ export interface ShapeAllowance {
  *   gained the Spartan as a fourth loss.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  storm: { ...SHAPE, fewest: 1 },
-  titan: { ...SHAPE, fewest: 1 },
-  bomber: { ...SHAPE, fewest: 1 },
-  berserker: { ...SHAPE, most: 5, within: 3 },
-  bloom: { ...SHAPE, most: 5 },
-  ghost: { ...SHAPE, fewest: 1 },
-  sniper: { ...SHAPE, fewest: 1 },
-  quake: { ...SHAPE, fewest: 1 },
-  vampire: { ...SHAPE, fewest: 1, within: 3 },
+  storm: bothSides({ fewest: 1 }),
+  titan: bothSides({ fewest: 1 }),
+  bomber: bothSides({ fewest: 1 }),
+  berserker: bothSides({ most: 5, within: 3 }),
+  bloom: { ...STANDARD_SHAPE, losses: { fewest: SHAPE.fewest, most: 5 } },
+  ghost: bothSides({ fewest: 1 }),
+  sniper: bothSides({ fewest: 1 }),
+  quake: bothSides({ fewest: 1 }),
+  vampire: bothSides({ fewest: 1, within: 3 }),
 };
 
 /**
@@ -119,9 +134,12 @@ export function shapeProblem(
       ? undefined
       : `an even pick beats ${even.beats.join(', ') || 'nobody'} and loses to ${even.losesTo.join(', ')} only`;
   }
-  const { fewest, most, within } = SHAPE_EXCEPTIONS[id] ?? SHAPE;
-  for (const count of [beats.length, losesTo.length]) {
-    if (count < fewest || count > most) return `needs ${fewest}-${most} counters each way`;
+  const { wins, losses, within } = SHAPE_EXCEPTIONS[id] ?? STANDARD_SHAPE;
+  for (const [side, count, { fewest, most }] of [
+    ['wins', beats.length, wins],
+    ['losses', losesTo.length, losses],
+  ] as const) {
+    if (count < fewest || count > most) return `needs ${fewest}-${most} ${side}`;
   }
   return Math.abs(beats.length - losesTo.length) > within
     ? `wins and losses must be within ${within}`
