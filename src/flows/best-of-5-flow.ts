@@ -72,6 +72,10 @@ async function fromOtherModes(framed: Framed, format: Format): Promise<void> {
 /** Five balls, one row of the tray, then on to the series. */
 async function buildLineup(framed: Framed, own: readonly string[]): Promise<void> {
   expect(shown(framed, '.lineup-mode-name')[0]?.textContent).toMatch(/^Best of 5 · /);
+  // What a screen reader names the setup screen: its length too, not a fixed Best of 3.
+  expect(framed.doc().querySelector('#series-setup')?.getAttribute('aria-label')).toBe(
+    'Best of 5 setup',
+  );
   for (const id of own) tapBall(framed, id);
   await settle();
   const slots = shown(framed, '.lineup-tray-slot');

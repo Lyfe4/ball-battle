@@ -188,6 +188,8 @@ export function createSeriesSetup(
   });
 
   function open(step: SetupStep): void {
+    // The screen's accessible name says its length (ADR 0048); index.html's is Best of 3's.
+    root.setAttribute('aria-label', `Best of ${String(bestOf)} setup`);
     for (const [name, section] of Object.entries(steps)) section.hidden = name !== step;
     // Under the step's header: the rules and the lineup offer a held series back.
     steps[step].firstElementChild?.after(resume.element);
