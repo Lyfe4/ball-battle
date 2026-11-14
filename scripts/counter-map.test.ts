@@ -89,42 +89,65 @@ describe('shapeProblem', () => {
     expect(shapeProblem('archer', some(2), some(4))).toBeDefined();
   });
 
-  it('allows the named exceptions only their own gap', () => {
-    expect(shapeProblem('storm', some(1), some(1))).toBeUndefined();
-    expect(shapeProblem('storm', some(0), some(1))).toBeDefined();
-    expect(shapeProblem('vampire', some(1), some(4))).toBeUndefined();
-    expect(shapeProblem('vampire', some(1), some(5))).toBeDefined();
-    expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
-    expect(shapeProblem('berserker', some(5), some(2))).toBeUndefined();
-    expect(shapeProblem('berserker', some(6), some(2))).toBeDefined();
-    expect(shapeProblem('bloom', some(4), some(5))).toBeUndefined();
-    expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
-    expect(shapeProblem('bloom', some(7), some(4))).toBeDefined();
-    expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
-    // The Bloom's allowance is on its losses only: its wins keep the usual 2-4.
-    expect(shapeProblem('bloom', some(5), some(4))).toBeDefined();
-    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
-    expect(shapeProblem('bloom', some(1), some(2))).toBeDefined();
-    expect(shapeProblem('ghost', some(2), some(1))).toBeUndefined();
+  it('allows each named exception exactly its own gap, and no more', () => {
+    // Each ball's shape today (map and measured, ruleset 14) fits its allowance...
+    const today: Readonly<Record<string, readonly [number, number]>> = {
+      storm: [2, 1],
+      titan: [1, 1],
+      bomber: [2, 1],
+      berserker: [5, 4],
+      bloom: [4, 5],
+      ghost: [2, 1],
+      sniper: [1, 2],
+      quake: [1, 2],
+      vampire: [2, 4],
+    };
+    for (const [id, [wins, losses]] of Object.entries(today)) {
+      expect({ id, problem: shapeProblem(id, some(wins), some(losses)) }).toStrictEqual({
+        id,
+        problem: undefined,
+      });
+    }
+    // ...and one more step off the shape on any side fails.
+    expect(shapeProblem('storm', some(1), some(1))).toBeDefined();
+    expect(shapeProblem('storm', some(2), some(0))).toBeDefined();
+    expect(shapeProblem('titan', some(0), some(1))).toBeDefined();
+    expect(shapeProblem('titan', some(1), some(0))).toBeDefined();
+    expect(shapeProblem('bomber', some(1), some(1))).toBeDefined();
+    expect(shapeProblem('ghost', some(1), some(1))).toBeDefined();
     expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
+    expect(shapeProblem('berserker', some(6), some(5))).toBeDefined();
+    expect(shapeProblem('berserker', some(5), some(5))).toBeDefined();
+    expect(shapeProblem('berserker', some(5), some(3))).toBeDefined();
+    expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
+    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
+    expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
+    expect(shapeProblem('sniper', some(1), some(1))).toBeDefined();
+    expect(shapeProblem('sniper', some(0), some(2))).toBeDefined();
+    expect(shapeProblem('quake', some(1), some(1))).toBeDefined();
+    expect(shapeProblem('quake', some(1), some(3))).toBeDefined();
+    expect(shapeProblem('vampire', some(1), some(4))).toBeDefined();
+    expect(shapeProblem('vampire', some(2), some(5))).toBeDefined();
+    expect(shapeProblem('vampire', some(1), some(3))).toBeDefined();
+    // A ball that moves back towards the shape still passes.
+    expect(shapeProblem('storm', some(2), some(2))).toBeUndefined();
+    expect(shapeProblem('vampire', some(3), some(4))).toBeUndefined();
+    expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
   });
 
-  it('keeps every other exception the same on both sides, as before wins and losses were split', () => {
-    const same = (fewest: number, most: number, within: number) => ({
-      wins: { fewest, most },
-      losses: { fewest, most },
-      within,
-    });
+  it('pins each allowance', () => {
+    const range = (fewest: number, most: number) => ({ fewest, most });
+    const standard = range(2, 4);
     expect(SHAPE_EXCEPTIONS).toStrictEqual({
-      storm: same(1, 4, 1),
-      titan: same(1, 4, 1),
-      bomber: same(1, 4, 1),
-      berserker: same(2, 5, 3),
-      bloom: { wins: { fewest: 2, most: 4 }, losses: { fewest: 2, most: 5 }, within: 1 },
-      ghost: same(1, 4, 1),
-      sniper: same(1, 4, 1),
-      quake: same(1, 4, 1),
-      vampire: same(1, 4, 3),
+      storm: { wins: standard, losses: range(1, 4), within: 1 },
+      titan: { wins: range(1, 4), losses: range(1, 4), within: 1 },
+      bomber: { wins: standard, losses: range(1, 4), within: 1 },
+      berserker: { wins: range(2, 5), losses: standard, within: 1 },
+      bloom: { wins: standard, losses: range(2, 5), within: 1 },
+      ghost: { wins: standard, losses: range(1, 4), within: 1 },
+      sniper: { wins: range(1, 4), losses: standard, within: 1 },
+      quake: { wins: range(1, 4), losses: standard, within: 1 },
+      vampire: { wins: standard, losses: standard, within: 2 },
     });
   });
 
