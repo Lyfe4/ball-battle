@@ -1,7 +1,7 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { secondsOf } from './how-it-works.ts';
-import type { BallState, WorldState } from '../types.ts';
+import type { WorldState } from '../types.ts';
 import { leadTarget } from './archer.ts';
 import { nearestTarget } from './targeting.ts';
 
@@ -20,12 +20,6 @@ export const BOOMERANG_DAMAGE = 7;
 export const TURN_TICKS = 22;
 /** A safety net: a boomerang always comes home well inside this. */
 export const BOOMERANG_LIFETIME_TICKS = 240;
-
-/** The Boomerang's next throw tick, read from any ball state (undefined for other balls). */
-export function nextThrowTickOf(ball: BallState): number | undefined {
-  const next = ball.abilityState['nextThrowTick'];
-  return typeof next === 'number' ? next : undefined;
-}
 
 /** True while `ownerId` has a boomerang in the air. */
 export function hasBoomerangOut(world: WorldState, ownerId: string): boolean {
