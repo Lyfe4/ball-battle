@@ -8,7 +8,7 @@ import type { BallState } from './types.ts';
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
  */
-export type StatusKind = 'slowed' | 'poisoned';
+export type StatusKind = 'slowed' | 'poisoned' | 'glitched';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {

@@ -123,6 +123,21 @@ export function batchSixState(ball: BallState, balls: readonly BallState[]): Bal
       abilityState: { cursedId: cursed.id, cursedTick: TICK - half, burstTick: TICK + half },
     };
   }
+  if (ball.definitionId === 'glitch') return ball;
+  if (balls[balls.indexOf(ball) + 1]?.definitionId === 'glitch') {
+    // The Glitch's last bump, part-way through: the ball before it in the grid is glitched.
+    const status = {
+      kind: 'glitched' as const,
+      sourceId: 'glitch',
+      sinceTick: TICK - 40,
+      expiresTick: TICK + 80,
+    };
+    return withSpiderWebs({ ...ball, statuses: [...ball.statuses, status] });
+  }
+  return withSpiderWebs(ball);
+}
+
+function withSpiderWebs(ball: BallState): BallState {
   if (ball.definitionId === 'spider') {
     const webs = [
       { side: 0, at: 700, since: TICK - WEB_TICKS + 60, until: TICK + 45 },

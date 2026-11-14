@@ -1,5 +1,6 @@
 import { isAlive } from './combat.ts';
 import { getDefinition } from './definitions.ts';
+import { abilityTickOf } from './glitch.ts';
 import type { BallState, DefinitionLookup } from './types.ts';
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -22,7 +23,7 @@ export function applySize(
     if (!isAlive(ball)) return ball;
     const radiusOf = getDefinition(definitions, ball.definitionId).radiusOf;
     if (radiusOf === undefined) return ball;
-    const radius = radiusOf(ball, tick);
+    const radius = radiusOf(ball, abilityTickOf(ball, tick));
     if (!Number.isFinite(radius) || radius <= 0 || radius * 2 > arenaSize) {
       throw new Error(`Ball "${ball.id}" has an invalid radius (${String(radius)})`);
     }

@@ -1,3 +1,6 @@
+import { drawGlitched } from './glitched.ts';
+import { isPhased } from '../sim/combat.ts';
+import { isGlitched } from '../sim/glitch.ts';
 import { ownerColor } from './ball-colors.ts';
 import { drawRewinds } from './draw-rewind.ts';
 import type { RewindTrail } from './rewind.ts';
@@ -11,6 +14,7 @@ import {
   drawKnockouts,
   drawParticles,
   drawStatuses,
+  glitchRingRadius,
   drawWinnerRing,
   withBallTransform,
 } from './draw-feel.ts';
@@ -132,7 +136,8 @@ export function drawWorld(
     const definition = definitions.get(ball.definitionId);
     const design = BALL_DESIGNS.get(ball.definitionId);
     const heal = effects.heal(ball.id);
-    const phased = definition?.phasedOf?.(ball) ?? false;
+    const phased = definition !== undefined && isPhased(ball, definition);
+    const glitched = isGlitched(ball);
     withBallTransform(ctx, ball, effects.squash(ball.id), effects.intro(index), () => {
       drawBall(ctx, world, ball, {
         color,
@@ -142,6 +147,7 @@ export function drawWorld(
         design,
         cssPixelsPerUnit,
         phased,
+        glitched,
       });
     });
     if (ball.health > 0) {
@@ -149,6 +155,7 @@ export function drawWorld(
       const pulse = { strength: heal, amount: effects.healAmount(ball.id), maxHealth };
       drawHealPulse(ctx, ball, pulse, effects.reducedMotion);
       drawStatuses(ctx, ball);
+      drawGlitched(ctx, ball, world.tick, glitchRingRadius(ball), effects.reducedMotion);
       drawGlance(ctx, ball, effects.glance(ball.id), effects.reducedMotion);
     }
   });
@@ -211,6 +218,8 @@ export interface BallLook {
   readonly detail?: 'full' | 'simple';
   /** Phased (ADR 0026, 0049): drawn see-through with a broken outline. */
   readonly phased?: boolean;
+  /** Glitched (proposal): its ability is off, so its markings fade. */
+  readonly glitched?: boolean;
 }
 
 /**
@@ -235,7 +244,12 @@ export function drawBall(
   ctx.fillStyle = color;
   ctx.fill();
   const view = design === undefined ? undefined : designView(design, ball, world, look);
-  if (design !== undefined && view !== undefined) paintDesign(ctx, view, design.draw);
+  if (design !== undefined && view !== undefined) {
+    ctx.save();
+    if (look.glitched === true) ctx.globalAlpha *= theme.glitchedDesignAlpha;
+    paintDesign(ctx, view, design.draw);
+    ctx.restore();
+  }
   // The design leaves its own path behind (paths are not part of save/restore), so the flash and
   // outline rebuild the body's.
   ctx.beginPath();

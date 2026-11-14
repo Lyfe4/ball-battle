@@ -1,0 +1,10 @@
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "stats": {"titan": {"maxHealth": 79}}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "stats": {"titan": {"maxHealth": 80}}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "stats": {"titan": {"contactDamage": 14.8}}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "stats": {"titan": {"contactDamage": 15}}}
+{"bloom": {"health": 53, "speed": 780, "hit": 21, "every": 12, "wait": 130}}
+{"bloom": {"health": 53, "speed": 780, "hit": 21, "every": 12, "wait": 130}, "stats": {"titan": {"maxHealth": 79}}}
+{"bloom": {"health": 53, "speed": 780, "hit": 21, "every": 12, "wait": 130}, "stats": {"titan": {"maxHealth": 80}}}
+{"bloom": {"health": 53, "speed": 780, "hit": 21, "every": 12, "wait": 130}, "stats": {"titan": {"contactDamage": 14.8}}}
+{"bloom": {"health": 53, "speed": 780, "hit": 21, "every": 12, "wait": 130}, "stats": {"titan": {"contactDamage": 15}}}

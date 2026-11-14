@@ -10,13 +10,13 @@ export type BloomState = Readonly<{
   pausedUntil: number;
 }>;
 
-/** It heals HEAL_AMOUNT every this many ticks, the whole match. */
-export const HEAL_EVERY_TICKS = 17;
+/** Once regrowing, it heals HEAL_AMOUNT every this many ticks. */
+export const HEAL_EVERY_TICKS = 12;
 export const HEAL_AMOUNT = 1;
 /** Its first regrowth comes this tick. */
 export const FIRST_HEAL_TICK = HEAL_EVERY_TICKS;
-/** After every hit it takes its regrowth pauses this long (1 s): the petals close. */
-export const PAUSE_TICKS = 60;
+/** It regrows only after this long untouched (2 s); any hit starts the wait again. Its petals stay shut. */
+export const PAUSE_TICKS = 120;
 
 /** The tick a Bloom next regrows, read from any ball state (undefined for other balls). */
 export function nextHealTickOf(ball: BallState): number | undefined {
@@ -38,16 +38,16 @@ export function pausedUntilOf(ball: BallState): number | undefined {
 export const bloom = defineBall<BloomState>({
   id: 'bloom',
   name: 'Bloom',
-  description: 'Always regrowing, but every hit stops it for a second.',
+  description: 'Regrows once left alone for 2 s; any hit makes it wait again.',
   color: '#f472b6',
   ability: { name: 'Regrowth', shownBy: { kind: 'healed' } },
   howItWorks: [
-    `It regrows ${HEAL_AMOUNT} health every ${secondsOf(HEAL_EVERY_TICKS)} s, all match long.`,
-    `Every hit it takes, of any kind, stops that for ${secondsOf(PAUSE_TICKS)} s: its petals close.`,
+    `Left alone for ${secondsOf(PAUSE_TICKS)} s, it opens and regrows ${HEAL_AMOUNT} health every ${secondsOf(HEAL_EVERY_TICKS)} s.`,
+    'Every hit it takes, of any kind, closes it into a bud and starts the wait again.',
   ],
   radius: STANDARD_BALL_RADIUS,
-  speed: 760,
-  maxHealth: 49,
+  speed: 780,
+  maxHealth: 52,
   contactDamage: 21,
   initialAbilityState: { nextHealTick: FIRST_HEAL_TICK, pausedUntil: 0 },
   hooks: {

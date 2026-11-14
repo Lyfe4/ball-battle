@@ -1,6 +1,7 @@
 // The Spider's webs (ADR 0049): a fan of silk against the wall where it bounced, under the balls
 // like a zone, fading out at the end of its life. Reads sim state only.
 import { WEB_HALF_LENGTH, websOf } from '../sim/balls/spider.ts';
+import { abilityTickOf } from '../sim/glitch.ts';
 import type { WorldState } from '../sim/types.ts';
 import { theme } from './theme.ts';
 
@@ -20,7 +21,7 @@ export function drawWebs(ctx: CanvasRenderingContext2D, world: WorldState): void
     const webs = websOf(ball);
     if (webs === undefined || ball.health <= 0) continue;
     for (const web of webs) {
-      const left = web.until - world.tick;
+      const left = web.until - abilityTickOf(ball, world.tick);
       if (left <= 0) continue;
       const frame = frameOf(web.side, web.at, size);
       ctx.save();

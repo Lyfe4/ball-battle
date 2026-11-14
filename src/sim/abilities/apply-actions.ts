@@ -1,5 +1,6 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
+import { isGlitched } from '../glitch.ts';
 import { spawnMinion } from '../minions/spawn.ts';
 import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
@@ -198,7 +199,9 @@ export function applyActions(
         update(action.targetId, (target) => {
           assertStatusDuration(action.status, action.durationTicks, ownerId);
           // A ball that resists a kind keeps it for less time, or never gets it (ADR 0016).
-          const keeps = getDefinition(definitions, target.definitionId).statusResistance;
+          const keeps = isGlitched(target)
+            ? undefined
+            : getDefinition(definitions, target.definitionId).statusResistance;
           const durationTicks = resistedDuration(action.durationTicks, keeps?.[action.status]);
           if (durationTicks === 0) return undefined;
           const request = { kind: action.status, durationTicks };

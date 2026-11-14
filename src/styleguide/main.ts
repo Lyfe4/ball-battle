@@ -1,9 +1,13 @@
+import { GLITCH_TICKS } from '../sim/balls/glitch.ts';
+import { isPhased } from '../sim/combat.ts';
+import { isGlitched } from '../sim/glitch.ts';
+import { drawGlitched } from '../render/glitched.ts';
 // Dev-only style guide (/styleguide.html under `pnpm dev`; not in the production build). Draws
 // every ball with the game's own drawBall and designs, in each ability state, large and at phone
 // size, so designs can be reviewed without playing matches.
 import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import { ballColor } from '../render/ball-colors.ts';
-import { drawStatuses } from '../render/draw-feel.ts';
+import { drawStatuses, glitchRingRadius } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { drawHealPulse } from '../render/draw-cues.ts';
 import { drawAimLines } from '../render/projectiles.ts';
@@ -75,7 +79,8 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
   const statuses = (tile.statuses ?? []).map((kind) => ({
     kind,
     sourceId: 'ball-1',
-    expiresTick: TICK + 1,
+    // A glitch part-way through, so its ring shows how much is left.
+    expiresTick: kind === 'glitched' ? TICK + Math.round(GLITCH_TICKS * 0.65) : TICK + 1,
     sinceTick: TICK,
   }));
   const shown = { ...ball, statuses };
@@ -83,7 +88,8 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
-    phased: definition.phasedOf?.(shown) ?? false,
+    phased: isPhased(shown, definition),
+    glitched: isGlitched(shown),
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
     cssPixelsPerUnit: radiusPx / ball.radius,
@@ -97,7 +103,10 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     };
     drawHealPulse(ctx, shown, pulse, false);
   }
-  if (rings > 0) drawStatuses(ctx, shown);
+  if (rings > 0) {
+    drawStatuses(ctx, shown);
+    drawGlitched(ctx, shown, TICK, glitchRingRadius(shown), true);
+  }
   return canvas;
 }
 

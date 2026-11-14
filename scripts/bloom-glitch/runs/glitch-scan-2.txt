@@ -1,0 +1,9 @@
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 66, "speed": 770, "hit": 24, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 72, "speed": 770, "hit": 22, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 80, "speed": 770, "hit": 20, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 80, "speed": 770, "hit": 18, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 88, "speed": 770, "hit": 18, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 88, "speed": 770, "hit": 16, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 96, "speed": 770, "hit": 15, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 104, "speed": 770, "hit": 13, "ticks": 120}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 66, "speed": 770, "hit": 24, "ticks": 120}, "proto": {"keepSizeHit": false}}

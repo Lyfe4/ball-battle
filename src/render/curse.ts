@@ -2,6 +2,7 @@
 // of its health bar, and a ring that empties as the burst comes, flickering in its last stretch
 // (steady with reduced motion). Reads sim state only.
 import { CURSE_FUSE_TICKS, hexCurseOf } from '../sim/balls/hex.ts';
+import { abilityTickOf } from '../sim/glitch.ts';
 import type { WorldState } from '../sim/types.ts';
 import { hexagonPath } from './ball-designs/hex.ts';
 import { theme } from './theme.ts';
@@ -28,7 +29,7 @@ export function drawCurses(
     if (curse === undefined || owner.health <= 0) continue;
     const target = world.balls.find((ball) => ball.id === curse.cursedId);
     if (target === undefined || target.health <= 0) continue;
-    const left = curseLeft(curse, world.tick);
+    const left = curseLeft(curse, abilityTickOf(owner, world.tick));
     const { x, y } = target.position;
     const r = target.radius;
     ctx.save();

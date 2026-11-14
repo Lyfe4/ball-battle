@@ -2,6 +2,7 @@ import type { PairContact } from './collision.ts';
 import { CONTACT_SLOP, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
 import { defendHit, type HitReducedEvent } from './defence.ts';
+import { glitchProto, isGlitched } from './glitch.ts';
 import type {
   BallDefeatedEvent,
   BallDefinition,
@@ -66,6 +67,7 @@ export function impactDamage(contactDamage: number, multiplier: number): number 
 
 /** True while a ball's definition says it is phased (ADR 0026): it passes through other balls. */
 export function isPhased(ball: BallState, definition: BallDefinition): boolean {
+  if (isGlitched(ball)) return false;
   return definition.phasedOf?.(ball) ?? false;
 }
 
@@ -75,7 +77,10 @@ export function isPhased(ball: BallState, definition: BallDefinition): boolean {
  * negative value, which only a bug can produce.
  */
 export function contactDamageOf(ball: BallState, definition: BallDefinition): number {
-  const damage = definition.contactDamageOf?.(ball, definition) ?? definition.contactDamage;
+  // A ball that grows keeps the bump of its size: its size is its body (glitch.ts).
+  const keeps = glitchProto.keepSizeHit && definition.radiusOf !== undefined;
+  const own = isGlitched(ball) && !keeps ? undefined : definition.contactDamageOf;
+  const damage = own?.(ball, definition) ?? definition.contactDamage;
   if (!Number.isFinite(damage) || damage < 0) {
     throw new Error(`Ball "${ball.id}" has an invalid contact damage (${String(damage)})`);
   }

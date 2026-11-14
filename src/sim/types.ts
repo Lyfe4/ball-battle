@@ -302,6 +302,11 @@ export interface BallState {
   readonly abilityState: AbilityState;
   /** Status effects on this ball (ADR 0009): at most one per kind, created only by actions. */
   readonly statuses: readonly StatusState[];
+  /**
+   * Ticks its ability clock has stood still, one for every tick it was glitched (glitch.ts).
+   * Absent until it is first glitched.
+   */
+  readonly abilityPausedTicks?: number;
 }
 
 /**

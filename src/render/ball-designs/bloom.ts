@@ -5,15 +5,15 @@ import type { BallDesign } from './types.ts';
 /** Petals as fractions of r: how far out each sits and how big it is, open and closed. */
 const PETAL = { distance: 0.4, size: 0.24 } as const;
 const CLOSED = { distance: 0.17, size: 0.2 } as const;
-/** The petals open again over the last ticks of a pause, so a reopening reads as a movement. */
-const REOPEN_TICKS = 10;
+/** The petals open again over the last ticks of its wait, so a reopening reads as a movement. */
+const REOPEN_TICKS = 20;
 /** The petals' directions: five, evenly spaced, the first straight up. */
 const PETALS = [0, 1, 2, 3, 4].map((index) => {
   const angle = -Math.PI / 2 + (index * 2 * Math.PI) / 5;
   return [Math.cos(angle), Math.sin(angle)] as const;
 });
 
-/** How closed a Bloom's petals are at `tick`, 1 just hit down to 0 open: its regrowth's pause. */
+/** How closed a Bloom's petals are at `tick`, 1 shut down to 0 open: its wait to regrow. */
 export function petalsClosed(pausedUntil: number | undefined, tick: number): number {
   if (pausedUntil === undefined || tick >= pausedUntil) return 0;
   return Math.min(1, (pausedUntil - tick) / REOPEN_TICKS);
@@ -21,7 +21,7 @@ export function petalsClosed(pausedUntil: number | undefined, tick: number): num
 
 /**
  * A flower in the dark accent with a pale centre (ADR 0045). Every regrowth shows as the heal pulse;
- * every hit closes it into a bud for the second its regrowth pauses, and it opens again when the
+ * every hit closes it into a bud that stays shut through its whole wait, and it opens again as the
  * regrowth comes back. At small size the petals are bigger and the centre smaller.
  */
 export const bloomDesign: BallDesign = {

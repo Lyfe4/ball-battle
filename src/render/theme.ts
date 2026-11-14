@@ -123,6 +123,7 @@ export const theme = {
     bloom: '#831843',
     hex: '#3b0764',
     spider: '#18181b',
+    glitch: '#0f172a',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -174,6 +175,19 @@ export const theme = {
    * outline, so a viewer can see why hits miss it. Its status rings and health bar stay solid.
    */
   phasedAlpha: 0.38,
+  /**
+   * A glitched ball (proposal): its markings fade to this, bands of static (dark and pale blocks)
+   * cross it, jumping every glitchFrameTicks, and a broken pale ring empties as the glitch wears off.
+   */
+  glitchedDesignAlpha: 0.3,
+  glitchDark: '#0f172a',
+  glitchLight: '#f1f5f9',
+  glitchBands: 3,
+  glitchBand: 0.17,
+  glitchBlock: 0.22,
+  glitchFrameTicks: 5,
+  glitchRingWidth: 5,
+  glitchRingDash: [14, 6, 4, 6] as readonly number[],
   phasedOutline: '#ede9fe',
   phasedOutlineWidth: 4,
   phasedDash: [10, 8] as readonly number[],

@@ -22,6 +22,7 @@ import { spartanDesign } from './spartan.ts';
 import { bloomDesign } from './bloom.ts';
 import { hexDesign } from './hex.ts';
 import { spiderDesign } from './spider.ts';
+import { glitchDesign } from './glitch.ts';
 
 /**
  * How each kind of ball looks, keyed by definition id. A ball without an entry is drawn as a
@@ -51,4 +52,5 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['bloom', bloomDesign],
   ['hex', hexDesign],
   ['spider', spiderDesign],
+  ['glitch', glitchDesign],
 ]);

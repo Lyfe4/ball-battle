@@ -1,0 +1,16 @@
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 770, "hit": 24, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 780, "hit": 24, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 770, "hit": 24, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 780, "hit": 24, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 770, "hit": 24.5, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 780, "hit": 24.5, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 770, "hit": 24.5, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 51, "speed": 780, "hit": 24.5, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 770, "hit": 24, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 780, "hit": 24, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 770, "hit": 24, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 780, "hit": 24, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 770, "hit": 24.5, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 780, "hit": 24.5, "ticks": 240}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 770, "hit": 24.5, "ticks": 300}}
+{"bloom": {"health": 52, "speed": 780, "hit": 21, "every": 12, "wait": 120}, "glitch": {"health": 52, "speed": 780, "hit": 24.5, "ticks": 300}}

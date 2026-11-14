@@ -154,6 +154,12 @@ export function drawWinnerRing(
  * - slowed: solid, pale ice, with short frost ticks pointing outwards;
  * - poisoned: a ring of round pale-lime dots, like drops.
  */
+/** Where a glitched ball's ring goes: outside its other status rings. */
+export function glitchRingRadius(ball: BallState): number {
+  const inner = (['slowed', 'poisoned'] as const).filter((kind) => hasStatus(ball, kind)).length;
+  return ball.radius + theme.statusRingGap + inner * theme.statusRingSpacing;
+}
+
 export function drawStatuses(ctx: CanvasRenderingContext2D, ball: BallState): void {
   let radius = ball.radius + theme.statusRingGap;
   if (hasStatus(ball, 'slowed')) {

@@ -25,6 +25,7 @@ import { evaluateMatch } from './match.ts';
 import { moveBall } from './movement.ts';
 import { resolveMinions } from './minions/resolve.ts';
 import { resolveProjectiles } from './projectiles/resolve.ts';
+import { pauseGlitchedClocks } from './glitch.ts';
 import { expireStatuses } from './status.ts';
 import { resolvePoison } from './status-effects.ts';
 import { resolveZones } from './zones/resolve.ts';
@@ -103,7 +104,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
   const { size } = world.arena;
   const events: SimEvent[] = [];
   const expiry = expireStatuses(world.balls, tick);
-  let balls: readonly BallState[] = expiry.balls;
+  // A glitched ball's ability clock stands still this tick (glitch.ts).
+  let balls: readonly BallState[] = pauseGlitchedClocks(expiry.balls);
   events.push(...expiry.events);
   let { rngState, projectiles, nextProjectileId, zones, nextZoneId, minions, nextMinionId } = world;
 
@@ -232,7 +234,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   events.push(...defeatsThisTick(world.balls, balls, events, tick));
 
-  balls = applyCruiseSpeed(balls, definitions);
+  balls = applyCruiseSpeed(balls, definitions, tick);
   balls = applySize(balls, definitions, tick, size);
 
   const match = evaluateMatch(balls, tick, definitions);

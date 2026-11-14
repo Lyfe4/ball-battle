@@ -22,4 +22,25 @@ export const BATCH_SIX: readonly (readonly [string, readonly Tile[]])[] = [
       { label: 'defeated', id: 'spider', defeated: true },
     ],
   ],
+  [
+    'Glitch: TV static in a round window, its middle row torn sideways; the ball it bumps is glitched (below)',
+    [
+      { label: 'idle', id: 'glitch' },
+      { label: 'hit flash', id: 'glitch', flash: 0.6 },
+      { label: 'mirror B', id: 'glitch', repeat: true },
+      { label: 'defeated', id: 'glitch', defeated: true },
+    ],
+  ],
+  [
+    'Glitched (proposal): its ability is off, so its markings fade, bands of static cross it and a broken pale ring empties as the glitch wears off (the static jumps a few times a second in a match, holds still with reduced motion)',
+    [
+      ...['archer', 'ghost', 'titan', 'bloom', 'spartan', 'brawler'].map((id): Tile => ({
+        label: id,
+        id,
+        statuses: ['glitched'],
+        ...(id === 'ghost' ? { abilityState: { phase: 0, phased: true } } : {}),
+      })),
+      { label: 'slowed + glitched', id: 'storm', statuses: ['slowed', 'glitched'] },
+    ],
+  ],
 ];

@@ -34,19 +34,18 @@ export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Bloom: a flower, open while it regrows; every regrowth is a heal pulse, every hit closes it into a bud for a second',
+    'Bloom: a flower. Left alone it opens and regrows (each regrowth a heal pulse); any hit closes it into a bud, which stays shut through its whole wait and opens over the last part of it',
     [
-      { label: 'idle', id: 'bloom' },
-      { label: 'regrowing', id: 'bloom', heal: 0.6, healShare: 0.05 },
+      { label: 'open (regrowing)', id: 'bloom', heal: 0.6, healShare: 0.02 },
       {
-        label: 'just hit (paused)',
+        label: 'just hit (bud)',
         id: 'bloom',
         abilityState: { nextHealTick: TICK + PAUSE_TICKS, pausedUntil: TICK + PAUSE_TICKS },
       },
       {
-        label: 'reopening',
+        label: 'opening',
         id: 'bloom',
-        abilityState: { nextHealTick: TICK + 5, pausedUntil: TICK + 5 },
+        abilityState: { nextHealTick: TICK + 10, pausedUntil: TICK + 10 },
       },
       { label: 'mirror B', id: 'bloom', repeat: true },
       { label: 'defeated', id: 'bloom', defeated: true },

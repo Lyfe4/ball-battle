@@ -1,3 +1,4 @@
+import { abilityTickOf } from '../sim/glitch.ts';
 import { isPulling } from '../sim/balls/magnet.ts';
 import { nearestEnemy } from '../sim/balls/targeting.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
@@ -137,7 +138,7 @@ export function drawSparks(ctx: CanvasRenderingContext2D, sparks: readonly Spark
 /** Every locked aim in the world, as a thin laser line. Drawn under the balls. */
 export function drawAimLines(ctx: CanvasRenderingContext2D, world: WorldState): void {
   for (const ball of world.balls) {
-    const line = aimLineOf(ball, world.tick, world.arena.size);
+    const line = aimLineOf(ball, abilityTickOf(ball, world.tick), world.arena.size);
     if (line === undefined) continue;
     ctx.save();
     ctx.globalAlpha = laserAlpha(line.progress);
@@ -158,7 +159,7 @@ export function drawAimLines(ctx: CanvasRenderingContext2D, world: WorldState): 
  */
 export function drawPullLines(ctx: CanvasRenderingContext2D, world: WorldState): void {
   for (const ball of world.balls) {
-    if (ball.health <= 0 || !isPulling(ball, world.tick)) continue;
+    if (ball.health <= 0 || !isPulling(ball, abilityTickOf(ball, world.tick))) continue;
     const target = nearestEnemy(ball, world.balls);
     if (target === undefined) continue;
     ctx.save();

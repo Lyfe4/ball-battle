@@ -1,5 +1,6 @@
 import { isAlive, isPhased as phasedOf } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
+import { abilityTickOf, isGlitched } from '../glitch.ts';
 import { createStream, deriveSeed } from '../rng.ts';
 import type {
   Actions,
@@ -70,13 +71,25 @@ export function runPhase(
     const self = snapshot[ballIndex];
     // onKnockedOut is for a ball just brought to 0 (ADR 0034); every other hook needs it alive.
     if (self === undefined || (!isAlive(self) && invocation.hook !== 'onKnockedOut')) continue;
+    // A glitched ball's ability is off: none of its hooks run (glitch.ts).
+    if (isGlitched(self, world.tick)) continue;
     const definition = getDefinition(definitions, self.definitionId);
     const call = callCounts.get(self.id) ?? 0;
     callCounts.set(self.id, call + 1);
     const random = createStream(
       deriveSeed([world.rngState, world.tick, ballIndex, HOOK_CODES[invocation.hook], call]),
     );
-    const base: HookContext = { world, self, stats: definition, random, isPhased, maxHealthOf };
+    // Its hooks read time on its ability clock, which stood still while it was glitched.
+    const abilityTick = abilityTickOf(self, world.tick);
+    const seen = abilityTick === world.tick ? world : { ...world, tick: abilityTick };
+    const base: HookContext = {
+      world: seen,
+      self,
+      stats: definition,
+      random,
+      isPhased,
+      maxHealthOf,
+    };
     const actions = invocation.call(definition, base, snapshot);
     if (actions !== undefined && actions.length > 0) {
       collected.push({ ballId: invocation.ballId, hook: invocation.hook, actions });

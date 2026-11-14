@@ -1,5 +1,6 @@
 import { isAlive } from './combat.ts';
 import { getDefinition } from './definitions.ts';
+import { isGlitched } from './glitch.ts';
 import { hasStatus, slowedSpeed } from './status.ts';
 import type { BallDefinition, BallState, DefinitionLookup } from './types.ts';
 import { scale } from './vec2.ts';
@@ -9,8 +10,9 @@ import { scale } from './vec2.ts';
  * declares one, otherwise its definition speed, reduced while it is slowed (ADR 0012). Throws for a
  * non-finite or non-positive speed, which only a bug can produce.
  */
-export function cruiseSpeedOf(ball: BallState, definition: BallDefinition): number {
-  const own = definition.cruiseSpeed?.(ball.abilityState, definition) ?? definition.speed;
+export function cruiseSpeedOf(ball: BallState, definition: BallDefinition, tick?: number): number {
+  const query = isGlitched(ball, tick) ? undefined : definition.cruiseSpeed;
+  const own = query?.(ball.abilityState, definition) ?? definition.speed;
   const speed = hasStatus(ball, 'slowed') ? slowedSpeed(own) : own;
   if (!Number.isFinite(speed) || speed <= 0) {
     throw new Error(`Ball "${ball.id}" has an invalid cruise speed (${String(speed)})`);
@@ -27,13 +29,14 @@ export function cruiseSpeedOf(ball: BallState, definition: BallDefinition): numb
 export function applyCruiseSpeed(
   balls: readonly BallState[],
   definitions: DefinitionLookup,
+  tick?: number,
 ): readonly BallState[] {
   return balls.map((ball) => {
     if (!isAlive(ball)) return ball;
     const { x, y } = ball.velocity;
     const current = Math.sqrt(x * x + y * y);
     if (current === 0) return ball;
-    const target = cruiseSpeedOf(ball, getDefinition(definitions, ball.definitionId));
+    const target = cruiseSpeedOf(ball, getDefinition(definitions, ball.definitionId), tick);
     if (current === target) return ball;
     return { ...ball, velocity: scale(ball.velocity, target / current) };
   });

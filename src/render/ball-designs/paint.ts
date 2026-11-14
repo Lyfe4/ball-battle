@@ -1,6 +1,7 @@
 // Painting a ball's design in its own frame: what the design is told (DesignView) and where it is
 // drawn (centred on the ball, turned to its heading). Used for the markings inside the ball and for
 // the few parts a design draws over the outline (`BallDesign.over`).
+import { abilityTickOf } from '../../sim/glitch.ts';
 import type { BallState, WorldState } from '../../sim/types.ts';
 import { theme } from '../theme.ts';
 import { aimHeading, useSimpleDesign, velocityHeading } from './state.ts';
@@ -32,7 +33,8 @@ export function designView(
     radius: ball.radius,
     base: look.color,
     accent: theme.ballAccents[ball.definitionId] ?? theme.defaultAccent,
-    tick: world.tick,
+    // Its ability's timers read on its ability clock, which stands still while it is glitched.
+    tick: abilityTickOf(ball, world.tick),
     heading: headingFor(design, ball, world),
     heal: ball.health > 0 ? look.heal : 0,
     simple:
