@@ -2,7 +2,8 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { Side } from '../../sim/series.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element } from '../dom.ts';
-import { bannerText, SIDE_NAMES } from '../series-text.ts';
+import { bannerText } from '../series-text.ts';
+import { BOT_SEATS, labelOf, otherSide, type Seats } from './seats.ts';
 import type { PickChoice } from './series-view.ts';
 
 /** Reveal's coin toss (ADR 0029): who won it, and the series seed it was tossed for. */
@@ -17,7 +18,7 @@ export interface PickBanner {
    * "The bot plays Venom. Pick your answer.", and the like; redrawn only when it changes. On
    * Reveal's round 1 `toss` leads it: the coin, then "Coin toss: you show first." (ADR 0041).
    */
-  show(choice: PickChoice, toss?: Toss): void;
+  show(choice: PickChoice, toss?: Toss, seats?: Seats): void;
 }
 
 const FACE_PX = 20;
@@ -43,19 +44,20 @@ export function createPickBanner(lookup: DefinitionLookup): PickBanner {
   let flipped: number | undefined;
   return {
     element: root,
-    show(choice, toss) {
+    show(choice, toss, seats = BOT_SEATS) {
       const faced = choice.facing;
-      const key = `${choice.kind}:${faced ?? ''}:${toss?.first ?? ''}:${String(toss?.key ?? '')}`;
+      const key = `${choice.kind}:${faced ?? ''}:${toss?.first ?? ''}:${String(toss?.key ?? '')}:${seats.you}:${seats.them}`;
       if (key === shown) return;
       shown = key;
-      const { lead, ask } = bannerText(choice, nameOf, toss?.first);
+      const { lead, ask } = bannerText(choice, nameOf, toss?.first, seats);
       const ball = faced === undefined ? undefined : lookup.get(faced);
       if (ball !== undefined) drawBallIcon(face, ball, FACE_PX);
       const first = element('span', 'series-banner-lead');
       if (toss !== undefined) {
-        coin.dataset['first'] = toss.first;
-        front.textContent = SIDE_NAMES[toss.first];
-        back.textContent = SIDE_NAMES[toss.first === 'a' ? 'b' : 'a'];
+        // The coin's colours follow the player's side: `a` is always the player's.
+        coin.dataset['first'] = toss.first === seats.you ? 'a' : 'b';
+        front.textContent = labelOf(seats, toss.first);
+        back.textContent = labelOf(seats, otherSide(toss.first));
         first.append(coin);
       }
       first.append(lead, ...(ball === undefined ? [] : [' ', face]));
