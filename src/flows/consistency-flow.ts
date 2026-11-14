@@ -83,7 +83,7 @@ async function checkLegend(where: string): Promise<void> {
 
 /** The ready moment: its card centred on the court, and Escape leaves it waiting. */
 async function checkReady(where: string): Promise<void> {
-  await until(() => visible('.ready-card').length === 1, 10_000, false);
+  await until(() => visible('.ready-card').length === 1, 10_000, 'the ready card', false);
   const card = visible('.ready-card')[0]?.getBoundingClientRect();
   const court = document.getElementById('arena-container')?.getBoundingClientRect();
   if (card === undefined || court === undefined) throw new Error('No card or court');
@@ -195,8 +195,15 @@ export async function runConsistencyFlow(): Promise<void> {
     if (phase() === 'playing') {
       await checkSettings(`series round ${String(round)} fight`, () => phase() === 'playing');
     }
-    await until(() => phase() !== 'playing', 90_000);
-    await settle();
+    await until(() => phase() !== 'playing', 90_000, 'the round to end');
+    // The story is worked out between frames once the fight ends (match-story-teller.ts), as in
+    // Free play below: wait for it rather than for a fixed moment, which a busy browser can miss.
+    await until(
+      () => visible('.match-story').length === 1,
+      30_000,
+      'How it was won after the round',
+      false,
+    );
     const finished = phase() === 'finished';
     const where = finished ? 'series result' : `after round ${String(round)}`;
     await checkStory(where, /^Round \d: \S/);
@@ -222,7 +229,7 @@ export async function runConsistencyFlow(): Promise<void> {
   await click(button('Start match'));
   await checkReady('Free play');
   await checkSettings('Free play fight', () => visible('.match-story').length === 0);
-  await until(() => visible('.match-story').length === 1, 90_000);
+  await until(() => visible('.match-story').length === 1, 90_000, 'How it was won after Free play');
   await checkStory('Free play result', /^(?!Round)\S/);
   await checkSettings('Free play result');
 

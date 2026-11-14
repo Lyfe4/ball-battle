@@ -99,7 +99,7 @@ export async function runPanelPartsFlow(desktop: boolean): Promise<void> {
   await settle();
   checkSeriesBar(desktop);
   visible('.answer-step .pick-row-pick')[0]?.click();
-  await until(() => visible('.hud-health-track').length === 2, 15_000, false);
+  await until(() => visible('.hud-health-track').length === 2, 15_000, 'both health bars', false);
   pressFight();
   // A second or two of fighting, so the ghost has health just lost to show.
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -125,7 +125,7 @@ export async function runPanelPartsFlow(desktop: boolean): Promise<void> {
   await settle();
   checkSeriesBar(desktop, longest);
   visible('.answer-step .pick-row-pick')[0]?.click();
-  await until(() => visible('.hud-health-track').length === 2, 15_000, false);
+  await until(() => visible('.hud-health-track').length === 2, 15_000, 'both health bars', false);
   pressFight();
   await new Promise((resolve) => setTimeout(resolve, 1000));
   checkSeriesBar(desktop, longest);

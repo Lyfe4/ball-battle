@@ -57,11 +57,21 @@ describe('tips in the arena', () => {
     expect(await changes(canvasNow, 900)).toBe(true);
 
     // The first poisoning shows the Venom's hint, and the device remembers it.
-    await until(() => visible('.ability-hint')[0]?.textContent === 'Poison!', 20_000, false);
+    await until(
+      () => visible('.ability-hint')[0]?.textContent === 'Poison!',
+      20_000,
+      'the Poison! hint',
+      false,
+    );
     expect(window.localStorage.getItem(HINTS_SEEN_STORAGE_KEY)).toContain('venom');
 
     // At the end, "How it was won" is offered, closed, its summary the result in one line.
-    await until(() => visible('.hud .match-story').length === 1, 60_000, false);
+    await until(
+      () => visible('.hud .match-story').length === 1,
+      60_000,
+      'How it was won under the match',
+      false,
+    );
     const story = visible('.hud .match-story')[0];
     expect(story?.hasAttribute('open')).toBe(false);
     expect(story?.querySelector('.match-story-result')?.textContent).toMatch(

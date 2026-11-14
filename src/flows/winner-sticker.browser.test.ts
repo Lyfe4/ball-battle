@@ -23,9 +23,13 @@ describe('the Winner sticker', () => {
     // Nothing while the match plays.
     expect(card()).toBeUndefined();
 
-    await until(() => card() !== undefined, 60_000);
+    await until(() => card() !== undefined, 60_000, 'the Winner sticker');
     // The HUD marks the winner once the result shows, a moment after the sticker lands.
-    await until(() => visible('.hud-ball[data-outcome="won"]').length === 1, 5_000);
+    await until(
+      () => visible('.hud-ball[data-outcome="won"]').length === 1,
+      5_000,
+      'the winning ball marked won',
+    );
     const name = card()?.querySelector('.winner-sticker-name')?.textContent ?? '';
     expect(name).not.toBe('');
     const won = visible('.hud-ball[data-outcome="won"]')[0];

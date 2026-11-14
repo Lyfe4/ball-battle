@@ -235,7 +235,12 @@ async function resume(): Promise<void> {
   const play = visible('.home-play')[0];
   expect(play?.querySelector('.home-play-label')?.textContent).toBe('Resume series');
   if (play !== undefined) await click(play);
-  await until(() => new URL(location.href).searchParams.get('step') === 'play', 5000, false);
+  await until(
+    () => new URL(location.href).searchParams.get('step') === 'play',
+    5000,
+    'the series to start',
+    false,
+  );
   expect(visible('#series')).toHaveLength(1);
 }
 
