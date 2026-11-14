@@ -1,7 +1,9 @@
 // The measured pass-through margin (ADR 0002): two balls must never close faster than a fraction of
 // what the discrete overlap test can catch. The largest share of the slow suite, so it plays each
 // pair once (mirrors included) with the slot order alternating between seeds: closing speed doesn't
-// depend on which slot a ball starts in, and both orders are still covered.
+// depend on which slot a ball starts in, and both orders are still covered. One test per ball (its
+// pairs with every ball after it in the roster), so each has its own time budget as the roster
+// grows, and a failure names the ball.
 import { describe, expect, it } from 'vitest';
 import { DT } from '../constants.ts';
 import { createWorld } from '../world.ts';
@@ -10,15 +12,17 @@ import { closingSpeed, PAIRS, play, ROSTER_TIMEOUT_MS } from './roster-support.t
 /** Seeds per pair, split evenly between the two slot orders. */
 const SEEDS = 60;
 
+const firstBalls = [...new Set(PAIRS.map(([a]) => a.id))];
+
 describe('the ball roster (slow): pass-through', () => {
-  it(
-    'never lets two balls close faster than the pass-through limit',
+  it.each(firstBalls)(
+    'never lets %s and a ball after it close faster than the pass-through limit',
     { timeout: ROSTER_TIMEOUT_MS },
-    () => {
+    (id) => {
       // ADR 0002: a hit can be missed if the balls close by more than the sum of their radii in one
       // tick. Includes speed from abilities and from elastic collisions.
       let worst = 0;
-      for (const [a, b] of PAIRS) {
+      for (const [a, b] of PAIRS.filter(([first]) => first.id === id)) {
         const limit = (a.radius + b.radius) / DT;
         for (let seed = 0; seed < SEEDS; seed++) {
           const pair = seed % 2 === 0 ? ([a, b] as const) : ([b, a] as const);
@@ -36,4 +40,9 @@ describe('the ball roster (slow): pass-through', () => {
       expect(worst).toBeLessThan(0.6);
     },
   );
+
+  it('covers every pair once, mirrors included', () => {
+    const covered = firstBalls.flatMap((id) => PAIRS.filter(([first]) => first.id === id));
+    expect(covered).toHaveLength(PAIRS.length);
+  });
 });
