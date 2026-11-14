@@ -146,10 +146,13 @@ describe('series URL, draft formats', () => {
     expect(blind.has('bot')).toBe(false);
   });
 
-  it('reads a link without a level as the first bot, and keeps an unknown level for verifying', () => {
+  it('reads a link without a level as the first bot, and refuses an unknown level, keeping the lineup', () => {
     const query = `mode=bo3&la=thorns,sniper,berserker&lb=${setup.b.join(',')}&seed=${String(SEED)}`;
     expect(parse(query)?.setup?.opponent).toStrictEqual(setup.opponent);
-    expect(parse(`${query}&bot=Genius`)?.setup?.opponent).toMatchObject({ bot: 'genius' });
+    // Never another bot's series: the sim's decoder refuses it, and the lineup is prefilled.
+    expect(parse(`${query}&bot=Genius`)).toStrictEqual({
+      lineup: ['thorns', 'sniper', 'berserker'],
+    });
   });
 
   it('keeps the format while a series is built or played', () => {

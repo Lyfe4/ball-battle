@@ -81,8 +81,8 @@ in parallel). All must pass.
    timers. Enforced by `tsconfig.sim.json` (no DOM lib, no ambient `@types`) and ESLint rules in
    `eslint.config.js` that also ban transcendental `Math` functions (`sin`, `cos`, `atan2`, `pow`,
    `exp`, `log`, ...) and the `**` operator, because their results can differ between JS engines.
-   `+ - * /` and `Math.sqrt` are exact under IEEE 754 and safe. `src/sim` must not import from
-   `src/render` or `src/main.ts`.
+   `+ - * /` and `Math.sqrt` are exact under IEEE 754 and safe. `src/sim` must not import anything
+   outside `src/sim` (ESLint `no-restricted-imports`): a server runs it on its own.
 2. **Fixed timestep**: the simulation advances in ticks of exactly `DT = 1 / 60` seconds. Same
    inputs + same seed = identical result, bit for bit.
 3. **Randomness only from the seeded PRNG** (mulberry32) in `src/sim/rng.ts`. Its state lives in
@@ -173,7 +173,9 @@ aiming created no skill), `docs/decisions/0019-draft-formats.md`,
   notice instead of replaying a different fight.
 - Whether a series setup is valid is decided by `verifySeries` (`src/sim/series-verify.ts`) alone:
   `playSeries`, the browser's route, a saved series after a reload (ADR 0042) and a future server
-  all use it. Don't add a second check.
+  all use it. Don't add a second check. Series data from outside (a link, a save, a request body) is read by the one
+  decoder, `decodeSeriesSetup` (`src/sim/series-decode.ts`), which `verifySeries` runs first; it
+  takes `unknown` and never throws.
 
 - `step` is pure: it returns a new `WorldState` and never mutates its input. Sim types are
   `readonly`.
