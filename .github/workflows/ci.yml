@@ -127,9 +127,11 @@ jobs:
       # served by `netlify dev` with the functions on one origin, as on a deploy preview.
       - run: node scripts/local-env.ts > .env
       - run: pnpm build:online
+      # Its own step: the install alone takes about two minutes.
+      - run: npm install --global netlify-cli@27.14.0
       - name: Start netlify dev
         run: |
-          pnpm dlx netlify-cli@27.14.0 dev --offline > netlify-dev.log 2>&1 &
+          netlify dev --offline > netlify-dev.log 2>&1 &
           for attempt in $(seq 1 60); do
             curl -sf http://localhost:8888/api/v1/health && exit 0
             sleep 2
