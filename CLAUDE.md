@@ -127,6 +127,18 @@ Each line is a rule; its ADR has the reasoning.
   series names them in `SeriesSetup.seeds`, secret until each lock (ADR 0051, 0052). The server
   derives them with `src/server/seeds.ts` and players check them with `src/api/fairness.ts`.
 
+**The server (ADR 0052)**
+
+- `src/server` imports only types from `src/sim` (ESLint): a series is played and verified only by
+  its ruleset's frozen bundle (`rulesetSim`, `rulesets/r<N>/sim.mjs`). A missing bundle is
+  `ruleset_missing`, never a fallback. `src/server/current-ruleset.ts` is bumped with
+  `RULESET_VERSION` (a test checks).
+- Every route authenticates through `sessionOf` and starts with `guard` (method and CSRF). Routes
+  are thin; rules live in services, SQL in `src/server/db/`. Times in rules are the database's
+  `now()`. What a player may see of a series is decided by `viewOf` alone.
+- Database tests (`*.db.test.ts`) call handlers through `TestBrowser`; two requests at once use
+  `elsewhere(...)` with a second `testDeps()`, since one connection would queue them.
+
 **The sim**
 
 - Sim types are `readonly`. The order within a tick is documented on `step` (`src/sim/step.ts`);

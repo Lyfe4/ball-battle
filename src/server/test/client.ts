@@ -23,6 +23,16 @@ export class TestBrowser {
     this.ip = ip;
   }
 
+  /**
+   * The same device served by another function instance, with its own database connection: what
+   * two requests at once really meet (one instance's single connection would queue them).
+   */
+  elsewhere(deps: Deps): TestBrowser {
+    const twin = new TestBrowser(deps, this.ip);
+    twin.cookie = this.cookie;
+    return twin;
+  }
+
   /** Calls `handler` at `path` the way the page's fetch would. */
   async call(
     handler: RouteHandler,
