@@ -1,0 +1,77 @@
+name: Publish
+
+# Production is the `release` branch, not `main` (ADR 0052, "Cost"). Netlify's Free plan charges 15
+# of its 300 monthly credits for every production deploy, so merges to `main` collect into batches
+# and this workflow publishes one: it fast-forwards `release` to a `main` commit whose CI passed,
+# and Netlify deploys `release`. Deploy previews on pull requests are unchanged.
+#
+# Run it from the Actions tab or with `gh workflow run publish.yml` (optionally `-f ref=<sha>`).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'The main commit to publish (default: the tip of main)'
+        required: false
+        default: main
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Fast-forward release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the commit
+        id: commit
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          sha=$(git rev-parse --verify "origin/${REF}^{commit}" 2>/dev/null || git rev-parse --verify "${REF}^{commit}")
+          # Only what is on main is published: never a branch that skipped review.
+          git merge-base --is-ancestor "$sha" origin/main || { echo "::error::$sha is not on main"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      # Every CI job on main ran on this commit and passed. A commit still being checked or never
+      # checked (pushed with [skip ci]) is refused rather than waited for.
+      - name: Check CI passed on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main \
+            --commit "$SHA" --event push --limit 1 --json conclusion --jq '.[0].conclusion // ""')
+          if [ "$conclusion" != success ]; then
+            echo "::error::CI on $SHA is '${conclusion:-not run}', not success"
+            exit 1
+          fi
+
+      # Fast-forward only: `release` never holds a commit that isn't on main, and a publish never
+      # moves it backwards (an older ref fails here; roll back in Netlify's dashboard instead).
+      - name: Fast-forward release
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          git merge-base --is-ancestor origin/release "$SHA" || { echo "::error::release is not behind $SHA"; exit 1; }
+          if [ "$(git rev-parse origin/release)" = "$SHA" ]; then
+            echo "release is already at $SHA: nothing to publish"
+            exit 0
+          fi
+          git push origin "$SHA:refs/heads/release"
+          {
+            echo "Published \`$SHA\` to \`release\`; Netlify deploys it to production."
+            echo
+            echo "Merges in this batch:"
+            git log --merges --format='- %s' "origin/release..$SHA"
+          } >> "$GITHUB_STEP_SUMMARY"

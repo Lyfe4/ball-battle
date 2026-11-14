@@ -38,7 +38,8 @@ arena until one wins, and every decision is made before the fight starts.
 TypeScript (strict), Vite, plain HTML Canvas 2D and plain DOM. No game engine, no physics library,
 no UI framework. Tested with Vitest, in Node and through Playwright in Chromium, Firefox and
 WebKit. ESLint, Prettier, Husky and GitHub Actions. Deployed as a static site on Netlify with a
-strict Content Security Policy.
+strict Content Security Policy. Pull requests get deploy previews; production is published in
+batches from the `release` branch by a manual workflow (`.github/workflows/publish.yml`).
 
 ## Engineering highlights
 
