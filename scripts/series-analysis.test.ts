@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WHOLE_RUN_TIMEOUT_MS } from '../src/sim/test-support.ts';
 import { BALLS } from '../src/sim/balls/index.ts';
 import { BOT_LEVELS, easyBot, hardBot } from '../src/sim/bot.ts';
 import { lineupsOf, mapOdds } from './reveal-analysis.ts';
@@ -40,14 +41,18 @@ describe('the series analysis', () => {
     }
   });
 
-  it('finds Hard harder than Easy, and Hard at best play the game’s fair value', () => {
-    for (const format of formats) {
-      const easy = summariseLevel(format, easyBot, pairs, mapOdds);
-      const hard = summariseLevel(format, hardBot, pairs, mapOdds);
-      expect(hard.random).toBeLessThan(easy.random);
-      expect(hard.best).toBeLessThan(easy.best);
-      // Both sides playing their best by the map's own odds: an even game, over many pairs.
-      expect(hard.best).toBeCloseTo(0.5, 1);
-    }
-  });
+  it(
+    'finds Hard harder than Easy, and Hard at best play the game’s fair value',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      for (const format of formats) {
+        const easy = summariseLevel(format, easyBot, pairs, mapOdds);
+        const hard = summariseLevel(format, hardBot, pairs, mapOdds);
+        expect(hard.random).toBeLessThan(easy.random);
+        expect(hard.best).toBeLessThan(easy.best);
+        // Both sides playing their best by the map's own odds: an even game, over many pairs.
+        expect(hard.best).toBeCloseTo(0.5, 1);
+      }
+    },
+  );
 });

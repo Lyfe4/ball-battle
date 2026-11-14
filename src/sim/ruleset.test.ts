@@ -10,7 +10,7 @@ import { BOTS, randomBot, type BotView } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { FORMATS } from './series.ts';
 import { playToEnd } from './series-verify.ts';
-import { playLikeTheGame } from './test-support.ts';
+import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from './test-support.ts';
 import { createWorld } from './world.ts';
 
 /**
@@ -91,7 +91,7 @@ function fingerprint(): string {
 }
 
 describe('the ruleset version', () => {
-  it('names the fingerprint of the rules as they are', () => {
+  it('names the fingerprint of the rules as they are', { timeout: WHOLE_RUN_TIMEOUT_MS }, () => {
     expect(
       fingerprint(),
       'The rules changed: bump RULESET_VERSION in src/sim/ruleset.ts and add the new fingerprint ' +

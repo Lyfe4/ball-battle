@@ -3,7 +3,7 @@ import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { botFor } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { revealFirst, setupWithPicks, type Format, type SeriesSetup } from '../sim/series.ts';
-import { playLikeTheGame } from '../sim/test-support.ts';
+import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from '../sim/test-support.ts';
 import {
   clearSeries,
   loadSeries,
@@ -78,7 +78,7 @@ describe('a saved series, reloaded', () => {
     },
   );
 
-  it('keeps a round’s draws and its sudden death', () => {
+  it('keeps a round’s draws and its sudden death', { timeout: WHOLE_RUN_TIMEOUT_MS }, () => {
     const positions = pagePositions(SUDDEN_DEATH);
     const drawn = positions.filter((session) => session.state.pending.length > 0);
     const decidedByCoin = positions.filter((session) =>

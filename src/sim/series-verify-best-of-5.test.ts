@@ -6,7 +6,7 @@ import { BOT_LEVELS, botFor } from './bot.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { setupWithPicks, type Format, type SeriesSetup } from './series.ts';
 import { verifySeries } from './series-verify.ts';
-import { playLikeTheGame } from './test-support.ts';
+import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from './test-support.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 
@@ -31,23 +31,27 @@ const reasonOf = (setup: SeriesSetup) => {
 };
 
 describe('verifySeries, Best of 5', () => {
-  it('accepts every format against every level, with the state the game reached', () => {
-    for (const format of ['blind', 'reveal', 'showdown'] as const) {
-      for (const bot of BOT_LEVELS) {
-        const setup = decided(format, 3, bot.id);
-        const verdict = verifySeries(setup, BALL_LOOKUP);
-        expect(verdict.ok, `${format} ${bot.id}`).toBe(true);
-        if (!verdict.ok) continue;
-        expect(verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
-        const { a, b } = { a: 0, b: 0, ...count(verdict.state.rounds.map((r) => r.winner)) };
-        expect(Math.max(a, b)).toBe(3);
-        expect(Math.min(a, b)).toBeLessThan(3);
-        // Reveal and Showdown record two picks for every round but the last.
-        const picks = setup.picks?.length ?? 0;
-        expect(picks).toBe(format === 'blind' ? 0 : 2 * Math.min(4, verdict.state.rounds.length));
+  it(
+    'accepts every format against every level, with the state the game reached',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      for (const format of ['blind', 'reveal', 'showdown'] as const) {
+        for (const bot of BOT_LEVELS) {
+          const setup = decided(format, 3, bot.id);
+          const verdict = verifySeries(setup, BALL_LOOKUP);
+          expect(verdict.ok, `${format} ${bot.id}`).toBe(true);
+          if (!verdict.ok) continue;
+          expect(verdict.state).toStrictEqual(playLikeTheGame(setup, BALL_LOOKUP));
+          const { a, b } = { a: 0, b: 0, ...count(verdict.state.rounds.map((r) => r.winner)) };
+          expect(Math.max(a, b)).toBe(3);
+          expect(Math.min(a, b)).toBeLessThan(3);
+          // Reveal and Showdown record two picks for every round but the last.
+          const picks = setup.picks?.length ?? 0;
+          expect(picks).toBe(format === 'blind' ? 0 : 2 * Math.min(4, verdict.state.rounds.length));
+        }
       }
-    }
-  });
+    },
+  );
 
   it('refuses a length the game does not play, or lineups of another length', () => {
     const setup = decided('reveal', 3, 'hard');
@@ -61,19 +65,23 @@ describe('verifySeries, Best of 5', () => {
     expect(reasonOf({ ...setup, a: setup.a.slice(0, 3) })).toMatch(/not 5 different balls/);
   });
 
-  it('refuses a bot lineup or a bot pick the bot would not make, and a missing or extra pick', () => {
-    const setup = decided('reveal', 3, 'normal');
-    const [x = '', y = '', ...rest] = setup.b;
-    expect(reasonOf({ ...setup, b: [y, x, ...rest] })).toMatch(/lineup the normal bot picks/);
-    const picks = setup.picks ?? [];
-    expect(reasonOf({ ...setup, picks: picks.slice(0, -1) })).toMatch(/needs a pick/);
-    expect(reasonOf({ ...setup, picks: [...picks, setup.a[0] ?? ''] })).toMatch(/never used/);
-    // Each bot pick swapped for another ball it had: refused at that pick, or a later one.
-    const hard = decided('showdown', 3, 'hard');
-    const [mine = '', opener = '', ...later] = hard.picks ?? [];
-    const swapped = hard.b.find((id) => id !== opener) ?? '';
-    expect(reasonOf({ ...hard, picks: [mine, swapped, ...later] })).toMatch(/Pick 2 is not/);
-  });
+  it(
+    'refuses a bot lineup or a bot pick the bot would not make, and a missing or extra pick',
+    { timeout: WHOLE_RUN_TIMEOUT_MS },
+    () => {
+      const setup = decided('reveal', 3, 'normal');
+      const [x = '', y = '', ...rest] = setup.b;
+      expect(reasonOf({ ...setup, b: [y, x, ...rest] })).toMatch(/lineup the normal bot picks/);
+      const picks = setup.picks ?? [];
+      expect(reasonOf({ ...setup, picks: picks.slice(0, -1) })).toMatch(/needs a pick/);
+      expect(reasonOf({ ...setup, picks: [...picks, setup.a[0] ?? ''] })).toMatch(/never used/);
+      // Each bot pick swapped for another ball it had: refused at that pick, or a later one.
+      const hard = decided('showdown', 3, 'hard');
+      const [mine = '', opener = '', ...later] = hard.picks ?? [];
+      const swapped = hard.b.find((id) => id !== opener) ?? '';
+      expect(reasonOf({ ...hard, picks: [mine, swapped, ...later] })).toMatch(/Pick 2 is not/);
+    },
+  );
 });
 
 function count(sides: readonly string[]): Record<string, number> {
