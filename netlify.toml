@@ -34,3 +34,33 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# The game server (ADR 0052): one function per route in netlify/functions, under /api/v1/*. A
+# series is played by the frozen sim of the ruleset it names (src/server/rulesets.ts), so the
+# frozen bundles ship beside the functions. The functions' region (Sydney, beside the database)
+# and their secrets are set in Netlify's dashboard, not here.
+[functions]
+  # One self-contained file per function: pnpm's linked node_modules are not traced reliably.
+  node_bundler = "esbuild"
+  included_files = ["rulesets/*/sim.mjs"]
+
+# Online play is built only where it is switched on: deploy previews and the main branch deploy
+# (staging), never production until launch (ADR 0052 section 6). The functions read their own
+# BALLBATTLE_ONLINE, set per context in the dashboard with their secrets.
+[context.deploy-preview.environment]
+  VITE_ONLINE = "1"
+
+[context.branch-deploy.environment]
+  VITE_ONLINE = "1"
+
+# `netlify dev`: Vite with the functions on one origin, http://localhost:8888, against a local
+# Supabase (`pnpm exec supabase start`) and the settings in .env (see .env.example).
+[dev]
+  framework = "#custom"
+  command = "pnpm dev"
+  targetPort = 5199
+  port = 8888
+  autoLaunch = false
+
+[context.dev.environment]
+  VITE_ONLINE = "1"

@@ -7,6 +7,6 @@
     "lib": ["ES2023"],
     "types": ["node"]
   },
-  "include": ["src/server/**/*.ts"],
+  "include": ["src/server/**/*.ts", "netlify/functions/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]
 }

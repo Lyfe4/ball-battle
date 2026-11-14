@@ -509,30 +509,37 @@ misconfigured exposure leaks nothing.
     cross-border disclosure under APP 8.
 - **The app stores require** a privacy policy page (and Apple's privacy labels).
 
-### Legal advice comes first (decided)
+### Before launch: minimal data, our own policy and terms, deletion, 16+ (decided 2026-11-15)
 
-**No stored player data goes public until a lawyer has answered these.** Slice 1 stores guest
-data, so its public launch waits for this. Until then the online modes are switched on only in
-deploy previews and staging (a build flag set per Netlify context).
+**Amended 2026-11-15:** this replaces "legal advice comes first". The owner decided not to use a
+lawyer. Stored player data goes public only when all of these are done:
 
-1. **Privacy policy:** what it must say for guests, accounts, push subscriptions, error reports and
-   overseas providers, and where it must be shown (the site, both app stores).
+1. **Minimal data.** A guest is a random user id, a generated name ("Player 4821"), the time they
+   confirmed they are 16 or older, and their play records. Nothing else is collected (section 6,
+   "What we collect").
+2. **A privacy policy and terms of service,** drafted with Claude for the owner to review, covering
+   the questions below. They are pages on the site and, later, in both app stores.
+3. **Data deletion** in the app: "Forget me" deletes a guest and everything keyed to it (slice 1);
+   account deletion and export follow with accounts (slice 2).
+4. **A 16+ confirmation at the first online action:** one short screen with the guest's creation
+   (slice 1), stored as `profiles.adult_confirmed_at`. Nobody under 16 is asked to play online,
+   which keeps the Children's Online Privacy Code and parental consent out of scope; the offline
+   game asks nothing and stores nothing on a server.
+
+Until then the online modes are switched on only in deploy previews and staging (a build flag
+set per Netlify context, and `BALLBATTLE_ONLINE` for the functions).
+
+The questions the policy and terms answer, in the owner's own review:
+
+1. **Privacy policy:** what is collected for guests, accounts, push subscriptions and error
+   reports; the overseas providers (APP 8); retention; deletion; how to ask.
 2. **Terms of service:** conduct, forfeits, removing accounts that cheat, liability, and later
    virtual currency and refunds under the Australian Consumer Law.
-3. **The small-business exemption:** does it apply, does it still apply once players overseas or
-   purchases come, and should we opt in to the APPs anyway (`docs/vision.md` builds as if they
-   apply)?
-4. **Players under 16:**
-   - whether to ask an age, and what to do with the answer;
-   - the Children's Online Privacy Code;
-   - whether playing strangers with generated names and no chat needs parental consent;
-   - the app stores' age ratings.
-5. **Guest data:**
-   - is an anonymous user id with its play history personal information;
-   - is 90 days of inactivity before deletion a fair retention;
-   - may finished series be kept for the opponent's history after deletion, shown as "Deleted
-     player";
-   - what consent push notifications need.
+3. **The small-business exemption:** built as if the APPs apply, whatever the turnover.
+4. **Players under 16:** the 16+ confirmation, and the app stores' age ratings.
+5. **Guest data:** an anonymous id with its play history is treated as personal information; 90
+   days of inactivity before deletion; finished series kept for the opponent's history after
+   deletion, shown as "Deleted player"; push notifications only on opt-in.
 
 Later, before purchases: loot-box classification (already in `docs/vision.md`), and GDPR if the
 game is marketed outside Australia.
@@ -644,7 +651,8 @@ The first thing players see from the backend. It contains:
      migration, the `game_api` role;
    - `GET /api/v1/health`, which reads the database;
    - the integration CI job; Sentry; `log()`;
-   - the build flag that keeps online modes out of production until the legal sign-off.
+   - the build flag that keeps online modes out of production until the launch checklist
+     (section 6) is done.
 2. **Guest sessions and headers (M):**
    - guest creation on the first online action, the cookie, `sessionOf`, the CSRF check;
    - `connect-src`, HSTS, Trusted Types, logout and "Forget me" clearing `ballbattle.*`;
@@ -666,9 +674,35 @@ The first thing players see from the backend. It contains:
 6. **Web Push (M):** the opt-in, the service worker, subscriptions, and the four notifications
    above.
 
-**Before its public launch:** the legal answers (section 6), the privacy policy and terms pages,
-the Netlify Personal plan, and Supabase Pro if the series kept are worth backing up (recommended:
-yes, from launch).
+**As built (slice 1 part A, PR 1: infrastructure):**
+
+- `supabase/` with the first migration: the `game` schema (not exposed, RLS on, no policies), the
+  part A tables (profiles, series, seeds, picks, rounds, challenges, rate limits), and the
+  `game_api` role. `game_api` has `BYPASSRLS` (it owns no table, and RLS with no policies would
+  otherwise hide every row from it), `SELECT/INSERT/UPDATE` on the game tables, `DELETE` on
+  `rate_limits` only, and nothing on `auth`. Its password is set per environment outside the
+  migrations. A trigger on `profiles` forfeits a deleted player's open series, however the
+  deletion comes.
+- **No generated row types (amends section 5).** `supabase gen types` describes PostgREST's JSON
+  (timestamps and `bytea` as strings); `postgres` returns `Date` and `Buffer`, so the generated
+  types would mislead. Each query names its own row type and the database tests run every query
+  against the migrated schema, which is what catches drift.
+- **Sentry without its SDK.** `src/server/monitor.ts` posts Sentry's envelope format with `fetch`:
+  the error's type, message and stack, the route and the request id, nothing else. The Node SDK
+  brings OpenTelemetry instrumentation a function doesn't need, and Netlify's bundler couldn't
+  trace one of its packages under pnpm.
+- `SEED_KEYS` is the JSON map of key id to base64 key; the greatest id (date ids, e.g. `2026-11`)
+  seeds new series. The server loads a series' sim only from `rulesets/r<N>/sim.mjs`
+  (`src/server/rulesets.ts`, shipped with `included_files`); ESLint lets `src/server` import only
+  types from `src/sim`. The current ruleset is a server constant kept equal to the sim's by a test.
+- The functions' region (Sydney) is a dashboard setting, not `netlify.toml`.
+- `GET /api/v1/health` reads the database as `game_api` and loads the current ruleset's bundle.
+- `pnpm build` ends with `scripts/check-bundle.ts`: no secret-shaped text in `dist/`, and no API
+  path in a build without `VITE_ONLINE`.
+
+**Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
+and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
+the series kept are worth backing up (recommended: yes, from launch).
 
 ### Slice 2: real accounts (M-L, about 3 PRs)
 
@@ -747,7 +781,9 @@ After that, in `docs/vision.md`'s order:
 7. **Both departures from ADR 0051 are accepted:** no `packages/sim` workspace yet, and no worker
    pool. The bot's choice seed joins the secret seeds.
 8. **Each ruleset's frozen sim is committed** to the repo.
-9. **Legal advice comes before any stored player data goes public.** The questions are in section 6.
+9. **No lawyer (amended 2026-11-15).** Before stored player data goes public: minimal data, a
+   privacy policy and terms drafted with Claude for the owner to review, data deletion, and a 16+
+   confirmation at the first online action (section 6).
 
 ### Still open
 
@@ -762,7 +798,6 @@ After that, in `docs/vision.md`'s order:
 - **iPhone players in Safari get no push** until they add the game to the home screen or the
   native app ships. Watch the forfeit rate by platform. If it's high, the Capacitor release moves
   up.
-- **The legal answers** may change the data kept for guests, or add an age question to slice 1.
 
 ## Consequences
 

@@ -68,8 +68,35 @@ function sharedWithServer(up, { server }) {
   };
 }
 
+/**
+ * The server's rules for a file `up` levels below src/: the shared rule above, and the live sim's
+ * values not at all. A series is played and verified only by its ruleset's frozen bundle
+ * (src/server/rulesets.ts), so the server takes nothing but types from src/sim/index.ts; its tests
+ * may compare against the live sim.
+ */
+function serverImports(up) {
+  return {
+    'no-restricted-imports': 'off',
+    '@typescript-eslint/no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          sharedWithServer(up, { server: true }),
+          {
+            regex: String.raw`^${up.replaceAll('.', String.raw`\.`)}sim/index\.ts$`,
+            allowTypeImports: true,
+            message:
+              'The server plays a series only through its frozen ruleset bundle ' +
+              '(src/server/rulesets.ts, ADR 0052): it imports types alone from the live sim.',
+          },
+        ],
+      },
+    ],
+  };
+}
+
 export default defineConfig(
-  { ignores: ['dist', 'coverage', 'rulesets'] },
+  { ignores: ['dist', 'coverage', 'rulesets', '.netlify'] },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
@@ -164,16 +191,44 @@ export default defineConfig(
   },
   {
     files: ['src/server/*.ts'],
+    ignores: ['src/server/*.test.ts'],
+    rules: serverImports('../'),
+  },
+  {
+    files: ['src/server/*/*.ts'],
+    ignores: ['src/server/*/*.test.ts'],
+    rules: serverImports('../../'),
+  },
+  {
+    files: ['src/server/*.test.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [sharedWithServer('../', { server: true })] }],
     },
   },
   {
-    files: ['src/server/*/*.ts'],
+    files: ['src/server/*/*.test.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         { patterns: [sharedWithServer('../../', { server: true })] },
+      ],
+    },
+  },
+  // A function file is the route's thin adapter: it reaches the server and the contract only.
+  {
+    files: ['netlify/functions/*.ts'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: String.raw`^\.\./\.\./(?!src/server/|src/api/)`,
+              message: 'A function imports only src/server and src/api (ADR 0052, section 7).',
+            },
+          ],
+        },
       ],
     },
   },
