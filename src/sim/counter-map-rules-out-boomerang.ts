@@ -14,7 +14,7 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'boomerang',
     intended: 'y',
-    reason: 'The boomerang hits twice a throw, and every hit stops the regrowth.',
+    reason: 'Two hits a throw, out and back: it is never left alone for 2 s.',
   },
   {
     x: 'boomerang',

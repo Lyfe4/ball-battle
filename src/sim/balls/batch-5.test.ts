@@ -7,6 +7,7 @@ import { blue, red, withBalls } from '../test-support.ts';
 import { POISON_DAMAGE, POISON_INTERVAL_TICKS } from '../status.ts';
 import type { SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
+import { defineBall } from '../define-ball.ts';
 import { bloom, FIRST_HEAL_TICK, HEAL_AMOUNT, HEAL_EVERY_TICKS, PAUSE_TICKS } from './bloom.ts';
 import { BLAST_DAMAGE, bomber, DROP_TICKS, FIRST_DROP_TICK, FUSE_TICKS } from './bomber.ts';
 import { boomerang, COOLDOWN_TICKS, FIRST_THROW_TICK } from './boomerang.ts';
@@ -196,7 +197,7 @@ describe('Spartan', () => {
 });
 
 describe('Bloom', () => {
-  it('regrows a little on a fixed rhythm, all match long', () => {
+  it('regrows a little on a fixed rhythm while left alone', () => {
     const hurt = withBalls(parked(bloom), [{ health: bloom.maxHealth - 20 }]);
     const { events } = play(hurt, FIRST_HEAL_TICK + HEAL_EVERY_TICKS * 3);
     const heals = ofType(events, 'healed');
@@ -229,5 +230,34 @@ describe('Bloom', () => {
     for (const hit of resumed) {
       if (hit + PAUSE_TICKS < 240) expect(heals).toContain(hit + PAUSE_TICKS);
     }
+  });
+
+  it('waits 2 s untouched after any hit, a hit mid-wait starts it again, then regrows 5 a second', () => {
+    // A test-only ball that pricks the Bloom from afar at ticks 30 and 100, and nothing else.
+    const pricker = defineBall({
+      ...blue,
+      id: 'pricker',
+      hooks: {
+        onTick: ({ world }) =>
+          world.tick === 30 || world.tick === 100
+            ? [{ kind: 'damage', targetId: 'ball-0', amount: 1 }]
+            : [],
+      },
+    });
+    const world = withBalls(createWorld(1, [bloom, pricker]), [
+      { position: { x: 200, y: 200 }, velocity: still, health: bloom.maxHealth - 20 },
+      { position: { x: 800, y: 800 }, velocity: still },
+    ]);
+    const pricked = indexDefinitions([bloom, pricker]);
+    let current = world;
+    const heals: number[] = [];
+    for (let i = 0; i < 250; i++) {
+      const result = step(current, pricked);
+      current = result.world;
+      heals.push(...ofType(result.events, 'healed').map((heal) => heal.tick));
+    }
+    // Before the first hit it regrows; after it, nothing until 2 s (120 ticks) after the last hit,
+    // then 1 health every 12 ticks.
+    expect(heals).toStrictEqual([12, 24, 220, 232, 244]);
   });
 });

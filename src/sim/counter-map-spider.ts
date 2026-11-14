@@ -132,7 +132,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spider',
     y: 'bloom',
-    intended: 'y',
-    reason: 'It regrows each small nip.',
+    intended: 'even',
+    reason: 'Webs and nips restart the wait, but they are small: neither pulls ahead.',
   },
 ];

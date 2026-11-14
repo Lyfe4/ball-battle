@@ -97,9 +97,10 @@ describe('shapeProblem', () => {
     expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
     expect(shapeProblem('berserker', some(5), some(2))).toBeUndefined();
     expect(shapeProblem('berserker', some(6), some(2))).toBeDefined();
-    expect(shapeProblem('bloom', some(7), some(4))).toBeUndefined();
-    expect(shapeProblem('bloom', some(8), some(5))).toBeDefined();
-    expect(shapeProblem('bloom', some(7), some(3))).toBeDefined();
+    expect(shapeProblem('bloom', some(4), some(5))).toBeUndefined();
+    expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
+    expect(shapeProblem('bloom', some(7), some(4))).toBeDefined();
+    expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
     expect(shapeProblem('ghost', some(2), some(1))).toBeUndefined();
     expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
   });

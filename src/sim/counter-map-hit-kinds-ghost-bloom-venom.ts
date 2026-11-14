@@ -26,7 +26,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'frost',
     intended: 'x',
-    reason: 'The cold’s bumps come slowly, and it regrows between them.',
+    reason: 'The slow keeps the cold’s bumps rare, and it regrows in the gaps.',
   },
   {
     x: 'bloom',
@@ -38,7 +38,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'venom',
     intended: 'y',
-    reason: 'Every poison tick stops the regrowth again, so it hardly regrows at all.',
+    reason: 'Every poison tick is a hit, so its wait never runs out.',
   },
   {
     x: 'bloom',
@@ -49,26 +49,26 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'necromancer',
-    intended: 'x',
-    reason: 'The skeleton’s bites come slowly enough for the regrowth to heal them back.',
+    intended: 'even',
+    reason: 'The skeleton’s bites restart the wait, but they are small: neither pulls ahead.',
   },
   {
     x: 'bloom',
     y: 'titan',
     intended: 'y',
-    reason: 'Grows too big: its huge bumps outpace the regrowth.',
+    reason: 'Its late bumps grow bigger than anything the Bloom regrows between them.',
   },
   {
     x: 'bloom',
     y: 'inferno',
-    intended: 'even',
-    reason: 'Every burn stops the regrowth, but the burns are small: neither pulls ahead.',
+    intended: 'y',
+    reason: 'Burning patches hurt every half second, so the bud never opens.',
   },
   {
     x: 'bloom',
     y: 'bomber',
     intended: 'even',
-    reason: 'Regrows between the bombs, but each blast takes more than it regrows.',
+    reason: 'Regrows in the gaps between bombs, but each blast takes more than it regrows.',
   },
   {
     x: 'venom',
