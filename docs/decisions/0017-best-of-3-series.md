@@ -3,6 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Implements: step 1 of `docs/vision.md` ("round structure against a bot lineup, locally")
+- Amended by: ADR 0051 (competitive play: the server issues secret per-round seeds; links and
+  single-player keep the series seed)
 
 ## Context
 

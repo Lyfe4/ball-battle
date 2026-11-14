@@ -3,6 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Amends: ADR 0017 (the link, the bot), ADR 0019 (links, picks)
+- Amended by: ADR 0051 (a server verifies each series under the ruleset it was created with,
+  from frozen sim bundles kept for a window)
 
 ## Context
 

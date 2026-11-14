@@ -1,8 +1,9 @@
 # 0051: Competitive integrity: secret seeds, pinned rulesets, and what comes before accounts
 
-- Status: Proposed (draft, not accepted; for review before any server code)
+- Status: Accepted (2026-11-14): option B for seeds, pinned rulesets with frozen bundles for
+  verification. Not built yet: it is the design the server work follows.
 - Date: 2026-11-14
-- Amends (if accepted): ADR 0017 (a series' seed), ADR 0022 (one ruleset per build, verifying a
+- Amends: ADR 0017 (a series' seed), ADR 0022 (one ruleset per build, verifying a
   series)
 - Builds on: `docs/audit-2026-11.md` sections 2.3, 2.4, 2.5, 2.7 and 7
 
@@ -229,12 +230,12 @@ Each is small. All of them come before the first account exists:
 - `localStorage` is per origin, shared by every tab, and has no notification within the writing
   tab. Per-tab ownership needs `sessionStorage` or a `storage` listener.
 
-## Consequences (if accepted)
+## Consequences
 
 - Ranked and ladder modes are possible without the draft becoming a lookup. Single-player play and
   links stay as they are.
 - One ruleset bump carries the explicit seeds, and from then on every kept ruleset adds a frozen
   bundle and a golden run in CI.
 - The server owns secrets (`K`, salts) and their rotation. That is new operational work.
-- Nothing here is built yet. This ADR is a proposal to decide on before the first line of server
-  code.
+- Nothing here is built yet. The first server code follows it: packaging first, then option B
+  with its ruleset bump, then ruleset pinning, with the checklist above before the first account.
