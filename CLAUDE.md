@@ -112,6 +112,10 @@ Each line is a rule; its ADR has the reasoning.
   which `verifySeries` runs first; it takes `unknown` and never throws.
 - A series' length is `SeriesSetup.bestOf` (absent is 3, `mode=bo5` in a link), never a constant
   (ADR 0048).
+- Rules read a series' seeds only through `src/sim/series-seeds.ts` (`roundSeedOf`,
+  `firstToShowOf`, `botSeedOf`): a local series and a link derive them from `seed`, a server
+  series names them in `SeriesSetup.seeds`, secret until each lock (ADR 0051, 0052). The server
+  derives them with `src/server/seeds.ts` and players check them with `src/api/fairness.ts`.
 
 **The sim**
 

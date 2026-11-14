@@ -131,9 +131,14 @@ describe('decodeSeriesSetup', () => {
       const roll = random();
       if (depth > 2 || roll < 0.5) return plain[Math.floor(random() * plain.length)];
       if (roll < 0.7) return Array.from({ length: Math.floor(random() * 4) }, () => any(depth + 1));
-      return { kind: any(depth + 1), bot: any(depth + 1), lineupSeed: any(depth + 1) };
+      return {
+        kind: any(depth + 1),
+        bot: any(depth + 1),
+        lineupSeed: any(depth + 1),
+        ...(roll < 0.85 ? {} : { rounds: any(depth + 1), toss: any(depth + 1) }),
+      };
     };
-    const keys = [...Object.keys(valid), 'bestOf'];
+    const keys = [...Object.keys(valid), 'bestOf', 'seeds'];
     for (let round = 0; round < 2000; round += 1) {
       const raw: Record<string, unknown> = { ...valid };
       for (const key of keys) if (random() < 0.3) raw[key] = any(0);

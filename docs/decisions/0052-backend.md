@@ -320,8 +320,20 @@ Nothing seed-shaped is sent before its lock (ADR 0051).
     `setup.seed`), secret until the series ends.
 - Every seed gets a random 128-bit salt and a commitment `SHA-256(seed ‖ salt)`. Only the salts
   are stored; the seeds are re-derived from `K`.
-- `SeriesSetup` gains `seeds: { rounds; toss?; lineup?; bot? }` (ADR 0051 named all but `bot`).
+- `SeriesSetup` gains `seeds: { rounds; toss?; bot? }` (ADR 0051 named all but `bot`).
   The ruleset bump is 15. Single-player play and links keep the one series seed.
+- **As built (slice 0):**
+  - The bot's lineup seed stays in `opponent.lineupSeed`, which already is exactly that seed: the
+    server writes its secret `lineup` seed there. A second copy in `seeds` would need a rule for
+    which one wins.
+  - `decodeSeriesSetup` takes exactly the seeds a series uses: one per round, `toss` for Reveal
+    only, `bot` only for a bot that chooses (any format but Blind). With `seeds`, nothing is
+    derived from `seed`; rules read every seed through `src/sim/series-seeds.ts`.
+  - The HMAC message is `"ballbattle/seed/v1" NUL seriesId NUL purpose NUL index` (UTF-8), the
+    series id a lowercase UUID, `index` the round for `round` and 0 otherwise, the seed the first
+    four bytes big-endian (`src/server/seeds.ts`, WebCrypto). K is at least 32 bytes.
+  - A commitment is `SHA-256(seed as 4 bytes big-endian ‖ 16-byte salt)`, hex on the wire
+    (`src/api/fairness.ts`). Test vectors made with Node's `crypto` pin both.
 
 ### Rulesets
 

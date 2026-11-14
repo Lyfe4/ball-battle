@@ -11,7 +11,10 @@ import {
   DEFAULT_BEST_OF,
   FORMATS,
   isValidLineup,
+  type BestOf,
+  type Format,
   type Opponent,
+  type SeriesSeeds,
   type SeriesSetup,
 } from './series.ts';
 
@@ -20,7 +23,7 @@ export type DecodedSetup =
   | { readonly ok: false; readonly reason: string };
 
 /** Every field a setup may have (SeriesSetup). */
-const FIELDS = ['ruleset', 'seed', 'a', 'b', 'opponent', 'format', 'picks', 'bestOf'];
+const FIELDS = ['ruleset', 'seed', 'a', 'b', 'opponent', 'format', 'picks', 'bestOf', 'seeds'];
 
 const refuse = (reason: string): DecodedSetup => ({ ok: false, reason });
 
@@ -56,6 +59,38 @@ function opponentOf(value: unknown): Opponent | string {
 }
 
 /**
+ * A server series' seeds (ADR 0052): exactly the seeds the series uses, so a stored setup has one
+ * form and no rule quietly falls back to the series seed. One per round; a toss for Reveal only;
+ * a bot seed only for a bot that makes choices (any format but Blind).
+ */
+function seedsOf(
+  value: unknown,
+  length: BestOf,
+  format: Format,
+  opponent: Opponent,
+): SeriesSeeds | string {
+  if (!isRecord(value)) return 'The seeds are not an object';
+  const extra = Object.keys(value).find((key) => !['rounds', 'toss', 'bot'].includes(key));
+  if (extra !== undefined) return `Unknown seeds field "${extra}"`;
+  const { rounds, toss, bot } = value;
+  // Length first, so a huge list costs nothing; `Array.from` reads a hole as undefined.
+  const list = Array.isArray(rounds) && rounds.length === length ? Array.from(rounds) : [];
+  if (list.length !== length || !list.every(isUint32)) {
+    return 'The round seeds are not one 32-bit integer per round';
+  }
+  if (format === 'reveal' && !isUint32(toss)) return 'A Reveal series needs a toss seed';
+  if (format !== 'reveal' && toss !== undefined) return 'Only a Reveal series has a toss seed';
+  const chooses = opponent.kind === 'bot' && format !== 'blind';
+  if (chooses && !isUint32(bot)) return 'A bot that chooses needs a bot seed';
+  if (!chooses && bot !== undefined) return 'Only a bot that chooses has a bot seed';
+  return {
+    rounds: list,
+    ...(isUint32(toss) ? { toss } : {}),
+    ...(isUint32(bot) ? { bot } : {}),
+  };
+}
+
+/**
  * The setup `raw` holds, as a fresh object with exactly its fields, or why it isn't one. The
  * roster is the ids a lineup may use, in the order the bot picks from.
  */
@@ -63,7 +98,7 @@ export function decodeSeriesSetup(raw: unknown, roster: readonly string[]): Deco
   if (!isRecord(raw)) return refuse('The series is not an object');
   const unknown = Object.keys(raw).find((key) => !FIELDS.includes(key));
   if (unknown !== undefined) return refuse(`Unknown field "${unknown}"`);
-  const { ruleset, seed, a, b, format, picks, bestOf } = raw;
+  const { ruleset, seed, a, b, format, picks, bestOf, seeds } = raw;
   if (!isUint32(ruleset)) return refuse('The ruleset is not a 32-bit unsigned integer');
   if (!isUint32(seed)) return refuse('The seed is not a 32-bit unsigned integer');
   // Absent is Best of 3, as every series before ADR 0048.
@@ -91,6 +126,8 @@ export function decodeSeriesSetup(raw: unknown, roster: readonly string[]): Deco
   if (picks !== undefined && made === undefined) {
     return refuse('The picks are not balls from the roster');
   }
+  const own = seeds === undefined ? undefined : seedsOf(seeds, length, named ?? 'blind', opponent);
+  if (typeof own === 'string') return refuse(own);
   // One stored form per series (ADR 0051): a field holding its default is left out, so a setup
   // written with `bestOf: 3`, `format: 'blind'` or no picks stores and compares like one without.
   return {
@@ -104,6 +141,7 @@ export function decodeSeriesSetup(raw: unknown, roster: readonly string[]): Deco
       ...(named === undefined || named === 'blind' ? {} : { format: named }),
       ...(made === undefined || made.length === 0 ? {} : { picks: made }),
       ...(length === DEFAULT_BEST_OF ? {} : { bestOf: length }),
+      ...(own === undefined ? {} : { seeds: own }),
     },
   };
 }
