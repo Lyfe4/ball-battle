@@ -97,14 +97,19 @@ about 20 merges a month used the whole plan before any traffic.
 
 ### Publishing in batches (built with this ADR)
 
-- **Production is the `release` branch**, set in Netlify's settings (production branch `release`,
-  and only it builds for production). Merging to `main` no longer publishes.
+- **Production is the `release` branch**, set in Netlify's settings (production branch
+  `release`). Merging to `main` no longer publishes.
+- **`main` is a branch deploy** (`main--battle-ball.netlify.app`). Netlify builds deploy previews
+  only for pull requests into the production branch or a branch-deploy branch, so without it
+  pull requests into `main` would get no preview. It also shows what the next publish would
+  release.
 - **The Publish workflow** (`.github/workflows/publish.yml`, run by hand:
   `gh workflow run publish.yml`) publishes a batch:
   - it fast-forwards `release` to a `main` commit whose CI run passed;
   - it refuses anything not on `main`, and never moves `release` backwards (roll back in
     Netlify's dashboard instead).
-- **Deploy previews on every pull request are unchanged.** They don't cost deploy credits.
+- **Deploy previews and branch deploys don't cost credits,** only production deploys do (Netlify's
+  billing docs).
 - **Budget on Free:** about 12 publishes a month (180 credits), leaving the rest for bandwidth
   and requests.
 - **Move to Personal ($9, 1,000 credits) when the first functions go live in production** (slice
