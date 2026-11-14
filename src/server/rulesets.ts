@@ -24,6 +24,7 @@ const REQUIRED = [
   'recordOutcome',
   'recordPick',
   'remainingOf',
+  'setupWithPicks',
   'startSeries',
   'verifySeries',
 ] as const;

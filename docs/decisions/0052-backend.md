@@ -720,7 +720,40 @@ The first thing players see from the backend. It contains:
 - Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, and is
   reported to Sentry, since it may be everyone's limit at once.
 - Headers: `connect-src 'self'`, `require-trusted-types-for 'script'` (the client writes no HTML,
-  so nothing changed) and `Strict-Transport-Security: max-age=63072000; includeSubDomains`.
+  so nothing changed) and `Strict-Transport-Security: max-age=63072000; includeSubDomains`. On
+  `*.netlify.app` Netlify sends its own HSTS (one year, `preload`) in place of ours; ours applies
+  on a custom domain.
+
+**As built (PR 3: the series machine and friend challenges' API):**
+
+- `src/server/machine.ts` is pure: it rebuilds the sim's `SeriesState` from the stored lineups,
+  picks and rounds with the series' own frozen sim, plays every round that needs no more picks,
+  and finishes through `verifySeries` (a failure is `void` and reported). Picks are applied in the
+  format's turn order, so Showdown's opener can be locked by B before A.
+- `src/server/series-service.ts` runs each change in one transaction holding the series row
+  (`FOR UPDATE`): the pick's primary key makes the first lock win, and the row lock keeps two
+  instances from both playing the round that pick completes. A pick for a round and side already
+  locked answers the stored series, whatever ball it names (a retry, a second tab); a pick that
+  isn't due is `409 not_your_turn`.
+- Seeds: committed at creation (salt and SHA-256 stored), Reveal's toss revealed at once, each
+  round's seed revealed when the round is played, and every seed revealed once the series is
+  verified. A forfeit reveals nothing more.
+- `viewOf` (`src/server/view.ts`) sends the opponent's pick at once only when the format shows it;
+  Showdown's opener stays hidden until both lock. In Blind the opponent's lineup is hidden until
+  the end (a Blind series plays out the moment both lineups are locked).
+- Deadlines: 24 hours from when a turn starts, by database time. When one side locks Showdown's
+  opener first the other side's clock keeps running. A missed turn forfeits to the other side;
+  when both missed the opener nobody wins. Settled on every read and by `netlify/functions/sweep.ts`
+  every 15 minutes (Netlify runs scheduled functions on production deploys only, so previews rely
+  on settling on read).
+- `GET /api/v1/series` (open first, the player's turn first, then the last 10 finished),
+  `GET /api/v1/series/:id` (ETag of the version, 304), `POST /api/v1/series/:id/picks`.
+- Challenges: `POST /api/v1/challenges`, `GET /api/v1/challenges/:token` (no session needed),
+  `POST /api/v1/challenges/:token/accept`. The token is the first 16 bytes of an HMAC of the
+  challenger and their request id under the current seed key: unguessable, the same link again
+  for a retried create, and only its SHA-256 is stored. Accepting locks the challenge row; the
+  challenger is side A. At most 3 open series per player (checked on accepting) and 5 links
+  waiting.
 
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
