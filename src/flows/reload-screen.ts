@@ -43,7 +43,11 @@ export function screenOf(framed: Framed, court: boolean): Screen {
     canvas !== null && context !== undefined && context !== null
       ? {
           size: `${String(canvas.width)}x${String(canvas.height)}`,
-          pixels: context.getImageData(0, 0, canvas.width, canvas.height).data,
+          // A court not laid out yet (a phone between screens) is 0 wide: no pixels to read.
+          pixels:
+            canvas.width === 0 || canvas.height === 0
+              ? []
+              : context.getImageData(0, 0, canvas.width, canvas.height).data,
         }
       : undefined;
   return {
