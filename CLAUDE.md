@@ -48,6 +48,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
   `pnpm balance:ci` is CI's reduced run (150 seeds, map shape, ADR 0011 addendum).
 - `pnpm golden`: rewrite `src/golden/golden-matches.json` after a `RULESET_VERSION` bump. It
   refuses otherwise: results that move without a bump are a bug.
+- `pnpm ruleset:freeze`: after `pnpm golden`, freeze the new ruleset as `rulesets/r<N>/` (its
+  bundled sim and its known results; ADR 0052). Commit it; it is never rebuilt or edited, and
+  `test:slow` replays every frozen ruleset's results against its own bundle.
 
 CI runs format, lint, typecheck, unit tests and build in one job, `test:slow` and `balance:ci` in
 their own, and the browser suite in two jobs per engine (phones, the rest). All must pass.
@@ -105,7 +108,8 @@ Each line is a rule; its ADR has the reasoning.
 - Bump `RULESET_VERSION` (`src/sim/ruleset.ts`) in the same commit as anything that can change a
   fight, a bot's choice or a series: stats, abilities, combat rules, counter-map sides, the roster
   or its order, seeds and salts. Add the new fingerprint to `ruleset.test.ts` (never edit an old
-  one), then `pnpm golden` (ADR 0022, 0023).
+  one), then `pnpm golden` and `pnpm ruleset:freeze` (ADR 0022, 0023, 0052). A series records
+  its ruleset and is verified by that ruleset's frozen bundle.
 - `verifySeries` (`src/sim/series-verify.ts`) alone decides whether a series is valid: `playSeries`,
   the route, a saved series after a reload and a future server all use it; no second check.
   Series data from outside is read only by `decodeSeriesSetup` (`src/sim/series-decode.ts`),

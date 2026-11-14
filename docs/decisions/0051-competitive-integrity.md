@@ -1,7 +1,8 @@
 # 0051: Competitive integrity: secret seeds, pinned rulesets, and what comes before accounts
 
 - Status: Accepted (2026-11-14): option B for seeds, pinned rulesets with frozen bundles for
-  verification. Not built yet: it is the design the server work follows.
+  verification. Its sim side is built (ADR 0052 slice 0: the entry file, explicit seeds at
+  ruleset 15, commitments and the HMAC derivation, frozen rulesets); the server is not.
 - Date: 2026-11-14
 - Amends: ADR 0017 (a series' seed), ADR 0022 (one ruleset per build, verifying a
   series)
