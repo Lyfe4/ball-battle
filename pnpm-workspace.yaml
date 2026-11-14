@@ -1,0 +1,5 @@
+# pnpm settings (no workspace packages yet).
+overrides:
+  # ESLint's minimatch 10 has a ReDoS (GHSA-g3hv-75wg-m249). Dev tooling only, never shipped; drop
+  # this once ESLint depends on a patched version itself.
+  minimatch: ^11.0.1

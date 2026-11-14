@@ -1,8 +1,21 @@
-# Keeps the commit-pinned GitHub Actions in .github/workflows current: a monthly pull request per
-# update, with the version in the trailing comment. Actions only; npm dependencies are updated by hand.
+# Proposes updates monthly, one pull request per group:
+# - the commit-pinned GitHub Actions in .github/workflows, with the version in the trailing comment;
+# - the npm dev tooling, minor and patch updates grouped into one pull request. Majors come one at a
+#   time, so each gets its own look (TypeScript 7 and its typescript-eslint support, for example).
+#   @types/node stays on the Node major the project runs (engines.node, Netlify): 24.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      tooling:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
