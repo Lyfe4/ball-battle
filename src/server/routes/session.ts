@@ -1,0 +1,67 @@
+// /api/v1/session (ADR 0052, section 2).
+// - POST makes a guest on the player's first online action, with their 16+ confirmation, and sets
+//   the session cookie. A browser that already has a working session keeps it (a double tap or a
+//   second tab makes no second guest).
+// - DELETE logs out: ends the session in Auth and clears the cookie. The client clears every
+//   `ballbattle.*` key itself. A guest who logs out can't come back, so the game offers "Forget
+//   me" instead; logout is here for accounts (slice 2) and for completeness.
+import { decodeCreateGuest, type PlayerResponse } from '../../api/session.ts';
+import { AuthError, signOut, signUpGuest } from '../auth.ts';
+import { deleteUser } from '../auth-admin.ts';
+import { clearedSessionCookie, readSession, sessionCookie } from '../cookie.ts';
+import { createProfile } from '../db/profiles.ts';
+import { guard, jsonBody } from '../guard.ts';
+import { ApiError, json, type RouteHandler } from '../http.ts';
+import { report } from '../monitor.ts';
+import { ipSubject, LIMITS, spend } from '../rate-limit.ts';
+import { optionalSession } from '../session.ts';
+
+async function createGuest(...[request, context]: Parameters<RouteHandler>): Promise<Response> {
+  if (decodeCreateGuest(await jsonBody(request)) === undefined) {
+    throw new ApiError(400, 'age_unconfirmed', 'Online play is for players 16 and over');
+  }
+  const existing = await optionalSession(request, context).catch((error: unknown) => {
+    // A dead session is replaced by a new guest; anything else is a real failure.
+    if (error instanceof ApiError && error.code === 'unauthenticated') return undefined;
+    throw error;
+  });
+  if (existing !== undefined) {
+    return json(200, { name: existing.name } satisfies PlayerResponse);
+  }
+  const { config, sql } = context.deps;
+  if (context.ip !== undefined)
+    await spend(sql, await ipSubject(config, context.ip), LIMITS.guests);
+  const guest = await signUpGuest(config, context.ip).catch(async (error: unknown) => {
+    // Auth's own anonymous sign-in limit (ADR 0052 section 11): the player gets a clear answer,
+    // and we hear about it, since it may be every player's limit at once.
+    if (error instanceof AuthError && error.status === 429) {
+      await report(error, { route: 'session.create', requestId: context.requestId });
+      throw new ApiError(503, 'guests_busy', 'Too many new players right now: try again soon', {
+        'Retry-After': '300',
+      });
+    }
+    throw error;
+  });
+  try {
+    const profile = await createProfile(sql, guest.userId);
+    context.setUser(profile.userId);
+    context.setCookie(sessionCookie(guest.tokens));
+    return json(201, { name: profile.name } satisfies PlayerResponse);
+  } catch (error) {
+    // No half-made guest: an auth user without a profile could never play.
+    await deleteUser(config, guest.userId).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function logout(...[request, context]: Parameters<RouteHandler>): Promise<Response> {
+  const tokens = readSession(request);
+  if (tokens !== undefined) await signOut(context.deps.config, tokens.access);
+  context.setCookie(clearedSessionCookie());
+  return json(204, null);
+}
+
+export const session: RouteHandler = (request, context) => {
+  guard(request, ['POST', 'DELETE']);
+  return request.method === 'POST' ? createGuest(request, context) : logout(request, context);
+};

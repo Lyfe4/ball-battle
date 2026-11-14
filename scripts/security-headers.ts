@@ -4,7 +4,10 @@
 
 /**
  * Everything the built app loads comes from its own origin: one module script, one stylesheet and
- * the self-hosted font files from /assets, the icons and the web app manifest. Nothing else is allowed. Inline styles set through the CSSOM (element.style) are
+ * the self-hosted font files from /assets, the icons and the web app manifest; the only network
+ * calls are to the game's own API on the same origin (ADR 0052, `connect-src 'self'`). Trusted
+ * Types are required, so no string can ever reach an HTML or script sink: the game builds its DOM
+ * with createElement and textContent only. Nothing else is allowed. Inline styles set through the CSSOM (element.style) are
  * not subject to CSP, so the HUD and canvas sizing keep working under style-src 'self'.
  */
 export const CONTENT_SECURITY_POLICY = [
@@ -14,9 +17,11 @@ export const CONTENT_SECURITY_POLICY = [
   "img-src 'self'",
   "font-src 'self'",
   "manifest-src 'self'",
+  "connect-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",
+  "require-trusted-types-for 'script'",
 ].join('; ');
 
 /**
@@ -31,6 +36,8 @@ export const PATH_HEADERS: Readonly<Record<string, Readonly<Record<string, strin
 
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+  // HTTPS only, for two years, set by us rather than left to the platform (ADR 0052 section 6).
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',

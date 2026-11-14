@@ -1,0 +1,73 @@
+// Rate limits (ADR 0052, "Abuse"): fixed windows counted in Postgres, by database time, so every
+// function instance on every host shares one count. Limits are per account; only guest creation,
+// which has no account yet, is per client IP, and the IP is never stored: its subject is an HMAC
+// of it under a server key, purged with its window. Netlify's own per-IP rule is only a flood guard.
+import type { Config } from './config.ts';
+import type { Sql, TransactionSql } from './db.ts';
+import { ApiError } from './http.ts';
+
+export interface Limit {
+  /** The name of what is counted. */
+  readonly bucket: string;
+  readonly max: number;
+  readonly windowSeconds: number;
+}
+
+/** What each counted action may do. Generous: a class of players on one network must fit. */
+export const LIMITS = {
+  /** Guests made from one IP (a school or an office shares one). */
+  guests: { bucket: 'guest.create', max: 60, windowSeconds: 3600 },
+  /** Challenges sent by one player. */
+  challenges: { bucket: 'challenge.create', max: 20, windowSeconds: 3600 },
+  /** Picks and acceptances by one player. */
+  moves: { bucket: 'move', max: 120, windowSeconds: 600 },
+} as const satisfies Record<string, Limit>;
+
+/**
+ * Counts one action of `subject` and refuses it (429, with Retry-After) once the window holds more
+ * than the limit allows. Refused attempts count too, so hammering doesn't open the window sooner.
+ */
+export async function spend(
+  sql: Sql | TransactionSql,
+  subject: string,
+  limit: Limit,
+): Promise<void> {
+  const window = `${String(limit.windowSeconds)} seconds`;
+  const [row] = await sql<{ readonly count: number; readonly retry: number }[]>`
+    insert into game.rate_limits (subject, bucket, window_start, count)
+    values (
+      ${subject}, ${limit.bucket},
+      date_bin(${window}::interval, now(), timestamptz '2000-01-01'), 1
+    )
+    on conflict (subject, bucket, window_start)
+      do update set count = game.rate_limits.count + 1
+    returning count,
+      ceil(extract(epoch from (window_start + ${window}::interval - now())))::integer as retry`;
+  if (row !== undefined && row.count > limit.max) {
+    throw new ApiError(429, 'rate_limited', 'Too many tries: wait a little', {
+      'Retry-After': String(Math.max(1, row.retry)),
+    });
+  }
+}
+
+/** A client IP as a rate-limit subject: an HMAC under the server's seed key, never the IP itself. */
+export async function ipSubject(config: Config, ip: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    config.currentSeedKey.raw,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  // Its own domain, so this can never equal a seed's message (seeds.ts uses ballbattle/seed/v1).
+  const message = new TextEncoder().encode(`ballbattle/ip/v1\0${ip}`);
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, message));
+  return `ip:${Buffer.from(mac.subarray(0, 16)).toString('hex')}`;
+}
+
+/** Drops windows that have ended (the scheduled sweep). */
+export async function purgeRateLimits(sql: Sql): Promise<number> {
+  const rows = await sql`
+    delete from game.rate_limits where window_start < now() - interval '1 day' returning 1`;
+  return rows.length;
+}

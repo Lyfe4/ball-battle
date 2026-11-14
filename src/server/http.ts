@@ -11,6 +11,11 @@ import { report, startMonitor } from './monitor.ts';
 export interface Deps {
   readonly config: Config;
   readonly sql: Sql;
+  /**
+   * The time access tokens are checked against: the host's clock (with a tolerance) unless a test
+   * moves it. Game rules never read it; they use database time.
+   */
+  readonly tokenClock?: () => Date;
 }
 
 export interface RouteContext {
@@ -20,6 +25,8 @@ export interface RouteContext {
   readonly ip: string | undefined;
   /** Names the player in the log line, once the request is authenticated. */
   setUser(id: string): void;
+  /** Adds a `Set-Cookie` to the answer, whether the route succeeds or fails. */
+  setCookie(value: string): void;
 }
 
 export type RouteHandler = (request: Request, context: RouteContext) => Promise<Response>;
@@ -93,6 +100,7 @@ export function endpoint(
     const started = performance.now();
     const requestId = platform?.requestId ?? crypto.randomUUID();
     let userId: string | undefined;
+    const cookies: string[] = [];
     let errorCode: string | undefined;
     let response: Response;
     try {
@@ -107,6 +115,9 @@ export function endpoint(
         setUser: (id) => {
           userId = id;
         },
+        setCookie: (value) => {
+          cookies.push(value);
+        },
       });
     } catch (error) {
       if (error instanceof ApiError) {
@@ -119,6 +130,7 @@ export function endpoint(
       }
     }
     response.headers.set('X-Request-Id', requestId);
+    for (const cookie of cookies) response.headers.append('Set-Cookie', cookie);
     const entry = {
       requestId,
       route: name,
