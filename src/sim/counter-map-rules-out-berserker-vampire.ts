@@ -20,7 +20,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'bloom',
     intended: 'y',
-    reason: 'Its raging bumps come with long gaps, and the regrowth heals each back.',
+    reason: 'Its raging bumps come with long gaps, and the Bloom regrows in each.',
   },
   {
     x: 'berserker',
@@ -158,7 +158,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'bloom',
     intended: 'even',
     reason:
-      'Each bump stops the regrowth and is drunk back, but on little health it can’t pull away.',
+      'Each bump restarts the wait and is drunk back, but on little health it can’t pull away.',
   },
   {
     x: 'vampire',

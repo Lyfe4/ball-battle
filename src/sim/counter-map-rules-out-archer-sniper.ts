@@ -14,7 +14,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'bloom',
     intended: 'x',
-    reason: 'Arrows keep coming, and every one stops the regrowth for a second.',
+    reason: 'Arrows keep coming, and every one restarts its 2 s wait.',
   },
   {
     x: 'archer',

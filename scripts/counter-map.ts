@@ -82,8 +82,8 @@ export interface ShapeAllowance {
  * - The Storm, Titan and Bomber have one counter on a side: nothing in the roster beats one big
  *   strike but the rewind, the growing giant or the big blast.
  * - The Berserker beats nearly every ball that hits rarely: up to 5 wins.
- * - The Bloom regrows between hits that come in pieces, so it beats both new balls of ADR 0049 too:
- *   up to 7 wins until its rework (docs/vision.md).
+ * - The Bloom regrows only after 2 s untouched, so every ball that hits it often wins: up to 5
+ *   losses (ADR 0050).
  * - The Ghost (ADR 0049): while phased nothing touches it, so a quarter of every kind of hit misses
  *   alike, and only the Bloom's regrowth beats it: one loss.
  * - Since the Guardian left (ADR 0047): the Sniper and Quake each lost a counter, and the Vampire
@@ -94,7 +94,7 @@ export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
   titan: { ...SHAPE, fewest: 1 },
   bomber: { ...SHAPE, fewest: 1 },
   berserker: { ...SHAPE, most: 5, within: 3 },
-  bloom: { ...SHAPE, most: 7, within: 3 },
+  bloom: { ...SHAPE, most: 5 },
   ghost: { ...SHAPE, fewest: 1 },
   sniper: { ...SHAPE, fewest: 1 },
   quake: { ...SHAPE, fewest: 1 },

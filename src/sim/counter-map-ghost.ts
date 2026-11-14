@@ -128,6 +128,6 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'bloom',
     intended: 'y',
-    reason: 'Its damage comes in pieces, and the regrowth heals each back between them.',
+    reason: 'Phasing makes the fight stop-start, and every quiet 2 s is regrowth.',
   },
 ];

@@ -121,6 +121,6 @@ export const SPARTAN_ENTRIES: readonly CounterEntry[] = [
     x: 'spartan',
     y: 'bloom',
     intended: 'even',
-    reason: 'The spear pauses the regrowth, the shield halves the bumps: neither pulls ahead.',
+    reason: 'The spear restarts the wait, the shield halves the bumps: neither pulls ahead.',
   },
 ];

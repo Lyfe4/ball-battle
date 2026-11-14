@@ -30,7 +30,7 @@ export const titan = defineBall({
     `Its bump grows with it, to ${String(GROWN_HIT)} times as hard. Heavy, it barely turns when light balls hit it.`,
   ],
   radius: STANDARD_BALL_RADIUS,
-  speed: 740,
+  speed: 750,
   maxHealth: 78,
   contactDamage: 14.5,
   initialAbilityState: {},

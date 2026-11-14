@@ -134,8 +134,8 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'bloom',
-    intended: 'y',
-    reason: 'Its small health makes a small burst, and it regrows it.',
+    intended: 'even',
+    reason: 'Its burst restarts the wait, but it is small: neither pulls ahead.',
   },
   {
     x: 'hex',

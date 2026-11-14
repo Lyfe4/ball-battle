@@ -167,7 +167,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'bloom',
     intended: 'even',
-    reason: 'Each shockwave stops the regrowth, but they are small: neither pulls ahead.',
+    reason: 'Each shockwave restarts the wait, but they are small: neither pulls ahead.',
   },
   {
     x: 'quake',
