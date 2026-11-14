@@ -120,7 +120,18 @@ export default defineConfig({
             '**/*.slow.test.ts',
             '**/*.browser.test.ts',
             '**/*.db.test.ts',
+            '**/*.online.test.ts',
           ],
+        },
+      },
+      {
+        // Online play through the real page (ADR 0052): two browser contexts against `netlify dev`
+        // serving an online build. Needs Supabase, `pnpm build:online` and `netlify dev` first.
+        extends: true,
+        test: {
+          name: 'online',
+          include: ['src/flows/*.online.test.ts'],
+          testTimeout: 600_000,
         },
       },
       {

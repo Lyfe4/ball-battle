@@ -19,10 +19,11 @@ export interface Hud {
    */
   update(world: WorldState, showResult: boolean): void;
   /**
-   * Series mode: rows are labelled You / Bot instead of A / B, and Replay / New match are hidden
-   * (the series panel offers its own buttons). Takes effect at the next setMatch / update.
+   * Series mode: rows are labelled You / Bot instead of A / B (or `sides`, slot A's first: an
+   * online series names the other player, on whichever side the player is), and Replay / New
+   * match are hidden (the series panel offers its own buttons). Takes effect at the next setMatch.
    */
-  setSeriesMode(on: boolean): void;
+  setSeriesMode(on: boolean, sides?: readonly string[]): void;
 }
 
 interface BallRow {
@@ -88,11 +89,13 @@ export function createHud(
   };
   root.append(list, result, buttons, story.element);
   let seriesMode = false;
+  let seriesSides: readonly string[] = SERIES_SIDES;
   let start: WorldState | undefined;
 
   return {
-    setSeriesMode(on) {
+    setSeriesMode(on, sides = SERIES_SIDES) {
       seriesMode = on;
+      seriesSides = sides;
     },
     setMatch(world) {
       start = world;
@@ -116,7 +119,7 @@ export function createHud(
           element(
             'span',
             'hud-ball-side',
-            (seriesMode ? SERIES_SIDES : SIDES)[index] ?? String(index + 1),
+            (seriesMode ? seriesSides : SIDES)[index] ?? String(index + 1),
           ),
           definition?.name ?? ball.id,
         );

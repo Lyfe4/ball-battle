@@ -1,14 +1,10 @@
 import './style.css';
 import { screenKeyOf } from './app/history-rules.ts';
+import { createMoves } from './app/moves.ts';
 import { createNavigation } from './app/navigation.ts';
-import {
-  parseRoute,
-  writeHomeParams,
-  writeManualParams,
-  writeModesParams,
-  type Route,
-} from './app/route.ts';
+import { parseRoute, writeManualParams, writeModesParams, type Route } from './app/route.ts';
 import { writeMainModeParams } from './app/modes.ts';
+import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
 import { initialAppState, isSetupScreen, screenTitle } from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
@@ -22,6 +18,8 @@ import { createBallLink, createManualScreen } from './screens/manual.ts';
 import { createModesScreen } from './screens/modes.ts';
 import { createOutdatedController } from './screens/outdated.ts';
 import { createQuickController } from './screens/quick.ts';
+import { mountOnline } from './screens/online-mount.ts';
+import { offlineMount } from './screens/online-off.ts';
 import { createSeriesScreens } from './screens/series.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
@@ -61,29 +59,10 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
-/**
- * Moves to the screen `write` describes by the Back rules (ADR 0025) and shows it: at once, or once
- * the browser has gone back to it.
- */
-function go(write: (params: URLSearchParams) => void): void {
-  if (navigation.go(write) !== 'return') showCurrentRoute();
-}
-
-/** Shows another screen in place of this entry: the parent a Back falls back to. */
-function replaceWith(write: (params: URLSearchParams) => void): void {
-  navigation.replace(write);
-  showCurrentRoute();
-}
-
 function showCurrentRoute(): void {
   router.show(currentRoute());
 }
-
-/** Moves to the home screen, or puts it in place of this entry (a parent fallback). */
-function goHome(how: 'go' | 'replace' = 'go'): void {
-  if (how === 'replace') replaceWith(writeHomeParams);
-  else go(writeHomeParams);
-}
+const { go, replaceWith, goHome } = createMoves(navigation, showCurrentRoute);
 
 const ballLink = createBallLink(go);
 
@@ -191,11 +170,30 @@ const seriesScreens = createSeriesScreens(
 
 const { setup: seriesSetup, play: series } = seriesScreens;
 
+// Online play (ADR 0052), only in builds that have it: production holds none of it.
+const online = ONLINE_BUILD
+  ? mountOnline({
+      navigation,
+      go,
+      replaceWith,
+      goHome,
+      showWorld,
+      worldsShown: () => worldsShown,
+      showControls,
+      redraw: () => {
+        arena.redraw();
+      },
+    })
+  : offlineMount(() => {
+      goHome('replace');
+    });
+
 const router = createRouter(
   {
     home: {
       show: () => {
         home.open();
+        online.homeShown();
       },
       leave: () => {
         home.leave();
@@ -229,6 +227,7 @@ const router = createRouter(
       },
     },
     series: seriesScreens.screen,
+    ...online.handlers,
   },
   initialRoute.screen,
   showControls,
@@ -250,10 +249,10 @@ const arena = createArena(
     speed: () => playbackSpeedFor(router.current(), state.speed),
     afterTicks: (world) => {
       series.settle(world);
+      online.settle(world);
     },
     tips,
-    moment: () =>
-      router.current() === 'home' ? 'demo' : router.current() === 'series' ? 'series' : 'quick',
+    moment: () => (router.current() === 'home' ? 'demo' : seriesOnScreen() ? 'series' : 'quick'),
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // A finished Free play match has no use for speed: it makes way (ADR 0039).
@@ -264,6 +263,7 @@ const arena = createArena(
       }
       // The round screen waits for the Winner sticker's moment (ADR 0033).
       series.update(world, celebrated);
+      online.update(world, celebrated);
       if (router.current() === 'home') home.drawn(resultShown);
     },
   },
@@ -277,7 +277,8 @@ function setSpeed(next: PlaybackSpeed): void {
   refreshSettings();
 }
 const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
-installSettings({ tips, speed: () => state.speed, setSpeed, court: arena.court });
+const settingsHost = { tips, speed: () => state.speed, setSpeed, court: arena.court };
+installSettings({ ...settingsHost, ...online.settings });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
 let worldsShown = 0;
@@ -294,7 +295,10 @@ function showWorld(world: WorldState, shownSeed: number, finished = false): void
 }
 
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
-const isSetup = () => isSetupScreen(router.current(), series.isPlaying());
+const seriesOnScreen = () => router.current() === 'series' || router.current() === 'online';
+/** The series on screen, offline or online, is being played. */
+const seriesPlaying = () => (router.current() === 'online' ? online.playing() : series.isPlaying());
+const isSetup = () => isSetupScreen(router.current(), seriesPlaying());
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
 function showControls(): void {
@@ -311,13 +315,17 @@ function showControls(): void {
   seriesSetup.setVisible(screen === 'series' && setup);
   // Between series rounds and at the end the arena, health and speed make way for the round
   // screen (ADR 0025): the track and the result say what they would.
-  const roundOver =
-    screen === 'series' && series.phase() !== undefined && series.phase() !== 'playing';
+  const phase = screen === 'online' ? online.phase() : series.phase();
+  const roundOver = seriesOnScreen() && phase !== undefined && phase !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
   hudRoot.hidden = setup || screen === 'home' || roundOver;
   speedRoot.hidden = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   series.setVisible(screen === 'series');
-  hud.setSeriesMode(series.isPlaying());
+  online.setVisible(screen);
+  hud.setSeriesMode(
+    seriesOnScreen() && seriesPlaying(),
+    screen === 'online' ? online.sides() : undefined,
+  );
   // A series screen's title names its length (ADR 0048).
   document.title = screenTitle(
     screen,

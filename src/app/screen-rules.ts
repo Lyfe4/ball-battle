@@ -63,8 +63,8 @@ export function seriesRound(link: RouteOf<'series'>['link'], inHand: SeriesInHan
 
 /** A setup or reading screen is up (choosing balls, setting up a series): no match is watched. */
 export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
-  if (screen === 'series') return !seriesPlaying;
-  return screen === 'pick' || screen === 'manual' || screen === 'modes' || screen === 'outdated';
+  if (screen === 'series' || screen === 'online') return !seriesPlaying;
+  return ['pick', 'manual', 'modes', 'outdated', 'challenge', 'send'].includes(screen);
 }
 
 const TITLES: Readonly<Record<Screen, string>> = {
@@ -75,6 +75,9 @@ const TITLES: Readonly<Record<Screen, string>> = {
   series: 'Best of 3 · BallBattle',
   manual: 'Ball manual · BallBattle',
   outdated: 'Link from another version · BallBattle',
+  online: 'Online series · BallBattle',
+  challenge: 'Challenge · BallBattle',
+  send: 'Challenge a friend · BallBattle',
 };
 
 /**

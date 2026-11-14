@@ -755,6 +755,40 @@ The first thing players see from the backend. It contains:
   challenger is side A. At most 3 open series per player (checked on accepting) and 5 links
   waiting.
 
+**As built (PRs 4 and 5: the client):**
+
+- The series screens take `Seats` (the player's side, the other side's name) and, online, the
+  server's `due` (Showdown's opener is due from both sides at once, which the sim records A first).
+  Offline is `BOT_SEATS`, unchanged. An online series plays in the same panel, with Home as its way
+  on at the end and while waiting ("Waiting for Player 4821 · 23 h left"), and leaving asks nothing.
+- The page turns the server's view into the sim's state up to the rounds this device has watched
+  (`ballbattle.online.watched`), so each unwatched round is fought again on the arena from its
+  revealed seed: Play round, as offline. A replayed round that differs from the server's is logged
+  as a determinism error; the server's result stands. At the end the fair-play check (commitments,
+  the final setup's seeds, and a headless replay with `verifySeries`) shows ✓ with its details
+  folded away.
+- Sending: Other modes' Online section (length, then a format) opens the lineup step with no bot
+  level; "Send challenge" goes to the link's own card, which offers Share (or Copy) and Home.
+  Accepting: the link's card names the sender and the format, never their lineup; "Build your
+  lineup", "Accept challenge", then the series. Taken, expired, the sender's own and unknown links
+  each say so with a way on.
+- The 16+ confirmation is one notice ("Play online") shown at the first online action on a device
+  with no guest, before any request; a device whose cookie is gone meets it after a 401. It makes
+  the guest. Nothing online happens on load: home asks for "Your turn" only on a device that has
+  played online, and the offline game sends no request at all.
+- "Forget me" sits in settings on a device with a guest: it deletes the guest and clears every
+  `ballbattle.*` key, then reloads home.
+- Offline, every online screen is a notice ("You're offline") with Try again and Home.
+- Every online module is reached only through `mountOnline`, chosen by `ONLINE_BUILD`; a production
+  build holds none of it (`scripts/check-bundle.ts`).
+- `netlify dev` serves an online build from `dist/` (`pnpm build:online`), because Netlify applies
+  the production CSP in dev, which blocks the Vite dev server's inline styles. Online play is
+  checked locally under the real CSP.
+- `src/flows/friend-challenge.online.test.ts` (`pnpm test:online`, CI's online-flow job): two
+  browser contexts in Chromium send, accept and play a Reveal challenge to its end against
+  `netlify dev`, each seeing fair play, with no console error. The fights come from the series'
+  random id, so the flow plays whatever the screen offers rather than pinning a seed.
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).

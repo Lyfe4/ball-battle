@@ -21,9 +21,16 @@ export interface LineupStep {
   readonly element: HTMLElement;
   /**
    * Shows the lineup step for `format` at `bestOf` balls, with `draft` in the tray and the bot's
-   * `level` (where it makes choices), and focuses the heading.
+   * `level` (where it makes choices), and focuses the heading. Against a player (ADR 0052) there
+   * is no level (`undefined`), and `done` names what the full tray does ("Send challenge").
    */
-  open(format: Format, draft: Draft, level: string, bestOf: BestOf): void;
+  open(
+    format: Format,
+    draft: Draft,
+    level: string | undefined,
+    bestOf: BestOf,
+    done?: string,
+  ): void;
   /** The lineup in the tray, complete or not. */
   draft(): Draft;
 }
@@ -60,6 +67,7 @@ export function createLineupStep(
   let draft: Draft = [];
   let format: Format = 'blind';
   let size: BestOf = 3;
+  let doneText: string | undefined;
 
   const mode = element('div', 'lineup-mode');
   const modeName = element('p', 'lineup-mode-name');
@@ -153,25 +161,24 @@ export function createLineupStep(
     setText(
       done,
       complete
-        ? unordered()
-          ? 'Reveal lineups'
-          : 'Start series'
+        ? (doneText ?? (unordered() ? 'Reveal lineups' : 'Start series'))
         : `Pick ${String(size - draftCount(draft))} more`,
     );
   }
 
   return {
     element: root,
-    open(nextFormat, nextDraft, nextLevel, bestOf) {
+    open(nextFormat, nextDraft, nextLevel, bestOf, done) {
       format = nextFormat;
       size = bestOf;
+      doneText = done;
       setText(modeName, setupLine(format, size));
       // Five slots share the row in a Best of 5 (series-setup.css).
       tray.style.setProperty('--tray-slots', String(size));
       tray.classList.toggle('lineup-tray-compact', size > 3);
       // Blind has no choices a level changes (ADR 0035), so no level to show.
-      level.element.hidden = !botChooses(format);
-      level.show(nextLevel);
+      level.element.hidden = nextLevel === undefined || !botChooses(format);
+      if (nextLevel !== undefined) level.show(nextLevel);
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
       tray.classList.toggle('lineup-tray-unordered', unordered());
       update(draftOf(nextDraft, (id) => byId.has(id), size));

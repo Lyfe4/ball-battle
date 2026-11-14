@@ -3,6 +3,7 @@
 // Other modes, in titled sections. The series section opens with a length choice (Best of 3 or 5,
 // ADR 0048), so it lists every format, Reveal included: at Best of 5 nothing else reaches it.
 import { DEFAULT_BEST_OF, type BestOf, type Format } from '../sim/series.ts';
+import { ONLINE_BUILD } from './online-build.ts';
 import { writeSeriesModeParams } from './series-url.ts';
 
 /**
@@ -31,9 +32,14 @@ export function lineupParentOf(format: Format, bestOf: BestOf = DEFAULT_BEST_OF)
   return format === MAIN_FORMAT && bestOf === DEFAULT_BEST_OF ? 'home' : 'modes';
 }
 
-/** A way to play on Other modes: a Best of 3 in one format, or Free play (one match). */
+/**
+ * A way to play on Other modes: a series against the bot in one format, a challenge to send a
+ * friend in one format (online builds, ADR 0052), or Free play (one match).
+ */
 export type OtherMode =
-  { readonly kind: 'series'; readonly format: Format } | { readonly kind: 'free' };
+  | { readonly kind: 'series'; readonly format: Format }
+  | { readonly kind: 'challenge'; readonly format: Format }
+  | { readonly kind: 'free' };
 
 export interface ModeSection {
   readonly title: string;
@@ -47,7 +53,7 @@ export interface ModeSection {
  * (home's mode, listed for Best of 5), Showdown, then Blind, the casual "set it and watch" series.
  * Free play is one match with both balls chosen.
  */
-export const OTHER_MODE_SECTIONS: readonly ModeSection[] = [
+export const OFFLINE_SECTIONS: readonly ModeSection[] = [
   {
     title: 'Series vs bot',
     lengthChoice: true,
@@ -59,3 +65,25 @@ export const OTHER_MODE_SECTIONS: readonly ModeSection[] = [
   },
   { title: 'One match', modes: [{ kind: 'free' }] },
 ];
+
+/**
+ * Online (ADR 0052): a challenge to send a friend, in any format and length, played by turns. Only
+ * in builds with online play, after the series against the bot.
+ */
+export const ONLINE_SECTION: ModeSection = {
+  title: 'Online',
+  lengthChoice: true,
+  modes: [
+    { kind: 'challenge', format: 'reveal' },
+    { kind: 'challenge', format: 'showdown' },
+    { kind: 'challenge', format: 'blind' },
+  ],
+};
+
+/** Other modes' sections in a build with or without online play. */
+export function sectionsFor(online: boolean): readonly ModeSection[] {
+  const [series, ...rest] = OFFLINE_SECTIONS;
+  return online && series !== undefined ? [series, ONLINE_SECTION, ...rest] : OFFLINE_SECTIONS;
+}
+
+export const OTHER_MODE_SECTIONS: readonly ModeSection[] = sectionsFor(ONLINE_BUILD);

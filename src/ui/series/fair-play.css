@@ -1,0 +1,38 @@
+/* The fair-play line at the end of an online series (fair-play.ts): one quiet ✓ line, its details
+   folded under it. */
+.fair-play {
+  justify-self: center;
+  max-width: var(--sheet-narrow);
+  font-size: var(--font-size-small);
+}
+
+.fair-play-summary {
+  display: flex;
+  gap: var(--space-small);
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target);
+  cursor: pointer;
+}
+
+.fair-play-mark {
+  color: var(--color-favoured);
+  font-weight: 800;
+}
+
+.fair-play[data-result='unfair'] .fair-play-head {
+  color: var(--color-unfavoured);
+}
+
+.fair-play-body {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Online: why a series waits, or how it ended without being played out (series-panel.ts). */
+.series-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  text-align: center;
+}

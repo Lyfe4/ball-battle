@@ -5,7 +5,8 @@
 import type { Lean } from './balls/matchups.ts';
 import { MARKS } from './balls/marks.ts';
 
-export type SymbolKey = Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more';
+export type SymbolKey =
+  Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more' | 'fairPlay';
 
 export interface SymbolEntry {
   /** The symbol as text; empty for one drawn as a swatch (a colour or a ring). */
@@ -38,6 +39,11 @@ export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
     mark: '▾',
     meaning: 'Opens the full series track',
     legendNote: 'on the score line during a round',
+  },
+  fairPlay: {
+    mark: '✓',
+    meaning: 'Fair play: every seed matched its commitment, and this device replayed every round',
+    legendNote: 'at the end of an online series',
   },
 };
 

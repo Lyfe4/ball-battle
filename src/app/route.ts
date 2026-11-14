@@ -3,6 +3,8 @@
 // ever written. Quick-match links (`?a=&b=&seed=`) and series links (`?mode=bo3...`, ADR 0017,
 // 0019) keep their meaning.
 import { parseMatchup, writeMatchParams, type Matchup } from './matchup.ts';
+import { ONLINE_BUILD } from './online-build.ts';
+import { parseOnlineRoute, type OnlineRoute } from './online-url.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { verifySeries } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
@@ -42,7 +44,9 @@ export type Route =
    * until the player chooses to play it under this page's rules. `made` is the link's ruleset (0
    * for a link from before versions).
    */
-  | { readonly screen: 'outdated'; readonly kind: 'match' | 'series'; readonly made: number };
+  | { readonly screen: 'outdated'; readonly kind: 'match' | 'series'; readonly made: number }
+  /** Online play (ADR 0052), only in builds that have it: a series, a challenge, sending one. */
+  | OnlineRoute;
 
 /** Where a best-of-3 screen is: the rules first, then the steps a link can name. */
 export type SeriesScreenStep = 'rules' | SeriesStep;
@@ -108,12 +112,16 @@ export function writeHomeParams(params: URLSearchParams): void {
  * replayed only if `verifySeries` (the same check a server runs, ADR 0022) accepts it; otherwise
  * it opens the lineup step, prefilled with what the link holds, like any other incomplete link.
  * `verify` false skips that replay, for reading only which screen a URL is on (history-rules.ts).
+ * `online` is whether this build has online play; without it, online URLs open home.
  */
 export function parseRoute(
   params: URLSearchParams,
   definitions: DefinitionLookup,
   verify = true,
+  online = ONLINE_BUILD,
 ): Route {
+  const onlineRoute = online ? parseOnlineRoute(params) : undefined;
+  if (onlineRoute !== undefined) return onlineRoute;
   const validIds = [...definitions.keys()];
   const view = params.get(VIEW)?.trim().toLowerCase();
   if (view === 'modes') return { screen: 'modes' };

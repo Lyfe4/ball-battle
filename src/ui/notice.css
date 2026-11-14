@@ -1,10 +1,16 @@
-/* A replay link from another version of the game: the notice and what the player can do with it. */
-.outdated {
+/* A notice (notice.ts): a link from another version, online play's states. One thing to say and a
+   way on. */
+.notice {
   display: grid;
   gap: var(--space-gap);
 }
 
-.outdated-body {
+.notice-body {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.notice-text {
   margin: 0;
   line-height: 1.45;
 }
@@ -22,7 +28,7 @@
 
 /* Desktop (ADR 0031): a short notice stays at a readable width, as a card. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  .outdated {
+  .notice {
     justify-self: center;
     width: 100%;
     max-width: var(--sheet-narrow);

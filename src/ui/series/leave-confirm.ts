@@ -10,13 +10,14 @@ export interface LeaveConfirm {
 }
 
 /**
- * Leave series, asked once (ADR 0042): leaving forgets the series, so a tap on the link turns its
+ * Leave series, asked once (ADR 0042), unless `ask` is false (an online series, which leaving
+ * keeps): leaving forgets the series, so a tap on the link turns its
  * row into the question with Stay and Leave under it. No modal: the fight goes on behind it. Stay is
  * the default (first, primary, focused, and Escape means Stay); only Leave leaves.
  */
-export function createLeaveConfirm(onLeave: () => void): LeaveConfirm {
+export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfirm {
   const root = element('div', 'leave-confirm');
-  const link = element('button', 'text-link series-leave', 'Leave series');
+  const link = element('button', 'text-link series-leave', ask ? 'Leave series' : 'Home');
   link.type = 'button';
 
   const row = element('div', 'leave-confirm-row');
@@ -56,7 +57,8 @@ export function createLeaveConfirm(onLeave: () => void): LeaveConfirm {
     if (refocus) link.focus({ preventScroll: true });
   }
 
-  link.addEventListener('click', open);
+  // Online (ADR 0052) leaving keeps the series on the server: nothing to ask.
+  link.addEventListener('click', ask ? open : onLeave);
   stay.addEventListener('click', () => {
     close(true);
   });

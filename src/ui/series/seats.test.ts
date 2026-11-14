@@ -101,3 +101,53 @@ describe('a series seen from side B', () => {
     expect(playerSeats('a', null).them).toBe('Deleted player');
   });
 });
+
+describe('an online series screen (ADR 0052, no dead ends)', () => {
+  const online = { note: 'Waiting for Player 4821 · 23 h left' };
+
+  it('offers Home while the other side is to move', () => {
+    const state = recordPick(startSeries(setup), 'archer');
+    const screen = seriesScreenOf({
+      state,
+      current: undefined,
+      settled: false,
+      linkState: undefined,
+      seats: asB,
+      due: ['a'],
+      online,
+    });
+    expect(screen.waiting).toBe(true);
+    expect(screen.actions).toStrictEqual(['newSeries']);
+  });
+
+  it('offers Home at the end, never Rematch', () => {
+    const won = recordOutcome(recordPick(recordPick(afterRound1(), 'thorns'), 'magnet'), 'a');
+    const screen = seriesScreenOf({
+      state: won,
+      current: undefined,
+      settled: true,
+      linkState: undefined,
+      seats: asB,
+      online,
+    });
+    expect(screen.actions).toStrictEqual(['newSeries']);
+  });
+
+  it('never leaves a state between rounds with nothing to do', () => {
+    const states = [startSeries(setup), afterRound1(), recordPick(afterRound1(), 'thorns')];
+    for (const state of states) {
+      for (const due of [[], ['a'], ['b'], ['a', 'b']] as const) {
+        const screen = seriesScreenOf({
+          state,
+          current: undefined,
+          settled: false,
+          linkState: undefined,
+          seats: asB,
+          due,
+          online,
+        });
+        expect(screen.actions.length, JSON.stringify(due)).toBeGreaterThan(0);
+      }
+    }
+  });
+});

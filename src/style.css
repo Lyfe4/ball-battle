@@ -21,14 +21,16 @@
 @import './ui/modes.css';
 @import './ui/manual/manual.css';
 @import './ui/manual/matchup-chart.css';
-@import './ui/outdated.css';
+@import './ui/notice.css';
 @import './ui/series/series-setup.css';
 @import './ui/series/series-bar.css';
 @import './ui/series-panel.css';
 @import './ui/series/leave-confirm.css';
 @import './ui/series/pick-rows.css';
 @import './ui/series/pick-banner.css';
+@import './ui/series/fair-play.css';
 @import './ui/settings-menu.css';
+@import './ui/online/online.css';
 @import './ui/symbol-tooltip.css';
 @import './ui/winner-sticker.css';
 @import './ui/arena-tips.css';

@@ -43,9 +43,11 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 - `pnpm test:db`: the API (`src/server`, `*.db.test.ts`) against a local Supabase; start it first
   with `pnpm exec supabase start` (Docker). Migrations are `supabase/migrations/*.sql` (`pnpm exec
 supabase migration new <name>`, then `pnpm exec supabase db reset`).
-- `netlify dev`: the game and the API on one origin, http://localhost:8888, with `.env` (from
-  `.env.example`). Online play is built only where `VITE_ONLINE=1` (previews, the main branch
-  deploy, `netlify dev`) and served only where the functions have `BALLBATTLE_ONLINE=1`.
+- `netlify dev`: an online build (`pnpm build:online` first) and the API on one origin,
+  http://localhost:8888, with `.env` (`node scripts/local-env.ts > .env`). Online play is built
+  only where `VITE_ONLINE=1` (previews, the main branch deploy, `build:online`) and served only
+  where the functions have `BALLBATTLE_ONLINE=1`. `pnpm test:online`: two players through a
+  friend challenge in Chromium, against `netlify dev`.
 - `pnpm lint`, `pnpm typecheck` (`tsc -b`), `pnpm format` / `pnpm format:check`.
 - `pnpm balance [seeds] [--ball <id>] [--serial]`: every matchup (both slot orders) across all
   cores; prints the matrix, each ball's shape and whether the targets are met; exits 1 on any
