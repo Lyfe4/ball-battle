@@ -700,6 +700,28 @@ The first thing players see from the backend. It contains:
 - `pnpm build` ends with `scripts/check-bundle.ts`: no secret-shaped text in `dist/`, and no API
   path in a build without `VITE_ONLINE`.
 
+**As built (PR 2: guest sessions and headers):**
+
+- `POST /api/v1/session {adult: true}` makes a guest (Auth's anonymous sign-up, then the profile
+  with `adult_confirmed_at`); without the 16+ confirmation it answers `age_unconfirmed` and makes
+  nothing. A browser with a working session keeps its guest, so a double tap makes no second one.
+  `DELETE /api/v1/session` logs out; `GET /api/v1/me` names the player; `DELETE /api/v1/me` is
+  "Forget me".
+- The cookie holds both tokens as base64url JSON. `sessionOf` (`src/server/session.ts`) verifies
+  the access token against Auth's JWKS (issuer, audience `authenticated`, 30 s tolerance),
+  refreshes it once expired and rewrites the cookie, and requires the profile, so a deleted
+  player's other tabs stop working at once. A JWKS outage is a 500 that keeps the cookie, never a
+  logout.
+- CSRF: every request but GET and HEAD needs `Origin` equal to the request's own origin, and a
+  body needs `application/json`.
+- Rate limits are fixed windows in `game.rate_limits` by database time. Per account, except guest
+  creation: 60 an hour per client IP (a class on one network fits), keyed on an HMAC of the IP
+  under the server key, so no IP is stored.
+- Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, and is
+  reported to Sentry, since it may be everyone's limit at once.
+- Headers: `connect-src 'self'`, `require-trusted-types-for 'script'` (the client writes no HTML,
+  so nothing changed) and `Strict-Transport-Security: max-age=63072000; includeSubDomains`.
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).
@@ -789,8 +811,14 @@ After that, in `docs/vision.md`'s order:
 
 - **Population.** The open queue may be empty early on. Friend links and the bot fill the wait.
   Watch how long entries wait before deciding when ranked opens.
-- **Supabase's per-IP anonymous limit seen through our functions.** If a forwarded IP or a raised
-  limit doesn't fix it, there are two ways out:
+- **Supabase's per-IP anonymous limit seen through our functions.** Measured locally (2026-11-15,
+  GoTrue v2.197): Auth counts anonymous sign-ins per value of one configured header
+  (`GOTRUE_RATE_LIMIT_HEADER`), 30 an hour each; with no header configured it counts nothing
+  (why `supabase start` never refuses); a different header value is a fresh bucket. So the answer
+  on hosted Supabase depends on which header its gateway sets and whether a forwarded IP from our
+  function survives it, which only staging can show: `scripts/anon-limit-probe.ts`. Our functions
+  forward the client's IP either way. If a forwarded IP or a raised limit doesn't fix it, there
+  are two ways out:
   - the browser calls Supabase directly for the guest, and the tokens go straight to our cookie
     endpoint;
   - or a Turnstile CAPTCHA (a third-party script, and CSP changes).

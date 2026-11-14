@@ -15,6 +15,8 @@ export const ERROR_CODES = [
   /** The 16+ confirmation is missing from a guest's first online action. */
   'age_unconfirmed',
   'rate_limited',
+  /** Supabase Auth refused to make another guest for now (its own per-IP limit). */
+  'guests_busy',
   /** A pick that isn't this side's to make now (not its turn, a stale tab, a finished series). */
   'not_your_turn',
   'conflict',
