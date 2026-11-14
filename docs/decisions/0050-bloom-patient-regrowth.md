@@ -59,8 +59,9 @@ The Bloom beats the Berserker, Frost, Ghost and Chrono and loses to the Archer, 
 Venom and Titan: 4-5. Its pairs with the Hex, Spider and Necromancer are now even, and the Inferno
 now beats it (its patches burn every half second, so the bud never opens).
 
-- **Bloom: up to 5 losses** replaces "up to 7 wins, within 3". The allowance type limits both sides
-  alike, so it reads `most: 5` with wins and losses within 1: today 4-5. The reason, in
+- **Bloom: up to 5 losses** replaces "up to 7 wins, within 3": 2-4 wins as usual, 2-5 losses, the
+  two within 1 (today 4-5). An allowance now caps wins and losses separately (addendum below), so
+  this allows no extra wins. The reason, in
   `scripts/counter-map.ts` and `docs/vision.md`: it regrows only after 2 s untouched, so every ball
   that hits it often wins.
 - The Ghost's "one loss" (still the Bloom) and the Brawler's "beats nobody" are unchanged, as are
@@ -114,3 +115,11 @@ zone.
 | Mid-fight on a phone (375 wide, 2x): Bloom vs Archer, a shut bud | The style guide's Bloom tiles at phone width |
 | ---------------------------------------------------------------- | -------------------------------------------- |
 | ![](0050/bloom-wait-phone.png)                                   | ![](0050/bloom-looks-phone.png)              |
+
+## Addendum: wins and losses capped separately (2026-11-14)
+
+A shape allowance (`ShapeAllowance` in `scripts/counter-map.ts`) now has its own range of wins and
+of losses, plus the gap between them. Before, one range applied to both sides, so the Bloom's "up to
+5 losses" also let it beat five. Now it is 2-4 wins and 2-5 losses. Every other exception keeps the
+same range on both sides, exactly as before (pinned in `counter-map.test.ts`). No sim change and no
+ruleset bump: only the check and the summary's gaps table changed.

@@ -101,8 +101,31 @@ describe('shapeProblem', () => {
     expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
     expect(shapeProblem('bloom', some(7), some(4))).toBeDefined();
     expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
+    // The Bloom's allowance is on its losses only: its wins keep the usual 2-4.
+    expect(shapeProblem('bloom', some(5), some(4))).toBeDefined();
+    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
+    expect(shapeProblem('bloom', some(1), some(2))).toBeDefined();
     expect(shapeProblem('ghost', some(2), some(1))).toBeUndefined();
     expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
+  });
+
+  it('keeps every other exception the same on both sides, as before wins and losses were split', () => {
+    const same = (fewest: number, most: number, within: number) => ({
+      wins: { fewest, most },
+      losses: { fewest, most },
+      within,
+    });
+    expect(SHAPE_EXCEPTIONS).toStrictEqual({
+      storm: same(1, 4, 1),
+      titan: same(1, 4, 1),
+      bomber: same(1, 4, 1),
+      berserker: same(2, 5, 3),
+      bloom: { wins: { fewest: 2, most: 4 }, losses: { fewest: 2, most: 5 }, within: 1 },
+      ghost: same(1, 4, 1),
+      sniper: same(1, 4, 1),
+      quake: same(1, 4, 1),
+      vampire: same(1, 4, 3),
+    });
   });
 
   it('holds an even pick to exactly its listed counters', () => {

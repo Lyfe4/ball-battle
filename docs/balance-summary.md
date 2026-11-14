@@ -77,17 +77,17 @@ Every ball has 2-4 counters each way, the two counts within 1, except
 these, which `pnpm balance` allows by name and nothing else: gaps for future balls to fill
 (ADR 0045, 0047, docs/vision.md). The even picks have exactly their counters: Brawler beats nobody and loses to Thorns; Magnet beats nobody and loses to Thorns.
 
-| Ball      | Counters each way | Wins and losses within |
-| --------- | ----------------: | ---------------------: |
-| Storm     |               1-4 |                      1 |
-| Titan     |               1-4 |                      1 |
-| Bomber    |               1-4 |                      1 |
-| Berserker |               2-5 |                      3 |
-| Bloom     |               2-5 |                      1 |
-| Ghost     |               1-4 |                      1 |
-| Sniper    |               1-4 |                      1 |
-| Quake     |               1-4 |                      1 |
-| Vampire   |               1-4 |                      3 |
+| Ball      | Wins | Losses | Wins and losses within |
+| --------- | ---: | -----: | ---------------------: |
+| Storm     |  1-4 |    1-4 |                      1 |
+| Titan     |  1-4 |    1-4 |                      1 |
+| Bomber    |  1-4 |    1-4 |                      1 |
+| Berserker |  2-5 |    2-5 |                      3 |
+| Bloom     |  2-4 |    2-5 |                      1 |
+| Ghost     |  1-4 |    1-4 |                      1 |
+| Sniper    |  1-4 |    1-4 |                      1 |
+| Quake     |  1-4 |    1-4 |                      1 |
+| Vampire   |  1-4 |    1-4 |                      3 |
 
 ## Below target
 
