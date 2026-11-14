@@ -160,9 +160,9 @@ blind picks. See Decisions below.
 ### Aiming is dropped (2026-11-07)
 
 - **A launch choice was tested three times, and dropped.** Aiming v1, a free launch angle
-  (`docs/aiming-measurements.md`); bigger balls, to see if they rescued it
-  (`docs/bigger-balls-experiment.md`); and aiming v2, a few clear launch choices, an opening strike
-  and launches inside Reveal's turns (`docs/aiming-v2-experiment.md`). Every version either barely
+  (`docs/experiments/aiming-measurements.md`); bigger balls, to see if they rescued it
+  (`docs/experiments/bigger-balls-experiment.md`); and aiming v2, a few clear launch choices, an opening strike
+  and launches inside Reveal's turns (`docs/experiments/aiming-v2-experiment.md`). Every version either barely
   mattered (about 2 points, since an 18-second fight washes out the launch) or broke the counter
   map. So skill stays in the draft. Skill beyond the draft would need an input during the fight,
   which is a separate idea.
@@ -170,8 +170,8 @@ blind picks. See Decisions below.
 ### Where the skill is (2026-11-05)
 
 - **In picking, not in aiming.** A chosen launch direction was measured and turned out to be a
-  second blind guess rather than a skill (`docs/aiming-measurements.md`, ADR 0018); bigger balls
-  did not change that and broke the counter map (`docs/bigger-balls-experiment.md`). The draft
+  second blind guess rather than a skill (`docs/experiments/aiming-measurements.md`, ADR 0018); bigger balls
+  did not change that and broke the counter map (`docs/experiments/bigger-balls-experiment.md`). The draft
   formats of ADR 0019 move the skill into picks made with information: the opponent's lineup, or
   the winner's next ball. Reveal's first version still left no decision against the bot; it now
   takes turns showing first (ADR 0021), measured in `docs/reveal-measurements.md`.
@@ -281,14 +281,14 @@ on the same tick, and equal raw contact damage.
 
 ### Quiet stretches: the shrinking arena and Ghost phasing are dropped (2026-11-12)
 
-- **Measured in prototypes, recorded in `docs/quiet-stretches-experiment.md`.** A shrinking
+- **Measured in prototypes, recorded in `docs/experiments/quiet-stretches-experiment.md`.** A shrinking
   arena cuts late quiet stretches but not the largest source (the first seconds of a fight), and
   moves 23 pairs by 8+ points (the Bloom 49.8% to 40.2%). Ghost phasing drops the Ghost from 45.4%
   to 35.1%, and the health that restores it breaks the Brawler's pinned edge over the Ghost. Both
   dropped, as are the face-off charge and a wider wall turn.
 - **Kept: the lane fix** (`proto/contact-A`: no bounce leaves within 10° of the wall's
   perpendicular). It drops the Storm from 51.5% to 47.3% and puts Storm vs Chrono at 21.6/78.4.
-  Measured with the Hex, Spider and Ghost (`docs/new-balls-proposal-3.md`), it knocked eight balls
+  Measured with the Hex, Spider and Ghost (`docs/experiments/new-balls-proposal-3.md`), it knocked eight balls
   off their shape on its own, so ruleset 13 shipped without it (ADR 0049). It stays parked on
   `proto/contact-A` for a retune of its own. The Spider does more for quiet stretches: fights with
   a 10 s+ stretch with no damage fall from 32% to 4% against it.

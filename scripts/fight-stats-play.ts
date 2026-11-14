@@ -1,4 +1,4 @@
-// Headless fight statistics for the bigger-balls experiment (docs/bigger-balls-experiment.md):
+// Headless fight statistics for the bigger-balls experiment (docs/experiments/bigger-balls-experiment.md):
 // match length, collisions, and how often projectiles and zones land, per pair, on today's random
 // start. Measurement only.
 import { BALL_LOOKUP } from '../src/sim/balls/index.ts';

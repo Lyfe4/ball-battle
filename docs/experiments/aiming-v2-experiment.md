@@ -1,5 +1,8 @@
 # Experiment: aiming v2
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Measured 2026-11-07 on a throwaway branch, since deleted. **Decision: not adopted**; aiming is
 dropped and the skill stays in the draft (`docs/vision.md`). The live game never changed. On the
 branch the default paths were proven identical to `main`: the ruleset fingerprint was unchanged, the
@@ -17,7 +20,7 @@ the counters.
 
 ## Why a second attempt
 
-Aiming v1 (`docs/aiming-measurements.md`, ADR 0018) gave each side a free launch angle from fixed
+Aiming v1 (`docs/experiments/aiming-measurements.md`, ADR 0018) gave each side a free launch angle from fixed
 spots. It failed in three ways:
 
 1. One side's angle was worth a median +1.7 points, because wall bounces wash it out.

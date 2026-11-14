@@ -1,10 +1,13 @@
 # 0049: The Hex, the Spider and the phasing Ghost (ruleset 13)
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 - Status: Accepted
 - Date: 2026-11-14
 - Amends: ADR 0026 and 0028 (phasing is one rule: a phased ball is aimed at and pulled like any
   other), ADR 0045 (the Ghost's fade is replaced), ADR 0047 (the Spartan's known gap closes)
-- Proposal: `docs/new-balls-proposal-3.md` (measured on `proto/hex-spider-ghost`, ruleset 12)
+- Proposal: `docs/experiments/new-balls-proposal-3.md` (measured on `proto/hex-spider-ghost`, ruleset 12)
 
 ## Context
 

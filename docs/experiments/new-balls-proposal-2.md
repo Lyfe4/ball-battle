@@ -1,5 +1,8 @@
 # New balls, round 2: proposal
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 > Kept for the record: the decisions are in ADR 0047 (the Spartan with a half shield, no Dodger,
 > the Magnet stays). The prototype code and its measuring scripts were on the deleted branch
 > `new-balls/proposal` and are not on `main`; the paths below refer to that branch.

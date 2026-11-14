@@ -1,5 +1,8 @@
 # Roster redesign, group 4: proposal
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Proposal only, not for merge (branch `roster-redesign/group-4-proposal`). The prototype is the ball
 files on this branch; numbers are its measured win rates, 500 seeds per slot order (about ±2.2 points
 per pair), against ruleset 10 at the same seeds. Reproduce with `scripts/redesign-g4/` (see the head

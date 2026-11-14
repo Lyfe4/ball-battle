@@ -1,6 +1,7 @@
 # 0041: The spark marks the counter, and counters say why
 
-- Status: Accepted
+- Status: Superseded in part by ADR 0045: the spark and the rules it marked are gone; the counter
+  reasons stay
 - Date: 2026-11-07
 - Amends: ADR 0028 (the rule cue sits on the ball that caused the rule; its words), ADR 0029 (the
   coin toss is said in the pick banner; the strip is gone), ADR 0036 (a rule gets a one-time hint)

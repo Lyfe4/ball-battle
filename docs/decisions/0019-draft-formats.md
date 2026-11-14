@@ -10,9 +10,9 @@
 
 ## Context
 
-Aiming the launch didn't create skill (`docs/aiming-measurements.md`): one side's angle barely
+Aiming the launch didn't create skill (`docs/experiments/aiming-measurements.md`): one side's angle barely
 matters, and the pair of angles turns into a second blind guess. Bigger balls didn't rescue it
-(`docs/bigger-balls-experiment.md`). The vision's skill is in the guess about picks
+(`docs/experiments/bigger-balls-experiment.md`). The vision's skill is in the guess about picks
 (`docs/vision.md`): "they opened with a Speedster last time, so I'll lead with the Vampire". Today
 both orders are set blind, so the only decision is three balls and their order, once. Two formats
 move more of the skill into picking, with more information on the table.

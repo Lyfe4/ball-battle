@@ -45,8 +45,8 @@ strict Content Security Policy.
 - **A deterministic simulation, checked across three browser engines.** The game logic is a pure
   function of the seed and the balls: fixed 60 Hz ticks, a seeded PRNG, and no `Math.sin`,
   `Math.pow` or other functions whose results can differ between engines (an ESLint rule bans
-  them). 306 recorded matches must come out bit-identical in Node, Chromium, Firefox and WebKit on
-  every push. That is what lets a link replay a fight exactly, and a future server verify a result.
+  them). Every recorded match (each pair of balls on two seeds, `src/golden`) must come out
+  bit-identical in Node, Chromium, Firefox and WebKit on every push. That is what lets a link replay a fight exactly, and a future server verify a result.
 - **Counters built from mechanics, held by an automated balance suite.** Stats can't make a ball
   beat one opponent without beating everyone (ADR 0010). So each favoured matchup needs a written
   mechanical reason, like "arrows never touch the spikes". `pnpm balance`
@@ -58,11 +58,11 @@ strict Content Security Policy.
 - **Measure ideas before building them.** Letting players aim the launch was prototyped and
   measured across every matchup, three times. It either barely mattered or broke the counters, so
   it was dropped and the skill stays in the draft. The write-ups are kept:
-  [aiming](docs/aiming-measurements.md), [bigger balls](docs/bigger-balls-experiment.md),
-  [aiming v2](docs/aiming-v2-experiment.md).
-- **Decisions are written down.** 34 short architecture decision records in
-  [docs/decisions](docs/decisions/) explain why the code is the way it is, including what was tried
-  and dropped.
+  [aiming](docs/experiments/aiming-measurements.md), [bigger balls](docs/experiments/bigger-balls-experiment.md),
+  [aiming v2](docs/experiments/aiming-v2-experiment.md).
+- **Decisions are written down.** Short architecture decision records in
+  [docs/decisions](docs/decisions/README.md) (indexed, with each one's status) explain why the code
+  is the way it is, including what was tried and dropped.
 
 ## Screens
 
@@ -136,63 +136,17 @@ least 62% of the time and aims for 65-72%, and each one comes from something you
 [ADR 0050](docs/decisions/0050-bloom-patient-regrowth.md)). No rule exists only where two abilities
 meet: every ability works the same on any ball.
 
-- **Bumps against spikes:** Thorns beats the Brawler, Magnet and Titan; the harder a ball bumps,
-  the harder it is hurt back. The Archer and Sniper beat Thorns: they never touch it.
-- **Lifesteal:** the Vampire beats the Berserker, whose big bumps it drinks back, and loses to
-  what never touches it (Archer, Storm, Boomerang) and to the Spartan's shield, which halves its
-  bumps and so what it drinks.
-- **Rage:** every hit the Berserker takes builds rage, so many small hits feed it: it beats the
-  Archer, Venom, Quake, Inferno and Boomerang. Regrowth (Bloom) and lifesteal heal its big bumps back,
-  and the Hex's one big burst gives it one rage, not several.
-- **Big hits against the rewind:** the Chrono rewinds a strike, a shot or a blast, so it beats the
-  Storm, Sniper, Bomber and the Spartan's spear; Venom, Quake, Inferno and Bloom deal no hit big
-  enough to rewind.
-- **Shield and spear:** the Spartan's planted shield halves every hit, whoever deals it, so it
-  beats the Vampire and the Hex (a small burst, halved again); it is too slow behind its shield to leave the Storm's circle, and the
-  Chrono rewinds its spear.
-- **Regrowth:** the Bloom regrows only after 2 s untouched, so it heals back damage that comes
-  rarely (Frost, Berserker, Ghost, Chrono), but anything that hits it often keeps it a closed bud
-  (Venom's poison, the Archer's arrows, the Boomerang's two hits a throw, the Inferno's fire); the
-  grown Titan's huge bumps outpace it.
-- **Phasing:** for one second in four nothing touches the Ghost, so poison ticks and a curse's
-  burst that fall then miss: it beats Venom and the Hex.
-- **The curse:** the Hex's burst is a quarter of the cursed ball's full health, so it beats the
-  sturdy balls (Frost, Berserker, Speedster) and the Inferno, whose light bumps barely hurt back;
-  frail balls take small bursts (Vampire, Spartan).
-- **Webs:** the Spider's webs slow a ball that bounces off them, so it beats the balls that live on
-  speed and walls (Speedster, Quake) and the Chrono, which can't rewind a small nip; the Archer and
-  Bomber don't need speed.
-- **The skull:** the Necromancer's skeleton draws arrows and throws (Archer, Boomerang); wide
-  shockwaves and fire deal with it (Quake, Inferno).
-- **Speed and the slow:** the Speedster outruns arrows, shots and throws (Archer, Sniper,
-  Boomerang); the Frost slows it right down and the Bomber's blasts catch it.
-- **One big hit:** the Storm's strike takes most of the Vampire's small health and catches the
-  slowed Spartan; the Bomber's blast catches the Speedster; the growing Titan crushes the Bloom
-  late.
+For example, the Archer and Sniper beat Thorns because they never touch its spikes, and the
+Chrono beats the Storm because it rewinds the big strike. Every pair's counter and its reason live
+in the counter map (`src/sim/counter-map-*.ts`), checked by `pnpm balance`
+([ADR 0010](docs/decisions/0010-counter-map.md), [ADR 0045](docs/decisions/0045-roster-redesign.md));
+the game's Ball manual shows them, and [docs/balance-summary.md](docs/balance-summary.md) (generated)
+lists each ball's counters with their measured win rates. Every other pair is even; an even pair
+with a side between 58% and 62% sits in a grey zone, shown as even and counted by `pnpm balance`.
 
-Every other pair is even. Even pairs with a side between 58% and 62% sit in a grey zone, shown as
-even and counted by `pnpm balance`.
-
-Every ball has two to four counters each way, the two counts within one, except known gaps for
-future balls to fill (listed in [docs/balance-summary.md](docs/balance-summary.md)): the Storm,
-Titan, Bomber, Sniper and Quake have one counter on a side, the Ghost one loss, the Vampire two
-wins to four losses, the Berserker beats five and the Bloom loses to five. The
-**Brawler** and **Magnet** are the even picks: the Brawler beats nobody and loses only to Thorns,
-the Magnet loses only to Thorns.
-
-The roster redesign ([docs/roster-redesign.md](docs/roster-redesign.md)) shipped in four groups:
-the first removed the three rules between balls (shock, stagger and numbed rage) and the spark
-that marked them; the second gave the Chrono, Guardian, Ghost, Bloom and Venom abilities that act
-on a kind of hit (big or small; the Guardian has since been replaced by the Spartan, ADR 0047);
-the third made the Inferno's fire never stack and tuned the Necromancer, Bomber, Frost and Thorns;
-the fourth reworked the Berserker, Titan, Quake, Bomber and Vampire so their hits are a kind of
-their own. Every heal shows as a green pulse sized by the heal.
-The map is checked by `pnpm balance` ([ADR 0010](docs/decisions/0010-counter-map.md),
-[ADR 0026](docs/decisions/0026-magnet-ghost-necromancer.md),
-[ADR 0043](docs/decisions/0043-boomerang-bomber-guardian-bloom.md),
-[ADR 0045](docs/decisions/0045-roster-redesign.md),
-[ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
-[ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md)).
+Every ball has two to four counters each way, the two counts within one, except the known gaps for
+future balls to fill (each allowed exactly as it is today, listed in the balance summary) and the
+two even picks, the **Brawler** and **Magnet**, which beat nobody and lose only to Thorns.
 
 ## Best of 3
 
@@ -208,7 +162,7 @@ on the device, not in the URL, and checked with the same rule as a link before i
 bot's lineup stays hidden; each round reveals both balls as it starts. A
 drawn round is replayed on a new seed, up to three times, then settled by sudden death. When the
 series ends, the link holds both lineups, the series seed and the ruleset, e.g.
-`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=2`, and replays it exactly
+`?mode=bo3&la=frost,quake,venom&lb=sniper,archer,storm&seed=5&v=<ruleset>`, and replays it exactly
 ([ADR 0017](docs/decisions/0017-best-of-3-series.md)). Before replaying, the page checks the link
 with the same rule a server would use: the bot's lineup and picks must be the ones it would
 choose, so an edited link opens the lineup instead
@@ -247,7 +201,7 @@ pnpm install
 pnpm dev
 ```
 
-Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42&v=2`: share or reload it to
+Every match is in the URL, e.g. `?a=speedster&b=vampire&seed=42&v=<ruleset>`: share or reload it to
 replay the exact same fight. Unknown ball ids fall back to the defaults, and a missing seed gets a
 fresh random one. `v` is the ruleset the fight was played under: balance changes bump it, and a
 link from another version says so and offers to play under today's rules rather than silently
@@ -305,7 +259,7 @@ The rules, in brief:
 1. **The simulation is pure and deterministic.** `src/sim` cannot touch the DOM, the clock,
    timers or `Math.random`. A separate `tsconfig.sim.json` without the DOM lib and ESLint rules
    enforce this; transcendental `Math` functions are banned too, because they can differ between
-   browsers. 306 recorded matches are checked on every push to come out bit-identical in Node,
+   browsers. Every recorded match is checked on every push to come out bit-identical in Node,
    Chromium, Firefox and WebKit
    ([ADR 0023](docs/decisions/0023-known-match-results-across-engines.md)).
 2. **Fixed timestep.** The sim runs at exactly 60 ticks per second regardless of frame rate. The
@@ -321,51 +275,13 @@ The rules, in brief:
    (damage, heal, change velocity, update own state, fire a projectile, mark a zone); the sim
    applies them in a fixed order.
 
-Why: [ADR 0001: Deterministic, fixed-timestep simulation](docs/decisions/0001-deterministic-simulation.md)
-, [ADR 0002: Combat core](docs/decisions/0002-combat-core.md)
-, [ADR 0003: Ability system](docs/decisions/0003-ability-system.md)
-, [ADR 0004: Wall-bounce variance](docs/decisions/0004-wall-bounce-variance.md)
-, [ADR 0005: Projectiles](docs/decisions/0005-projectiles.md)
-, [ADR 0006: Hazard zones](docs/decisions/0006-hazard-zones.md)
-, [ADR 0007: Presentation clock and battle feel](docs/decisions/0007-presentation-clock.md)
-, [ADR 0008: Uniform size, directness, cruise speed](docs/decisions/0008-size-directness-cruise-speed.md)
-, [ADR 0009: Status effects](docs/decisions/0009-status-effects.md)
-, [ADR 0010: Counter map](docs/decisions/0010-counter-map.md)
-, [ADR 0011: Roster scaling](docs/decisions/0011-roster-scaling.md)
-, [ADR 0012: Slowed, poisoned, onDamageTaken](docs/decisions/0012-slowed-poisoned-damage-taken.md)
-, [ADR 0013: Thorns, the Brawler's counter](docs/decisions/0013-thorns-brawler-counter.md)
-, [ADR 0014: Venom, Thorns' counter](docs/decisions/0014-venom-thorns-counter.md)
-, [ADR 0015: Berserker, Sniper, Quake](docs/decisions/0015-berserker-sniper-quake.md)
-, [ADR 0016: Counter density](docs/decisions/0016-counter-density.md)
-, [ADR 0017: Best-of-3 series](docs/decisions/0017-best-of-3-series.md)
-, [ADR 0018: Aimed start (removed)](docs/decisions/0018-aimed-start.md)
-, [ADR 0019: Draft formats](docs/decisions/0019-draft-formats.md)
-, [ADR 0020: Screens](docs/decisions/0020-screens.md)
-, [ADR 0021: Reveal takes turns](docs/decisions/0021-reveal-take-turns.md)
-, [ADR 0022: Ruleset version and verified series](docs/decisions/0022-ruleset-version-and-verified-series.md)
-, [ADR 0023: Known match results across engines](docs/decisions/0023-known-match-results-across-engines.md)
-, [ADR 0024: Player-facing text stays in definitions](docs/decisions/0024-player-facing-text-stays-in-definitions.md)
-, [ADR 0025: Show less, and Back](docs/decisions/0025-show-less-and-back.md)
-, [ADR 0026: Magnet, Ghost, Necromancer](docs/decisions/0026-magnet-ghost-necromancer.md)
-, [ADR 0027: Phone play fixes](docs/decisions/0027-phone-play-fixes.md)
-, [ADR 0028: The counter pass](docs/decisions/0028-counter-pass.md)
-, [ADR 0029: Reveal's coin toss](docs/decisions/0029-reveal-coin-toss.md)
-, [ADR 0030: Symbol tooltips and result fixes](docs/decisions/0030-symbol-tooltips-and-result-fixes.md)
-, [ADR 0031: Desktop layouts](docs/decisions/0031-desktop-layouts.md)
-, [ADR 0032: The Sticker Pop restyle](docs/decisions/0032-sticker-pop-restyle.md)
-, [ADR 0033: Arena polish](docs/decisions/0033-arena-polish.md)
-, [ADR 0039: The phone arena is the screen](docs/decisions/0039-the-phone-arena-is-the-screen.md)
-, [ADR 0040: Settings](docs/decisions/0040-settings.md)
-, [ADR 0041: The spark marks the counter](docs/decisions/0041-the-spark-marks-the-counter.md) (removed by ADR 0045)
-, [ADR 0042: A Best of 3 survives a reload](docs/decisions/0042-reload-safe-series.md)
-, [ADR 0044: One story look, settings off the court](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)
-, [ADR 0045: The roster redesign](docs/decisions/0045-roster-redesign.md)
-, [ADR 0046: Reveal first, every other mode behind Other modes](docs/decisions/0046-reveal-first-home-and-other-modes.md)
-and [ADR 0049: The Hex, the Spider and the phasing Ghost](docs/decisions/0049-hex-spider-phasing-ghost.md).
+Why: every decision has a short record in [docs/decisions](docs/decisions/README.md), indexed
+with its status and what superseded it; ADR 0001 to 0003 cover the rules above.
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle: 205.75 kB JS (65.69 kB gzipped), 47.20 kB CSS (8.67 kB gzipped), and the
-self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
+Production bundle (November 2026, ruleset 14): 231.55 kB JS (73.82 kB gzipped), 49.94 kB CSS
+(9.05 kB gzipped), and the self-hosted font's Latin subset at 41.34 kB. First version baseline:
+5.05 kB JS (2.41 kB gzipped).
 
 ## License
 

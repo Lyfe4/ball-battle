@@ -10,7 +10,7 @@
 
 ## Context
 
-Counter pass 2 (`docs/counter-pass-2-phase-2.md`) showed that only binary mechanics sharpen a
+Counter pass 2 (`docs/experiments/counter-pass-2-phase-2.md`) showed that only binary mechanics sharpen a
 counter without dragging its even neighbours along, and that pair rules (shock against healers,
 stagger against aimers, poison against rage) were the only binary mechanics the roster had. Each
 rule was one more thing a player had to be told rather than could see. The redesign
@@ -319,7 +319,7 @@ both within a point of the line.
 
 The Berserker, Titan, Quake, Bomber and Vampire become kinds of hit of their own; Venom, Brawler,
 Magnet and the defenders are retuned; and the whole map is held to one final counter rule. Proposal
-and prototype: `docs/roster-redesign-group-4.md`, approved 2026-11-09 with the decisions below.
+and prototype: `docs/experiments/roster-redesign-group-4.md`, approved 2026-11-09 with the decisions below.
 
 ### The final counter rule
 

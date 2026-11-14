@@ -1,5 +1,8 @@
 # Experiment: counter pass 2, phase 1 (game-wide levers)
 
+> **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+> lived on the experiment's own branch. The numbers here are the record.
+
 Measured 2026-11-08 on the branch `experiment/counter-pass-2-sharpness` (ruleset 7, 21 balls).
 Not merged. Question: which game-wide change, if any, makes the better matchup win more reliably
 while keeping fights fun, before per-ball tuning (phase 2)?
