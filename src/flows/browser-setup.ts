@@ -1,9 +1,13 @@
-// Runs before every browser test file: the files of a project share one origin, and so one
-// `localStorage`. A series saved by one flow (ADR 0042) must not be put back in the next one's page.
-import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
-import { SERIES_SETUP_STORAGE_KEY, SERIES_STORAGE_KEY } from '../app/series-save.ts';
+// Runs before every browser test file. The files of a project's session run one after another in
+// one browser context, and which files share a session changes from run to run, so whatever one
+// file leaves in `localStorage` (a saved series, ADR 0042; the bot level; the speed; tips seen)
+// must not reach the next: every file starts as a fresh device. The seed is pinned too
+// (fixed-seed.ts), so a flow fights the same series on every run.
+import { DEFAULT_TEST_SEED, pinSeed } from './fixed-seed.ts';
 
-// The remembered series length too (ADR 0048): Other modes opens on Best of 3 in every file.
-for (const key of [SERIES_STORAGE_KEY, SERIES_SETUP_STORAGE_KEY, SERIES_LENGTH_STORAGE_KEY]) {
-  window.localStorage.removeItem(key);
-}
+const ours = (key: string | null): key is string => key?.startsWith('ballbattle.') === true;
+const keys = Array.from({ length: window.localStorage.length }, (_, at) =>
+  window.localStorage.key(at),
+).filter(ours);
+for (const key of keys) window.localStorage.removeItem(key);
+pinSeed(DEFAULT_TEST_SEED);

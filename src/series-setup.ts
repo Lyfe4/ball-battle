@@ -9,7 +9,7 @@
 import { loadBotLevel, saveBotLevel } from './app/bot-level.ts';
 import { lineupParentOf } from './app/modes.ts';
 import { loadSetup, saveSetup } from './app/series-save.ts';
-import { generateSeed } from './app/seed.ts';
+import { generateSeed } from './app/fresh-seed.ts';
 import { beginSession, botOf, resolvePicks } from './app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from './app/series-url.ts';
 import { botFor, DEFAULT_BOT } from './sim/bot.ts';

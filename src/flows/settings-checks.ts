@@ -75,7 +75,14 @@ export async function checkSettings(where: string, playing?: () => boolean): Pro
   if (gear === undefined) return;
   const panel = () => document.getElementById(gear.getAttribute('aria-controls') ?? '');
   const isOpen = () => gear.getAttribute('aria-expanded') === 'true' && panel()?.hidden === false;
-  const closed = () => ({ where, open: isOpen(), focus: document.activeElement === gear });
+  // Focus goes back to the gear. Mid-fight, a menu kept off the court lets the match play on, and
+  // if the round ends meanwhile the round screen rightly takes focus for what comes next
+  // (series-controller.ts, focusAction): only an undecided match must leave it on the gear.
+  const closed = () => ({
+    where,
+    open: isOpen(),
+    focus: document.activeElement === gear || (playing !== undefined && !playing()),
+  });
   const shut = { where, open: false, focus: true };
 
   await click(gear);

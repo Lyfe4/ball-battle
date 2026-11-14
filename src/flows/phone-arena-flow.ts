@@ -143,12 +143,12 @@ export async function runPhoneArenaFlow(): Promise<void> {
   visible('.answer-step .pick-row-pick')[0]?.click();
   for (let round = 1; round <= 2; round += 1) {
     const where = `series round ${String(round)}`;
-    await until(() => visible('.ready-card').length === 1, 10_000, false);
+    await until(() => visible('.ready-card').length === 1, 10_000, 'the ready card', false);
     fighting = () => true;
     await checkCourt(`${where} ready`);
     fighting = () => phase() === 'playing';
     await checkWholeFight(where, true);
-    await until(() => phase() !== 'playing', 150_000);
+    await until(() => phase() !== 'playing', 150_000, 'the round to end');
     await settle();
     if (phase() === 'finished') break;
     const pick = visible('#series .pick-row-pick')[0];
@@ -160,12 +160,16 @@ export async function runPhoneArenaFlow(): Promise<void> {
   // the player's balls (Storm, Venom, Quake) in it, so Frost vs Titan is always new here.
   await open('?view=pick&a=frost&b=titan');
   await click(button('Start match'));
-  await until(() => visible('.ready-card').length === 1, 10_000, false);
+  await until(() => visible('.ready-card').length === 1, 10_000, 'the ready card', false);
   fighting = () => true;
   await checkCourt('Free play ready');
   fighting = () => visible('.match-story').length === 0;
   await checkWholeFight('Free play', false);
-  await until(() => visible('.match-story').length === 1, 150_000);
+  await until(
+    () => visible('.match-story').length === 1,
+    150_000,
+    'How it was won after the match',
+  );
   await settle();
   fighting = () => true;
   await checkCourt('Free play result');

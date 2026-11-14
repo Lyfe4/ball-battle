@@ -21,10 +21,10 @@ const score = () => visible('.series-track-points')[0]?.textContent;
 /** Plays the replayed link to its result: Play round whenever the screen offers it. */
 async function playToResult(): Promise<void> {
   for (;;) {
-    await until(() => phase() !== 'playing', 60_000);
+    await until(() => phase() !== 'playing', 60_000, 'the round to end');
     if (phase() === 'finished') return;
     await browserPage.getByRole('button', { name: /^(Play round|↻ Replay round)/ }).click();
-    await until(() => phase() === 'playing', 5_000);
+    await until(() => phase() === 'playing', 5_000, 'the next round to start');
   }
 }
 
@@ -113,7 +113,12 @@ describe('the Best of 3 result screen', () => {
     await browserPage.getByRole('button', { name: 'New series' }).click();
     // New series may go Back to the lineup entry (history-rules.ts), which lands when the browser
     // gets to it, not within a fixed time.
-    await until(() => new URL(location.href).searchParams.get('step') === 'lineup', 15_000, false);
+    await until(
+      () => new URL(location.href).searchParams.get('step') === 'lineup',
+      15_000,
+      'the lineup step',
+      false,
+    );
     await settle();
     const url = new URL(location.href).searchParams;
     expect(url.get('step')).toBe('lineup');

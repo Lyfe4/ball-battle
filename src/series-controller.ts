@@ -5,7 +5,7 @@
 // resumed where it was, with every choice already made kept, until a new series replaces it. Every
 // change is saved on the device (ADR 0042), so a reload puts the series back where it was; leaving
 // it on purpose (Leave series, New series) forgets it.
-import { generateSeed } from './app/seed.ts';
+import { generateSeed } from './app/fresh-seed.ts';
 import {
   advanceSession,
   beginSession,

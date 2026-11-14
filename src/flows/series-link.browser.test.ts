@@ -77,7 +77,7 @@ describe('a shared Reveal link', () => {
       visible('#series [data-symbol]').length === 0 ||
       visible('#series .symbol-legend-toggle').length === 1;
     expect(explained()).toBe(true);
-    await until(() => phase() === 'between', 60_000);
+    await until(() => phase() === 'between', 60_000, 'the round screen between rounds');
     expect(visible('#series [data-symbol]').length).toBeGreaterThan(0);
     expect(explained()).toBe(true);
     button(`Play round 2`).click();

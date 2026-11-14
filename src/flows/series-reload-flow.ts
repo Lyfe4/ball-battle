@@ -36,6 +36,7 @@ import {
 
 import {
   checkBotHidden,
+  comesBackTo,
   fightShown,
   reloadsTo,
   steady,
@@ -81,7 +82,7 @@ async function liveSeries(
 
   for (let round = 1; ; round += 1) {
     const where = `${label}: round ${String(round)}`;
-    await waitFor(() => fightShown(framed), 15_000, `${where} Fight!`);
+    await waitFor(framed, () => fightShown(framed), 15_000, `${where} Fight!`);
     checkBotHidden(framed, `${where} Fight!`);
     const ready = await reloadsTo(framed, `${where} Fight!`, true);
     // The words and Fight! are compared mid-fight; the drawn opening was compared just above, on
@@ -95,7 +96,7 @@ async function liveSeries(
     await reloadsTo(framed, `${where} mid-fight`, false, readyWords);
 
     shown(framed, '.ready-fight')[0]?.click();
-    await waitFor(() => seriesPhase(framed) !== 'playing', 150_000, `${where} to end`);
+    await waitFor(framed, () => seriesPhase(framed) !== 'playing', 150_000, `${where} to end`);
     const decided = seriesPhase(framed) === 'finished';
     checkBotHidden(framed, `${where} result`);
     const between = await reloadsTo(
@@ -112,7 +113,7 @@ async function liveSeries(
       await reloadsTo(framed, `${where} held`, false);
       buttonIn(framed, 'Resume series').click();
       await settle();
-      expect({ where, ...(await steady(framed, false)) }).toStrictEqual({ where, ...between });
+      await comesBackTo(framed, `${where} resumed`, false, between);
     }
     const pick = shown(framed, '#series .pick-row-pick')[0];
     if (pick !== undefined) pick.click();
@@ -129,7 +130,7 @@ async function liveSeries(
   buttonIn(framed, 'New series').click();
   // The lineup this series came from is an entry behind it, so New series goes Back to it
   // (history-rules.ts): a history traversal, which lands when the browser gets to it.
-  await waitFor(() => paramOf(framed, 'step') === 'lineup', 15_000, 'New series to land');
+  await waitFor(framed, () => paramOf(framed, 'step') === 'lineup', 15_000, 'New series to land');
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
   return shared;
@@ -142,7 +143,7 @@ async function liveSeries(
 async function sharedLinkFromRoundOne(framed: Framed, shared: Shared): Promise<void> {
   for (const key of [SERIES_STORAGE_KEY, SERIES_SETUP_STORAGE_KEY]) storage().removeItem(key);
   await visit(framed, shared.search);
-  await waitFor(() => fightShown(framed), 15_000, 'the shared link’s round 1');
+  await waitFor(framed, () => fightShown(framed), 15_000, 'the shared link’s round 1');
   const names = shown(framed, '.hud-ball-name').map((row) => row.textContent);
   const [you, bot] = shared.round1.map((id) => BALL_LOOKUP.get(id)?.name ?? id);
   expect({
@@ -202,7 +203,7 @@ async function savedPosition(
   if (session === undefined) throw new Error(`No position for ${where}`);
   saveSeries(storage, session);
   await visit(framed, '?mode=bo3&step=play');
-  await waitFor(() => seriesPhase(framed) !== 'none', 10_000, where);
+  await waitFor(framed, () => seriesPhase(framed) !== 'none', 10_000, where);
   const screen = await steady(framed, true);
   checkBotHidden(framed, where);
   await reloadsTo(framed, where, true, screen);
@@ -238,9 +239,14 @@ async function leavingAndBadSaves(framed: Framed): Promise<void> {
   if (fight === undefined) throw new Error('No first position');
   saveSeries(storage, fight);
   await visit(framed, '?mode=bo3&step=play');
-  await waitFor(() => fightShown(framed), 10_000, 'Fight! before Leave');
+  await waitFor(framed, () => fightShown(framed), 10_000, 'Fight! before Leave');
   await leaveIsAskedOnce(framed);
-  await waitFor(() => paramOf(framed, 'step') === 'lineup', 10_000, 'the lineup after Leave');
+  await waitFor(
+    framed,
+    () => paramOf(framed, 'step') === 'lineup',
+    10_000,
+    'the lineup after Leave',
+  );
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
   await reload(framed);
@@ -258,7 +264,12 @@ async function leavingAndBadSaves(framed: Framed): Promise<void> {
   ] as const) {
     storage().setItem(SERIES_STORAGE_KEY, saved);
     await visit(framed, '?mode=bo3&step=play');
-    await waitFor(() => paramOf(framed, 'step') === 'lineup', 10_000, `${what}: the lineup`);
+    await waitFor(
+      framed,
+      () => paramOf(framed, 'step') === 'lineup',
+      10_000,
+      `${what}: the lineup`,
+    );
     expect({
       what,
       resume: shown(framed, '.resume-card').length,

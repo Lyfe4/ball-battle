@@ -91,13 +91,24 @@ export function pressFight(): boolean {
 }
 
 /**
- * Waits until `done`, failing after `ms`. A match waiting on its ready moment is started, as a
- * player would, unless `fight` is false.
+ * Waits until `done`, failing after `ms` with `what` it waited for and where the page was. A match
+ * waiting on its ready moment is started, as a player would, unless `fight` is false.
  */
-export async function until(done: () => boolean, ms: number, fight = true): Promise<void> {
+export async function until(
+  done: () => boolean,
+  ms: number,
+  what: string,
+  fight = true,
+): Promise<void> {
   const end = Date.now() + ms;
   while (!done()) {
-    if (Date.now() > end) throw new Error('Timed out waiting for the page');
+    if (Date.now() > end) {
+      const phase = document.querySelector<HTMLElement>('#series')?.dataset['phase'] ?? 'none';
+      const page = location.search || '(home)';
+      throw new Error(
+        `Timed out after ${String(ms)} ms waiting for ${what}; page ${page}, series phase ${phase}, visibility ${document.visibilityState}`,
+      );
+    }
     if (fight) pressFight();
     await settle();
   }

@@ -4,6 +4,7 @@ import { expect } from 'vitest';
 import { loadSeries } from '../app/series-save.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { formatOf, remainingOf } from '../sim/series.ts';
+import { courtDifference, sameCourt, type Court } from './court-compare.ts';
 import { frames } from './page-support.ts';
 import { paramOf, reload, shown, type Framed } from './reload-support.ts';
 
@@ -15,8 +16,8 @@ export interface Screen {
   readonly search: string;
   readonly title: string;
   readonly parts: readonly string[];
-  /** The court's size and pixels, where the opening drawn is checked. */
-  readonly court?: string;
+  /** The court's size and pixels, where the opening drawn is checked (court-compare.ts). */
+  readonly court?: Court;
 }
 
 /** The parts of the page a series screen is made of. The Winner sticker (see-through between rounds, ADR 0033) is left out. */
@@ -37,9 +38,17 @@ export function screenOf(framed: Framed, court: boolean): Screen {
     return `${selector}: ${part.innerText.replace(/\s+/g, ' ').trim()}`;
   });
   const canvas = doc.querySelector<HTMLCanvasElement>('#arena');
-  const drawn =
-    court && canvas !== null
-      ? `${String(canvas.width)}x${String(canvas.height)} ${canvas.toDataURL()}`
+  const context = court ? canvas?.getContext('2d') : undefined;
+  const drawn: Court | undefined =
+    canvas !== null && context !== undefined && context !== null
+      ? {
+          size: `${String(canvas.width)}x${String(canvas.height)}`,
+          // A court not laid out yet (a phone between screens) is 0 wide: no pixels to read.
+          pixels:
+            canvas.width === 0 || canvas.height === 0
+              ? []
+              : context.getImageData(0, 0, canvas.width, canvas.height).data,
+        }
       : undefined;
   return {
     search: framed.win().location.search,
@@ -47,6 +56,31 @@ export function screenOf(framed: Framed, court: boolean): Screen {
     parts,
     ...(drawn === undefined ? {} : { court: drawn }),
   };
+}
+
+const words = (screen: Screen) => ({
+  search: screen.search,
+  title: screen.title,
+  parts: screen.parts,
+});
+
+/** The same words exactly, and the same court within court-compare.ts's tolerance. */
+export function sameScreen(a: Screen, b: Screen): boolean {
+  if (JSON.stringify(words(a)) !== JSON.stringify(words(b))) return false;
+  if (a.court === undefined || b.court === undefined) return a.court === b.court;
+  return sameCourt(a.court, b.court);
+}
+
+/** A screen as an assertion compares it: the words, and how far its court is from `expected`'s. */
+function compared(screen: Screen, expected: Screen) {
+  if (screen.court === undefined || expected.court === undefined) {
+    return { ...words(screen), court: screen.court === expected.court ? 'same' : 'missing' };
+  }
+  const { differing, worst } = courtDifference(screen.court, expected.court);
+  const court = sameCourt(screen.court, expected.court)
+    ? 'same'
+    : `${screen.court.size}: ${String(differing)} pixels differ, by up to ${String(worst)}`;
+  return { ...words(screen), court };
 }
 
 /**
@@ -60,7 +94,7 @@ export async function steady(framed: Framed, court: boolean): Promise<Screen> {
     await wait(400);
     await frames(2, framed.win());
     const now = screenOf(framed, court);
-    if (JSON.stringify(now) === JSON.stringify(last)) return now;
+    if (sameScreen(now, last)) return now;
     last = now;
   }
   return last;
@@ -70,14 +104,32 @@ export async function steady(framed: Framed, court: boolean): Promise<Screen> {
 export async function reloadsTo(framed: Framed, where: string, court: boolean, expected?: Screen) {
   const before = expected ?? (await steady(framed, court));
   await reload(framed);
-  const end = Date.now() + 15_000;
+  await comesBackTo(framed, where, court, before);
+  return before;
+}
+
+/**
+ * Checks the page comes back to `expected` after a reload or a Resume. Long enough for a busy
+ * browser: the page puts the series back at once, but "How it was won" is worked out between
+ * frames (match-story-teller.ts) and a loaded engine runs those late, while a screen still missing
+ * it holds still like a settled one. It returns as soon as the screen matches.
+ */
+export async function comesBackTo(
+  framed: Framed,
+  where: string,
+  court: boolean,
+  expected: Screen,
+): Promise<void> {
+  const end = Date.now() + 45_000;
   let after = screenOf(framed, court);
-  while (JSON.stringify(after) !== JSON.stringify(before) && Date.now() < end) {
+  while (!sameScreen(after, expected) && Date.now() < end) {
     await wait(300);
     after = screenOf(framed, court);
   }
-  expect({ where, ...after }).toStrictEqual({ where, ...before });
-  return before;
+  expect({ where, ...compared(after, expected) }).toStrictEqual({
+    where,
+    ...compared(expected, expected),
+  });
 }
 
 /**

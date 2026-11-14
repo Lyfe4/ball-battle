@@ -1,10 +1,13 @@
 // Home's Resume series (ADR 0046), through the real page in a frame it can reload (ADR 0042): with a
 // series held, home's main button resumes it in one tap and says its format and score; a reload
 // keeps it; "New series" beside it forgets it and opens Reveal's lineup, after which home plays
-// again, reload or not.
+// again, reload or not. The series is pinned (fixed-seed.ts): seed 85 at Normal draws round 1, so
+// the flow also proves a drawn round is replayed before home offers to resume.
 import { expect } from 'vitest';
+import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SERIES_STORAGE_KEY } from '../app/series-save.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
+import { pinSeed } from './fixed-seed.ts';
 import { backIn, openFramed, reload, shown, waitFor, type Framed } from './reload-support.ts';
 import { settle } from './page-support.ts';
 
@@ -48,6 +51,10 @@ function home(framed: Framed) {
   };
 }
 
+/** The between-rounds button a drawn round leaves, if it shows. */
+const replayOffered = (framed: Framed) =>
+  shown(framed, '#series button').find((node) => node.textContent.trim() === '↻ Replay round');
+
 /** Plays a Reveal series from home until round 1 is decided, then leaves it with two Backs. */
 async function holdAfterRound1(framed: Framed): Promise<string> {
   await press(framed, '.home-play');
@@ -58,16 +65,24 @@ async function holdAfterRound1(framed: Framed): Promise<string> {
   shown(framed, '.answer-step .pick-row-pick')[0]?.click();
   await settle();
   expect(step(framed)).toBe('play');
-  // Round 1, played out: a draw is replayed, so wait until a side has won it.
+  // Round 1, played out: a draw is replayed (its own button, then a new Fight!), so wait until a
+  // side has won it.
+  let replayed = false;
   await waitFor(
+    framed,
     () => {
       shown(framed, '.ready-fight')[0]?.click();
+      const replay = replayOffered(framed);
+      replay?.click();
+      replayed ||= replay !== undefined;
       const [you, bot] = scoreIn(seriesScore(framed));
       return you + bot === 1;
     },
     120_000,
     'round 1 to be decided',
   );
+  // The pinned seed draws round 1; if a new ruleset moves it, pick another drawn seed (see DRAWN_ROUND_1).
+  expect(replayed, 'round 1 was drawn and replayed').toBe(true);
   const score = seriesScore(framed) ?? '';
   await backIn(framed);
   expect(step(framed)).toBe('lineup');
@@ -75,8 +90,13 @@ async function holdAfterRound1(framed: Framed): Promise<string> {
   return score;
 }
 
+/** Seed 85 at Normal: round 1 (Storm against the bot's Spider) is a draw, then replayed. */
+const DRAWN_ROUND_1 = 85;
+
 export async function runHomeResumeFlow(): Promise<void> {
   window.localStorage.setItem(SPEED_STORAGE_KEY, '2');
+  window.localStorage.setItem(BOT_LEVEL_STORAGE_KEY, 'normal');
+  pinSeed(DRAWN_ROUND_1);
   const framed = await openFramed('');
 
   // Nothing held: Play, and no New series.
