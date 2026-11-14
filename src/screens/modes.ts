@@ -2,12 +2,13 @@
 // series format's lineup at the chosen length, or Free play with the demo's pair), one history step
 // in; Back returns home. The length chosen here is remembered on the device, like the bot level.
 // main.ts hands over how to move.
-import { loadBotLevel } from './app/bot-level.ts';
-import type { Matchup } from './app/matchup.ts';
-import { writePickParams } from './app/route.ts';
-import { loadSeriesLength, saveSeriesLength } from './app/series-length.ts';
-import { writeSeriesModeParams } from './app/series-url.ts';
-import { createModes } from './ui/modes.ts';
+import { loadBotLevel } from '../app/bot-level.ts';
+import type { Matchup } from '../app/matchup.ts';
+import { writePickParams } from '../app/route.ts';
+import { loadSeriesLength, saveSeriesLength } from '../app/series-length.ts';
+import { writeSeriesModeParams } from '../app/series-url.ts';
+import { createModes } from '../ui/modes.ts';
+import { browserStorage as storage } from '../app/storage.ts';
 
 export interface ModesHost {
   /** Moves to the screen `write` describes, by the Back rules, and shows it. */
@@ -22,9 +23,6 @@ export interface ModesScreen {
   setVisible(visible: boolean): void;
   show(): void;
 }
-
-/** Reading `localStorage` can throw; the helpers catch it. */
-const storage = () => window.localStorage;
 
 export function createModesScreen(root: HTMLElement, host: ModesHost): ModesScreen {
   const modes = createModes(root, {

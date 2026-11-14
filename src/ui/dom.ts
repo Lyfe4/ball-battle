@@ -14,3 +14,12 @@ export function element<K extends keyof HTMLElementTagNameMap>(
 export function setText(node: HTMLElement, text: string): void {
   if (node.textContent !== text) node.textContent = text;
 }
+
+/** The element with `id`, which the page must have as a `type`: a missing part is a broken page. */
+export function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
+  const found = document.getElementById(id);
+  if (!(found instanceof type)) {
+    throw new Error(`Expected #${id} to be a ${type.name}`);
+  }
+  return found;
+}

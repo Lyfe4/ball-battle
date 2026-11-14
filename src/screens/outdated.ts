@@ -1,11 +1,11 @@
 // A replay link made under another ruleset (ADR 0022), wired to the page: the notice, playing the
 // link under this page's rules (its URL rewritten, so the route opens the match or series), and
 // reloading for a link from a newer version. main.ts hands over how to move.
-import type { Navigation } from './app/navigation.ts';
-import { writeTodaysRuleset } from './app/route.ts';
-import type { RouteOf } from './app/router.ts';
-import { RULESET_VERSION } from './sim/ruleset.ts';
-import { createOutdatedScreen } from './ui/outdated.ts';
+import type { Navigation } from '../app/navigation.ts';
+import { writeTodaysRuleset } from '../app/route.ts';
+import type { RouteOf } from '../app/router.ts';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { createOutdatedScreen } from '../ui/outdated.ts';
 
 export interface OutdatedHost {
   readonly navigation: Navigation;

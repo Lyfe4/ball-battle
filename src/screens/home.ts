@@ -1,14 +1,14 @@
 // The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
 // pairs from the counter map, not announced as counters); Play, Other modes and the manual (ADR
 // 0046). main.ts owns the arena and hands this module what it needs through `HomeHost`.
-import { demoAt } from './app/demo.ts';
-import type { Matchup } from './app/matchup.ts';
-import { generateSeed } from './app/fresh-seed.ts';
-import { getDefinition } from './sim/definitions.ts';
-import type { SeriesState } from './sim/series.ts';
-import type { BallDefinition, DefinitionLookup, WorldState } from './sim/types.ts';
-import { createWorld } from './sim/world.ts';
-import { createHome } from './ui/home.ts';
+import { demoAt } from '../app/demo.ts';
+import type { Matchup } from '../app/matchup.ts';
+import { generateSeed } from '../app/fresh-seed.ts';
+import { getDefinition } from '../sim/definitions.ts';
+import type { SeriesState } from '../sim/series.ts';
+import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
+import { createWorld } from '../sim/world.ts';
+import { createHome } from '../ui/home.ts';
 
 /** How long a finished demo's result stays up before the next demo starts. */
 const NEXT_DEMO_MS = 2500;

@@ -7,38 +7,31 @@ import {
   writeManualParams,
   writeModesParams,
   type Route,
-  type Screen,
 } from './app/route.ts';
 import { writeMainModeParams } from './app/modes.ts';
 import { createRouter } from './app/router.ts';
-import { initialAppState } from './app/screen-rules.ts';
+import { initialAppState, isSetupScreen, screenTitle } from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
+import { browserStorage as storage } from './app/storage.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
-import { createHomeController } from './home-controller.ts';
-import { createBallLink, createManualScreen } from './manual-screen.ts';
-import { createModesScreen } from './modes-screen.ts';
-import { createOutdatedController } from './outdated-screen.ts';
-import { createQuickController } from './quick-controller.ts';
-import { createSeriesScreens } from './series-screens.ts';
+import { createHomeController } from './screens/home.ts';
+import { createBallLink, createManualScreen } from './screens/manual.ts';
+import { createModesScreen } from './screens/modes.ts';
+import { createOutdatedController } from './screens/outdated.ts';
+import { createQuickController } from './screens/quick.ts';
+import { createSeriesScreens } from './screens/series.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
 import { createWorld } from './sim/world.ts';
 import { createHud } from './ui/hud.ts';
+import { getElement } from './ui/dom.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
-
-function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
-  const found = document.getElementById(id);
-  if (!(found instanceof type)) {
-    throw new Error(`Expected #${id} to be a ${type.name}`);
-  }
-  return found;
-}
 
 const stage = getElement('stage', HTMLElement);
 // What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
@@ -54,22 +47,10 @@ const navigation = createNavigation(window, (url) =>
 const currentRoute = (): Route =>
   parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();
-// Remembered per viewer. Reading localStorage itself can throw, hence the getter.
-const storage = () => window.localStorage;
 const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 const tips = createTips(storage);
 /** The match on the arena has ended and its result is showing. */
 let matchOver = false;
-
-const TITLES: Readonly<Record<Screen, string>> = {
-  home: 'BallBattle: build a lineup, watch it fight',
-  modes: 'Other modes · BallBattle',
-  pick: 'Free play · BallBattle',
-  match: 'Free play · BallBattle',
-  series: 'Best of 3 · BallBattle',
-  manual: 'Ball manual · BallBattle',
-  outdated: 'Link from another version · BallBattle',
-};
 
 const hud = createHud(hudRoot, BALL_LOOKUP, {
   onReplay: () => {
@@ -229,7 +210,7 @@ const router = createRouter(
       show: (route) => {
         manual.show(route.ball, route.chart);
         const ball = BALL_LOOKUP.get(route.ball ?? '');
-        if (ball !== undefined) document.title = `${ball.name} · ${TITLES.manual}`;
+        if (ball !== undefined) document.title = screenTitle('manual', undefined, ball.name);
       },
     },
     pick: {
@@ -313,11 +294,7 @@ function showWorld(world: WorldState, shownSeed: number, finished = false): void
 }
 
 /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
-function isSetup(): boolean {
-  const screen = router.current();
-  if (screen === 'series') return !series.isPlaying();
-  return screen === 'pick' || screen === 'manual' || screen === 'modes' || screen === 'outdated';
-}
+const isSetup = () => isSetupScreen(router.current(), series.isPlaying());
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
 function showControls(): void {
@@ -342,8 +319,10 @@ function showControls(): void {
   series.setVisible(screen === 'series');
   hud.setSeriesMode(series.isPlaying());
   // A series screen's title names its length (ADR 0048).
-  const bestOf = readMode(new URLSearchParams(window.location.search).get('mode'));
-  document.title = screen === 'series' && bestOf === 5 ? 'Best of 5 · BallBattle' : TITLES[screen];
+  document.title = screenTitle(
+    screen,
+    readMode(new URLSearchParams(window.location.search).get('mode')),
+  );
 }
 
 navigation.onChange(showCurrentRoute);

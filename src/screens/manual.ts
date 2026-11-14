@@ -1,10 +1,10 @@
 // The ball manual wired to the page: the index (roster or chart, one history entry) and a ball's
 // entry (one more; moving from ball to ball replaces it, ADR 0025), and Try it leads to the
 // quick-match setup. main.ts hands over how to move.
-import { writeManualParams, writePickParams } from './app/route.ts';
-import type { BallDefinition } from './sim/types.ts';
-import type { BallInfoLink } from './ui/balls/ball-link.ts';
-import { createManual, type Manual } from './ui/manual/manual.ts';
+import { writeManualParams, writePickParams } from '../app/route.ts';
+import type { BallDefinition } from '../sim/types.ts';
+import type { BallInfoLink } from '../ui/balls/ball-link.ts';
+import { createManual, type Manual } from '../ui/manual/manual.ts';
 
 export interface ManualHost {
   /** Moves to the screen `write` describes, by the Back rules, and shows it. */

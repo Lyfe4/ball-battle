@@ -5,7 +5,7 @@
 // resumed where it was, with every choice already made kept, until a new series replaces it. Every
 // change is saved on the device (ADR 0042), so a reload puts the series back where it was; leaving
 // it on purpose (Leave series, New series) forgets it.
-import { generateSeed } from './app/fresh-seed.ts';
+import { generateSeed } from '../app/fresh-seed.ts';
 import {
   advanceSession,
   beginSession,
@@ -18,13 +18,13 @@ import {
   showBotBallNow,
   withLinkPicks,
   type SeriesSession,
-} from './app/series-session.ts';
-import { writeSeriesModeParams, writeSeriesParams } from './app/series-url.ts';
-import { awaitingPick, type SeriesSetup, type SeriesState } from './sim/series.ts';
-import { matchWorld, playToEnd } from './sim/series-verify.ts';
-import type { DefinitionLookup, WorldState } from './sim/types.ts';
-import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from './ui/series-panel.ts';
-import { lastPlayOf } from './ui/series/series-view.ts';
+} from '../app/series-session.ts';
+import { writeSeriesModeParams, writeSeriesParams } from '../app/series-url.ts';
+import { awaitingPick, type SeriesSetup, type SeriesState } from '../sim/series.ts';
+import { matchWorld, playToEnd } from '../sim/series-verify.ts';
+import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
+import { lastPlayOf } from '../ui/series/series-view.ts';
 
 /** What the series needs from the page around it. */
 export interface SeriesHost {
