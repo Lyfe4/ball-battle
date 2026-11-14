@@ -52,6 +52,22 @@ function leavesSim(group) {
   };
 }
 
+/**
+ * Code a server shares (src/api, src/server) reaches the sim only through its entry file, so a
+ * frozen ruleset bundle (built from src/sim/index.ts) can stand in for it (ADR 0051, 0052). `up` is
+ * the import text from a file's folder back to src/. The contract (src/api) may import neither the
+ * server nor anything else of the app; the server may also import the contract.
+ */
+function sharedWithServer(up, { server }) {
+  const allowed = [String.raw`sim/index\.ts$`, 'api/', ...(server ? ['server/'] : [])];
+  return {
+    regex: `^${up.replaceAll('.', String.raw`\.`)}(?!${allowed.join('|')})`,
+    message:
+      'src/api and src/server import the sim only through src/sim/index.ts, and nothing of the ' +
+      'app (src/api not even src/server). See docs/decisions/0052-backend.md, section 7.',
+  };
+}
+
 export default defineConfig(
   { ignores: ['dist', 'coverage'] },
   js.configs.recommended,
@@ -132,6 +148,48 @@ export default defineConfig(
   {
     files: ['src/sim/*/*.ts'],
     rules: { 'no-restricted-imports': ['error', { patterns: [leavesSim('../../**')] }] },
+  },
+  {
+    files: ['src/api/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [sharedWithServer('../', { server: false })] },
+      ],
+    },
+  },
+  {
+    files: ['src/server/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [sharedWithServer('../', { server: true })] }],
+    },
+  },
+  {
+    files: ['src/server/*/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [sharedWithServer('../../', { server: true })] },
+      ],
+    },
+  },
+  // The client never imports the server (ADR 0052): its secrets and Node code stay off the page.
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/sim/**', 'src/api/**', 'src/server/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/server/**'],
+              message: 'The client never imports src/server (docs/decisions/0052-backend.md).',
+            },
+          ],
+        },
+      ],
+    },
   },
   prettier,
 );

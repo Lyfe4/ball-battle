@@ -91,6 +91,8 @@ export function decodeSeriesSetup(raw: unknown, roster: readonly string[]): Deco
   if (picks !== undefined && made === undefined) {
     return refuse('The picks are not balls from the roster');
   }
+  // One stored form per series (ADR 0051): a field holding its default is left out, so a setup
+  // written with `bestOf: 3`, `format: 'blind'` or no picks stores and compares like one without.
   return {
     ok: true,
     setup: {
@@ -99,9 +101,9 @@ export function decodeSeriesSetup(raw: unknown, roster: readonly string[]): Deco
       a: lineupA,
       b: lineupB,
       opponent,
-      ...(named === undefined ? {} : { format: named }),
-      ...(made === undefined ? {} : { picks: made }),
-      ...(bestOf === undefined ? {} : { bestOf: length }),
+      ...(named === undefined || named === 'blind' ? {} : { format: named }),
+      ...(made === undefined || made.length === 0 ? {} : { picks: made }),
+      ...(length === DEFAULT_BEST_OF ? {} : { bestOf: length }),
     },
   };
 }

@@ -239,6 +239,7 @@ displays.
 ```
 src/
   sim/      pure, deterministic simulation (no DOM, no time, no Math.random)
+  sim/index.ts      the sim's public API, what a server imports (ADR 0052)
   render/   draws sim state on a canvas; never changes it
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
