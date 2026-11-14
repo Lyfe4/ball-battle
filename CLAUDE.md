@@ -89,6 +89,11 @@ CI jobs and Netlify's deploy preview; Netlify's header, pages-changed and redire
 informational), merge it yourself with a merge commit (no squash) and delete the branch. Never
 merge a red pull request: fix it on the branch.
 
+Merging doesn't publish. Production is the `release` branch (Netlify's Free plan charges 15 of 300
+monthly credits per production deploy, ADR 0052): publish a batch of merges with the Publish
+workflow (`gh workflow run publish.yml`), which fast-forwards `release` to a `main` commit whose CI
+passed. Publish only when the user asks.
+
 ## Conventions
 
 Each line is a rule; its ADR has the reasoning.
