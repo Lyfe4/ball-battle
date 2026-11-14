@@ -5,6 +5,8 @@
 - Date: 2026-11-14
 - Amends: ADR 0017 (a series' seed), ADR 0022 (one ruleset per build, verifying a
   series)
+- Amended by: ADR 0052 (the bot's choice seed is secret too; no `packages/sim` workspace or worker
+  pool yet)
 - Builds on: `docs/audit-2026-11.md` sections 2.3, 2.4, 2.5, 2.7 and 7
 
 ## Context

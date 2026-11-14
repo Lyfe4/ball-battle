@@ -1,12 +1,13 @@
 # 0052: The backend: Supabase for accounts and data, Netlify Functions as the game server
 
-- Status: Proposed (draft, 2026-11-14). Nothing here is built. It needs the decisions in
-  "Open questions" before slice 1 starts.
+- Status: Accepted (2026-11-14), with the decisions in section 11: player vs player comes first
+  (slice 1, guests welcome, unrated), then accounts, ranked play and the bot ladder. Nothing is
+  built yet except batch publishing (section 1, "Publishing in batches").
 - Date: 2026-11-14
 - Builds on: ADR 0051 (secret seeds, pinned rulesets, the checklist before accounts), ADR 0022
   (one gate for a valid series), ADR 0048 (Best of 5), `docs/vision.md` ("Long-term goal")
 - Amends: ADR 0051 in three places, each said where it comes up: the bot's own seed is secret too
-  ("Seeds"), no `packages/sim` workspace yet ("Packaging"), no worker pool ("Where the sim runs")
+  ("Seeds"), no `packages/sim` workspace yet, and no worker pool ("Deliberately simple")
 
 ## Context
 
@@ -82,9 +83,9 @@ Notes on the ones not chosen:
 ### Cost, roughly
 
 Netlify bills credits: 15 per production deploy, 2 per 10,000 requests, 10 per GB-hour of
-function compute (Netlify docs, November 2026). The Free plan's 300 credits a month are a hard
-limit. **That is 20 merges to `main`**, before any traffic. Check which plan the site is on
-today; Personal ($9, 1,000 credits) is the realistic floor once the API ships.
+function compute (Netlify docs, November 2026). The site is on the Free plan, whose 300 credits a
+month are a hard limit: past it the site stops. Every merge to `main` was a production deploy, so
+about 20 merges a month used the whole plan before any traffic.
 
 - **Beta, under 1k MAU:** $0-9 a month.
 - **Launch:** Supabase Pro ($25: daily backups kept 7 days, no pausing, 100k MAU) for
@@ -93,6 +94,23 @@ today; Personal ($9, 1,000 credits) is the realistic floor once the API ships.
   (~1,200 credits) and ~100 GB-hours (~1,000 credits). That is Netlify Pro with extra credits,
   plus Supabase Pro: about $50-100 a month. Cloudflare would be about $10 for the same traffic.
   That gap, not features, is the main reason to move later.
+
+### Publishing in batches (built with this ADR)
+
+- **Production is the `release` branch**, set in Netlify's settings (production branch `release`,
+  and only it builds for production). Merging to `main` no longer publishes.
+- **The Publish workflow** (`.github/workflows/publish.yml`, run by hand:
+  `gh workflow run publish.yml`) publishes a batch:
+  - it fast-forwards `release` to a `main` commit whose CI run passed;
+  - it refuses anything not on `main`, and never moves `release` backwards (roll back in
+    Netlify's dashboard instead).
+- **Deploy previews on every pull request are unchanged.** They don't cost deploy credits.
+- **Budget on Free:** about 12 publishes a month (180 credits), leaving the rest for bandwidth
+  and requests.
+- **Move to Personal ($9, 1,000 credits) when the first functions go live in production** (slice
+  1's public launch). From then on, every request, every function GB-hour and the scheduled
+  deadline sweep (about 2,900 runs a month) draw on the same 300. Move sooner if publishing more
+  than about 12 times a month starts to matter.
 
 ## 2. Accounts
 
@@ -103,12 +121,15 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 
 ### Guests
 
-- A guest is a Supabase **anonymous user**. It is created on the **first online action** (a
-  ladder series, a friend challenge), never on opening the app. That keeps offline play
-  untouched and avoids a dead account per visit.
-- Guests can play the bot ladder and friend challenges. **Ranked PvP and the public leaderboards
-  need a signed-in account**: a guest costs nothing to make, so many guests could farm a lucky
-  streak or feed one account wins. A guest sees their place ("you'd be #12: sign in to appear").
+- A guest is a Supabase **anonymous user**. It is created on the **first online action**
+  (accepting or sending a friend challenge, joining the open queue), never on opening the app.
+  That keeps offline play untouched and avoids a dead account per visit.
+- **Guests play player vs player from the first slice:** friend challenges and the open queue,
+  both unrated. They show as a generated name ("Player 4821").
+- **Ranked play and the public leaderboards need a signed-in account**: a guest costs nothing to
+  make, so many guests could farm a lucky streak or feed one account wins. A guest sees their
+  place on a board ("you'd be #12: sign in to appear").
+- A guest can delete itself ("Forget me" in settings) from the first slice.
 - A guest lives as long as its cookie. Clearing site data loses it; the UI says so before it
   matters ("Sign in to keep your progress").
 - Guests with no activity for 90 days are deleted by a scheduled job.
@@ -136,10 +157,10 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 ### A guest who signs up
 
 - Signing in from a guest **links the identity to the same user id** (`linkIdentity` for OAuth,
-  `updateUser` for email). Every row is keyed by user id, so ladder runs and series stay.
+  `updateUser` for email). Every row is keyed by user id, so open and finished series stay.
 - If that Google account or email already has an account (signed up on another device), nothing
-  is merged. The player chooses: switch to the existing account (the guest's runs stay with the
-  guest, and say so) or stay a guest. Merging becomes worth building when there is currency to
+  is merged. The player chooses: switch to the existing account (the guest's series stay with
+  the guest, and say so) or stay a guest. Merging becomes worth building when there is currency to
   merge, and then it needs its own rules.
 
 ### Logging out and deleting
@@ -147,7 +168,8 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 - Logout clears the cookie and every `ballbattle.*` key (ADR 0051 item 5).
 - **Deletion** (`DELETE /api/v1/me`, in the app and on the web, which both stores require):
   - immediate;
-  - deletes the auth user, profile, ratings, queue entry and ladder scores;
+  - deletes the auth user, profile, ratings, queue entry, push subscriptions, open challenges and ladder
+    scores;
   - keeps finished series for the opponent's history, with the player shown as "Deleted player"
     (`ON DELETE SET NULL`);
   - an open series is forfeited to the opponent;
@@ -173,26 +195,43 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 
 - **One async state machine for every format.** The server stores locked picks and asks the sim
   whose turn it is (`awaitingPick`), so all three formats come for free.
-- **Ranked is Reveal Best of 5, by turns.** One queue and one rating. It is the main mode, and its
-  skill gap is the largest measured (20-23 points, ADR 0048).
-- **Friend challenges** (a link) can use any format and length, and are unrated.
+- **Slice 1 brings two ways to play, both unrated and open to guests:**
+  - **Friend challenges** (a link), in any format and length.
+  - **The open queue**: Reveal Best of 5 by turns, the format ranked will use. Players learn it
+    before a rating is at stake, and ranked later adds a queue beside it, not a new format.
+- **Ranked (slice 3) is Reveal Best of 5, by turns,** for signed-in players: one queue and one
+  rating. It is the main mode, and its skill gap is the largest measured (20-23 points, ADR 0048).
 - **Blind against saved lineups** (instant fights, no waiting) is a cheap later mode on the same
   tables. It's left out until players ask for it.
 - **Live PvP later is the same machine with short timers** and a push to say a series moved on,
   instead of a new design.
 
-### How a ranked series plays
+### Friend challenges
+
+1. **The challenger** chooses the format and length, builds a lineup and gets a link:
+   `/?challenge=<token>`.
+   - The token is 128 random bits. Only its hash is stored, it expires after 7 days, and it can
+     be accepted once.
+   - The challenger's lineup is never sent before the series starts.
+2. **The friend** opens the link, builds a lineup without seeing the challenger's, and accepts.
+   The series starts.
+3. **Accepting your own link is refused.** A second friend opening a used link is told it's taken,
+   and offered a challenge of their own (no dead end).
+
+### How a series by turns plays (open queue, and later ranked)
 
 1. **Find a match.** The player builds a 5-ball lineup exactly as today, before seeing the
-   opponent's. It joins the queue with that lineup locked (one queue entry per player, at most 3
-   open ranked series).
+   opponent's. It joins the queue with that lineup locked.
+   - One queue entry per player, and at most 3 open series by turns of all kinds.
 2. **Matching** runs in the same request, in one transaction:
-   - it takes the oldest compatible entry (`FOR UPDATE SKIP LOCKED`): same ruleset and length, not
-     the same opponent within 24 hours, rating within a window that widens with the entry's wait
-     (by database time);
+   - it takes the oldest compatible entry (`FOR UPDATE SKIP LOCKED`): same ruleset and length, and
+     not the same opponent within 24 hours. Ranked also needs the ratings within a window that
+     widens with the entry's wait (by database time);
    - if one is found, the series is created; if not, the player's own entry waits, for up to 24
      hours.
-   - The player can close the app either way.
+   - The player can close the app either way. While they wait, the screen offers a friend
+     challenge or a game against the bot. The queue may be empty in the early days, and friend
+     links are the answer to that.
 3. **The series starts:**
    - both lineups and the toss are shown;
    - the commitments are published;
@@ -203,13 +242,37 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 5. **Deadline: 24 hours per turn, by database time.** A missed turn forfeits the series. Expired
    turns are settled when anyone reads the series, and by a scheduled function every 15 minutes.
 6. **The end.** The last round plays, the server runs `verifySeries` on the final setup under the
-   series' ruleset, then the result and rating change are shown.
+   series' ruleset, then the result (and, in ranked, the rating change) is shown.
    - The client checks every revealed seed against its commitment (WebCrypto) and replays the
      series. A ✓ "fair play" mark in the series bar is the outcome, with the details in a
      `<details>`.
 
-The home screen gains a "Your turn (n)" list. Notifications start in the app (the list is fetched
-on open). Web Push comes in slice 4, native push with the app.
+The home screen gains a "Your turn (n)" list, fetched on open.
+
+### Push notifications move into slice 1
+
+Play by turns depends on them. With 24 hours a turn and a forfeit at the end, a player who only
+learns it's their turn by opening the app loses series they meant to play, and the opponent waits
+for nothing. So Web Push is part of the first PvP slice, not a later one:
+
+- **Opt-in:** asked after the player's first pick in an online series, never on load.
+- **Sent when:**
+  - it becomes your turn;
+  - a queue entry is matched;
+  - 4 hours are left on your turn (from the scheduled sweep);
+  - a series ends.
+- **How:**
+  - a small service worker that only shows notifications and opens the series (no offline
+    caching);
+  - VAPID keys as Netlify secrets;
+  - the `web-push` library on the server;
+  - a `push_subscriptions` table;
+  - `worker-src 'self'` in the CSP.
+  - A subscription the push service says is gone (`404`/`410`) is deleted.
+- **iPhones:** Safari delivers Web Push only to a web app added to the home screen (iOS 16.4 and
+  later). An iPhone player in a Safari tab gets none until they add it or the native app ships, so
+  the opt-in explains "Add to Home Screen" there. That limit is the main argument for the
+  Capacitor release coming soon after accounts.
 
 ### A turn on the server
 
@@ -258,30 +321,33 @@ Nothing seed-shaped is sent before its lock (ADR 0051).
 ### Rulesets
 
 - A series is pinned to the ruleset it was created under (ADR 0051 option 2).
-- **For the bot ladder (slices 1-2), drain instead:** a series lasts minutes, so a deploy that
-  bumps the ruleset voids open ladder series (they don't count either way).
-- **Frozen bundles arrive with ranked PvP (slice 3)**, where series last days. How they work:
+- **Frozen bundles arrive with the first PvP slice,** because a series by turns lasts days and a
+  balance change must not void it. How they work:
   - each kept ruleset is an esbuild bundle of `src/sim/index.ts`, committed as
     `rulesets/r15/sim.mjs` and never edited;
   - the server imports the bundle the series names;
   - a client watching an older series lazy-loads the same file;
   - CI replays the golden results against every kept bundle.
-- **Committing build output is deliberate:** a bundle must be byte-identical forever, and
-  rebuilding an old commit with newer tools doesn't promise that.
+- **Committing build output is deliberate (decided):** a bundle must be byte-identical forever,
+  and rebuilding an old commit with newer tools doesn't promise that.
+- **New series always use the newest ruleset.** Before ranked exists, balance changes ship as
+  today. Once ranked is live, **changes that affect ranked fights ship only between seasons**
+  (decided). Changes that touch only the bot or the offline game can still ship any time, since
+  pinning keeps every open series on its own rules.
 
 ## 4. Leaderboards and rating
 
-### The bot ladder (slice 1)
+### The bot ladder (slice 4)
 
 - **Weekly, against the Hard bot, Reveal Best of 5.** The score is the **best win streak of the
-  week**, ties to whoever reached it first.
+  week** (decided), ties to whoever reached it first. The board lists signed-in players only.
 - One open ladder series per player. A series not finished within 24 hours is a loss, so
   abandoning a losing series doesn't protect a streak.
 - The week starts and ends by database time (Monday 00:00 in Sydney, stored as UTC).
 - Streaks are clear to read and need no rating maths. With option B's seeds, a streak can only
   come from drafting well, not from solving the seed.
 
-### Ranked PvP (slice 3)
+### Ranked PvP (slice 3, signed-in players only)
 
 - **Glicko-2**, updated after each series, the way Lichess does it, rather than in batched rating
   periods. It suits async play: few games, long gaps, and a rating deviation (RD) that says how
@@ -299,8 +365,7 @@ Nothing seed-shaped is sent before its lock (ADR 0051).
   - a new season carries each rating halfway towards 1500, with RD 250;
   - a series counts in the season it was created in, so one that spans the boundary isn't
     ambiguous.
-  - **Ruleset bumps that change ranked fights go out at season boundaries** (an open question:
-    it changes how often balance ships).
+  - **Ruleset bumps that change ranked fights go out only at season boundaries** (decided).
 - **A result counts only after verification:**
   - the finishing transaction runs `verifySeries` under the pinned ruleset;
   - it writes `rating_changes` (primary key `(series_id, user_id)`, so it can't apply twice) and
@@ -315,19 +380,21 @@ Postgres, in a schema `game` that is **not exposed** through Supabase's Data API
 never queries the database). RLS is still enabled on every table with no policies, so a
 misconfigured exposure leaks nothing.
 
-| Table            | Key fields                                                                                                                                                                                                                                                                                                                                                                      | Notes                                                                                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `profiles`       | `user_id` PK → `auth.users` ON DELETE CASCADE, `display_name`, `created_at`                                                                                                                                                                                                                                                                                                     | Names start as "Player 4821"; signed-in players can change them                                                                                                                             |
-| `series`         | `id` uuid, `kind` (`ladder`/`ranked`/`friend`), `ruleset`, `format`, `best_of`, `player_a`, `player_b` (null for a bot; both ON DELETE SET NULL), `bot`, `lineup_a`, `lineup_b` text[], `key_id`, `status` (`open`/`finished`/`forfeit`/`void`), `winner`, `version`, `turn_side`, `turn_deadline`, `season_id`, `request_id`, `created_at`, `finished_at`, `final_setup` jsonb | `unique (player_a, request_id)` makes creation idempotent. `final_setup` is the full `SeriesSetup` with revealed seeds and picks: a few hundred bytes that replay the whole series anywhere |
-| `series_seeds`   | PK `(series_id, purpose, idx)`, `salt` bytea, `commitment` bytea, `seed` int (set on reveal), `revealed_at`                                                                                                                                                                                                                                                                     | Salts are secret until revealed. Seeds are derived from `K`                                                                                                                                 |
-| `picks`          | PK `(series_id, round, side)`, `ball`, `created_at`                                                                                                                                                                                                                                                                                                                             | The PK is the idempotent lock                                                                                                                                                               |
-| `rounds`         | PK `(series_id, round)`, `a`, `b`, `outcomes` text[], `winner`, `sudden_death`                                                                                                                                                                                                                                                                                                  | Stored as played, so reads don't replay                                                                                                                                                     |
-| `queue_entries`  | PK `user_id`, `ruleset`, `best_of`, `format`, `lineup` text[], `rating`, `created_at`                                                                                                                                                                                                                                                                                           | The lineup is never sent to anyone                                                                                                                                                          |
-| `seasons`        | `id`, `starts_at`, `ends_at`                                                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                             |
-| `ratings`        | PK `(user_id, season_id)`, `rating`, `rd`, `volatility`, `series_count`, `last_series_at`                                                                                                                                                                                                                                                                                       |                                                                                                                                                                                             |
-| `rating_changes` | PK `(series_id, user_id)`, before and after `rating`/`rd`                                                                                                                                                                                                                                                                                                                       | Idempotency and history                                                                                                                                                                     |
-| `ladder_scores`  | PK `(user_id, week)`, `current_streak`, `best_streak`, `best_at`                                                                                                                                                                                                                                                                                                                | Updated in the finishing transaction                                                                                                                                                        |
-| `rate_limits`    | PK `(subject, bucket, window_start)`, `count`                                                                                                                                                                                                                                                                                                                                   | Fixed windows, upserted. Purged daily                                                                                                                                                       |
+| Table                | Key fields                                                                                                                                                                                                                                                                                                                                                                             | Notes                                                                                                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`           | `user_id` PK → `auth.users` ON DELETE CASCADE, `display_name`, `created_at`                                                                                                                                                                                                                                                                                                            | Names start as "Player 4821"; signed-in players can change them                                                                                                                             |
+| `series`             | `id` uuid, `kind` (`friend`/`open`/`ranked`/`ladder`), `ruleset`, `format`, `best_of`, `player_a`, `player_b` (null for a bot; both ON DELETE SET NULL), `bot`, `lineup_a`, `lineup_b` text[], `key_id`, `status` (`open`/`finished`/`forfeit`/`void`), `winner`, `version`, `turn_side`, `turn_deadline`, `season_id`, `request_id`, `created_at`, `finished_at`, `final_setup` jsonb | `unique (player_a, request_id)` makes creation idempotent. `final_setup` is the full `SeriesSetup` with revealed seeds and picks: a few hundred bytes that replay the whole series anywhere |
+| `series_seeds`       | PK `(series_id, purpose, idx)`, `salt` bytea, `commitment` bytea, `seed` int (set on reveal), `revealed_at`                                                                                                                                                                                                                                                                            | Salts are secret until revealed. Seeds are derived from `K`                                                                                                                                 |
+| `picks`              | PK `(series_id, round, side)`, `ball`, `created_at`                                                                                                                                                                                                                                                                                                                                    | The PK is the idempotent lock                                                                                                                                                               |
+| `rounds`             | PK `(series_id, round)`, `a`, `b`, `outcomes` text[], `winner`, `sudden_death`                                                                                                                                                                                                                                                                                                         | Stored as played, so reads don't replay                                                                                                                                                     |
+| `challenges`         | `id`, `token_hash` (unique), `creator`, `format`, `best_of`, `lineup` text[], `created_at`, `expires_at`, `series_id` (set on acceptance)                                                                                                                                                                                                                                              | Friend links. Accepting sets `series_id` where it is null, so it happens once                                                                                                               |
+| `queue_entries`      | PK `user_id`, `kind` (`open`/`ranked`), `ruleset`, `best_of`, `format`, `lineup` text[], `rating` (ranked only), `created_at`                                                                                                                                                                                                                                                          | The lineup is never sent to anyone                                                                                                                                                          |
+| `push_subscriptions` | PK `endpoint`, `user_id`, `p256dh`, `auth`, `created_at`                                                                                                                                                                                                                                                                                                                               | Deleted when the push service answers 404 or 410, and with the user                                                                                                                         |
+| `seasons`            | `id`, `starts_at`, `ends_at`                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                             |
+| `ratings`            | PK `(user_id, season_id)`, `rating`, `rd`, `volatility`, `series_count`, `last_series_at`                                                                                                                                                                                                                                                                                              |                                                                                                                                                                                             |
+| `rating_changes`     | PK `(series_id, user_id)`, before and after `rating`/`rd`                                                                                                                                                                                                                                                                                                                              | Idempotency and history                                                                                                                                                                     |
+| `ladder_scores`      | PK `(user_id, week)`, `current_streak`, `best_streak`, `best_at`                                                                                                                                                                                                                                                                                                                       | Updated in the finishing transaction                                                                                                                                                        |
+| `rate_limits`        | PK `(subject, bucket, window_start)`, `count`                                                                                                                                                                                                                                                                                                                                          | Fixed windows, upserted. Purged daily                                                                                                                                                       |
 
 - **Replays and verification need only `final_setup`.** No tick data, snapshots or events are
   stored.
@@ -377,14 +444,14 @@ misconfigured exposure leaks nothing.
 
 ### Abuse
 
-| Abuse                                                   | Answer                                                                                                                                                                                                          |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Farming a ladder streak with many guests                | Boards show signed-in accounts only, and a rate limit on series per account                                                                                                                                     |
-| Win trading between two accounts                        | Matchmaking avoids repeat opponents within 24 h, and friend series are unrated. Watch for pairs that meet often                                                                                                 |
-| Queue or pick spam                                      | Per-account rate limits, one queue entry, 3 open ranked series                                                                                                                                                  |
-| Display names                                           | Optional, signed-in only, 3-20 characters. NFC-normalised, length counted in graphemes (`Intl.Segmenter`, so non-English names aren't cut mid-character), a word list, and a report button. No chat             |
-| Supabase's anonymous sign-in limit (30 per hour per IP) | **Our functions make that call, so every player shares Netlify's few outgoing IPs.** Test in slice 1 whether Supabase honours a forwarded client IP. If not, raise its limit and rely on ours (open question 6) |
-| A player using a solver for picks                       | Allowed in effect: the counter map is public and the pick screens show the odds. Option B stops what matters, solving the seed                                                                                  |
+| Abuse                                                   | Answer                                                                                                                                                                                                                 |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Farming a ladder streak with many guests                | Boards show signed-in accounts only, and a rate limit on series per account                                                                                                                                            |
+| Win trading between two accounts                        | Matchmaking avoids repeat opponents within 24 h, and friend series are unrated. Watch for pairs that meet often                                                                                                        |
+| Queue or pick spam, or guests who join and walk away    | Per-account rate limits, one queue entry, 3 open series by turns. A walked-away series is a forfeit after 24 h. Guest creation is rate-limited too, so a new guest per series costs the abuser time                    |
+| Display names                                           | Optional, signed-in only, 3-20 characters. NFC-normalised, length counted in graphemes (`Intl.Segmenter`, so non-English names aren't cut mid-character), a word list, and a report button. No chat                    |
+| Supabase's anonymous sign-in limit (30 per hour per IP) | **Our functions make that call, so every player shares Netlify's few outgoing IPs.** Test in slice 1 whether Supabase honours a forwarded client IP. If not, raise its limit and rely on ours (section 11, still open) |
+| A player using a solver for picks                       | Allowed in effect: the counter map is public and the pick screens show the odds. Option B stops what matters, solving the seed                                                                                         |
 
 ### Logging, monitoring, backups
 
@@ -418,18 +485,39 @@ misconfigured exposure leaks nothing.
   - an email only for email sign-in;
   - a display name only if chosen;
   - play records;
+  - a push subscription only if the player opts in;
   - IPs only in short-lived platform logs.
-  - Stored in Sydney.
+  - Stored in Sydney. Supabase, Netlify and Sentry are overseas companies, which is a
+    cross-border disclosure under APP 8.
 - **The app stores require** a privacy policy page (and Apple's privacy labels).
 
-**Needs a lawyer before launch:**
+### Legal advice comes first (decided)
 
-- whether the exemption applies, and whether to opt in;
-- terms of service;
-- children and age gating;
-- Australian Consumer Law for virtual currency and refunds;
-- loot-box classification (already in `docs/vision.md`);
-- GDPR if the game is marketed outside Australia.
+**No stored player data goes public until a lawyer has answered these.** Slice 1 stores guest
+data, so its public launch waits for this. Until then the online modes are switched on only in
+deploy previews and staging (a build flag set per Netlify context).
+
+1. **Privacy policy:** what it must say for guests, accounts, push subscriptions, error reports and
+   overseas providers, and where it must be shown (the site, both app stores).
+2. **Terms of service:** conduct, forfeits, removing accounts that cheat, liability, and later
+   virtual currency and refunds under the Australian Consumer Law.
+3. **The small-business exemption:** does it apply, does it still apply once players overseas or
+   purchases come, and should we opt in to the APPs anyway (`docs/vision.md` builds as if they
+   apply)?
+4. **Players under 16:**
+   - whether to ask an age, and what to do with the answer;
+   - the Children's Online Privacy Code;
+   - whether playing strangers with generated names and no chat needs parental consent;
+   - the app stores' age ratings.
+5. **Guest data:**
+   - is an anonymous user id with its play history personal information;
+   - is 90 days of inactivity before deletion a fair retention;
+   - may finished series be kept for the opponent's history after deletion, shown as "Deleted
+     player";
+   - what consent push notifications need.
+
+Later, before purchases: loot-box classification (already in `docs/vision.md`), and GDPR if the
+game is marketed outside Australia.
 
 ## 7. Code layout and standards
 
@@ -494,8 +582,8 @@ rulesets/r15/sim.mjs       frozen bundles (slice 3)
   - a deadline passing;
   - deleting a player mid-series;
   - the `authenticated` and `anon` roles can't read `game.*`.
-- **Browser flows:** the ladder against the API running locally (`netlify dev`) in Chromium, at
-  first. The offline game's flows don't change.
+- **Browser flows:** a friend challenge played by two browser contexts against the API running
+  locally (`netlify dev`), in Chromium at first. The offline game's flows don't change.
 
 ### Deliberately simple, and when to grow it
 
@@ -523,57 +611,69 @@ Each slice ships on its own. Sizes: S half a day, M one to two days, L more.
   - Also `src/api/fairness.ts` (commitment checks in WebCrypto) and the HMAC derivation, with test
     vectors.
 
-### Slice 1: guests and a weekly Hard-bot ladder (L, about 4 PRs)
+### Slice 1: player vs player, guests welcome, unrated (L, about 6 PRs)
+
+The first thing players see from the backend. It contains:
 
 1. **Infrastructure (M):**
    - Supabase projects in Sydney, the Netlify functions region, `supabase/` with the first
      migration, the `game_api` role;
    - `GET /api/v1/health`, which reads the database;
-   - the integration CI job; Sentry; `log()`.
-2. **Sessions and headers (M):**
-   - guest creation on first online action, the cookie, `sessionOf`, the CSRF check;
-   - `connect-src`, HSTS, Trusted Types, logout clearing `ballbattle.*`;
+   - the integration CI job; Sentry; `log()`;
+   - the build flag that keeps online modes out of production until the legal sign-off.
+2. **Guest sessions and headers (M):**
+   - guest creation on the first online action, the cookie, `sessionOf`, the CSRF check;
+   - `connect-src`, HSTS, Trusted Types, logout and "Forget me" clearing `ballbattle.*`;
    - rate limits;
    - the test of Supabase's anonymous sign-in limit through our functions.
-3. **Server series (L):**
-   - `series-machine`, `viewOf`, secret seeds and commitments, picks, the bot's moves, the
-     drain-on-bump rule;
-   - the client plays a server series in the existing series screens;
-   - a fair-play ✓ at the end;
-   - offline, online modes show a "You're offline" state with a way back (no dead end).
-4. **The ladder (M):** `ladder_scores`, the weekly board (guests listed while it's labelled beta,
-   until slice 2), and "Ladder" in Other modes.
+3. **The series machine (L):**
+   - `series-machine`, `viewOf`, secret seeds and commitments, picks by turns;
+   - deadlines, forfeits and the scheduled sweep;
+   - the first frozen ruleset bundle, with its golden run in CI;
+   - the client plays a server series in the existing series screens, with a fair-play ✓ at the
+     end;
+   - offline, the online modes show a "You're offline" state with a way back (no dead end).
+4. **Friend challenges (M):**
+   - the link, accepting it, any format and length;
+   - the "Your turn (n)" list on home;
+   - an "Online" section in Other modes.
+5. **The open queue (M):** Reveal Best of 5, matched by waiting time (no rating yet), with a friend
+   link or a bot game offered while waiting.
+6. **Web Push (M):** the opt-in, the service worker, subscriptions, and the four notifications
+   above.
 
-Worth shipping alone: a real reason to come back each week, and every piece ranked PvP needs
-except a second human.
+**Before its public launch:** the legal answers (section 6), the privacy policy and terms pages,
+the Netlify Personal plan, and Supabase Pro if the series kept are worth backing up (recommended:
+yes, from launch).
 
 ### Slice 2: real accounts (M-L, about 3 PRs)
 
 - Google and email-code sign-in, linking a guest, display names;
-- export and deletion;
-- privacy policy and terms pages;
-- leaderboards limited to signed-in players.
+- data export, and account deletion beyond "Forget me" (Apple's token revocation follows with
+  Sign in with Apple).
 
-### Slice 3: async ranked PvP (L, about 5 PRs)
+### Slice 3: ranked (M-L, about 3 PRs)
 
-1. Frozen ruleset bundles and their golden runs in CI (M).
-2. The queue and matching (M).
-3. Turns, deadlines, forfeits and the scheduled settlement (M).
-4. Glicko-2, `ratings`, `rating_changes` and season 1 (M).
-5. The "Your turn" list, friend challenge links (any format, unrated), and the ranked
-   leaderboard (M).
+The queue, turns and pinning already exist, so ranked is the rating and the rules around it:
 
-### Slice 4: keeping players coming back (M)
+1. Glicko-2, `ratings`, `rating_changes`, and the ranked queue with its rating window, for
+   signed-in players (M).
+2. Seasons, season 1, and the rule that ranked-affecting balance ships only between seasons, in
+   CLAUDE.md and the publish checklist (S-M).
+3. The ranked leaderboard (S-M).
 
-- Web Push for "your turn" and "your match was found" (a service worker, VAPID keys, opt-in);
-- season rollover;
-- Supabase Pro and backups before the public launch.
+### Slice 4: the weekly ladder against the Hard bot (M, about 2 PRs)
+
+- Bot series on the same machine (the `lineup` and `bot` seeds secret until the end);
+- `ladder_scores` and the best-streak board for signed-in players.
 
 After that, in `docs/vision.md`'s order:
 
 - **Currency and unlocks:** server-owned balances in an append-only ledger table.
-- **The Capacitor release:** Sign in with Apple, the bearer-or-native-cookie decision, native
-  push.
+- **The Capacitor release:**
+  - Sign in with Apple;
+  - the bearer-or-native-cookie decision;
+  - native push. It closes the iPhone Web Push gap, so it should come soon after accounts.
 - **Live PvP:** the same machine with short timers and a realtime channel, its own ADR. Supabase
   Realtime or Durable Objects decided then.
 
@@ -600,34 +700,45 @@ After that, in `docs/vision.md`'s order:
 | Double tap on a pick, or a retry on a slow connection | The first lock wins and the retry gets the stored pick                                                  | Two concurrent locks; the same lock twice                     |
 | The same series open in two tabs                      | The server holds the state; the stale tab's pick is refused or returns the stored one, and it refetches | A stale `ETag`, then a pick                                   |
 | Reconnecting mid-turn                                 | `GET` the series and carry on                                                                           | Drop between lock and reveal                                  |
-| A deploy bumps the ruleset mid-series                 | Ladder: voided. Ranked: pinned bundle                                                                   | Create under r15, deploy r16, finish under r15                |
+| A deploy bumps the ruleset mid-series                 | The series finishes on its pinned bundle                                                                | Create under r15, deploy r16, finish under r15                |
 | Hosts with different clocks                           | Only database time is used                                                                              | A deadline test with a faked host clock                       |
 | A player deletes their account mid-series             | The opponent wins by forfeit; history shows "Deleted player"                                            | Integration test                                              |
 | A guest clears site data                              | The guest is gone; the UI warned them                                                                   | A flow on the warning                                         |
 | Non-English display names                             | NFC, graphemes counted, never part of a seed or hash                                                    | Names in Thai, Arabic, emoji with joiners                     |
 | The client's replay disagrees with the server's round | The server's result stands; the client logs a determinism error                                         | A forced mismatch in a unit test                              |
 
-## 11. Risks and open questions to decide
+## 11. Decisions (2026-11-14) and what is still open
 
-1. **Population.** Ranked async needs people in the queue. If it's empty, a player waits up to a
-   day. Ship slice 3 with friend challenges first and open the ranked queue when there are enough
-   weekly ladder players? (Suggested: yes, with a number to wait for, say 200 weekly players.)
-2. **Ladder score:** best weekly streak (recommended) or wins minus losses?
-3. **Guests in ranked:** no (recommended), or yes with a separate guest board?
-4. **Turn deadline and concurrency:** 24 h and 3 open series (recommended), or shorter for pace?
-5. **Ruleset bumps only at season boundaries** once ranked is live? That slows balance changes to
-   about every 8 weeks for ranked. (Bot play could keep shipping them, if the ladder drains.)
-6. **Supabase's per-IP anonymous limit seen through our functions.** If it can't be fixed with a
-   forwarded IP or a raised limit, guests are created by the browser calling Supabase directly
-   with the tokens handed straight to our cookie endpoint, or a Turnstile CAPTCHA is added (a
-   third-party script, CSP changes). The first slice-1 PR answers this.
-7. **The Netlify plan:** which plan is the site on? 15 credits per production deploy matters
-   at our merge rate.
-8. **Deviations from ADR 0051 to accept:** no `packages/sim` workspace yet, no worker pool, and the
-   bot's choice seed added to the secret seeds.
-9. **Committing frozen ruleset bundles** to the repo (recommended) rather than rebuilding them
-   from tags.
-10. **Legal advice** before slice 2 goes public: privacy policy, terms, the exemption, children.
+### Decided
+
+1. **Player vs player comes first:** friend challenges and an open queue, both unrated and open to
+   guests, are slice 1. Accounts follow, then ranked, then the weekly bot ladder. Web Push moves
+   into slice 1, because play by turns depends on it.
+2. **The weekly ladder** is scored by best weekly win streak.
+3. **Guests** play friend challenges and the open queue, never ranked; ranked needs an account.
+4. **24 hours per turn and up to 3 open series by turns** to start.
+5. **Ranked-affecting balance changes ship only between seasons.**
+6. **The Netlify Free plan stays for now. Production publishes in batches** from `release` (built
+   with this ADR). Move to Personal when the first functions go live in production.
+7. **Both departures from ADR 0051 are accepted:** no `packages/sim` workspace yet, and no worker
+   pool. The bot's choice seed joins the secret seeds.
+8. **Each ruleset's frozen sim is committed** to the repo.
+9. **Legal advice comes before any stored player data goes public.** The questions are in section 6.
+
+### Still open
+
+- **Population.** The open queue may be empty early on. Friend links and the bot fill the wait.
+  Watch how long entries wait before deciding when ranked opens.
+- **Supabase's per-IP anonymous limit seen through our functions.** If a forwarded IP or a raised
+  limit doesn't fix it, there are two ways out:
+  - the browser calls Supabase directly for the guest, and the tokens go straight to our cookie
+    endpoint;
+  - or a Turnstile CAPTCHA (a third-party script, and CSP changes).
+  - Slice 1's second PR answers this.
+- **iPhone players in Safari get no push** until they add the game to the home screen or the
+  native app ships. Watch the forfeit rate by platform. If it's high, the Capacitor release moves
+  up.
+- **The legal answers** may change the data kept for guests, or add an age question to slice 1.
 
 ## Consequences
 
@@ -637,8 +748,8 @@ After that, in `docs/vision.md`'s order:
   - migrations;
   - an integration CI job (about 2 minutes);
   - an error monitor to read.
-- The offline game is untouched. Online play is opt-in, a section of Other modes and later a
-  ranked button.
+- The offline game is untouched. Online play is opt-in: a section of Other modes and a "Your
+  turn" list, and later a ranked button.
 - Every competitive result comes from the server's own play of fair, committed seeds, and anyone
   can re-check it from `final_setup`.
 - Moving the API to Cloudflare later stays a port, not a rewrite.
