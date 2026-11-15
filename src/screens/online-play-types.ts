@@ -1,5 +1,6 @@
 // The online series screen's parts as the page sees them (ADR 0052, 0053): what it needs from the
 // arena and the page, and what it offers back.
+import type { ApiResult } from '../app/api.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { WorldState } from '../sim/types.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
@@ -18,6 +19,8 @@ export interface OnlinePlayHost {
   /** Home, the way on from a series that waits on the other side or has ended. */
   home(): void;
   readonly storage: DeviceStorage;
+  /** The series read just before moving here, shown at once (online-prime.ts, ADR 0054). */
+  readonly primed?: (id: string) => ApiResult<unknown> | undefined;
 }
 
 export interface OnlinePlay {

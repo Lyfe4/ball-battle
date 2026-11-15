@@ -20,6 +20,7 @@ import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
+import { createSkeleton } from '../ui/skeleton.ts';
 import { createFairPlayLine } from '../ui/series/fair-play.ts';
 import { liveFootLine, liveNote } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
@@ -30,7 +31,7 @@ import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
 export type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
 
 export function createOnlinePlay(
-  roots: SeriesPanelRoots & { readonly notice: HTMLElement },
+  roots: SeriesPanelRoots & { readonly notice: HTMLElement; readonly loading: HTMLElement },
   lookup: DefinitionLookup,
   host: OnlinePlayHost,
 ): OnlinePlay {
@@ -117,6 +118,10 @@ export function createOnlinePlay(
   const fairLine = createFairPlayLine();
   roots.panel.append(fairLine.element);
   const notice = createNotice(roots.notice, () => {
+    host.home();
+  });
+  // Opened cold (a link, a reload): the pick screen's layout until the first answer (ADR 0054).
+  createSkeleton(roots.loading, 'series', () => {
     host.home();
   });
 
@@ -224,10 +229,12 @@ export function createOnlinePlay(
 
   function render(): void {
     const ready = status === 'ready' && view !== undefined;
-    roots.notice.hidden = !visible || ready;
+    const loading = status === 'loading';
+    roots.loading.hidden = !visible || !loading;
+    roots.notice.hidden = !visible || ready || loading;
     // Try again keeps the notice up, its button working, until the answer shows what's next.
     const retry = () => client.load();
-    if (!ready && visible) {
+    if (visible && status !== 'ready' && status !== 'loading') {
       notice.show(
         onlineNotice(
           status,
@@ -262,24 +269,26 @@ export function createOnlinePlay(
   /** Who must pick now: nobody before a live match starts or while its fight is still on. */
   return {
     open(next) {
+      visible = true;
+      // Read just before moving here: shown at once, with no read of its own first.
+      const primed = id === next ? undefined : host.primed?.(next);
       if (id !== next) {
         id = next;
         view = undefined;
         session = undefined;
         fair = undefined;
         status = 'loading';
-        client.open(next);
+        client.open(next, primed);
       }
-      visible = true;
       render();
       // Back on a round that was being fought: it starts again from its seed (as offline); live,
-      // from where the server's clock says it is.
-      if (isLive()) placeLive(true);
+      // from where the server's clock says it is (a series read just before is placed already).
+      if (isLive() && primed === undefined) placeLive(true);
       else {
         const current = session?.current;
         if (current !== undefined && keyOf(current) === shownPlay && !ours()) playCurrent();
       }
-      void client.load();
+      if (primed === undefined) void client.load();
     },
     leave() {
       visible = false;
@@ -301,7 +310,8 @@ export function createOnlinePlay(
     },
     setVisible(next) {
       panel.setVisible(next && visible && status === 'ready');
-      roots.notice.hidden = !(next && visible && status !== 'ready');
+      roots.loading.hidden = !(next && visible && status === 'loading');
+      roots.notice.hidden = !(next && visible && status !== 'ready' && status !== 'loading');
     },
     settle(world) {
       if (session === undefined || view === undefined || !visible || !ours() || isLive()) return;

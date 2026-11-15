@@ -1,0 +1,99 @@
+/*
+ * A screen loading on its own (skeleton.ts, ADR 0054): its layout in calm blocks of the card fill,
+ * breathing slowly so it reads as "on its way", still with reduced motion.
+ */
+.skeleton {
+  display: grid;
+  gap: var(--space-gap);
+  align-content: start;
+}
+
+.skeleton-block {
+  display: block;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  animation: skeleton-breathe 1.6s ease-in-out infinite;
+}
+
+.skeleton-title {
+  width: 11rem;
+  max-width: 100%;
+  height: 1.6rem;
+}
+
+.skeleton-line {
+  height: 1.1rem;
+}
+
+.skeleton-line-short {
+  width: 9rem;
+  height: 1.1rem;
+}
+
+.skeleton-button {
+  flex: 1;
+  height: var(--tap-target);
+}
+
+/* The series' pick, as it will stand: bar, status line, track, banner and the pick rows. */
+.skeleton-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skeleton-status {
+  justify-self: center;
+  width: 8rem;
+  height: 1.3rem;
+}
+
+.skeleton-track {
+  height: 10rem;
+  border-radius: var(--radius-large);
+}
+
+.skeleton-banner {
+  height: 4.25rem;
+}
+
+.skeleton-rows {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.skeleton-row {
+  height: 3.5rem;
+}
+
+.skeleton-home {
+  justify-self: start;
+}
+
+@keyframes skeleton-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block {
+    animation: none;
+  }
+}
+
+/* Desktop (ADR 0031): a card loads at the notice's readable width, as the card will show. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .skeleton-card {
+    justify-self: center;
+    width: 100%;
+    max-width: var(--sheet-narrow);
+    padding: var(--space-gap) var(--space-gutter) var(--space-gutter);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .skeleton-card .skeleton-block {
+    background: var(--color-raised);
+  }
+}

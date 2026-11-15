@@ -1,7 +1,7 @@
 // An online series' requests (ADR 0052, 0053): reading it (with its ETag, so a series that hasn't
 // moved costs a 304), locking a pick, Leave and forfeit, and asking again on a timer. The screen
 // decides what each answer means for what it shows; this module only talks to the server.
-import { callApi, failureKindOf, type FailureKind } from '../app/api.ts';
+import { callApi, failureKindOf, type ApiResult, type FailureKind } from '../app/api.ts';
 import type { ClockSample } from '../app/live-clock.ts';
 import type { SeriesView } from '../api/series.ts';
 import { decodeSeriesView } from '../api/series-view-decode.ts';
@@ -24,8 +24,11 @@ export interface SeriesClientHost {
 }
 
 export interface SeriesClient {
-  /** The series this screen reads from now on. */
-  open(id: string): void;
+  /**
+   * The series this screen reads from now on; `primed`, an answer read for it just before moving
+   * here (online-prime.ts), is taken at once, as if just read.
+   */
+  open(id: string, primed?: ApiResult<unknown>): void;
   load(): Promise<void>;
   pick(ball: string): Promise<void>;
   /** Leave and forfeit (a live series still open): the match is lost at once. */
@@ -55,7 +58,11 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     const view = host.view();
     const headers: Record<string, string> =
       view?.id === id && etag !== null ? { 'If-None-Match': etag } : {};
-    const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
+    take(await callApi<unknown>('GET', `series/${id}`, undefined, headers));
+  }
+
+  /** What a read answered. */
+  function take(answer: ApiResult<unknown>): void {
     if (answer.ok) {
       host.heard(answer.clock);
       if (answer.status !== 304) etag = answer.etag;
@@ -73,9 +80,10 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
   }
 
   return {
-    open(next) {
+    open(next, primed) {
       id = next;
       etag = null;
+      if (primed !== undefined) take(primed);
     },
     load,
     async pick(ball) {

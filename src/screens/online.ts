@@ -10,9 +10,11 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
+import type { CurrentMatch } from '../api/live.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
+import { createPrimer } from './online-prime.ts';
 import { failureLine } from './online-failure-text.ts';
 
 export interface OnlineHost {
@@ -61,14 +63,23 @@ export function createOnlineScreens(
     return node;
   };
   const challengeNotice = section('online-challenge', 'Challenge');
+  const challengeLoading = section('online-challenge-loading', 'Challenge');
   const lineupRoot = section('online-lineup', 'Your lineup');
   const seriesNotice = section('online-series-notice', 'Online series');
+  const seriesLoading = section('online-series-loading', 'Online series');
   const panel = section('online-series', 'Online series');
   const exit = element('div', 'series-exit');
   exit.hidden = true;
   // Beside the offline screens: before the health bars, and the way out under them.
   const status = hud.querySelector('#hud-status');
-  for (const node of [challengeNotice, lineupRoot, seriesNotice, panel]) {
+  for (const node of [
+    challengeNotice,
+    challengeLoading,
+    lineupRoot,
+    seriesNotice,
+    seriesLoading,
+    panel,
+  ]) {
     hud.insertBefore(node, status);
   }
   foot.append(exit);
@@ -76,9 +87,21 @@ export function createOnlineScreens(
   const home = () => {
     host.home();
   };
-  const play = createOnlinePlay({ panel, exit, notice: seriesNotice }, lookup, { ...host, home });
+  // Moving into a series reads it first, so its screen shows complete (ADR 0054).
+  const primer = createPrimer();
+  const toMatch = async (match: CurrentMatch): Promise<void> => {
+    if (match.kind === 'series') await primer.series(match.id);
+    host.go((url) => {
+      writeMatchParams(url, match);
+    });
+  };
+  const play = createOnlinePlay(
+    { panel, exit, notice: seriesNotice, loading: seriesLoading },
+    lookup,
+    { ...host, home, primed: (id) => primer.takeSeries(id) },
+  );
   const challenges = createChallengeScreens(
-    { notice: challengeNotice, lineup: lineupRoot },
+    { notice: challengeNotice, lineup: lineupRoot, loading: challengeLoading },
     balls,
     {
       go: (write) => {
@@ -95,14 +118,12 @@ export function createOnlineScreens(
         host.modes();
       },
       storage: host.storage,
+      primeSeries: (id) => primer.series(id),
+      toMatch,
     },
   );
 
-  const back = createBackToMatch((match) => {
-    host.go((url) => {
-      writeMatchParams(url, match);
-    });
-  });
+  const back = createBackToMatch(toMatch);
   const backToMatch = {
     element: back.element,
     /** Asks for the player's live match, only on a device that has played online. */

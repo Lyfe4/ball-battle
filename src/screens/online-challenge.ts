@@ -13,6 +13,8 @@ import type { BallDefinition } from '../sim/types.ts';
 import type { Draft } from '../ui/lineup-draft.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
+import { createSkeleton } from '../ui/skeleton.ts';
+import type { CurrentMatch } from '../api/live.ts';
 import { inAMatchCard } from './current-match.ts';
 import { adultCard, cardFor, shareLink } from './online-challenge-text.ts';
 import { onlineNotice } from './online-text.ts';
@@ -31,6 +33,10 @@ export interface ChallengeHost {
   /** Other modes, where challenges are sent from. */
   modes(): void;
   readonly storage: DeviceStorage;
+  /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
+  primeSeries(id: string): Promise<void>;
+  /** Goes to the player's live match or lobby, read first. */
+  toMatch(match: CurrentMatch): Promise<void>;
 }
 
 export interface ChallengeScreens {
@@ -52,7 +58,12 @@ const CARD_SAYS: ReadonlySet<ErrorCode> = new Set([
 ]);
 
 export function createChallengeScreens(
-  roots: { readonly notice: HTMLElement; readonly lineup: HTMLElement },
+  roots: {
+    readonly notice: HTMLElement;
+    readonly lineup: HTMLElement;
+    /** The card's layout while it loads on its own (a link opened cold, a reload). */
+    readonly loading: HTMLElement;
+  },
   balls: readonly BallDefinition[],
   host: ChallengeHost,
 ): ChallengeScreens {
@@ -66,11 +77,13 @@ export function createChallengeScreens(
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
 
-  const notice = createNotice(roots.notice, () => {
+  const back = () => {
     host.back(() => {
       host.home();
     });
-  });
+  };
+  const notice = createNotice(roots.notice, back);
+  createSkeleton(roots.loading, 'card', back);
   const lineup = createLineupStep(balls, {
     onBack: () => {
       host.back(() => {
@@ -96,11 +109,25 @@ export function createChallengeScreens(
     lobby = undefined;
   }
 
-  function show(part: 'notice' | 'lineup', content?: NoticeContent): void {
+  /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
+  function show(
+    part: 'notice' | 'lineup' | 'loading',
+    content?: NoticeContent,
+    focus = true,
+  ): void {
     stopLobby();
     roots.notice.hidden = !visible || part !== 'notice';
     roots.lineup.hidden = !visible || part !== 'lineup';
-    if (content !== undefined) notice.show(content);
+    roots.loading.hidden = !visible || part !== 'loading';
+    if (content !== undefined) notice.show(content, focus);
+  }
+
+  /** Into series `id` once it is read, in place of this screen. */
+  async function intoSeries(id: string): Promise<void> {
+    await host.primeSeries(id);
+    host.replaceWith((url) => {
+      writeOnlineSeriesParams(url, id);
+    });
   }
 
   const home = () => {
@@ -126,13 +153,7 @@ export function createChallengeScreens(
     if (answer.kind === 'error' && answer.code === 'in_a_match') {
       show(
         'notice',
-        inAMatchCard(
-          answer.message,
-          (write) => {
-            host.go(write);
-          },
-          home,
-        ),
+        inAMatchCard(answer.message, (match) => host.toMatch(match), home),
       );
       return;
     }
@@ -181,7 +202,11 @@ export function createChallengeScreens(
     const link = answer.body;
     if (link === undefined) return;
     requestId = crypto.randomUUID();
-    // The sender's own card shares the link; this lineup entry becomes it.
+    // The sender's own card (the lobby) shares the link. It is read first, so the button stays
+    // busy until the lobby can show; this lineup entry becomes it.
+    token = link.token;
+    const card = await callApi<ChallengeInfo>('GET', `challenges/${link.token}`);
+    info = card.ok ? card.body : undefined;
     host.replaceWith((url) => {
       writeChallengeParams(url, link.token);
     });
@@ -202,12 +227,11 @@ export function createChallengeScreens(
     const seriesId = answer.body?.seriesId;
     if (seriesId === undefined) return;
     rememberGuest(host.storage, true);
-    host.replaceWith((url) => {
-      writeOnlineSeriesParams(url, seriesId);
-    });
+    await intoSeries(seriesId);
   }
 
-  async function loadCard(): Promise<void> {
+  /** Asks for the card; `focus` false when it already shows (the lobby asking again). */
+  async function loadCard(focus = true): Promise<void> {
     if (token === undefined) return;
     const answer = await callApi<ChallengeInfo>('GET', `challenges/${token}`);
     if (!answer.ok || answer.body === undefined) {
@@ -220,15 +244,17 @@ export function createChallengeScreens(
     // The sender's live link was accepted: straight into the match, in place of the lobby.
     const started = info.seriesId;
     if (info.live && info.own && started !== null) {
-      host.replaceWith((url) => {
-        writeOnlineSeriesParams(url, started);
-      });
+      await intoSeries(started);
       return;
     }
-    show('notice', cardFor(info, cardActions(), inAppBrowserOf(navigator.userAgent)));
-    // Waiting in the lobby: ask again soon (each ask keeps the link open).
-    if (info.live && info.status === 'yours' && visible) {
-      lobby = window.setTimeout(() => void loadCard(), LOBBY_POLL_MS);
+    showCard(info, focus);
+  }
+
+  /** The card for `card`; a waiting lobby asks again soon (each ask keeps the link open). */
+  function showCard(card: ChallengeInfo, focus: boolean): void {
+    show('notice', cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent)), focus);
+    if (card.live && card.status === 'yours' && visible) {
+      lobby = window.setTimeout(() => void loadCard(false), LOBBY_POLL_MS);
     }
   }
 
@@ -238,11 +264,8 @@ export function createChallengeScreens(
     stopLobby();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
     const started = answer.ok ? answer.body?.seriesId : undefined;
-    if (started != null) {
-      host.replaceWith((url) => {
-        writeOnlineSeriesParams(url, started);
-      });
-    } else host.home();
+    if (started != null) await intoSeries(started);
+    else host.home();
   }
 
   function cardActions() {
@@ -277,7 +300,7 @@ export function createChallengeScreens(
       // Back from a share sheet or another app: the lobby asks at once.
       if (visible && lobby !== undefined) {
         stopLobby();
-        void loadCard();
+        void loadCard(false);
       }
     },
     showChallenge(next, step) {
@@ -296,8 +319,16 @@ export function createChallengeScreens(
         });
         return;
       }
-      show('notice', { title: 'Loading…', body: [], buttons: [{ text: 'Home', onClick: home }] });
-      void loadCard();
+      // Read just before (the lobby after Send challenge): shown at once, and asked again as the
+      // lobby does. Else the card's layout until it comes (ADR 0054).
+      if (info === undefined) {
+        show('loading');
+        void loadCard();
+      } else {
+        showCard(info, true);
+        // A card seen before is asked again (it may have been taken); a lobby asks on its own.
+        if (lobby === undefined) void loadCard(false);
+      }
     },
     showSend(format, bestOf) {
       sending = { format, bestOf };
