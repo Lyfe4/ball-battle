@@ -9,7 +9,8 @@
 // disconnect: the friend drops for 12 s and comes back, then drops for good (a forfeit).
 // --slow: the friend's connection gets 150 ms more each way.
 import { mkdirSync } from 'node:fs';
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, type Page } from 'playwright';
+import { pct, phone, player, startMatch, type Phone } from './live-phones.ts';
 
 const [base = 'http://localhost:8888', mode = 'bo3', ...rest] = process.argv.slice(2);
 const slow = rest.includes('--slow');
@@ -18,149 +19,8 @@ const shots = shotsAt >= 0 ? rest[shotsAt + 1] : undefined;
 if (shots !== undefined) mkdirSync(shots, { recursive: true });
 const bestOf = mode === 'bo5' ? 5 : 3;
 
-interface Phone {
-  readonly page: Page;
-  readonly context: BrowserContext;
-  readonly requests: { route: string; status: number; ms: number; at: number }[];
-  /** Each new series version this page was answered, and when. */
-  readonly versions: { version: number; at: number }[];
-  /** Each server clock sample: device times and X-Now. */
-  readonly clock: { sent: number; received: number; server: number }[];
-  /** When this page's live countdown card lifted (a fight started), by this machine's clock. */
-  starts(): Promise<number[]>;
-}
-
-async function phone(browser: Browser, name: string): Promise<Phone> {
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 664 },
-    deviceScaleFactor: 2,
-  });
-  const page = await context.newPage();
-  // Netlify's deploy toolbar covers the page's buttons; each fight's start is noted as it happens.
-  await page.addInitScript(`
-    window.__starts = [];
-    new MutationObserver(() => {
-      document.querySelector('[data-netlify-deploy-id]')?.remove();
-      const layer = document.querySelector('.ready-layer');
-      const count = document.querySelector('.ready-count');
-      const held = layer !== null && !layer.hidden && count !== null && !count.hidden;
-      if (window.__held && !held) window.__starts.push(Date.now());
-      window.__held = held;
-    }).observe(document, { childList: true, subtree: true, attributes: true });
-  `);
-  const requests: Phone['requests'] = [];
-  const versions: Phone['versions'] = [];
-  const clock: Phone['clock'] = [];
-  const sent = new Map<object, number>();
-  page.on('request', (request) => {
-    if (request.url().includes('/api/v1/')) sent.set(request, Date.now());
-  });
-  page.on('response', (response) => {
-    const request = response.request();
-    if (!request.url().includes('/api/v1/')) return;
-    const at = sent.get(request) ?? Date.now();
-    const now = Date.now();
-    const route = `${request.method()} ${new URL(request.url()).pathname.replace(/[0-9a-f-]{36}|[A-Za-z0-9_-]{22}/g, ':id')}`;
-    requests.push({ route, status: response.status(), ms: now - at, at });
-    const server = Number(response.headers()['x-now']);
-    if (Number.isFinite(server)) clock.push({ sent: at, received: now, server });
-    const version = /"v(\d+)/.exec(response.headers()['etag'] ?? '')?.[1];
-    if (version !== undefined && response.status() === 200) {
-      const v = Number(version);
-      if (!versions.some((seen) => seen.version >= v)) versions.push({ version: v, at: now });
-    }
-  });
-  page.on('console', (message) => {
-    if (message.type() === 'error') console.error(`[${name}] ${message.text()}`);
-  });
-  if (slow && name === 'friend') {
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Network.emulateNetworkConditions', {
-      offline: false,
-      latency: 300,
-      downloadThroughput: -1,
-      uploadThroughput: -1,
-    });
-  }
-  return {
-    page,
-    context,
-    requests,
-    versions,
-    clock,
-    starts: () => page.evaluate(() => (globalThis as unknown as { __starts: number[] }).__starts),
-  };
-}
-
 const shot = async (page: Page, name: string) => {
   if (shots !== undefined) await page.screenshot({ path: `${shots}/${name}.png` });
-};
-
-async function lineup(page: Page, done: string, first: number): Promise<void> {
-  const grid = page.locator('#online-lineup .ball-grid button');
-  for (let index = 0; index < bestOf; index += 1) await grid.nth(first + index).click();
-  await page.getByRole('button', { name: done }).click();
-}
-
-async function confirmAge(page: Page): Promise<void> {
-  await page.getByRole('heading', { name: 'Play online' }).waitFor();
-  await page.getByRole('button', { name: 'I’m 16 or older' }).click();
-}
-
-async function start(browser: Browser) {
-  const sender = await phone(browser, 'sender');
-  const friend = await phone(browser, 'friend');
-  await sender.page.goto(`${base}/`);
-  await shot(sender.page, 'home-no-match');
-  await sender.page.goto(`${base}/?view=send&fmt=reveal&mode=bo${String(bestOf)}`);
-  await lineup(sender.page, 'Send challenge', 0);
-  await confirmAge(sender.page);
-  await sender.page.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
-  await shot(sender.page, 'lobby');
-  const token = new URL(sender.page.url()).searchParams.get('challenge') ?? '';
-  await friend.page.goto(`${base}/?challenge=${token}`);
-  await friend.page.getByRole('button', { name: 'Build your lineup' }).click();
-  await lineup(friend.page, 'Accept challenge', bestOf);
-  await confirmAge(friend.page);
-  const accepted = Date.now();
-  await friend.page.waitForURL(/[?&]online=/);
-  await sender.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
-  return { sender, friend, lobbyToMatchMs: Date.now() - accepted };
-}
-
-/** Picks on one page: `delay(n)` ms after its nth pick phase opens, or never (it runs out). */
-async function player(phone: Phone, delay: (n: number) => number | undefined, picks: number[]) {
-  const panel = phone.page.locator('#online-series');
-  let phases = 0;
-  let due: number | undefined;
-  for (;;) {
-    if (
-      await panel
-        .locator('.series-result')
-        .isVisible()
-        .catch(() => false)
-    )
-      return;
-    const pick = panel.locator('.pick-row-pick').first();
-    const open = await pick.isVisible().catch(() => false);
-    if (open && due === undefined) {
-      const wait = delay(phases);
-      phases += 1;
-      due = wait === undefined ? Infinity : Date.now() + wait;
-    }
-    if (!open) due = undefined;
-    if (due !== undefined && Date.now() >= due) {
-      picks.push(Date.now());
-      await pick.click().catch(() => undefined);
-      due = Infinity;
-    }
-    await phone.page.waitForTimeout(200);
-  }
-}
-
-const pct = (list: readonly number[], p: number) => {
-  const sorted = [...list].sort((x, y) => x - y);
-  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
 };
 
 /** The page's own clock estimate: the shortest round trip of all its answers (live-clock.ts). */
@@ -181,7 +41,9 @@ function reached(picks: readonly number[], other: Phone): number[] {
 const browser = await chromium.launch();
 try {
   const begun = Date.now();
-  const { sender, friend, lobbyToMatchMs } = await start(browser);
+  const sender = await phone(browser, 'sender');
+  const friend = await phone(browser, 'friend', { slow });
+  const { lobbyToMatchMs } = await startMatch(base, bestOf, sender, friend, shot);
   if (mode === 'disconnect') {
     await sender.page.waitForTimeout(5_000);
     await friend.context.setOffline(true);
