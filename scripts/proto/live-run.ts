@@ -23,6 +23,12 @@ interface Counted {
 async function phone(browser: Browser, name: string): Promise<Counted> {
   const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: 2 });
   const page = await context.newPage();
+  // Netlify's deploy-preview toolbar sits over the page's buttons: not part of the game.
+  await page.addInitScript(`
+    new MutationObserver(() => {
+      document.querySelector('[data-netlify-deploy-id]')?.remove();
+    }).observe(document, { childList: true, subtree: true });
+  `);
   const requests: Counted['requests'] = [];
   const started = new Map<string, number>();
   page.on('request', (r) => {
