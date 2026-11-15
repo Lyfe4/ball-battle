@@ -2,7 +2,7 @@
 // every time by the database's clock) and the page (which only counts down to those times). A live
 // series is a series by turns with short deadlines, fights the server schedules, and a forfeit for a
 // player who stops asking.
-import type { Format } from '../sim/index.ts';
+import type { Format, Side } from '../sim/index.ts';
 
 /** Seconds each pick has, from when its pick phase opens. Out of time: a random ball. */
 export const PICK_SECONDS = 30;
@@ -41,3 +41,54 @@ const INTRO_MS = 1_200;
 const TICK_WATCH_MS = (1000 / 60) * 1.1;
 /** The knockout: its slow-mo, the result's delay and the winner's celebration, with a margin. */
 const ENDING_MS = 2_600;
+
+/** Why a live series ended early: a deliberate leave, a player gone past the grace, a missed start. */
+export type LiveEndReason = 'timeout' | 'left' | 'disconnected' | 'start_missed';
+
+/**
+ * A live series' clock as a player is sent it (`SeriesView.live`), by the database's time in ms
+ * since the epoch. The database's clock at the read comes in the `X-Now` header of every answer
+ * (a 304 too), so the page can keep its own clock's offset.
+ */
+export interface LiveView {
+  /** When both players had arrived; null while waiting for the other one. */
+  readonly startedAt: number | null;
+  /** Whoever hasn't arrived by then loses. */
+  readonly startBy: number;
+  /** When the current pick phase opened (its deadline is the view's `deadline`). */
+  readonly opensAt: number | null;
+  /** Each played round's Fight! and the end of its watching time at 1x. */
+  readonly fights: readonly {
+    readonly round: number;
+    readonly fightAt: number;
+    readonly endsAt: number;
+  }[];
+  /** Picks the server made at random when their time ran out. */
+  readonly auto: readonly { readonly round: number; readonly side: Side }[];
+  /** The opponent has not asked for AWAY_AFTER_MS: since when, and when they lose. */
+  readonly away: { readonly since: number; readonly forfeitAt: number } | null;
+  readonly endReason: LiveEndReason | null;
+}
+
+/** GET /api/v1/me/match: the live match or lobby to go back to (home's "Back to your match"). */
+export type CurrentMatch =
+  | {
+      readonly kind: 'series';
+      readonly id: string;
+      readonly format: Format;
+      readonly bestOf: 3 | 5;
+      readonly opponent: string | null;
+    }
+  | {
+      readonly kind: 'lobby';
+      readonly token: string;
+      readonly format: Format;
+      readonly bestOf: 3 | 5;
+    };
+
+export interface CurrentMatchResponse {
+  readonly match: CurrentMatch | null;
+}
+
+/** The `X-Now` header: the database's clock (ms since the epoch) when the answer was made. */
+export const NOW_HEADER = 'X-Now';

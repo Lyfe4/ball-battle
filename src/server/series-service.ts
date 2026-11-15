@@ -12,7 +12,7 @@ import type { Config } from './config.ts';
 import type { Sql, TransactionSql } from './db.ts';
 import { markPresent } from './db/live.ts';
 import { loadSeries, type LoadedSeries } from './db/series-record.ts';
-import { writeSeries } from './db/series-write.ts';
+import { forfeitSeries, writeSeries } from './db/series-write.ts';
 import { insertSeriesWithSeeds, settleExpired } from './db/series.ts';
 import { ApiError, type Deps } from './http.ts';
 import { settleLive } from './live-service.ts';
@@ -92,13 +92,25 @@ export async function createSeries(db: Db, config: Config, input: SeriesInput): 
   return id;
 }
 
+/** A series as answered: the player's view, and for a live one the database's clock at the read. */
+export interface Served {
+  readonly view: SeriesView;
+  /** The database's clock (ms since the epoch), for the `X-Now` header; null by turns. */
+  readonly now: number | null;
+}
+
+const served = (series: LoadedSeries, side: Side): Served => ({
+  view: viewOf(series, side),
+  now: series.live?.now ?? null,
+});
+
 /** A player's view of a loaded series; a 404 for anyone not playing in it. */
-function viewFor(series: LoadedSeries | undefined, userId: string): SeriesView {
+function viewFor(series: LoadedSeries | undefined, userId: string): Served {
   const side = series === undefined ? undefined : sideOf(series.players, userId);
   if (series === undefined || side === undefined) {
     throw new ApiError(404, 'not_found', 'No such series');
   }
-  return viewOf(series, side);
+  return served(series, side);
 }
 
 /**
@@ -111,7 +123,7 @@ export async function readSeries(
   id: string,
   userId: string,
   loaded?: LoadedSeries,
-): Promise<SeriesView> {
+): Promise<Served> {
   const series = loaded ?? (await loadSeries(deps.sql, id, userId));
   if (series !== undefined && sideOf(series.players, userId) !== undefined && series.live) {
     return viewFor(await settleLive(deps, series), userId);
@@ -134,7 +146,7 @@ export async function lockPick(
   userId: string,
   request: PickRequest,
   loaded?: LoadedSeries,
-): Promise<SeriesView> {
+): Promise<Served> {
   let series = loaded ?? (await loadSeries(deps.sql, id, userId));
   for (let tries = 0; tries < MOST_TRIES; tries += 1) {
     const side = series === undefined ? undefined : sideOf(series.players, userId);
@@ -148,7 +160,7 @@ export async function lockPick(
     }
     if (series.live !== null) series = await settleLive(deps, series);
     if (series.picks.some((p) => p.round === request.round && p.side === side)) {
-      return viewOf(series, side);
+      return served(series, side);
     }
     const clock = series.live;
     if (
@@ -173,9 +185,34 @@ export async function lockPick(
     const moment = clock === null ? undefined : { lockedAt: clock.now };
     const move = await moveOf(deps.config, series, [pick], due.sides.length === 2, moment);
     const written = await writeSeries(deps.sql, id, series.version, move);
-    if (written !== undefined) return viewOf(after(series, move, written), side);
+    if (written !== undefined) return served(after(series, move, written), side);
     // Another move came first: read the series as it is now and decide again.
     series = await loadSeries(deps.sql, id);
+  }
+  throw new ApiError(409, 'conflict', 'The series is busy: try again');
+}
+
+/**
+ * "Leave and forfeit" (ADR 0053): the player leaves their live series and loses it at once. A
+ * series already over (a forfeit settled first, the last round played) is answered as it is.
+ */
+export async function leaveSeries(deps: Deps, id: string, userId: string): Promise<Served> {
+  for (let tries = 0; tries < MOST_TRIES; tries += 1) {
+    const loaded = await loadSeries(deps.sql, id);
+    const side = loaded === undefined ? undefined : sideOf(loaded.players, userId);
+    if (loaded === undefined || side === undefined) {
+      throw new ApiError(404, 'not_found', 'No such series');
+    }
+    if (loaded.live === null) {
+      throw new ApiError(409, 'not_your_turn', 'Only a live match can be left');
+    }
+    const series = await settleLive(deps, loaded);
+    if (series.status !== 'open') return served(series, side);
+    const winner = side === 'a' ? 'b' : 'a';
+    if (await forfeitSeries(deps.sql, id, series.version, winner, 'left')) {
+      const after = await loadSeries(deps.sql, id);
+      if (after !== undefined) return served(after, side);
+    }
   }
   throw new ApiError(409, 'conflict', 'The series is busy: try again');
 }

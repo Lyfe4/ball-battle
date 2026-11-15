@@ -16,7 +16,7 @@ import {
   openChallengesOf,
   openSeriesOf,
 } from './db/challenges.ts';
-import { liveNowOf, lobbySeen } from './db/live.ts';
+import { cancelLobby, liveNowOf, lobbySeen } from './db/live.ts';
 import { ApiError, type Deps } from './http.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
 import { createSeries } from './series-service.ts';
@@ -191,4 +191,19 @@ export async function acceptChallenge(
     await markAccepted(db, found.id, seriesId);
     return { seriesId };
   });
+}
+
+/**
+ * The sender cancels their live link from the lobby (ADR 0053): it stops, and a friend opening it
+ * is told so. A link already accepted answers its series, so the lobby can go there instead.
+ */
+export async function cancelChallenge(
+  deps: Deps,
+  token: string,
+  creator: string,
+): Promise<ChallengeInfo> {
+  const found = await challengeByHash(deps.sql, await hashOf(token));
+  if (found?.creator !== creator) throw new ApiError(404, 'not_found', 'No such challenge');
+  await cancelLobby(deps.sql, found.id, creator);
+  return challengeInfo(deps, token, creator);
 }

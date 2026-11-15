@@ -3,6 +3,7 @@
 // Nothing seed-shaped is in a view before its lock: only commitments, and the seeds and salts the
 // server has revealed.
 import type { BestOf, Format, PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
+import type { LiveView } from './live.ts';
 
 /** What a seed is for: a round's seed (index 0-4) or Reveal's toss. */
 export type SeedPurpose = 'round' | 'toss' | 'lineup' | 'bot';
@@ -52,6 +53,8 @@ export interface SeriesView {
   readonly version: number;
   /** The whole setup once the series is finished and verified: replays it anywhere. */
   readonly final: SeriesSetup | null;
+  /** A live series' clock (ADR 0053); null for a series by turns. */
+  readonly live: LiveView | null;
 }
 
 /** POST /api/v1/series/:id/picks. */
