@@ -49,6 +49,7 @@ async function finishedView(): Promise<SeriesView> {
     winner: state.winner ?? null,
     version: 3,
     final: setupWithPicks(state),
+    live: null,
   };
 }
 

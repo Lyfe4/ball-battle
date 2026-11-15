@@ -21,6 +21,11 @@ export const LIMITS = {
   challenges: { bucket: 'challenge.create', max: 20, windowSeconds: 3600 },
   /** Picks and acceptances by one player. */
   moves: { bucket: 'move', max: 120, windowSeconds: 600 },
+  /**
+   * Reads by one player: a live match's page asks about once a second, a lobby every 2 s, home
+   * once. Three a second on average over 5 minutes leaves room for a few tabs, not for a loop.
+   */
+  reads: { bucket: 'read', max: 900, windowSeconds: 300 },
 } as const satisfies Record<string, Limit>;
 
 /**
@@ -43,9 +48,17 @@ export async function spend(
       do update set count = game.rate_limits.count + 1
     returning count,
       ceil(extract(epoch from (window_start + ${window}::interval - now())))::integer as retry`;
-  if (row !== undefined && row.count > limit.max) {
+  if (row !== undefined) refuseOver(limit, row);
+}
+
+/** Refuses (429, with Retry-After) once a window's count is past the limit. */
+export function refuseOver(
+  limit: Limit,
+  spent: { readonly count: number; readonly retry: number },
+): void {
+  if (spent.count > limit.max) {
     throw new ApiError(429, 'rate_limited', 'Too many tries: wait a little', {
-      'Retry-After': String(Math.max(1, row.retry)),
+      'Retry-After': String(Math.max(1, spent.retry)),
     });
   }
 }

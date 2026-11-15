@@ -2,7 +2,10 @@
 // of a series. Pure, and tested per format at every step: nothing seed-shaped before its lock,
 // no pick the format hides, and in Blind no opponent lineup until the end.
 import type { SeedCommitment, SeedReveal, SeriesStatus, SeriesView, Turn } from '../api/series.ts';
+import { AWAY_AFTER_MS, START_WINDOW_MS, type LiveView } from '../api/live.ts';
 import type { BestOf, Format, PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
+import type { LiveClock } from './db/series-record.ts';
+import { forfeitAtOf } from './live.ts';
 
 /** One stored seed: its commitment always; its seed and salt only once revealed. */
 export interface SeedRow extends SeedCommitment {
@@ -27,6 +30,8 @@ export interface SeriesRecord {
   readonly winner: Side | null;
   readonly version: number;
   readonly final: SeriesSetup | null;
+  /** A live series' clock (ADR 0053); null or absent for a series by turns. */
+  readonly live?: LiveClock | null;
 }
 
 const other = (side: Side): Side => (side === 'a' ? 'b' : 'a');
@@ -72,6 +77,28 @@ export function viewOf(record: SeriesRecord, viewer: Side): SeriesView {
     winner: record.winner,
     version: record.version,
     final: record.status === 'finished' ? record.final : null,
+    live: record.live == null ? null : liveViewOf(record.live, record.status === 'open', viewer),
+  };
+}
+
+/**
+ * The live clock a player sees: the times the server set, and whether their opponent has gone
+ * quiet (shown after AWAY_AFTER_MS, with when they lose). Never the viewer's own presence.
+ */
+function liveViewOf(clock: LiveClock, open: boolean, viewer: Side): LiveView {
+  const seen = clock.seen[other(viewer)];
+  const away =
+    open && clock.startedAt !== null && seen !== null && clock.now - seen >= AWAY_AFTER_MS
+      ? { since: seen, forfeitAt: forfeitAtOf(seen) }
+      : null;
+  return {
+    startedAt: clock.startedAt,
+    startBy: clock.createdAt + START_WINDOW_MS,
+    opensAt: clock.opensAt,
+    fights: clock.fights,
+    auto: clock.auto,
+    away,
+    endReason: clock.endReason,
   };
 }
 

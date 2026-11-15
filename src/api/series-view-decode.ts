@@ -2,6 +2,7 @@
 // malformed or unexpected answer is refused in one place rather than breaking a screen later.
 // The final setup is checked by verifySeries itself, so here it is only an object or null.
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
+import type { LiveEndReason, LiveView } from './live.ts';
 import type {
   SeedCommitment,
   SeedPurpose,
@@ -71,6 +72,50 @@ function revealOf(value: unknown): SeedReveal | undefined {
   return isInt(seed, 0, 0xffff_ffff) && isHex(salt, 16) ? { ...committed, seed, salt } : undefined;
 }
 
+const isTime = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0;
+const timeOrNull = (value: unknown): number | null | undefined =>
+  value === null ? null : isTime(value) ? value : undefined;
+const END_REASONS: readonly LiveEndReason[] = ['timeout', 'left', 'disconnected', 'start_missed'];
+
+/** A live series' clock: null for a series by turns, undefined when malformed. */
+function liveOf(value: unknown): LiveView | null | undefined {
+  if (value === null) return null;
+  if (!isRecord(value)) return undefined;
+  const { startBy, away, endReason } = value;
+  const startedAt = timeOrNull(value['startedAt']);
+  const opensAt = timeOrNull(value['opensAt']);
+  const fights = listOf(value['fights'], (f) =>
+    isRecord(f) && isInt(f['round'], 0, 4) && isTime(f['fightAt']) && isTime(f['endsAt'])
+      ? { round: f['round'], fightAt: f['fightAt'], endsAt: f['endsAt'] }
+      : undefined,
+  );
+  const auto = listOf(value['auto'], (p) =>
+    isRecord(p) && isInt(p['round'], 0, 4) && isSide(p['side'])
+      ? { round: p['round'], side: p['side'] }
+      : undefined,
+  );
+  const gone =
+    away === null
+      ? null
+      : isRecord(away) && isTime(away['since']) && isTime(away['forfeitAt'])
+        ? { since: away['since'], forfeitAt: away['forfeitAt'] }
+        : undefined;
+  const reason = endReason === null ? null : END_REASONS.find((r) => r === endReason);
+  if (
+    startedAt === undefined ||
+    opensAt === undefined ||
+    !isTime(startBy) ||
+    fights === undefined ||
+    auto === undefined ||
+    gone === undefined ||
+    reason === undefined
+  ) {
+    return undefined;
+  }
+  return { startedAt, startBy, opensAt, fights, auto, away: gone, endReason: reason };
+}
+
 const nameOf = (value: unknown): string | null | undefined =>
   value === null ? null : typeof value === 'string' && value.length <= 40 ? value : undefined;
 
@@ -97,7 +142,9 @@ export function decodeSeriesView(raw: unknown): SeriesView | undefined {
   const turnOk: Turn | null | undefined =
     turn === null ? null : isSide(turn) || turn === 'both' ? turn : undefined;
   const final = raw['final'];
+  const live = liveOf(raw['live'] ?? null);
   if (
+    live === undefined ||
     nameA === undefined ||
     nameB === undefined ||
     lineupA === undefined ||
@@ -134,5 +181,6 @@ export function decodeSeriesView(raw: unknown): SeriesView | undefined {
     winner,
     version: raw['version'],
     final: final as SeriesSetup | null,
+    live,
   };
 }

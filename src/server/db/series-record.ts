@@ -7,6 +7,7 @@ import type { SeriesStatus, Turn } from '../../api/series.ts';
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { EndReason, FightTime } from '../live.ts';
+import type { Limit } from '../rate-limit.ts';
 import type { SeedRow } from '../view.ts';
 import type { SeriesRow } from './series.ts';
 
@@ -33,6 +34,8 @@ export interface LoadedSeries extends SeriesRow {
   readonly seeds: readonly SeedRow[];
   /** Null for a series by turns. */
   readonly live: LiveClock | null;
+  /** The reader's count in its rate-limit window, when the read was counted. */
+  readonly spent?: { readonly count: number; readonly retry: number };
 }
 
 interface Raw {
@@ -68,21 +71,35 @@ interface Raw {
   readonly end_reason: LiveClock['endReason'];
   readonly seen_a: Date | null;
   readonly seen_b: Date | null;
+  readonly spent_count: number | null;
+  readonly spent_retry: number | null;
 }
 
 const msOf = (date: Date | null): number | null => (date === null ? null : date.getTime());
 
 /**
  * The series with everything about it, in one round trip; undefined when there is none. When
- * `reader` plays in an open live series, this read is their heartbeat on it.
+ * `reader` plays in an open live series, this read is their heartbeat on it; with `limit`, the read
+ * is counted against the reader's rate limit in the same statement (see `spend`).
  */
 export async function loadSeries(
   db: Db,
   id: string,
   reader?: string,
+  limit?: Limit,
 ): Promise<LoadedSeries | undefined> {
+  const window = limit === undefined ? null : `${String(limit.windowSeconds)} seconds`;
   const [raw] = await db<Raw[]>`
-    with beat as (
+    with counted as (
+      insert into game.rate_limits (subject, bucket, window_start, count)
+      select ${reader ?? null}::text, ${limit?.bucket ?? null}::text,
+        date_bin(${window}::interval, now(), timestamptz '2000-01-01'), 1
+      where ${window}::text is not null and ${reader ?? null}::text is not null
+      on conflict (subject, bucket, window_start)
+        do update set count = game.rate_limits.count + 1
+      returning count,
+        ceil(extract(epoch from (window_start + ${window}::interval - now())))::integer as retry
+    ), beat as (
       insert into game.presence (series_id, side, seen_at)
       select s.id, case when s.player_a = ${reader ?? null}::uuid then 'a' else 'b' end, now()
       from game.series s
@@ -96,6 +113,7 @@ export async function loadSeries(
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
       s.live, now() as now, s.created_at, s.started_at, s.turn_opens_at, s.end_reason,
+      (select count from counted) as spent_count, (select retry from counted) as spent_retry,
       coalesce((select seen_at from beat where side = 'a'),
         (select seen_at from game.presence x where x.series_id = s.id and x.side = 'a')) as seen_a,
       coalesce((select seen_at from beat where side = 'b'),
@@ -123,7 +141,12 @@ export async function loadSeries(
     left join game.profiles pb on pb.user_id = s.player_b
     where s.id = ${id}`;
   if (raw === undefined) return undefined;
+  const spent =
+    raw.spent_count === null
+      ? {}
+      : { spent: { count: raw.spent_count, retry: raw.spent_retry ?? 1 } };
   return {
+    ...spent,
     id: raw.id,
     ruleset: raw.ruleset,
     format: raw.format,
