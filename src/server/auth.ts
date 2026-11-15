@@ -12,14 +12,37 @@ import type { SessionTokens } from './cookie.ts';
 const CLOCK_TOLERANCE_SECONDS = 30;
 const AUTH_TIMEOUT_MS = 8000;
 
-/** Auth refused (its HTTP status), or couldn't be reached (status 0, the network error as cause). */
+/** Auth's own error codes (`anonymous_provider_disabled`): plain words, never a value. */
+const AUTH_CODE = /^[a-z][a-z0-9_]{1,59}$/;
+
+/**
+ * Auth refused (its HTTP status and, when it gave one, its error code), or couldn't be reached
+ * (status 0, the network error as cause).
+ */
 export class AuthError extends Error {
   override readonly name = 'AuthError';
   readonly status: number;
-  constructor(message: string, status: number, cause?: unknown) {
+  readonly code: string | undefined;
+  constructor(message: string, status: number, cause?: unknown, code?: string) {
     super(message, cause === undefined ? undefined : { cause });
     this.status = status;
+    this.code = code !== undefined && AUTH_CODE.test(code) ? code : undefined;
   }
+}
+
+/** An AuthError for Auth's refusal, with the error code from its body when it sent one. */
+export async function refusalOf(response: Response, message: string): Promise<AuthError> {
+  const body: unknown = await response.json().catch(() => undefined);
+  const code =
+    typeof body === 'object' && body !== null
+      ? (body as Record<string, unknown>)['error_code']
+      : undefined;
+  return new AuthError(
+    message,
+    response.status,
+    undefined,
+    typeof code === 'string' ? code : undefined,
+  );
 }
 
 /** `fetch` to Auth, with a network failure turned into an AuthError (status 0). */
@@ -32,6 +55,9 @@ export function fetchAuth(url: string, init: RequestInit): Promise<Response> {
     );
   });
 }
+
+/** The asymmetric algorithms Auth signs access tokens with; the legacy shared secret is refused. */
+export const SIGNING_ALGORITHMS: readonly string[] = ['ES256', 'RS256', 'EdDSA'];
 
 type KeySet = ReturnType<typeof createRemoteJWKSet>;
 const keySets = new Map<string, KeySet>();
@@ -52,7 +78,7 @@ export async function verifyAccess(config: Config, token: string, now?: Date): P
     const { payload } = await jwtVerify(token, keysOf(config), {
       issuer: `${config.supabaseUrl}/auth/v1`,
       audience: 'authenticated',
-      algorithms: ['ES256', 'RS256', 'EdDSA'],
+      algorithms: [...SIGNING_ALGORITHMS],
       clockTolerance: CLOCK_TOLERANCE_SECONDS,
       ...(now === undefined ? {} : { currentDate: now }),
     });
@@ -90,7 +116,7 @@ async function tokenCall(
     signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
   });
   if (!response.ok) {
-    throw new AuthError(`Auth answered ${String(response.status)}`, response.status);
+    throw await refusalOf(response, `Auth answered ${String(response.status)}`);
   }
   const answer = (await response.json()) as Record<string, unknown>;
   const access = answer['access_token'];

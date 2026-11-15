@@ -7,6 +7,7 @@
 import { errors } from 'jose';
 import postgres from 'postgres';
 import { AuthError } from './auth.ts';
+import { AuthSettingError } from './auth-health.ts';
 import { ConfigError } from './config.ts';
 import { ApiError } from './http-error.ts';
 
@@ -75,12 +76,16 @@ export function failureOf(error: unknown, stage?: Stage): string {
   // Our own messages: they name a setting or a ruleset, never a value.
   if (error instanceof ConfigError) return `config: ${error.message}`;
   if (error instanceof RulesetError) return `ruleset: ${error.message}`;
+  if (error instanceof AuthSettingError) return `auth: ${error.message}`;
   if (error instanceof ApiError) {
     if (error.code === 'ruleset_missing') return 'ruleset: no frozen bundle on this server';
     return `${stage ?? 'internal'}: ${error.code}`;
   }
   if (error instanceof AuthError) {
-    if (error.status !== 0) return `auth: Supabase Auth answered ${String(error.status)}`;
+    if (error.status !== 0) {
+      const code = error.code === undefined ? '' : ` ${error.code}`;
+      return `auth: Supabase Auth answered ${String(error.status)}${code}`;
+    }
     const cause = codeOf(error.cause);
     return `auth: Supabase Auth unreachable${cause === undefined ? '' : ` (${described(cause)})`}`;
   }

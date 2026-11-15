@@ -1,7 +1,7 @@
 // A failure is logged by stage and kind, and nothing secret ever reaches the log line: not a
 // password in a connection string, not a token in an error's message, cause or stack.
 import { describe, expect, it } from 'vitest';
-import { AuthError } from './auth.ts';
+import { AuthError, refusalOf } from './auth.ts';
 import { ConfigError, configOf } from './config.ts';
 import { databaseFor } from './db.ts';
 import { failureOf, RulesetError } from './failure.ts';
@@ -80,6 +80,12 @@ describe('a failure in the log', () => {
 
   it('names Auth refusing or unreachable, the ruleset bundle, and our own 5xx answers', () => {
     expect(failureOf(new AuthError('x', 503))).toBe('auth: Supabase Auth answered 503');
+    expect(failureOf(new AuthError('x', 422, undefined, 'anonymous_provider_disabled'))).toBe(
+      'auth: Supabase Auth answered 422 anonymous_provider_disabled',
+    );
+    expect(failureOf(new AuthError('x', 422, undefined, `key=${SECRET}`))).toBe(
+      'auth: Supabase Auth answered 422',
+    );
     const unreachable = new AuthError(
       'x',
       0,
@@ -96,6 +102,19 @@ describe('a failure in the log', () => {
     );
     expect(failureOf(Object.assign(new Error('x'), { code: '28P01' }), 'database')).toBe(
       'database: 28P01 password authentication failed',
+    );
+  });
+
+  it('names Auth’s own error code from its answer, such as anonymous sign-ins being off', async () => {
+    const answer = new Response(
+      JSON.stringify({ code: 422, error_code: 'anonymous_provider_disabled', msg: 'x' }),
+      { status: 422 },
+    );
+    expect(failureOf(await refusalOf(answer, 'x'))).toBe(
+      'auth: Supabase Auth answered 422 anonymous_provider_disabled',
+    );
+    expect(failureOf(await refusalOf(new Response('not json', { status: 500 }), 'x'))).toBe(
+      'auth: Supabase Auth answered 500',
     );
   });
 
