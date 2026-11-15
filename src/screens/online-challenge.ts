@@ -4,6 +4,7 @@
 // the flow, never on load. Every state has a way on (ADR 0027).
 import type { ErrorCode } from '../api/errors.ts';
 import { callApi, failureKindOf, type ApiFailure } from '../app/api.ts';
+import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
@@ -84,9 +85,8 @@ export function createChallengeScreens(
     onChange: (tray) => {
       draft = tray;
     },
-    onDone: (own) => {
-      void (sending === undefined ? accept(own) : send(own));
-    },
+    // Send challenge and Accept challenge are requests: the button shows it is working.
+    onDone: (own) => (sending === undefined ? accept(own) : send(own)),
   });
   roots.lineup.classList.add('series-setup');
   roots.lineup.replaceChildren(lineup.element);
@@ -108,13 +108,13 @@ export function createChallengeScreens(
   };
 
   /** A failure as a notice; an `unauthenticated` one first asks for the 16+ confirmation. */
-  function failed(answer: ApiFailure, retry: () => void): void {
+  function failed(answer: ApiFailure, retry: () => Promise<unknown>): void {
     if (answer.kind === 'error' && answer.code === 'unauthenticated') {
       rememberGuest(host.storage, false);
       show(
         'notice',
         adultCard(
-          () => void startGuest(retry),
+          () => startGuest(retry),
           () => {
             host.back(home);
           },
@@ -143,12 +143,12 @@ export function createChallengeScreens(
    * The first online action on a device with no guest asks for the 16+ confirmation before any
    * request (a device that lost its cookie meets the same card after a 401). True when it asked.
    */
-  function askFirst(then: () => void): boolean {
+  function askFirst(then: () => Promise<unknown>): boolean {
     if (hasGuest(host.storage)) return false;
     show(
       'notice',
       adultCard(
-        () => void startGuest(then),
+        () => startGuest(then),
         () => {
           host.back(home);
         },
@@ -158,23 +158,24 @@ export function createChallengeScreens(
   }
 
   /** Makes the guest (the first online action), then does what was asked. */
-  async function startGuest(then: () => void): Promise<void> {
+  async function startGuest(then: () => Promise<unknown>): Promise<void> {
     const made = await callApi<unknown>('POST', 'session', { adult: true });
     if (!made.ok) {
-      failed(made, () => void startGuest(then));
+      failed(made, () => startGuest(then));
       return;
     }
     rememberGuest(host.storage, true);
-    then();
+    // The age card's button stays busy through the request it was asked for.
+    await then();
   }
 
   async function send(own: Lineup): Promise<void> {
-    if (sending === undefined || askFirst(() => void send(own))) return;
+    if (sending === undefined || askFirst(() => send(own))) return;
     // Live (ADR 0053): both players in the match until it ends.
     const body = { ...sending, lineup: own, requestId, live: true };
     const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
     if (!answer.ok) {
-      failed(answer, () => void send(own));
+      failed(answer, () => send(own));
       return;
     }
     const link = answer.body;
@@ -187,7 +188,7 @@ export function createChallengeScreens(
   }
 
   async function accept(own: Lineup): Promise<void> {
-    if (token === undefined || askFirst(() => void accept(own))) return;
+    if (token === undefined || askFirst(() => accept(own))) return;
     const answer = await callApi<Accepted>('POST', `challenges/${token}/accept`, { lineup: own });
     if (!answer.ok) {
       if (answer.kind === 'error' && answer.code !== undefined && CARD_SAYS.has(answer.code)) {
@@ -195,7 +196,7 @@ export function createChallengeScreens(
         await loadCard();
         return;
       }
-      failed(answer, () => void accept(own));
+      failed(answer, () => accept(own));
       return;
     }
     const seriesId = answer.body?.seriesId;
@@ -212,7 +213,7 @@ export function createChallengeScreens(
     if (!answer.ok || answer.body === undefined) {
       if (!answer.ok && answer.kind === 'error' && answer.status === 404) {
         show('notice', cardFor(undefined, cardActions()));
-      } else if (!answer.ok) failed(answer, () => void loadCard());
+      } else if (!answer.ok) failed(answer, () => loadCard());
       return;
     }
     info = answer.body;
@@ -224,7 +225,7 @@ export function createChallengeScreens(
       });
       return;
     }
-    show('notice', cardFor(info, cardActions()));
+    show('notice', cardFor(info, cardActions(), inAppBrowserOf(navigator.userAgent)));
     // Waiting in the lobby: ask again soon (each ask keeps the link open).
     if (info.live && info.status === 'yours' && visible) {
       lobby = window.setTimeout(() => void loadCard(), LOBBY_POLL_MS);
@@ -263,7 +264,7 @@ export function createChallengeScreens(
         host.modes();
       },
       share: () => shareLink(current),
-      cancel: () => void cancel(),
+      cancel: () => cancel(),
     };
   }
 

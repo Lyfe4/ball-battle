@@ -2,12 +2,14 @@
 // header with Back, a short body, and the buttons that move on, the first the primary. One look
 // for every notice: a link from another version, and online play's states (loading, offline, a
 // challenge already taken, the 16+ confirmation).
+import { busyOnClick } from './busy-button.ts';
 import { element } from './dom.ts';
 import { createScreenHeader } from './screen-header.ts';
 
 export interface NoticeButton {
   readonly text: string;
-  readonly onClick: () => void;
+  /** A request (it returns a promise) shows on the button until it settles (busy-button.ts). */
+  readonly onClick: () => unknown;
   /** An accessible name, when the text alone isn't enough. */
   readonly label?: string;
 }
@@ -47,7 +49,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
           );
           button.type = 'button';
           if (spec.label !== undefined) button.setAttribute('aria-label', spec.label);
-          button.addEventListener('click', spec.onClick);
+          busyOnClick(button, spec.onClick);
           return button;
         }),
       );

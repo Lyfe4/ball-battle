@@ -216,3 +216,8 @@
     font-size: var(--font-size-small);
   }
 }
+
+/* A pick on its way to the server (busy-button.ts): the other rows wait, dimmed. */
+.pick-rows-list[aria-busy='true'] .pick-row:not(:has([aria-busy='true'])) {
+  opacity: 0.5;
+}

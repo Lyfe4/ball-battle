@@ -410,6 +410,44 @@ both pages estimated it within 5 ms of each other.
 | -------------------------------------------------------------------- | ---------------------------------------------------- |
 | ![Back to your match in Play's place](../images/live/home-match.png) | ![Play, as always](../images/live/home-no-match.png) |
 
+### Smooth fights on both phones, and buttons that show they work (2026-11-15)
+
+Played phone against phone on `main`'s deploy, the friend who opened the link had slow, choppy
+fights; the sender's were smooth. Measured with `scripts/live-frames.ts` (two phones at 390 x 664
+on one PC, a whole live match, frames noted only while a fight plays):
+
+| Build             | Chromium, 4x CPU | Chromium, 10x CPU (sender / friend) | WebKit (sender / friend) | DOM changes a fight-minute |
+| ----------------- | ---------------- | ----------------------------------- | ------------------------ | -------------------------- |
+| Before            | 0% / 0% dropped  | 13.2% / 10.9% (11.0% / 10.0% rerun) | 0.9% / 0.8%              | ~59,000                    |
+| After (this work) | -                | 0.4% / 0.3%                         | 0.8% / 0.8%              | ~570                       |
+
+- **Not the role.** Both roles are one screen (`online-play.ts`) and measured the same on one
+  machine in every run; neither page keeps a timer or listener from the card or the lineup. What a
+  slower device shows is the work the page did beside every fight, on both sides: each read (once
+  a second) adopted the series again even when nothing moved, re-laid out the page and drew the
+  arena outside its own frames; the countdown ticker drew the arena four times a second; and the
+  series panel rewrote about 16 attributes and two text nodes on every frame (offline too). On a
+  fast phone that hides; on a slower one, or one in Low Power Mode, or an app's own browser with
+  its scripts watching the page, it drops frames. The friend's phone was the slower case.
+- **Now:** an answer that changes nothing is the heartbeat only; the ticker draws only while no
+  fight plays; per-frame writes go through `setText`, `setHidden` and `setAttr`, which write only a
+  change. A better clock estimate never re-stages a fight under way (it never did; now a test says
+  so). `online-play.browser.test.ts` opens a live fight as each role and fails on any of these.
+- **In-app browsers:** a link opened inside Instagram, Messenger, Facebook, TikTok, Snapchat,
+  LINE, LinkedIn, X, WeChat or an Android web view gets one line on the friend's card, before
+  Accept: "For the smoothest game, open the link in Safari first" (`in-app-browser.ts`). Before,
+  because each browser keeps its own guest cookie: switching after Accept is a different player.
+  Apps that open links in Safari's own view (Messages, WhatsApp, Discord) are Safari.
+- **Buttons that wait on the server** (every online action takes one to three seconds) use one
+  component, `busyOnClick` / `holdBusy` (`src/ui/busy-button.ts`): busy from the tap (`aria-busy`,
+  a spoken "working", a second tap does nothing), then after 180 ms a small ball bounces in place
+  of the words, which stay transparent so the button keeps its size; three still dots with reduced
+  motion. A pick shows it on the ball tapped and dims the rest of the grid.
+
+| Send challenge                           | A pick                                   | Leave and forfeit                         | Reduced motion                                              | Opened in Instagram                                     |
+| ---------------------------------------- | ---------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| ![Working](../images/live/busy-send.png) | ![Working](../images/live/busy-pick.png) | ![Working](../images/live/busy-leave.png) | ![Three still dots](../images/live/busy-accept-reduced.png) | ![Open in Safari first](../images/live/in-app-card.png) |
+
 ## Consequences
 
 - Friend matches become something two people do together; play by turns is kept for later.

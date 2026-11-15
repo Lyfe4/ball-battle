@@ -1,6 +1,7 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
 import { PICK_SECONDS } from '../api/live.ts';
+import { inAppLine, type InAppBrowser } from '../app/in-app-browser.ts';
 import type { NoticeContent } from '../ui/notice.ts';
 import { STAY_LINE } from './live-text.ts';
 import { challengeLine } from './online-text.ts';
@@ -18,7 +19,7 @@ export interface CardActions {
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
   /** The sender stops waiting in a live lobby (ADR 0053). */
-  readonly cancel: () => void;
+  readonly cancel: () => Promise<unknown>;
 }
 
 /** What a live match is, said on both players' cards before it starts (ADR 0053). */
@@ -43,8 +44,15 @@ export async function shareLink(token: string): Promise<string> {
   }
 }
 
-/** What a challenge's card says and offers; `undefined` is a link nobody made. */
-export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): NoticeContent {
+/**
+ * What a challenge's card says and offers; `undefined` is a link nobody made. `inApp`: the link was
+ * opened inside an app's own browser, so a live challenge's card suggests the phone's browser first.
+ */
+export function cardFor(
+  info: ChallengeInfo | undefined,
+  actions: CardActions,
+  inApp?: InAppBrowser,
+): NoticeContent {
   const home = { text: 'Home', onClick: actions.home };
   const own = { text: 'Challenge a friend', onClick: actions.sendOwn };
   if (info === undefined) {
@@ -61,7 +69,12 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
       return {
         title: `${from} challenges you`,
         body: info.live
-          ? [what, `Build your lineup without seeing theirs. ${LIVE_LINE}`, STAY_LINE]
+          ? [
+              what,
+              `Build your lineup without seeing theirs. ${LIVE_LINE}`,
+              STAY_LINE,
+              ...(inApp === undefined ? [] : [inAppLine(inApp)]),
+            ]
           : [
               what,
               'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
@@ -159,7 +172,7 @@ function shareButton(actions: CardActions) {
  * The first online action asks once (ADR 0052 section 6): online play is for players 16 and over,
  * and says what is kept. Confirming makes the guest.
  */
-export function adultCard(confirm: () => void, cancel: () => void): NoticeContent {
+export function adultCard(confirm: () => Promise<unknown>, cancel: () => void): NoticeContent {
   return {
     title: 'Play online',
     body: [

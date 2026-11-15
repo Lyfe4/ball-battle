@@ -1,4 +1,5 @@
-import { element } from '../dom.ts';
+import { busyOnClick } from '../busy-button.ts';
+import { element, setHidden, setText } from '../dom.ts';
 
 export interface LeaveConfirm {
   /** The way out: the Leave series link, or the confirm row in its place. */
@@ -20,7 +21,7 @@ export interface LeaveConfirm {
  * row into the question with Stay and Leave under it. No modal: the fight goes on behind it. Stay is
  * the default (first, primary, focused, and Escape means Stay); only Leave leaves.
  */
-export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfirm {
+export function createLeaveConfirm(onLeave: () => unknown, ask = true): LeaveConfirm {
   const root = element('div', 'leave-confirm');
   const link = element('button', 'text-link series-leave', ask ? 'Leave series' : 'Home');
   link.type = 'button';
@@ -72,24 +73,32 @@ export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfir
   stay.addEventListener('click', () => {
     close(true);
   });
-  leave.addEventListener('click', () => {
+  // A live match's Leave and forfeit is a request: the question stays, its Leave working, until
+  // it is done (busy-button.ts).
+  busyOnClick(leave, () => {
+    const out = onLeave();
+    if (out instanceof Promise) {
+      return out.finally(() => {
+        close(false);
+      });
+    }
     close(false);
-    onLeave();
+    return undefined;
   });
 
   return {
     element: root,
     setHidden(hidden) {
       if (hidden) close(false);
-      root.hidden = hidden;
+      setHidden(root, hidden);
     },
     close() {
       close(false);
     },
     setLive(live) {
       asks = live || ask;
-      link.textContent = live ? 'Leave match' : words.link;
-      question.textContent = live ? 'Leave and forfeit?' : words.question;
+      setText(link, live ? 'Leave match' : words.link);
+      setText(question, live ? 'Leave and forfeit?' : words.question);
     },
   };
 }

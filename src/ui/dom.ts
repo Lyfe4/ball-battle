@@ -15,6 +15,19 @@ export function setText(node: HTMLElement, text: string): void {
   if (node.textContent !== text) node.textContent = text;
 }
 
+/**
+ * Shows or hides only when it changed: an attribute written every frame, even with the same value,
+ * is a DOM mutation each time (style work, and anything watching the page reacts).
+ */
+export function setHidden(node: HTMLElement, hidden: boolean): void {
+  if (node.hidden !== hidden) node.hidden = hidden;
+}
+
+/** Sets an attribute only when it changed (see `setHidden`). */
+export function setAttr(node: HTMLElement, name: string, value: string): void {
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
 /** The element with `id`, which the page must have as a `type`: a missing part is a broken page. */
 export function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const found = document.getElementById(id);

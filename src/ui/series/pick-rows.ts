@@ -2,6 +2,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { leanOf, matchupTip, type Lean } from '../balls/matchups.ts';
+import { holdBusy } from '../busy-button.ts';
 import { element } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
 import { BOT_SEATS, type Seats } from './seats.ts';
@@ -32,7 +33,10 @@ const KEY_ORDER: readonly Lean[] = ['favoured', 'even', 'unfavoured'];
  * the rows says what the marks mean without any gesture, and each row's accessible name says it
  * all in words. Nothing says which ball the bot will play: the player makes their own read.
  */
-export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) => void): PickRows {
+export function createPickRows(
+  lookup: DefinitionLookup,
+  onPick: (ball: string) => unknown,
+): PickRows {
   const root = element('div', 'pick-rows');
   const head = element('div', 'pick-rows-head');
   // The rows' names say every opponent in words.
@@ -94,8 +98,16 @@ export function createPickRows(lookup: DefinitionLookup, onPick: (ball: string) 
     );
     const verb = choice.kind === 'show' ? 'Show' : choice.kind === 'open' ? 'Open with' : 'Play';
     pick.setAttribute('aria-label', `${verb} ${nameOf(ball)}: ${leans.join(', ')}`);
+    // Online a pick is a request: the ball tapped shows it is working and the others wait, so a
+    // second tap (on it or another ball) never sends a second pick (busy-button.ts).
     pick.addEventListener('click', () => {
-      onPick(ball);
+      if (rows.getAttribute('aria-busy') === 'true') return;
+      const out = onPick(ball);
+      if (!(out instanceof Promise)) return;
+      rows.setAttribute('aria-busy', 'true');
+      void holdBusy(pick, out, `Picking ${nameOf(ball)}…`).finally(() => {
+        rows.removeAttribute('aria-busy');
+      });
     });
     // The marks beside the pick button, never inside it: a tap on one explains, never picks.
     const marks = choice.opponents.map((face) => {

@@ -33,15 +33,14 @@ export function inAMatchCard(
     buttons: [
       {
         text: 'Back to your match',
-        onClick: () => {
-          void currentMatch().then((match) => {
+        onClick: () =>
+          currentMatch().then((match) => {
             if (match == null) home();
             else
               go((url) => {
                 writeMatchParams(url, match);
               });
-          });
-        },
+          }),
       },
       { text: 'Home', onClick: home },
     ],
