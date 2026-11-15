@@ -7,7 +7,7 @@ import { dueOf, seatsOf, timeLeft } from '../app/online-series.ts';
 import { otherSide } from '../ui/series/seats.ts';
 import { failureText } from './online-failure-text.ts';
 import { FORMAT_SHORT, bestOfName } from '../ui/series-text.ts';
-import type { NoticeContent } from '../ui/notice.ts';
+import type { NoticeContent } from '../ui/notice-content.ts';
 
 export type LoadStatus = 'loading' | 'ready' | 'missing' | FailureKind;
 

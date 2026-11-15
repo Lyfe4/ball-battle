@@ -259,3 +259,26 @@ export function scoreText(
   const them = short ? seats.them.replace(/^Player (\d+)$/, 'P$1') : seats.them;
   return `Round ${String(round + 1)} · You ${String(you)}–${String(bot)} ${them}`;
 }
+
+/**
+ * The end of a series as its sticker says it (ADR 0055): "You win" or, lost by one round, "Close
+ * one" (else "Player 4821 wins"), the score from the player's side under it ("2–1 vs Player 4821"),
+ * and the whole of it for screen readers, the winner's score first ("Player 4821 wins 2–1").
+ */
+export function resultWords(
+  winner: Side | undefined,
+  seats: Seats,
+  totals: Readonly<Record<Side, number>>,
+): { readonly title: string; readonly below: string; readonly spoken: string } {
+  const mine = totals[seats.you];
+  const theirs = totals[theirSide(seats)];
+  const below = `${String(mine)}–${String(theirs)} vs ${seats.them}`;
+  if (winner === undefined) return { title: 'No winner', below, spoken: `No winner, ${below}` };
+  if (winner === seats.you) {
+    return { title: 'You win', below, spoken: `You win ${String(mine)}–${String(theirs)}` };
+  }
+  const spoken = `${seats.them} wins ${String(theirs)}–${String(mine)}`;
+  if (theirs - mine === 1) return { title: 'Close one', below, spoken };
+  // The title names them already: the score alone under it.
+  return { title: `${seats.them} wins`, below: `You ${String(mine)}–${String(theirs)}`, spoken };
+}

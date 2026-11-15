@@ -118,9 +118,9 @@ export function createOnlinePlay(
     true,
   );
   const fairLine = createFairPlayLine();
-  roots.panel.append(fairLine.element);
-  // A live match's pick card (ADR 0055, B2).
+  // A live match's pick card (ADR 0055, B2); at the end, the fair-play line under the track.
   const clock = createPickClock(lookup, roots.panel);
+  roots.panel.querySelector('#series-track')?.after(fairLine.element);
   const notice = createNotice(roots.notice, () => {
     host.home();
   });

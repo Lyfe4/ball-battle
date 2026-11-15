@@ -260,3 +260,24 @@ guarantees the whole count on both phones.
   (`ready-card.ts`).
 - **The score line fits a phone** (part C item 3): mid-fight a guest is "P6066" in the line
   ("Round 1 · You 0–0 P6066"), the whole name in its accessible name.
+
+### 3. The lobby, the friend's card and the end screen
+
+- **One sticker off the court** (`src/ui/sticker.ts`): the Winner sticker's cream card, tilted, for
+  who challenges you and how a series ended. The notice (`notice.ts`) gains the parts these
+  screens need, as data (`notice-content.ts`, pure, so the words are unit-tested): a sticker in
+  the title's place (the title stays the heading for screen readers), chips, a waiting card with a
+  bouncing ball, steps in a box, the link in a quiet box with Copy, a note and a quiet action.
+- **The friend's card:** "A challenge from / Player 6908" as the sticker, "Best of 3 · Reveal ·
+  Live · 30 s a pick" as chips, "How it goes" in three steps (the last is the stay rule), Build
+  your lineup, and Not now as a quiet link (part C item 8: no title wraps in the header).
+- **The lobby:** "Your challenge", the waiting card ("Waiting for your friend", "Best of 3 · Reveal
+  · live", the ball bouncing, still with reduced motion), Share link as the one main button, the
+  link in a quiet box with Copy, the stay rule, and Cancel challenge as a quiet link (part C item
+  4). Where there is no share sheet (a desktop browser) the main button is Copy link and the box
+  has no second Copy.
+- **The end:** the result as the sticker: "You win / 2–1 vs Player 4821"; a loss by one round is
+  "Close one / 1–2 vs Player 4821", a wider one "Player 4821 wins / You 0–2". The fair-play line
+  sits under the track. Offline series end the same way ("2–1 vs Bot"): one look per state (ADR
+  0038). The end keeps the arena beside it on a desktop, as every series' end does, where the
+  mockup showed none.

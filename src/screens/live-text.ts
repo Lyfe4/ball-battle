@@ -1,13 +1,9 @@
-// A live match's words (ADR 0053), pure: the line under the series (whose pick, the seconds left,
-// a pick made at random, the opponent gone quiet, how it ended) and the one line both players see
-// before it starts. Times are the server's (ms since the epoch); the page only counts down.
-import { GRACE_MS } from '../api/live.ts';
+// A live match's words (ADR 0053, 0055), pure: the line over the series (a pick made at random,
+// how it ended) and the line under a fight. Whose pick it is and the seconds left are the pick
+// card's (pick-clock-text.ts). Times are the server's (ms since the epoch); the page only counts.
 import type { SeriesView } from '../api/series.ts';
 import { secondsUntil } from '../app/live-play.ts';
 import { seatsOf } from '../app/online-series.ts';
-
-/** Said once before a live match starts, to both players (decision 3). */
-export const STAY_LINE = `Stay until the end. Leaving for ${String(GRACE_MS / 1000)} s loses the match.`;
 
 /** How a live series ended early, from the viewer's side; undefined when it was played out. */
 export function liveEnding(view: SeriesView): string | undefined {

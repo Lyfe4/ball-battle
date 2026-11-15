@@ -1,15 +1,21 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
 import type { ErrorCode } from '../api/errors.ts';
-import { PICK_SECONDS } from '../api/live.ts';
+import { GRACE_MS, PICK_SECONDS } from '../api/live.ts';
+import { bestOfName, FORMAT_SHORT } from '../ui/series-text.ts';
 import { inAppLine, type InAppBrowser } from '../app/in-app-browser.ts';
-import type { NoticeContent } from '../ui/notice.ts';
-import { STAY_LINE } from './live-text.ts';
+import type { NoticeContent } from '../ui/notice-content.ts';
 import { challengeLine } from './online-text.ts';
 
 export interface CardActions {
-  /** The link's token: the card shows the link as text, to copy by hand. */
+  /** The link's token. */
   readonly token: string;
+  /** The link itself: the card shows it as text, to read or copy by hand. */
+  readonly url: string;
+  /** This device has a share sheet (phones): Share is the main button, Copy sits by the link. */
+  readonly canShare: boolean;
+  /** The link to the clipboard; resolves to what happened, for the button. */
+  readonly copy: () => Promise<string>;
   readonly home: () => void;
   /** Build a lineup to accept it. */
   readonly lineup: () => void;
@@ -31,27 +37,26 @@ export const CARD_SAYS: ReadonlySet<ErrorCode> = new Set([
   'own_challenge',
 ]);
 
-/** What a live match is, said on both players' cards before it starts (ADR 0053). */
-const LIVE_LINE = `You play live, together: ${String(PICK_SECONDS)} s a pick.`;
+/** The stay rule, as the friend's card's last step and the lobby's line (ADR 0053, 0055). */
+const STAY_STEP = `Stay until the end: leaving for ${String(GRACE_MS / 1000)} s loses the match.`;
 
-/** The link to a challenge, on this site. */
-export const challengeUrl = (token: string): string =>
-  `${window.location.origin}/?challenge=${encodeURIComponent(token)}`;
-
-/** The system share sheet where there is one (phones), else the clipboard. */
-export async function shareLink(token: string): Promise<string> {
-  const url = challengeUrl(token);
-  try {
-    if (typeof navigator.share === 'function') {
-      await navigator.share({ title: 'BallBattle challenge', url });
-      return 'Shared';
-    }
-    await navigator.clipboard.writeText(url);
-    return 'Link copied';
-  } catch {
-    return 'Copy the link above';
-  }
+/** How a live match goes, in three short steps on the friend's card (ADR 0055). */
+export function howItGoes(info: Pick<ChallengeInfo, 'format' | 'bestOf'>): readonly string[] {
+  return [
+    `Build your lineup of ${String(info.bestOf)} without seeing theirs.`,
+    info.format === 'showdown'
+      ? 'Open together; then the winner shows and the loser answers.'
+      : 'Take turns showing a ball; the other answers.',
+    STAY_STEP,
+  ];
 }
+
+/** The facts as chips: "Best of 3", "Reveal", "Live · 30 s a pick". */
+export const challengeChips = (info: Pick<ChallengeInfo, 'format' | 'bestOf'>) => [
+  bestOfName(info.bestOf),
+  FORMAT_SHORT[info.format],
+  `Live · ${String(PICK_SECONDS)} s a pick`,
+];
 
 /**
  * What a challenge's card says and offers; `undefined` is a link nobody made. `inApp`: the link was
@@ -75,19 +80,24 @@ export function cardFor(
   const from = info.from ?? 'A deleted player';
   switch (info.status) {
     case 'open':
+      // Live (ADR 0055): who, as a sticker; the facts as chips; how it goes in three steps.
+      if (info.live) {
+        return {
+          title: `${from} challenges you`,
+          sticker: { above: 'A challenge from', title: from },
+          chips: challengeChips(info),
+          body: inApp === undefined ? [] : [inAppLine(inApp)],
+          steps: { title: 'How it goes', items: howItGoes(info) },
+          buttons: [{ text: 'Build your lineup', onClick: actions.lineup }],
+          quiet: { text: 'Not now', onClick: actions.home },
+        };
+      }
       return {
         title: `${from} challenges you`,
-        body: info.live
-          ? [
-              what,
-              `Build your lineup without seeing theirs. ${LIVE_LINE}`,
-              STAY_LINE,
-              ...(inApp === undefined ? [] : [inAppLine(inApp)]),
-            ]
-          : [
-              what,
-              'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
-            ],
+        body: [
+          what,
+          'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
+        ],
         buttons: [{ text: 'Build your lineup', onClick: actions.lineup }, home],
       };
     case 'stopped':
@@ -120,20 +130,22 @@ export function cardFor(
         };
       }
       if (info.live) {
+        // The lobby (ADR 0055): one main button, Share; the link to read in a quiet box with
+        // Copy; the stay rule; Cancel as a quiet link.
+        const share = actions.canShare;
         return {
-          title: 'Waiting for your friend…',
-          body: [
-            what,
-            'Send them this link: the match starts as soon as they accept.',
-            STAY_LINE,
-            challengeUrl(actions.token),
-          ],
-          buttons: [shareButton(actions), { text: 'Cancel', onClick: actions.cancel }],
+          title: 'Your challenge',
+          waiting: { title: 'Waiting for your friend', line: `${what} · live` },
+          body: [],
+          buttons: [shareButton(actions)],
+          link: share ? { url: actions.url, copy: actions.copy } : { url: actions.url },
+          note: `The match starts the moment they accept. ${STAY_STEP}`,
+          quiet: { text: 'Cancel challenge', onClick: actions.cancel },
         };
       }
       return {
         title: 'Send this link to a friend',
-        body: [what, 'It works once and lasts 7 days.', challengeUrl(actions.token)],
+        body: [what, 'It works once and lasts 7 days.', actions.url],
         buttons: [shareButton(actions), home],
       };
     }
@@ -165,16 +177,8 @@ export function cardFor(
 }
 
 function shareButton(actions: CardActions) {
-  const label = typeof navigator.share === 'function' ? 'Share link' : 'Copy link';
-  return {
-    text: label,
-    onClick: (event?: Event) => {
-      const button = event?.currentTarget;
-      void actions.share().then((done) => {
-        if (button instanceof HTMLElement) button.textContent = done;
-      });
-    },
-  };
+  const label = actions.canShare ? 'Share link' : 'Copy link';
+  return { text: label, onClick: actions.share, relabel: true };
 }
 
 /**
