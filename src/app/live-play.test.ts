@@ -91,15 +91,15 @@ describe('the countdown before a live fight (ADR 0054)', () => {
   it('says Get ready, then counts 3, 2, 1, each for a whole second', () => {
     expect(countdownLine(start, T, early)).toBe('Get ready');
     expect(countdownLine(start, start - 3_001, early)).toBe('Get ready');
-    expect(countdownLine(start, start - 3_000, early)).toBe('Fight in 3…');
-    expect(countdownLine(start, start - 2_001, early)).toBe('Fight in 3…');
-    expect(countdownLine(start, start - 2_000, early)).toBe('Fight in 2…');
-    expect(countdownLine(start, start - 1_000, early)).toBe('Fight in 1…');
-    expect(countdownLine(start, start - 1, early)).toBe('Fight in 1…');
+    expect(countdownLine(start, start - 3_000, early)).toBe('3');
+    expect(countdownLine(start, start - 2_001, early)).toBe('3');
+    expect(countdownLine(start, start - 2_000, early)).toBe('2');
+    expect(countdownLine(start, start - 1_000, early)).toBe('1');
+    expect(countdownLine(start, start - 1, early)).toBe('1');
   });
 
   it('shows the 3-2-1 to a phone that learns in time for all of it', () => {
-    expect(countdownLine(start, start - 2_500, start - 2_900)).toBe('Fight in 3…');
+    expect(countdownLine(start, start - 2_500, start - 2_900)).toBe('3');
   });
 
   it('never joins the 3-2-1 part-way: a phone that learns late keeps Get ready', () => {

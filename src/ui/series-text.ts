@@ -239,3 +239,23 @@ export function finalLine(state: SeriesState, seats: Seats = BOT_SEATS): string 
 
 /** "You" or the other side's label, for a side (the coin's faces, the track's rows). */
 export { labelOf };
+
+/** The score line's content while a round is fought. */
+export interface ScoreLine {
+  /** 0-based. */
+  readonly round: number;
+  readonly you: number;
+  readonly bot: number;
+  /** The full track is open under the line. */
+  readonly open: boolean;
+}
+
+/** "Round 2 · You 1–0 Bot"; `short` names a guest "P4821", so the line fits a phone (ADR 0055). */
+export function scoreText(
+  { round, you, bot }: ScoreLine,
+  seats: Seats = BOT_SEATS,
+  short = false,
+): string {
+  const them = short ? seats.them.replace(/^Player (\d+)$/, 'P$1') : seats.them;
+  return `Round ${String(round + 1)} · You ${String(you)}–${String(bot)} ${them}`;
+}

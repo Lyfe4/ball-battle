@@ -9,16 +9,7 @@ import { BOT_SEATS, type Seats } from './seats.ts';
 import { createSettingsToggle } from '../settings-menu.ts';
 import { createSymbolLegend } from '../symbol-legend.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
-
-/** The score line's content while a round is fought. */
-export interface ScoreLine {
-  /** 0-based. */
-  readonly round: number;
-  readonly you: number;
-  readonly bot: number;
-  /** The full track is open under the line. */
-  readonly open: boolean;
-}
+import { scoreText, type ScoreLine } from '../series-text.ts';
 
 /** The track the score line opens: its id, and what a tap on the line does. */
 export interface TrackControl {
@@ -33,11 +24,6 @@ export interface SeriesBar {
   readonly legend: HTMLElement;
   /** `score` while a round is fought; the phone shows it in place of what is played. */
   show(setup: SeriesSetup, score?: ScoreLine, seats?: Seats): void;
-}
-
-/** "Round 2 · You 1–0 Bot". */
-export function scoreText({ round, you, bot }: ScoreLine, seats: Seats = BOT_SEATS): string {
-  return `Round ${String(round + 1)} · You ${String(you)}–${String(bot)} ${seats.them}`;
 }
 
 /**
@@ -99,7 +85,8 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
       if (line === undefined) return;
       // Called every frame: only changed attributes are written.
       const text = scoreText(line, seats);
-      setText(scoreWords, text);
+      // The line shows the short name; its accessible name says the whole one.
+      setText(scoreWords, scoreText(line, seats, true));
       setAttribute(score, 'aria-expanded', String(line.open));
       setAttribute(score, 'aria-label', `${text}: the series track`);
     },

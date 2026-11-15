@@ -144,17 +144,65 @@
   }
 }
 
-/* A live round's countdown in Fight!'s place (ADR 0053): the same size and weight, as a word, since
-   nothing is pressed: both screens start it together at the server's time. */
+/*
+ * A live round's countdown in Fight!'s place (ADR 0053, 0055 C1): nothing is pressed, both screens
+ * start it together at the server's time. The sticker grows to read across a room: "Get ready" in
+ * display type, then a huge 3, 2, 1 on top, the pairing in small type under it. Each line pops in
+ * (a 120 ms scale) and the sticker lifts away at Fight!, neither with reduced motion.
+ */
 .ready-count {
-  min-height: var(--tap-target);
-  margin: 4px 0 var(--press-depth);
-  font-size: var(--font-size-lead);
+  margin: 0;
+  font-size: var(--font-size-display);
   font-weight: 800;
-  line-height: var(--tap-target);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--letter-spacing-display);
+  line-height: 1.1;
+}
+
+.ready-count[data-number='true'] {
+  font-size: clamp(5rem, 22vmin, 9rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .ready-count[hidden] {
   display: none;
+}
+
+.ready-card[data-live='true'] {
+  min-width: min(80%, 16rem);
+  padding: var(--space-gutter) var(--space-gutter) var(--space-gap);
+  gap: var(--space-small);
+}
+
+.ready-card[data-live='true'] .ready-count {
+  order: -1;
+}
+
+.ready-card[data-live='true'] .pairing {
+  font-size: var(--font-size-small);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ready-count-pop {
+    animation: ready-count-pop 120ms ease-out both;
+  }
+
+  .ready-lift .ready-card {
+    animation: ready-lift 180ms ease-in both;
+  }
+}
+
+@keyframes ready-count-pop {
+  from {
+    scale: 0.7;
+    opacity: 0.4;
+  }
+}
+
+@keyframes ready-lift {
+  to {
+    opacity: 0;
+    translate: 0 -24px;
+    scale: 1.05;
+  }
 }

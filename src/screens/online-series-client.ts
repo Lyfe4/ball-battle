@@ -113,3 +113,9 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     schedule,
   };
 }
+
+/** The same series in full: a 304, or an answer that moved nothing (the heartbeat only). */
+export const sameView = (view: SeriesView | undefined, next: SeriesView): boolean =>
+  view !== undefined &&
+  (next === view ||
+    (next.version === view.version && JSON.stringify(next) === JSON.stringify(view)));

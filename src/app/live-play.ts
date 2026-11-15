@@ -68,8 +68,8 @@ export const secondsUntil = (at: number, now: number): number =>
 const COUNTDOWN_SLACK_MS = 200;
 
 /**
- * The ready card's line before a live fight that starts at `startAt` (ADR 0054): "Get ready", then
- * the 3-2-1 over its last COUNTDOWN_MS, each number for a whole second. A page that learned of the
+ * The ready card's line before a live fight that starts at `startAt` (ADR 0054, 0055): "Get ready",
+ * then a huge "3", "2", "1" over its last COUNTDOWN_MS, each number for a whole second. A page that learned of the
  * round (`learnedAt`) too late for the whole 3-2-1 keeps "Get ready" until the fight starts: it never
  * joins the count part-way.
  */
@@ -77,7 +77,7 @@ export function countdownLine(startAt: number, now: number, learnedAt: number): 
   const late = startAt - learnedAt < COUNTDOWN_MS - COUNTDOWN_SLACK_MS;
   const left = startAt - now;
   if (late || left > COUNTDOWN_MS) return 'Get ready';
-  return `Fight in ${String(secondsUntil(startAt, now))}…`;
+  return String(secondsUntil(startAt, now));
 }
 
 /** Ms until the countdown's line next changes, or undefined once the fight has started. */

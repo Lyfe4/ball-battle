@@ -22,9 +22,11 @@ import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createFairPlayLine } from '../ui/series/fair-play.ts';
+import { createPickClock } from '../ui/series/pick-clock.ts';
+import { pickClockOf } from './pick-clock-text.ts';
 import { liveFootLine, liveNote } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
-import { createSeriesClient } from './online-series-client.ts';
+import { createSeriesClient, sameView } from './online-series-client.ts';
 import { onlineNotice, waitNote, type LoadStatus } from './online-text.ts';
 import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
 
@@ -117,6 +119,8 @@ export function createOnlinePlay(
   );
   const fairLine = createFairPlayLine();
   roots.panel.append(fairLine.element);
+  // A live match's pick card (ADR 0055, B2).
+  const clock = createPickClock(lookup, roots.panel);
   const notice = createNotice(roots.notice, () => {
     host.home();
   });
@@ -196,11 +200,7 @@ export function createOnlinePlay(
    * alone (a fight's end, a countdown) the display ticker and the arena's frames take care of.
    */
   const unchanged = (next: SeriesView): boolean =>
-    status === 'ready' &&
-    !reconnecting &&
-    view !== undefined &&
-    (next === view ||
-      (next.version === view.version && JSON.stringify(next) === JSON.stringify(view)));
+    status === 'ready' && !reconnecting && sameView(view, next);
 
   /** Takes a new view: by turns the rounds watched stay watched and anything new waits. */
   function adopt(next: SeriesView): void {
@@ -337,7 +337,7 @@ export function createOnlinePlay(
           ? world.match.status === 'finished' && celebrated
           : true;
       const all = watched === view.rounds.length;
-      const note = isLive() ? liveNote(view, now, watched) : waitNote(view, Date.now());
+      const note = isLive() ? liveNote(view, watched) : waitNote(view, Date.now());
       const next = panel.update({
         state: session.state,
         current: session.current,
@@ -348,6 +348,8 @@ export function createOnlinePlay(
         online: { note: all ? note : undefined, live: isLive() },
       });
       fairLine.show(all && next === 'finished' ? fair : undefined);
+      const timed = isLive() && all && next !== 'playing';
+      clock.show(timed ? pickClockOf(view, session.state, now, lookup) : undefined);
       if (next !== phase) {
         phase = next;
         host.layoutChanged();
