@@ -6,7 +6,8 @@ code quality matters as much as features.
 
 Where it's heading (PvP best of 3 with blind lineups, soft counters, then a backend):
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
-formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035).
+formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
+online (previews and staging only), live friend matches in Reveal and Showdown (ADR 0052, 0053).
 Reveal is the main mode: home's Play opens its lineup in one tap, every other way to play is on
 Other modes (ADR 0046, `src/app/modes.ts`). The series rules and bots are pure sim code
 (`src/sim/series.ts`, `src/sim/bot.ts`), the same functions a server would run, so keep them
@@ -46,8 +47,10 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
 - `netlify dev`: an online build (`pnpm build:online` first) and the API on one origin,
   http://localhost:8888, with `.env` (`node scripts/local-env.ts > .env`). Online play is built
   only where `VITE_ONLINE=1` (previews, the main branch deploy, `build:online`) and served only
-  where the functions have `BALLBATTLE_ONLINE=1`. `pnpm test:online`: two players through a
-  friend challenge in Chromium, against `netlify dev`.
+  where the functions have `BALLBATTLE_ONLINE=1`. `pnpm test:online`: two phones through live
+  friend matches in Chromium (a whole match, a pick running out, Leave and forfeit, a disconnect),
+  against `netlify dev`. After changing `src/server`, restart `netlify dev`: it can keep serving
+  the old functions.
 - `pnpm lint`, `pnpm typecheck` (`tsc -b`), `pnpm format` / `pnpm format:check`.
 - `pnpm balance [seeds] [--ball <id>] [--serial]`: every matchup (both slot orders) across all
   cores; prints the matrix, each ball's shape and whether the targets are met; exits 1 on any
@@ -143,9 +146,26 @@ Each line is a rule; its ADR has the reasoning.
 - Queries on one connection go one at a time, never in `Promise.all`: Supabase's pooler
   (transaction mode) never answers two pipelined queries, so the request hangs. The API, the
   database tests and `netlify dev` connect through the local pooler, as on Netlify.
+- Migrations reach staging by hand (`pnpm exec supabase db push --remote`), before the code that
+  needs them is merged: every deploy preview and `main` use staging. Expand only.
 - The client tells failures apart (`callApi`, `failureKindOf`): "You're offline" only when the
   device is offline or no response came; a timeout, a server error and a refusal each say so
   with Try again (`online-failure-text.ts`).
+
+**Live friend matches (ADR 0053)**
+
+- A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 3 s to
+  Fight!, away after 6 s, 30 s grace, 60 s to arrive), every time the database's. What the clock
+  decided (the start, a random pick as of its deadline, a forfeit) is settled on read, on a pick and
+  in the sweep, earliest first (`live-service.ts`); never on a host's clock.
+- Presence is `game.presence` (per series and side), written by the player's own read of the
+  series in the same statement; `/me/match` (home) is never a heartbeat.
+- The server times each round's fight (`fight_at`, `ends_at`) with `attemptWatchMs`, which must stay
+  longer than the page's own presentation (`live-watch.test.ts`); picks before `ends_at` are
+  refused. The page starts each fight with a timer for its server time (`online-live.ts`), plays
+  it at 1x, and shows nothing of a round before its `ends_at`.
+- One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
+  Live is Reveal and Showdown only. Play by turns stays in the code and its tests, hidden.
 
 **The sim**
 

@@ -859,6 +859,11 @@ authentication failed`. `/health` checks the database and the ruleset bundle sep
   "Forget me" keeps the guest on the device rather than forgetting a guest the server kept.
   `online-failures.online.test.ts` checks each failure on a phone-sized page.
 
+**As built (ADR 0053, 2026-11-15): live friend matches.** Friend challenges are played live (Reveal and
+Showdown); play by turns is hidden from players and stays in the code with its tests. Home's "Your
+turn (n)" list is replaced by "Back to your match". The open queue and Web Push are postponed (items
+5 and 6 above). ADR 0053 has the rules, the API and the measurements.
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).
