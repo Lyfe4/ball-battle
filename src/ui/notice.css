@@ -15,6 +15,199 @@
   line-height: 1.45;
 }
 
+/* A friend's card (ADR 0055): the sticker says who; the header's title is for screen readers. */
+.notice[data-sticker] .screen-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.notice[data-sticker] .settings-toggle {
+  margin-left: auto;
+}
+
+.notice[data-sticker] .notice-body {
+  justify-items: stretch;
+  gap: var(--space-gap);
+}
+
+.notice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice-chip {
+  padding: 4px var(--space-gap);
+  border-radius: 999px;
+  background: var(--color-sunken);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+/* The lobby's waiting card: a big bouncing ball, the busy ball's sibling (busy-button.css). */
+.notice-waiting {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-small);
+  padding: var(--space-gutter) var(--space-gap) var(--space-gutter);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.notice-waiting-ball {
+  position: relative;
+  width: 56px;
+  height: 84px;
+}
+
+.notice-waiting-ball::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 30%, rgb(255 255 255 / 0.35) 0 14%, transparent 16%),
+    var(--color-accent);
+  box-shadow: inset -6px -6px 0 var(--color-accent-slab);
+  transform: translateY(24px);
+}
+
+.notice-waiting-ball::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 8px;
+  width: 40px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-sunken);
+}
+
+.notice-waiting-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.notice-waiting-line {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* "How it goes": three short steps in a box. */
+.notice-steps {
+  padding: var(--space-gap) var(--space-gutter);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+}
+
+.notice-steps-title {
+  margin: 0 0 var(--space-small);
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+}
+
+.notice-steps-list {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding-left: 1.25em;
+  line-height: 1.4;
+}
+
+.notice-after {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-gap);
+}
+
+.notice-after[hidden] {
+  display: none;
+}
+
+/* The link in a quiet box with Copy at its end: there to read, Share is the main way. */
+.notice-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  justify-self: stretch;
+  min-width: 0;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small) 0 var(--space-gutter);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.notice-link-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: all;
+}
+
+.notice-link-copy {
+  flex: none;
+  min-height: var(--tap-target);
+  font-size: 1rem;
+}
+
+.notice-link-copy::after,
+.notice-quiet::after {
+  content: none;
+}
+
+.notice-quiet {
+  min-height: var(--tap-target);
+  padding: 0;
+  font-size: 1rem;
+}
+
+.notice[data-sticker] .notice-after {
+  justify-items: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .notice-waiting-ball::before {
+    animation: notice-bounce 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+  }
+
+  .notice-waiting-ball::after {
+    animation: notice-shadow 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+  }
+}
+
+@keyframes notice-bounce {
+  from {
+    transform: translateY(24px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes notice-shadow {
+  to {
+    scale: 0.7;
+    opacity: 0.6;
+  }
+}
+
 /* Nothing is fighting: no arena at any width, like the manual. */
 .stage[data-screen='outdated'] .arena-container {
   display: none;
@@ -28,6 +221,13 @@
 
 /* Desktop (ADR 0031): a short notice stays at a readable width, as a card. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* Its own boxes sit into the card rather than vanish into it. */
+  .notice-waiting,
+  .notice-steps,
+  .notice-link {
+    background: var(--color-sunken);
+  }
+
   .notice {
     justify-self: center;
     width: 100%;

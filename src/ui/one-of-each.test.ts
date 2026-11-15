@@ -36,6 +36,9 @@ const OWNERS: readonly (readonly [string, string])[] = [
   ["'settings-panel'", 'ui/settings-menu.ts'],
   ["'settings-toggle'", 'ui/settings-menu.ts'],
   ["'series-bar-score'", 'ui/series/series-bar.ts'],
+  // ADR 0055: one sticker off the court (a friend's card, the end of a series), one pick card.
+  ["'sticker'", 'ui/sticker.ts'],
+  ["'pick-clock'", 'ui/series/pick-clock.ts'],
 ];
 
 describe('one component per shared part', () => {

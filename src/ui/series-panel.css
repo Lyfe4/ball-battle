@@ -156,14 +156,12 @@
   background: var(--color-surface);
 }
 
-/* The result, first and large: one word for who won, in the winner's colour of the track. */
+/* The result, first: a sticker with who won and the score from the player's side (ADR 0055). */
 .series-result {
-  margin: 0;
-  font-size: var(--font-size-display);
-  font-weight: 800;
-  text-align: center;
+  display: grid;
+  justify-items: center;
 }
 
-.series-result[data-winner='a'] {
-  color: var(--color-won);
+.series-result[hidden] {
+  display: none;
 }

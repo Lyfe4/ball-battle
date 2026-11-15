@@ -17,7 +17,8 @@ import { createSkeleton } from '../ui/skeleton.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import { inAMatchCard } from './current-match.ts';
 import { createFriendSetup } from './friend-setup.ts';
-import { adultCard, CARD_SAYS, cardFor, shareLink } from './online-challenge-text.ts';
+import { adultCard, CARD_SAYS, cardFor } from './online-challenge-text.ts';
+import { challengeUrl, copyLink, shareLink } from './online-share.ts';
 import { onlineNotice } from './online-text.ts';
 
 /** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
@@ -297,6 +298,9 @@ export function createChallengeScreens(
         host.friend();
       },
       share: () => shareLink(current),
+      url: challengeUrl(current),
+      canShare: typeof navigator.share === 'function',
+      copy: () => copyLink(current),
       cancel: () => cancel(),
     };
   }

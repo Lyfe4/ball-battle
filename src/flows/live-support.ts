@@ -113,7 +113,7 @@ export async function startLiveMatch(
   }
   await sender.getByRole('button', { name: 'Choose lineup' }).click();
   await buildLineup(sender, 'Send challenge');
-  await sender.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
+  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   // Send challenge stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';

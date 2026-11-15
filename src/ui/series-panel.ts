@@ -10,6 +10,7 @@ import {
 } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import { createSticker } from './sticker.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
 import { createPairing } from './balls/pairing.ts';
 import { createLeaveConfirm } from './series/leave-confirm.ts';
@@ -26,7 +27,14 @@ import {
   type SeriesPhase,
 } from './series/series-view.ts';
 import { BOT_SEATS, otherSide } from './series/seats.ts';
-import { betweenLine, finalLine, linkPickLine, playingLine, pickLine } from './series-text.ts';
+import {
+  betweenLine,
+  finalLine,
+  linkPickLine,
+  playingLine,
+  pickLine,
+  resultWords,
+} from './series-text.ts';
 
 export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
@@ -109,7 +117,10 @@ export function createSeriesPanel(
   // What is being played, and the legend's ? for every symbol the series shows (ADR 0035).
   const bar = createSeriesBar({ id: track.element.id, onToggle: toggleTrack });
 
-  const result = element('p', 'series-result');
+  // The result as a sticker (ADR 0055): who won, and the score from the player's side.
+  const result = element('div', 'series-result');
+  const sticker = createSticker();
+  result.append(sticker.element);
 
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
@@ -247,18 +258,15 @@ export function createSeriesPanel(
       const upcoming = nextMatch(state);
       const roundsPlayed = state.rounds.length;
 
-      // The result headline, at the end only.
+      // The result, at the end only.
       const totals = scoreOf(state);
       const won = state.winner === seats.you;
-      const headline = won ? 'You win' : `${seats.them} wins`;
+      const words = resultWords(state.winner, seats, totals);
       setHidden(result, !finished);
       // Styled by who won from the player's side: `a` is always the player's colour.
       setAttr(result, 'data-winner', state.winner === undefined ? '' : won ? 'a' : 'b');
-      setText(result, headline);
-      const [first, second] = won
-        ? [totals[seats.you], totals[them]]
-        : [totals[them], totals[seats.you]];
-      setAttr(result, 'aria-label', `${headline} ${String(first)}–${String(second)}`);
+      if (finished) sticker.show(words);
+      setAttr(result, 'aria-label', words.spoken);
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';

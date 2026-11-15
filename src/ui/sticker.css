@@ -1,0 +1,40 @@
+/*
+ * A sticker on the page (sticker.ts, ADR 0055): the Winner sticker's cream card, off the court, for
+ * who challenges you and how a match ended. Tilted a little, the accent's edge and slab under it.
+ */
+.sticker {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  justify-self: center;
+  max-width: 100%;
+  margin: var(--space-small) 0 calc(var(--space-small) + 8px);
+  padding: var(--space-gap) clamp(20px, 7vw, 36px);
+  border-radius: var(--radius-large);
+  background: var(--color-sticker);
+  box-shadow:
+    0 0 0 4px var(--color-accent),
+    0 8px 0 var(--color-accent-slab);
+  color: var(--color-accent-text);
+  text-align: center;
+  transform: rotate(-3deg);
+}
+
+.sticker-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(2rem, 9vw, 2.75rem);
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+  line-height: 1.05;
+}
+
+.sticker-small {
+  margin: 0;
+  font-size: var(--font-size-lead);
+  font-weight: 700;
+}
+
+.sticker-small[hidden] {
+  display: none;
+}

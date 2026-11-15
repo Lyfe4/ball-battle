@@ -90,7 +90,9 @@ describe('a live friend match', () => {
         await page.locator('#online-series .fair-play[data-result="fair"]').waitFor();
       }
       const results = await Promise.all(
-        [sender, friend].map((page) => panelOf(page).locator('.series-result').innerText()),
+        [sender, friend].map((page) =>
+          panelOf(page).locator('.series-result .sticker-title').innerText(),
+        ),
       );
       expect(results.filter((text) => text === 'You win')).toHaveLength(1);
       // Over: home offers Play again.
@@ -121,7 +123,9 @@ describe('a live friend match', () => {
         .filter({ hasText: 'left the match. You win.' })
         .waitFor({ timeout: 15_000 });
       // The match is over on the winner's screen: the result, no way to leave a finished match.
-      await expect(panelOf(sender).locator('.series-result').innerText()).resolves.toBe('You win');
+      await expect(
+        panelOf(sender).locator('.series-result .sticker-title').innerText(),
+      ).resolves.toBe('You win');
       expect(await sender.getByRole('button', { name: 'Leave match' }).isVisible()).toBe(false);
       expect(phones.errors).toStrictEqual([]);
     },

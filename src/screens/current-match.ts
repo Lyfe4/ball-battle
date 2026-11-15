@@ -4,7 +4,7 @@
 import type { CurrentMatch, CurrentMatchResponse } from '../api/live.ts';
 import { callApi } from '../app/api.ts';
 import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
-import type { NoticeContent } from '../ui/notice.ts';
+import type { NoticeContent } from '../ui/notice-content.ts';
 
 /** The player's live match or waiting lobby, if any; undefined when it can't be known now. */
 export async function currentMatch(): Promise<CurrentMatch | null | undefined> {
