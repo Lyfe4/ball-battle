@@ -35,10 +35,13 @@ export async function closePhones(phones: Phones): Promise<void> {
 /**
  * Notes every loading state a page shows (ADR 0054): a screen's skeleton (by its section's id) or a
  * "Loading…" heading. Moving between screens shows neither; only a cold open shows a skeleton.
+ * Against a deploy preview (ONLINE_BASE_URL) it also removes Netlify's toolbar.
  */
 const LOADING_PROBE = `
   window.__loading = [];
   const note = () => {
+    // A deploy preview's Netlify toolbar covers the page's buttons.
+    document.querySelector('[data-netlify-deploy-id]')?.remove();
     for (const node of document.querySelectorAll('.skeleton, h1')) {
       const shown = node.getClientRects().length > 0;
       const what = node.matches('.skeleton') ? node.id : node.textContent === 'Loading…' ? 'Loading…' : '';

@@ -8,7 +8,7 @@
   (secret seeds, commitments, frozen rulesets), ADR 0007 (presentation time), ADR 0027 (no dead ends)
 - Amends: ADR 0052 section 3 ("Live PvP later is the same machine with short timers"): it comes
   now, for friend challenges, and play by turns is hidden (kept in the code)
-- Amended by: ADR 0054 (5 s to Fight!: Get ready, then the whole 3-2-1; settings never make a live
+- Amended by: ADR 0054 (6 s to Fight!: Get ready, then the whole 3-2-1; settings never make a live
   match wait; buttons wait for the next screen, no loading pages)
 
 ## Context

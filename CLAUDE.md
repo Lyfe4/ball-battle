@@ -154,7 +154,7 @@ Each line is a rule; its ADR has the reasoning.
 
 **Live friend matches (ADR 0053)**
 
-- A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 5 s to
+- A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 6 s to
   Fight!: Get ready, then the whole 3-2-1, ADR 0054; away after 6 s, 30 s grace, 60 s to arrive),
   every time the database's. A phone that learns of a round too late for the whole 3-2-1 says Get
   ready until Fight!, never a count joined part-way (`countdownLine`). What the clock
