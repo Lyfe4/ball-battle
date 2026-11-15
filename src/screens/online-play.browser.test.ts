@@ -159,7 +159,7 @@ async function pass(ms: number): Promise<void> {
 
 function roots() {
   const make = () => document.body.appendChild(document.createElement('section'));
-  return { panel: make(), exit: make(), notice: make() };
+  return { panel: make(), exit: make(), notice: make(), loading: make() };
 }
 
 beforeEach(() => {
@@ -214,5 +214,46 @@ describe.each([
     answer.bump = true;
     await pass(3_000);
     expect(calls.staged).toBe(1);
+  });
+});
+
+describe('arriving at a live series (ADR 0054)', () => {
+  it('shows a series read just before moving at once, with no read of its own first', async () => {
+    vi.setSystemTime(FIGHT_AT - 4_000);
+    const view = liveView('b');
+    const fetch = server(view, { offset: 0, trip: 300, full: false });
+    const { host, calls } = countingHost();
+    const at = Date.now();
+    const primed = {
+      ok: true as const,
+      status: 200,
+      body: view,
+      etag: '"v4"',
+      clock: { sentAt: at - 300, receivedAt: at, serverNow: at - 150 },
+    };
+    const parts = roots();
+    createOnlinePlay(parts, BALL_LOOKUP, { ...host, primed: () => primed }).open(ID);
+    expect(calls.staged, 'the round is on the arena as the screen opens').toBe(1);
+    expect(parts.loading.hidden).toBe(true);
+    expect(parts.notice.hidden).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+    await pass(1_500);
+    expect(fetch.mock.calls.length, 'then it asks as a live page does').toBeGreaterThanOrEqual(1);
+  });
+
+  it('opened cold, shows the screen’s layout until the first answer, never a Loading notice', async () => {
+    vi.setSystemTime(FIGHT_AT - 4_000);
+    server(liveView('a'), { offset: 0, trip: 600, full: false });
+    const { host, calls } = countingHost();
+    const parts = roots();
+    createOnlinePlay(parts, BALL_LOOKUP, host).open(ID);
+    expect(parts.loading.hidden).toBe(false);
+    expect(parts.loading.getAttribute('aria-busy')).toBe('true');
+    expect(parts.notice.hidden).toBe(true);
+    const headings = [...document.querySelectorAll('h1')].map((h) => h.textContent);
+    expect(headings).not.toContain('Loading…');
+    for (let waited = 0; calls.staged === 0 && waited < 3_000; waited += 50) await pass(50);
+    expect(calls.staged).toBe(1);
+    expect(parts.loading.hidden).toBe(true);
   });
 });

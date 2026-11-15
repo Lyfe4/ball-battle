@@ -119,3 +119,53 @@ export function placeMenu(
 export function menuMaxHeight(screen: Screen, insets: Insets = NO_INSETS): number {
   return Math.max(0, screen.height - 2 * EDGE - insets.top - insets.bottom);
 }
+
+/** A placement that must keep off the court: its height is capped to the room it has. */
+export interface ClearPlacement {
+  readonly left: number;
+  readonly top: number;
+  readonly maxHeight: number;
+}
+
+/**
+ * Where the menu goes when it may not cover the court at all (a live match plays on the server's
+ * clock and can't wait, ADR 0054): in its column, the tallest band of the visible screen that is
+ * clear of the court and its gear, next to the gear's side of that band, its height capped to the
+ * band so it scrolls inside itself. Used only when placeMenu found no clear place at full size.
+ */
+export function placeClear(
+  gear: Box,
+  size: Size,
+  screen: Screen,
+  court: Box,
+  insets: Insets = NO_INSETS,
+): ClearPlacement {
+  const { left } = placeMenu(gear, size, screen, insets, court);
+  const minTop = screen.top + EDGE + insets.top;
+  const maxBottom = screen.top + screen.height - EDGE - insets.bottom;
+  const column = { left, width: size.width };
+  const inColumn = (box: Box) =>
+    box.left < column.left + column.width && column.left < box.left + box.width;
+  // The court and the gear, each with its gap, as spans of the column to keep off.
+  const blocked = [court, gear]
+    .filter(inColumn)
+    .map((box) => ({ from: box.top - GAP, to: box.top + box.height + GAP }))
+    .sort((x, y) => x.from - y.from);
+  const bands: { from: number; to: number }[] = [];
+  let from = minTop;
+  for (const span of blocked) {
+    if (span.from > from) bands.push({ from, to: Math.min(span.from, maxBottom) });
+    from = Math.max(from, span.to);
+  }
+  if (maxBottom > from) bands.push({ from, to: maxBottom });
+  const best = bands.reduce<{ from: number; to: number } | undefined>(
+    (tallest, band) =>
+      tallest === undefined || band.to - band.from > tallest.to - tallest.from ? band : tallest,
+    undefined,
+  ) ?? { from: minTop, to: minTop };
+  const maxHeight = Math.max(0, best.to - best.from);
+  const height = Math.min(size.height, maxHeight);
+  // Under the gear it hangs from the band's top; over it, it sits on the band's bottom.
+  const top = best.from >= gear.top ? best.from : best.to - height;
+  return { left, top, maxHeight };
+}

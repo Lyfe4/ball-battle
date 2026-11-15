@@ -83,6 +83,9 @@
   --press-depth: 4px;
   --shadow-slab: 0 var(--press-depth) 0 var(--color-slab);
   --shadow-accent-slab: 0 var(--press-depth) 0 var(--color-accent-slab);
+  /* The chosen option (choice.css): its ring, and the check sticker on its corner. */
+  --choice-ring: 3px;
+  --choice-badge: 20px;
   /* The panel beside a fight; wider on a desktop, so "Best of 3 · Reveal · Hard" fits on one line. */
   --hud-width: 16rem;
   /* The side panel on a wide screen during setup, wide enough for four ball tiles. */

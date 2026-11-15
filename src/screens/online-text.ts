@@ -14,9 +14,10 @@ export type LoadStatus = 'loading' | 'ready' | 'missing' | FailureKind;
 /**
  * A series' or a challenge's screen while it can't be shown: always with a way on. A failure says
  * what failed (`failureText`; `reason` is a refusal's message from the server), with Try again.
+ * Loading is never a notice: the screen's own layout shows meanwhile (skeleton.ts, ADR 0054).
  */
 export function onlineNotice(
-  status: LoadStatus,
+  status: Exclude<LoadStatus, 'loading' | 'ready'>,
   /** A request: Try again shows it is working until it settles. */
   retry: () => Promise<unknown>,
   home: () => void,
@@ -24,9 +25,6 @@ export function onlineNotice(
 ): NoticeContent {
   const homeButton = { text: 'Home', onClick: home };
   switch (status) {
-    case 'loading':
-    case 'ready':
-      return { title: 'Loading…', body: [], buttons: [homeButton] };
     case 'missing':
       return {
         title: 'Nothing here',

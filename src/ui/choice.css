@@ -1,0 +1,55 @@
+/*
+ * The chosen option (ADR 0054): one look for every toggle and choice in the game, so what is chosen
+ * is plain at a glance on any screen: a segment (length, level, speed, the manual's tabs), a format
+ * card, a Free play slot, a ball in a lineup. A component marks its options `.choice` and says
+ * which is chosen with aria-pressed (or aria-checked); this sheet alone draws it. Not just a shade:
+ * the chosen one takes the selected fill, a thick ring in the second accent (the colour of picking)
+ * and a round check sticker on its corner, so it changes in colour and in shape. A ball tile keeps
+ * its own × (a tap takes it out), so it shows the ring without the sticker.
+ */
+.choice {
+  position: relative;
+}
+
+.choice:is([aria-pressed='true'], [aria-checked='true']) {
+  background: var(--color-selected);
+  color: var(--color-text);
+  outline: var(--choice-ring) solid var(--color-accent-2);
+  outline-offset: calc(var(--choice-ring) * -1);
+}
+
+/* The check sticker: a pink disc on the top right corner with an ink tick drawn on it. */
+.choice:is([aria-pressed='true'], [aria-checked='true'])::before,
+.choice:is([aria-pressed='true'], [aria-checked='true'])::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.choice:is([aria-pressed='true'], [aria-checked='true'])::before {
+  top: calc(var(--choice-badge) / -3);
+  right: calc(var(--choice-badge) / -3);
+  z-index: 1;
+  width: var(--choice-badge);
+  height: var(--choice-badge);
+  border-radius: 50%;
+  background: var(--color-accent-2);
+  box-shadow: 0 0 0 2px var(--color-page);
+}
+
+.choice:is([aria-pressed='true'], [aria-checked='true'])::after {
+  top: calc(var(--choice-badge) / -3 + var(--choice-badge) * 0.2);
+  right: calc(var(--choice-badge) / -3 + var(--choice-badge) * 0.34);
+  z-index: 2;
+  width: calc(var(--choice-badge) * 0.3);
+  height: calc(var(--choice-badge) * 0.5);
+  border-right: 3px solid var(--color-accent-2-text);
+  border-bottom: 3px solid var(--color-accent-2-text);
+  transform: rotate(40deg);
+}
+
+/* A ball tile: the ring only; its × already says it is in (and that a tap takes it out). */
+.ball-tile.choice::before,
+.ball-tile.choice::after {
+  content: none;
+}

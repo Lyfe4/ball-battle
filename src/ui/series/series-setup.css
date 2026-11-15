@@ -30,10 +30,6 @@
   cursor: pointer;
 }
 
-.rules-card[aria-pressed='true'] {
-  background: var(--color-selected);
-}
-
 .rules-card-name {
   font-weight: 700;
 }

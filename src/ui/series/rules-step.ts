@@ -38,7 +38,7 @@ export function createRulesStep(actions: RulesActions): RulesStep {
   let chosen: Format = 'blind';
 
   const cards = FORMATS.map((format) => {
-    const card = element('button', 'rules-card');
+    const card = element('button', 'rules-card choice');
     card.type = 'button';
     card.append(
       element('span', 'rules-card-name', FORMAT_NAMES[format]),

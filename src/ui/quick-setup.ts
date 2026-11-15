@@ -61,7 +61,7 @@ export function createQuickSetup(
   slotRow.setAttribute('aria-label', 'Slot to fill');
   const slots = (['a', 'b'] as const).map((slot) => {
     const holder = element('div', 'quick-slot-holder');
-    const button = element('button', 'quick-slot');
+    const button = element('button', 'quick-slot choice');
     button.type = 'button';
     const badge = element('span', 'quick-slot-badge');
     const icon = element('canvas', 'quick-slot-icon');

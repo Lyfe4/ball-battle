@@ -2,7 +2,8 @@
 // Safari's visible size against `netlify dev` (an online build and the API on one origin, over a
 // local Supabase). Each phone is its own guest. The fights come from the series' random id, so a
 // flow plays whatever the screen offers rather than pinning a seed.
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, webkit, type Browser, type BrowserContext, type Page } from 'playwright';
+import { expect } from 'vitest';
 
 /** iPhone Safari's visible size (ADR 0039). */
 export const PHONE = { width: 390, height: 664 };
@@ -16,12 +17,14 @@ export interface Phones {
   readonly errors: string[];
 }
 
-export async function openPhones(base: string): Promise<Phones> {
+/** `engine` is Chromium (as CI runs it) unless 'webkit': one run in Safari's engine. */
+export async function openPhones(base: string, engine?: string): Promise<Phones> {
   const health = await fetch(`${base}/api/v1/health`).catch(() => undefined);
   if (health?.ok !== true) {
     throw new Error(`No online server at ${base}: pnpm build:online, then netlify dev`);
   }
-  return { base, browser: await chromium.launch(), contexts: [], errors: [] };
+  const browser = await (engine === 'webkit' ? webkit : chromium).launch();
+  return { base, browser, contexts: [], errors: [] };
 }
 
 export async function closePhones(phones: Phones): Promise<void> {
@@ -29,11 +32,40 @@ export async function closePhones(phones: Phones): Promise<void> {
   await phones.browser.close();
 }
 
-/** A fresh phone, collecting console errors. */
+/**
+ * Notes every loading state a page shows (ADR 0054): a screen's skeleton (by its section's id) or a
+ * "Loading…" heading. Moving between screens shows neither; only a cold open shows a skeleton.
+ * Against a deploy preview (ONLINE_BASE_URL) it also removes Netlify's toolbar.
+ */
+const LOADING_PROBE = `
+  window.__loading = [];
+  const note = () => {
+    // A deploy preview's Netlify toolbar covers the page's buttons.
+    document.querySelector('[data-netlify-deploy-id]')?.remove();
+    for (const node of document.querySelectorAll('.skeleton, h1')) {
+      const shown = node.getClientRects().length > 0;
+      const what = node.matches('.skeleton') ? node.id : node.textContent === 'Loading…' ? 'Loading…' : '';
+      if (shown && what !== '' && !window.__loading.includes(what)) window.__loading.push(what);
+    }
+  };
+  new MutationObserver(note).observe(document, { childList: true, subtree: true, attributes: true, characterData: true });
+`;
+
+/** The loading states `page` has shown since it opened or since the last `forgetLoading`. */
+export const loadingSeen = (page: Page): Promise<string[]> =>
+  page.evaluate(() => (globalThis as unknown as { __loading: string[] }).__loading);
+
+export const forgetLoading = (page: Page): Promise<void> =>
+  page.evaluate(() => {
+    (globalThis as unknown as { __loading: string[] }).__loading = [];
+  });
+
+/** A fresh phone, collecting console errors and the loading states it shows. */
 export async function phone(phones: Phones): Promise<Page> {
   const context = await phones.browser.newContext({ viewport: PHONE });
   phones.contexts.push(context);
   const page = await context.newPage();
+  await page.addInitScript(LOADING_PROBE);
   page.on('console', (message) => {
     // A request the page meant to fail (offline on purpose) is not an error of the page's.
     if (
@@ -75,16 +107,24 @@ export async function startLiveMatch(
   await buildLineup(sender, 'Send challenge');
   await confirmAge(sender);
   await sender.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
+  // Send challenge stayed busy until the lobby could show: nothing loading between them.
+  expect(await loadingSeen(sender)).toStrictEqual([]);
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
 
   await friend.goto(`${base}/?challenge=${token}`);
   await friend.getByRole('heading', { name: /challenges you$/ }).waitFor();
+  // A link opened cold: the card's own layout while it loads, never a Loading title.
+  expect(await loadingSeen(friend)).not.toContain('Loading…');
+  await forgetLoading(friend);
   await friend.getByText('Leaving for 30 s loses the match').waitFor();
   await friend.getByRole('button', { name: 'Build your lineup' }).click();
   await buildLineup(friend, 'Accept challenge');
   await confirmAge(friend);
   await friend.waitForURL(/[?&]online=/);
   await sender.waitForURL(/[?&]online=/, { timeout: 20_000 });
+  // Accept and the lobby each waited for the series: it showed complete on arrival.
+  expect(await loadingSeen(friend)).toStrictEqual([]);
+  expect(await loadingSeen(sender)).toStrictEqual([]);
   return new URL(friend.url()).searchParams.get('online') ?? '';
 }
 

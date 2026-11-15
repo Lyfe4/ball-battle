@@ -109,7 +109,7 @@ describe('a pick that runs out', () => {
 });
 
 describe('a fight', () => {
-  it('starts 3 s after the lock that completes its round; the next pick opens when it ends', async () => {
+  it('starts LEAD_MS after the lock that completes its round; the next pick opens when it ends', async () => {
     const { id, players } = await startedLive(deps, 'showdown');
     for (const side of ['a', 'b'] as const) {
       view(await pick(players[side], id, 0, leftOf(await read(players[side], id), side)[0] ?? ''));

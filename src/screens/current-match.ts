@@ -24,7 +24,8 @@ export function writeMatchParams(params: URLSearchParams, match: CurrentMatch): 
  */
 export function inAMatchCard(
   message: string,
-  go: (write: (params: URLSearchParams) => void) => void,
+  /** Goes to the match once its screen is read (ADR 0054). */
+  toMatch: (match: CurrentMatch) => Promise<void>,
   home: () => void,
 ): NoticeContent {
   return {
@@ -33,14 +34,11 @@ export function inAMatchCard(
     buttons: [
       {
         text: 'Back to your match',
-        onClick: () =>
-          currentMatch().then((match) => {
-            if (match == null) home();
-            else
-              go((url) => {
-                writeMatchParams(url, match);
-              });
-          }),
+        onClick: async () => {
+          const match = await currentMatch();
+          if (match == null) home();
+          else await toMatch(match);
+        },
       },
       { text: 'Home', onClick: home },
     ],

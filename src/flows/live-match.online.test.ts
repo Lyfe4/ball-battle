@@ -7,6 +7,8 @@ import {
   closePhones,
   finished,
   footOf,
+  forgetLoading,
+  loadingSeen,
   noteOf,
   openPhones,
   panelOf,
@@ -19,7 +21,7 @@ import {
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 let phones: Phones;
 beforeAll(async () => {
-  phones = await openPhones(BASE);
+  phones = await openPhones(BASE, process.env['ONLINE_ENGINE']);
 });
 afterAll(async () => {
   await closePhones(phones);
@@ -36,8 +38,11 @@ describe('a live friend match', () => {
 
       // Home offers the way back while the match is on, in Play's place.
       await sender.goto(`${BASE}/`);
+      await forgetLoading(sender);
       await sender.getByRole('button', { name: /^Back to your match/ }).click();
       await sender.waitForURL(new RegExp(`online=${series}`));
+      // The button waited for the series: no skeleton between home and the match.
+      expect(await loadingSeen(sender)).toStrictEqual([]);
 
       let fights = 0;
       for (let step = 0; !((await finished(sender)) && (await finished(friend))); step += 1) {

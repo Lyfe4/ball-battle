@@ -2,6 +2,7 @@
 // still waiting for their friend, it takes Play's place as the one clear action, in Play's own look
 // (the same button, one look per screen state). It goes when the match ends or the grace runs out.
 import type { CurrentMatch } from '../../api/live.ts';
+import { busyOnClick } from '../busy-button.ts';
 import { element, setText } from '../dom.ts';
 import { backWords } from './back-to-match-text.ts';
 
@@ -11,7 +12,8 @@ export interface BackToMatch {
   show(match: CurrentMatch | null): boolean;
 }
 
-export function createBackToMatch(open: (match: CurrentMatch) => void): BackToMatch {
+/** `open` goes to the match once its screen is read: the button shows it is working until then. */
+export function createBackToMatch(open: (match: CurrentMatch) => Promise<void>): BackToMatch {
   const root = element('div', 'home-back-match');
   const button = element('button', 'hud-button hud-button-primary home-play');
   button.type = 'button';
@@ -21,9 +23,7 @@ export function createBackToMatch(open: (match: CurrentMatch) => void): BackToMa
   root.append(button);
   root.hidden = true;
   let shown: CurrentMatch | null = null;
-  button.addEventListener('click', () => {
-    if (shown !== null) open(shown);
-  });
+  busyOnClick(button, () => (shown === null ? undefined : open(shown)));
   return {
     element: root,
     show(match) {

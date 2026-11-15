@@ -154,8 +154,10 @@ Each line is a rule; its ADR has the reasoning.
 
 **Live friend matches (ADR 0053)**
 
-- A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 3 s to
-  Fight!, away after 6 s, 30 s grace, 60 s to arrive), every time the database's. What the clock
+- A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 6 s to
+  Fight!: Get ready, then the whole 3-2-1, ADR 0054; away after 6 s, 30 s grace, 60 s to arrive),
+  every time the database's. A phone that learns of a round too late for the whole 3-2-1 says Get
+  ready until Fight!, never a count joined part-way (`countdownLine`). What the clock
   decided (the start, a random pick as of its deadline, a forfeit) is settled on read, on a pick and
   in the sweep, earliest first (`live-service.ts`); never on a host's clock.
 - Presence is `game.presence` (per series and side), written by the player's own read of the
@@ -262,7 +264,8 @@ Each line is a rule; its ADR has the reasoning.
 - Settings (ADR 0040, 0044): one menu (`settings-menu.ts`) behind exactly one gear per screen, at
   the top right before any `?`. It floats by its gear, never moves the layout, closes on the gear,
   Close, Escape or a tap outside (focus back on the gear), keeps off the court where it can (else
-  the arena holds the match until it closes), and holds only real per-device choices.
+  the arena holds an offline match until it closes; a live match never waits, so there it scrolls
+  inside the room beside the court, ADR 0054), and holds only real per-device choices.
 - Back follows one rule (ADR 0025, `src/app/history-rules.ts`): move with `navigation.go`, never by
   choosing push or replace. Leaving an undecided series holds it; Back never drops it.
 - A series survives a reload (ADR 0042): the controller saves after every change through `keep`
@@ -272,7 +275,12 @@ Each line is a rule; its ADR has the reasoning.
   (`src/flows/reload-support.ts`).
 - A button that waits on the server is busy through `busyOnClick` / `holdBusy`
   (`src/ui/busy-button.ts`): a handler that returns a promise is a request. Never a second
-  spinner or a disabled button for it.
+  spinner or a disabled button for it. A button that moves to another online screen stays busy
+  until that screen is read (`online-prime.ts`); no "Loading…" page between screens. A screen
+  that loads on its own (a cold link, a reload) shows its skeleton (`skeleton.ts`, ADR 0054).
+- A chosen option has one look (`choice.css`, ADR 0054): a control marks its options `.choice`
+  and the chosen one with `aria-pressed` or `aria-checked`; no other stylesheet draws a chosen
+  state (`choice.test.ts`).
 - Colours, sizes and type come from roles in `src/styles/tokens.css`; renderer colours and sizes
   from `src/render/theme.ts`. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP `font-src 'self'`), calm
   platform screens, the energy in the arena. Every ball keeps 3:1 against the floor; text in a

@@ -1,7 +1,9 @@
 // A live match on the page (ADR 0053): the server's clock as this page knows it, and the arena kept
 // at the server's moment. Each round fights at the time the server set, on both screens: held on
-// its ready card with a countdown, then started by a timer set for that exact moment of the
-// corrected clock (not a check every so often). A page that comes back from the background, or
+// its ready card ("Get ready", then the 3-2-1, each line changed by a timer set for its exact
+// moment, ADR 0054), then started by a timer set for that exact moment of the corrected clock (not
+// a check every so often). A page that learned of the round too late for the whole 3-2-1 says
+// "Get ready" until its Fight!. A page that comes back from the background, or
 // opens the match late, fights the attempt that is on from the point it has reached; rounds that
 // ended meanwhile count as watched. Polling is the heartbeat: about once a second while visible.
 import type { SeriesView } from '../api/series.ts';
@@ -9,7 +11,13 @@ import { dueOf } from '../app/online-series.ts';
 import type { Side } from '../sim/series.ts';
 import type { OnlinePlayHost } from './online-play-types.ts';
 import { NO_CLOCK, serverNowOf, withSample, type ClockSample } from '../app/live-clock.ts';
-import { livePlace, secondsUntil, type AttemptSlot, type LivePlace } from '../app/live-play.ts';
+import {
+  countdownLine,
+  livePlace,
+  nextLineChange,
+  type AttemptSlot,
+  type LivePlace,
+} from '../app/live-play.ts';
 import { matchWorld, playToEnd } from '../sim/series-verify.ts';
 import type { NextMatch } from '../sim/series.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
@@ -18,7 +26,7 @@ import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 export const LIVE_POLL_MS = 1_000;
 /** How often a page waiting on the other side of a series by turns asks whether it moved. */
 const TURNS_POLL_MS = 15_000;
-/** How often the countdowns on screen are redrawn (display only: no fight starts on it). */
+/** How often the pick timers on screen are redrawn (display only: no fight starts on it). */
 const DISPLAY_MS = 250;
 
 export interface LiveArena {
@@ -62,6 +70,10 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
   let clock = NO_CLOCK;
   let slot: AttemptSlot | undefined;
   let start: number | undefined;
+  /** When this page learned of the staged attempt, by the server's clock. */
+  let learnedAt = 0;
+  /** The countdown line's next change. */
+  let line: number | undefined;
   let ticker: number | undefined;
   let onTick: () => void = () => undefined;
   /** Each played round's attempts in ticks, by series and round: played headlessly once. */
@@ -83,13 +95,22 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
     return ticks;
   }
 
+  function stopLine(): void {
+    if (line !== undefined) window.clearTimeout(line);
+    line = undefined;
+  }
+
+  /** Shows the countdown's line now and sets a timer for the moment it next changes. */
   function countdown(): void {
-    if (slot === undefined || now() >= slot.startAt) {
+    stopLine();
+    const at = now();
+    if (slot === undefined || at >= slot.startAt) {
       arena.countdown(undefined);
       return;
     }
-    const left = secondsUntil(slot.startAt, now());
-    arena.countdown(left > 0 ? `Fight in ${String(left)}…` : 'Fight!');
+    arena.countdown(countdownLine(slot.startAt, at, learnedAt));
+    const next = nextLineChange(slot.startAt, at);
+    if (next !== undefined) line = window.setTimeout(countdown, Math.max(1, next));
   }
 
   function stopStart(): void {
@@ -105,6 +126,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
     place: (view, watched) => livePlace(view, watched, now(), (round) => ticksOf(view, round)),
     stage(next, match, showing) {
       const same = slot?.round === next.round && slot.attempt === next.attempt;
+      if (!same) learnedAt = now();
       slot = next;
       const world = matchWorld(match, lookup);
       const until = next.startAt - now();
@@ -128,6 +150,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
     clear() {
       slot = undefined;
       stopStart();
+      stopLine();
       arena.countdown(undefined);
     },
     setActive(active, tick) {
@@ -136,12 +159,12 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
         if (ticker !== undefined) window.clearInterval(ticker);
         ticker = undefined;
         stopStart();
+        stopLine();
         return;
       }
       // Already ticking: kept as it is, so a render doesn't move its beat.
       if (ticker !== undefined) return;
       ticker = window.setInterval(() => {
-        countdown();
         onTick();
       }, DISPLAY_MS);
     },
