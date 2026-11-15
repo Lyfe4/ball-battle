@@ -5,6 +5,7 @@
 - Amends: ADR 0037 (§5: the story is no longer a quiet line between rounds), ADR 0038 (§1 the
   legend's look, §5 the consistency flow also compares rendered looks), ADR 0040 (§ one panel:
   where it is placed, a compact form, the match waits under it, and a tap outside returns focus)
+- Amended by: ADR 0054 (§3: only an offline match waits; a live one never does)
 
 ## Context
 
