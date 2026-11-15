@@ -4,6 +4,7 @@
 // hand. Never a staging or production secret: everything here is the local stack's own.
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { apiDatabaseUrl } from '../src/server/test/local-database.ts';
 
 const out = execSync('pnpm exec supabase status -o json', {
   encoding: 'utf8',
@@ -13,13 +14,10 @@ const status = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1))
   string,
   string
 >;
-const db = new URL(status['DB_URL'] ?? '');
-db.username = 'game_api_v2';
-db.password = 'game_api_local';
 
 const lines = [
   'BALLBATTLE_ONLINE=1',
-  `DATABASE_URL=${db.href}`,
+  `DATABASE_URL=${apiDatabaseUrl(status['DB_URL'] ?? '')}`,
   `SUPABASE_URL=${status['API_URL'] ?? ''}`,
   `SUPABASE_PUBLISHABLE_KEY=${status['PUBLISHABLE_KEY'] ?? ''}`,
   `SUPABASE_SECRET_KEY=${status['SECRET_KEY'] ?? ''}`,

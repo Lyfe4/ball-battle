@@ -2,6 +2,7 @@
 // local Supabase's addresses and keys from `supabase status` once, for every test file. Needs
 // `pnpm exec supabase start` first (Docker); CI's integration job starts it.
 import { execSync } from 'node:child_process';
+import { apiDatabaseUrl } from './local-database.ts';
 
 interface Status {
   readonly DB_URL: string;
@@ -21,12 +22,9 @@ export default function setup(): void {
   } catch {
     throw new Error('The local Supabase is not running: pnpm exec supabase start (needs Docker)');
   }
-  const db = new URL(status.DB_URL);
   process.env['TEST_ADMIN_DATABASE_URL'] = status.DB_URL;
-  // The API's own role, as on Netlify (its local password is set by supabase/seed.sql).
-  db.username = 'game_api_v2';
-  db.password = 'game_api_local';
-  process.env['TEST_DATABASE_URL'] = db.href;
+  // The API's own role through the pooler, as on Netlify.
+  process.env['TEST_DATABASE_URL'] = apiDatabaseUrl(status.DB_URL);
   process.env['TEST_SUPABASE_URL'] = status.API_URL;
   process.env['TEST_SUPABASE_PUBLISHABLE_KEY'] = status.PUBLISHABLE_KEY;
   process.env['TEST_SUPABASE_SECRET_KEY'] = status.SECRET_KEY;
