@@ -3,7 +3,7 @@
 // revealed seed, so the player watches what was played since their last visit and the page checks
 // the server's result as it goes. A pick goes to the server; while it is the other side's turn the
 // page asks again now and then (a 304 when nothing moved). At the end, the fair-play check.
-import { callApi } from '../app/api.ts';
+import { callApi, failureKindOf } from '../app/api.ts';
 import { rememberWatched, watchedOf, type DeviceStorage } from '../app/online-device.ts';
 import { dueOf, fairPlayOf, seatsOf, stateAt, type FairPlay } from '../app/online-series.ts';
 import { advanceSession, settleCurrent, type SeriesSession } from '../app/series-session.ts';
@@ -16,7 +16,7 @@ import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
 import { createFairPlayLine } from '../ui/series/fair-play.ts';
-import { onlineNotice, waitNote } from './online-text.ts';
+import { onlineNotice, waitNote, type LoadStatus } from './online-text.ts';
 
 /** How often a page waiting on the other side asks whether the series moved. */
 const POLL_MS = 15_000;
@@ -46,8 +46,6 @@ export interface OnlinePlay {
   update(world: WorldState, celebrated: boolean): void;
 }
 
-type Status = 'loading' | 'ready' | 'offline' | 'missing' | 'error';
-
 export function createOnlinePlay(
   roots: SeriesPanelRoots & { readonly notice: HTMLElement },
   lookup: DefinitionLookup,
@@ -57,7 +55,9 @@ export function createOnlinePlay(
   let view: SeriesView | undefined;
   let session: SeriesSession | undefined;
   let watched = 0;
-  let status: Status = 'loading';
+  let status: LoadStatus = 'loading';
+  /** The server's message for a refusal shown as the status. */
+  let reason: string | undefined;
   let visible = false;
   let shownAt = -1;
   /** Which play the arena was given (round, attempt, seed): only that one is ever recorded. */
@@ -119,8 +119,9 @@ export function createOnlinePlay(
     shownPlay = keyOf(current);
   }
 
-  function setStatus(next: Status): void {
+  function setStatus(next: LoadStatus, message?: string): void {
     status = next;
+    reason = message;
     render();
   }
 
@@ -158,9 +159,14 @@ export function createOnlinePlay(
       const decoded = answer.status === 304 ? view : decodeSeriesView(answer.body);
       if (decoded === undefined) setStatus('error');
       else adopt(decoded);
-    } else if (answer.kind === 'offline') {
-      if (view === undefined) setStatus('offline');
-    } else setStatus(answer.status === 404 || answer.status === 401 ? 'missing' : 'error');
+    } else if (answer.kind === 'error' && (answer.status === 404 || answer.status === 401)) {
+      setStatus('missing');
+    } else if (answer.kind === 'error') {
+      setStatus(failureKindOf(answer), answer.message);
+    } else if (view === undefined) {
+      // Offline or too slow with nothing to show yet; with a series on screen, the next poll asks.
+      setStatus(answer.kind);
+    }
     schedule();
   }
 
@@ -175,9 +181,10 @@ export function createOnlinePlay(
       if (decoded !== undefined) adopt(decoded);
       return;
     }
-    // Offline or refused (a stale tab): the series as the server has it now.
-    if (answer.kind === 'offline') setStatus('offline');
-    else await load();
+    // Refused (a stale tab): the series as the server has it now. Offline, too slow or failing: say
+    // so; Try again reads the series, which shows whether the pick went through.
+    if (answer.kind === 'error' && answer.status < 500) await load();
+    else setStatus(failureKindOf(answer));
   }
 
   /** Asks again later while the other side is to move and nobody watches a round here. */
@@ -196,10 +203,14 @@ export function createOnlinePlay(
       notice.show(
         onlineNotice(
           status,
-          () => void load(),
+          () => {
+            setStatus('loading');
+            void load();
+          },
           () => {
             host.home();
           },
+          reason,
         ),
         false,
       );

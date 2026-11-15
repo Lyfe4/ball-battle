@@ -12,8 +12,11 @@ export interface ForgetMe {
 
 export interface ForgetMeHost {
   hasGuest(): boolean;
-  /** Deletes the guest and this device's keys; resolves false when the server couldn't be reached. */
-  forget(): Promise<boolean>;
+  /**
+   * Deletes the guest and this device's keys; resolves undefined when done, else the line that says
+   * why not (offline, the server too slow or failing).
+   */
+  forget(): Promise<string | undefined>;
 }
 
 export function createForgetMe(host: ForgetMeHost): ForgetMe {
