@@ -1,18 +1,15 @@
 // Online play's screens wired to the page (ADR 0052): an online series, a friend's challenge,
-// sending one, home's "Your turn" and settings' "Forget me". main.ts creates this only in a build
+// sending one, home's "Back to your match" and settings' "Forget me". main.ts creates this only in a build
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
 import { callApi, failureKindOf } from '../app/api.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { forgetDevice, hasGuest, type DeviceStorage } from '../app/online-device.ts';
-import { writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { ScreenHandler } from '../app/router.ts';
-import type { SeriesList } from '../api/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
-import { createYourTurn, type YourTurn } from '../ui/online/your-turn.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
@@ -42,7 +39,6 @@ export interface OnlineScreens {
   readonly challenge: ScreenHandler<'challenge'>;
   readonly send: ScreenHandler<'send'>;
   readonly play: OnlinePlay;
-  readonly yourTurn: YourTurn & { refresh(): void };
   /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
   readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
   readonly forgetMe: ForgetMe;
@@ -101,25 +97,6 @@ export function createOnlineScreens(
       storage: host.storage,
     },
   );
-
-  const turns = createYourTurn((id) => {
-    host.go((url) => {
-      writeOnlineSeriesParams(url, id);
-    });
-  });
-  const yourTurn = {
-    ...turns,
-    /** Asks for the player's series, only on a device that has played online. */
-    refresh() {
-      if (!hasGuest(host.storage)) {
-        turns.show([], Date.now());
-        return;
-      }
-      void callApi<SeriesList>('GET', 'series').then((answer) => {
-        if (answer.ok && answer.body !== undefined) turns.show(answer.body.series, Date.now());
-      });
-    },
-  };
 
   const back = createBackToMatch((match) => {
     host.go((url) => {
@@ -180,7 +157,6 @@ export function createOnlineScreens(
       },
     },
     play,
-    yourTurn,
     backToMatch,
     forgetMe,
     setVisible(screen) {
