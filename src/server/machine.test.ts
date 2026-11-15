@@ -36,6 +36,16 @@ describe('the series machine', () => {
     expect(verifyFinished(sim, state).ok).toBe(true);
   });
 
+  it('says how many ticks each attempt of each played round took', () => {
+    const { played, ticks } = playDue(sim, stateOf(sim, series({ format: 'blind' })));
+    expect(ticks).toHaveLength(played.length);
+    played.forEach((round, index) => {
+      const attempts = ticks[index] ?? [];
+      expect(attempts).toHaveLength(round.seeds.length);
+      for (const tick of attempts) expect(tick).toBeGreaterThan(0);
+    });
+  });
+
   it('rebuilds the same state from stored rounds as from playing them', () => {
     const blind = series({ format: 'blind' });
     const { state } = playDue(sim, stateOf(sim, blind));

@@ -1,5 +1,7 @@
 // game.challenges: friend links (ADR 0052). Times are the database's: a link expires 7 days after
-// it was made, by `now()`.
+// it was made, by `now()`; a live link (ADR 0053) stops once its sender's lobby has been silent for
+// LOBBY_SEEN_MS, or is cancelled.
+import { LOBBY_SEEN_MS } from '../../api/live.ts';
 import type { BestOf, Format } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 
@@ -17,6 +19,10 @@ export interface ChallengeRow {
   readonly seriesId: string | null;
   /** Who accepted it: side B of its series. */
   readonly acceptor: string | null;
+  readonly live: boolean;
+  /** A live link nobody accepted whose sender cancelled it or left the lobby. */
+  readonly stopped: boolean;
+  readonly requestId: string;
 }
 
 interface Raw {
@@ -30,6 +36,9 @@ interface Raw {
   readonly expired: boolean;
   readonly series_id: string | null;
   readonly acceptor: string | null;
+  readonly live: boolean;
+  readonly stopped: boolean;
+  readonly request_id: string;
 }
 
 export async function challengeByHash(
@@ -40,7 +49,10 @@ export async function challengeByHash(
   const forUpdate = lock ? db`for update of c` : db``;
   const [raw] = await db<Raw[]>`
     select c.id, c.creator, p.display_name as creator_name, c.format, c.best_of, c.lineup,
-      c.expires_at, c.expires_at < now() as expired, c.series_id, s.player_b as acceptor
+      c.expires_at, c.expires_at < now() as expired, c.series_id, s.player_b as acceptor,
+      c.live, c.request_id,
+      (c.live and c.series_id is null and (c.cancelled_at is not null
+        or c.creator_seen_at <= now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))) as stopped
     from game.challenges c
     left join game.profiles p on p.user_id = c.creator
     left join game.series s on s.id = c.series_id
@@ -59,6 +71,9 @@ export async function challengeByHash(
         expired: raw.expired,
         seriesId: raw.series_id,
         acceptor: raw.acceptor,
+        live: raw.live,
+        stopped: raw.stopped,
+        requestId: raw.request_id,
       };
 }
 
@@ -70,15 +85,17 @@ export interface NewChallenge {
   readonly bestOf: BestOf;
   readonly lineup: readonly string[];
   readonly requestId: string;
+  readonly live: boolean;
 }
 
 export async function insertChallenge(db: Db, challenge: NewChallenge): Promise<void> {
   await db`
     insert into game.challenges (token_hash, creator, ruleset, format, best_of, lineup,
-      request_id, expires_at)
+      request_id, expires_at, live, creator_seen_at)
     values (${challenge.tokenHash}, ${challenge.creator}, ${challenge.ruleset}, ${challenge.format},
       ${challenge.bestOf}, ${[...challenge.lineup]}, ${challenge.requestId},
-      now() + interval '7 days')
+      now() + interval '7 days', ${challenge.live},
+      case when ${challenge.live} then now() end)
     on conflict (creator, request_id) do nothing`;
 }
 
@@ -86,17 +103,29 @@ export async function markAccepted(db: Db, id: string, seriesId: string): Promis
   await db`update game.challenges set series_id = ${seriesId} where id = ${id} and series_id is null`;
 }
 
-/** Links a player has out that nobody has accepted yet and that haven't expired. */
+/**
+ * Links by turns a player has out that nobody has accepted yet and that haven't expired. A live
+ * link is one at a time instead (`liveNowOf`), and stops when its sender leaves.
+ */
 export async function openChallengesOf(db: Db, creator: string): Promise<number> {
   const [row] = await db<{ count: number }[]>`
     select count(*)::int as count from game.challenges
-    where creator = ${creator} and series_id is null and expires_at > now()`;
+    where creator = ${creator} and not live and series_id is null and expires_at > now()`;
   return row?.count ?? 0;
 }
 
+/** Open series by turns a player is in (live ones finish in minutes and have their own rule). */
 export async function openSeriesOf(db: Db, player: string): Promise<number> {
   const [row] = await db<{ count: number }[]>`
     select count(*)::int as count from game.series
-    where status = 'open' and (player_a = ${player} or player_b = ${player})`;
+    where status = 'open' and not live and (player_a = ${player} or player_b = ${player})`;
   return row?.count ?? 0;
+}
+
+/**
+ * Holds `player`'s starting of live matches until the transaction ends, on every host: a challenge
+ * sent and one accepted at the same moment can't both pass the one-match check (ADR 0053).
+ */
+export async function lockPlayer(db: TransactionSql, player: string): Promise<void> {
+  await db`select pg_advisory_xact_lock(hashtextextended(${`live:${player}`}, 0))`;
 }

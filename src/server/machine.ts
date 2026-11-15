@@ -93,26 +93,34 @@ export const turnOf = (sides: readonly Side[]): Turn => (sides.length === 2 ? 'b
 
 /**
  * Plays every round that needs no more picks (all of Blind; Reveal's and Showdown's last round),
- * with the series' frozen sim, draws and sudden death included. Returns the rounds it played.
+ * with the series' frozen sim, draws and sudden death included. Returns the rounds it played and,
+ * for each, every attempt's length in ticks (a live fight's watching time, ADR 0053).
  */
 export function playDue(
   sim: FrozenSim,
   from: SeriesState,
-): { state: SeriesState; played: RoundRecord[] } {
+): { state: SeriesState; played: RoundRecord[]; ticks: number[][] } {
   let state = from;
   const played: RoundRecord[] = [];
+  const ticks: number[][] = [];
+  let attempts: number[] = [];
   for (;;) {
     if (state.winner !== undefined || sim.awaitingPick(state) !== undefined) break;
     const match = sim.nextMatch(state);
     if (match === undefined) break;
     const end = sim.playToEnd(sim.matchWorld(match));
     if (end.match.status !== 'finished') throw new Error('A match ended without a result');
+    attempts.push(end.tick);
     const rounds = state.rounds.length;
     state = sim.recordOutcome(state, sim.outcomeOf(end.match.result, end));
     const record = state.rounds[rounds];
-    if (record !== undefined) played.push(record);
+    if (record !== undefined) {
+      played.push(record);
+      ticks.push(attempts);
+      attempts = [];
+    }
   }
-  return { state, played };
+  return { state, played, ticks };
 }
 
 /**

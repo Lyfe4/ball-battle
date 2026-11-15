@@ -1,22 +1,38 @@
-// A series in one query, and every change to it in one statement (ADR 0052; the functions run far
-// from the database, so each round trip costs ~200 ms). `loadSeries` reads the row with its picks,
-// rounds and seeds as JSON aggregates. `writeSeries` applies a whole move (the series row, a new
-// pick, rounds played, seeds revealed) as data-modifying CTEs that all hang off one guarded
-// update: `where version = $version`. A request that raced another one writes nothing and gets
-// undefined, so it reloads and tries again: the same one-at-a-time guarantee a row lock gave,
-// without holding a transaction open across the network.
+// A series in one query (ADR 0052; the functions run far from the database, so each round trip
+// costs ~200 ms): the row with its picks, rounds and seeds as JSON aggregates, and for a live series
+// (ADR 0053) its clock: the database's `now()`, when each player was last heard from and each
+// round's fight times. A live series' read is its reader's heartbeat, written in the same
+// statement. Every change is written by `writeSeries` (series-write.ts).
 import type { SeriesStatus, Turn } from '../../api/series.ts';
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
+import type { EndReason, FightTime } from '../live.ts';
 import type { SeedRow } from '../view.ts';
-import { TURN_HOURS, type SeriesRow } from './series.ts';
+import type { SeriesRow } from './series.ts';
 
 type Db = Sql | TransactionSql;
+
+/** A live series' clock, by the database's time (ms since the epoch). */
+export interface LiveClock {
+  /** The database's clock when the series was read. */
+  readonly now: number;
+  readonly createdAt: number;
+  readonly startedAt: number | null;
+  /** When the current pick phase opened; null before the start and once nothing is due. */
+  readonly opensAt: number | null;
+  readonly seen: Readonly<Record<Side, number | null>>;
+  readonly fights: readonly FightTime[];
+  /** The picks the server made at random when their time ran out. */
+  readonly auto: readonly { readonly round: number; readonly side: Side }[];
+  readonly endReason: EndReason | 'timeout' | null;
+}
 
 export interface LoadedSeries extends SeriesRow {
   readonly picks: readonly PickRecord[];
   readonly rounds: readonly RoundRecord[];
   readonly seeds: readonly SeedRow[];
+  /** Null for a series by turns. */
+  readonly live: LiveClock | null;
 }
 
 interface Raw {
@@ -38,25 +54,62 @@ interface Raw {
   readonly turn_deadline: Date | null;
   readonly expired: boolean;
   readonly final_setup: SeriesSetup | null;
-  readonly picks: PickRecord[];
-  readonly rounds: RoundRecord[];
+  readonly picks: (PickRecord & { readonly auto: boolean })[];
+  readonly rounds: (RoundRecord & {
+    readonly fightAt: number | null;
+    readonly endsAt: number | null;
+  })[];
   readonly seeds: SeedRow[];
+  readonly live: boolean;
+  readonly now: Date;
+  readonly created_at: Date;
+  readonly started_at: Date | null;
+  readonly turn_opens_at: Date | null;
+  readonly end_reason: LiveClock['endReason'];
+  readonly seen_a: Date | null;
+  readonly seen_b: Date | null;
 }
 
-/** The series with everything about it, in one round trip; undefined when there is none. */
-export async function loadSeries(db: Db, id: string): Promise<LoadedSeries | undefined> {
+const msOf = (date: Date | null): number | null => (date === null ? null : date.getTime());
+
+/**
+ * The series with everything about it, in one round trip; undefined when there is none. When
+ * `reader` plays in an open live series, this read is their heartbeat on it.
+ */
+export async function loadSeries(
+  db: Db,
+  id: string,
+  reader?: string,
+): Promise<LoadedSeries | undefined> {
   const [raw] = await db<Raw[]>`
+    with beat as (
+      insert into game.presence (series_id, side, seen_at)
+      select s.id, case when s.player_a = ${reader ?? null}::uuid then 'a' else 'b' end, now()
+      from game.series s
+      where s.id = ${id} and s.live and s.status = 'open'
+        and ${reader ?? null}::uuid in (s.player_a, s.player_b)
+      on conflict (series_id, side) do update set seen_at = excluded.seen_at
+      returning side, seen_at
+    )
     select s.id, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
       pa.display_name as name_a, pb.display_name as name_b, s.lineup_a, s.lineup_b, s.key_id,
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
+      s.live, now() as now, s.created_at, s.started_at, s.turn_opens_at, s.end_reason,
+      coalesce((select seen_at from beat where side = 'a'),
+        (select seen_at from game.presence x where x.series_id = s.id and x.side = 'a')) as seen_a,
+      coalesce((select seen_at from beat where side = 'b'),
+        (select seen_at from game.presence x where x.series_id = s.id and x.side = 'b')) as seen_b,
       coalesce((
-        select json_agg(json_build_object('round', p.round, 'side', p.side, 'ball', p.ball)
+        select json_agg(json_build_object('round', p.round, 'side', p.side, 'ball', p.ball,
+          'auto', p.auto)
           order by p.round, p.created_at)
         from game.picks p where p.series_id = s.id), '[]') as picks,
       coalesce((
         select json_agg(json_build_object('round', r.round, 'a', r.a, 'b', r.b, 'seeds', r.seeds,
-          'outcomes', r.outcomes, 'winner', r.winner, 'suddenDeath', r.sudden_death)
+          'outcomes', r.outcomes, 'winner', r.winner, 'suddenDeath', r.sudden_death,
+          'fightAt', (extract(epoch from r.fight_at) * 1000)::bigint,
+          'endsAt', (extract(epoch from r.ends_at) * 1000)::bigint)
           order by r.round)
         from game.rounds r where r.series_id = s.id), '[]') as rounds,
       coalesce((
@@ -84,89 +137,35 @@ export async function loadSeries(db: Db, id: string): Promise<LoadedSeries | und
     version: raw.version,
     turn: raw.turn,
     deadline: raw.turn_deadline,
-    expired: raw.expired,
+    // A live turn never forfeits for time: its pick is made at random (live.ts).
+    expired: raw.expired && !raw.live,
     final: raw.final_setup,
-    picks: raw.picks,
-    rounds: raw.rounds,
+    picks: raw.picks.map(({ round, side, ball }) => ({ round, side, ball })),
+    rounds: raw.rounds.map(({ round, a, b, seeds, outcomes, winner, suddenDeath }) => ({
+      round,
+      a,
+      b,
+      seeds,
+      outcomes,
+      winner,
+      suddenDeath,
+    })),
     seeds: raw.seeds,
+    live: raw.live ? clockOf(raw) : null,
   };
 }
 
-/** One move of a series: what the row becomes, and the rows it adds or reveals. */
-export interface SeriesMove {
-  readonly turn: Turn | null;
-  /** Keep the current turn's deadline (Showdown's opener, locked by one side first). */
-  readonly keepDeadline: boolean;
-  readonly status: SeriesStatus;
-  readonly winner: Side | null;
-  readonly final: SeriesSetup | null;
-  readonly picks: readonly PickRecord[];
-  readonly rounds: readonly RoundRecord[];
-  readonly reveals: readonly {
-    readonly purpose: string;
-    readonly index: number;
-    readonly seed: number;
-  }[];
-}
-
-/**
- * Applies `move` if the series is still at `version`: the new version and deadline, or undefined
- * when another request moved the series first (nothing was written).
- */
-export async function writeSeries(
-  db: Db,
-  id: string,
-  version: number,
-  move: SeriesMove,
-): Promise<{ readonly version: number; readonly deadline: Date | null } | undefined> {
-  const open = move.status === 'open';
-  const rounds = move.rounds.map((round) => ({
-    round: round.round,
-    a: round.a,
-    b: round.b,
-    seeds: round.seeds,
-    outcomes: round.outcomes,
-    winner: round.winner,
-    sudden_death: round.suddenDeath,
-  }));
-  const [row] = await db<{ readonly version: number; readonly turn_deadline: Date | null }[]>`
-    with moved as (
-      update game.series set
-        turn = ${move.turn},
-        turn_deadline = case
-          when ${move.turn}::text is null then null
-          when ${move.keepDeadline} then turn_deadline
-          else now() + make_interval(hours => ${TURN_HOURS})
-        end,
-        status = ${move.status},
-        winner = ${move.winner},
-        finished_at = case when ${open} then null else now() end,
-        final_setup = ${move.final === null ? null : db.json(move.final)},
-        version = version + 1
-      where id = ${id} and version = ${version}
-      returning id, version, turn_deadline
-    ), picked as (
-      insert into game.picks (series_id, round, side, ball)
-      select moved.id, x.round, x.side, x.ball
-      from moved, jsonb_to_recordset(${db.json(move.picks)}::jsonb)
-        as x(round integer, side text, ball text)
-      on conflict (series_id, round, side) do nothing
-    ), played as (
-      insert into game.rounds (series_id, round, a, b, seeds, outcomes, winner, sudden_death)
-      select moved.id, x.round, x.a, x.b,
-        array(select jsonb_array_elements_text(x.seeds)::bigint),
-        array(select jsonb_array_elements_text(x.outcomes)),
-        x.winner, x.sudden_death
-      from moved, jsonb_to_recordset(${db.json(rounds)}::jsonb)
-        as x(round integer, a text, b text, seeds jsonb, outcomes jsonb, winner text,
-          sudden_death boolean)
-    ), revealed as (
-      update game.series_seeds s set seed = x.seed, revealed_at = now()
-      from moved, jsonb_to_recordset(${db.json(move.reveals)}::jsonb)
-        as x(purpose text, index integer, seed bigint)
-      where s.series_id = moved.id and s.purpose = x.purpose and s.idx = x.index
-        and s.seed is null
-    )
-    select version, turn_deadline from moved`;
-  return row === undefined ? undefined : { version: row.version, deadline: row.turn_deadline };
+function clockOf(raw: Raw): LiveClock {
+  return {
+    now: raw.now.getTime(),
+    createdAt: raw.created_at.getTime(),
+    startedAt: msOf(raw.started_at),
+    opensAt: msOf(raw.turn_opens_at),
+    seen: { a: msOf(raw.seen_a), b: msOf(raw.seen_b) },
+    fights: raw.rounds.flatMap(({ round, fightAt, endsAt }) =>
+      fightAt === null || endsAt === null ? [] : [{ round, fightAt, endsAt }],
+    ),
+    auto: raw.picks.filter((p) => p.auto).map(({ round, side }) => ({ round, side })),
+    endReason: raw.end_reason,
+  };
 }

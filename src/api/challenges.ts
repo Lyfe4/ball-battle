@@ -9,6 +9,11 @@ export interface CreateChallenge {
   readonly lineup: readonly string[];
   /** The client's id for this create (a UUID), so a retry returns the same link. */
   readonly requestId: string;
+  /**
+   * Played live (ADR 0053): both players in the match until it ends, Reveal or Showdown only.
+   * Without it, the series is played by turns (kept in the code, hidden from players).
+   */
+  readonly live: boolean;
 }
 
 export interface ChallengeLink {
@@ -28,10 +33,13 @@ export interface ChallengeInfo {
   readonly from: string | null;
   /**
    * `open`: can be accepted. `yours`: the viewer sent it. `taken`: someone else accepted it.
-   * `accepted`: the viewer accepted it (`seriesId` says where). `expired`.
+   * `accepted`: the viewer accepted it (`seriesId` says where). `expired`. `stopped`: a live link
+   * whose sender cancelled it or left the lobby.
    */
-  readonly status: 'open' | 'yours' | 'taken' | 'accepted' | 'expired';
+  readonly status: 'open' | 'yours' | 'taken' | 'accepted' | 'expired' | 'stopped';
   readonly seriesId: string | null;
+  /** Played live (ADR 0053). */
+  readonly live: boolean;
 }
 
 /** POST /api/v1/challenges/:token/accept. */
@@ -56,13 +64,14 @@ const lineupOf = (value: unknown): string[] | undefined =>
 
 export function decodeCreateChallenge(body: unknown): CreateChallenge | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
-  const { format, bestOf, lineup, requestId } = body as Record<string, unknown>;
+  const { format, bestOf, lineup, requestId, live } = body as Record<string, unknown>;
   const named = FORMATS.find((name) => name === format);
   const length = bestOf === 3 || bestOf === 5 ? bestOf : undefined;
   const balls = lineupOf(lineup);
   if (named === undefined || length === undefined || balls === undefined) return undefined;
   if (typeof requestId !== 'string' || !UUID.test(requestId)) return undefined;
-  return { format: named, bestOf: length, lineup: balls, requestId };
+  if (live !== undefined && typeof live !== 'boolean') return undefined;
+  return { format: named, bestOf: length, lineup: balls, requestId, live: live === true };
 }
 
 export function decodeAcceptChallenge(body: unknown): AcceptChallenge | undefined {
