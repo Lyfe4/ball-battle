@@ -8,9 +8,9 @@ import type { Format, Side } from '../sim/index.ts';
 export const PICK_SECONDS = 30;
 /**
  * From the lock that completes a round to its Fight!: room for the other phone to learn of it (its
- * next read, measured up to about 1.6 s from Ohio, ADR 0054), then the whole 3-2-1 on both.
+ * next read: measured up to 2.2 s from Ohio on a slow phone, ADR 0054), then the whole 3-2-1.
  */
-export const LEAD_MS = 5_000;
+export const LEAD_MS = 6_000;
 /** The 3-2-1 at the end of the lead; before it the ready card says "Get ready". */
 export const COUNTDOWN_MS = 3_000;
 /** A player not heard from for this long shows as disconnected to the other. */

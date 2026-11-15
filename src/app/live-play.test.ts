@@ -85,7 +85,7 @@ describe('the countdown before a live fight (ADR 0054)', () => {
   const early = T;
 
   it('leaves room before the 3-2-1 for a phone that learns of the round late', () => {
-    expect(LEAD_MS - COUNTDOWN_MS).toBeGreaterThanOrEqual(2_000);
+    expect(LEAD_MS - COUNTDOWN_MS).toBeGreaterThanOrEqual(3_000);
   });
 
   it('says Get ready, then counts 3, 2, 1, each for a whole second', () => {
