@@ -187,8 +187,24 @@ export function createOnlinePlay(
     checkFairPlay();
   }
 
+  /**
+   * Nothing moved (a 304, or the same series in full) on a screen that shows it: the read was the
+   * heartbeat and nothing else, so a live fight's frames are left alone. What changes with time
+   * alone (a fight's end, a countdown) the display ticker and the arena's frames take care of.
+   */
+  const unchanged = (next: SeriesView): boolean =>
+    status === 'ready' &&
+    !reconnecting &&
+    view !== undefined &&
+    (next === view ||
+      (next.version === view.version && JSON.stringify(next) === JSON.stringify(view)));
+
   /** Takes a new view: by turns the rounds watched stay watched and anything new waits. */
   function adopt(next: SeriesView): void {
+    if (unchanged(next)) {
+      client.schedule();
+      return;
+    }
     const first = view?.id !== next.id;
     view = next;
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
@@ -232,10 +248,11 @@ export function createOnlinePlay(
     live.setActive(visible && ready && isLive(), () => {
       const slot = live.staged();
       if (slot !== undefined && live.now() >= slot.endAt) placeLive(false);
-      host.redraw();
+      // The countdowns and notes, redrawn while nothing moves on the arena; a fight draws itself.
+      if (!live.fighting()) host.redraw();
     });
     host.layoutChanged();
-    host.redraw();
+    if (!live.fighting()) host.redraw();
   }
 
   // Back from the background (iPhone Safari pauses a hidden page): ask now, and put the fight

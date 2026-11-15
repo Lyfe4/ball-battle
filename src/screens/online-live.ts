@@ -47,9 +47,14 @@ export interface LiveDriver {
   stage(slot: AttemptSlot, match: NextMatch, showing: boolean): void;
   /** The attempt staged, while there is one. */
   staged(): AttemptSlot | undefined;
+  /** A staged attempt is under way now: the arena's own frames draw it. */
+  fighting(): boolean;
   /** Nothing to stage (a pick phase, the end): any countdown and start timer stop. */
   clear(): void;
-  /** Starts or stops the display ticker (the countdowns) with the screen. */
+  /**
+   * Starts or stops the display ticker (the countdowns) with the screen. It redraws only while no
+   * fight plays: during one the arena draws every frame, and nothing else runs on the side.
+   */
   setActive(active: boolean, onTick: () => void): void;
 }
 
@@ -58,6 +63,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
   let slot: AttemptSlot | undefined;
   let start: number | undefined;
   let ticker: number | undefined;
+  let onTick: () => void = () => undefined;
   /** Each played round's attempts in ticks, by series and round: played headlessly once. */
   const lengths = new Map<string, readonly number[]>();
   const now = () => serverNowOf(clock, Date.now());
@@ -118,18 +124,22 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
       countdown();
     },
     staged: () => slot,
+    fighting: () => slot !== undefined && now() >= slot.startAt && now() < slot.endAt,
     clear() {
       slot = undefined;
       stopStart();
       arena.countdown(undefined);
     },
-    setActive(active, onTick) {
-      if (ticker !== undefined) window.clearInterval(ticker);
-      ticker = undefined;
+    setActive(active, tick) {
+      onTick = tick;
       if (!active) {
+        if (ticker !== undefined) window.clearInterval(ticker);
+        ticker = undefined;
         stopStart();
         return;
       }
+      // Already ticking: kept as it is, so a render doesn't move its beat.
+      if (ticker !== undefined) return;
       ticker = window.setInterval(() => {
         countdown();
         onTick();

@@ -7,7 +7,7 @@ import type { Tips } from '../app/tips.ts';
 import { showsAbility } from '../render/ability-sign.ts';
 import { theme } from '../render/theme.ts';
 import type { DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
-import { element } from './dom.ts';
+import { element, setHidden } from './dom.ts';
 
 /** How long an ability hint shows, in effect-time milliseconds. */
 export const HINT_MS = 1600;
@@ -79,7 +79,7 @@ export function createArenaTips(
       const ball =
         showing === undefined ? undefined : drawn.balls.find((b) => b.id === showing?.ballId);
       if (showing === undefined || ball === undefined || ball.health <= 0) {
-        hint.hidden = true;
+        setHidden(hint, true);
         return;
       }
       if (hint.hidden || hint.textContent !== showing.text) {

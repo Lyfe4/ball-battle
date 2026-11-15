@@ -1,4 +1,4 @@
-import { element } from '../dom.ts';
+import { element, setHidden, setText } from '../dom.ts';
 
 export interface LeaveConfirm {
   /** The way out: the Leave series link, or the confirm row in its place. */
@@ -81,15 +81,15 @@ export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfir
     element: root,
     setHidden(hidden) {
       if (hidden) close(false);
-      root.hidden = hidden;
+      setHidden(root, hidden);
     },
     close() {
       close(false);
     },
     setLive(live) {
       asks = live || ask;
-      link.textContent = live ? 'Leave match' : words.link;
-      question.textContent = live ? 'Leave and forfeit?' : words.question;
+      setText(link, live ? 'Leave match' : words.link);
+      setText(question, live ? 'Leave and forfeit?' : words.question);
     },
   };
 }

@@ -10,7 +10,7 @@ import {
 } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
-import { element, setText } from './dom.ts';
+import { element, setAttr, setHidden, setText } from './dom.ts';
 import { createPairing } from './balls/pairing.ts';
 import { createLeaveConfirm } from './series/leave-confirm.ts';
 import { createPickBanner } from './series/pick-banner.ts';
@@ -204,7 +204,7 @@ export function createSeriesPanel(
       phase = screen.phase;
       const playing = phase === 'playing';
       const finished = phase === 'finished';
-      root.dataset['phase'] = phase;
+      setAttr(root, 'data-phase', phase);
       // The track's open state belongs to the round being fought, so a new round starts closed.
       fought = playing ? current?.round : undefined;
       if (trackOpenFor !== fought) trackOpenFor = undefined;
@@ -250,14 +250,14 @@ export function createSeriesPanel(
       const totals = scoreOf(state);
       const won = state.winner === seats.you;
       const headline = won ? 'You win' : `${seats.them} wins`;
-      result.hidden = !finished;
+      setHidden(result, !finished);
       // Styled by who won from the player's side: `a` is always the player's colour.
-      result.dataset['winner'] = state.winner === undefined ? '' : won ? 'a' : 'b';
+      setAttr(result, 'data-winner', state.winner === undefined ? '' : won ? 'a' : 'b');
       setText(result, headline);
       const [first, second] = won
         ? [totals[seats.you], totals[them]]
         : [totals[them], totals[seats.you]];
-      result.setAttribute('aria-label', `${headline} ${String(first)}–${String(second)}`);
+      setAttr(result, 'aria-label', `${headline} ${String(first)}–${String(second)}`);
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';
@@ -266,34 +266,37 @@ export function createSeriesPanel(
         reveal && roundsPlayed === 0 && state.pending.length === 0
           ? { first: firstToShowOf(state.setup), key: state.setup.seed }
           : undefined;
-      banner.element.hidden = !actions.includes('pick');
-      picks.element.hidden = !actions.includes('pick');
+      setHidden(banner.element, !actions.includes('pick'));
+      setHidden(picks.element, !actions.includes('pick'));
       if (choice !== undefined) {
         picks.show(choice, seats);
         banner.show(choice, toss, seats);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
-      pairing.element.hidden = pair === undefined;
+      setHidden(pairing.element, pair === undefined);
       if (pair !== undefined) {
         const known = (id: string | undefined) =>
           id === undefined ? undefined : definitions.get(id);
         pairing.show(known(pair.you), known(pair.bot));
       }
-      next.hidden = !actions.includes('play');
+      const play = actions.includes('play');
+      setHidden(next, !play);
       setText(
         next,
         state.pending.length > 0 ? '↻ Replay round' : `Play round ${String(roundsPlayed + 1)}`,
       );
-      rematch.hidden = !actions.includes('rematch');
-      newSeries.hidden = !actions.includes('newSeries');
-      buttons.hidden = next.hidden && rematch.hidden && newSeries.hidden;
-      share.hidden = !finished || online;
+      const again = actions.includes('rematch');
+      const fresh = actions.includes('newSeries');
+      setHidden(rematch, !again);
+      setHidden(newSeries, !fresh);
+      setHidden(buttons, !play && !again && !fresh);
+      setHidden(share, !finished || online);
       if (!finished) setText(share, 'Copy link');
       leave.setHidden(finished || (screen.waiting && !actions.includes('leave')));
       leave.setLive(moment.online?.live === true);
       const said = playing ? undefined : moment.online?.note;
-      note.hidden = said === undefined;
+      setHidden(note, said === undefined);
       setText(note, said ?? '');
 
       let text = '';

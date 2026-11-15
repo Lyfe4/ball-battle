@@ -1,7 +1,7 @@
 import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
 import { readableOn } from '../render/contrast.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
-import { element, setText } from './dom.ts';
+import { element, setHidden, setText } from './dom.ts';
 import { createMatchStory } from './match-story.ts';
 import { describeResult } from './result-text.ts';
 
@@ -159,7 +159,7 @@ export function createHud(
         setText(row.outcome, outcome === 'won' ? 'Wins' : outcome === 'draw' ? 'Draw' : '');
       }
       setText(result, finished ? describeResult(world.match, world, definitions) : '');
-      buttons.hidden = !finished || seriesMode;
+      setHidden(buttons, !finished || seriesMode);
       // Replayed between frames from the moment the fight ends, so it is told by the time the
       // result shows (and the series panel's copy of the same round is told with it).
       if (start !== undefined && world.match.status === 'finished') story.prepare(start);
