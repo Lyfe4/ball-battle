@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="mock.css" />
+    <style>
+      :root {
+        --brawler: #e84545;
+        --archer: #20c4e8;
+        --frost: #a9dcf6;
+        --vampire: #9150e0;
+        --storm: #6ea9ea;
+        --speedster: #f6c71b;
+        --thorns: #2c9e3c;
+        --venom: #7cc82c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="desk sheet" style="max-width: 30rem">
+      <div class="header">
+        <span class="back">‹</span>
+        <h1>Your challenge</h1>
+        <span class="gear">⚙</span>
+      </div>
+      <div class="card" style="justify-items: center; gap: 10px; padding: 22px 14px">
+        <div style="position: relative; height: 70px; width: 60px">
+          <span
+            class="ball l"
+            style="
+              --b: var(--accent, #ffd23f);
+              background: var(--color-accent);
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 56px;
+              height: 56px;
+            "
+          ></span
+          ><span
+            style="
+              position: absolute;
+              bottom: 0;
+              left: 10px;
+              width: 40px;
+              height: 6px;
+              border-radius: 50%;
+              background: #000;
+              opacity: 0.35;
+            "
+          ></span>
+        </div>
+        <b style="font-size: 1.25rem">Waiting for your friend</b>
+        <span class="muted small">Best of 3 · Reveal · live</span>
+      </div>
+      <div class="btn primary">Share link</div>
+      <div class="card row between">
+        <span class="small muted">battle-ball.netlify.app/?challenge=MV5a…</span
+        ><span class="link">Copy</span>
+      </div>
+      <p class="muted small">
+        The match starts the moment they accept. Stay until the end: leaving for 30 s loses it.
+      </p>
+      <span class="link" style="justify-self: start">Cancel challenge</span>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-12
+- Amended by: ADR 0055 (home by opponent: Play remembers the last series against the bot; Other
+  modes goes)
 - Amends: ADR 0020 (§5 home), ADR 0027 (§3 Best of 3 leads home; Free play moves to Other modes),
   ADR 0035 (Reveal is the main mode, see its addendum; the level is also chosen on the lineup step)
 

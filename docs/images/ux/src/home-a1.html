@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="mock.css" />
+    <style>
+      :root {
+        --brawler: #e84545;
+        --archer: #20c4e8;
+        --frost: #a9dcf6;
+        --vampire: #9150e0;
+        --storm: #6ea9ea;
+        --speedster: #f6c71b;
+        --thorns: #2c9e3c;
+        --venom: #7cc82c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="screen" data-phone>
+      <div class="court" style="aspect-ratio: 16/10">
+        <span class="ball" style="--b: var(--vampire); left: 22%; top: 30%"></span
+        ><span class="ball" style="--b: var(--storm); left: 66%; top: 52%"></span>
+      </div>
+      <div class="row between">
+        <h1 style="font-size: 2rem">BallBattle</h1>
+        <span class="gear">⚙</span>
+      </div>
+      <div class="btn primary big">
+        Play<span class="meta">Best of 5 · Reveal · vs Hard bot</span>
+      </div>
+      <div class="row" style="align-items: stretch">
+        <div class="card raised" style="flex: 1">
+          <span class="name">vs Bot</span
+          ><span class="muted small">A series against the computer</span>
+        </div>
+        <div class="card raised" style="flex: 1">
+          <span class="name">vs Friend</span
+          ><span class="muted small">Live, by a link you send</span>
+        </div>
+      </div>
+      <div class="row center" style="gap: 24px; margin-top: 4px">
+        <span class="link">Free play ›</span><span class="link">Ball manual ›</span>
+      </div>
+    </div>
+  </body>
+</html>

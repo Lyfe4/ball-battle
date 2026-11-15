@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-13
+- Amended by: ADR 0055 (the length is chosen on each opponent's setup screen)
 - Amends: ADR 0017 (a series' length is part of its setup), ADR 0035 (Hard plays any length),
   ADR 0046 (§2: Other modes lists every format under a length choice)
 
