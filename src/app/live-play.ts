@@ -3,7 +3,7 @@
 // time (`attemptWatchMs`, the same function the server timed it with). So a page that comes back,
 // or opens the series late, knows which rounds have already been fought, which attempt is on now
 // and how far into it, and fights it from there: both screens show the same moment.
-import { attemptWatchMs } from '../api/live.ts';
+import { attemptWatchMs, COUNTDOWN_MS } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 
 /** One attempt of a round on the server's clock (ms since the epoch). */
@@ -63,3 +63,27 @@ export function livePlace(
 /** Whole seconds left until `at`, never negative: a countdown's number. */
 export const secondsUntil = (at: number, now: number): number =>
   Math.max(0, Math.ceil((at - now) / 1000));
+
+/** A page that learned of a round this little short of the whole 3-2-1 still shows all of it. */
+const COUNTDOWN_SLACK_MS = 200;
+
+/**
+ * The ready card's line before a live fight that starts at `startAt` (ADR 0054): "Get ready", then
+ * the 3-2-1 over its last COUNTDOWN_MS, each number for a whole second. A page that learned of the
+ * round (`learnedAt`) too late for the whole 3-2-1 keeps "Get ready" until the fight starts: it never
+ * joins the count part-way.
+ */
+export function countdownLine(startAt: number, now: number, learnedAt: number): string {
+  const late = startAt - learnedAt < COUNTDOWN_MS - COUNTDOWN_SLACK_MS;
+  const left = startAt - now;
+  if (late || left > COUNTDOWN_MS) return 'Get ready';
+  return `Fight in ${String(secondsUntil(startAt, now))}…`;
+}
+
+/** Ms until the countdown's line next changes, or undefined once the fight has started. */
+export function nextLineChange(startAt: number, now: number): number | undefined {
+  const left = startAt - now;
+  if (left <= 0) return undefined;
+  if (left > COUNTDOWN_MS) return left - COUNTDOWN_MS;
+  return left % 1000 === 0 ? 1000 : left % 1000;
+}

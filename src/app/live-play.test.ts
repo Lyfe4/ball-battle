@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { attemptWatchMs } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 import type { RoundRecord } from '../sim/series.ts';
-import { attemptSlots, livePlace, secondsUntil } from './live-play.ts';
+import { COUNTDOWN_MS, LEAD_MS } from '../api/live.ts';
+import {
+  attemptSlots,
+  countdownLine,
+  livePlace,
+  nextLineChange,
+  secondsUntil,
+} from './live-play.ts';
 
 const T = 1_700_000_000_000;
 const round = (index: number, seeds: number[]): RoundRecord => ({
@@ -69,5 +76,44 @@ describe('a live series at a moment', () => {
   it('counts down in whole seconds, never below zero', () => {
     expect(secondsUntil(T + 2_001, T)).toBe(3);
     expect(secondsUntil(T - 5, T)).toBe(0);
+  });
+});
+
+describe('the countdown before a live fight (ADR 0054)', () => {
+  const start = T + LEAD_MS;
+  /** The page learned of the round at the lock: the whole lead is ahead of it. */
+  const early = T;
+
+  it('leaves room before the 3-2-1 for a phone that learns of the round late', () => {
+    expect(LEAD_MS - COUNTDOWN_MS).toBeGreaterThanOrEqual(2_000);
+  });
+
+  it('says Get ready, then counts 3, 2, 1, each for a whole second', () => {
+    expect(countdownLine(start, T, early)).toBe('Get ready');
+    expect(countdownLine(start, start - 3_001, early)).toBe('Get ready');
+    expect(countdownLine(start, start - 3_000, early)).toBe('Fight in 3…');
+    expect(countdownLine(start, start - 2_001, early)).toBe('Fight in 3…');
+    expect(countdownLine(start, start - 2_000, early)).toBe('Fight in 2…');
+    expect(countdownLine(start, start - 1_000, early)).toBe('Fight in 1…');
+    expect(countdownLine(start, start - 1, early)).toBe('Fight in 1…');
+  });
+
+  it('shows the 3-2-1 to a phone that learns in time for all of it', () => {
+    expect(countdownLine(start, start - 2_500, start - 2_900)).toBe('Fight in 3…');
+  });
+
+  it('never joins the 3-2-1 part-way: a phone that learns late keeps Get ready', () => {
+    for (const learned of [start - 2_700, start - 1_500, start - 200]) {
+      expect(countdownLine(start, learned, learned)).toBe('Get ready');
+      expect(countdownLine(start, start - 500, learned)).toBe('Get ready');
+    }
+  });
+
+  it('changes its line exactly on each second, not on the next display tick', () => {
+    expect(nextLineChange(start, T)).toBe(LEAD_MS - COUNTDOWN_MS);
+    expect(nextLineChange(start, start - 3_000)).toBe(1_000);
+    expect(nextLineChange(start, start - 2_400)).toBe(400);
+    expect(nextLineChange(start, start - 1)).toBe(1);
+    expect(nextLineChange(start, start)).toBeUndefined();
   });
 });

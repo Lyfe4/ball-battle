@@ -6,8 +6,13 @@ import type { Format, Side } from '../sim/index.ts';
 
 /** Seconds each pick has, from when its pick phase opens. Out of time: a random ball. */
 export const PICK_SECONDS = 30;
-/** From the lock that completes a round to its Fight!, so both screens learn of it first. */
-export const LEAD_MS = 3_000;
+/**
+ * From the lock that completes a round to its Fight!: room for the other phone to learn of it (its
+ * next read, measured up to about 1.6 s from Ohio, ADR 0054), then the whole 3-2-1 on both.
+ */
+export const LEAD_MS = 5_000;
+/** The 3-2-1 at the end of the lead; before it the ready card says "Get ready". */
+export const COUNTDOWN_MS = 3_000;
 /** A player not heard from for this long shows as disconnected to the other. */
 export const AWAY_AFTER_MS = 6_000;
 /** Then this long to come back before losing by forfeit. */
