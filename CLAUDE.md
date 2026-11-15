@@ -160,6 +160,9 @@ Each line is a rule; its ADR has the reasoning.
   in the sweep, earliest first (`live-service.ts`); never on a host's clock.
 - Presence is `game.presence` (per series and side), written by the player's own read of the
   series in the same statement; `/me/match` (home) is never a heartbeat.
+- While a live fight plays, a read that changes nothing is the heartbeat only: no layout, no
+  arena redraw, no re-staging (`online-play.browser.test.ts`). Per-frame DOM writes go through
+  `setText`, `setHidden` and `setAttr` (`src/ui/dom.ts`), which write only a change.
 - The server times each round's fight (`fight_at`, `ends_at`) with `attemptWatchMs`, which must stay
   longer than the page's own presentation (`live-watch.test.ts`); picks before `ends_at` are
   refused. The page starts each fight with a timer for its server time (`online-live.ts`), plays
@@ -267,6 +270,9 @@ Each line is a rule; its ADR has the reasoning.
   `verifySeries` accepts it. Leave series and New series clear it; Back holds it; a fight under way
   restarts from its Fight! moment. Browser flows that reload use a frame
   (`src/flows/reload-support.ts`).
+- A button that waits on the server is busy through `busyOnClick` / `holdBusy`
+  (`src/ui/busy-button.ts`): a handler that returns a promise is a request. Never a second
+  spinner or a disabled button for it.
 - Colours, sizes and type come from roles in `src/styles/tokens.css`; renderer colours and sizes
   from `src/render/theme.ts`. The look is Sticker Pop (ADR 0032): one self-hosted family (Bricolage Grotesque, CSP `font-src 'self'`), calm
   platform screens, the energy in the arena. Every ball keeps 3:1 against the floor; text in a
