@@ -204,8 +204,11 @@ export function lastPlayOf(state: SeriesState): NextMatch | undefined {
 }
 
 /** What the player can do next on a series screen: every screen but a fight offers one or more. */
-/** `leave`: a live match's only way on while it waits (Leave and forfeit, ADR 0053). */
-export type SeriesAction = 'pick' | 'play' | 'rematch' | 'newSeries' | 'leave';
+/**
+ * `leave`: a live match's only way on while it waits (Leave and forfeit, ADR 0053). `decline`:
+ * No thanks to a friend's rematch (ADR 0055).
+ */
+export type SeriesAction = 'pick' | 'play' | 'rematch' | 'decline' | 'newSeries' | 'leave';
 
 /** Where the series is: a round being fought, the screen between rounds, or the result. */
 export type SeriesPhase = 'playing' | 'between' | 'finished';
@@ -240,6 +243,11 @@ export interface SeriesMoment {
      * on is "Leave match" (asked as Leave and forfeit?), never a Home that would quietly lose it.
      */
     readonly live?: boolean;
+    /**
+     * At the end of a live match (ADR 0055): `offer`, Rematch may be asked (beside Home);
+     * `answer`, the other player asked, so Rematch or No thanks.
+     */
+    readonly rematch?: 'offer' | 'answer' | undefined;
   };
 }
 
@@ -256,6 +264,13 @@ export interface SeriesScreen {
    * moves on by itself, every other screen offers a pick, Play round, or Rematch and New series.
    */
   readonly actions: readonly SeriesAction[];
+}
+
+/** The ways on at the end: offline Rematch and New series; online Home, and a friend's rematch. */
+function endActionsOf(online: SeriesMoment['online']): readonly SeriesAction[] {
+  if (online === undefined) return ['rematch', 'newSeries'];
+  if (online.rematch === 'answer') return ['rematch', 'decline'];
+  return online.rematch === 'offer' ? ['rematch', 'newSeries'] : ['newSeries'];
 }
 
 /** What a series screen shows and offers at this moment; the panel renders exactly this. */
@@ -278,7 +293,7 @@ export function seriesScreenOf({
       choice: undefined,
       pairing: undefined,
       waiting: false,
-      actions: finished ? (online === undefined ? ['rematch', 'newSeries'] : ['newSeries']) : [],
+      actions: finished ? endActionsOf(online) : [],
     };
   }
   // A link's due pick is the link's to make, so the player isn't asked for it: Play round makes it.

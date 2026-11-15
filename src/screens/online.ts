@@ -99,7 +99,12 @@ export function createOnlineScreens(
   const play = createOnlinePlay(
     { panel, exit, notice: seriesNotice, loading: seriesLoading },
     lookup,
-    { ...host, home, primed: (id) => primer.takeSeries(id) },
+    {
+      ...host,
+      home,
+      primed: (id) => primer.takeSeries(id),
+      primeSeries: (id) => primer.series(id),
+    },
   );
   const challenges = createChallengeScreens(
     { notice: challengeNotice, lineup: lineupRoot, loading: challengeLoading },
@@ -178,7 +183,7 @@ export function createOnlineScreens(
     },
     send: {
       show: (route) => {
-        challenges.showSend(route.format, route.bestOf, route.step);
+        challenges.showSend(route.format, route.bestOf, route.step, route.rematch);
       },
     },
     play,

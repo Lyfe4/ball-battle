@@ -30,6 +30,8 @@ export const ERROR_CODES = [
   'challenge_stopped',
   'own_challenge',
   'too_many_series',
+  /** A rematch that can't be asked or answered now: declined, out of time, or never offered. */
+  'rematch_closed',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
   'ruleset_missing',
   'internal',

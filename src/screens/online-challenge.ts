@@ -3,9 +3,9 @@
 // seeing theirs). The guest is made here after the 16+ confirmation, asked once per device at the
 // start of either flow (opening the vs Friend setup, or Build your lineup on a friend's card), so
 // a lineup is never built only to be stopped; never on load. Every state has a way on (ADR 0027).
-import { callApi, failureKindOf, type ApiFailure } from '../app/api.ts';
+import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
-import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
+import { rememberGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeChallengeParams, writeOnlineSeriesParams, type SendStep } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
 import type { BestOf, Format, Lineup } from '../sim/series.ts';
@@ -15,11 +15,11 @@ import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import type { CurrentMatch } from '../api/live.ts';
-import { inAMatchCard } from './current-match.ts';
 import { createFriendSetup } from './friend-setup.ts';
-import { adultCard, CARD_SAYS, cardFor } from './online-challenge-text.ts';
+import { createRematchLineup } from './rematch-lineup.ts';
+import { createGuestGate } from './guest-gate.ts';
+import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import { challengeUrl, copyLink, shareLink } from './online-share.ts';
-import { onlineNotice } from './online-text.ts';
 
 /** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
 const LOBBY_POLL_MS = 2_000;
@@ -47,8 +47,8 @@ export interface ChallengeScreens {
   setVisible(visible: boolean): void;
   /** A friend's link: its card, or the lineup that accepts it. */
   showChallenge(token: string, step: 'card' | 'lineup'): void;
-  /** Sending a challenge: the vs Friend setup, or the lineup for it. */
-  showSend(format: Format, bestOf: BestOf, step: SendStep): void;
+  /** Sending a challenge: the vs Friend setup, or the lineup for it (or for a rematch). */
+  showSend(format: Format, bestOf: BestOf, step: SendStep, rematch?: string): void;
   /** The page is visible again: a waiting lobby asks now. */
   resumed(): void;
 }
@@ -69,7 +69,8 @@ export function createChallengeScreens(
   let token: string | undefined;
   /** One id per challenge being sent, so a retry after a lost answer gets the same link. */
   let requestId = crypto.randomUUID();
-  let sending: { readonly format: Format; readonly bestOf: BestOf } | undefined;
+  let sending:
+    { readonly format: Format; readonly bestOf: BestOf; readonly rematch?: string } | undefined;
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
 
@@ -104,10 +105,29 @@ export function createChallengeScreens(
       draft = tray;
     },
     // Send challenge and Accept challenge are requests: the button shows it is working.
-    onDone: (own) => (sending === undefined ? accept(own) : send(own)),
+    onDone: (own) =>
+      sending === undefined
+        ? accept(own)
+        : sending.rematch === undefined
+          ? send(own)
+          : rematch.submit(sending.rematch, own),
   });
   roots.lineup.classList.add('series-setup');
   roots.lineup.replaceChildren(setup.element, lineup.element);
+
+  // A rematch's new lineup, then the wait for the friend's (ADR 0055).
+  const rematch = createRematchLineup({
+    show: (content, focus) => {
+      show('notice', content, focus);
+    },
+    intoSeries: (id) => intoSeries(id),
+    home: () => {
+      host.home();
+    },
+    failed: (answer, retry) => {
+      failed(answer, retry);
+    },
+  });
 
   function stopLobby(): void {
     if (lobby !== undefined) window.clearTimeout(lobby);
@@ -141,66 +161,29 @@ export function createChallengeScreens(
     host.home();
   };
 
-  /** A failure as a notice; an `unauthenticated` one first asks for the 16+ confirmation. */
-  function failed(answer: ApiFailure, retry: () => Promise<unknown>): void {
-    if (answer.kind === 'error' && answer.code === 'unauthenticated') {
-      rememberGuest(host.storage, false);
-      show(
-        'notice',
-        adultCard(
-          () => startGuest(retry),
-          () => {
-            host.back(home);
-          },
-        ),
-      );
-      return;
-    }
-    const reason = answer.kind === 'error' ? answer.message : undefined;
-    if (answer.kind === 'error' && answer.code === 'in_a_match') {
-      show(
-        'notice',
-        inAMatchCard(answer.message, (match) => host.toMatch(match), home),
-      );
-      return;
-    }
-    show('notice', onlineNotice(failureKindOf(answer), retry, home, reason));
-  }
-
-  /**
-   * The first online action on a device with no guest asks for the 16+ confirmation before any
-   * request (a device that lost its cookie meets the same card after a 401). True when it asked.
-   */
-  function askFirst(then: () => unknown): boolean {
-    if (hasGuest(host.storage)) return false;
-    show(
-      'notice',
-      adultCard(
-        () => startGuest(then),
-        () => {
-          host.back(home);
-        },
-      ),
-    );
-    return true;
-  }
-
-  /** Makes the guest (the first online action), then does what was asked. */
-  async function startGuest(then: () => unknown): Promise<void> {
-    const made = await callApi<unknown>('POST', 'session', { adult: true });
-    if (!made.ok) {
-      failed(made, () => startGuest(then));
-      return;
-    }
-    rememberGuest(host.storage, true);
-    // The age card's button stays busy through the request it was asked for.
-    await then();
-  }
+  // The 16+ question and failures, as notices in this screen's place.
+  const { failed, askFirst } = createGuestGate({
+    storage: host.storage,
+    show: (content) => {
+      show('notice', content);
+    },
+    back: () => {
+      host.back(home);
+    },
+    home,
+    toMatch: (match) => host.toMatch(match),
+  });
 
   async function send(own: Lineup): Promise<void> {
     if (sending === undefined || askFirst(() => send(own))) return;
     // Live (ADR 0053): both players in the match until it ends.
-    const body = { ...sending, lineup: own, requestId, live: true };
+    const body = {
+      format: sending.format,
+      bestOf: sending.bestOf,
+      lineup: own,
+      requestId,
+      live: true,
+    };
     const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
     if (!answer.ok) {
       failed(answer, () => send(own));
@@ -308,7 +291,10 @@ export function createChallengeScreens(
   return {
     setVisible(next) {
       visible = next;
-      if (!next) show('notice');
+      if (!next) {
+        show('notice');
+        rematch.stop();
+      }
     },
     resumed() {
       // Back from a share sheet or another app: the lobby asks at once.
@@ -344,12 +330,19 @@ export function createChallengeScreens(
         if (lobby === undefined) void loadCard(false);
       }
     },
-    showSend(format, bestOf, step) {
-      sending = { format, bestOf };
+    showSend(format, bestOf, step, again) {
+      sending = again === undefined ? { format, bestOf } : { format, bestOf, rematch: again };
       token = undefined;
+      rematch.stop();
       if (step === 'lineup') {
         show('lineup');
-        lineup.open(format, draft, undefined, bestOf, 'Send challenge');
+        lineup.open(
+          format,
+          draft,
+          undefined,
+          bestOf,
+          again === undefined ? 'Send challenge' : 'Start rematch',
+        );
         return;
       }
       // The start of the vs Friend flow: the 16+ question first, on a device that hasn't answered.

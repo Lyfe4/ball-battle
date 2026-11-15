@@ -172,6 +172,10 @@ Each line is a rule; its ADR has the reasoning.
   it at 1x, and shows nothing of a round before its `ends_at`.
 - One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
   Live is Reveal and Showdown only. Play by turns stays in the code and its tests, hidden.
+- A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2
+  minutes of a live match's end, answered within 30 s, both lineups within 60 s, then a new live
+  series (new seeds). Its timers are read against `now()`, never written; every move locks the old
+  series' row in a statement of its own before reading.
 
 **The sim**
 

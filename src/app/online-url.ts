@@ -4,7 +4,8 @@
 //   `&step=lineup` to build the lineup that accepts it. The sender's own link opens the same card,
 //   which offers to share it.
 // - `?view=send&fmt=<format>&mode=bo3|bo5`: building the lineup for a challenge to send, and
-//   `&step=setup` for the vs Friend setup before it (its length and format, ADR 0055).
+//   `&step=setup` for the vs Friend setup before it (its length and format, ADR 0055), or
+//   `&rematch=<series id>` for a rematch's new lineup (ADR 0055).
 // Nothing secret is in any of them: the series id needs a session that plays in it, and the token
 // is the link itself, meant to be shared.
 import { isChallengeToken } from '../api/challenges.ts';
@@ -19,6 +20,8 @@ export type OnlineRoute =
       readonly format: Format;
       readonly bestOf: BestOf;
       readonly step: SendStep;
+      /** A rematch's new lineup (ADR 0055): the live series it follows. */
+      readonly rematch?: string;
     };
 
 /** Sending a challenge: the vs Friend setup, then the lineup. */
@@ -50,12 +53,14 @@ export function writeSendParams(
   format: Format,
   bestOf: BestOf,
   step: SendStep = 'lineup',
+  rematch?: string,
 ): void {
   clear(params);
   params.set('view', 'send');
   params.set('fmt', format);
   params.set('mode', bestOf === 5 ? 'bo5' : 'bo3');
   if (step === 'setup') params.set('step', 'setup');
+  if (rematch !== undefined) params.set('rematch', rematch);
 }
 
 /** The online screen a URL names, if any; anything malformed names none (and falls to home). */
@@ -72,5 +77,9 @@ export function parseOnlineRoute(params: URLSearchParams): OnlineRoute | undefin
   const format =
     FORMATS.find((name) => name === params.get('fmt')?.trim().toLowerCase()) ?? 'reveal';
   const step = params.get('step') === 'setup' ? 'setup' : 'lineup';
-  return { screen: 'send', format, bestOf: readMode(params.get('mode')) ?? 3, step };
+  const bestOf = readMode(params.get('mode')) ?? 3;
+  const rematch = params.get('rematch')?.trim().toLowerCase();
+  return rematch !== undefined && UUID.test(rematch) && step === 'lineup'
+    ? { screen: 'send', format, bestOf, step, rematch }
+    : { screen: 'send', format, bestOf, step };
 }
