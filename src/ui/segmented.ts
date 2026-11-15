@@ -35,7 +35,7 @@ export function createSegmented<T>(
   root.append(caption);
 
   const buttons = options.map((option) => {
-    const button = element('button', 'segmented-button', option.text);
+    const button = element('button', 'segmented-button choice', option.text);
     button.type = 'button';
     if (option.label !== undefined) button.setAttribute('aria-label', option.label);
     button.addEventListener('click', () => {

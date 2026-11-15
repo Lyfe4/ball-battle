@@ -32,10 +32,6 @@
   cursor: pointer;
 }
 
-.quick-slot[aria-pressed='true'] {
-  background: var(--color-selected);
-}
-
 /* The ball's drawing with its mark against the other slot on its shoulder. */
 .quick-slot-art {
   position: relative;

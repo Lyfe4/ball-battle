@@ -24,10 +24,6 @@
   cursor: pointer;
 }
 
-.ball-tile[aria-pressed='true'] {
-  background: var(--color-selected);
-}
-
 .ball-tile[aria-disabled='true'] {
   opacity: 0.45;
   cursor: default;

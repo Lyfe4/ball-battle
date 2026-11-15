@@ -63,7 +63,7 @@ export function createBallGrid(
   let state: BallGridState = { pressed: [] };
 
   const tiles = balls.map((ball) => {
-    const tile = element('button', 'ball-tile');
+    const tile = element('button', 'ball-tile choice');
     tile.type = 'button';
     tile.dataset['ballId'] = ball.id;
     const icon = element('canvas', 'ball-tile-icon');
