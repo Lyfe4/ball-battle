@@ -4,6 +4,7 @@
 // the flow, never on load. Every state has a way on (ADR 0027).
 import type { ErrorCode } from '../api/errors.ts';
 import { callApi, failureKindOf, type ApiFailure } from '../app/api.ts';
+import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
@@ -224,7 +225,7 @@ export function createChallengeScreens(
       });
       return;
     }
-    show('notice', cardFor(info, cardActions()));
+    show('notice', cardFor(info, cardActions(), inAppBrowserOf(navigator.userAgent)));
     // Waiting in the lobby: ask again soon (each ask keeps the link open).
     if (info.live && info.status === 'yours' && visible) {
       lobby = window.setTimeout(() => void loadCard(), LOBBY_POLL_MS);

@@ -1,6 +1,7 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
 import { PICK_SECONDS } from '../api/live.ts';
+import { inAppLine, type InAppBrowser } from '../app/in-app-browser.ts';
 import type { NoticeContent } from '../ui/notice.ts';
 import { STAY_LINE } from './live-text.ts';
 import { challengeLine } from './online-text.ts';
@@ -43,8 +44,15 @@ export async function shareLink(token: string): Promise<string> {
   }
 }
 
-/** What a challenge's card says and offers; `undefined` is a link nobody made. */
-export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): NoticeContent {
+/**
+ * What a challenge's card says and offers; `undefined` is a link nobody made. `inApp`: the link was
+ * opened inside an app's own browser, so a live challenge's card suggests the phone's browser first.
+ */
+export function cardFor(
+  info: ChallengeInfo | undefined,
+  actions: CardActions,
+  inApp?: InAppBrowser,
+): NoticeContent {
   const home = { text: 'Home', onClick: actions.home };
   const own = { text: 'Challenge a friend', onClick: actions.sendOwn };
   if (info === undefined) {
@@ -61,7 +69,12 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
       return {
         title: `${from} challenges you`,
         body: info.live
-          ? [what, `Build your lineup without seeing theirs. ${LIVE_LINE}`, STAY_LINE]
+          ? [
+              what,
+              `Build your lineup without seeing theirs. ${LIVE_LINE}`,
+              STAY_LINE,
+              ...(inApp === undefined ? [] : [inAppLine(inApp)]),
+            ]
           : [
               what,
               'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
