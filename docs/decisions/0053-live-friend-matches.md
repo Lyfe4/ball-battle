@@ -325,7 +325,7 @@ Rules, all in the existing one-statement writes guarded by `version`:
 - **When both players have gone, the one who went quiet first loses** (settled by the 15-minute
   sweep), so the result never depends on who happened to read last.
 
-## As built (2026-11-15, PRs #65-#68)
+## As built (2026-11-15, PRs #65-#69)
 
 The proposal above stands where this section doesn't say otherwise.
 
@@ -379,6 +379,36 @@ one player sending and accepting on two hosts at once, the API), unit tests for 
 schedule and the words, and `live-match.online.test.ts`: two phones at 390 × 664 through a whole
 match, a pick running out, Leave and forfeit, and a disconnect that comes back in time, then one
 that doesn't.
+
+### Measured on staging, as built (2026-11-15)
+
+Two Chromium phones at 390 × 664 on one PC in New South Wales against `main`'s deploy (functions in
+Ohio, database in Sydney), `scripts/live-measure.ts`. This PC's clock was 3.2 s off the database's;
+both pages estimated it within 5 ms of each other.
+
+| Run                    | Length | Requests (both) | Fight start gap (ms) | Pick → other screen (ms)                        | Read p50 / p90 / max (ms) |
+| ---------------------- | ------ | --------------- | -------------------- | ----------------------------------------------- | ------------------------- |
+| Best of 3              | 125 s  | 109             | 11, 0                | 2,461, 1,945, 1,678                             | 628 / 1,041 / 3,010       |
+| Best of 5              | 220 s  | 212             | 183, 0, 0, 0, 0      | 2,581, 1,429, 1,512, 1,744, 3,233, 2,197, 1,372 | 630 / 783 / 3,210         |
+| Best of 3, friend +300 | 110 s  | 91              | 200, 10              | 3,889, 2,112, 1,745                             | 627 / 932 / 1,567         |
+
+- **Fights start together:** 9 fights, 7 within 11 ms (most 0). The two outliers (183 and 200 ms)
+  are each a match's first fight, before a page has many answers to estimate the clock from: the
+  error is bounded by half a round trip (about 315 ms from Ohio to Sydney). The prototype's median
+  was about 55 ms.
+- **A pick reaches the other screen in 1.4-3.9 s**, as before: the pick's own write, then up to a
+  poll and a read.
+- **Lobby to match:** 5.1-7.0 s from Accept to both pages in the match.
+- **A pick running out** made a random pick each run, and both pages said so.
+- **Disconnect** (after #69): the other page said "disconnected" 6.5 s after the drop, cleared it
+  2.9 s after the player came back (15.2 s before #69, which fixed the ETag the page sent), and
+  showed the forfeit 37.0 s after the player left for good.
+- **Cost** by the estimate above: a Best of 3 about 0.21 credits, a Best of 5 about 0.41, most of
+  it compute waiting on Sydney.
+
+| Home, a match in progress                                            | Home, no match                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------------- |
+| ![Back to your match in Play's place](../images/live/home-match.png) | ![Play, as always](../images/live/home-no-match.png) |
 
 ## Consequences
 
