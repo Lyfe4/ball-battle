@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MENU_MIN_WIDTH, menuMaxHeight, menuWidth, placeMenu } from './settings-place.ts';
+import {
+  MENU_MIN_WIDTH,
+  menuMaxHeight,
+  menuWidth,
+  placeClear,
+  placeMenu,
+} from './settings-place.ts';
 
 const phone = { width: 375, height: 812, top: 0 };
 const size = { width: 300, height: 260 };
@@ -95,5 +101,39 @@ describe('placeMenu', () => {
 
   it('is never taller than the visible screen less its edges and safe areas', () => {
     expect(menuMaxHeight(safari, { top: 0, right: 0, bottom: 34, left: 0 })).toBe(664 - 32 - 34);
+  });
+});
+
+describe('placeClear (a live match: never over the court)', () => {
+  const safari = { width: 390, height: 664, top: 0 };
+  const phoneCourt = { left: 16, top: 16, width: 358, height: 358 };
+  const short = { width: 375, height: 635, top: 0 };
+  const shortCourt = { left: 16, top: 16, width: 343, height: 343 };
+
+  it('takes the band under the gear when it is the tallest, capped to it', () => {
+    // 375 x 635: the gear in the score line under the court, 196 px to the bottom edge.
+    const at = placeClear(gear(299, 379), { width: 320, height: 300 }, short, shortCourt);
+    expect(at).toStrictEqual({ left: 23, top: 431, maxHeight: 188 });
+    const box = { left: at.left, top: at.top, width: 320, height: at.maxHeight };
+    expect(box.top).toBeGreaterThanOrEqual(shortCourt.top + shortCourt.height);
+    expect(box.top + box.height).toBeLessThanOrEqual(short.height - 16);
+  });
+
+  it('keeps off the court and its gear wherever the gear is', () => {
+    const at = placeClear(gear(286, 386), { width: 320, height: 300 }, safari, phoneCourt);
+    expect(at.top).toBeGreaterThanOrEqual(386 + 44 + 8);
+    expect(at.top + Math.min(300, at.maxHeight)).toBeLessThanOrEqual(664 - 16);
+  });
+
+  it('sits on the band’s bottom when the room is over the gear', () => {
+    // A court low on the screen and the gear above it: the band above the gear is the room.
+    const low = { left: 16, top: 300, width: 343, height: 343 };
+    const at = placeClear(
+      gear(299, 240),
+      { width: 320, height: 120 },
+      { width: 375, height: 700, top: 0 },
+      low,
+    );
+    expect(at).toStrictEqual({ left: 23, top: 112, maxHeight: 216 });
   });
 });

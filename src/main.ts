@@ -279,7 +279,9 @@ function setSpeed(next: PlaybackSpeed): void {
   refreshSettings();
 }
 const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
-const settingsHost = { tips, speed: () => state.speed, setSpeed, court: arena.court };
+// A live match plays on the server's clock: settings never make it wait (ADR 0054).
+const mayWait = () => !online.isLive();
+const settingsHost = { tips, speed: () => state.speed, setSpeed, court: arena.court, mayWait };
 installSettings({ ...settingsHost, ...online.settings });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */

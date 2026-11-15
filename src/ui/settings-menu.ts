@@ -3,7 +3,9 @@
 // looks the same everywhere (and like the legend: the shared info panel). It floats over the page
 // (never pushing the layout), placed by its gear, kept off the court and inside the visible
 // screen; on a short phone it first tries a compact form, and only when nothing keeps it off the
-// court does it cover it, and the match waits (`settingsCoverCourt`). The gear toggles it; Close,
+// court does it cover it, and the match waits (`settingsCoverCourt`). A live match can't wait (it
+// plays on the server's clock, ADR 0053), so there it never covers the court: it takes the room
+// beside it and scrolls inside itself (ADR 0054). The gear toggles it; Close,
 // Escape and a tap outside close it, and focus returns to the gear. Everything in it is saved per
 // device by the code it calls.
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
@@ -11,7 +13,7 @@ import type { Tips } from '../app/tips.ts';
 import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import type { Box } from './tooltip-place.ts';
-import { menuMaxHeight, menuWidth, placeMenu, type Insets } from './settings-place.ts';
+import { menuMaxHeight, menuWidth, placeClear, placeMenu, type Insets } from './settings-place.ts';
 
 /** What the menu reads and changes, set once by main.ts. */
 export interface SettingsHost {
@@ -21,6 +23,11 @@ export interface SettingsHost {
   readonly setSpeed: (speed: PlaybackSpeed) => void;
   /** The court on screen, if one shows: the menu keeps off it (ADR 0044). */
   readonly court: () => Box | undefined;
+  /**
+   * Whether the match on screen may wait while the menu covers its court (ADR 0044). False for a
+   * live match, which plays on the server's clock: the menu then never covers the court (ADR 0054).
+   */
+  readonly mayWait: () => boolean;
   /** Online play's group ("Forget me"), in builds that have it (ADR 0052). */
   readonly online?: { readonly element: HTMLElement; refresh(): void };
 }
@@ -198,6 +205,18 @@ function place(): void {
   if (spot.covers) {
     panel.dataset['compact'] = '';
     spot = at();
+  }
+  if (spot.covers && court !== undefined && !(host?.mayWait() ?? true)) {
+    // A live match: compact, beside the court, scrolling inside itself if it must.
+    const clear = placeClear(
+      gear,
+      { width: panel.offsetWidth, height: panel.offsetHeight },
+      screen,
+      court,
+      insets,
+    );
+    panel.style.maxHeight = `${String(clear.maxHeight)}px`;
+    spot = { left: clear.left, top: clear.top, covers: false };
   }
   if (spot.covers) {
     delete panel.dataset['compact'];
