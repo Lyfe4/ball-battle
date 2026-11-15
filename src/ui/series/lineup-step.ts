@@ -3,6 +3,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import { BEST_OF, type BestOf, type Format, type Lineup } from '../../sim/series.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
+import { busyOnClick } from '../busy-button.ts';
 import { element, setText } from '../dom.ts';
 import {
   completeLineup,
@@ -38,7 +39,8 @@ export interface LineupStep {
 export interface LineupActions {
   readonly onBack: () => void;
   /** The tray is full (three balls, or five in a Best of 5) and the player goes on. */
-  readonly onDone: (lineup: Lineup) => void;
+  /** Online, a request: the button shows it is working until it settles (busy-button.ts). */
+  readonly onDone: (lineup: Lineup) => unknown;
   /** The tray changed, so the setup keeps it if the player leaves for the manual and comes back. */
   readonly onChange: (draft: Draft) => void;
   /** The player chose the bot's level here (ADR 0046), without leaving the step. */
@@ -110,9 +112,9 @@ export function createLineupStep(
 
   const done = element('button', 'hud-button hud-button-primary');
   done.type = 'button';
-  done.addEventListener('click', () => {
+  busyOnClick(done, () => {
     const lineup = completeLineup(draft, size);
-    if (lineup !== undefined) actions.onDone(lineup);
+    return lineup === undefined ? undefined : actions.onDone(lineup);
   });
   const footer = element('div', 'screen-footer');
   footer.append(done);

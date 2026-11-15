@@ -32,13 +32,14 @@ export interface SeriesActions {
   /** Plays the next match: the next round, or a drawn round again. */
   readonly onNext: () => void;
   /** The player picked `ball` for the coming round (a Reveal or Showdown turn). */
-  readonly onPick: (ball: string) => void;
+  /** Online, a request: the ball tapped shows it is working, the rest wait (busy-button.ts). */
+  readonly onPick: (ball: string) => unknown;
   /** Same lineups, new seed. */
   readonly onRematch: () => void;
   /** Back to the lineup builder. */
   readonly onNewSeries: () => void;
   /** Leaves the series before it is decided (it is held, to resume). */
-  readonly onLeave: () => void;
+  readonly onLeave: () => unknown;
 }
 
 export type { SeriesPhase } from './series/series-view.ts';

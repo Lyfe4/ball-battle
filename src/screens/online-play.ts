@@ -100,19 +100,17 @@ export function createOnlinePlay(
         playCurrent();
         host.redraw();
       },
-      onPick: (ball) => {
-        void client.pick(ball);
-      },
+      // A request: the ball tapped shows it is working, the rest of the grid waits.
+      onPick: (ball) => client.pick(ball),
       onRematch: () => undefined,
       onNewSeries: () => {
         host.home();
       },
       // Live: Leave and forfeit, asked first by the panel. By turns: Home.
-      onLeave: () => {
-        void client.forfeit().then(() => {
+      onLeave: () =>
+        client.forfeit().then(() => {
           host.home();
-        });
-      },
+        }),
     },
     true,
   );
@@ -227,10 +225,8 @@ export function createOnlinePlay(
   function render(): void {
     const ready = status === 'ready' && view !== undefined;
     roots.notice.hidden = !visible || ready;
-    const retry = () => {
-      setStatus('loading');
-      void client.load();
-    };
+    // Try again keeps the notice up, its button working, until the answer shows what's next.
+    const retry = () => client.load();
     if (!ready && visible) {
       notice.show(
         onlineNotice(

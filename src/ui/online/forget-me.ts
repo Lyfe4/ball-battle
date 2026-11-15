@@ -2,6 +2,7 @@
 // deletes the guest on the server at once (its open series are forfeited, finished ones stay in
 // the opponent's history as "Deleted player") and clears every `ballbattle.*` key here. Asked once,
 // in place, like Leave series.
+import { busyOnClick } from '../busy-button.ts';
 import { element, setText } from '../dom.ts';
 
 export interface ForgetMe {
@@ -52,13 +53,12 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
     start.hidden = false;
     start.focus();
   });
-  yes.addEventListener('click', () => {
-    yes.disabled = true;
-    void host.forget().then((done) => {
-      yes.disabled = false;
-      if (!done) setText(question, 'You’re offline: try again when you’re back.');
-    });
-  });
+  busyOnClick(yes, () =>
+    host.forget().then((failed) => {
+      // Done, the page starts afresh; otherwise the line says why not, and Delete can be tapped again.
+      if (failed !== undefined) setText(question, failed);
+    }),
+  );
 
   return {
     element: group,

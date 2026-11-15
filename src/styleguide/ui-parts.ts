@@ -4,6 +4,7 @@
 import '../style.css';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { createBallGrid } from '../ui/balls/ball-grid.ts';
+import { holdBusy } from '../ui/busy-button.ts';
 import { leanOf } from '../ui/balls/matchups.ts';
 import { createBallDetail } from '../ui/manual/ball-detail.ts';
 import { createMatchupChart } from '../ui/manual/matchup-chart.ts';
@@ -79,9 +80,29 @@ export function uiPartsSection(): HTMLElement {
   const legend = createSymbolLegend();
   legend.panel.hidden = false;
 
+  // Buttons waiting on the server (busy-button.ts), held busy for good: a footer's two, and a pick.
+  const never = new Promise<void>(() => undefined);
+  const footer = document.createElement('div');
+  footer.className = 'screen-footer';
+  for (const [text, primary] of [
+    ['Send challenge', true],
+    ['Try again', false],
+  ] as const) {
+    const button = document.createElement('button');
+    button.className = primary ? 'hud-button hud-button-primary' : 'hud-button';
+    button.textContent = text;
+    footer.append(button);
+    void holdBusy(button, never);
+  }
+  const waiting = createPickRows(BALL_LOOKUP, () => never);
+  if (choice !== undefined) waiting.show(choice);
+  waiting.element.querySelector<HTMLButtonElement>('.pick-row-pick')?.click();
+
   row.append(
     example('Series track, Reveal after round 1', track.element),
     example('Pick rows: show first, with the bot’s possible answers', rows.element),
+    example('Buttons waiting on the server', footer),
+    example('Pick rows: a pick on its way, the rest waiting', waiting.element),
     example('Symbol legend, open', legend.panel),
     example('Ball grid, one chosen', plain.element),
     example('Ball grid, marked against Storm (quick match)', marked.element),

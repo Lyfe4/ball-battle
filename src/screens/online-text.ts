@@ -17,7 +17,8 @@ export type LoadStatus = 'loading' | 'ready' | 'missing' | FailureKind;
  */
 export function onlineNotice(
   status: LoadStatus,
-  retry: () => void,
+  /** A request: Try again shows it is working until it settles. */
+  retry: () => Promise<unknown>,
   home: () => void,
   reason?: string,
 ): NoticeContent {

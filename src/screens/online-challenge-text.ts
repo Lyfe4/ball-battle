@@ -18,7 +18,7 @@ export interface CardActions {
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
   /** The sender stops waiting in a live lobby (ADR 0053). */
-  readonly cancel: () => void;
+  readonly cancel: () => Promise<unknown>;
 }
 
 /** What a live match is, said on both players' cards before it starts (ADR 0053). */
@@ -159,7 +159,7 @@ function shareButton(actions: CardActions) {
  * The first online action asks once (ADR 0052 section 6): online play is for players 16 and over,
  * and says what is kept. Confirming makes the guest.
  */
-export function adultCard(confirm: () => void, cancel: () => void): NoticeContent {
+export function adultCard(confirm: () => Promise<unknown>, cancel: () => void): NoticeContent {
   return {
     title: 'Play online',
     body: [
