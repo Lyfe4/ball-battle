@@ -34,7 +34,7 @@ const facts = [
   `surrounding whitespace: ${raw === raw.trim() ? 'no' : 'yes'}`,
 ];
 if (url.hostname.endsWith('pooler.supabase.com') && !/\.[a-z0-9]{20}$/.test(user)) {
-  facts.push('warning: through the pooler the user must be game_api.<project ref>');
+  facts.push('warning: through the pooler the user must be game_api_v2.<project ref>');
 }
 if (url.hostname.startsWith('db.') && url.hostname.endsWith('.supabase.co')) {
   facts.push('warning: the direct host is IPv6-only and unreachable from Netlify: use the pooler');

@@ -14,7 +14,7 @@ const status = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1))
   string
 >;
 const db = new URL(status['DB_URL'] ?? '');
-db.username = 'game_api';
+db.username = 'game_api_v2';
 db.password = 'game_api_local';
 
 const lines = [
