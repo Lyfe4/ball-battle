@@ -20,6 +20,10 @@ arena until one wins, and every decision is made before the fight starts.
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option on Other
   modes ([ADR 0048](docs/decisions/0048-best-of-5.md)).
+- **Live friend matches** (deploy previews and staging for now,
+  [ADR 0053](docs/decisions/0053-live-friend-matches.md)): send a link, wait in the lobby, and play
+  Reveal or Showdown together. 30 s a pick, fights that start at the same moment on both phones at
+  the server's time, and a fair-play check at the end against seeds committed at the start.
 - **Soft counters:** most pairs lean one way, so a pick matters, but no fight is decided before it
   starts.
 - **Teaching in the arena:** a ready moment before a fight (both balls where they start, what to
@@ -209,7 +213,7 @@ link from another version says so and offers to play under today's rules rather 
 replaying a different fight
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
-Online play (ADR 0052) runs only in deploy previews and staging. Locally: Docker, then
+Online play (ADR 0052, live friend matches ADR 0053) runs only in deploy previews and staging. Locally: Docker, then
 `pnpm exec supabase start`, `node scripts/local-env.ts > .env`, `pnpm build:online` and
 `netlify dev` (http://localhost:8888), which serves the game and the API on one origin.
 
@@ -231,7 +235,7 @@ displays.
 | `pnpm test:slow`       | Roster-wide tests that play every matchup (a separate CI job)                                               |
 | `pnpm test:browsers`   | Known match results and page flows in Chromium, Firefox, WebKit (own CI job)                                |
 | `pnpm test:db`         | The API against a local Supabase (`pnpm exec supabase start` first; needs Docker)                           |
-| `pnpm test:online`     | Two players through a friend challenge in Chromium, against `netlify dev`                                   |
+| `pnpm test:online`     | Two phones through live friend matches in Chromium, against `netlify dev`                                   |
 | `pnpm golden`          | Record the known match results again after a ruleset bump                                                   |
 | `pnpm lint`            | ESLint                                                                                                      |
 | `pnpm typecheck`       | `tsc -b` across all tsconfig projects                                                                       |

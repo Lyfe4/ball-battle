@@ -325,6 +325,61 @@ Rules, all in the existing one-statement writes guarded by `version`:
 - **When both players have gone, the one who went quiet first loses** (settled by the 15-minute
   sweep), so the result never depends on who happened to read last.
 
+## As built (2026-11-15, PRs #65-#68)
+
+The proposal above stands where this section doesn't say otherwise.
+
+**Schema** (`20261115090000_live_series.sql`, expand only): `series.live`, `started_at`,
+`turn_opens_at` and `end_reason`; `game.presence` (a row per series and side); `rounds.fight_at` and
+`ends_at`; `picks.auto`; `challenges.live`, `creator_seen_at` and `cancelled_at`. No `grace_used`
+columns (see "Calls made while building").
+
+**Rules** (`src/server/live.ts`, pure; `live-service.ts` writes them):
+
+- The first pick phase opens when both players have asked about the series (the friend counts as
+  arrived at Accept); whoever hasn't arrived 60 s after Accept loses (`start_missed`).
+- A pick that runs out is a random ball from those left (`crypto.getRandomValues`), locked as of its
+  deadline and marked `auto`. In Showdown's opener, only the side that hadn't locked gets one.
+- A round fights 3 s after the lock that completes it, or 3 s after the round before ends (Reveal's
+  last). `ends_at` adds each attempt's `attemptWatchMs(ticks)` (`src/api/live.ts`: the whole intro,
+  ticks at 60 Hz plus 10%, 2.6 s of ending). `live-watch.test.ts` plays every known match the way
+  the arena does and checks the estimate is longer, by under 3 s on the closest.
+- A pick before `turn_opens_at` is `409 too_early`. A player silent for 6 s + 30 s loses
+  (`disconnected`); with both gone, the one who went quiet first. Events are settled earliest
+  first, on every read and pick and in the sweep, each write guarded by the series' version.
+- One live match or waiting lobby per player (`409 in_a_match`), held by
+  `pg_advisory_xact_lock` per player in the transactions that send and accept. A live link stops
+  once its sender hasn't asked for 60 s, or cancels (`410 challenge_stopped`), and never reopens.
+
+**API:** `SeriesView.live` (the clock, the opponent away with when they lose, why it ended), the
+database's time in `X-Now` on every series answer (a 304 too), an ETag that changes when the
+opponent shows as away, `POST /series/:id/forfeit`, `POST /challenges/:token/cancel`,
+`GET /me/match`, and a read limit per account (900 per 5 minutes) counted inside the read's own
+statement, so a poll is still two round trips.
+
+**Page:**
+
+- The clock offset comes from the answer with the shortest round trip of the last 12 (`live-clock.ts`).
+- Each attempt is held on the ready card with "Fight in 3…" and started by a `setTimeout` for its
+  server time (`online-live.ts`). A page back from the background, or opened late, plays the
+  attempt on now headlessly to the point the server's clock has reached, then shows it from there.
+- The page asks every second while it shows a live match (the heartbeat); the lobby every 2 s; home
+  every 10 s while it shows "Back to your match".
+- Live fights are 1x. In the speed toggle's place a line says "Live · normal speed",
+  "Player 4821 disconnected · 24 s" or "Reconnecting…": the decision asked for a disabled 1× toggle,
+  but a control that can't be used is noise on a phone, and the line has the same height.
+- Leave match asks "Leave and forfeit?". While a live match waits it is the only way on, never a
+  Home that would quietly lose it. Browser Back can't be asked, so it leaves the page: the player
+  has the grace period to come back, and home offers "Back to your match".
+- Home's "Your turn (n)" list is gone; play by turns stays on the server, with its tests, and the
+  page no longer sends it.
+
+**Tests:** 33 database tests through the local pooler (the clock, both players racing a timeout,
+one player sending and accepting on two hosts at once, the API), unit tests for the clock, the
+schedule and the words, and `live-match.online.test.ts`: two phones at 390 × 664 through a whole
+match, a pick running out, Leave and forfeit, and a disconnect that comes back in time, then one
+that doesn't.
+
 ## Consequences
 
 - Friend matches become something two people do together; play by turns is kept for later.

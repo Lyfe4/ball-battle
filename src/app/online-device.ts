@@ -1,5 +1,5 @@
 // What this device remembers about online play (ADR 0052): only that it has a guest (so home asks
-// for "Your turn" without touching the network for anyone who never played online), and how many
+// for "Back to your match" without touching the network for anyone who never played online), and how many
 // rounds of each series it has watched. The guest itself lives in an HttpOnly cookie. Logout and
 // "Forget me" clear every `ballbattle.*` key on the device (ADR 0051 item 5), offline settings and
 // a saved series included, so nothing of the player is left behind.

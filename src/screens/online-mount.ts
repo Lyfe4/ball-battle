@@ -30,7 +30,7 @@ export interface OnlineMount {
   /** The health bars' labels for the online series on screen. */
   sides(): readonly string[] | undefined;
   setVisible(screen: Screen): void;
-  /** Home was opened: "Your turn" asks again. */
+  /** Home was opened: "Back to your match" asks again. */
   homeShown(): void;
   /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
   isLive(): boolean;
@@ -100,7 +100,6 @@ export function mountOnline(context: MountContext): OnlineMount {
   });
   const homeRoot = getElement('home', HTMLElement);
   const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
-  playRow?.after(screens.yourTurn.element);
   // "Back to your match" takes Play's place while a live match or lobby is on (ADR 0053), and is
   // asked about again every few seconds on home so it goes when the match ends.
   playRow?.before(screens.backToMatch.element);
@@ -139,7 +138,6 @@ export function mountOnline(context: MountContext): OnlineMount {
       screens.setVisible(screen);
     },
     homeShown: () => {
-      screens.yourTurn.refresh();
       void askHome();
     },
     isLive: () => screens.play.isLive(),

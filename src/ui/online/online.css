@@ -1,55 +1,5 @@
-/* Online play's parts outside the series screens (ADR 0052): home's "Your turn" list and the
-   settings' "Forget me". */
-.home-online {
-  display: grid;
-  gap: var(--space-small);
-}
-
-.home-online-title {
-  margin: 0;
-  font-size: var(--font-size-lead);
-}
-
-.home-online-list {
-  display: grid;
-  gap: var(--space-small);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-online-row {
-  display: grid;
-  gap: 2px;
-  width: 100%;
-  min-height: var(--tap-target);
-  padding: var(--space-small) var(--space-gap);
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.home-online-row[data-your-turn='true'] {
-  background: var(--color-raised);
-}
-
-.home-online-state {
-  font-weight: 800;
-}
-
-.home-online-row[data-your-turn='true'] .home-online-state {
-  color: var(--color-accent);
-}
-
-.home-online-line {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
+/* Online play's parts outside the series screens (ADR 0052, 0053): home's "Back to your match"
+   and the settings' "Forget me". */
 .settings-online-line {
   margin: 0;
   font-size: var(--font-size-small);
