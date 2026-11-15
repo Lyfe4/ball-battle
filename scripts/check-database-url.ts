@@ -1,8 +1,12 @@
 // `node scripts/check-database-url.ts`: checks the DATABASE_URL in your shell's environment the way
 // the functions use it, and prints only facts about it, never a value: its shape (host, port, user
 // form, whether a password is there and needs escaping) and what one `select 1` as that role says.
+// Through Supabase's pooler it also connects to each of the host's addresses in turn: a password
+// that works on some and fails on others (28P01) is the pooler's stale credential cache after the
+// role's password changed, not a wrong DATABASE_URL.
 // Paste the value into the environment yourself, so it never lands in a file or your shell history:
 //   PowerShell: $env:DATABASE_URL = Read-Host -MaskInput; node scripts/check-database-url.ts
+import { lookup } from 'node:dns/promises';
 import { databaseFor } from '../src/server/db.ts';
 import { failureOf } from '../src/server/failure.ts';
 
@@ -40,12 +44,29 @@ if (url.port === '5432' && url.hostname.endsWith('pooler.supabase.com')) {
 }
 console.log(facts.join('\n'));
 
-const sql = databaseFor(raw.trim());
-try {
-  await sql`select 1`;
-  console.log('select 1: ok');
-} catch (error) {
-  console.log(`select 1 failed: ${failureOf(error, 'database')}`);
-} finally {
-  await sql.end({ timeout: 1 });
+/** What one `select 1` through `target` says. */
+async function selectOne(target: string): Promise<string> {
+  const sql = databaseFor(target);
+  try {
+    await sql`select 1`;
+    return 'ok';
+  } catch (error) {
+    return `failed: ${failureOf(error, 'database')}`;
+  } finally {
+    await sql.end({ timeout: 1 });
+  }
+}
+
+console.log(`select 1: ${await selectOne(raw.trim())}`);
+if (url.hostname.endsWith('pooler.supabase.com')) {
+  const addresses = await lookup(url.hostname, { all: true, family: 4 });
+  for (const [index, { address }] of addresses.entries()) {
+    const pinned = new URL(raw.trim());
+    pinned.hostname = address;
+    // Two tries each: a node with a stale cache fails both, a passing blip doesn't.
+    const results = [await selectOne(pinned.href), await selectOne(pinned.href)];
+    console.log(
+      `pooler address ${String(index + 1)} of ${String(addresses.length)}: ${results.join(', ')}`,
+    );
+  }
 }

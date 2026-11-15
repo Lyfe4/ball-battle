@@ -19,6 +19,7 @@ describe('GET /api/v1/health', () => {
     expect(await response.json()).toStrictEqual({
       status: 'ok',
       database: 'ok',
+      auth: 'ok',
       ruleset: 15,
       failed: [],
     });

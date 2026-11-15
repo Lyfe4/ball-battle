@@ -807,6 +807,21 @@ authentication failed`. `/health` checks the database and the ruleset bundle sep
   one round trip. A series read went from 8 round trips to 1, a pick from 15 to 3
   (`round-trips.db.test.ts`, through a proxy adding 100 ms each way).
 
+**As built (staging, 2026-11-15): Auth in /health:**
+
+- Staging's first guest failed twice over: anonymous sign-ins were off (Auth answers
+  `422 anonymous_provider_disabled`), and some new database connections (a few in twenty) failed with
+  `28P01` though the password was right. That second one is Supavisor checking some connections
+  against credentials it cached before `game_api`'s password was set (Supabase's troubleshooting
+  guide, "password authentication failed after rotating database password").
+  `scripts/check-database-url.ts` now connects to each of the pooler's addresses so it can be told
+  apart from a wrong password. No retry on `28P01`: Supavisor's circuit breaker blocks an IP that
+  keeps failing, and every player shares Netlify's few IPs.
+- `/health` checks Auth too, each check named after what to fix: `auth` (unreachable or failing),
+  `auth_publishable_key` and `auth_secret_key` (refused), `auth_anonymous_sign_ins` (off) and
+  `auth_signing_keys` (no asymmetric key of an algorithm we verify). An Auth refusal's log line
+  carries Auth's own error code (`auth: Supabase Auth answered 422 anonymous_provider_disabled`).
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).
