@@ -52,6 +52,25 @@ export interface SeriesView {
   readonly version: number;
   /** The whole setup once the series is finished and verified: replays it anywhere. */
   readonly final: SeriesSetup | null;
+  /** PROTOTYPE (live): the live series' clock. */
+  readonly live?: LiveInfo;
+}
+
+/**
+ * PROTOTYPE (live, ADR 0053 draft): a live series' clock. Times are milliseconds since the epoch
+ * by the database's clock; `now` is when this view was read, so the page can tell its own clock's
+ * offset. Each played round fights at `at` on both screens; the next pick opens at its `endsAt`.
+ */
+export interface LiveInfo {
+  readonly now: number;
+  readonly pickSeconds: number;
+  readonly fights: readonly {
+    readonly round: number;
+    readonly at: number;
+    readonly endsAt: number;
+  }[];
+  /** The opponent stopped asking: since when, and when they lose by forfeit. */
+  readonly away: { readonly since: number; readonly forfeitAt: number } | null;
 }
 
 /** POST /api/v1/series/:id/picks. */

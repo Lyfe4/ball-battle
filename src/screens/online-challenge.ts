@@ -188,7 +188,21 @@ export function createChallengeScreens(
       return;
     }
     info = answer.body;
+    // PROTOTYPE (live): the lobby. Accepted: straight into the match; else ask again in 2 s.
+    const series = info.status === 'yours' ? info.seriesId : null;
+    if (series !== null) {
+      host.replaceWith((url) => {
+        writeOnlineSeriesParams(url, series);
+      });
+      return;
+    }
     show('notice', cardFor(info, cardActions()));
+    if (info.status === 'yours' && visible) {
+      const waiting = token;
+      window.setTimeout(() => {
+        if (visible && token === waiting) void loadCard();
+      }, 2_000);
+    }
   }
 
   function cardActions() {
@@ -210,6 +224,9 @@ export function createChallengeScreens(
         host.modes();
       },
       share: () => shareLink(current),
+      cancel: () => {
+        void callApi('POST', `challenges/${current}/cancel`, {}).then(home);
+      },
     };
   }
 

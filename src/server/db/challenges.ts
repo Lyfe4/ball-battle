@@ -100,3 +100,15 @@ export async function openSeriesOf(db: Db, player: string): Promise<number> {
     where status = 'open' and (player_a = ${player} or player_b = ${player})`;
   return row?.count ?? 0;
 }
+
+/** PROTOTYPE (live): expires the creator's link now, unless a friend already accepted it. */
+export async function cancelOpen(db: Db, hash: Buffer, creator: string): Promise<void> {
+  await db`
+    update game.challenges set expires_at = now()
+    where token_hash = ${hash} and creator = ${creator} and series_id is null`;
+}
+
+/** PROTOTYPE (live): the player is here now (a live series' presence). */
+export async function heartbeat(db: Db, userId: string): Promise<void> {
+  await db`update game.profiles set last_seen_at = now() where user_id = ${userId}`;
+}

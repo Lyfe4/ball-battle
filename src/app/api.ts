@@ -6,7 +6,14 @@
 import { errorOf, type ErrorCode } from '../api/errors.ts';
 
 export type ApiResult<T> =
-  | { readonly ok: true; readonly status: number; readonly body: T; readonly etag: string | null }
+  | {
+      readonly ok: true;
+      readonly status: number;
+      readonly body: T;
+      readonly etag: string | null;
+      /** PROTOTYPE (live): the database's clock when the server answered (`X-Now`). */
+      readonly serverNow?: number;
+    }
   | ApiFailure;
 
 export type ApiFailure =
@@ -89,6 +96,9 @@ export async function callApi<T>(
       status: response.status,
       body: parsed as T | undefined,
       etag: response.headers.get('ETag'),
+      ...(response.headers.has('X-Now')
+        ? { serverNow: Number(response.headers.get('X-Now')) }
+        : {}),
     };
   }
   const error = errorOf(parsed);

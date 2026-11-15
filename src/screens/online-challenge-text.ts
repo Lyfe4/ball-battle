@@ -15,6 +15,8 @@ export interface CardActions {
   readonly sendOwn: () => void;
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
+  /** PROTOTYPE (live): the sender stops waiting; the link stops working. */
+  readonly cancel: () => void;
 }
 
 /** The link to a challenge, on this site. */
@@ -53,10 +55,7 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
     case 'open':
       return {
         title: `${from} challenges you`,
-        body: [
-          what,
-          'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
-        ],
+        body: [what, 'Build your lineup without seeing theirs. Then you play live: 30 s a pick.'],
         buttons: [{ text: 'Build your lineup', onClick: actions.lineup }, home],
       };
     case 'yours': {
@@ -76,10 +75,15 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
           ],
         };
       }
+      // PROTOTYPE (live): the lobby. The match starts the moment the friend accepts.
       return {
-        title: 'Send this link to a friend',
-        body: [what, 'It works once and lasts 7 days.', challengeUrl(actions.token)],
-        buttons: [shareButton(actions), home],
+        title: 'Waiting for your friend…',
+        body: [
+          what,
+          'Send them this link and stay here: the match starts as soon as they accept.',
+          challengeUrl(actions.token),
+        ],
+        buttons: [shareButton(actions), { text: 'Cancel', onClick: actions.cancel }],
       };
     }
     case 'accepted': {

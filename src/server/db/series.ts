@@ -72,7 +72,19 @@ export async function settleExpired(db: Db, id?: string): Promise<number> {
       status = 'forfeit',
       winner = case turn when 'a' then 'b' when 'b' then 'a' else null end,
       turn = null, turn_deadline = null, finished_at = now(), version = version + 1
-    where status = 'open' and turn_deadline < now() ${only}
+    where status = 'open' and turn_deadline < now() - interval '10 minutes' ${only}
     returning 1`;
   return rows.length;
+}
+
+/**
+ * PROTOTYPE (live): the series goes to `winner` by forfeit, if it is still at `version` (the other
+ * player stopped asking past the grace period).
+ */
+export async function forfeitTo(db: Db, id: string, version: number, winner: Side): Promise<void> {
+  await db`
+    update game.series set
+      status = 'forfeit', winner = ${winner}, turn = null, turn_deadline = null,
+      finished_at = now(), version = version + 1
+    where id = ${id} and version = ${version} and status = 'open'`;
 }

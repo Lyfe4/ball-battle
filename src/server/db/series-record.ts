@@ -9,12 +9,23 @@ import type { SeriesStatus, Turn } from '../../api/series.ts';
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { SeedRow } from '../view.ts';
+import { PICK_SECONDS } from '../live.ts';
 import { TURN_HOURS, type SeriesRow } from './series.ts';
 
 type Db = Sql | TransactionSql;
 
+/** PROTOTYPE (live): when each pick was locked, by database time. */
+export interface TimedPick extends PickRecord {
+  readonly at?: string;
+}
+
 export interface LoadedSeries extends SeriesRow {
-  readonly picks: readonly PickRecord[];
+  readonly picks: readonly TimedPick[];
+  /** PROTOTYPE (live): the database's clock at the read, and when each player was last heard from. */
+  readonly now?: Date;
+  readonly seen?: Readonly<Record<Side, Date | null>>;
+  /** PROTOTYPE (live): the pick phase has not opened yet (a fight is still on). */
+  readonly early?: boolean;
   readonly rounds: readonly RoundRecord[];
   readonly seeds: readonly SeedRow[];
 }
@@ -38,20 +49,39 @@ interface Raw {
   readonly turn_deadline: Date | null;
   readonly expired: boolean;
   readonly final_setup: SeriesSetup | null;
-  readonly picks: PickRecord[];
+  readonly db_now: Date;
+  readonly seen_a: Date | null;
+  readonly seen_b: Date | null;
+  readonly early: boolean;
+  readonly picks: TimedPick[];
   readonly rounds: RoundRecord[];
   readonly seeds: SeedRow[];
 }
 
-/** The series with everything about it, in one round trip; undefined when there is none. */
-export async function loadSeries(db: Db, id: string): Promise<LoadedSeries | undefined> {
+/**
+ * The series with everything about it, in one round trip; undefined when there is none.
+ * PROTOTYPE (live): `viewer`'s read is their heartbeat, written in the same statement.
+ */
+export async function loadSeries(
+  db: Db,
+  id: string,
+  viewer?: string,
+): Promise<LoadedSeries | undefined> {
   const [raw] = await db<Raw[]>`
-    select s.id, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
+    with heartbeat as (
+      update game.profiles set last_seen_at = now()
+      where user_id = ${viewer ?? null}::uuid
+      returning 1
+    )
+    select now() as db_now, pa.last_seen_at as seen_a, pb.last_seen_at as seen_b,
+      coalesce(s.turn_deadline - make_interval(secs => ${PICK_SECONDS}) > now(), false) as early,
+      s.id, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
       pa.display_name as name_a, pb.display_name as name_b, s.lineup_a, s.lineup_b, s.key_id,
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
       coalesce((
-        select json_agg(json_build_object('round', p.round, 'side', p.side, 'ball', p.ball)
+        select json_agg(json_build_object('round', p.round, 'side', p.side, 'ball', p.ball,
+          'at', p.created_at)
           order by p.round, p.created_at)
         from game.picks p where p.series_id = s.id), '[]') as picks,
       coalesce((
@@ -89,6 +119,9 @@ export async function loadSeries(db: Db, id: string): Promise<LoadedSeries | und
     picks: raw.picks,
     rounds: raw.rounds,
     seeds: raw.seeds,
+    now: raw.db_now,
+    seen: { a: raw.seen_a, b: raw.seen_b },
+    early: raw.early,
   };
 }
 
@@ -97,6 +130,8 @@ export interface SeriesMove {
   readonly turn: Turn | null;
   /** Keep the current turn's deadline (Showdown's opener, locked by one side first). */
   readonly keepDeadline: boolean;
+  /** PROTOTYPE (live): the next deadline in seconds from now, in place of TURN_HOURS. */
+  readonly deadlineSeconds?: number;
   readonly status: SeriesStatus;
   readonly winner: Side | null;
   readonly final: SeriesSetup | null;
@@ -118,7 +153,9 @@ export async function writeSeries(
   id: string,
   version: number,
   move: SeriesMove,
-): Promise<{ readonly version: number; readonly deadline: Date | null } | undefined> {
+): Promise<
+  { readonly version: number; readonly deadline: Date | null; readonly at: Date } | undefined
+> {
   const open = move.status === 'open';
   const rounds = move.rounds.map((round) => ({
     round: round.round,
@@ -129,13 +166,17 @@ export async function writeSeries(
     winner: round.winner,
     sudden_death: round.suddenDeath,
   }));
-  const [row] = await db<{ readonly version: number; readonly turn_deadline: Date | null }[]>`
+  const [row] = await db<
+    { readonly version: number; readonly turn_deadline: Date | null; readonly at: Date }[]
+  >`
     with moved as (
       update game.series set
         turn = ${move.turn},
         turn_deadline = case
           when ${move.turn}::text is null then null
           when ${move.keepDeadline} then turn_deadline
+          when ${move.deadlineSeconds ?? null}::float8 is not null
+            then now() + make_interval(secs => ${move.deadlineSeconds ?? null}::float8)
           else now() + make_interval(hours => ${TURN_HOURS})
         end,
         status = ${move.status},
@@ -167,6 +208,8 @@ export async function writeSeries(
       where s.series_id = moved.id and s.purpose = x.purpose and s.idx = x.index
         and s.seed is null
     )
-    select version, turn_deadline from moved`;
-  return row === undefined ? undefined : { version: row.version, deadline: row.turn_deadline };
+    select version, turn_deadline, now() as at from moved`;
+  return row === undefined
+    ? undefined
+    : { version: row.version, deadline: row.turn_deadline, at: row.at };
 }

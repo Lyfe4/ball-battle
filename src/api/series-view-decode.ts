@@ -3,6 +3,7 @@
 // The final setup is checked by verifySeries itself, so here it is only an object or null.
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
 import type {
+  LiveInfo,
   SeedCommitment,
   SeedPurpose,
   SeedReveal,
@@ -134,5 +135,24 @@ export function decodeSeriesView(raw: unknown): SeriesView | undefined {
     winner,
     version: raw['version'],
     final: final as SeriesSetup | null,
+    ...liveOf(raw['live']),
   };
+}
+
+/** PROTOTYPE (live): the clock block, kept only when every field is the right shape. */
+function liveOf(raw: unknown): { live?: LiveInfo } {
+  if (!isRecord(raw)) return {};
+  const { now, pickSeconds, fights, away } = raw;
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  if (!num(now) || !num(pickSeconds) || !Array.isArray(fights)) return {};
+  const list = fights.flatMap((f: unknown) =>
+    isRecord(f) && num(f['round']) && num(f['at']) && num(f['endsAt'])
+      ? [{ round: f['round'], at: f['at'], endsAt: f['endsAt'] }]
+      : [],
+  );
+  const gone =
+    isRecord(away) && num(away['since']) && num(away['forfeitAt'])
+      ? { since: away['since'], forfeitAt: away['forfeitAt'] }
+      : null;
+  return { live: { now, pickSeconds, fights: list, away: gone } };
 }

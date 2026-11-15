@@ -5,7 +5,9 @@
 import type { Accepted, ChallengeInfo, ChallengeLink, CreateChallenge } from '../api/challenges.ts';
 import type { Config } from './config.ts';
 import {
+  cancelOpen,
   challengeByHash,
+  heartbeat,
   insertChallenge,
   markAccepted,
   openChallengesOf,
@@ -92,6 +94,8 @@ export async function challengeInfo(
   token: string,
   viewer: string | undefined,
 ): Promise<ChallengeInfo> {
+  // PROTOTYPE (live): the sender waiting in the lobby is present; a series that starts finds them so.
+  if (viewer !== undefined) await heartbeat(deps.sql, viewer);
   const found = await challengeByHash(deps.sql, await hashOf(token));
   if (found === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
   const status: ChallengeInfo['status'] =
@@ -111,6 +115,11 @@ export async function challengeInfo(
     status,
     seriesId: status === 'accepted' || status === 'yours' ? found.seriesId : null,
   };
+}
+
+/** PROTOTYPE (live): the sender gives up waiting; a link nobody accepted yet expires now. */
+export async function cancelChallenge(deps: Deps, token: string, creator: string): Promise<void> {
+  await cancelOpen(deps.sql, await hashOf(token), creator);
 }
 
 /**

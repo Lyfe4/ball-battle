@@ -8,13 +8,13 @@ import {
   decodeCreateChallenge,
   isChallengeToken,
 } from '../../api/challenges.ts';
-import { acceptChallenge, challengeInfo, createChallenge } from '../challenges.ts';
+import { acceptChallenge, cancelChallenge, challengeInfo, createChallenge } from '../challenges.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
 import { optionalSession, sessionOf } from '../session.ts';
 
-const ONE = /^\/api\/v1\/challenges\/([A-Za-z0-9_-]+)(\/accept)?$/;
+const ONE = /^\/api\/v1\/challenges\/([A-Za-z0-9_-]+)(\/accept|\/cancel)?$/;
 
 export const challenges: RouteHandler = async (request, context) => {
   guard(request, ['POST']);
@@ -38,6 +38,10 @@ export const challengeOne: RouteHandler = async (request, context) => {
   }
   guard(request, ['POST']);
   const player = await sessionOf(request, context);
+  if (match[2] === '/cancel') {
+    await cancelChallenge(context.deps, token, player.userId);
+    return json(204, null);
+  }
   const body = decodeAcceptChallenge(await jsonBody(request));
   if (body === undefined) throw new ApiError(400, 'bad_request', 'Send {lineup}');
   await spend(context.deps.sql, player.userId, LIMITS.moves);

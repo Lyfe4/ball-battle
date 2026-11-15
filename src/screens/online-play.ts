@@ -17,6 +17,7 @@ import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
 import { createFairPlayLine } from '../ui/series/fair-play.ts';
 import { onlineNotice, waitNote, type LoadStatus } from './online-text.ts';
+import { createLiveDriver, LIVE_POLL_MS, liveLog, liveNote } from './online-live.ts';
 
 /** How often a page waiting on the other side asks whether the series moved. */
 const POLL_MS = 15_000;
@@ -65,6 +66,10 @@ export function createOnlinePlay(
   let phase: SeriesPhase = 'between';
   let fair: FairPlay | 'checking' | undefined;
   let timer: number | undefined;
+  const sent = new Set<number>();
+  let autoUntil = 0;
+  let etag: string | null = null;
+  let ticker: number | undefined;
   const keyOf = (play: NextMatch | undefined) =>
     play === undefined ? '' : `${String(play.round)}:${String(play.attempt)}:${String(play.seed)}`;
   /**
@@ -97,6 +102,22 @@ export function createOnlinePlay(
     },
     true,
   );
+  const live = createLiveDriver({
+    view: () => view,
+    current: () =>
+      session?.current === undefined
+        ? undefined
+        : { ...session.current, key: keyOf(session.current), recorded: session.recorded },
+    shown: () => ({ key: shownPlay, ours: ours() }),
+    play: playCurrent,
+    next: () => {
+      if (session === undefined) return;
+      session = session.state.pending.length > 0 ? advanceSession(session) : sessionAt(watched);
+    },
+    redraw: () => {
+      host.redraw();
+    },
+  });
   const fairLine = createFairPlayLine();
   roots.panel.append(fairLine.element);
   const notice = createNotice(roots.notice, () => {
@@ -128,6 +149,7 @@ export function createOnlinePlay(
   /** Takes a new view: the rounds watched stay watched; anything new waits for Play round. */
   function adopt(next: SeriesView): void {
     const first = view?.id !== next.id;
+    if (!first && live.adopted(view, next, sent)) autoUntil = Date.now() + 6_000;
     view = next;
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
     // here: the server plays it on its own frozen sim, and this page shows its rounds on the track.
@@ -153,8 +175,11 @@ export function createOnlinePlay(
   async function load(): Promise<void> {
     if (id === undefined) return;
     const headers: Record<string, string> =
-      view?.id === id ? { 'If-None-Match': `"v${String(view.version)}"` } : {};
-    const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
+      view?.id === id && etag !== null ? { 'If-None-Match': etag } : {};
+    const answer = await live.timed(() =>
+      callApi<unknown>('GET', `series/${id ?? ''}`, undefined, headers),
+    );
+    if (answer.ok && answer.etag !== null) etag = answer.etag;
     if (answer.ok) {
       const decoded = answer.status === 304 ? view : decodeSeriesView(answer.body);
       if (decoded === undefined) setStatus('error');
@@ -172,10 +197,11 @@ export function createOnlinePlay(
 
   async function pick(ball: string): Promise<void> {
     if (view === undefined || id === undefined) return;
-    const answer = await callApi<unknown>('POST', `series/${id}/picks`, {
-      round: view.rounds.length,
-      ball,
-    });
+    const round = view.rounds.length;
+    sent.add(round);
+    const at = Date.now();
+    const answer = await callApi<unknown>('POST', `series/${id}/picks`, { round, ball });
+    liveLog().picks.push({ round, ball, sent: at, answered: Date.now() });
     if (answer.ok) {
       const decoded = decodeSeriesView(answer.body);
       if (decoded !== undefined) adopt(decoded);
@@ -193,7 +219,11 @@ export function createOnlinePlay(
     timer = undefined;
     const waiting =
       visible && view?.status === 'open' && !dueOf(view).includes(view.you) && status === 'ready';
-    if (waiting) timer = window.setTimeout(() => void load(), POLL_MS);
+    // PROTOTYPE (live): a live page always asks, every second: its heartbeat.
+    const livePoll = visible && view?.live !== undefined && view.status === 'open';
+    if (waiting || livePoll) {
+      timer = window.setTimeout(() => void load(), livePoll ? LIVE_POLL_MS : POLL_MS);
+    }
   }
 
   function render(): void {
@@ -229,6 +259,9 @@ export function createOnlinePlay(
         status = 'loading';
       }
       visible = true;
+      ticker ??= window.setInterval(() => {
+        live.tick();
+      }, 200);
       render();
       // Back on a round that was being fought: it starts again from its seed (as offline).
       const current = session?.current;
@@ -237,6 +270,8 @@ export function createOnlinePlay(
     },
     leave() {
       visible = false;
+      window.clearInterval(ticker);
+      ticker = undefined;
       schedule();
       render();
     },
@@ -277,6 +312,7 @@ export function createOnlinePlay(
     update(world, celebrated) {
       if (session === undefined || view === undefined || !visible || status !== 'ready') return;
       const settled = ours() ? world.match.status === 'finished' && celebrated : true;
+      live.celebrated(celebrated);
       const all = watched === view.rounds.length;
       const shown = panel.update({
         state: session.state,
@@ -285,7 +321,14 @@ export function createOnlinePlay(
         linkState: undefined,
         seats: seatsOf(view),
         due: all ? dueOf(view) : [],
-        online: { note: all ? waitNote(view, Date.now()) : undefined },
+        online: {
+          note:
+            view.live !== undefined && view.status === 'open'
+              ? liveNote(view, live.clock.now(), watched, Date.now() < autoUntil)
+              : all
+                ? waitNote(view, Date.now())
+                : undefined,
+        },
       });
       fairLine.show(all && shown === 'finished' ? fair : undefined);
       if (shown !== phase) {

@@ -8,7 +8,7 @@
 // Queries go one at a time, never two at once (`Promise.all`): the pooler (Supavisor, transaction
 // mode) never answers two queries pipelined on one connection, so such a request hangs until the
 // function times out (staging, 2026-11-15). `pnpm test:db` runs through the local pooler to catch it.
-import { decodePickRequest } from '../../api/series.ts';
+import { decodePickRequest, type SeriesView } from '../../api/series.ts';
 import { listFor } from '../db/series-list.ts';
 import { loadSeries } from '../db/series-record.ts';
 import { settleExpired } from '../db/series.ts';
@@ -22,8 +22,16 @@ const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ONE = new RegExp(`^/api/v1/series/(${UUID})$`);
 const PICKS = new RegExp(`^/api/v1/series/(${UUID})/picks$`);
 
-/** A series' ETag: its version, which every change bumps. Answers vary by the session cookie. */
-const etagOf = (version: number) => `"v${String(version)}"`;
+/**
+ * A series' ETag: its version, which every change bumps. Answers vary by the session cookie.
+ * PROTOTYPE (live): and whether the opponent is away, which changes without a new version.
+ */
+const etagOf = (view: SeriesView) =>
+  `"v${String(view.version)}${view.live?.away === null || view.live === undefined ? '' : 'a'}"`;
+
+/** PROTOTYPE (live): the database's clock, on every answer (a 304 too), for the page's offset. */
+const clockOf = (view: SeriesView): Record<string, string> =>
+  view.live === undefined ? {} : { 'X-Now': String(view.live.now) };
 
 export const seriesList: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
@@ -40,19 +48,24 @@ export const seriesOne: RouteHandler = async (request, context) => {
     const pick = decodePickRequest(await jsonBody(request));
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
     const player = await sessionOf(request, context);
-    const loaded = await loadSeries(context.deps.sql, picks);
+    const loaded = await loadSeries(context.deps.sql, picks, player.userId);
     await spend(context.deps.sql, player.userId, LIMITS.moves);
     const view = await lockPick(context.deps, picks, player.userId, pick, loaded);
-    return json(200, view, { ETag: etagOf(view.version), Vary: 'Cookie' });
+    return json(200, view, { ETag: etagOf(view), Vary: 'Cookie', ...clockOf(view) });
   }
   const id = ONE.exec(path)?.[1];
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
-  const loaded = await loadSeries(context.deps.sql, id);
+  const loaded = await loadSeries(context.deps.sql, id, player.userId);
   const view = await readSeries(context.deps, id, player.userId, loaded);
-  const etag = etagOf(view.version);
-  const headers = { ETag: etag, Vary: 'Cookie', 'Cache-Control': 'private, no-cache' };
+  const etag = etagOf(view);
+  const headers = {
+    ETag: etag,
+    Vary: 'Cookie',
+    'Cache-Control': 'private, no-cache',
+    ...clockOf(view),
+  };
   if (request.headers.get('If-None-Match') === etag) return json(304, null, headers);
   return json(200, view, headers);
 };

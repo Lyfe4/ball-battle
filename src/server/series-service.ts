@@ -10,10 +10,12 @@ import type { BestOf, Format, PickRecord, Side } from '../sim/index.ts';
 import { ConfigError, type Config } from './config.ts';
 import type { Sql, TransactionSql } from './db.ts';
 import { loadSeries, writeSeries, type LoadedSeries, type SeriesMove } from './db/series-record.ts';
-import { insertSeriesWithSeeds, settleExpired } from './db/series.ts';
+import { insertSeriesWithSeeds } from './db/series.ts';
 import { ApiError, type Deps } from './http.ts';
 import { dueOf, playDue, stateOf, turnOf, verifyFinished, type StoredSeries } from './machine.ts';
 import { report } from './monitor.ts';
+import { deadlineAfter, fightMsOf, PICK_SECONDS, START_MS } from './live.ts';
+import { liveViewOf, settleLive } from './live-service.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
 import { importSeedKey, newSalt, seriesSeeds, type SeedKey } from './seeds.ts';
 import { sideOf, viewOf, type SeedRow } from './view.ts';
@@ -63,10 +65,14 @@ async function moveOf(
   series: LoadedSeries,
   picks: readonly PickRecord[],
   keepDeadline: boolean,
+  extraSeconds = 0,
 ): Promise<SeriesMove> {
   const sim = await rulesetSim(series.ruleset);
   const stored = await storedOf(config, { ...series, picks: [...series.picks, ...picks] });
   const { state, played } = playDue(sim, stateOf(sim, stored));
+  // PROTOTYPE (live): the next pick is due 30 s after the fights this move started have played.
+  const fights = played.map((r) => fightMsOf(sim, `${series.id}:${String(r.round)}`, r, r.a, r.b));
+  const deadlineSeconds = played.length > 0 ? deadlineAfter(fights) : PICK_SECONDS + extraSeconds;
   const round = (index: number) => ({
     purpose: 'round',
     index,
@@ -76,6 +82,7 @@ async function moveOf(
     return {
       turn: turnOf(dueOf(sim, { ...stored, rounds: state.rounds }, state).sides) ?? null,
       keepDeadline: keepDeadline && played.length === 0,
+      deadlineSeconds,
       status: 'open',
       winner: null,
       final: null,
@@ -112,7 +119,7 @@ async function moveOf(
 function after(
   series: LoadedSeries,
   move: SeriesMove,
-  written: { readonly version: number; readonly deadline: Date | null },
+  written: { readonly version: number; readonly deadline: Date | null; readonly at: Date },
 ): LoadedSeries {
   const revealed = (seed: SeedRow): SeedRow => {
     const shown = move.reveals.find((r) => r.purpose === seed.purpose && r.index === seed.index);
@@ -127,7 +134,9 @@ function after(
     final: move.final,
     version: written.version,
     expired: false,
-    picks: [...series.picks, ...move.picks],
+    picks: [...series.picks, ...move.picks.map((p) => ({ ...p, at: written.at.toISOString() }))],
+    now: written.at,
+    early: move.rounds.length > 0,
     rounds: [...series.rounds, ...move.rounds],
     seeds: series.seeds.map(revealed),
   };
@@ -183,7 +192,7 @@ export async function createSeries(db: Db, config: Config, input: SeriesInput): 
     seeds: rows,
   };
   await insertSeriesWithSeeds(db, { ...series, kind: 'friend' }, rows);
-  const move = await moveOf(config, series, [], false);
+  const move = await moveOf(config, series, [], false, START_MS / 1000);
   const toss = seeds.toss === undefined ? [] : [{ purpose: 'toss', index: 0, seed: seeds.toss }];
   await writeSeries(db, id, 0, { ...move, reveals: [...toss, ...move.reveals] });
   return id;
@@ -209,10 +218,33 @@ export async function readSeries(
   userId: string,
   loaded?: LoadedSeries,
 ): Promise<SeriesView> {
-  const series = loaded ?? (await loadSeries(deps.sql, id));
-  if (series?.expired !== true) return viewFor(series, userId);
-  await settleExpired(deps.sql, id);
-  return viewFor(await loadSeries(deps.sql, id), userId);
+  const series = loaded ?? (await loadSeries(deps.sql, id, userId));
+  // PROTOTYPE (live): every friend series is live; a missed pick is picked for the player, and a
+  // player gone past the grace period loses by forfeit.
+  const side = series === undefined ? undefined : sideOf(series.players, userId);
+  if (series === undefined || side === undefined) return viewFor(series, userId);
+  const settled = await settleLive(deps, series, side, autoPick);
+  return liveViewOf(settled ?? series, side);
+}
+
+/**
+ * PROTOTYPE (live): a random ball from those left, for every side whose pick ran out. The
+ * opponent can't steer it and nothing seed-shaped decides it (crypto randomness). Undefined when
+ * another request moved the series first.
+ */
+export async function autoPick(deps: Deps, series: LoadedSeries): Promise<boolean> {
+  const sim = await rulesetSim(series.ruleset);
+  const stored = await storedOf(deps.config, series);
+  const state = stateOf(sim, stored);
+  const due = dueOf(sim, stored, state);
+  const picks = due.sides.map((side) => {
+    const left = sim.remainingOf(state, side);
+    const [random = 0] = crypto.getRandomValues(new Uint32Array(1));
+    return { round: due.round, side, ball: left[random % left.length] ?? '' };
+  });
+  if (picks.length === 0 || picks.some((p) => p.ball === '')) return false;
+  const move = await moveOf(deps.config, series, picks, false);
+  return (await writeSeries(deps.sql, series.id, series.version, move)) !== undefined;
 }
 
 /**
@@ -228,19 +260,24 @@ export async function lockPick(
   request: PickRequest,
   loaded?: LoadedSeries,
 ): Promise<SeriesView> {
-  let series = loaded ?? (await loadSeries(deps.sql, id));
+  let series = loaded ?? (await loadSeries(deps.sql, id, userId));
   for (let tries = 0; tries < MOST_TRIES; tries += 1) {
     const side = series === undefined ? undefined : sideOf(series.players, userId);
     if (series === undefined || side === undefined) {
       throw new ApiError(404, 'not_found', 'No such series');
     }
     if (series.expired) {
-      await settleExpired(deps.sql, id);
-      series = await loadSeries(deps.sql, id);
+      // PROTOTYPE (live): a pick that ran out is made for the player, then this one is weighed.
+      await autoPick(deps, series);
+      series = await loadSeries(deps.sql, id, userId);
       continue;
     }
     if (series.picks.some((p) => p.round === request.round && p.side === side)) {
-      return viewOf(series, side);
+      return liveViewOf(series, side);
+    }
+    // PROTOTYPE (live): no pick before the pick phase opens on both screens.
+    if (series.early === true) {
+      throw new ApiError(409, 'not_your_turn', 'The fight is still on: pick when it ends');
     }
     const sim = await rulesetSim(series.ruleset);
     const stored = await storedOf(deps.config, series);
@@ -256,7 +293,7 @@ export async function lockPick(
     // Showdown's round 1: the other side's clock keeps running when one side locks first.
     const move = await moveOf(deps.config, series, [pick], due.sides.length === 2);
     const written = await writeSeries(deps.sql, id, series.version, move);
-    if (written !== undefined) return viewOf(after(series, move, written), side);
+    if (written !== undefined) return liveViewOf(after(series, move, written), side);
     // Another move came first: read the series as it is now and decide again.
     series = await loadSeries(deps.sql, id);
   }
