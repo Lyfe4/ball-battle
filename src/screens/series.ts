@@ -29,10 +29,8 @@ export interface SeriesScreensHost {
   layoutChanged(): void;
   /** Draws the arena's frame again (which updates the scoreboard). */
   redraw(): void;
-  /** Home in place of this entry: the first step's Back, arriving from a link. */
+  /** Home in place of this entry: the setup's Back, arriving from a link. */
   exitToHome(): void;
-  /** Other modes in place of this entry: a lineup's Back, arriving from a link (ADR 0046). */
-  exitToModes(): void;
 }
 
 export interface SeriesScreens {
@@ -63,9 +61,6 @@ export function createSeriesScreens(
     },
     exit: () => {
       host.exitToHome();
-    },
-    toModes: () => {
-      host.exitToModes();
     },
     held: () => play.held(),
     resume: () => {

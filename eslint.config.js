@@ -96,7 +96,8 @@ function serverImports(up) {
 }
 
 export default defineConfig(
-  { ignores: ['dist', 'coverage', 'rulesets', '.netlify'] },
+  // docs/images holds the design mockups' renderer (ADR 0055): a doc tool, not the game's code.
+  { ignores: ['dist', 'coverage', 'rulesets', '.netlify', 'docs/images'] },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,

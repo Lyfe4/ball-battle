@@ -1,12 +1,13 @@
 // Best of 5 (ADR 0048) through the real page, in a frame it can reload (reload-support.ts). Run at
-// 390 x 664 (Safari's iPhone with its toolbars, touch) and 1280 x 800. From home, Other modes'
-// remembered Best of 5 opens each format's lineup; five balls fill one row of the tray; the pick
+// 390 x 664 (Safari's iPhone with its toolbars, touch) and 1280 x 800. From home, the vs Bot setup's
+// Best of 5 (kept across a reload) opens each format's lineup and becomes home's Play (ADR 0055); five balls fill one row of the tray; the pick
 // chart shows every ball left against every one of the bot's, each mark a 44 px target and every
 // name whole; mid-fight the score line and the five-round track fit with no sideways scroll; the
 // series stops at three wins, a reload and a Back with Resume carry on where it was, and the
 // decided link replays as a Best of 5.
 import { expect } from 'vitest';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
+import { PLAY_FORMAT_STORAGE_KEY } from '../app/modes.ts';
 import { SERIES_SETUP_STORAGE_KEY, SERIES_STORAGE_KEY } from '../app/series-save.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
@@ -42,26 +43,26 @@ function fitsWidth(framed: Framed, where: string): void {
   });
 }
 
-/** Other modes, from home: the length remembered, then a tap on the format's card. */
-async function fromOtherModes(framed: Framed, format: Format): Promise<void> {
+/** The vs Bot setup, from home: Best of 5 (kept across a reload), the format's card, the lineup. */
+async function fromBotSetup(framed: Framed, format: Format): Promise<void> {
   await visit(framed, '');
-  buttonIn(framed, 'Other modes').click();
+  shown(framed, '.home-card[data-opponent="bot"]')[0]?.click();
   await settle();
   const five = buttonIn(framed, 'Best of 5');
   if (five.getAttribute('aria-pressed') !== 'true') {
     five.click();
     await settle();
-    // Remembered across a reload, like the bot level.
+    // Kept in the setup's own entry, so a reload (or a Back to it) finds it as it was.
     await reload(framed);
     expect(buttonIn(framed, 'Best of 5').getAttribute('aria-pressed')).toBe('true');
   }
-  expect(shown(framed, '.modes-length-rule')[0]?.textContent).toBe(
-    '5 balls each · first to 3 wins',
-  );
-  const card = shown(framed, '.modes-card').find(
-    (node) => node.querySelector('.modes-card-name')?.textContent === NAMES[format],
+  expect(shown(framed, '.rules-rule')[0]?.textContent).toBe('5 balls each · first to 3 wins');
+  const card = shown(framed, '.rules-card').find(
+    (node) => node.querySelector('.rules-card-name')?.textContent === NAMES[format],
   );
   card?.click();
+  await settle();
+  buttonIn(framed, 'Choose lineup').click();
   await settle();
   expect({ mode: paramOf(framed, 'mode'), step: paramOf(framed, 'step') }).toStrictEqual({
     mode: 'bo5',
@@ -202,7 +203,7 @@ export async function runBestOf5Flow(): Promise<void> {
     blind: ['brawler', 'sniper', 'quake', 'magnet', 'bloom'],
   };
   for (const format of ['reveal', 'showdown', 'blind'] as const) {
-    await fromOtherModes(framed, format);
+    await fromBotSetup(framed, format);
     await buildLineup(framed, lineups[format]);
     await playOut(framed, format);
     const link = checkResult(framed, format);
@@ -214,15 +215,17 @@ export async function runBestOf5Flow(): Promise<void> {
       expect(shown(framed, '#series .series-bar-about')[0]?.textContent).toMatch(/^Best of 5/);
     }
   }
-  // Home's Play is still Best of 3 Reveal, whatever length Other modes remembers.
+  // Home's Play now plays the last series set up against the bot: Best of 5 Blind (ADR 0055).
   storage().removeItem(SERIES_STORAGE_KEY);
   await visit(framed, '');
+  expect(shown(framed, '.home-play-meta')[0]?.textContent).toBe('Best of 5 · Blind · vs bot');
   shown(framed, '.home-play')[0]?.click();
   await settle();
-  expect({ mode: paramOf(framed, 'mode'), fmt: paramOf(framed, 'fmt') }).toStrictEqual({
-    mode: 'bo3',
-    fmt: 'reveal',
-  });
+  expect({
+    mode: paramOf(framed, 'mode'),
+    fmt: paramOf(framed, 'fmt'),
+    step: paramOf(framed, 'step'),
+  }).toStrictEqual({ mode: 'bo5', fmt: null, step: 'lineup' });
   for (const key of [
     SERIES_STORAGE_KEY,
     SERIES_SETUP_STORAGE_KEY,
@@ -231,6 +234,7 @@ export async function runBestOf5Flow(): Promise<void> {
     READY_CARD_STORAGE_KEY,
     TIPS_STORAGE_KEY,
     BOT_LEVEL_STORAGE_KEY,
+    PLAY_FORMAT_STORAGE_KEY,
   ]) {
     storage().removeItem(key);
   }

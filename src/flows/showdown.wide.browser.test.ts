@@ -1,5 +1,5 @@
 // The real page in a real browser (`pnpm test:browsers`, at desktop size): a Showdown against the Hard bot set up
-// and started live (ADR 0035). The level is chosen on the rules step and remembered; round 1 asks
+// and started live (ADR 0035). The level is chosen on the vs Bot setup and remembered; round 1 asks
 // for an opener marked against the bot's whole lineup, with a one-line key, and never names the
 // bot's pick before it is made; picking starts the round with the chosen ball.
 import { describe, expect, it } from 'vitest';
@@ -26,9 +26,10 @@ describe('a Showdown against the Hard bot', () => {
     await settle();
     expect(visible('.rules-level')).toHaveLength(1);
     button('Hard bot').click();
-    expect(window.localStorage.getItem(BOT_LEVEL_STORAGE_KEY)).toBe('hard');
+    // Remembered as Play's once the player goes on to the lineup (ADR 0055).
     button('Choose lineup').click();
     await settle();
+    expect(window.localStorage.getItem(BOT_LEVEL_STORAGE_KEY)).toBe('hard');
 
     for (const name of ['Storm', 'Berserker', 'Brawler']) {
       const tile = visible('.ball-tile').find(

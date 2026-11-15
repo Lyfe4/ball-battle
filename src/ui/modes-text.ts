@@ -1,6 +1,7 @@
-// The words for the ways to play (ADR 0046): home's one tap, the Other modes cards, the bot level
-// on the lineup step. Pure, so they are tested without a DOM.
-import type { OtherMode } from '../app/modes.ts';
+// The words for the ways to play (ADR 0046, 0055): home's Play and its opponent cards, the setup
+// screens, the bot level on the lineup step. Pure, so they are tested without a DOM.
+import { PICK_SECONDS } from '../api/live.ts';
+import { botChooses, type Opponent, type PlaySetup } from '../app/modes.ts';
 import {
   bestOfOf,
   DEFAULT_BEST_OF,
@@ -10,40 +11,51 @@ import {
   type Format,
   type SeriesState,
 } from '../sim/series.ts';
-import { bestOfName, FORMAT_LINES, FORMAT_SHORT, LEVEL_NAMES, seriesRule } from './series-text.ts';
-
-/** Home's main button: one word, what it plays under it, and the whole of it for screen readers. */
-export const MAIN_PLAY = {
-  label: 'Play',
-  meta: 'Best of 3 · Reveal · vs bot',
-  spoken: 'Play Best of 3, Reveal, against the bot',
-} as const;
-
-const FREE_PLAY = { name: 'Free play', line: 'Pick both balls and watch.' } as const;
-
-export function modeName(mode: OtherMode): string {
-  return mode.kind === 'free' ? FREE_PLAY.name : FORMAT_SHORT[mode.format];
-}
-
-/** How a mode plays, in a few words (ADR 0025). A format's line is the rules step's own. */
-export function modeLine(mode: OtherMode): string {
-  return mode.kind === 'free' ? FREE_PLAY.line : FORMAT_LINES[mode.format];
-}
-
-/** Who a challenge is played against (ADR 0052), as a bot series names its level. */
-export const CHALLENGE_OPPONENT = 'vs a friend';
+import { bestOfName, FORMAT_SHORT, LEVEL_NAMES, seriesRule } from './series-text.ts';
 
 /** "vs Normal bot": the level a series is played against. */
 export function levelLine(level: string): string {
   return `vs ${LEVEL_NAMES[level] ?? level} bot`;
 }
 
-/** "Best of 3 · Reveal": what the lineup is for, since home's one tap skips the rules step. */
+/** Home's main button: one word, then what it plays. */
+export const PLAY_LABEL = 'Play';
+
+/** "Best of 5 · Reveal · vs Hard bot": what home's Play starts. Blind has no level to name. */
+export function playLine(setup: PlaySetup): string {
+  const against = botChooses(setup.format) ? levelLine(setup.level) : 'vs bot';
+  return `${setupLine(setup.format, setup.bestOf)} · ${against}`;
+}
+
+/** The same in words, for the button's accessible name. */
+export function playSpoken(setup: PlaySetup): string {
+  const against = botChooses(setup.format)
+    ? `the ${LEVEL_NAMES[setup.level] ?? setup.level} bot`
+    : 'the bot';
+  return `${PLAY_LABEL} ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}, against ${against}`;
+}
+
+/** Each opponent card on home, and the heading of the setup screen it opens. */
+export const OPPONENT_CARDS: Readonly<
+  Record<Opponent, { readonly name: string; readonly line: string }>
+> = {
+  bot: { name: 'vs Bot', line: 'A series against the computer' },
+  friend: { name: 'vs Friend', line: 'Live, by a link you send' },
+};
+
+/** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
+export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; the match starts when they accept.`;
+
+/** Home's quiet links under the cards. */
+export const FREE_PLAY = 'Free play';
+export const BALL_MANUAL = 'Ball manual';
+
+/** "Best of 3 · Reveal": what the lineup is for, since Play skips the setup screen. */
 export function setupLine(format: Format, bestOf: BestOf = DEFAULT_BEST_OF): string {
   return `${bestOfName(bestOf)} · ${FORMAT_SHORT[format]}`;
 }
 
-/** Other modes' length choice (ADR 0048): each length's name and the rule it plays by. */
+/** A setup's length choice (ADR 0048): each length's name and the rule it plays by. */
 export function lengthChoiceOf(bestOf: BestOf): { readonly name: string; readonly rule: string } {
   return { name: bestOfName(bestOf), rule: seriesRule(bestOf) };
 }

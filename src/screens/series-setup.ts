@@ -1,13 +1,14 @@
-// Setting up a best-of-3 series (ADR 0017, 0019, 0021, 0029, 0035), one job per screen: the rules
-// (with the bot's level), the lineup and, in Reveal and Showdown, round 1 with both lineups shown:
+// Setting up a series against the bot (ADR 0017, 0019, 0021, 0029, 0035, 0055), one job per screen:
+// the vs Bot setup (length, format, the bot's level), the lineup and, in Reveal and Showdown, round 1 with both lineups shown:
 // Reveal's coin toss and the player's first pick (an answer to the bot's shown ball, or the ball
-// they show first), or Showdown's opener, picked while the bot picks its own. The rules and the lineup are
-// history entries (`?mode=bo3&step=...`), so Back walks back through them; the answer is part of the
+// they show first), or Showdown's opener, picked while the bot picks its own. The setup and the lineup are
+// history entries (`?mode=bo3&step=...`), so Back walks back through them; each choice on the setup
+// rewrites its own entry, so Back from the lineup finds the setup as it was left; the answer is part of the
 // series' one entry, which starting the series replaces (ADR 0025). The bot's lineup lives here and in
 // the device's storage (so a reload keeps round 1's pick where it was, ADR 0042) until the series
 // starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from '../app/bot-level.ts';
-import { lineupParentOf } from '../app/modes.ts';
+import { savePlaySetup, SETUP_FORMATS } from '../app/modes.ts';
 import { loadSetup, saveSetup } from '../app/series-save.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
 import { beginSession, botOf, resolvePicks } from '../app/series-session.ts';
@@ -48,10 +49,8 @@ export interface SeriesSetupHost {
   replace(write: (params: URLSearchParams) => void): void;
   /** In-app Back: the previous screen, or `toParent` when the visitor arrived here from a link. */
   back(toParent: () => void): void;
-  /** Leaves Best of 3 for home (the first step's Back, arriving from a link). */
+  /** Leaves the setup for home (the setup's Back, arriving from a link). */
   exit(): void;
-  /** Other modes in place of this entry: the parent of a lineup it leads to (ADR 0046). */
-  toModes(): void;
   /** The setup is complete: play the series (Reveal and Showdown: with the player's round-1 pick). */
   start(setup: SeriesSetup, firstPick?: string): void;
   /** An undecided series left with Back, which the rules and lineup offer to resume. */
@@ -95,34 +94,43 @@ export function createSeriesSetup(
     writeSeriesModeParams(params, format, step === 'rules' ? undefined : step, bestOf);
   };
 
-  /** Remembers the level chosen on the rules step or the lineup step (ADR 0035, 0046). */
+  /** Remembers the level chosen on the lineup step (ADR 0035, 0046): Play plays it next. */
   function chooseLevel(chosen: string): void {
     level = chosen;
     saveBotLevel(storage, chosen);
   }
 
-  const rules = createRulesStep({
-    onBack: () => {
-      host.back(() => {
-        host.exit();
-      });
+  const rules = createRulesStep(
+    { title: 'vs Bot', formats: SETUP_FORMATS.bot, levels: true },
+    {
+      onBack: () => {
+        host.back(() => {
+          host.exit();
+        });
+      },
+      // Each choice rewrites this entry, so Back from the lineup finds the setup as it was left.
+      onChange: (chosen) => {
+        ({ format, bestOf, level } = chosen);
+        host.replace(to('rules'));
+      },
+      // Going on to the lineup makes this setup Play's (ADR 0055).
+      onNext: (chosen) => {
+        ({ format, bestOf, level } = chosen);
+        savePlaySetup(storage, chosen);
+        host.move(to('lineup'));
+        open('lineup');
+      },
     },
-    onLevel: chooseLevel,
-    onNext: (chosen) => {
-      format = chosen;
-      host.move(to('lineup'));
-      open('lineup');
-    },
-  });
+  );
 
   const lineup = createLineupStep(balls, {
     onBack: () => {
       draft = lineup.draft();
-      // Arriving from a link: the screen that leads to this lineup (ADR 0046). Reveal's is home;
-      // the other formats' is Other modes. A lineup reached from the rules step goes back to it.
+      // Back to the screen it came from: home from Play, the setup from the setup (ADR 0055).
+      // Arriving from a link, the setup that leads to it, on the link's choices.
       host.back(() => {
-        if (lineupParentOf(format, bestOf) === 'home') host.exit();
-        else host.toModes();
+        host.replace(to('rules'));
+        open('rules');
       });
     },
     onLevel: chooseLevel,
@@ -197,7 +205,7 @@ export function createSeriesSetup(
     if (step === 'rules') {
       revealed = undefined;
       remember();
-      rules.open(format, level, bestOf);
+      rules.open({ format, level, bestOf });
     } else if (step === 'lineup') {
       revealed = undefined;
       remember();

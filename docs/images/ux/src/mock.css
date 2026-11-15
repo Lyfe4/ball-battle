@@ -1,0 +1,431 @@
+/* Mockup kit for the UX proposal (ADR 0055 draft): the game's own tokens and font, simplified
+   parts. Rendered to PNG by render.mjs; not shipped. */
+@import url('../../../../src/styles/tokens.css');
+
+@font-face {
+  font-family: 'Bricolage Grotesque Variable';
+  font-weight: 200 800;
+  src: url('../../../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2')
+    format('woff2-variations');
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.screen {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  gap: 32px;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 40px 32px;
+  align-items: start;
+}
+
+.desk.sheet {
+  grid-template-columns: 1fr;
+  max-width: 44rem;
+}
+
+.desk.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.col {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.between {
+  justify-content: space-between;
+}
+
+.center {
+  justify-content: center;
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.back,
+.gear {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  font-weight: 800;
+}
+
+.gear {
+  margin-left: auto;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+h2 {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.btn {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  font-weight: 700;
+  text-align: center;
+}
+
+.btn.primary {
+  background: var(--color-accent);
+  box-shadow: var(--shadow-accent-slab);
+  color: var(--color-accent-text);
+}
+
+.btn.big {
+  min-height: 76px;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.btn .meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.link {
+  color: var(--color-focus);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.card {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.card.raised {
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+}
+
+.card .name {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.tag {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-sunken);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.soon {
+  opacity: 0.45;
+}
+
+/* The chosen look (choice.css, ADR 0054). */
+.chosen {
+  position: relative;
+  background: var(--color-selected);
+  outline: 3px solid var(--color-accent-2);
+  outline-offset: -3px;
+}
+
+.chosen::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-accent-2);
+  box-shadow: 0 0 0 2px var(--color-page);
+}
+
+.chosen::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: 0;
+  width: 6px;
+  height: 10px;
+  border-right: 3px solid var(--color-accent-2-text);
+  border-bottom: 3px solid var(--color-accent-2-text);
+  transform: rotate(40deg);
+}
+
+.seg {
+  display: flex;
+  gap: 8px;
+}
+
+.seg > * {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border-radius: 14px;
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  font-weight: 700;
+}
+
+.ball {
+  display: inline-block;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--b, #888);
+  box-shadow: inset -4px -5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.ball.s {
+  width: 22px;
+  height: 22px;
+}
+
+.ball.l {
+  width: 64px;
+  height: 64px;
+}
+
+.ball.ghost {
+  background: var(--color-raised);
+  box-shadow: none;
+}
+
+.court {
+  aspect-ratio: 1;
+  width: 100%;
+  border: 6px solid var(--color-raised);
+  border-radius: 22px;
+  background: #1f1838;
+  position: relative;
+  overflow: hidden;
+}
+
+.court .ball {
+  position: absolute;
+}
+
+.pick-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  font-weight: 800;
+}
+
+.pick-row .odds {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.odd {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-sunken);
+  font-size: 0.8rem;
+}
+
+.up {
+  color: var(--color-favoured);
+}
+
+.down {
+  color: var(--color-unfavoured);
+}
+
+.track {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.score {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.note {
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--color-sunken);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.label {
+  position: absolute;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--color-accent-2);
+  color: var(--color-accent-2-text);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* Timers */
+.bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-sunken);
+  overflow: hidden;
+}
+
+.bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-text-muted);
+}
+
+.bar.urgent > i {
+  background: var(--color-accent);
+}
+
+.ring {
+  --p: 60;
+  --c: var(--color-text-muted);
+
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--color-sunken) 0);
+  font-weight: 800;
+}
+
+.ring > span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-page);
+}
+
+.ring.urgent {
+  --c: var(--color-accent);
+}
+
+.dots::after {
+  content: ' • • •';
+  color: var(--color-accent-2);
+  letter-spacing: 2px;
+}
+
+.sticker {
+  display: grid;
+  place-items: center;
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: var(--color-sticker);
+  box-shadow: 0 6px 0 var(--color-accent);
+  color: var(--color-accent-text);
+  transform: rotate(-3deg);
+  text-align: center;
+}
+
+.caption {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--color-accent-2);
+  color: var(--color-accent-2-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.option-title {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font: 700 12px system-ui;
+  opacity: 0.85;
+}
+
+.card.row {
+  display: flex;
+}

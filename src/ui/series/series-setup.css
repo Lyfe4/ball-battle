@@ -40,13 +40,55 @@
   line-height: 1.35;
 }
 
-/* The bot's level (ADR 0035): one small segmented choice under the formats, hidden for Blind. */
-.rules-level .segmented-button {
-  min-width: 5.5rem;
+/*
+ * An opponent's setup (ADR 0055): the length with its rule, the format cards under their label, the
+ * bot's level (hidden for Blind), and against a friend a quiet note on what a live match asks.
+ */
+.rules-body {
+  display: grid;
+  gap: calc(var(--space-gap) * 1.5);
+}
+
+.rules-group {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.rules-rule {
+  margin: 0;
+}
+
+/* A setup's segmented choices fill the row under their label, like the format cards. */
+.rules-step .segmented {
+  flex-wrap: wrap;
+  justify-content: stretch;
+}
+
+.rules-step .segmented-label {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.rules-step .segmented-button {
+  flex: 1;
+}
+
+.rules-format-group > .segmented-label {
+  font-weight: 700;
 }
 
 .rules-level[hidden] {
   display: none;
+}
+
+.rules-note {
+  margin: 0;
+  padding: var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-sunken);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.45;
 }
 
 /* The lineup tray: three numbered slots in a row; a filled slot is a button that takes its ball out. */
@@ -232,15 +274,32 @@
 
 /* Desktop (ADR 0031): each step laid out for the space, centred in the sheet. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  /* Rules: the three formats side by side, Choose lineup under them on the right. */
+  /*
+   * A setup (ADR 0055): two columns, the length and the bot's level (or the note) on the left, the
+   * format cards stacked on the right, Choose lineup under the left column.
+   */
   .rules-step {
     justify-self: center;
     width: 100%;
     max-width: 52rem;
   }
 
-  .rules-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .rules-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    align-items: start;
+    column-gap: var(--space-columns);
+  }
+
+  .rules-format-group {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .rules-length-group,
+  .rules-level,
+  .rules-note {
+    grid-column: 1;
   }
 
   .rules-card {
@@ -248,8 +307,8 @@
   }
 
   .rules-step > .screen-footer {
-    justify-self: end;
-    width: var(--setup-width);
+    justify-self: start;
+    width: calc((100% - var(--space-columns)) / 2);
   }
 
   .rules-level {

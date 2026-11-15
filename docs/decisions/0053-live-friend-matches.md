@@ -4,6 +4,7 @@
   `proto/live-friend-matches` (draft PR #64, closed unmerged) and measured on staging, then
   rebuilt on `main` in four pull requests (build plan, below).
 - Date: 2026-11-15
+- Amended by: ADR 0055 (the pick timer, the countdown sticker, the lobby, the end and a rematch)
 - Builds on: ADR 0052 (the series machine, friend challenges, `viewOf`, settle on read), ADR 0051
   (secret seeds, commitments, frozen rulesets), ADR 0007 (presentation time), ADR 0027 (no dead ends)
 - Amends: ADR 0052 section 3 ("Live PvP later is the same machine with short timers"): it comes

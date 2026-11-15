@@ -9,10 +9,9 @@ import {
   writeHomeParams,
   writeManualParams,
   writeMatchUrl,
-  writeModesParams,
   writePickParams,
 } from './route.ts';
-import { writeMainModeParams } from './modes.ts';
+import { FIRST_PLAY, writeBotSetupParams, writePlayParams } from './modes.ts';
 import { writeSeriesModeParams } from './series-url.ts';
 
 const keyOf = (url: URL) => screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false));
@@ -51,8 +50,12 @@ describe('screenKeyOf', () => {
     expect(key('?view=manual&ball=quake')).toBe('manual-entry');
   });
 
-  it('gives Other modes its own key, apart from home and the setups it opens', () => {
-    expect(key('?view=modes')).toBe('modes');
+  it('gives the vs Bot setup its own key, apart from home and the lineup it opens', () => {
+    expect(key('?mode=bo5&fmt=showdown')).toBe('series-rules');
+  });
+
+  it('puts an old Other modes link on home (ADR 0055)', () => {
+    expect(key('?view=modes')).toBe('home');
   });
 });
 
@@ -159,45 +162,44 @@ describe('Back through whole flows', () => {
     expect(at()).toBe('');
   });
 
-  it('goes from home to Reveal’s lineup in one move, and one Back returns home (ADR 0046)', () => {
+  it('goes from home to Play’s lineup in one move, and one Back returns home (ADR 0055)', () => {
     const { navigation, back, at, entries } = app();
-    navigation.go(writeMainModeParams);
-    expect(at()).toBe('?mode=bo3&fmt=reveal&step=lineup');
+    navigation.go((url) => {
+      writePlayParams(url, { ...FIRST_PLAY, bestOf: 5 });
+    });
+    expect(at()).toBe('?mode=bo5&fmt=reveal&step=lineup');
     expect(entries.length).toBe(2);
     back();
     expect(at()).toBe('');
   });
 
-  it('walks Other modes: each mode one step in, one Back out, and one more Back home', () => {
+  it('walks the vs Bot setup: choices rewrite it, the lineup is one step in, Back keeps them', () => {
+    const { navigation, back, at, entries } = app();
+    navigation.go((url) => {
+      writeBotSetupParams(url, 'reveal', 3);
+    });
+    expect(at()).toBe('?mode=bo3&fmt=reveal');
+    // A choice on the setup rewrites its own entry.
+    navigation.go((url) => {
+      writeBotSetupParams(url, 'showdown', 5);
+    });
+    expect(entries.length).toBe(2);
+    navigation.go((url) => {
+      writeSeriesModeParams(url, 'showdown', 'lineup', 5);
+    });
+    expect(at()).toBe('?mode=bo5&fmt=showdown&step=lineup');
+    back();
+    expect(at()).toBe('?mode=bo5&fmt=showdown');
+    back();
+    expect(at()).toBe('');
+  });
+
+  it('goes from home to Free play in one step, and one Back returns home', () => {
     const { navigation, back, at } = app();
-    navigation.go(writeModesParams);
-    expect(at()).toBe('?view=modes');
-    const ways: readonly (readonly [(url: URLSearchParams) => void, string])[] = [
-      [
-        (url) => {
-          writeSeriesModeParams(url, 'showdown', 'lineup');
-        },
-        '?mode=bo3&fmt=showdown&step=lineup',
-      ],
-      [
-        (url) => {
-          writeSeriesModeParams(url, 'blind', 'lineup');
-        },
-        '?mode=bo3&step=lineup',
-      ],
-      [
-        (url) => {
-          writePickParams(url, pair);
-        },
-        '?view=pick&a=brawler&b=quake',
-      ],
-    ];
-    for (const [write, landed] of ways) {
-      navigation.go(write);
-      expect(at()).toBe(landed);
-      back();
-      expect(at()).toBe('?view=modes');
-    }
+    navigation.go((url) => {
+      writePickParams(url, pair);
+    });
+    expect(at()).toBe('?view=pick&a=brawler&b=quake');
     back();
     expect(at()).toBe('');
   });

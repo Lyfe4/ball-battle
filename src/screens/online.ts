@@ -22,7 +22,8 @@ export interface OnlineHost {
   go(write: (params: URLSearchParams) => void): void;
   replaceWith(write: (params: URLSearchParams) => void): void;
   home(): void;
-  modes(): void;
+  /** The vs Friend setup: where a challenge is sent from (ADR 0055). */
+  friend(): void;
   showWorld(world: WorldState, seed: number): void;
   /** A live round held on its countdown, or already `elapsedMs` under way (ADR 0053). */
   holdLive(world: WorldState, seed: number): void;
@@ -110,12 +111,15 @@ export function createOnlineScreens(
       replaceWith: (write) => {
         host.replaceWith(write);
       },
+      rewrite: (write) => {
+        host.navigation.replace(write);
+      },
       back: (toParent) => {
         host.navigation.back(toParent);
       },
       home,
-      modes: () => {
-        host.modes();
+      friend: () => {
+        host.friend();
       },
       storage: host.storage,
       primeSeries: (id) => primer.series(id),
@@ -174,7 +178,7 @@ export function createOnlineScreens(
     },
     send: {
       show: (route) => {
-        challenges.showSend(route.format, route.bestOf);
+        challenges.showSend(route.format, route.bestOf, route.step);
       },
     },
     play,

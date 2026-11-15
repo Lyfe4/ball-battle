@@ -11,7 +11,7 @@ import {
   writeOnlineSeriesParams,
   writeSendParams,
 } from './online-url.ts';
-import { parseRoute, writeModesParams } from './route.ts';
+import { parseRoute } from './route.ts';
 
 const SERIES = '0e5c8d7a-1b2c-4d3e-8f90-123456789abc';
 const TOKEN = 'WAxqQRi-cu8gT10UyGTlCQ';
@@ -29,6 +29,7 @@ describe('online URLs', () => {
     expect(online(`?challenge=${TOKEN}&step=lineup`)).toMatchObject({ step: 'lineup' });
     expect(online('?view=send&fmt=showdown&mode=bo5')).toStrictEqual({
       screen: 'send',
+      step: 'lineup',
       format: 'showdown',
       bestOf: 5,
     });
@@ -82,8 +83,8 @@ describe('Back through a friend challenge', () => {
     };
   }
 
-  it('sender: Other modes, the lineup, then its link in the lineup’s place; Back is Other modes', () => {
-    const sender = app('?view=modes');
+  it('sender: the vs Friend setup, the lineup, then its link in the lineup’s place; Back is the setup', () => {
+    const sender = app('?view=send&fmt=reveal&mode=bo3&step=setup');
     sender.navigation.go((p) => {
       writeSendParams(p, 'reveal', 3);
     });
@@ -91,9 +92,43 @@ describe('Back through a friend challenge', () => {
       writeChallengeParams(p, TOKEN);
     });
     sender.back();
-    const modes = new URLSearchParams();
-    writeModesParams(modes);
-    expect(sender.at()).toBe(`?${modes.toString()}`);
+    expect(sender.at()).toBe('?view=send&fmt=reveal&mode=bo3&step=setup');
+  });
+
+  it('reads the vs Friend setup and its lineup from one view, the lineup by default (old links)', () => {
+    expect(online('?view=send&fmt=showdown&mode=bo5&step=setup')).toStrictEqual({
+      screen: 'send',
+      format: 'showdown',
+      bestOf: 5,
+      step: 'setup',
+    });
+    expect(online('?view=send&fmt=reveal')).toStrictEqual({
+      screen: 'send',
+      format: 'reveal',
+      bestOf: 3,
+      step: 'lineup',
+    });
+    const written = new URLSearchParams();
+    writeSendParams(written, 'reveal', 5, 'setup');
+    expect(written.toString()).toBe('view=send&fmt=reveal&mode=bo5&step=setup');
+  });
+
+  it('walks the vs Friend setup as vs Bot’s: choices rewrite it, Back keeps them (ADR 0055)', () => {
+    const { navigation, back, at } = app('');
+    navigation.go((url) => {
+      writeSendParams(url, 'reveal', 3, 'setup');
+    });
+    navigation.go((url) => {
+      writeSendParams(url, 'showdown', 5, 'setup');
+    });
+    navigation.go((url) => {
+      writeSendParams(url, 'showdown', 5);
+    });
+    expect(at()).toBe('?view=send&fmt=showdown&mode=bo5');
+    back();
+    expect(at()).toBe('?view=send&fmt=showdown&mode=bo5&step=setup');
+    back();
+    expect(at()).toBe('');
   });
 
   it('friend: the card, the lineup, then the series in the lineup’s place; Back is the card', () => {

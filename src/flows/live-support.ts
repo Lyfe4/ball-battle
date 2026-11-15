@@ -93,7 +93,7 @@ async function confirmAge(page: Page): Promise<void> {
 }
 
 /**
- * The sender sends a live Best of 3 and waits in the lobby; the friend opens the link, sees the
+ * The sender sends a live Best of 3 from home's vs Friend and waits in the lobby; the friend opens the link, sees the
  * line about staying, and accepts. Both end up in the series: the sender's lobby goes there by
  * itself. Returns the series id.
  */
@@ -103,9 +103,16 @@ export async function startLiveMatch(
   friend: Page,
   format = 'reveal',
 ): Promise<string> {
-  await sender.goto(`${base}/?view=send&fmt=${format}&mode=bo3`);
-  await buildLineup(sender, 'Send challenge');
+  // From home, as a player starts it (ADR 0055): vs Friend, the 16+ question first, then its setup.
+  await sender.goto(`${base}/`);
+  await sender.locator('.home-card[data-opponent="friend"]').click();
   await confirmAge(sender);
+  await sender.getByRole('heading', { name: 'vs Friend' }).waitFor();
+  if (format !== 'reveal') {
+    await sender.locator('#online-lineup .rules-card', { hasText: /^Showdown/ }).click();
+  }
+  await sender.getByRole('button', { name: 'Choose lineup' }).click();
+  await buildLineup(sender, 'Send challenge');
   await sender.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
   // Send challenge stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
@@ -118,8 +125,9 @@ export async function startLiveMatch(
   await forgetLoading(friend);
   await friend.getByText('Leaving for 30 s loses the match').waitFor();
   await friend.getByRole('button', { name: 'Build your lineup' }).click();
-  await buildLineup(friend, 'Accept challenge');
+  // The 16+ question comes before the lineup, never after it is built (ADR 0055).
   await confirmAge(friend);
+  await buildLineup(friend, 'Accept challenge');
   await friend.waitForURL(/[?&]online=/);
   await sender.waitForURL(/[?&]online=/, { timeout: 20_000 });
   // Accept and the lobby each waited for the series: it showed complete on arrival.

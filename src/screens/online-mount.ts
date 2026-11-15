@@ -5,7 +5,7 @@
 import type { Navigation } from '../app/navigation.ts';
 import type { Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
-import { writeModesParams } from '../app/route.ts';
+import { writeSendParams } from '../app/online-url.ts';
 import { browserStorage } from '../app/storage.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import type { Arena } from '../arena.ts';
@@ -69,8 +69,10 @@ export function mountOnline(context: MountContext): OnlineMount {
     home: () => {
       context.goHome();
     },
-    modes: () => {
-      context.go(writeModesParams);
+    friend: () => {
+      context.go((url) => {
+        writeSendParams(url, 'reveal', 3, 'setup');
+      });
     },
     showWorld: (world, seed) => {
       context.showWorld(world, seed);
