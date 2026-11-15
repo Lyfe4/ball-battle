@@ -8,7 +8,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type * as Sim from '../sim/index.ts';
-import { ApiError } from './http.ts';
+import { RulesetError } from './failure.ts';
+import { ApiError } from './http-error.ts';
 
 /** What every frozen bundle exports: src/sim/index.ts as it was at that ruleset. */
 export type FrozenSim = typeof Sim;
@@ -47,10 +48,18 @@ async function load(version: number, dir: string): Promise<FrozenSim> {
       `Ruleset ${String(version)} has no frozen bundle on this server`,
     );
   }
-  const sim = (await import(pathToFileURL(file).href)) as Partial<FrozenSim>;
+  let sim: Partial<FrozenSim>;
+  try {
+    sim = (await import(pathToFileURL(file).href)) as Partial<FrozenSim>;
+  } catch (error) {
+    const kind = error instanceof Error ? error.name : 'unknown error';
+    throw new RulesetError(`ruleset ${String(version)}'s bundle failed to load (${kind})`);
+  }
   const missing = REQUIRED.filter((name) => typeof sim[name] !== 'function');
   if (sim.RULESET_VERSION !== version || missing.length > 0) {
-    throw new Error(`rulesets/r${String(version)}/sim.mjs is not ruleset ${String(version)}'s sim`);
+    throw new RulesetError(
+      `rulesets/r${String(version)}/sim.mjs is not ruleset ${String(version)}'s sim`,
+    );
   }
   return sim;
 }

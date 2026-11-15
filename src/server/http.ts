@@ -1,9 +1,11 @@
 // Every route's frame (ADR 0052, section 7): a request id, the online switch, error answers in the
 // API's shape, one log line, and unexpected errors to the monitor. A Netlify function file is just
 // `export default endpoint('health', health)`; tests call the same handler with their own deps.
-import type { ErrorBody, ErrorCode } from '../api/errors.ts';
+import type { ErrorBody } from '../api/errors.ts';
+import { ApiError } from './http-error.ts';
 import { configOf, type Config } from './config.ts';
 import { databaseFor, type Sql } from './db.ts';
+import { failureOf, type Stage } from './failure.ts';
 import { log, type LogSink } from './log.ts';
 import { report, startMonitor } from './monitor.ts';
 
@@ -27,28 +29,13 @@ export interface RouteContext {
   setUser(id: string): void;
   /** Adds a `Set-Cookie` to the answer, whether the route succeeds or fails. */
   setCookie(value: string): void;
+  /** A failure the route answered for itself (a health check): logged by stage and kind. */
+  readonly noteFailure: (error: unknown, stage: Stage) => void;
 }
 
 export type RouteHandler = (request: Request, context: RouteContext) => Promise<Response>;
 
-/** An answer that isn't a success: thrown by a route, sent as `{ error: { code, message } }`. */
-export class ApiError extends Error {
-  override readonly name = 'ApiError';
-  readonly status: number;
-  readonly code: ErrorCode;
-  readonly headers: Readonly<Record<string, string>>;
-  constructor(
-    status: number,
-    code: ErrorCode,
-    message: string,
-    headers: Readonly<Record<string, string>> = {},
-  ) {
-    super(message);
-    this.status = status;
-    this.code = code;
-    this.headers = headers;
-  }
-}
+export { ApiError } from './http-error.ts';
 
 /** API answers are never cached by a browser or a CDN, except as a route says (an ETag). */
 const NO_STORE = { 'Cache-Control': 'no-store' };
@@ -101,6 +88,7 @@ export function endpoint(
     const requestId = platform?.requestId ?? crypto.randomUUID();
     let userId: string | undefined;
     const cookies: string[] = [];
+    const failures: string[] = [];
     let errorCode: string | undefined;
     let response: Response;
     try {
@@ -118,12 +106,17 @@ export function endpoint(
         setCookie: (value) => {
           cookies.push(value);
         },
+        noteFailure: (error, stage) => {
+          failures.push(failureOf(error, stage));
+        },
       });
     } catch (error) {
       if (error instanceof ApiError) {
         errorCode = error.code;
+        if (error.status >= 500) failures.push(failureOf(error));
         response = problem(error);
       } else {
+        failures.push(failureOf(error));
         errorCode = 'internal';
         await report(error, { route: name, requestId });
         response = problem(new ApiError(500, 'internal', 'Something went wrong on our side'));
@@ -139,6 +132,7 @@ export function endpoint(
       durationMs: performance.now() - started,
       userId,
       error: errorCode,
+      failure: failures.length === 0 ? undefined : failures.join('; '),
     };
     log(entry, sink);
     return response;

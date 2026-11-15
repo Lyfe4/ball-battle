@@ -16,6 +16,11 @@ describe('GET /api/v1/health', () => {
     );
     const response = await handler(new Request('http://localhost/api/v1/health'));
     expect(response.status).toBe(200);
-    expect(await response.json()).toStrictEqual({ status: 'ok', database: 'ok', ruleset: 15 });
+    expect(await response.json()).toStrictEqual({
+      status: 'ok',
+      database: 'ok',
+      ruleset: 15,
+      failed: [],
+    });
   });
 });
