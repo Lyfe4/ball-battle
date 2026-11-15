@@ -5,6 +5,9 @@
 //   that hasn't moved costs a 304.
 // - POST /api/v1/series/:id/picks {round, ball}: locks a pick, in one transaction.
 // Expired turns are settled when anyone reads, and by the scheduled sweep.
+// Queries go one at a time, never two at once (`Promise.all`): the pooler (Supavisor, transaction
+// mode) never answers two queries pipelined on one connection, so such a request hangs until the
+// function times out (staging, 2026-11-15). `pnpm test:db` runs through the local pooler to catch it.
 import { decodePickRequest } from '../../api/series.ts';
 import { listFor } from '../db/series-list.ts';
 import { loadSeries } from '../db/series-record.ts';
@@ -24,11 +27,8 @@ const etagOf = (version: number) => `"v${String(version)}"`;
 
 export const seriesList: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
-  // Settling expired turns needs nobody's session: both go to the database at once.
-  const [player] = await Promise.all([
-    sessionOf(request, context),
-    settleExpired(context.deps.sql),
-  ]);
+  const player = await sessionOf(request, context);
+  await settleExpired(context.deps.sql);
   return json(200, { series: await listFor(context.deps.sql, player.userId) });
 };
 
@@ -39,12 +39,8 @@ export const seriesOne: RouteHandler = async (request, context) => {
     guard(request, ['POST']);
     const pick = decodePickRequest(await jsonBody(request));
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
-    // The session and the series are read together: one connection pipelines both queries, so
-    // they cost one round trip to the database, not two.
-    const [player, loaded] = await Promise.all([
-      sessionOf(request, context),
-      loadSeries(context.deps.sql, picks),
-    ]);
+    const player = await sessionOf(request, context);
+    const loaded = await loadSeries(context.deps.sql, picks);
     await spend(context.deps.sql, player.userId, LIMITS.moves);
     const view = await lockPick(context.deps, picks, player.userId, pick, loaded);
     return json(200, view, { ETag: etagOf(view.version), Vary: 'Cookie' });
@@ -52,10 +48,8 @@ export const seriesOne: RouteHandler = async (request, context) => {
   const id = ONE.exec(path)?.[1];
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
-  const [player, loaded] = await Promise.all([
-    sessionOf(request, context),
-    loadSeries(context.deps.sql, id),
-  ]);
+  const player = await sessionOf(request, context);
+  const loaded = await loadSeries(context.deps.sql, id);
   const view = await readSeries(context.deps, id, player.userId, loaded);
   const etag = etagOf(view.version);
   const headers = { ETag: etag, Vary: 'Cookie', 'Cache-Control': 'private, no-cache' };

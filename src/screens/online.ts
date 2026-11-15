@@ -2,7 +2,7 @@
 // sending one, home's "Your turn" and settings' "Forget me". main.ts creates this only in a build
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
-import { callApi } from '../app/api.ts';
+import { callApi, failureKindOf } from '../app/api.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { forgetDevice, hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeOnlineSeriesParams } from '../app/online-url.ts';
@@ -14,6 +14,7 @@ import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import { createYourTurn, type YourTurn } from '../ui/online/your-turn.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
+import { failureLine } from './online-failure-text.ts';
 
 export interface OnlineHost {
   readonly navigation: Navigation;
@@ -114,11 +115,17 @@ export function createOnlineScreens(
     hasGuest: () => hasGuest(host.storage),
     forget: async () => {
       const answer = await callApi('DELETE', 'me');
-      if (!answer.ok && answer.kind === 'offline') return false;
-      // Deleted, or already gone (401): this device forgets it too, and starts afresh.
+      // Deleted, or already gone (401): this device forgets it too, and starts afresh. Anything
+      // else left the guest on the server, so the device keeps it and says why.
+      if (!answer.ok && !(answer.kind === 'error' && answer.status === 401)) {
+        return failureLine(
+          failureKindOf(answer),
+          answer.kind === 'error' ? answer.message : undefined,
+        );
+      }
       forgetDevice(host.storage);
       window.location.assign('/');
-      return true;
+      return undefined;
     },
   });
 

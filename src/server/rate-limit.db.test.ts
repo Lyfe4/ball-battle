@@ -27,7 +27,10 @@ describe('a rate limit', () => {
   });
 
   it('counts each subject on its own, on every host alike (one count in the database)', async () => {
-    await Promise.all([0, 1, 2].map(() => spend(deps.sql, 'player-2', limit)));
+    // Three hosts at once, each with its own connection (one connection never sends two at once).
+    const hosts = [0, 1, 2].map(() => testDeps());
+    await Promise.all(hosts.map((host) => spend(host.sql, 'player-2', limit)));
+    await Promise.all(hosts.map((host) => host.sql.end()));
     await expect(spend(deps.sql, 'player-3', limit)).resolves.toBeUndefined();
     await expect(spend(deps.sql, 'player-2', limit)).rejects.toThrow(ApiError);
   });

@@ -2,7 +2,8 @@
 // answering one (the card that says who sent it, then a lineup without seeing theirs). The guest
 // is made here, on the first online action only, after the 16+ confirmation: one short card in
 // the flow, never on load. Every state has a way on (ADR 0027).
-import { callApi, type ApiResult } from '../app/api.ts';
+import type { ErrorCode } from '../api/errors.ts';
+import { callApi, failureKindOf, type ApiFailure } from '../app/api.ts';
 import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
@@ -34,6 +35,14 @@ export interface ChallengeScreens {
   /** The lineup for a challenge to send. */
   showSend(format: Format, bestOf: BestOf): void;
 }
+
+/** Refusals of an accept that the link's own card explains; any other shows its message. */
+const CARD_SAYS: ReadonlySet<ErrorCode> = new Set([
+  'not_found',
+  'challenge_taken',
+  'challenge_expired',
+  'own_challenge',
+]);
 
 export function createChallengeScreens(
   roots: { readonly notice: HTMLElement; readonly lineup: HTMLElement },
@@ -85,12 +94,8 @@ export function createChallengeScreens(
   };
 
   /** A failure as a notice; an `unauthenticated` one first asks for the 16+ confirmation. */
-  function failed(answer: Exclude<ApiResult<unknown>, { ok: true }>, retry: () => void): void {
-    if (answer.kind === 'offline') {
-      show('notice', onlineNotice('offline', retry, home));
-      return;
-    }
-    if (answer.code === 'unauthenticated') {
+  function failed(answer: ApiFailure, retry: () => void): void {
+    if (answer.kind === 'error' && answer.code === 'unauthenticated') {
       rememberGuest(host.storage, false);
       show(
         'notice',
@@ -103,11 +108,8 @@ export function createChallengeScreens(
       );
       return;
     }
-    show('notice', {
-      title: 'That didn’t work',
-      body: [answer.message],
-      buttons: [{ text: 'Home', onClick: home }],
-    });
+    const reason = answer.kind === 'error' ? answer.message : undefined;
+    show('notice', onlineNotice(failureKindOf(answer), retry, home, reason));
   }
 
   /**
@@ -160,8 +162,8 @@ export function createChallengeScreens(
     if (token === undefined || askFirst(() => void accept(own))) return;
     const answer = await callApi<Accepted>('POST', `challenges/${token}/accept`, { lineup: own });
     if (!answer.ok) {
-      if (answer.kind === 'error' && answer.code !== 'unauthenticated') {
-        // Taken, expired, or the sender's own: the card says so with a way on.
+      if (answer.kind === 'error' && answer.code !== undefined && CARD_SAYS.has(answer.code)) {
+        // Taken, expired, the sender's own or gone: the card says so with a way on.
         await loadCard();
         return;
       }

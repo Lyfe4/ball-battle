@@ -1,12 +1,17 @@
 // Calls to the game's own API (ADR 0052): same origin only (`connect-src 'self'`), JSON both ways,
-// the session in an HttpOnly cookie the page never sees. Every answer is one of three things the
-// screens can show: the body, our error (`{ error: { code, message } }`), or "offline" when the
-// request never reached the server, so no online screen is ever left without a way on.
+// the session in an HttpOnly cookie the page never sees. Every answer is one of four things the
+// screens can show: the body, our error (`{ error: { code, message } }`, or any other answer with
+// an error status), "timeout" when the server took too long, or "offline" when the device is
+// offline or the request got no response at all. A slow or failing server is never "offline".
 import { errorOf, type ErrorCode } from '../api/errors.ts';
 
 export type ApiResult<T> =
   | { readonly ok: true; readonly status: number; readonly body: T; readonly etag: string | null }
+  | ApiFailure;
+
+export type ApiFailure =
   | { readonly ok: false; readonly kind: 'offline' }
+  | { readonly ok: false; readonly kind: 'timeout' }
   | {
       readonly ok: false;
       readonly kind: 'error';
@@ -15,14 +20,26 @@ export type ApiResult<T> =
       readonly message: string;
     };
 
+/**
+ * What a failure means to the player: offline, the server too slow (`timeout`), the server failing
+ * (`error`, a 5xx), or the request refused (`refused`, a 4xx: its message says why).
+ */
+export type FailureKind = 'offline' | 'timeout' | 'error' | 'refused';
+
+export function failureKindOf(answer: ApiFailure): FailureKind {
+  if (answer.kind !== 'error') return answer.kind;
+  return answer.status >= 500 ? 'error' : 'refused';
+}
+
 /** What the page calls the API with; tests give their own. */
 export type Fetch = (input: string, init: RequestInit) => Promise<Response>;
 
+/** Long enough for a cold function far from the database (~3 s on staging), short enough to say so. */
 const TIMEOUT_MS = 15_000;
 
 /**
  * `method path` with an optional JSON body. A 304 (the copy in hand is current) is `ok` with no
- * body. A network failure, a timeout or a browser that says it is offline is `offline`.
+ * body. No answer within TIMEOUT_MS, headers and body, is `timeout`.
  */
 export async function callApi<T>(
   method: 'GET' | 'POST' | 'DELETE',
@@ -31,8 +48,17 @@ export async function callApi<T>(
   headers: Readonly<Record<string, string>> = {},
   send: Fetch = (input, init) => fetch(input, init),
 ): Promise<ApiResult<T | undefined>> {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return { ok: false, kind: 'offline' };
+  // Only an explicit false: a runtime without `onLine` (not a browser) isn't offline.
+  if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+    return { ok: false, kind: 'offline' };
+  }
+  // A plain timer, not AbortSignal.timeout (Safari 16+ only); only it aborts, so an abort is a timeout.
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, TIMEOUT_MS);
   let response: Response;
+  let text: string;
   try {
     response = await send(`/api/v1/${path}`, {
       method,
@@ -43,12 +69,14 @@ export async function callApi<T>(
         ...headers,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: controller.signal,
     });
+    text = response.status === 204 || response.status === 304 ? '' : await response.text();
   } catch {
-    return { ok: false, kind: 'offline' };
+    return { ok: false, kind: controller.signal.aborted ? 'timeout' : 'offline' };
+  } finally {
+    clearTimeout(timer);
   }
-  const text = response.status === 204 || response.status === 304 ? '' : await response.text();
   let parsed: unknown;
   try {
     parsed = text === '' ? undefined : JSON.parse(text);
