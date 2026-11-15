@@ -20,6 +20,7 @@ const TABLES = [
   'challenges',
   'rate_limits',
   'presence',
+  'rematches',
 ];
 
 describe('the game schema', () => {

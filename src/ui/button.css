@@ -21,6 +21,18 @@
     filter 120ms ease-out;
 }
 
+/* A button with what it does under its word: "Rematch" over "Same friend, new lineups". */
+.hud-button-label,
+.hud-button-sub {
+  display: block;
+}
+
+.hud-button-sub {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  opacity: 0.8;
+}
+
 .hud-button-primary {
   background: var(--color-accent);
   box-shadow: var(--shadow-accent-slab);

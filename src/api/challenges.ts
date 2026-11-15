@@ -57,7 +57,7 @@ const FORMATS: readonly Format[] = ['blind', 'reveal', 'showdown'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const BALL = /^[a-z][a-z0-9-]{0,31}$/;
 
-const lineupOf = (value: unknown): string[] | undefined =>
+export const lineupOf = (value: unknown): string[] | undefined =>
   Array.isArray(value) &&
   value.length <= 5 &&
   value.every((ball): ball is string => typeof ball === 'string' && BALL.test(ball))

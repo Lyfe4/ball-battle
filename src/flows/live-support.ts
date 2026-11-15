@@ -79,10 +79,18 @@ export async function phone(phones: Phones): Promise<Page> {
   return page;
 }
 
-/** Fills the visible lineup tray with the first three balls of the grid, then presses `done`. */
-async function buildLineup(page: Page, done: string): Promise<void> {
+/**
+ * Fills the visible lineup tray with the first balls of the grid (a tray kept from the last lineup,
+ * a rematch's, is used as it is), then presses `done`.
+ */
+export async function buildLineup(page: Page, done: string): Promise<void> {
+  // Until the tray is full the button says how many more ("Pick 2 more").
+  const button = page.locator('#online-lineup .screen-footer .hud-button-primary:visible');
   const grid = page.locator('#online-lineup .ball-grid button');
-  for (let index = 0; index < 3; index += 1) await grid.nth(index).click();
+  await button.waitFor();
+  for (let index = 0; (await button.isDisabled()) && index < 12; index += 1) {
+    await grid.nth(index).click();
+  }
   await page.getByRole('button', { name: done }).click();
 }
 

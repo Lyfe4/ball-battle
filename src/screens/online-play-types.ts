@@ -21,6 +21,10 @@ export interface OnlinePlayHost {
   readonly storage: DeviceStorage;
   /** The series read just before moving here, shown at once (online-prime.ts, ADR 0054). */
   readonly primed?: (id: string) => ApiResult<unknown> | undefined;
+  /** Moves by the Back rules (a rematch's lineup, ADR 0055). */
+  go(write: (params: URLSearchParams) => void): void;
+  /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
+  primeSeries(id: string): Promise<void>;
 }
 
 export interface OnlinePlay {

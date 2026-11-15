@@ -21,13 +21,11 @@ import type { DefinitionLookup } from '../sim/types.ts';
 import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
-import { createFairPlayLine } from '../ui/series/fair-play.ts';
-import { createPickClock } from '../ui/series/pick-clock.ts';
-import { pickClockOf } from './pick-clock-text.ts';
-import { liveFootLine, liveNote } from './live-text.ts';
+import { liveFootLine } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
 import { createSeriesClient, sameView } from './online-series-client.ts';
-import { onlineNotice, waitNote, type LoadStatus } from './online-text.ts';
+import { createSeriesExtras } from './online-series-extras.ts';
+import { onlineNotice, type LoadStatus } from './online-text.ts';
 import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
 
 export type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
@@ -105,7 +103,8 @@ export function createOnlinePlay(
       },
       // A request: the ball tapped shows it is working, the rest of the grid waits.
       onPick: (ball) => client.pick(ball),
-      onRematch: () => undefined,
+      onRematch: () => extras.rematch.yes(),
+      onDecline: () => extras.rematch.no(),
       onNewSeries: () => {
         host.home();
       },
@@ -117,10 +116,8 @@ export function createOnlinePlay(
     },
     true,
   );
-  const fairLine = createFairPlayLine();
-  // A live match's pick card (ADR 0055, B2); at the end, the fair-play line under the track.
-  const clock = createPickClock(lookup, roots.panel);
-  roots.panel.querySelector('#series-track')?.after(fairLine.element);
+  // The pick card, the fair-play line and the rematch (ADR 0055).
+  const extras = createSeriesExtras(roots.panel, lookup, host);
   const notice = createNotice(roots.notice, () => {
     host.home();
   });
@@ -337,7 +334,7 @@ export function createOnlinePlay(
           ? world.match.status === 'finished' && celebrated
           : true;
       const all = watched === view.rounds.length;
-      const note = isLive() ? liveNote(view, watched) : waitNote(view, Date.now());
+      const tick = { view, state: session.state, now, live: isLive(), all, watched, visible };
       const next = panel.update({
         state: session.state,
         current: session.current,
@@ -345,11 +342,9 @@ export function createOnlinePlay(
         linkState: undefined,
         seats: seatsOf(view),
         due: all ? dueAt(view, live.now()) : [],
-        online: { note: all ? note : undefined, live: isLive() },
+        online: extras.moment(tick),
       });
-      fairLine.show(all && next === 'finished' ? fair : undefined);
-      const timed = isLive() && all && next !== 'playing';
-      clock.show(timed ? pickClockOf(view, session.state, now, lookup) : undefined);
+      extras.shown(tick, next, fair);
       if (next !== phase) {
         phase = next;
         host.layoutChanged();

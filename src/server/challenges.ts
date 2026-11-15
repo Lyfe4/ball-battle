@@ -48,7 +48,7 @@ export const hashOf = async (token: string): Promise<Buffer> =>
   Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)));
 
 /** A lineup of `bestOf` different balls from the current ruleset's roster. */
-async function checkLineup(lineup: readonly string[], bestOf: number): Promise<void> {
+export async function checkLineup(lineup: readonly string[], bestOf: number): Promise<void> {
   const { ROSTER } = await rulesetSim(CURRENT_RULESET);
   const valid =
     lineup.length === bestOf &&
@@ -60,7 +60,7 @@ async function checkLineup(lineup: readonly string[], bestOf: number): Promise<v
 }
 
 /** Refuses a player who already has a live match or a lobby waiting (one at a time). */
-async function checkNotLive(db: TransactionSql, player: string): Promise<void> {
+export async function checkNotLive(db: TransactionSql, player: string): Promise<void> {
   await lockPlayer(db, player);
   const now = await liveNowOf(db, player);
   if (now !== undefined) {

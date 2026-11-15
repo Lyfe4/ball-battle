@@ -96,6 +96,8 @@ function countingHost() {
       layoutChanged: () => void (calls.layout += 1),
       redraw: () => void (calls.redraw += 1),
       home: () => undefined,
+      go: () => undefined,
+      primeSeries: () => Promise.resolve(),
       storage: () => storage,
     },
   };

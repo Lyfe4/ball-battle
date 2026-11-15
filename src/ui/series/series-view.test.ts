@@ -225,3 +225,26 @@ describe('an online series waiting on the other player (ADR 0027, 0053)', () => 
     expect(waiting(true)).toMatchObject({ waiting: true, actions: ['leave'] });
   });
 });
+
+describe('the end of a live match, and a rematch (ADR 0055)', () => {
+  const ended = play(series('blind'), 'a', 'a');
+  const end = (rematch?: 'offer' | 'answer') =>
+    seriesScreenOf({
+      state: ended,
+      current: undefined,
+      settled: true,
+      linkState: undefined,
+      seats: { you: 'a', their: 'Player 2’s', them: 'Player 2', they: 'Player 2' },
+      due: [],
+      online: { note: undefined, live: true, ...(rematch === undefined ? {} : { rematch }) },
+    });
+
+  it('offers Home alone when no rematch can be asked', () => {
+    expect(end()).toMatchObject({ phase: 'finished', actions: ['newSeries'] });
+  });
+
+  it('offers Rematch beside Home, and Rematch or No thanks when the friend asked', () => {
+    expect(end('offer').actions).toStrictEqual(['rematch', 'newSeries']);
+    expect(end('answer').actions).toStrictEqual(['rematch', 'decline']);
+  });
+});

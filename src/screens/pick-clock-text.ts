@@ -15,8 +15,8 @@ import { pickChoiceOf } from '../ui/series/series-view.ts';
 export const URGENT_SECONDS = 10;
 
 export interface PickClock {
-  /** The player's pick, the other's, the friend not yet arrived, or the other away. */
-  readonly kind: 'yours' | 'theirs' | 'join' | 'away';
+  /** The player's pick, the other's, the friend not yet arrived, the other away, a rematch. */
+  readonly kind: 'yours' | 'theirs' | 'join' | 'away' | 'rematch';
   /** "Your pick", "Player 4821 is picking", "Waiting for Player 6338 to join". */
   readonly title: string;
   /** Whole seconds left, as the card shows them. */

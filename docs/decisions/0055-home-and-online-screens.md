@@ -281,3 +281,28 @@ guarantees the whole count on both phones.
   sits under the track. Offline series end the same way ("2–1 vs Bot"): one look per state (ADR
   0038). The end keeps the arena beside it on a desktop, as every series' end does, where the
   mockup showed none.
+
+### 4. Rematch
+
+- **The machine** (`src/server/rematch.ts`, `src/api/rematch.ts`): a row per ended live series in
+  `game.rematches` (migration `20261115222739_rematch.sql`, one new table, expand only). Either
+  player asks within 2 minutes of the end (`REMATCH_OFFER_MS`); the other has 30 s to say yes or
+  no (`REMATCH_ANSWER_MS`); after a yes both have 60 s to hand in a new lineup
+  (`REMATCH_LINEUP_MS`), and when the second is in the server starts a new live series between
+  the same two players, sides kept, in the same format and length, with new seeds (its own id).
+  A no, or a timer running out, ends it for both; nothing is written when a timer runs out, it is
+  read against `now()`. A void match (nobody arrived) offers none.
+- **The route:** `GET` and `POST /api/v1/series/:id/rematch` (`{answer: 'yes' | 'no'}`, then
+  `{lineup}`), one load and one write per move under a lock on the old series' row. The lock is
+  its own statement: under read committed a `for update` that had to wait re-reads the locked
+  row but not a joined one, so two players asking at once each saw no rematch and both "asked"
+  (the database test caught it). A player in another live match by then is refused
+  (`in_a_match`), as at a challenge's Accept.
+- **The end screen:** Rematch is the main button ("Same friend, new lineups"), Home beside it.
+  The asker sees "Waiting for Player 4821 to answer" on the pick card's bar; the other sees
+  "Player 4821 wants a rematch" with Rematch and No thanks. The page asks every second while a
+  rematch may be asked or is under way. Once both said yes, both phones move to the lineup
+  (`?view=send&…&rematch=<id>`, the send-lineup screen with Start rematch, the tray kept from
+  the last lineup); the first in waits ("Waiting for your friend's lineup"), and both go into
+  the new match when it starts. A no or the time running out says so on both end screens ("Player
+  4821 said no to a rematch.", "No rematch: time ran out."), with Home.
