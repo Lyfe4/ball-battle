@@ -19,6 +19,7 @@ const TABLES = [
   'rounds',
   'challenges',
   'rate_limits',
+  'presence',
 ];
 
 describe('the game schema', () => {
