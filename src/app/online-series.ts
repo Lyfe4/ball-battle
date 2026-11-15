@@ -6,7 +6,7 @@
 import { isCommitted } from '../api/fairness.ts';
 import type { SeriesView } from '../api/series.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import type { SeriesSetup, SeriesState, Side } from '../sim/series.ts';
+import { recordOutcome, type SeriesSetup, type SeriesState, type Side } from '../sim/series.ts';
 import { verifySeries } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { otherSide, playerSeats, type Seats } from '../ui/series/seats.ts';
@@ -49,6 +49,17 @@ export function stateAt(view: SeriesView, watched: number): SeriesState {
     winner: all && view.status !== 'open' ? (view.winner ?? undefined) : undefined,
     picks: view.picks.filter((pick) => pick.round <= seen),
   };
+}
+
+/**
+ * The series after `watched` rounds and the first `attempt` attempts of the next one (each a draw,
+ * fought again): where a live page fights an attempt that comes after a draw (ADR 0053).
+ */
+export function stateAtAttempt(view: SeriesView, watched: number, attempt: number): SeriesState {
+  let state = stateAt(view, watched);
+  const outcomes = view.rounds[watched]?.outcomes ?? [];
+  for (const outcome of outcomes.slice(0, attempt)) state = recordOutcome(state, outcome);
+  return state;
 }
 
 export const seatsOf = (view: SeriesView): Seats =>
@@ -97,4 +108,17 @@ export async function fairPlayOf(view: SeriesView, lookup: DefinitionLookup): Pr
   const verdict = verifySeries(final, lookup);
   if (!verdict.ok || verdict.state.winner !== view.winner) return 'unfair';
   return JSON.stringify(verdict.state.rounds) === JSON.stringify(view.rounds) ? 'fair' : 'unfair';
+}
+
+/** A replayed round that differs from the server's is a determinism bug to hear about. */
+export function reportReplay(view: SeriesView, record: unknown, played: number): void {
+  const server = view.rounds[played - 1];
+  // The server's result stands.
+  if (JSON.stringify(record) !== JSON.stringify(server)) {
+    console.error(
+      `Series ${view.id} round ${String(played)}: the replay disagreed`,
+      JSON.stringify(record),
+      JSON.stringify(server),
+    );
+  }
 }

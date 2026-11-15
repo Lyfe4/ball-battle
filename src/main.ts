@@ -6,7 +6,7 @@ import { parseRoute, writeManualParams, writeModesParams, type Route } from './a
 import { writeMainModeParams } from './app/modes.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
-import { initialAppState, isSetupScreen, screenTitle } from './app/screen-rules.ts';
+import { initialAppState, isSetupScreen, readyMomentOf, screenTitle } from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
@@ -178,6 +178,7 @@ const online = ONLINE_BUILD
       replaceWith,
       goHome,
       showWorld,
+      arena: () => arena,
       worldsShown: () => worldsShown,
       showControls,
       redraw: () => {
@@ -246,13 +247,14 @@ const arena = createArena(
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
-    speed: () => playbackSpeedFor(router.current(), state.speed),
+    // A live fight plays at 1x on both screens, whatever the toggle says (ADR 0053).
+    speed: () => (online.isLive() ? 1 : playbackSpeedFor(router.current(), state.speed)),
     afterTicks: (world) => {
       series.settle(world);
       online.settle(world);
     },
     tips,
-    moment: () => (router.current() === 'home' ? 'demo' : seriesOnScreen() ? 'series' : 'quick'),
+    moment: () => readyMomentOf(router.current(), seriesOnScreen(), online.isLive()),
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // A finished Free play match has no use for speed: it makes way (ADR 0039).
@@ -319,7 +321,9 @@ function showControls(): void {
   const roundOver = seriesOnScreen() && phase !== undefined && phase !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
   hudRoot.hidden = setup || screen === 'home' || roundOver;
-  speedRoot.hidden = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
+  const noSpeed = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
+  // Live fights are 1x only (ADR 0053): a line takes the toggle's place.
+  speedRoot.hidden = online.footLine(screen === 'online', noSpeed);
   series.setVisible(screen === 'series');
   online.setVisible(screen);
   hud.setSeriesMode(

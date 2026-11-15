@@ -203,3 +203,25 @@ describe('the last play, as "How it was won" tells it', () => {
     });
   });
 });
+
+describe('an online series waiting on the other player (ADR 0027, 0053)', () => {
+  // Reveal: the other side shows first and has not yet.
+  const waiting = (live: boolean) =>
+    seriesScreenOf({
+      state: series('reveal'),
+      current: undefined,
+      settled: true,
+      linkState: undefined,
+      seats: { you: 'b', their: 'Player 1’s', them: 'Player 1', they: 'Player 1' },
+      due: [],
+      online: { note: 'Waiting', live },
+    });
+
+  it('by turns, goes Home: the series waits on the server', () => {
+    expect(waiting(false)).toMatchObject({ waiting: true, actions: ['newSeries'] });
+  });
+
+  it('live, offers only Leave match, never a quiet Home that would lose the match', () => {
+    expect(waiting(true)).toMatchObject({ waiting: true, actions: ['leave'] });
+  });
+});

@@ -8,11 +8,15 @@ import type { ScreenHandlers } from '../app/router.ts';
 import { writeModesParams } from '../app/route.ts';
 import { browserStorage } from '../app/storage.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
+import type { Arena } from '../arena.ts';
 import type { WorldState } from '../sim/types.ts';
 import { getElement } from '../ui/dom.ts';
 import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
+
+/** How often home asks again while it shows a way back to a live match. */
+const HOME_ASK_MS = 10_000;
 
 export interface OnlineMount {
   readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send'>;
@@ -28,6 +32,13 @@ export interface OnlineMount {
   setVisible(screen: Screen): void;
   /** Home was opened: "Your turn" asks again. */
   homeShown(): void;
+  /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
+  isLive(): boolean;
+  /**
+   * The line under a live fight, where the speed toggle sits: shown on the online screen when a
+   * live match is on and the toggle would show (`noSpeed` false). True when the toggle hides.
+   */
+  footLine(onScreen: boolean, noSpeed: boolean): boolean;
 }
 
 export interface MountContext {
@@ -36,6 +47,8 @@ export interface MountContext {
   replaceWith(write: (params: URLSearchParams) => void): void;
   goHome(): void;
   showWorld(world: WorldState, seed: number): void;
+  /** The arena, for a live round's start, countdown and a fight already under way (ADR 0053). */
+  arena(): Pick<Arena, 'release' | 'countdown' | 'showAt'>;
   worldsShown(): number;
   showControls(): void;
   redraw(): void;
@@ -62,6 +75,20 @@ export function mountOnline(context: MountContext): OnlineMount {
     showWorld: (world, seed) => {
       context.showWorld(world, seed);
     },
+    holdLive: (world, seed) => {
+      context.showWorld(world, seed);
+    },
+    // Put on screen as any round (the HUD, the seed), then played on to where it has got to.
+    showLiveAt: (world, seed, elapsedMs) => {
+      context.showWorld(world, seed);
+      context.arena().showAt(world, elapsedMs);
+    },
+    release: () => {
+      context.arena().release();
+    },
+    countdown: (text) => {
+      context.arena().countdown(text);
+    },
     worldsShown: () => context.worldsShown(),
     layoutChanged: () => {
       context.showControls();
@@ -71,7 +98,30 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     storage: browserStorage,
   });
-  getElement('home', HTMLElement).querySelector('.home-play-row')?.after(screens.yourTurn.element);
+  const homeRoot = getElement('home', HTMLElement);
+  const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
+  playRow?.after(screens.yourTurn.element);
+  // "Back to your match" takes Play's place while a live match or lobby is on (ADR 0053), and is
+  // asked about again every few seconds on home so it goes when the match ends.
+  playRow?.before(screens.backToMatch.element);
+  let homeAsk: number | undefined;
+  const askHome = async (): Promise<void> => {
+    if (homeAsk !== undefined) window.clearTimeout(homeAsk);
+    homeAsk = undefined;
+    const showing = await screens.backToMatch.refresh();
+    if (playRow !== null) playRow.hidden = showing;
+    if (showing && !homeRoot.hidden) homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
+  };
+  // A live fight's line, where the speed toggle sits (it makes way: live fights are 1x only).
+  const liveLine = document.createElement('p');
+  liveLine.className = 'live-line';
+  liveLine.setAttribute('role', 'status');
+  liveLine.hidden = true;
+  foot.append(liveLine);
+  const showLine = () => {
+    const text = screens.play.footLine() ?? '';
+    if (liveLine.textContent !== text) liveLine.textContent = text;
+  };
   return {
     handlers: { online: screens.online, challenge: screens.challenge, send: screens.send },
     settings: { online: screens.forgetMe },
@@ -80,6 +130,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     update: (world, celebrated) => {
       screens.play.update(world, celebrated);
+      if (!liveLine.hidden) showLine();
     },
     playing: () => screens.play.isPlaying(),
     phase: () => screens.play.phase(),
@@ -89,6 +140,14 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     homeShown: () => {
       screens.yourTurn.refresh();
+      void askHome();
+    },
+    isLive: () => screens.play.isLive(),
+    footLine: (onScreen, noSpeed) => {
+      const live = onScreen && screens.play.isLive();
+      liveLine.hidden = noSpeed || !live;
+      if (!liveLine.hidden) showLine();
+      return noSpeed || live;
     },
   };
 }
