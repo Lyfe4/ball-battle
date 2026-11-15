@@ -272,7 +272,7 @@ export function createArena(
       failed = false;
       failure.hidden = true;
       const moment = host.moment();
-      tips.start(moment !== 'demo' && !finished);
+      tips.start(moment !== 'demo' && moment !== 'still' && !finished);
       // A finished match never waits on Fight!: the ready card treats it as it treats the demo.
       held = ready.start(world, finished ? 'demo' : moment);
       // A finished match starts with its intro already over, so both balls are drawn at once.

@@ -219,8 +219,20 @@
   }
 }
 
-/* Desktop (ADR 0031): a short notice stays at a readable width, as a card. */
+/*
+ * Desktop (ADR 0031, 0055): a short notice stays at a readable width, as a card in the middle of the
+ * sheet's column, a little above the screen's centre (where the eye starts), never high on an empty
+ * page. Its buttons sit on the card, so its footer takes the card's fill, not the page's.
+ */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .notice {
+    margin-top: clamp(0px, 14dvh, 10rem);
+  }
+
+  .notice > .screen-footer {
+    background: transparent;
+  }
+
   /* Its own boxes sit into the card rather than vanish into it. */
   .notice-waiting,
   .notice-steps,

@@ -5,6 +5,7 @@ import { createRouter, type ScreenHandlers } from './router.ts';
 import {
   initialAppState,
   isSetupScreen,
+  readyMomentOf,
   resumesMatch,
   screenTitle,
   seriesRound,
@@ -135,5 +136,14 @@ describe('screenTitle', () => {
     expect(screenTitle('series', 5, undefined, true)).toBe('vs Bot · BallBattle');
     expect(screenTitle('manual')).toBe('Ball manual · BallBattle');
     expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Ball manual · BallBattle');
+  });
+});
+
+describe('readyMomentOf', () => {
+  it('labels the home demo while it waits on a still frame (ADR 0055)', () => {
+    expect(readyMomentOf('home', false, false)).toBe('demo');
+    expect(readyMomentOf('home', false, false, true)).toBe('still');
+    expect(readyMomentOf('series', true, true, true)).toBe('live');
+    expect(readyMomentOf('match', false, false, true)).toBe('quick');
   });
 });

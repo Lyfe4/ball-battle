@@ -306,3 +306,27 @@ guarantees the whole count on both phones.
   the last lineup); the first in waits ("Waiting for your friend's lineup"), and both go into
   the new match when it starts. A no or the time running out says so on both end screens ("Player
   4821 said no to a rematch.", "No rematch: time ran out."), with Home.
+
+### 5. The rest of part C
+
+- **Item 5, desktop notices:** a notice (the 16+ question, a failure, a friend's card) sits as a card
+  in the middle of the sheet's column, `clamp(0px, 14dvh, 10rem)` from the top, its button row on
+  the card's own fill.
+- **Item 6, Leave match:** the quiet muted link it was meant to be, in the link colour only when
+  pointed at or focused, offline and live.
+- **Item 7, the live line:** "Live · normal speed" says why there is no speed toggle in the first
+  round only; later the line is empty (it keeps its height, so the court never moves) unless a
+  reconnect or an opponent gone quiet has something to say.
+- **Item 9, the still demo:** under reduced motion the waiting demo shows the ready card's pairing
+  over its still frame (`ReadyMoment` `still`: not held, no button), so it reads as a picture; Watch
+  the demo starts it as before.
+- Items 1, 2, 3, 4 and 8 were built with the screens they belong to (1 to 3 above).
+
+## Consequences of the build
+
+- Positive: one tap plays the player's own game; the vs Bot and vs Friend screens are the same
+  component; every live state has a clock that both players read the same way; the end of a live
+  match leads to the next one.
+- Negative: the end screen asks the server every second for up to two minutes while a rematch may
+  be asked (900 reads per 5 minutes per player are allowed; a finished series no longer polls, so
+  the load moves rather than grows). A rematch is a second migration's worth of state.

@@ -19,6 +19,21 @@
   min-height: var(--tap-target);
 }
 
+/* The way out is quiet (ADR 0055): muted, in the link colour only when pointed at or focused. */
+.series-leave {
+  color: var(--color-text-muted);
+}
+
+.series-leave:focus-visible {
+  color: var(--color-focus);
+}
+
+@media (hover: hover) {
+  .series-leave:hover {
+    color: var(--color-focus);
+  }
+}
+
 /* The track: the score over a grid of rounds, the player's ball over the bot's. */
 .series-track {
   display: grid;
