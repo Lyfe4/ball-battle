@@ -183,7 +183,8 @@ describe.each([
     const fetch = server(liveView(you), answer);
     const { host, calls } = countingHost();
     createOnlinePlay(roots(), BALL_LOOKUP, host).open(ID);
-    await pass(answer.trip + 100);
+    // Until the first answer has put the fight on the arena (an engine may need a few more tasks).
+    for (let waited = 0; calls.staged === 0 && waited < 3_000; waited += 50) await pass(50);
     expect(calls.staged, 'the fight under way is put on the arena once').toBe(1);
     return { fetch, calls };
   }
