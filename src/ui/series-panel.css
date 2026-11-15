@@ -19,6 +19,30 @@
   min-height: var(--tap-target);
 }
 
+/* A live match's Rematch takes the row, the ways out beside each other under it (ADR 0055). */
+.series .hud-actions {
+  flex-wrap: wrap;
+}
+
+.series .hud-actions > :has(> .hud-button-sub) {
+  flex-basis: 100%;
+}
+
+/* The way out is quiet (ADR 0055): muted, in the link colour only when pointed at or focused. */
+.series-leave {
+  color: var(--color-text-muted);
+}
+
+.series-leave:focus-visible {
+  color: var(--color-focus);
+}
+
+@media (hover: hover) {
+  .series-leave:hover {
+    color: var(--color-focus);
+  }
+}
+
 /* The track: the score over a grid of rounds, the player's ball over the bot's. */
 .series-track {
   display: grid;

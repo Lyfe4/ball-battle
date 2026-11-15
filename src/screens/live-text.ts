@@ -45,13 +45,21 @@ export function liveNote(view: SeriesView, watched: number): string | undefined 
   return autoNote(view, watched);
 }
 
-/** The line under the court in a live fight, where the speed toggle would be. */
-export function liveFootLine(view: SeriesView, now: number, reconnecting: boolean): string {
+/**
+ * The line under the court in a live fight, where the speed toggle would be: in the first round it
+ * says why there is no speed toggle, later only a reconnect or an opponent gone quiet (ADR 0055).
+ */
+export function liveFootLine(
+  view: SeriesView,
+  now: number,
+  reconnecting: boolean,
+  first = true,
+): string {
   if (reconnecting) return 'Reconnecting…';
   const away = view.live?.away;
   if (view.status === 'open' && away != null) {
     const { they } = seatsOf(view);
     return `${they} disconnected · ${String(secondsUntil(away.forfeitAt, now))} s`;
   }
-  return 'Live · normal speed';
+  return first ? 'Live · normal speed' : '';
 }

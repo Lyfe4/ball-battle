@@ -79,7 +79,7 @@ describe('a live friend match', () => {
           fights += 1;
           expect(await sender.locator('#hud-speed').isVisible()).toBe(false);
           await expect(footOf(sender).innerText()).resolves.toMatch(
-            /Live · normal speed|disconnected/,
+            /^(Live · normal speed|.*disconnected.*)?$/,
           );
         }
         await sender.waitForTimeout(500);

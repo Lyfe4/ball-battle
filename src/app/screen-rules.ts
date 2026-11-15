@@ -99,15 +99,17 @@ export function screenTitle(
 }
 
 /**
- * What the arena is showing, for its ready moment (ADR 0037): the home demo, a series round (a
- * live one, ADR 0053, starts at its server time, with no Fight!), or a Free play match.
+ * What the arena is showing, for its ready moment (ADR 0037): the home demo (`still` while it
+ * waits under reduced motion, ADR 0055), a series round (a live one, ADR 0053, starts at its
+ * server time, with no Fight!), or a Free play match.
  */
 export function readyMomentOf(
   screen: Screen,
   seriesOnScreen: boolean,
   live: boolean,
-): 'demo' | 'series' | 'live' | 'quick' {
-  if (screen === 'home') return 'demo';
+  demoWaits = false,
+): 'demo' | 'still' | 'series' | 'live' | 'quick' {
+  if (screen === 'home') return demoWaits ? 'still' : 'demo';
   if (!seriesOnScreen) return 'quick';
   return live ? 'live' : 'series';
 }

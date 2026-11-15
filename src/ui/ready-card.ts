@@ -13,10 +13,12 @@ import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
 /**
- * What the arena is showing: the home demo, a Free play match, a series round, or a live round
- * (ADR 0053), which starts at the server's time on both screens: a countdown, no Fight!.
+ * What the arena is showing: the home demo (`still` while it waits on a still frame under reduced
+ * motion, ADR 0055: the pairing shows over it, so it reads as a picture), a Free play match, a
+ * series round, or a live round (ADR 0053), which starts at the server's time on both screens: a
+ * countdown, no Fight!.
  */
-export type ReadyMoment = 'demo' | 'quick' | 'series' | 'live';
+export type ReadyMoment = 'demo' | 'still' | 'quick' | 'series' | 'live';
 
 export interface ReadyCard {
   /** A new match: true when it waits on Fight! (the card shows over its opening world). */
@@ -34,7 +36,7 @@ const LIFT_MS = 180;
 
 /** Whether a match waits on Fight!, and whether its card says what to watch. */
 export function readyFor(moment: ReadyMoment, cardDue: boolean): { held: boolean; card: boolean } {
-  if (moment === 'demo') return { held: false, card: false };
+  if (moment === 'demo' || moment === 'still') return { held: false, card: false };
   // Live: every round waits for its time, and nobody reads a card in 3 s.
   if (moment === 'live') return { held: true, card: false };
   return { held: moment === 'series' || cardDue, card: cardDue };
@@ -134,13 +136,15 @@ export function createReadyCard(
         moment,
         !live && tips.takeReady(first.id, second.id),
       );
-      layer.hidden = !held;
-      fight.hidden = live;
+      // A still demo is not held: home holds its frame; the pairing labels it, with no button.
+      const still = moment === 'still';
+      layer.hidden = !held && !still;
+      fight.hidden = live || still;
       count.hidden = !live;
-      if (!held) return false;
+      if (!held && !still) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
-      return true;
+      return held;
     },
     release() {
       if (layer.hidden || lifting !== undefined) return false;

@@ -298,7 +298,7 @@ export function createOnlinePlay(
     isLive: () => visible && isLive(),
     footLine: () =>
       visible && view !== undefined && isLive()
-        ? liveFootLine(view, live.now(), reconnecting)
+        ? liveFootLine(view, live.now(), reconnecting, watched === 0)
         : undefined,
     sides() {
       if (view === undefined) return undefined;

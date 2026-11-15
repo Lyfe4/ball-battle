@@ -49,6 +49,12 @@ describe('a live match’s line', () => {
     expect(liveFootLine(series(), T, false)).toBe('Live · normal speed');
   });
 
+  it('says why there is no speed toggle in the first round only (ADR 0055)', () => {
+    expect(liveFootLine(series(), T, false, false)).toBe('');
+    const away = series({}, { away: { since: T - 8_000, forfeitAt: T + 28_000 } });
+    expect(liveFootLine(away, T, false, false)).toBe('Player 2 disconnected · 28 s');
+  });
+
   it('tells each side how a forfeit ended it', () => {
     const left = (winner: 'a' | 'b') =>
       liveEnding(series({ status: 'forfeit', winner }, { endReason: 'left' }));

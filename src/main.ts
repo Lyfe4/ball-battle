@@ -225,7 +225,8 @@ const arena = createArena(
       online.settle(world);
     },
     tips,
-    moment: () => readyMomentOf(router.current(), seriesOnScreen(), online.isLive()),
+    moment: () =>
+      readyMomentOf(router.current(), seriesOnScreen(), online.isLive(), home.isWaiting()),
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // A finished Free play match has no use for speed: it makes way (ADR 0039).
