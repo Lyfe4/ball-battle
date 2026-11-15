@@ -670,9 +670,11 @@ The first thing players see from the backend. It contains:
    - the "Your turn (n)" list on home;
    - an "Online" section in Other modes.
 5. **The open queue (M):** Reveal Best of 5, matched by waiting time (no rating yet), with a friend
-   link or a bot game offered while waiting.
+   link or a bot game offered while waiting. **Postponed (ADR 0053, 2026-11-15)** until live friend
+   matches have players; it will then be a live queue on the same machine.
 6. **Web Push (M):** the opt-in, the service worker, subscriptions, and the four notifications
-   above.
+   above. **Postponed with the open queue (ADR 0053):** it existed for 24-hour turns, and friend
+   matches are live now.
 
 **As built (slice 1 part A, PR 1: infrastructure):**
 

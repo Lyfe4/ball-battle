@@ -40,7 +40,7 @@ export const seriesOne: RouteHandler = async (request, context) => {
     const pick = decodePickRequest(await jsonBody(request));
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
     const player = await sessionOf(request, context);
-    const loaded = await loadSeries(context.deps.sql, picks);
+    const loaded = await loadSeries(context.deps.sql, picks, player.userId);
     await spend(context.deps.sql, player.userId, LIMITS.moves);
     const view = await lockPick(context.deps, picks, player.userId, pick, loaded);
     return json(200, view, { ETag: etagOf(view.version), Vary: 'Cookie' });
@@ -49,7 +49,7 @@ export const seriesOne: RouteHandler = async (request, context) => {
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
-  const loaded = await loadSeries(context.deps.sql, id);
+  const loaded = await loadSeries(context.deps.sql, id, player.userId);
   const view = await readSeries(context.deps, id, player.userId, loaded);
   const etag = etagOf(view.version);
   const headers = { ETag: etag, Vary: 'Cookie', 'Cache-Control': 'private, no-cache' };

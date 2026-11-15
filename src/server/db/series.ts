@@ -32,6 +32,8 @@ export interface SeriesRow {
 
 export interface NewSeries extends Omit<SeriesRow, 'names' | 'expired'> {
   readonly kind: 'friend';
+  /** Played live (ADR 0053). */
+  readonly live: boolean;
 }
 
 /** A new series and its committed seeds (salts and commitments, no seed yet), in one statement. */
@@ -49,10 +51,10 @@ export async function insertSeriesWithSeeds(
   await db`
     with made as (
       insert into game.series (id, kind, ruleset, format, best_of, player_a, player_b, lineup_a,
-        lineup_b, key_id)
+        lineup_b, key_id, live)
       values (${series.id}, ${series.kind}, ${series.ruleset}, ${series.format}, ${series.bestOf},
         ${series.players.a}, ${series.players.b}, ${[...series.lineups.a]},
-        ${[...series.lineups.b]}, ${series.keyId})
+        ${[...series.lineups.b]}, ${series.keyId}, ${series.live})
       returning id
     )
     insert into game.series_seeds (series_id, purpose, idx, salt, commitment)
@@ -62,17 +64,18 @@ export async function insertSeriesWithSeeds(
 }
 
 /**
- * Settles every turn that ran out (ADR 0052: 24 hours by database time): the side due forfeits
- * the series; when both were due (Showdown's round 1) nobody wins. `id` limits it to one series.
+ * Settles every turn by turns that ran out (ADR 0052: 24 hours by database time): the side due
+ * forfeits the series; when both were due (Showdown's round 1) nobody wins. `id` limits it to one
+ * series. A live series never forfeits for time (its pick is made at random, live-service.ts).
  */
 export async function settleExpired(db: Db, id?: string): Promise<number> {
   const only = id === undefined ? db`` : db`and id = ${id}`;
   const rows = await db`
     update game.series set
       status = 'forfeit',
-      winner = case turn when 'a' then 'b' when 'b' then 'a' else null end,
+      winner = case turn when 'a' then 'b' when 'b' then 'a' else null end, end_reason = 'timeout',
       turn = null, turn_deadline = null, finished_at = now(), version = version + 1
-    where status = 'open' and turn_deadline < now() ${only}
+    where status = 'open' and not live and turn_deadline < now() ${only}
     returning 1`;
   return rows.length;
 }

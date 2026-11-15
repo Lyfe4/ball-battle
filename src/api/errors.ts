@@ -20,8 +20,14 @@ export const ERROR_CODES = [
   /** A pick that isn't this side's to make now (not its turn, a stale tab, a finished series). */
   'not_your_turn',
   'conflict',
+  /** A live pick before its pick phase opens: the fight before it is still on (ADR 0053). */
+  'too_early',
+  /** The player is already in a live match or waiting in a lobby: one at a time (ADR 0053). */
+  'in_a_match',
   'challenge_taken',
   'challenge_expired',
+  /** A live link whose sender stopped waiting (cancelled, or left the lobby, ADR 0053). */
+  'challenge_stopped',
   'own_challenge',
   'too_many_series',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
