@@ -67,8 +67,9 @@ export const OFFLINE_SECTIONS: readonly ModeSection[] = [
 ];
 
 /**
- * Online (ADR 0052): a challenge to send a friend, in any format and length, played by turns. Only
- * in builds with online play, after the series against the bot.
+ * Online (ADR 0052, 0053): a challenge to send a friend, in either length, played live: Reveal and
+ * Showdown only (Blind live is two players watching). Only in builds with online play, after the
+ * series against the bot.
  */
 export const ONLINE_SECTION: ModeSection = {
   title: 'Online',
@@ -76,7 +77,6 @@ export const ONLINE_SECTION: ModeSection = {
   modes: [
     { kind: 'challenge', format: 'reveal' },
     { kind: 'challenge', format: 'showdown' },
-    { kind: 'challenge', format: 'blind' },
   ],
 };
 
