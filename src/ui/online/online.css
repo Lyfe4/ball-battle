@@ -66,3 +66,30 @@
   gap: var(--space-small);
   align-items: center;
 }
+
+/* Home's "Back to your match" (ADR 0053) takes Play's place: Play's row goes while it shows. */
+.home-back-match {
+  display: grid;
+}
+
+.home-back-match[hidden],
+.home-play-row[hidden] {
+  display: none;
+}
+
+/* A live fight's line under the court, in the speed toggle's place and height (ADR 0053). */
+.live-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  text-align: center;
+}
+
+.live-line[hidden] {
+  display: none;
+}

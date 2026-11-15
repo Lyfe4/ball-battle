@@ -146,6 +146,7 @@ export async function challengeInfo(
     status,
     seriesId: status === 'accepted' || status === 'yours' ? found.seriesId : null,
     live: found.live,
+    own,
   };
 }
 

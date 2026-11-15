@@ -1,6 +1,8 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
+import { PICK_SECONDS } from '../api/live.ts';
 import type { NoticeContent } from '../ui/notice.ts';
+import { STAY_LINE } from './live-text.ts';
 import { challengeLine } from './online-text.ts';
 
 export interface CardActions {
@@ -15,7 +17,12 @@ export interface CardActions {
   readonly sendOwn: () => void;
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
+  /** The sender stops waiting in a live lobby (ADR 0053). */
+  readonly cancel: () => void;
 }
+
+/** What a live match is, said on both players' cards before it starts (ADR 0053). */
+const LIVE_LINE = `You play live, together: ${String(PICK_SECONDS)} s a pick.`;
 
 /** The link to a challenge, on this site. */
 export const challengeUrl = (token: string): string =>
@@ -53,12 +60,26 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
     case 'open':
       return {
         title: `${from} challenges you`,
-        body: [
-          what,
-          'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
-        ],
+        body: info.live
+          ? [what, `Build your lineup without seeing theirs. ${LIVE_LINE}`, STAY_LINE]
+          : [
+              what,
+              'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
+            ],
         buttons: [{ text: 'Build your lineup', onClick: actions.lineup }, home],
       };
+    case 'stopped':
+      return info.own
+        ? {
+            title: 'This link has stopped',
+            body: ['You left the lobby, so it stopped waiting. Send your friend a new one.'],
+            buttons: [own, home],
+          }
+        : {
+            title: `${from} stopped waiting`,
+            body: [what, 'Send them a challenge of your own.'],
+            buttons: [own, home],
+          };
     case 'yours': {
       const series = info.seriesId;
       if (series !== null) {
@@ -74,6 +95,18 @@ export function cardFor(info: ChallengeInfo | undefined, actions: CardActions): 
             },
             home,
           ],
+        };
+      }
+      if (info.live) {
+        return {
+          title: 'Waiting for your friend…',
+          body: [
+            what,
+            'Send them this link: the match starts as soon as they accept.',
+            STAY_LINE,
+            challengeUrl(actions.token),
+          ],
+          buttons: [shareButton(actions), { text: 'Cancel', onClick: actions.cancel }],
         };
       }
       return {
