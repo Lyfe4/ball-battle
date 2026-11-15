@@ -204,7 +204,8 @@ export function lastPlayOf(state: SeriesState): NextMatch | undefined {
 }
 
 /** What the player can do next on a series screen: every screen but a fight offers one or more. */
-export type SeriesAction = 'pick' | 'play' | 'rematch' | 'newSeries';
+/** `leave`: a live match's only way on while it waits (Leave and forfeit, ADR 0053). */
+export type SeriesAction = 'pick' | 'play' | 'rematch' | 'newSeries' | 'leave';
 
 /** Where the series is: a round being fought, the screen between rounds, or the result. */
 export type SeriesPhase = 'playing' | 'between' | 'finished';
@@ -232,7 +233,14 @@ export interface SeriesMoment {
    * other side's turn the way on is Home (`newSeries`), and `note` says why it waits ("Waiting
    * for Player 4821 · 23 h left") or how it ended (a forfeit).
    */
-  readonly online?: { readonly note: string | undefined };
+  readonly online?: {
+    readonly note: string | undefined;
+    /**
+     * A live match (ADR 0053): it goes on only while both players stay, so while it waits the way
+     * on is "Leave match" (asked as Leave and forfeit?), never a Home that would quietly lose it.
+     */
+    readonly live?: boolean;
+  };
 }
 
 export interface SeriesScreen {
@@ -292,7 +300,7 @@ export function seriesScreenOf({
         : pairing !== undefined
           ? ['play']
           : waiting
-            ? ['newSeries']
+            ? [online.live === true ? 'leave' : 'newSeries']
             : [],
   };
 }

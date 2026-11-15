@@ -1,0 +1,99 @@
+// An online series' requests (ADR 0052, 0053): reading it (with its ETag, so a series that hasn't
+// moved costs a 304), locking a pick, Leave and forfeit, and asking again on a timer. The screen
+// decides what each answer means for what it shows; this module only talks to the server.
+import { callApi, failureKindOf, type FailureKind } from '../app/api.ts';
+import type { ClockSample } from '../app/live-clock.ts';
+import type { SeriesView } from '../api/series.ts';
+import { decodeSeriesView } from '../api/series-view-decode.ts';
+
+export interface SeriesClientHost {
+  /** The series on screen, if any (its version is the ETag sent). */
+  view(): SeriesView | undefined;
+  /** A view from the server, after a read or a pick. */
+  adopt(view: SeriesView): void;
+  /** An answer's clock sample (a live series). */
+  heard(sample: ClockSample | undefined): void;
+  /** Not one of this player's series (or gone), or the session is. */
+  missing(): void;
+  /** A read or pick failed: what failed, and a refusal's message. */
+  failed(kind: FailureKind | 'error', message?: string): void;
+  /** A read failed while a live match is on screen: it plays on, and says so. */
+  dropped(): boolean;
+  /** When to ask again, in ms, or undefined for not now. */
+  nextAsk(): number | undefined;
+}
+
+export interface SeriesClient {
+  /** The series this screen reads from now on. */
+  open(id: string): void;
+  load(): Promise<void>;
+  pick(ball: string): Promise<void>;
+  /** Leave and forfeit (a live series still open): the match is lost at once. */
+  forfeit(): Promise<void>;
+  /** Asks again later, as the host says, or stops asking. */
+  schedule(): void;
+}
+
+export function createSeriesClient(host: SeriesClientHost): SeriesClient {
+  let id: string | undefined;
+  let timer: number | undefined;
+
+  function schedule(): void {
+    if (timer !== undefined) window.clearTimeout(timer);
+    timer = undefined;
+    const delay = host.nextAsk();
+    if (delay !== undefined) timer = window.setTimeout(() => void load(), delay);
+  }
+
+  async function load(): Promise<void> {
+    if (id === undefined) return;
+    const view = host.view();
+    const headers: Record<string, string> =
+      view?.id === id ? { 'If-None-Match': `"v${String(view.version)}"` } : {};
+    const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
+    if (answer.ok) {
+      host.heard(answer.clock);
+      const decoded = answer.status === 304 ? host.view() : decodeSeriesView(answer.body);
+      if (decoded === undefined) host.failed('error');
+      else host.adopt(decoded);
+    } else if (answer.kind === 'error' && (answer.status === 404 || answer.status === 401)) {
+      host.missing();
+    } else if (!host.dropped()) {
+      if (answer.kind === 'error') host.failed(failureKindOf(answer), answer.message);
+      // Offline or too slow with nothing to show yet; with a series on screen, the next ask asks.
+      else if (host.view() === undefined) host.failed(answer.kind);
+    }
+    schedule();
+  }
+
+  return {
+    open(next) {
+      id = next;
+    },
+    load,
+    async pick(ball) {
+      const view = host.view();
+      if (view === undefined || id === undefined) return;
+      const answer = await callApi<unknown>('POST', `series/${id}/picks`, {
+        round: view.rounds.length,
+        ball,
+      });
+      if (answer.ok) {
+        host.heard(answer.clock);
+        const decoded = decodeSeriesView(answer.body);
+        if (decoded !== undefined) host.adopt(decoded);
+        return;
+      }
+      // Refused (a stale tab, a pick a moment early): the series as the server has it now.
+      // Offline, too slow or failing: say so; Try again reads it, which shows whether it went in.
+      if (answer.kind === 'error' && answer.status < 500) await load();
+      else host.failed(failureKindOf(answer));
+    },
+    async forfeit() {
+      const view = host.view();
+      if (id === undefined || view?.live == null || view.status !== 'open') return;
+      await callApi('POST', `series/${id}/forfeit`, {});
+    },
+    schedule,
+  };
+}

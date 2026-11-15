@@ -40,6 +40,8 @@ export interface ChallengeInfo {
   readonly seriesId: string | null;
   /** Played live (ADR 0053). */
   readonly live: boolean;
+  /** The viewer sent it (a stopped link reads differently to its sender). */
+  readonly own: boolean;
 }
 
 /** POST /api/v1/challenges/:token/accept. */

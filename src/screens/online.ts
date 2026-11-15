@@ -10,8 +10,10 @@ import type { ScreenHandler } from '../app/router.ts';
 import type { SeriesList } from '../api/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element } from '../ui/dom.ts';
+import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import { createYourTurn, type YourTurn } from '../ui/online/your-turn.ts';
+import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
 import { failureLine } from './online-failure-text.ts';
@@ -23,6 +25,12 @@ export interface OnlineHost {
   home(): void;
   modes(): void;
   showWorld(world: WorldState, seed: number): void;
+  /** A live round held on its countdown, or already `elapsedMs` under way (ADR 0053). */
+  holdLive(world: WorldState, seed: number): void;
+  showLiveAt(world: WorldState, seed: number, elapsedMs: number): void;
+  /** Starts the held match at its server time. */
+  release(): void;
+  countdown(text: string | undefined): void;
   worldsShown(): number;
   layoutChanged(): void;
   redraw(): void;
@@ -35,6 +43,8 @@ export interface OnlineScreens {
   readonly send: ScreenHandler<'send'>;
   readonly play: OnlinePlay;
   readonly yourTurn: YourTurn & { refresh(): void };
+  /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
+  readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
   readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
@@ -111,6 +121,27 @@ export function createOnlineScreens(
     },
   };
 
+  const back = createBackToMatch((match) => {
+    host.go((url) => {
+      writeMatchParams(url, match);
+    });
+  });
+  const backToMatch = {
+    element: back.element,
+    /** Asks for the player's live match, only on a device that has played online. */
+    async refresh(): Promise<boolean> {
+      if (!hasGuest(host.storage)) return back.show(null);
+      const match = await currentMatch();
+      // Unknown (offline, a failure): keep what shows; the next ask may know.
+      return match === undefined ? !back.element.hidden : back.show(match);
+    },
+  };
+
+  // Back from another app (a share sheet, a chat): a waiting lobby asks at once.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') challenges.resumed();
+  });
+
   const forgetMe = createForgetMe({
     hasGuest: () => hasGuest(host.storage),
     forget: async () => {
@@ -150,6 +181,7 @@ export function createOnlineScreens(
     },
     play,
     yourTurn,
+    backToMatch,
     forgetMe,
     setVisible(screen) {
       challenges.setVisible(screen === 'challenge' || screen === 'send');

@@ -4,9 +4,18 @@
 // an error status), "timeout" when the server took too long, or "offline" when the device is
 // offline or the request got no response at all. A slow or failing server is never "offline".
 import { errorOf, type ErrorCode } from '../api/errors.ts';
+import { NOW_HEADER } from '../api/live.ts';
+import type { ClockSample } from './live-clock.ts';
 
 export type ApiResult<T> =
-  | { readonly ok: true; readonly status: number; readonly body: T; readonly etag: string | null }
+  | {
+      readonly ok: true;
+      readonly status: number;
+      readonly body: T;
+      readonly etag: string | null;
+      /** A live series' answer: when it left, came back, and the server's clock (ADR 0053). */
+      readonly clock: ClockSample | undefined;
+    }
   | ApiFailure;
 
 export type ApiFailure =
@@ -59,6 +68,8 @@ export async function callApi<T>(
   }, TIMEOUT_MS);
   let response: Response;
   let text: string;
+  const sentAt = Date.now();
+  let receivedAt: number;
   try {
     response = await send(`/api/v1/${path}`, {
       method,
@@ -71,6 +82,7 @@ export async function callApi<T>(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: controller.signal,
     });
+    receivedAt = Date.now();
     text = response.status === 204 || response.status === 304 ? '' : await response.text();
   } catch {
     return { ok: false, kind: controller.signal.aborted ? 'timeout' : 'offline' };
@@ -84,11 +96,13 @@ export async function callApi<T>(
     parsed = undefined;
   }
   if (response.ok || response.status === 304) {
+    const serverNow = Number(response.headers.get(NOW_HEADER) ?? Number.NaN);
     return {
       ok: true,
       status: response.status,
       body: parsed as T | undefined,
       etag: response.headers.get('ETag'),
+      clock: Number.isFinite(serverNow) ? { sentAt, receivedAt, serverNow } : undefined,
     };
   }
   const error = errorOf(parsed);

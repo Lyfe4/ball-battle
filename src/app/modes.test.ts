@@ -81,7 +81,7 @@ describe('Other modes', () => {
 });
 
 describe('Other modes in a build with online play', () => {
-  it('adds the Online section after the series against the bot, with every format', () => {
+  it('adds the Online section after the series against the bot, live formats only', () => {
     const sections = sectionsFor(true);
     expect(sections.map((section) => section.title)).toStrictEqual([
       'Series vs bot',
@@ -91,7 +91,6 @@ describe('Other modes in a build with online play', () => {
     expect(sections[1]?.modes).toStrictEqual([
       { kind: 'challenge', format: 'reveal' },
       { kind: 'challenge', format: 'showdown' },
-      { kind: 'challenge', format: 'blind' },
     ]);
     expect(sections[1]?.lengthChoice).toBe(true);
   });

@@ -290,7 +290,8 @@ export function createSeriesPanel(
       buttons.hidden = next.hidden && rematch.hidden && newSeries.hidden;
       share.hidden = !finished || online;
       if (!finished) setText(share, 'Copy link');
-      leave.setHidden(finished || screen.waiting);
+      leave.setHidden(finished || (screen.waiting && !actions.includes('leave')));
+      leave.setLive(moment.online?.live === true);
       const said = playing ? undefined : moment.online?.note;
       note.hidden = said === undefined;
       setText(note, said ?? '');

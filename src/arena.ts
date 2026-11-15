@@ -54,6 +54,8 @@ export interface ArenaHost {
  * of the intro (a short beat) runs after Fight! before the first tick.
  */
 const READY_FLOOR_MS = theme.introMs - theme.introStaggerMs - theme.introPopMs;
+/** A frame at 60 Hz: how a live fight already under way is played on to its moment. */
+const LIVE_FRAME_MS = 1000 / 60;
 
 export interface Arena {
   /**
@@ -61,6 +63,15 @@ export interface Arena {
    * already ended as it ended: no intro, no Fight! to wait on, no effects to replay.
    */
   show(world: WorldState, finished?: boolean): void;
+  /**
+   * A live fight (ADR 0053) already `elapsedMs` of real time under way at 1x: the match is played
+   * on headlessly to that moment, effects and all, then shown from there.
+   */
+  showAt(world: WorldState, elapsedMs: number): void;
+  /** Starts a match held on its ready moment, as Fight! would: a live fight at its server time. */
+  release(): void;
+  /** The ready card's countdown in place of Fight! (a live fight), or none. */
+  countdown(text: string | undefined): void;
   /** Draws the match on screen again (e.g. after the HUD changed around it). */
   redraw(): void;
   /** The sim's latest world. */
@@ -191,26 +202,7 @@ export function createArena(
       const wasBusy = isClockBusy(playback.clock);
       const resultWasShown = effects.resultVisible(playback.effectMs);
       const wasCelebrated = effects.celebrationOver(playback.effectMs);
-      const frameMs = scaleFrame(nowMs - lastFrameMs, host.speed());
-      // Held on the ready moment: the pop-in plays, then time stops before the first tick.
-      const outcome = advanceFrame(
-        playback,
-        held ? heldFrameMs(playback.clock, frameMs, READY_FLOOR_MS) : frameMs,
-        (world) => step(world, lookup),
-        ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
-      );
-      // Held: stopped at exactly the same moment however the frames fell, so the same opening is
-      // drawn every time it is shown.
-      playback = held
-        ? settleHold(outcome.playback, theme.introMs, READY_FLOOR_MS)
-        : outcome.playback;
-      for (const { previous, result } of outcome.ticks) {
-        effects.apply(result.events, playback.effectMs);
-        rewinds.apply(result.events, playback.effectMs);
-        sourceChips.apply(result.events, playback.effectMs);
-        tips.apply(result.events, result.world, playback.effectMs);
-        effects.bounced(wallBounces(previous, result.world), playback.effectMs);
-      }
+      const ticks = play(scaleFrame(nowMs - lastFrameMs, host.speed()));
       host.afterTicks(playback.world);
       // Draw every frame while the match runs (balls move between ticks), while the intro, a
       // hit-stop or slow-mo runs, after the match ends while effects (the knockout sequence, the
@@ -223,7 +215,7 @@ export function createArena(
         effects.celebrationOver(playback.effectMs) !== wasCelebrated;
       if (
         running ||
-        outcome.ticks.length > 0 ||
+        ticks > 0 ||
         busy ||
         resultAppeared ||
         effects.isActive(playback.effectMs) ||
@@ -235,6 +227,32 @@ export function createArena(
       }
     }
     lastFrameMs = nowMs;
+  }
+
+  /**
+   * Plays `frameMs` of presentation time: whole ticks as the clock allows, their effects applied.
+   * Held on the ready moment, the pop-in plays, then time stops before the first tick, at exactly
+   * the same moment however the frames fell, so the same opening is drawn every time it is shown.
+   * Returns how many ticks ran.
+   */
+  function play(frameMs: number): number {
+    const outcome = advanceFrame(
+      playback,
+      held ? heldFrameMs(playback.clock, frameMs, READY_FLOOR_MS) : frameMs,
+      (world) => step(world, lookup),
+      ({ result }) => feelOf(result.events, reducedMotionQuery.matches),
+    );
+    playback = held
+      ? settleHold(outcome.playback, theme.introMs, READY_FLOOR_MS)
+      : outcome.playback;
+    for (const { previous, result } of outcome.ticks) {
+      effects.apply(result.events, playback.effectMs);
+      rewinds.apply(result.events, playback.effectMs);
+      sourceChips.apply(result.events, playback.effectMs);
+      tips.apply(result.events, result.world, playback.effectMs);
+      effects.bounced(wallBounces(previous, result.world), playback.effectMs);
+    }
+    return outcome.ticks.length;
   }
 
   // Browsers pause requestAnimationFrame in hidden tabs. Restart timing on return so the match
@@ -266,6 +284,26 @@ export function createArena(
       sourceChips.reset();
       lastFrameMs = undefined;
       render();
+    },
+    showAt(world, elapsedMs) {
+      this.show(world);
+      ready.release();
+      held = false;
+      // Frame by frame at 60 Hz, as a page that had been watching would have played it.
+      for (let left = elapsedMs; left > 0; left -= LIVE_FRAME_MS) {
+        play(Math.min(left, LIVE_FRAME_MS));
+      }
+      lastFrameMs = undefined;
+      render();
+    },
+    release() {
+      if (ready.release()) {
+        held = false;
+        lastFrameMs = undefined;
+      }
+    },
+    countdown(text) {
+      ready.countdown(text);
     },
     redraw: render,
     focus() {

@@ -7,6 +7,11 @@ export interface LeaveConfirm {
   setHidden(hidden: boolean): void;
   /** Back to the plain Leave series link, without leaving. */
   close(): void;
+  /**
+   * A live match (ADR 0053): "Leave match", asked as "Leave and forfeit?", since leaving loses it.
+   * Otherwise as made.
+   */
+  setLive(live: boolean): void;
 }
 
 /**
@@ -58,7 +63,12 @@ export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfir
   }
 
   // Online (ADR 0052) leaving keeps the series on the server: nothing to ask.
-  link.addEventListener('click', ask ? open : onLeave);
+  let asks = ask;
+  const words = { link: link.textContent, question: question.textContent };
+  link.addEventListener('click', () => {
+    if (asks) open();
+    else onLeave();
+  });
   stay.addEventListener('click', () => {
     close(true);
   });
@@ -75,6 +85,11 @@ export function createLeaveConfirm(onLeave: () => void, ask = true): LeaveConfir
     },
     close() {
       close(false);
+    },
+    setLive(live) {
+      asks = live || ask;
+      link.textContent = live ? 'Leave match' : words.link;
+      question.textContent = live ? 'Leave and forfeit?' : words.question;
     },
   };
 }

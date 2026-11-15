@@ -21,6 +21,17 @@ afterEach(() => {
 });
 
 describe('callApi', () => {
+  it('reads the server’s clock from X-Now, with when the request left and came back', async () => {
+    const answer = await callApi('GET', 'series/x', undefined, {}, () =>
+      Promise.resolve(new Response(null, { status: 304, headers: { 'X-Now': '1700000000123' } })),
+    );
+    if (!answer.ok) throw new Error('expected an answer');
+    expect(answer.clock?.serverNow).toBe(1_700_000_000_123);
+    expect(answer.clock?.receivedAt).toBeGreaterThanOrEqual(answer.clock?.sentAt ?? Infinity);
+    const plain = await callApi('GET', 'me', undefined, {}, () => Promise.resolve(json(200, {})));
+    expect(plain.ok && plain.clock).toBeUndefined();
+  });
+
   it('is offline when the browser says so, without sending anything', async () => {
     vi.stubGlobal('navigator', { onLine: false });
     const send = vi.fn<Fetch>();

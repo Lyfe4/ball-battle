@@ -88,3 +88,17 @@ export function screenTitle(screen: Screen, bestOf?: number, ballName?: string):
   if (screen === 'manual' && ballName !== undefined) return `${ballName} · ${TITLES.manual}`;
   return TITLES[screen];
 }
+
+/**
+ * What the arena is showing, for its ready moment (ADR 0037): the home demo, a series round (a
+ * live one, ADR 0053, starts at its server time, with no Fight!), or a Free play match.
+ */
+export function readyMomentOf(
+  screen: Screen,
+  seriesOnScreen: boolean,
+  live: boolean,
+): 'demo' | 'series' | 'live' | 'quick' {
+  if (screen === 'home') return 'demo';
+  if (!seriesOnScreen) return 'quick';
+  return live ? 'live' : 'series';
+}
