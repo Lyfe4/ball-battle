@@ -237,3 +237,26 @@ guarantees the whole count on both phones.
   card takes the row). On a desktop the column grows to `clamp(26rem, 100vw - 100dvh - 4rem,
 38rem)` and its type and cards scale with the screen's height.
 - An old `?view=modes` link, or any home URL with leftovers, opens home and rewrites its address.
+
+### 2. The pick timer, the countdown and the waiting states
+
+- **The pick card** (`src/ui/series/pick-clock.ts`, words in `src/screens/pick-clock-text.ts`):
+  above the track on both phones, the title and the seconds on one row and a bar under them. "Your
+  pick · 22 s" for the picker; "Player 4821 is picking • • • 18 s" for the other, with what they
+  answer ("You showed Storm. They answer from:" and their balls, or "They show first, from:") and
+  under the track what comes next ("You'll fight as soon as they pick."). Calm lilac, then the
+  accent yellow from 10 s on (`URGENT_SECONDS`), on the bar and the seconds only: the number keeps
+  its size, nothing flashes. The bar glides on the 250 ms display tick; with reduced motion it
+  steps once a second. Its writes go through `setText`, `setAttr` and `setHidden`, and the bar's
+  transform is written only when it changes.
+- **The same card before and around the match:** "Waiting for Player 6338 to join" with the 60 s
+  as its bar, and "Player 4821 disconnected" with their 30 s of grace. The line over the series
+  (`liveNote`) keeps only a pick made at random and how the match ended; "Stay until the end…"
+  stays on the lobby and the friend's card, read before the match (part C item 1).
+- **The countdown sticker (C1)** is the ready card's live form: `countdownLine` now says "Get
+  ready", then "3", "2", "1"; the card puts the line on top in display type, a number huge
+  (`clamp(5rem, 22vmin, 9rem)`), the pairing small under it. Each line pops in (120 ms) and the
+  sticker lifts away at Fight! (180 ms), neither with reduced motion. Still one component
+  (`ready-card.ts`).
+- **The score line fits a phone** (part C item 3): mid-fight a guest is "P6066" in the line
+  ("Round 1 · You 0–0 P6066"), the whole name in its accessible name.

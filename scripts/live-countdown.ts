@@ -22,9 +22,9 @@ const friendOptions = { cpu: option('--cpu'), fps: option('--fps'), slow: rest.i
 interface Countdown {
   /** From the card first showing to the fight's start. */
   readonly shownMs: number;
-  /** Its lines in order ("Get ready", "Fight in 3…", …). */
+  /** Its lines in order ("Get ready", "3", "2", "1"). */
   readonly lines: readonly string[];
-  /** It showed "Fight in 3…", "2…" and "1…", each for most of its second. */
+  /** It showed "3", "2" and "1", each for most of its second. */
   readonly whole: boolean;
 }
 
@@ -42,7 +42,7 @@ function countdowns(card: readonly CardMoment[]): Countdown[] {
     if (from === undefined) continue;
     const end = moment.at;
     const lasted = (n: number) => {
-      const index = lines.findIndex((line) => line.text === `Fight in ${String(n)}…`);
+      const index = lines.findIndex((line) => line.text === String(n));
       if (index < 0) return 0;
       return (lines[index + 1]?.at ?? end) - (lines[index]?.at ?? end);
     };

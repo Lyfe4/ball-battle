@@ -29,6 +29,9 @@ export interface ReadyCard {
   countdown(text: string | undefined): void;
 }
 
+/** How long a live sticker takes to lift away at Fight! (ready-card.css, `ready-lift`). */
+const LIFT_MS = 180;
+
 /** Whether a match waits on Fight!, and whether its card says what to watch. */
 export function readyFor(moment: ReadyMoment, cardDue: boolean): { held: boolean; card: boolean } {
   if (moment === 'demo') return { held: false, card: false };
@@ -70,6 +73,15 @@ export function createReadyCard(
     if (layer.hidden) return;
     layer.hidden = true;
     onFight();
+  }
+
+  // A live sticker lifts away at Fight! (ADR 0055, C1); with reduced motion it simply goes.
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let lifting: number | undefined;
+  function stopLift(): void {
+    if (lifting !== undefined) window.clearTimeout(lifting);
+    lifting = undefined;
+    layer.classList.remove('ready-lift');
   }
   fight.addEventListener('click', go);
   never.addEventListener('click', () => {
@@ -116,6 +128,8 @@ export function createReadyCard(
         return false;
       }
       const live = moment === 'live';
+      stopLift();
+      card.dataset['live'] = String(live);
       const { held, card: withCard } = readyFor(
         moment,
         !live && tips.takeReady(first.id, second.id),
@@ -129,12 +143,30 @@ export function createReadyCard(
       return true;
     },
     release() {
-      if (layer.hidden) return false;
-      layer.hidden = true;
+      if (layer.hidden || lifting !== undefined) return false;
+      if (card.dataset['live'] !== 'true' || reducedMotion.matches) {
+        layer.hidden = true;
+        return true;
+      }
+      layer.classList.add('ready-lift');
+      lifting = window.setTimeout(() => {
+        layer.hidden = true;
+        stopLift();
+      }, LIFT_MS);
       return true;
     },
     countdown(text) {
-      if (count.textContent !== (text ?? '')) count.textContent = text ?? '';
+      const line = text ?? '';
+      if (count.textContent === line) return;
+      count.textContent = line;
+      // "Get ready" as a word, 3, 2 and 1 huge; each new line pops in (not with reduced motion).
+      count.dataset['number'] = String(/^\d$/.test(line));
+      count.classList.remove('ready-count-pop');
+      if (line !== '' && !reducedMotion.matches) {
+        // A layout read restarts the pop for the next line.
+        count.getBoundingClientRect();
+        count.classList.add('ready-count-pop');
+      }
     },
     focus() {
       if (layer.hidden || fight.hidden) return false;

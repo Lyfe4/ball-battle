@@ -1,0 +1,139 @@
+/*
+ * A live match's pick card (pick-clock.ts, ADR 0055 B2): a raised card above the track with the
+ * title and the seconds on one row, a bar across it, and for the waiting player what the other is
+ * answering. Calm lilac until 10 s, then the accent yellow; the seconds never change size and
+ * nothing flashes. The three dots pulse softly in the second accent while the other picks.
+ */
+.pick-clock {
+  display: grid;
+  gap: var(--space-small);
+  padding: var(--space-gap) var(--space-gutter);
+  border-radius: var(--radius-large);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  margin-bottom: var(--press-depth);
+}
+
+.pick-clock[hidden],
+.pick-clock-next[hidden],
+.pick-clock-answer[hidden],
+.pick-clock-dots[hidden] {
+  display: none;
+}
+
+.pick-clock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-gap);
+}
+
+.pick-clock-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-small);
+  margin: 0;
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.pick-clock-seconds {
+  flex: none;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.pick-clock-bar {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-sunken);
+}
+
+.pick-clock-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-text-muted);
+  transform-origin: left center;
+}
+
+/* The last 10 s: the accent yellow, on the bar and the seconds; nothing else changes. */
+.pick-clock[data-urgent='true'] .pick-clock-fill {
+  background: var(--color-accent);
+}
+
+.pick-clock[data-urgent='true'] .pick-clock-seconds {
+  color: var(--color-accent);
+}
+
+.pick-clock-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.pick-clock-dots > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent-2);
+}
+
+.pick-clock-answer {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.pick-clock-answer-line {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.pick-clock-balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}
+
+.pick-clock-ball {
+  width: 36px;
+  height: 36px;
+}
+
+.pick-clock-next {
+  margin: 0;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pick-clock-fill {
+    transition: transform 250ms linear;
+  }
+
+  .pick-clock-dots > span {
+    animation: pick-clock-dot 1.2s ease-in-out infinite;
+  }
+
+  .pick-clock-dots > span:nth-child(2) {
+    animation-delay: 200ms;
+  }
+
+  .pick-clock-dots > span:nth-child(3) {
+    animation-delay: 400ms;
+  }
+}
+
+@keyframes pick-clock-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

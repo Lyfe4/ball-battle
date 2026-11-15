@@ -4,7 +4,7 @@
 import { GRACE_MS } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 import { secondsUntil } from '../app/live-play.ts';
-import { dueOf, seatsOf } from '../app/online-series.ts';
+import { seatsOf } from '../app/online-series.ts';
 
 /** Said once before a live match starts, to both players (decision 3). */
 export const STAY_LINE = `Stay until the end. Leaving for ${String(GRACE_MS / 1000)} s loses the match.`;
@@ -37,28 +37,16 @@ function autoNote(view: SeriesView, watched: number): string | undefined {
 }
 
 /**
- * The line under a live series at server time `now` with `watched` rounds watched here: why it
- * waits and for how long, or how it ended. Undefined while there is nothing to say.
+ * The line over a live series with `watched` rounds watched here: a pick made at random, or how it
+ * ended. Whose pick it is, the seconds left, the wait to join and an away player are the pick
+ * card's (pick-clock-text.ts, ADR 0055). Undefined while there is nothing to say.
  */
-export function liveNote(view: SeriesView, now: number, watched: number): string | undefined {
+export function liveNote(view: SeriesView, watched: number): string | undefined {
   const live = view.live;
   if (live === null) return undefined;
-  const { they } = seatsOf(view);
   if (view.status !== 'open') return liveEnding(view);
-  if (live.startedAt === null) {
-    return `Waiting for ${they} to join · ${String(secondsUntil(live.startBy, now))} s. ${STAY_LINE}`;
-  }
-  if (live.away !== null) {
-    return `${they} disconnected · waiting ${String(secondsUntil(live.away.forfeitAt, now))} s`;
-  }
-  const deadline = view.deadline === null ? undefined : Date.parse(view.deadline);
-  if (deadline === undefined || live.opensAt === null || now < live.opensAt) return undefined;
-  const left = `${String(secondsUntil(deadline, now))} s`;
-  const turn = dueOf(view).includes(view.you)
-    ? `Your pick · ${left}`
-    : `Waiting for ${they} · ${left}`;
-  const auto = autoNote(view, watched);
-  return auto === undefined ? turn : `${auto} ${turn}`;
+  if (live.startedAt === null || live.away !== null) return undefined;
+  return autoNote(view, watched);
 }
 
 /** The line under the court in a live fight, where the speed toggle would be. */
