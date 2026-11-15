@@ -143,3 +143,18 @@
     filter: brightness(1.12);
   }
 }
+
+/* A live round's countdown in Fight!'s place (ADR 0053): the same size and weight, as a word, since
+   nothing is pressed: both screens start it together at the server's time. */
+.ready-count {
+  min-height: var(--tap-target);
+  margin: 4px 0 var(--press-depth);
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+  line-height: var(--tap-target);
+  letter-spacing: 0.02em;
+}
+
+.ready-count[hidden] {
+  display: none;
+}

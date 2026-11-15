@@ -12,19 +12,28 @@ import { favouredOf } from './balls/matchups.ts';
 import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
-/** What the arena is showing: the home demo, a Free play match, or a Best of 3 round. */
-export type ReadyMoment = 'demo' | 'quick' | 'series';
+/**
+ * What the arena is showing: the home demo, a Free play match, a series round, or a live round
+ * (ADR 0053), which starts at the server's time on both screens: a countdown, no Fight!.
+ */
+export type ReadyMoment = 'demo' | 'quick' | 'series' | 'live';
 
 export interface ReadyCard {
   /** A new match: true when it waits on Fight! (the card shows over its opening world). */
   start(world: WorldState, moment: ReadyMoment): boolean;
   /** Focuses Fight! when the match waits on it; false when it doesn't. */
   focus(): boolean;
+  /** Starts a held match without Fight! (a live fight's time came): true when one was held. */
+  release(): boolean;
+  /** The countdown line a live fight shows in place of Fight!. */
+  countdown(text: string | undefined): void;
 }
 
 /** Whether a match waits on Fight!, and whether its card says what to watch. */
 export function readyFor(moment: ReadyMoment, cardDue: boolean): { held: boolean; card: boolean } {
   if (moment === 'demo') return { held: false, card: false };
+  // Live: every round waits for its time, and nobody reads a card in 3 s.
+  if (moment === 'live') return { held: true, card: false };
   return { held: moment === 'series' || cardDue, card: cardDue };
 }
 
@@ -48,7 +57,11 @@ export function createReadyCard(
   fight.type = 'button';
   const never = element('button', 'text-link ready-never', 'Don’t show these again');
   never.type = 'button';
-  card.append(head.element, edge, reason, fight, never);
+  // A live fight's countdown, where Fight! would be: announced as it changes.
+  const count = element('p', 'ready-count');
+  count.setAttribute('role', 'status');
+  count.hidden = true;
+  card.append(head.element, edge, reason, fight, count, never);
   layer.append(card);
   layer.hidden = true;
   container.append(layer);
@@ -102,15 +115,29 @@ export function createReadyCard(
         layer.hidden = true;
         return false;
       }
-      const { held, card: withCard } = readyFor(moment, tips.takeReady(first.id, second.id));
+      const live = moment === 'live';
+      const { held, card: withCard } = readyFor(
+        moment,
+        !live && tips.takeReady(first.id, second.id),
+      );
       layer.hidden = !held;
+      fight.hidden = live;
+      count.hidden = !live;
       if (!held) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
       return true;
     },
-    focus() {
+    release() {
       if (layer.hidden) return false;
+      layer.hidden = true;
+      return true;
+    },
+    countdown(text) {
+      if (count.textContent !== (text ?? '')) count.textContent = text ?? '';
+    },
+    focus() {
+      if (layer.hidden || fight.hidden) return false;
       fight.focus({ preventScroll: true });
       return true;
     },
