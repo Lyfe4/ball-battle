@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { OTHER_MODE_SECTIONS } from '../app/modes.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { BEST_OF, FORMATS, recordOutcome, startSeries, type Outcome } from '../sim/series.ts';
 import {
+  FRIEND_SETUP_NOTE,
   lengthChoiceOf,
   levelLine,
-  MAIN_PLAY,
-  modeLine,
-  modeName,
+  OPPONENT_CARDS,
+  PLAY_LABEL,
+  playLine,
+  playSpoken,
   RESUME_PLAY,
   resumeLine,
   resumeSpoken,
@@ -16,25 +17,45 @@ import {
 } from './modes-text.ts';
 import { FORMAT_LINES } from './series-text.ts';
 
-const modes = OTHER_MODE_SECTIONS.flatMap((section) => section.modes);
-
-describe('the words for the ways to play (ADR 0046)', () => {
-  it('says what home’s one tap plays, in words, not only “Play”', () => {
-    expect(MAIN_PLAY.label).toBe('Play');
-    expect(MAIN_PLAY.meta).toBe('Best of 3 · Reveal · vs bot');
-    expect(MAIN_PLAY.spoken).toBe('Play Best of 3, Reveal, against the bot');
+describe('the words for the ways to play (ADR 0046, 0055)', () => {
+  it('says what home’s Play starts, in words, not only “Play”', () => {
+    expect(PLAY_LABEL).toBe('Play');
+    expect(playLine({ format: 'reveal', bestOf: 3, level: 'normal' })).toBe(
+      'Best of 3 · Reveal · vs Normal bot',
+    );
+    expect(playLine({ format: 'reveal', bestOf: 5, level: 'hard' })).toBe(
+      'Best of 5 · Reveal · vs Hard bot',
+    );
+    expect(playSpoken({ format: 'showdown', bestOf: 5, level: 'easy' })).toBe(
+      'Play Best of 5, Showdown, against the Easy bot',
+    );
   });
 
-  it('names every other mode and says how it plays in a few words', () => {
-    expect(modes.map(modeName)).toStrictEqual(['Reveal', 'Showdown', 'Blind', 'Free play']);
-    for (const mode of modes) {
-      expect(modeLine(mode).split(' ').length).toBeLessThanOrEqual(7);
+  it('names no level for Blind, where the bot makes no choices', () => {
+    expect(playLine({ format: 'blind', bestOf: 3, level: 'hard' })).toBe(
+      'Best of 3 · Blind · vs bot',
+    );
+    expect(playSpoken({ format: 'blind', bestOf: 3, level: 'hard' })).toBe(
+      'Play Best of 3, Blind, against the bot',
+    );
+  });
+
+  it('names each opponent card and says who it plays in a few words', () => {
+    expect(OPPONENT_CARDS.bot.name).toBe('vs Bot');
+    expect(OPPONENT_CARDS.friend.name).toBe('vs Friend');
+    for (const card of Object.values(OPPONENT_CARDS)) {
+      expect(card.line.split(' ').length).toBeLessThanOrEqual(7);
     }
+  });
+
+  it('says what a live friend match asks before the lineup', () => {
+    expect(FRIEND_SETUP_NOTE).toBe(
+      'Live: you both stay until the end, 30 s a pick. You send a link; the match starts when they accept.',
+    );
   });
 
   it('describes Blind plainly: set an order, then watch', () => {
     expect(FORMAT_LINES.blind).toBe('Set your order, then watch.');
-    expect(modeLine({ kind: 'series', format: 'blind' })).toBe('Set your order, then watch.');
   });
 
   it('names the bot’s level as a player reads it', () => {
@@ -45,7 +66,7 @@ describe('the words for the ways to play (ADR 0046)', () => {
     ]);
   });
 
-  it('heads the lineup with what is being set up, since the rules step is skipped', () => {
+  it('heads the lineup with what is being set up, since Play skips the setup', () => {
     expect(FORMATS.map((format) => setupLine(format))).toStrictEqual([
       'Best of 3 · Blind',
       'Best of 3 · Reveal',

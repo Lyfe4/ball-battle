@@ -3,7 +3,8 @@
 // - `?challenge=<token>`: a friend's link (the card that says who sent it and what it is), and
 //   `&step=lineup` to build the lineup that accepts it. The sender's own link opens the same card,
 //   which offers to share it.
-// - `?view=send&fmt=<format>&mode=bo3|bo5`: building the lineup for a challenge to send.
+// - `?view=send&fmt=<format>&mode=bo3|bo5`: building the lineup for a challenge to send, and
+//   `&step=setup` for the vs Friend setup before it (its length and format, ADR 0055).
 // Nothing secret is in any of them: the series id needs a session that plays in it, and the token
 // is the link itself, meant to be shared.
 import { isChallengeToken } from '../api/challenges.ts';
@@ -13,7 +14,15 @@ import { readMode } from './series-url.ts';
 export type OnlineRoute =
   | { readonly screen: 'online'; readonly series: string }
   | { readonly screen: 'challenge'; readonly token: string; readonly step: 'card' | 'lineup' }
-  | { readonly screen: 'send'; readonly format: Format; readonly bestOf: BestOf };
+  | {
+      readonly screen: 'send';
+      readonly format: Format;
+      readonly bestOf: BestOf;
+      readonly step: SendStep;
+    };
+
+/** Sending a challenge: the vs Friend setup, then the lineup. */
+export type SendStep = 'setup' | 'lineup';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -36,11 +45,17 @@ export function writeChallengeParams(
   if (step === 'lineup') params.set('step', 'lineup');
 }
 
-export function writeSendParams(params: URLSearchParams, format: Format, bestOf: BestOf): void {
+export function writeSendParams(
+  params: URLSearchParams,
+  format: Format,
+  bestOf: BestOf,
+  step: SendStep = 'lineup',
+): void {
   clear(params);
   params.set('view', 'send');
   params.set('fmt', format);
   params.set('mode', bestOf === 5 ? 'bo5' : 'bo3');
+  if (step === 'setup') params.set('step', 'setup');
 }
 
 /** The online screen a URL names, if any; anything malformed names none (and falls to home). */
@@ -56,5 +71,6 @@ export function parseOnlineRoute(params: URLSearchParams): OnlineRoute | undefin
   if (params.get('view')?.trim().toLowerCase() !== 'send') return undefined;
   const format =
     FORMATS.find((name) => name === params.get('fmt')?.trim().toLowerCase()) ?? 'reveal';
-  return { screen: 'send', format, bestOf: readMode(params.get('mode')) ?? 3 };
+  const step = params.get('step') === 'setup' ? 'setup' : 'lineup';
+  return { screen: 'send', format, bestOf: readMode(params.get('mode')) ?? 3, step };
 }

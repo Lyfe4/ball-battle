@@ -1,12 +1,12 @@
-// Friend challenges on the page (ADR 0052): sending one (a lineup, then the link to share) and
-// answering one (the card that says who sent it, then a lineup without seeing theirs). The guest
-// is made here, on the first online action only, after the 16+ confirmation: one short card in
-// the flow, never on load. Every state has a way on (ADR 0027).
-import type { ErrorCode } from '../api/errors.ts';
+// Friend challenges on the page (ADR 0052, 0055): sending one (the vs Friend setup, a lineup, then
+// the link to share) and answering one (the card that says who sent it, then a lineup without
+// seeing theirs). The guest is made here after the 16+ confirmation, asked once per device at the
+// start of either flow (opening the vs Friend setup, or Build your lineup on a friend's card), so
+// a lineup is never built only to be stopped; never on load. Every state has a way on (ADR 0027).
 import { callApi, failureKindOf, type ApiFailure } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { hasGuest, rememberGuest, type DeviceStorage } from '../app/online-device.ts';
-import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
+import { writeChallengeParams, writeOnlineSeriesParams, type SendStep } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
 import type { BestOf, Format, Lineup } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
@@ -16,7 +16,8 @@ import { createLineupStep } from '../ui/series/lineup-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import { inAMatchCard } from './current-match.ts';
-import { adultCard, cardFor, shareLink } from './online-challenge-text.ts';
+import { createFriendSetup } from './friend-setup.ts';
+import { adultCard, CARD_SAYS, cardFor, shareLink } from './online-challenge-text.ts';
 import { onlineNotice } from './online-text.ts';
 
 /** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
@@ -27,11 +28,13 @@ export interface ChallengeHost {
   go(write: (params: URLSearchParams) => void): void;
   /** Shows another screen in place of this entry. */
   replaceWith(write: (params: URLSearchParams) => void): void;
+  /** Rewrites this entry's URL without showing it again. */
+  rewrite(write: (params: URLSearchParams) => void): void;
   /** In-app Back, or `toParent` when there is no history to go back to. */
   back(toParent: () => void): void;
   home(): void;
-  /** Other modes, where challenges are sent from. */
-  modes(): void;
+  /** The vs Friend setup, where challenges are sent from (ADR 0055). */
+  friend(): void;
   readonly storage: DeviceStorage;
   /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
   primeSeries(id: string): Promise<void>;
@@ -43,19 +46,11 @@ export interface ChallengeScreens {
   setVisible(visible: boolean): void;
   /** A friend's link: its card, or the lineup that accepts it. */
   showChallenge(token: string, step: 'card' | 'lineup'): void;
-  /** The lineup for a challenge to send. */
-  showSend(format: Format, bestOf: BestOf): void;
+  /** Sending a challenge: the vs Friend setup, or the lineup for it. */
+  showSend(format: Format, bestOf: BestOf, step: SendStep): void;
   /** The page is visible again: a waiting lobby asks now. */
   resumed(): void;
 }
-
-/** Refusals of an accept that the link's own card explains; any other shows its message. */
-const CARD_SAYS: ReadonlySet<ErrorCode> = new Set([
-  'not_found',
-  'challenge_taken',
-  'challenge_expired',
-  'own_challenge',
-]);
 
 export function createChallengeScreens(
   roots: {
@@ -84,10 +79,19 @@ export function createChallengeScreens(
   };
   const notice = createNotice(roots.notice, back);
   createSkeleton(roots.loading, 'card', back);
+  const setup = createFriendSetup({
+    back,
+    rewrite: (write) => {
+      host.rewrite(write);
+    },
+    go: (write) => {
+      host.go(write);
+    },
+  });
   const lineup = createLineupStep(balls, {
     onBack: () => {
       host.back(() => {
-        if (sending !== undefined || token === undefined) host.modes();
+        if (sending !== undefined || token === undefined) host.friend();
         else
           host.replaceWith((url) => {
             writeChallengeParams(url, token ?? '');
@@ -102,7 +106,7 @@ export function createChallengeScreens(
     onDone: (own) => (sending === undefined ? accept(own) : send(own)),
   });
   roots.lineup.classList.add('series-setup');
-  roots.lineup.replaceChildren(lineup.element);
+  roots.lineup.replaceChildren(setup.element, lineup.element);
 
   function stopLobby(): void {
     if (lobby !== undefined) window.clearTimeout(lobby);
@@ -111,13 +115,15 @@ export function createChallengeScreens(
 
   /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
   function show(
-    part: 'notice' | 'lineup' | 'loading',
+    part: 'notice' | 'setup' | 'lineup' | 'loading',
     content?: NoticeContent,
     focus = true,
   ): void {
     stopLobby();
     roots.notice.hidden = !visible || part !== 'notice';
-    roots.lineup.hidden = !visible || part !== 'lineup';
+    roots.lineup.hidden = !visible || (part !== 'lineup' && part !== 'setup');
+    setup.element.hidden = part !== 'setup';
+    lineup.element.hidden = part !== 'lineup';
     roots.loading.hidden = !visible || part !== 'loading';
     if (content !== undefined) notice.show(content, focus);
   }
@@ -164,7 +170,7 @@ export function createChallengeScreens(
    * The first online action on a device with no guest asks for the 16+ confirmation before any
    * request (a device that lost its cookie meets the same card after a 401). True when it asked.
    */
-  function askFirst(then: () => Promise<unknown>): boolean {
+  function askFirst(then: () => unknown): boolean {
     if (hasGuest(host.storage)) return false;
     show(
       'notice',
@@ -179,7 +185,7 @@ export function createChallengeScreens(
   }
 
   /** Makes the guest (the first online action), then does what was asked. */
-  async function startGuest(then: () => Promise<unknown>): Promise<void> {
+  async function startGuest(then: () => unknown): Promise<void> {
     const made = await callApi<unknown>('POST', 'session', { adult: true });
     if (!made.ok) {
       failed(made, () => startGuest(then));
@@ -273,10 +279,14 @@ export function createChallengeScreens(
     return {
       token: current,
       home,
+      // The 16+ question comes before the lineup, on a device that hasn't answered it.
       lineup: () => {
-        host.go((url) => {
-          writeChallengeParams(url, current, 'lineup');
-        });
+        const toLineup = () => {
+          host.go((url) => {
+            writeChallengeParams(url, current, 'lineup');
+          });
+        };
+        if (!askFirst(toLineup)) toLineup();
       },
       series: (id: string) => {
         host.go((url) => {
@@ -284,7 +294,7 @@ export function createChallengeScreens(
         });
       },
       sendOwn: () => {
-        host.modes();
+        host.friend();
       },
       share: () => shareLink(current),
       cancel: () => cancel(),
@@ -330,11 +340,20 @@ export function createChallengeScreens(
         if (lobby === undefined) void loadCard(false);
       }
     },
-    showSend(format, bestOf) {
+    showSend(format, bestOf, step) {
       sending = { format, bestOf };
       token = undefined;
-      show('lineup');
-      lineup.open(format, draft, undefined, bestOf, 'Send challenge');
+      if (step === 'lineup') {
+        show('lineup');
+        lineup.open(format, draft, undefined, bestOf, 'Send challenge');
+        return;
+      }
+      // The start of the vs Friend flow: the 16+ question first, on a device that hasn't answered.
+      const open = () => {
+        show('setup');
+        setup.open({ format, bestOf, level: '' });
+      };
+      if (!askFirst(open)) open();
     },
   };
 }

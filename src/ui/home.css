@@ -1,6 +1,6 @@
 /*
- * Home: under the demo arena on a phone, beside it on a wide screen. One large Play (Reveal, ADR
- * 0046); Other modes and the manual are visibly secondary.
+ * Home (ADR 0055): under the demo arena on a phone, beside it on a wide screen. One large Play that
+ * says what it starts, one card per opponent under it, then Free play and the manual as quiet links.
  */
 .home {
   display: grid;
@@ -79,9 +79,94 @@
   display: none;
 }
 
+/*
+ * The opponent cards: two side by side today; with Ranked and Casual a 2 x 2 grid, nothing else
+ * on home moving (ADR 0055). A card is a raised slab like a button, its name over one quiet line.
+ */
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One card alone (a build without online play) takes the row. */
+.home-cards-item:only-child {
+  grid-column: 1 / -1;
+}
+
+.home-cards-item {
+  display: grid;
+}
+
+.home-card {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 4px;
+  min-height: calc(var(--tap-target) * 2);
+  margin-bottom: var(--press-depth);
+  padding: var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out,
+    filter 120ms ease-out;
+}
+
+.home-card:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.home-card:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+@media (hover: hover) {
+  .home-card:hover {
+    filter: brightness(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-card {
+    transition: none;
+  }
+}
+
+.home-card-name {
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.home-card-line {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+/* Free play and the manual: quiet links, side by side under the cards. */
 .home-more {
   display: flex;
-  gap: var(--space-small);
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-small) var(--space-gap);
+}
+
+.home-link {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small);
+  font-size: 1rem;
 }
 
 /* The roster's drawings, on a wide screen only: on a phone the demo already shows two of them. */
@@ -111,20 +196,56 @@
 }
 
 /*
- * Desktop (ADR 0031): the demo stays the pitch, so the arena keeps its room; the panel beside it
- * widens and the name reads as a title.
+ * Desktop (ADR 0031, 0055): the demo stays the pitch, so the arena keeps its room; the column beside
+ * it fills its space with the arena's proportions: wider, the name a hero title, Play and the cards
+ * scaled up with the screen, so the column is as weighty as the court beside it, never a small
+ * stack in an empty column.
  */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .stage[data-home] .hud {
-    width: var(--panel-width-wide);
+    width: clamp(var(--panel-width-wide), 100vw - 100dvh - 4rem, 38rem);
+    max-width: none;
+  }
+
+  .home {
+    gap: clamp(var(--space-gap), 2.2vh, 24px);
   }
 
   .home-title {
-    font-size: var(--font-size-hero);
+    font-size: clamp(var(--font-size-hero), 7vh, 5rem);
   }
 
   .home-pitch {
-    font-size: var(--font-size-lead);
+    font-size: clamp(var(--font-size-lead), 2.4vh, 1.375rem);
+  }
+
+  .home-play {
+    min-height: clamp(5rem, 13vh, 9rem);
+  }
+
+  .home-play-label {
+    font-size: clamp(1.6rem, 4vh, 2.5rem);
+  }
+
+  .home-play-meta {
+    font-size: clamp(var(--font-size-small), 2vh, 1.125rem);
+  }
+
+  .home-card {
+    min-height: clamp(6rem, 16vh, 11rem);
+    padding: clamp(var(--space-gap), 2.4vh, 24px);
+  }
+
+  .home-card-name {
+    font-size: clamp(1.25rem, 3vh, 1.75rem);
+  }
+
+  .home-card-line {
+    font-size: clamp(var(--font-size-small), 1.9vh, 1.0625rem);
+  }
+
+  .home-link {
+    font-size: clamp(1rem, 2vh, 1.125rem);
   }
 }
 

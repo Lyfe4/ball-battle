@@ -1,89 +1,98 @@
-// The ways to play and where each leads (ADR 0046). Reveal is the main mode: home's one tap opens its
-// lineup, against the remembered bot level, with no rules step. Every other way to play is on
-// Other modes, in titled sections. The series section opens with a length choice (Best of 3 or 5,
-// ADR 0048), so it lists every format, Reveal included: at Best of 5 nothing else reaches it.
-import { DEFAULT_BEST_OF, type BestOf, type Format } from '../sim/series.ts';
+// The ways to play and where each leads (ADR 0046, 0055). Home's Play starts the player's last
+// series against the bot, as they set it up (its length, format and level), straight to its lineup;
+// a first visit plays Best of 3 · Reveal · vs Normal bot. Under Play, one card per opponent opens
+// that opponent's setup screen: vs Bot, and vs Friend in builds with online play. Play only ever
+// remembers bot games: a friend match needs a link, so it never becomes Play's setup.
+import { LIVE_FORMATS } from '../api/live.ts';
+import { DEFAULT_BOT } from '../sim/bot.ts';
+import { DEFAULT_BEST_OF, FORMATS, type BestOf, type Format } from '../sim/series.ts';
+import { loadBotLevel, saveBotLevel } from './bot-level.ts';
 import { ONLINE_BUILD } from './online-build.ts';
+import { loadSeriesLength, saveSeriesLength } from './series-length.ts';
 import { writeSeriesModeParams } from './series-url.ts';
-
-/**
- * Home's game: Best of 3, Reveal, against the bot. Measured with the most skill, the most reads and
- * the most different bot levels (`docs/best-of-5-measurements.md`, ADR 0035).
- */
-export const MAIN_FORMAT: Format = 'reveal';
-
-/** Home's one tap: the main format's lineup step. */
-export function writeMainModeParams(params: URLSearchParams): void {
-  for (const key of [...params.keys()]) params.delete(key);
-  writeSeriesModeParams(params, MAIN_FORMAT, 'lineup');
-}
 
 /** Whether the bot makes choices a level changes (ADR 0035): never in Blind. */
 export function botChooses(format: Format): boolean {
   return format !== 'blind';
 }
 
-/**
- * Where a lineup step's in-app Back goes when the visitor arrived on it from a link (otherwise it
- * is the browser's Back): the screen that leads to it. Home's Play leads only to Best of 3 Reveal;
- * every other lineup, a Best of 5 Reveal's included (ADR 0048), is reached from Other modes.
- */
-export function lineupParentOf(format: Format, bestOf: BestOf = DEFAULT_BEST_OF): 'home' | 'modes' {
-  return format === MAIN_FORMAT && bestOf === DEFAULT_BEST_OF ? 'home' : 'modes';
+/** What home's Play starts: a series against the bot, as last set up on this device. */
+export interface PlaySetup {
+  readonly format: Format;
+  readonly bestOf: BestOf;
+  /** The bot's level (ADR 0035), shared with the lineup step's own level choice. */
+  readonly level: string;
 }
 
 /**
- * A way to play on Other modes: a series against the bot in one format, a challenge to send a
- * friend in one format (online builds, ADR 0052), or Free play (one match).
+ * A first visit's Play: Best of 3, Reveal, against the Normal bot. Reveal is measured with the most
+ * skill, the most reads and the most different bot levels (`docs/best-of-5-measurements.md`).
  */
-export type OtherMode =
-  | { readonly kind: 'series'; readonly format: Format }
-  | { readonly kind: 'challenge'; readonly format: Format }
-  | { readonly kind: 'free' };
-
-export interface ModeSection {
-  readonly title: string;
-  /** A series section: the length (Best of 3 or 5) is chosen above its cards, and remembered. */
-  readonly lengthChoice?: boolean;
-  readonly modes: readonly OtherMode[];
-}
-
-/**
- * Other modes, in order. A series against the bot at either length, in order of skill: Reveal
- * (home's mode, listed for Best of 5), Showdown, then Blind, the casual "set it and watch" series.
- * Free play is one match with both balls chosen.
- */
-export const OFFLINE_SECTIONS: readonly ModeSection[] = [
-  {
-    title: 'Series vs bot',
-    lengthChoice: true,
-    modes: [
-      { kind: 'series', format: 'reveal' },
-      { kind: 'series', format: 'showdown' },
-      { kind: 'series', format: 'blind' },
-    ],
-  },
-  { title: 'One match', modes: [{ kind: 'free' }] },
-];
-
-/**
- * Online (ADR 0052, 0053): a challenge to send a friend, in either length, played live: Reveal and
- * Showdown only (Blind live is two players watching). Only in builds with online play, after the
- * series against the bot.
- */
-export const ONLINE_SECTION: ModeSection = {
-  title: 'Online',
-  lengthChoice: true,
-  modes: [
-    { kind: 'challenge', format: 'reveal' },
-    { kind: 'challenge', format: 'showdown' },
-  ],
+export const FIRST_PLAY: PlaySetup = {
+  format: 'reveal',
+  bestOf: DEFAULT_BEST_OF,
+  level: DEFAULT_BOT.id,
 };
 
-/** Other modes' sections in a build with or without online play. */
-export function sectionsFor(online: boolean): readonly ModeSection[] {
-  const [series, ...rest] = OFFLINE_SECTIONS;
-  return online && series !== undefined ? [series, ONLINE_SECTION, ...rest] : OFFLINE_SECTIONS;
+/** The browser storage key Play's format is remembered under (its length and level have theirs). */
+export const PLAY_FORMAT_STORAGE_KEY = 'ballbattle.playFormat';
+
+type Storage = () => Pick<globalThis.Storage, 'getItem' | 'setItem'>;
+
+/** The format `raw` names, else the first visit's. */
+export function parsePlayFormat(raw: string | null | undefined): Format {
+  return FORMATS.find((format) => format === raw?.trim().toLowerCase()) ?? FIRST_PLAY.format;
 }
 
-export const OTHER_MODE_SECTIONS: readonly ModeSection[] = sectionsFor(ONLINE_BUILD);
+/** Play's setup as remembered on this device; storage that is missing or throws is a first visit. */
+export function loadPlaySetup(storage: Storage): PlaySetup {
+  let format = FIRST_PLAY.format;
+  try {
+    format = parsePlayFormat(storage().getItem(PLAY_FORMAT_STORAGE_KEY));
+  } catch {
+    // A first visit's format.
+  }
+  return { format, bestOf: loadSeriesLength(storage), level: loadBotLevel(storage) };
+}
+
+/** Remembers a series set up against the bot as Play's, if storage allows. */
+export function savePlaySetup(storage: Storage, setup: PlaySetup): void {
+  try {
+    storage().setItem(PLAY_FORMAT_STORAGE_KEY, setup.format);
+  } catch {
+    // Not remembered this time; Play keeps its last setup.
+  }
+  saveSeriesLength(storage, setup.bestOf);
+  saveBotLevel(storage, setup.level);
+}
+
+/** Play's one tap: the remembered series' lineup step. */
+export function writePlayParams(params: URLSearchParams, setup: PlaySetup): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  writeSeriesModeParams(params, setup.format, 'lineup', setup.bestOf);
+}
+
+/** The vs Bot setup, on these choices: a series link's rules step (`?mode=bo3&fmt=`). */
+export function writeBotSetupParams(params: URLSearchParams, format: Format, bestOf: BestOf): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  writeSeriesModeParams(params, format, undefined, bestOf);
+}
+
+/**
+ * Who a home card plays against, the most competitive first. Ranked and Casual join this list
+ * later (ADR 0055): the cards become a 2 × 2 grid and nothing else on home moves.
+ */
+export type Opponent = 'friend' | 'bot';
+
+/** Home's cards in a build with or without online play: vs Friend needs online play. */
+export function homeCardsFor(online: boolean): readonly Opponent[] {
+  return online ? ['bot', 'friend'] : ['bot'];
+}
+
+export const HOME_CARDS: readonly Opponent[] = homeCardsFor(ONLINE_BUILD);
+
+/** The formats each opponent's setup offers: live play is Reveal and Showdown only (ADR 0053). */
+export const SETUP_FORMATS: Readonly<Record<Opponent, readonly Format[]>> = {
+  bot: ['reveal', 'showdown', 'blind'],
+  friend: LIVE_FORMATS,
+};

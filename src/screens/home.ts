@@ -1,8 +1,12 @@
 // The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
-// pairs from the counter map, not announced as counters); Play, Other modes and the manual (ADR
-// 0046). main.ts owns the arena and hands this module what it needs through `HomeHost`.
+// pairs from the counter map, not announced as counters); Play, the opponent cards, Free play and
+// the manual (ADR 0055). main.ts owns the arena and hands this module what it needs through
+// `HomeHost`.
 import { demoAt } from '../app/demo.ts';
-import type { Matchup } from '../app/matchup.ts';
+import { HOME_CARDS, loadPlaySetup, writeBotSetupParams, writePlayParams } from '../app/modes.ts';
+import { writeSendParams } from '../app/online-url.ts';
+import { writeManualParams, writePickParams } from '../app/route.ts';
+import { browserStorage as storage } from '../app/storage.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { SeriesState } from '../sim/series.ts';
@@ -15,17 +19,14 @@ const NEXT_DEMO_MS = 2500;
 
 export interface HomeHost {
   showWorld(world: WorldState, seed: number): void;
-  /** The main mode (ADR 0046): Reveal's lineup, one tap from home. */
-  play(): void;
-  /** Other modes: every other way to play. */
-  modes(): void;
+  /** Moves to the screen `write` describes, by the Back rules, and shows it. */
+  go(write: (params: URLSearchParams) => void): void;
   /** An undecided series held (a Back, or saved before a reload): Play resumes it instead. */
   held(): SeriesState | undefined;
   /** Carries on with the held series. */
   resume(): void;
-  /** Forgets the held series and opens the main mode's lineup. */
-  newSeries(): void;
-  manual(): void;
+  /** Forgets the held series (New series opens Play's lineup after it). */
+  forget(): void;
 }
 
 export interface HomeController {
@@ -38,8 +39,6 @@ export interface HomeController {
   drawn(resultShown: boolean): void;
   /** Leaving home: no demo is queued behind the next screen. */
   leave(): void;
-  /** The demo's pair, the favoured ball first: Free play opens on the counter just watched. */
-  demo(): Matchup;
 }
 
 export function createHomeController(
@@ -54,19 +53,40 @@ export function createHomeController(
   let waiting = false;
   let queued: number | undefined;
 
-  const home = createHome(root, balls, {
+  /** Play (ADR 0055): the last series set up against the bot, at its lineup, one tap from home. */
+  const play = () => {
+    host.go((url) => {
+      writePlayParams(url, loadPlaySetup(storage));
+    });
+  };
+
+  const home = createHome(root, balls, HOME_CARDS, {
     onPlay: () => {
-      if (host.held() === undefined) host.play();
+      if (host.held() === undefined) play();
       else host.resume();
     },
     onNewSeries: () => {
-      host.newSeries();
+      host.forget();
+      play();
     },
-    onModes: () => {
-      host.modes();
+    // Each opponent's setup: vs Bot opens on Play's choices, vs Friend on the first live format.
+    onOpponent: (opponent) => {
+      const { format, bestOf } = loadPlaySetup(storage);
+      host.go((url) => {
+        if (opponent === 'bot') writeBotSetupParams(url, format, bestOf);
+        else writeSendParams(url, 'reveal', 3, 'setup');
+      });
+    },
+    // Free play opens on the pair the demo is showing (ADR 0020).
+    onFreePlay: () => {
+      host.go((url) => {
+        writePickParams(url, demoAt(index).matchup);
+      });
     },
     onManual: () => {
-      host.manual();
+      host.go((url) => {
+        writeManualParams(url);
+      });
     },
     onWatch: () => {
       waiting = false;
@@ -97,7 +117,8 @@ export function createHomeController(
       home.setVisible(visible);
     },
     open() {
-      home.setHeld(host.held());
+      // As last set up on this device: a setup or a lineup may have changed it.
+      home.setPlay(loadPlaySetup(storage), host.held());
       waiting = reducedMotion.matches;
       home.setWaiting(waiting);
       startDemo();
@@ -116,6 +137,5 @@ export function createHomeController(
       }, NEXT_DEMO_MS);
     },
     leave: cancel,
-    demo: () => demoAt(index).matchup,
   };
 }

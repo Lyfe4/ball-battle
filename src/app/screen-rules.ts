@@ -64,12 +64,11 @@ export function seriesRound(link: RouteOf<'series'>['link'], inHand: SeriesInHan
 /** A setup or reading screen is up (choosing balls, setting up a series): no match is watched. */
 export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
   if (screen === 'series' || screen === 'online') return !seriesPlaying;
-  return ['pick', 'manual', 'modes', 'outdated', 'challenge', 'send'].includes(screen);
+  return ['pick', 'manual', 'outdated', 'challenge', 'send'].includes(screen);
 }
 
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
-  modes: 'Other modes · BallBattle',
   pick: 'Free play · BallBattle',
   match: 'Free play · BallBattle',
   series: 'Best of 3 · BallBattle',
@@ -77,13 +76,23 @@ const TITLES: Readonly<Record<Screen, string>> = {
   outdated: 'Link from another version · BallBattle',
   online: 'Online series · BallBattle',
   challenge: 'Challenge · BallBattle',
-  send: 'Challenge a friend · BallBattle',
+  send: 'vs Friend · BallBattle',
 };
+
+/** The vs Bot setup's title (ADR 0055): who the series is against, as its heading says. */
+export const BOT_SETUP_TITLE = 'vs Bot · BallBattle';
 
 /**
  * The page title on `screen`: a series names its length (ADR 0048), and a manual entry its ball.
+ * `botSetup`: the series' first step, the vs Bot setup, which names its opponent instead.
  */
-export function screenTitle(screen: Screen, bestOf?: number, ballName?: string): string {
+export function screenTitle(
+  screen: Screen,
+  bestOf?: number,
+  ballName?: string,
+  botSetup = false,
+): string {
+  if (screen === 'series' && botSetup) return BOT_SETUP_TITLE;
   if (screen === 'series' && bestOf === 5) return 'Best of 5 · BallBattle';
   if (screen === 'manual' && ballName !== undefined) return `${ballName} · ${TITLES.manual}`;
   return TITLES[screen];

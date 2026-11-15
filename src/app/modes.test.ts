@@ -1,101 +1,94 @@
 import { describe, expect, it } from 'vitest';
+import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { FORMATS } from '../sim/series.ts';
+import { BOT_LEVEL_STORAGE_KEY } from './bot-level.ts';
 import {
   botChooses,
-  lineupParentOf,
-  MAIN_FORMAT,
-  OTHER_MODE_SECTIONS,
-  sectionsFor,
-  writeMainModeParams,
+  FIRST_PLAY,
+  homeCardsFor,
+  loadPlaySetup,
+  PLAY_FORMAT_STORAGE_KEY,
+  savePlaySetup,
+  SETUP_FORMATS,
+  writeBotSetupParams,
+  writePlayParams,
 } from './modes.ts';
 import { parseRoute } from './route.ts';
-import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { SERIES_LENGTH_STORAGE_KEY } from './series-length.ts';
 
-const modes = OTHER_MODE_SECTIONS.flatMap((section) => section.modes);
+function memory(entries: Record<string, string> = {}) {
+  const store = new Map(Object.entries(entries));
+  return {
+    store,
+    storage: () => ({
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+    }),
+  };
+}
 
-describe('the main mode (ADR 0046)', () => {
-  it('is Reveal: home’s one tap opens its lineup, with no rules step', () => {
-    expect(MAIN_FORMAT).toBe('reveal');
+describe('home’s Play (ADR 0055)', () => {
+  it('is Best of 3 · Reveal · vs Normal bot on a first visit', () => {
+    expect(FIRST_PLAY).toStrictEqual({ format: 'reveal', bestOf: 3, level: 'normal' });
+    expect(loadPlaySetup(memory().storage)).toStrictEqual(FIRST_PLAY);
+  });
+
+  it('remembers the last series set up against the bot: length, format and level', () => {
+    const { storage, store } = memory();
+    savePlaySetup(storage, { format: 'showdown', bestOf: 5, level: 'hard' });
+    expect(store.get(PLAY_FORMAT_STORAGE_KEY)).toBe('showdown');
+    expect(store.get(SERIES_LENGTH_STORAGE_KEY)).toBe('5');
+    expect(store.get(BOT_LEVEL_STORAGE_KEY)).toBe('hard');
+    expect(loadPlaySetup(storage)).toStrictEqual({ format: 'showdown', bestOf: 5, level: 'hard' });
+  });
+
+  it('reads anything it can’t use, or storage that throws, as a first visit', () => {
+    const odd = memory({ [PLAY_FORMAT_STORAGE_KEY]: 'loser', [SERIES_LENGTH_STORAGE_KEY]: '7' });
+    expect(loadPlaySetup(odd.storage)).toStrictEqual(FIRST_PLAY);
+    const throws = () => {
+      throw new Error('blocked');
+    };
+    expect(loadPlaySetup(throws)).toStrictEqual(FIRST_PLAY);
+    expect(() => {
+      savePlaySetup(throws, FIRST_PLAY);
+    }).not.toThrow();
+  });
+
+  it('opens the remembered series’ lineup in one tap, with no setup step', () => {
     const params = new URLSearchParams('view=manual&ball=storm');
-    writeMainModeParams(params);
-    expect(params.toString()).toBe('mode=bo3&fmt=reveal&step=lineup');
+    writePlayParams(params, { format: 'reveal', bestOf: 5, level: 'hard' });
+    expect(params.toString()).toBe('mode=bo5&fmt=reveal&step=lineup');
     expect(parseRoute(params, BALL_LOOKUP)).toMatchObject({
       screen: 'series',
       step: 'lineup',
-      link: { format: 'reveal' },
+      link: { format: 'reveal', bestOf: 5 },
     });
   });
 
-  it('goes back to home from Reveal’s lineup, and to Other modes from any other format’s', () => {
-    expect(lineupParentOf('reveal')).toBe('home');
-    expect(lineupParentOf('showdown')).toBe('modes');
-    expect(lineupParentOf('blind')).toBe('modes');
-  });
-
-  it('goes back to Other modes from every Best of 5 lineup, Reveal’s included (ADR 0048)', () => {
-    for (const format of FORMATS) expect(lineupParentOf(format, 5)).toBe('modes');
-    expect(lineupParentOf('reveal', 3)).toBe('home');
+  it('opens the vs Bot setup on a series link’s rules step, so old `?mode=bo3` links still do', () => {
+    const params = new URLSearchParams('view=pick&a=storm&b=frost');
+    writeBotSetupParams(params, 'showdown', 3);
+    expect(params.toString()).toBe('mode=bo3&fmt=showdown');
+    expect(parseRoute(params, BALL_LOOKUP)).toMatchObject({ screen: 'series', step: 'rules' });
   });
 });
 
-describe('Other modes', () => {
-  it('offers every format once, under a length choice, and Free play once (ADR 0048)', () => {
-    // At Best of 5 nothing else reaches Reveal, so the series section lists every format.
-    const series = OTHER_MODE_SECTIONS.filter((section) => section.lengthChoice === true);
-    expect(series).toHaveLength(1);
-    const formats = (series[0]?.modes ?? []).flatMap((mode) =>
-      mode.kind === 'series' ? [mode.format] : [],
-    );
-    expect([...formats].sort()).toStrictEqual([...FORMATS].sort());
-    expect(modes.filter((mode) => mode.kind === 'free')).toHaveLength(1);
-    // Free play is one match: no length to choose.
-    for (const section of OTHER_MODE_SECTIONS) {
-      if (section.modes.some((mode) => mode.kind === 'free')) {
-        expect(section.lengthChoice).toBeUndefined();
-      }
-    }
+describe('home’s opponent cards (ADR 0055)', () => {
+  it('offers vs Friend only where online play is built, the bot always', () => {
+    expect(homeCardsFor(true)).toStrictEqual(['bot', 'friend']);
+    expect(homeCardsFor(false)).toStrictEqual(['bot']);
   });
 
-  it('orders the series by skill: the main format, then Showdown, then Blind as the casual one', () => {
-    expect(modes.map((mode) => (mode.kind === 'series' ? mode.format : mode.kind))).toStrictEqual([
-      MAIN_FORMAT,
-      'showdown',
-      'blind',
-      'free',
-    ]);
-  });
-
-  it('groups modes in titled sections', () => {
-    expect(OTHER_MODE_SECTIONS.map((section) => section.title)).toStrictEqual([
-      'Series vs bot',
-      'One match',
-    ]);
-    for (const section of OTHER_MODE_SECTIONS) expect(section.modes.length).toBeGreaterThan(0);
+  it('offers every format against the bot, and only the live ones against a friend', () => {
+    expect([...SETUP_FORMATS.bot].sort()).toStrictEqual([...FORMATS].sort());
+    expect(SETUP_FORMATS.friend).toStrictEqual(['reveal', 'showdown']);
   });
 
   it('shows the bot’s level only where the bot makes choices', () => {
     expect(botChooses('reveal')).toBe(true);
     expect(botChooses('showdown')).toBe(true);
     expect(botChooses('blind')).toBe(false);
-  });
-});
-
-describe('Other modes in a build with online play', () => {
-  it('adds the Online section after the series against the bot, live formats only', () => {
-    const sections = sectionsFor(true);
-    expect(sections.map((section) => section.title)).toStrictEqual([
-      'Series vs bot',
-      'Online',
-      'One match',
-    ]);
-    expect(sections[1]?.modes).toStrictEqual([
-      { kind: 'challenge', format: 'reveal' },
-      { kind: 'challenge', format: 'showdown' },
-    ]);
-    expect(sections[1]?.lengthChoice).toBe(true);
-  });
-
-  it('has no Online section without it', () => {
-    expect(sectionsFor(false).some((section) => section.title === 'Online')).toBe(false);
   });
 });

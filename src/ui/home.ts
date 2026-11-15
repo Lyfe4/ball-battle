@@ -3,16 +3,28 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import type { SeriesState } from '../sim/series.ts';
-import { MAIN_PLAY, RESUME_PLAY, resumeLine, resumeSpoken } from './modes-text.ts';
+import type { Opponent, PlaySetup } from '../app/modes.ts';
+import {
+  BALL_MANUAL,
+  FREE_PLAY,
+  OPPONENT_CARDS,
+  PLAY_LABEL,
+  playLine,
+  playSpoken,
+  RESUME_PLAY,
+  resumeLine,
+  resumeSpoken,
+} from './modes-text.ts';
 
 export interface HomeActions {
-  /** The main mode (ADR 0046): Best of 3, Reveal, vs the bot, straight to the lineup; or, with a
+  /** Play (ADR 0055): the last series set up against the bot, straight to its lineup; or, with a
    * series held, carry on with it. */
   readonly onPlay: () => void;
   /** With a series held: forget it and start a fresh one. */
   readonly onNewSeries: () => void;
-  /** Every other way to play: Showdown, Blind, Free play. */
-  readonly onModes: () => void;
+  /** An opponent's card: its setup screen. */
+  readonly onOpponent: (opponent: Opponent) => void;
+  readonly onFreePlay: () => void;
   readonly onManual: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
@@ -24,8 +36,11 @@ export interface Home {
   showDemo(a: string, b: string): void;
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
-  /** Play, or Resume series with its format and score while one is held, and New series. */
-  setHeld(held: SeriesState | undefined): void;
+  /**
+   * Play with what it starts (`setup`), or Resume series with its format and score while one is
+   * held, and New series.
+   */
+  setPlay(setup: PlaySetup, held: SeriesState | undefined): void;
   /** Moves focus to Play (or Resume series): the one obvious first action. */
   focus(): void;
 }
@@ -34,14 +49,16 @@ const STRIP_ICON_PX = 28;
 const SOURCE_URL = 'https://github.com/Lyfe4/ball-battle';
 
 /**
- * The front door, phone first: the live demo match on the arena above, then which balls are
- * playing, the name, the pitch (a strategy game about building a lineup; counters are for the
- * manual to reveal, not the headline), a large Play (Best of 3, Reveal, vs the bot: the game,
- * ADR 0046), and Other modes and the manual under it. On a wide screen it sits beside the arena with the roster's drawings as a strip.
+ * The front door, phone first (ADR 0055): the live demo match on the arena above, then which balls
+ * are playing, the name, the pitch (a strategy game about building a lineup; counters are for the
+ * manual to reveal, not the headline), a large Play that says what it starts (the player's last
+ * series against the bot), one card per opponent under it, then Free play and the manual as quiet
+ * links. On a wide screen it sits beside the arena with the roster's drawings as a strip.
  */
 export function createHome(
   root: HTMLElement,
   balls: readonly BallDefinition[],
+  opponents: readonly Opponent[],
   actions: HomeActions,
 ): Home {
   root.replaceChildren();
@@ -59,8 +76,7 @@ export function createHome(
   const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
-  // The main mode leads, one tap to its lineup, saying what it plays; every other way to play is
-  // one tap further, behind Other modes (ADR 0046).
+  // Play leads, one tap to the remembered series' lineup, saying what it plays (ADR 0055).
   const play = element('button', 'hud-button hud-button-primary home-play');
   play.type = 'button';
   const playLabel = element('span', 'home-play-label');
@@ -73,14 +89,38 @@ export function createHome(
   fresh.addEventListener('click', actions.onNewSeries);
   const playRow = element('div', 'home-play-row');
   playRow.append(play, fresh);
-  const modes = element('button', 'hud-button', 'Other modes');
-  modes.type = 'button';
-  modes.addEventListener('click', actions.onModes);
-  const manual = element('button', 'hud-button', 'Ball manual');
-  manual.type = 'button';
-  manual.addEventListener('click', actions.onManual);
+
+  // One card per opponent, each opening its setup: two today, a 2 x 2 grid with Ranked and Casual.
+  const cards = element('ul', 'home-cards');
+  cards.setAttribute('aria-label', 'Choose who to play');
+  cards.append(
+    ...opponents.map((opponent) => {
+      const item = element('li', 'home-cards-item');
+      const card = element('button', 'home-card');
+      card.type = 'button';
+      card.dataset['opponent'] = opponent;
+      card.append(
+        element('span', 'home-card-name', OPPONENT_CARDS[opponent].name),
+        element('span', 'home-card-line', OPPONENT_CARDS[opponent].line),
+      );
+      card.addEventListener('click', () => {
+        actions.onOpponent(opponent);
+      });
+      item.append(card);
+      return item;
+    }),
+  );
+
+  const link = (text: string, onClick: () => void) => {
+    const button = element('button', 'text-link home-link', text);
+    button.type = 'button';
+    // Named by its words alone: the chevron the link style adds is decoration.
+    button.setAttribute('aria-label', text);
+    button.addEventListener('click', onClick);
+    return button;
+  };
   const more = element('div', 'home-more');
-  more.append(modes, manual);
+  more.append(link(FREE_PLAY, actions.onFreePlay), link(BALL_MANUAL, actions.onManual));
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -105,7 +145,7 @@ export function createHome(
   // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
   const head = element('div', 'home-head');
   head.append(title, createSettingsToggle());
-  root.append(demo, head, pitch, playRow, more, strip, footer);
+  root.append(demo, head, pitch, playRow, cards, more, strip, footer);
 
   return {
     setVisible(visible) {
@@ -118,10 +158,10 @@ export function createHome(
     setWaiting(waiting) {
       watch.hidden = !waiting;
     },
-    setHeld(held) {
-      setText(playLabel, held === undefined ? MAIN_PLAY.label : RESUME_PLAY.label);
-      setText(playMeta, held === undefined ? MAIN_PLAY.meta : resumeLine(held));
-      play.setAttribute('aria-label', held === undefined ? MAIN_PLAY.spoken : resumeSpoken(held));
+    setPlay(setup, held) {
+      setText(playLabel, held === undefined ? PLAY_LABEL : RESUME_PLAY.label);
+      setText(playMeta, held === undefined ? playLine(setup) : resumeLine(held));
+      play.setAttribute('aria-label', held === undefined ? playSpoken(setup) : resumeSpoken(held));
       fresh.hidden = held === undefined;
     },
     focus() {

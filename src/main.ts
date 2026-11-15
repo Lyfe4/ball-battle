@@ -2,8 +2,7 @@ import './style.css';
 import { screenKeyOf } from './app/history-rules.ts';
 import { createMoves } from './app/moves.ts';
 import { createNavigation } from './app/navigation.ts';
-import { parseRoute, writeManualParams, writeModesParams, type Route } from './app/route.ts';
-import { writeMainModeParams } from './app/modes.ts';
+import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
 import { initialAppState, isSetupScreen, readyMomentOf, screenTitle } from './app/screen-rules.ts';
@@ -15,7 +14,6 @@ import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './screens/home.ts';
 import { createBallLink, createManualScreen } from './screens/manual.ts';
-import { createModesScreen } from './screens/modes.ts';
 import { createOutdatedController } from './screens/outdated.ts';
 import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
@@ -68,24 +66,13 @@ const ballLink = createBallLink(go);
 
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
   showWorld,
-  play: () => {
-    go(writeMainModeParams);
-  },
-  modes: () => {
-    go(writeModesParams);
-  },
+  go,
   held: () => series.held(),
   resume: () => {
     seriesScreens.resume();
   },
-  newSeries: () => {
+  forget: () => {
     series.forget();
-    go(writeMainModeParams);
-  },
-  manual: () => {
-    go((url) => {
-      writeManualParams(url);
-    });
   },
 });
 
@@ -96,16 +83,6 @@ const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
       goHome('replace');
     });
   },
-});
-
-const modes = createModesScreen(getElement('modes', HTMLElement), {
-  go,
-  back: () => {
-    navigation.back(() => {
-      goHome('replace');
-    });
-  },
-  freePlay: () => home.demo(),
 });
 
 const outdated = createOutdatedController(getElement('outdated', HTMLElement), {
@@ -162,9 +139,6 @@ const seriesScreens = createSeriesScreens(
     exitToHome: () => {
       goHome('replace');
     },
-    exitToModes: () => {
-      replaceWith(writeModesParams);
-    },
   },
 );
 
@@ -193,16 +167,13 @@ const router = createRouter(
   {
     home: {
       show: () => {
+        // An old Other modes link (ADR 0055) opens home: its address says so too.
+        if (window.location.search !== '') navigation.replace(writeHomeParams);
         home.open();
         online.homeShown();
       },
       leave: () => {
         home.leave();
-      },
-    },
-    modes: {
-      show: () => {
-        modes.show();
       },
     },
     manual: {
@@ -313,7 +284,6 @@ function showControls(): void {
   stage.dataset['screen'] = screen;
   home.setVisible(screen === 'home');
   manual.setVisible(screen === 'manual');
-  modes.setVisible(screen === 'modes');
   outdated.setVisible(screen === 'outdated');
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
@@ -332,11 +302,10 @@ function showControls(): void {
     seriesOnScreen() && seriesPlaying(),
     screen === 'online' ? online.sides() : undefined,
   );
-  // A series screen's title names its length (ADR 0048).
-  document.title = screenTitle(
-    screen,
-    readMode(new URLSearchParams(window.location.search).get('mode')),
-  );
+  // A series screen's title names its length (ADR 0048); its setup, its opponent (ADR 0055).
+  const params = new URLSearchParams(window.location.search);
+  const botSetup = screenKeyOf(parseRoute(params, BALL_LOOKUP, false)) === 'series-rules';
+  document.title = screenTitle(screen, readMode(params.get('mode')), undefined, botSetup);
 }
 
 navigation.onChange(showCurrentRoute);

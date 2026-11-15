@@ -1,5 +1,6 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
+import type { ErrorCode } from '../api/errors.ts';
 import { PICK_SECONDS } from '../api/live.ts';
 import { inAppLine, type InAppBrowser } from '../app/in-app-browser.ts';
 import type { NoticeContent } from '../ui/notice.ts';
@@ -21,6 +22,14 @@ export interface CardActions {
   /** The sender stops waiting in a live lobby (ADR 0053). */
   readonly cancel: () => Promise<unknown>;
 }
+
+/** Refusals of an accept that the link's own card explains; any other shows its message. */
+export const CARD_SAYS: ReadonlySet<ErrorCode> = new Set([
+  'not_found',
+  'challenge_taken',
+  'challenge_expired',
+  'own_challenge',
+]);
 
 /** What a live match is, said on both players' cards before it starts (ADR 0053). */
 const LIVE_LINE = `You play live, together: ${String(PICK_SECONDS)} s a pick.`;

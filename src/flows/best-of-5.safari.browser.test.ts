@@ -2,7 +2,7 @@
 import { describe, it } from 'vitest';
 import { runBestOf5Flow } from './best-of-5-flow.ts';
 
-describe('a Best of 5 from Other modes', () => {
+describe('a Best of 5 from the vs Bot setup', () => {
   it('plays each format to three wins, reloads and resumes mid-series', async () => {
     await runBestOf5Flow();
   }, 900_000);

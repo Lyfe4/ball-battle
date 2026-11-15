@@ -8,8 +8,9 @@ Where it's heading (PvP best of 3 with blind lineups, soft counters, then a back
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
 online (previews and staging only), live friend matches in Reveal and Showdown (ADR 0052, 0053).
-Reveal is the main mode: home's Play opens its lineup in one tap, every other way to play is on
-Other modes (ADR 0046, `src/app/modes.ts`). The series rules and bots are pure sim code
+Home is by opponent (ADR 0055, `src/app/modes.ts`): Play opens the last series set up against the
+bot in one tap (first visit: Best of 3 · Reveal · vs Normal bot), and a card per opponent opens
+its setup screen (vs Bot; vs Friend in online builds). The series rules and bots are pure sim code
 (`src/sim/series.ts`, `src/sim/bot.ts`), the same functions a server would run, so keep them
 deterministic and DOM-free. Every decision is an ADR in `docs/decisions/` (indexed in its
 README, with status); the last audit is `docs/audit-2026-11.md`.
@@ -256,11 +257,14 @@ Each line is a rule; its ADR has the reasoning.
   that restyles a shared part, and `src/flows/consistency-flow.ts` checks the legends at four sizes.
   The legend and settings are one info panel (`info-panel.css`, `.panel-close`). Escape only ever
   closes things.
-- One tap to the main mode (ADR 0046, 0048): home's Play opens Reveal's lineup against the
-  remembered bot level; every other mode is data in `OTHER_MODE_SECTIONS`; the series section
-  remembers Best of 3 / 5. A lineup's in-app Back without history goes to `lineupParentOf`.
-  `?mode=bo3` links open the rules step; a lineup URL's format is its own (none is Blind). While a
-  series is held (`held()`), home's Play is Resume series and New series forgets it (`forget()`).
+- Home by opponent (ADR 0055): Play remembers only bot games (`PlaySetup`, saved by the vs Bot
+  setup's Choose lineup) and opens that lineup in one tap; the opponent cards are data in
+  `HOME_CARDS` (Ranked and Casual join later as a 2 × 2 grid); every setup is the one
+  `rules-step.ts` screen, and its choices rewrite its own entry. A lineup's in-app Back without
+  history goes to its setup. `?mode=bo3` links open the vs Bot setup; `?view=modes` opens home; a
+  lineup URL's format is its own (none is Blind). The 16+ question comes first in the vs Friend
+  flow, on a device without a guest. While a series is held (`held()`), home's Play is Resume
+  series and New series forgets it (`forget()`).
 - Settings (ADR 0040, 0044): one menu (`settings-menu.ts`) behind exactly one gear per screen, at
   the top right before any `?`. It floats by its gear, never moves the layout, closes on the gear,
   Close, Escape or a tap outside (focus back on the gear), keeps off the court where it can (else

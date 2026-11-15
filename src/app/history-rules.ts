@@ -14,7 +14,6 @@ import type { Route } from './route.ts';
 
 export type ScreenKey =
   | 'home'
-  | 'modes'
   | 'pick'
   | 'match'
   | 'manual'
@@ -26,6 +25,7 @@ export type ScreenKey =
   | 'online'
   | 'challenge'
   | 'challenge-lineup'
+  | 'send-setup'
   | 'send';
 
 export type Move = 'push' | 'replace' | 'return';
@@ -37,6 +37,8 @@ export function screenKeyOf(route: Route): ScreenKey {
       return route.ball === undefined ? 'manual' : 'manual-entry';
     case 'challenge':
       return route.step === 'lineup' ? 'challenge-lineup' : 'challenge';
+    case 'send':
+      return route.step === 'setup' ? 'send-setup' : 'send';
     case 'series':
       if (route.step === 'rules') return 'series-rules';
       if (route.step === 'lineup') return 'series-lineup';

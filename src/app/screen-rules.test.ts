@@ -85,7 +85,6 @@ describe('router', () => {
     });
     const handlers: ScreenHandlers = {
       home: handler('home'),
-      modes: handler('modes'),
       manual: handler('manual'),
       pick: handler('pick'),
       match: handler('match'),
@@ -116,7 +115,7 @@ describe('router', () => {
 
 describe('isSetupScreen', () => {
   it('is every setup and reading screen, and a series only while nothing is played', () => {
-    for (const screen of ['pick', 'manual', 'modes', 'outdated'] as const) {
+    for (const screen of ['pick', 'manual', 'outdated', 'send'] as const) {
       expect(isSetupScreen(screen, false)).toBe(true);
     }
     expect(isSetupScreen('home', false)).toBe(false);
@@ -132,7 +131,8 @@ describe('screenTitle', () => {
     expect(screenTitle('series')).toBe('Best of 3 · BallBattle');
     expect(screenTitle('series', 3)).toBe('Best of 3 · BallBattle');
     expect(screenTitle('series', 5)).toBe('Best of 5 · BallBattle');
-    expect(screenTitle('modes', 5)).toBe('Other modes · BallBattle');
+    expect(screenTitle('send')).toBe('vs Friend · BallBattle');
+    expect(screenTitle('series', 5, undefined, true)).toBe('vs Bot · BallBattle');
     expect(screenTitle('manual')).toBe('Ball manual · BallBattle');
     expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Ball manual · BallBattle');
   });
