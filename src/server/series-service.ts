@@ -1,26 +1,16 @@
 // Series by turns on the server (ADR 0052, "A turn on the server"): creating one with committed
-// secret seeds, locking a pick, and moving the series on, each in one transaction that holds the
-// series row (`FOR UPDATE`), so one request at a time changes a series on any host. Every round is
-// played and every finished series verified by the frozen sim of the series' own ruleset.
+// secret seeds, locking a pick, and moving the series on. Each move is one load and one write: the
+// whole series in one query, then every change in one statement guarded by the series' version, so
+// one move at a time changes a series on any host (a raced move writes nothing, reloads and tries
+// again). The functions may run far from the database, so round trips are what a move costs.
+// Every round is played and every finished series verified by the frozen sim of its own ruleset.
 import { commitmentOf } from '../api/fairness.ts';
 import type { PickRequest, SeriesView } from '../api/series.ts';
-import type { BestOf, Format, Side } from '../sim/index.ts';
-import type { Config } from './config.ts';
-import type { TransactionSql } from './db.ts';
-import {
-  insertPick,
-  insertRound,
-  insertSeeds,
-  insertSeries,
-  picksOf,
-  revealSeeds,
-  roundsOf,
-  seedsOf,
-  seriesById,
-  settleExpired,
-  updateSeries,
-  type SeriesRow,
-} from './db/series.ts';
+import type { BestOf, Format, PickRecord, Side } from '../sim/index.ts';
+import { ConfigError, type Config } from './config.ts';
+import type { Sql, TransactionSql } from './db.ts';
+import { loadSeries, writeSeries, type LoadedSeries, type SeriesMove } from './db/series-record.ts';
+import { insertSeriesWithSeeds, settleExpired } from './db/series.ts';
 import { ApiError, type Deps } from './http.ts';
 import { dueOf, playDue, stateOf, turnOf, verifyFinished, type StoredSeries } from './machine.ts';
 import { report } from './monitor.ts';
@@ -28,10 +18,14 @@ import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
 import { importSeedKey, newSalt, seriesSeeds, type SeedKey } from './seeds.ts';
 import { sideOf, viewOf, type SeedRow } from './view.ts';
 
+type Db = Sql | TransactionSql;
+/** How often a move that raced another is tried again before giving up. */
+const MOST_TRIES = 4;
+
 const keys = new Map<string, Promise<SeedKey>>();
 function seedKey(config: Config, id: string): Promise<SeedKey> {
   const raw = config.seedKeys.get(id);
-  if (raw === undefined) throw new Error(`No seed key "${id}" in SEED_KEYS`);
+  if (raw === undefined) throw new ConfigError(`SEED_KEYS has no key "${id}" (a series uses it)`);
   let key = keys.get(id);
   if (key === undefined) {
     key = importSeedKey(raw);
@@ -41,76 +35,102 @@ function seedKey(config: Config, id: string): Promise<SeedKey> {
 }
 
 /** The series as the machine needs it: every seed re-derived from its key, secret ones too. */
-async function storedOf(db: TransactionSql, config: Config, row: SeriesRow): Promise<StoredSeries> {
-  const { seeds } = await seriesSeeds(await seedKey(config, row.keyId), row.id, {
-    bestOf: row.bestOf,
-    format: row.format,
+async function storedOf(config: Config, series: LoadedSeries): Promise<StoredSeries> {
+  const { seeds } = await seriesSeeds(await seedKey(config, series.keyId), series.id, {
+    bestOf: series.bestOf,
+    format: series.format,
     bot: false,
   });
   return {
-    ruleset: row.ruleset,
-    format: row.format,
-    bestOf: row.bestOf,
-    a: row.lineups.a,
-    b: row.lineups.b,
+    ruleset: series.ruleset,
+    format: series.format,
+    bestOf: series.bestOf,
+    a: series.lineups.a,
+    b: series.lineups.b,
     seeds,
-    picks: await picksOf(db, row.id),
-    rounds: await roundsOf(db, row.id),
+    picks: series.picks,
+    rounds: series.rounds,
   };
 }
 
 /**
- * Moves a locked series on after a change: plays every round that needs no more picks, reveals
- * their seeds, and either names whose turn it is or finishes the series through verifySeries. A
- * series that fails verification (a bug: the server built it) is void and reported.
+ * The move after `picks` are added: every round that needs no more picks played (their seeds
+ * revealed), then whose turn it is, or the series finished through verifySeries (every seed
+ * revealed) or void when that fails (a bug: the server built the series, so it is reported).
  */
-async function advance(db: TransactionSql, config: Config, row: SeriesRow, keepDeadline: boolean) {
-  const sim = await rulesetSim(row.ruleset);
-  const stored = await storedOf(db, config, row);
+async function moveOf(
+  config: Config,
+  series: LoadedSeries,
+  picks: readonly PickRecord[],
+  keepDeadline: boolean,
+): Promise<SeriesMove> {
+  const sim = await rulesetSim(series.ruleset);
+  const stored = await storedOf(config, { ...series, picks: [...series.picks, ...picks] });
   const { state, played } = playDue(sim, stateOf(sim, stored));
-  for (const round of played) await insertRound(db, row.id, round);
-  const seed = (round: number) => stored.seeds.rounds[round] ?? 0;
-  await revealSeeds(
-    db,
-    row.id,
-    played.map(({ round }) => ({ purpose: 'round' as const, index: round, seed: seed(round) })),
-  );
+  const round = (index: number) => ({
+    purpose: 'round',
+    index,
+    seed: stored.seeds.rounds[index] ?? 0,
+  });
   if (state.winner === undefined) {
-    const turn = turnOf(dueOf(sim, { ...stored, rounds: state.rounds }, state).sides) ?? null;
-    await updateSeries(db, row.id, {
-      turn,
+    return {
+      turn: turnOf(dueOf(sim, { ...stored, rounds: state.rounds }, state).sides) ?? null,
       keepDeadline: keepDeadline && played.length === 0,
       status: 'open',
       winner: null,
       final: null,
-    });
-    return;
+      picks,
+      rounds: played,
+      reveals: played.map(({ round: index }) => round(index)),
+    };
   }
   const verdict = verifyFinished(sim, state);
   if (!verdict.ok) {
-    await report(new Error(`Series ${row.id} failed verification: ${verdict.reason}`), {
+    await report(new Error(`Series ${series.id} failed verification: ${verdict.reason}`), {
       route: 'series.advance',
-      requestId: row.id,
+      requestId: series.id,
     });
   }
-  // The series is over: every seed it had is public now, played or not.
-  await revealSeeds(db, row.id, [
-    ...stored.seeds.rounds.map((value, index) => ({
-      purpose: 'round' as const,
-      index,
-      seed: value,
-    })),
-    ...(stored.seeds.toss === undefined
-      ? []
-      : [{ purpose: 'toss' as const, index: 0, seed: stored.seeds.toss }]),
-  ]);
-  await updateSeries(db, row.id, {
+  const toss = stored.seeds.toss;
+  return {
     turn: null,
     keepDeadline: false,
     status: verdict.ok ? 'finished' : 'void',
     winner: verdict.ok ? state.winner : null,
     final: verdict.ok ? verdict.setup : null,
-  });
+    picks,
+    rounds: played,
+    // The series is over: every seed it had is public now, played or not.
+    reveals: [
+      ...stored.seeds.rounds.map((_, index) => round(index)),
+      ...(toss === undefined ? [] : [{ purpose: 'toss', index: 0, seed: toss }]),
+    ],
+  };
+}
+
+/** The series as stored after `move` was written at `version`, without reading it again. */
+function after(
+  series: LoadedSeries,
+  move: SeriesMove,
+  written: { readonly version: number; readonly deadline: Date | null },
+): LoadedSeries {
+  const revealed = (seed: SeedRow): SeedRow => {
+    const shown = move.reveals.find((r) => r.purpose === seed.purpose && r.index === seed.index);
+    return seed.seed !== null || shown === undefined ? seed : { ...seed, seed: shown.seed };
+  };
+  return {
+    ...series,
+    turn: move.turn,
+    deadline: written.deadline,
+    status: move.status,
+    winner: move.winner,
+    final: move.final,
+    version: written.version,
+    expired: false,
+    picks: [...series.picks, ...move.picks],
+    rounds: [...series.rounds, ...move.rounds],
+    seeds: series.seeds.map(revealed),
+  };
 }
 
 export interface SeriesInput {
@@ -123,13 +143,9 @@ export interface SeriesInput {
 /**
  * Starts a series between two players under today's ruleset: commits to every seed it will use,
  * reveals Reveal's toss (it decides who shows first), and plays whatever needs no pick (all of a
- * Blind series). Returns its id.
+ * Blind series). Two statements. Returns its id.
  */
-export async function createSeries(
-  db: TransactionSql,
-  config: Config,
-  input: SeriesInput,
-): Promise<string> {
+export async function createSeries(db: Db, config: Config, input: SeriesInput): Promise<string> {
   const id = crypto.randomUUID();
   const key = config.currentSeedKey;
   const { seeds } = await seriesSeeds(await seedKey(config, key.id), id, {
@@ -146,89 +162,103 @@ export async function createSeries(
     const salt = newSalt();
     rows.push({ purpose, index, salt, commitment: await commitmentOf(seed, salt), seed: null });
   }
-  await insertSeries(db, {
+  const series: LoadedSeries = {
     id,
-    kind: 'friend',
     ruleset: CURRENT_RULESET,
     format: input.format,
     bestOf: input.bestOf,
     players: input.players,
+    names: { a: null, b: null },
     lineups: input.lineups,
     keyId: key.id,
-  });
-  await insertSeeds(db, id, rows);
-  if (seeds.toss !== undefined) {
-    await revealSeeds(db, id, [{ purpose: 'toss', index: 0, seed: seeds.toss }]);
-  }
-  const row = await seriesById(db, id, true);
-  if (row === undefined) throw new Error('A series just made is missing');
-  await advance(db, config, row, false);
+    status: 'open',
+    winner: null,
+    version: 0,
+    turn: null,
+    deadline: null,
+    expired: false,
+    final: null,
+    picks: [],
+    rounds: [],
+    seeds: rows,
+  };
+  await insertSeriesWithSeeds(db, { ...series, kind: 'friend' }, rows);
+  const move = await moveOf(config, series, [], false);
+  const toss = seeds.toss === undefined ? [] : [{ purpose: 'toss', index: 0, seed: seeds.toss }];
+  await writeSeries(db, id, 0, { ...move, reveals: [...toss, ...move.reveals] });
   return id;
 }
 
-/** A player's view of a series, read in `db`; a 404 for anyone not playing in it. */
-export async function viewFor(db: TransactionSql, id: string, userId: string): Promise<SeriesView> {
-  const row = await seriesById(db, id);
-  const side = row === undefined ? undefined : sideOf(row.players, userId);
-  if (row === undefined || side === undefined) {
+/** A player's view of a loaded series; a 404 for anyone not playing in it. */
+function viewFor(series: LoadedSeries | undefined, userId: string): SeriesView {
+  const side = series === undefined ? undefined : sideOf(series.players, userId);
+  if (series === undefined || side === undefined) {
     throw new ApiError(404, 'not_found', 'No such series');
   }
-  return viewOf(
-    {
-      ...row,
-      picks: await picksOf(db, id),
-      rounds: await roundsOf(db, id),
-      seeds: await seedsOf(db, id),
-    },
-    side,
-  );
+  return viewOf(series, side);
 }
 
-/** Reads a series, settling its turn first if it ran out (settled on read, ADR 0052). */
-export async function readSeries(deps: Deps, id: string, userId: string): Promise<SeriesView> {
-  return deps.sql.begin(async (db) => {
-    const row = await seriesById(db, id);
-    if (row?.expired === true) await settleExpired(db, id);
-    return viewFor(db, id, userId);
-  });
+/**
+ * A series, settling its turn first if it ran out (settled on read, ADR 0052). `loaded` is the
+ * series read alongside the session (one round trip for both); it is read again only after a
+ * forfeit was settled.
+ */
+export async function readSeries(
+  deps: Deps,
+  id: string,
+  userId: string,
+  loaded?: LoadedSeries,
+): Promise<SeriesView> {
+  const series = loaded ?? (await loadSeries(deps.sql, id));
+  if (series?.expired !== true) return viewFor(series, userId);
+  await settleExpired(deps.sql, id);
+  return viewFor(await loadSeries(deps.sql, id), userId);
 }
 
 /**
  * Locks a pick (ADR 0052, "A turn on the server"). The first lock of a round and side wins: a
  * retry, a double tap or a second tab gets the series as stored, never a second pick. A pick that
  * isn't due (another round, the opponent's turn, a finished series) is refused, unless it is the
- * very pick already stored.
+ * very pick already stored. `loaded` is a first read made alongside the session.
  */
 export async function lockPick(
   deps: Deps,
   id: string,
   userId: string,
   request: PickRequest,
+  loaded?: LoadedSeries,
 ): Promise<SeriesView> {
-  return deps.sql.begin(async (db) => {
-    let row = await seriesById(db, id, true);
-    const side = row === undefined ? undefined : sideOf(row.players, userId);
-    if (row === undefined || side === undefined) {
+  let series = loaded ?? (await loadSeries(deps.sql, id));
+  for (let tries = 0; tries < MOST_TRIES; tries += 1) {
+    const side = series === undefined ? undefined : sideOf(series.players, userId);
+    if (series === undefined || side === undefined) {
       throw new ApiError(404, 'not_found', 'No such series');
     }
-    if (row.expired) {
-      await settleExpired(db, id);
-      row = (await seriesById(db, id, true)) ?? row;
+    if (series.expired) {
+      await settleExpired(deps.sql, id);
+      series = await loadSeries(deps.sql, id);
+      continue;
     }
-    const sim = await rulesetSim(row.ruleset);
-    const stored = await storedOf(db, deps.config, row);
-    const already = stored.picks.find((p) => p.round === request.round && p.side === side);
-    if (already !== undefined) return viewFor(db, id, userId);
-    const due = dueOf(sim, stored, stateOf(sim, stored));
-    if (row.status !== 'open' || request.round !== due.round || !due.sides.includes(side)) {
+    if (series.picks.some((p) => p.round === request.round && p.side === side)) {
+      return viewOf(series, side);
+    }
+    const sim = await rulesetSim(series.ruleset);
+    const stored = await storedOf(deps.config, series);
+    const state = stateOf(sim, stored);
+    const due = dueOf(sim, stored, state);
+    if (series.status !== 'open' || request.round !== due.round || !due.sides.includes(side)) {
       throw new ApiError(409, 'not_your_turn', 'This pick is not yours to make now');
     }
-    if (!sim.remainingOf(stateOf(sim, stored), side).includes(request.ball)) {
+    if (!sim.remainingOf(state, side).includes(request.ball)) {
       throw new ApiError(400, 'bad_request', 'That ball is not one you have left');
     }
-    await insertPick(db, id, { round: request.round, side, ball: request.ball });
+    const pick = { round: request.round, side, ball: request.ball };
     // Showdown's round 1: the other side's clock keeps running when one side locks first.
-    await advance(db, deps.config, row, due.sides.length === 2);
-    return viewFor(db, id, userId);
-  });
+    const move = await moveOf(deps.config, series, [pick], due.sides.length === 2);
+    const written = await writeSeries(deps.sql, id, series.version, move);
+    if (written !== undefined) return viewOf(after(series, move, written), side);
+    // Another move came first: read the series as it is now and decide again.
+    series = await loadSeries(deps.sql, id);
+  }
+  throw new ApiError(409, 'conflict', 'The series is busy: try again');
 }

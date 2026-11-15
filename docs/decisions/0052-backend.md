@@ -789,6 +789,24 @@ The first thing players see from the backend. It contains:
   `netlify dev`, each seeing fair play, with no console error. The fights come from the series'
   random id, so the flow plays whatever the screen offers rather than pinning a seed.
 
+**As built (after staging, 2026-11-15): diagnosable failures and fewer round trips:**
+
+- Netlify's functions region can be chosen on Pro and Enterprise only, so on Free (and Personal)
+  the functions run in Ohio against the database in Sydney: about 200 ms a round trip.
+- Every failure on our side logs `failure`: the stage and the error's kind, from allow-listed
+  codes and our own messages only (`src/server/failure.ts`), e.g. `database: 28P01 password
+authentication failed`. `/health` checks the database and the ruleset bundle separately and
+  answers 503 naming the failed check. `scripts/check-database-url.ts` checks a `DATABASE_URL`
+  from your shell the same way, printing no value.
+- A series is loaded in one query (JSON aggregates) and every move written in one statement of
+  data-modifying CTEs guarded by the series' version, in place of a transaction holding the row:
+  a raced move writes nothing, reloads and tries again. The session and the series are read
+  together, which the driver pipelines on its one connection.
+- Without prepared statements the driver waits for the server's parameter types unless it knows
+  them; strings and booleans now go as `unknown`, string arrays as `text[]`, so a warm query is
+  one round trip. A series read went from 8 round trips to 1, a pick from 15 to 3
+  (`round-trips.db.test.ts`, through a proxy adding 100 ms each way).
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).
