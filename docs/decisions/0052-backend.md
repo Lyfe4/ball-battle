@@ -835,6 +835,28 @@ authentication failed`. `/health` checks the database and the ruleset bundle sep
   own. Local development and CI use it too. Once every environment has switched, a later migration
   can make `game_api` `NOLOGIN`.
 
+**As built (staging, 2026-11-15): one query at a time, and failures told apart:**
+
+- A friend's phone accepted a challenge (the guest and the accept both answered at once) and then
+  saw "You're offline". Every `GET /api/v1/series/:id` on a warm function hung until Netlify's 30 s
+  limit, with no log line: the read sent the session's profile query and the series query at once
+  on its one connection (pipelined, from "fewer round trips" above), and Supavisor in transaction
+  mode never answers the second. Postgres does, so local tests, which connected straight to it,
+  passed. A cold function looked fine because fetching the JWKS kept the two queries apart.
+- Queries on one connection now go one after the other: a series read is 2 round trips and a pick 4
+  (`round-trips.db.test.ts`), about 200 ms more each than the pipelined plan. The local pooler is
+  on (`supabase/config.toml`), and the database tests, `netlify dev` and CI connect through it as
+  `game_api_v2.pooler-dev` (`src/server/test/local-database.ts`), so a pipelined query hangs there
+  too. Through the pooler the old code failed 27 of 51 database tests.
+- The client had called every thrown request, a timeout included, "offline". `callApi` now answers
+  `timeout` when the server takes longer than 15 s (a plain timer: `AbortSignal.timeout` needs
+  Safari 16), `offline` only when the browser says so or no response came, and `error` for any
+  answer with an error status, ours or the gateway's. The screens say each in their own words with
+  Try again (`online-failure-text.ts`); an accept refused for a reason the link's card doesn't
+  explain (too many open series, a rate limit) shows the server's message, and a server error on
+  "Forget me" keeps the guest on the device rather than forgetting a guest the server kept.
+  `online-failures.online.test.ts` checks each failure on a phone-sized page.
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).

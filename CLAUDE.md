@@ -140,6 +140,12 @@ Each line is a rule; its ADR has the reasoning.
   `now()`. What a player may see of a series is decided by `viewOf` alone.
 - Database tests (`*.db.test.ts`) call handlers through `TestBrowser`; two requests at once use
   `elsewhere(...)` with a second `testDeps()`, since one connection would queue them.
+- Queries on one connection go one at a time, never in `Promise.all`: Supabase's pooler
+  (transaction mode) never answers two pipelined queries, so the request hangs. The API, the
+  database tests and `netlify dev` connect through the local pooler, as on Netlify.
+- The client tells failures apart (`callApi`, `failureKindOf`): "You're offline" only when the
+  device is offline or no response came; a timeout, a server error and a refusal each say so
+  with Try again (`online-failure-text.ts`).
 
 **The sim**
 
