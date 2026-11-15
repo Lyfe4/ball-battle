@@ -42,6 +42,7 @@
 /* Play, with what it plays under it (ADR 0046): the word large, the mode a quiet second line. */
 .home-play {
   display: grid;
+  place-content: center;
   justify-items: center;
   gap: 2px;
   min-height: calc(var(--tap-target) + 20px);
