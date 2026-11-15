@@ -37,6 +37,11 @@ export interface SeriesClient {
 export function createSeriesClient(host: SeriesClientHost): SeriesClient {
   let id: string | undefined;
   let timer: number | undefined;
+  /**
+   * The ETag of the last full answer, sent back as is: a live series' ETag also says whether the
+   * opponent shows as away (ADR 0053), so a version alone would get a 304 when they come back.
+   */
+  let etag: string | null = null;
 
   function schedule(): void {
     if (timer !== undefined) window.clearTimeout(timer);
@@ -49,10 +54,11 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     if (id === undefined) return;
     const view = host.view();
     const headers: Record<string, string> =
-      view?.id === id ? { 'If-None-Match': `"v${String(view.version)}"` } : {};
+      view?.id === id && etag !== null ? { 'If-None-Match': etag } : {};
     const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
     if (answer.ok) {
       host.heard(answer.clock);
+      if (answer.status !== 304) etag = answer.etag;
       const decoded = answer.status === 304 ? host.view() : decodeSeriesView(answer.body);
       if (decoded === undefined) host.failed('error');
       else host.adopt(decoded);
@@ -69,6 +75,7 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
   return {
     open(next) {
       id = next;
+      etag = null;
     },
     load,
     async pick(ball) {
@@ -80,6 +87,7 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
       });
       if (answer.ok) {
         host.heard(answer.clock);
+        etag = answer.etag;
         const decoded = decodeSeriesView(answer.body);
         if (decoded !== undefined) host.adopt(decoded);
         return;

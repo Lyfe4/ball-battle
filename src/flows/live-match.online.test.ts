@@ -113,11 +113,12 @@ describe('a live friend match', () => {
       await friend.waitForTimeout(12_000);
       // ...and back in time, the match carries on.
       await friendContext.setOffline(false);
-      await sender
-        .getByText(/disconnected/)
-        .first()
-        .waitFor({ state: 'detached', timeout: 20_000 })
-        .catch(() => undefined);
+      // The notice goes within a couple of reads: the page sends back the ETag it was given.
+      const back = Date.now();
+      while ((await sender.getByText(/disconnected · /).count()) > 0) {
+        expect(Date.now() - back, 'the disconnect notice stayed').toBeLessThan(5_000);
+        await sender.waitForTimeout(200);
+      }
       expect(await panelOf(sender).locator('.series-result').isVisible()).toBe(false);
 
       // Gone for good: the friend loses after the notice and the grace period.
