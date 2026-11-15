@@ -12,13 +12,25 @@ import type { SessionTokens } from './cookie.ts';
 const CLOCK_TOLERANCE_SECONDS = 30;
 const AUTH_TIMEOUT_MS = 8000;
 
+/** Auth refused (its HTTP status), or couldn't be reached (status 0, the network error as cause). */
 export class AuthError extends Error {
   override readonly name = 'AuthError';
   readonly status: number;
-  constructor(message: string, status: number) {
-    super(message);
+  constructor(message: string, status: number, cause?: unknown) {
+    super(message, cause === undefined ? undefined : { cause });
     this.status = status;
   }
+}
+
+/** `fetch` to Auth, with a network failure turned into an AuthError (status 0). */
+export function fetchAuth(url: string, init: RequestInit): Promise<Response> {
+  return fetch(url, init).catch((error: unknown) => {
+    throw new AuthError(
+      'Auth could not be reached',
+      0,
+      (error as { cause?: unknown }).cause ?? error,
+    );
+  });
 }
 
 type KeySet = ReturnType<typeof createRemoteJWKSet>;
@@ -67,7 +79,7 @@ async function tokenCall(
   body: unknown,
   headers: Readonly<Record<string, string>> = {},
 ): Promise<AuthSession> {
-  const response = await fetch(`${config.supabaseUrl}/auth/v1/${path}`, {
+  const response = await fetchAuth(`${config.supabaseUrl}/auth/v1/${path}`, {
     method: 'POST',
     headers: {
       apikey: config.supabasePublishableKey,

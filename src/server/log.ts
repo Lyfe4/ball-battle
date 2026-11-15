@@ -14,6 +14,8 @@ export interface RequestLog {
   readonly userId?: string | undefined;
   /** An error code we chose (`ApiError`), or `internal`. Never an error's own message. */
   readonly error?: string | undefined;
+  /** For a failure on our side: the stage and the error's kind (failure.ts). Never a value. */
+  readonly failure?: string | undefined;
 }
 
 /** Where log lines go: stdout in a function (Netlify collects it), a list in tests. */
@@ -34,6 +36,7 @@ export function logLine(entry: RequestLog): string {
     durationMs: Math.round(entry.durationMs),
     ...(entry.userId === undefined ? {} : { userId: entry.userId }),
     ...(entry.error === undefined ? {} : { error: entry.error }),
+    ...(entry.failure === undefined ? {} : { failure: entry.failure }),
   });
 }
 
