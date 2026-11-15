@@ -822,6 +822,19 @@ authentication failed`. `/health` checks the database and the ruleset bundle sep
   `auth_signing_keys` (no asymmetric key of an algorithm we verify). An Auth refusal's log line
   carries Auth's own error code (`auth: Supabase Auth answered 422 anonymous_provider_disabled`).
 
+**As built (staging, 2026-11-15): a fresh login role:**
+
+- The pooler's stale `game_api` credentials kept failing a few new connections with `28P01`
+  (a friend's first online action, making their guest, was refused; `/health` too). Following
+  Supabase's guide, the functions now log in as `game_api_v2`, a role the pooler has never cached:
+  its password is set in the dashboard before anything connects as it, then `DATABASE_URL` names
+  it (`game_api_v2.<project ref>`).
+- `game_api_v2` is a member of `game_api` and inherits every grant, so privileges stay on
+  `game_api` and later migrations grant to it as before; `BYPASSRLS` is an attribute and is set on
+  `game_api_v2` itself. `schema.db.test.ts` checks the API logs in as it and holds no grant of its
+  own. Local development and CI use it too. Once every environment has switched, a later migration
+  can make `game_api` `NOLOGIN`.
+
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
 the series kept are worth backing up (recommended: yes, from launch).

@@ -24,7 +24,7 @@ export default function setup(): void {
   const db = new URL(status.DB_URL);
   process.env['TEST_ADMIN_DATABASE_URL'] = status.DB_URL;
   // The API's own role, as on Netlify (its local password is set by supabase/seed.sql).
-  db.username = 'game_api';
+  db.username = 'game_api_v2';
   db.password = 'game_api_local';
   process.env['TEST_DATABASE_URL'] = db.href;
   process.env['TEST_SUPABASE_URL'] = status.API_URL;
