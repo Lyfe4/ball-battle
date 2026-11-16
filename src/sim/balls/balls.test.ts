@@ -29,6 +29,7 @@ import { boomerang } from './boomerang.ts';
 import { spartan } from './spartan.ts';
 import { hex } from './hex.ts';
 import { spider } from './spider.ts';
+import { battery } from './battery.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -81,6 +82,8 @@ describe('the ball roster', () => {
       hex: hex.speed,
       // A web slows the ball it catches; it never speeds anyone up (ADR 0049).
       spider: spider.speed,
+      // Storing a hit only changes how hard its next bump lands, never its speed.
+      battery: battery.speed,
     };
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {

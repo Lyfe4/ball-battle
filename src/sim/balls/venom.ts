@@ -28,8 +28,8 @@ export const venom = defineBall({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 66,
-  contactDamage: 11,
+  maxHealth: 69,
+  contactDamage: 10,
   initialAbilityState: {},
   hooks: {
     onHitBall: ({ other }) => [

@@ -91,8 +91,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'thorns',
-    intended: 'even',
-    reason: 'Poison never touches the spikes, but its bumps do: neither pulls ahead.',
+    intended: 'x',
+    reason: 'Poison never touches the spikes and its bumps are light: the spikes barely bite.',
   },
   {
     x: 'venom',

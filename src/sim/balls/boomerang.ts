@@ -46,7 +46,7 @@ export const boomerang = defineBall<BoomerangState>({
     'It can hit going out and again on the way back, then comes home to be thrown again.',
   ],
   radius: STANDARD_BALL_RADIUS,
-  speed: 770,
+  speed: 760,
   maxHealth: 52,
   contactDamage: 10,
   initialAbilityState: { nextThrowTick: FIRST_THROW_TICK },

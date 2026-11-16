@@ -44,6 +44,7 @@ export const speedster = defineBall<SpeedsterState>({
   contactDamage: 14,
   initialAbilityState: { stacks: 0 },
   cruiseSpeed: (state, stats) => speedForStacks(stats.speed, state.stacks),
+  topSpeed: speedForStacks(800, MAX_STACKS),
   hooks: {
     onWallHit: ({ self, bounces }) => {
       const stacks = Math.min(MAX_STACKS, self.abilityState.stacks + bounces);

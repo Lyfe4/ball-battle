@@ -121,8 +121,18 @@ describe('the ball roster: identity rules', () => {
     expect((HEAL_AMOUNT * TICK_RATE) / HEAL_EVERY_TICKS).toBeLessThan(bloom.maxHealth / 10);
   });
 
-  it('Speedster is the fastest ball at base speed', () => {
-    for (const ball of others(speedster.id)) expect(speedster.speed).toBeGreaterThan(ball.speed);
+  it('Speedster is the fastest ball: one wall bounce takes it past every other ball (ADR 0056)', () => {
+    // Its base speed is not the roster's highest since the Battery (870); what players see is the
+    // speed it fights at, and a single stack already beats every other ball's best.
+    const oneStack = speedForStacks(speedster.speed, 1);
+    for (const ball of others(speedster.id)) {
+      expect(oneStack).toBeGreaterThan(ball.topSpeed ?? ball.speed);
+    }
+    expect(speedster.topSpeed).toBe(speedForStacks(speedster.speed, MAX_STACKS));
+    // Only a ball whose ability speeds it up declares a top speed.
+    expect(
+      BALLS.filter((ball) => ball.topSpeed !== undefined).map((ball) => ball.id),
+    ).toStrictEqual([speedster.id]);
   });
 
   it('Speedster’s bonus at max stacks is at least half its contact damage', () => {
@@ -183,6 +193,8 @@ describe('the ball roster: identity rules', () => {
       // A quarter of the healthiest ball's full health.
       hex: curseBurstFor(Math.max(...BALLS.map((ball) => ball.maxHealth))),
       spider: WEB_NIP,
+      // What it stores comes back as contact damage on its next bump, not an ability hit.
+      battery: 0,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {

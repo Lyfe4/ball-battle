@@ -99,7 +99,15 @@ export function applyActions(
         update(action.targetId, (target) => {
           const requested = Math.max(0, action.amount);
           // The target's defence (a planted shield, phasing) takes its share first (ADR 0045, 0049).
-          const defended = defendHit(target, ownerId, requested, definitions, tick);
+          // Ability damage always names its source in play; an untagged hit counts as a hook's own.
+          const defended = defendHit(
+            target,
+            ownerId,
+            requested,
+            definitions,
+            tick,
+            via ?? 'onTick',
+          );
           if (defended.event !== undefined) events.push(defended.event);
           const amount = Math.min(target.health, defended.rest);
           if (amount <= 0) return undefined;
@@ -115,6 +123,7 @@ export function applyActions(
             multiplier: 1,
             survivedLethal: false,
             ...(via === undefined ? {} : { via }),
+            ...(defended.event === undefined ? {} : { reduced: defended.event.reduced }),
           });
           return { ...target, health: healthAfter };
         });

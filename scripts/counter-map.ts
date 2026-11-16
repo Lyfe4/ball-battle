@@ -105,11 +105,12 @@ function allow(gap: {
  * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
  * fill (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on
  * any other ball, and on these beyond their allowance. Each allowance is exactly the ball's gap
- * today (map and measured, ruleset 14) and no wider, so any ball slipping one more step fails; a
+ * today (map and measured, ruleset 16) and no wider, so any ball slipping one more step fails; a
  * ball moving back towards the shape still passes, and its allowance can then be tightened.
- * - The Storm, Bomber and Ghost lose to one ball, and the Titan beats one and loses to one: nothing
- *   in the roster beats one big strike but the rewind, the growing giant or the big blast, and
- *   while the Ghost is phased nothing touches it, so only the Bloom's regrowth beats it (ADR 0049).
+ * - The Ghost loses to one ball, and the Titan beats one and loses to one: while the Ghost is
+ *   phased nothing touches it, so only the Bloom's regrowth beats it (ADR 0049), and only Thorns
+ *   holds the grown Titan. (The Storm and Bomber lost this allowance in ruleset 16: the Battery
+ *   stores their big strikes and blasts and gives each a second loss, ADR 0056.)
  * - The Berserker beats nearly every ball that hits rarely: 5 wins (its 4 losses keep the gap 1).
  * - The Bloom regrows only after 2 s untouched, so every ball that hits it often wins: 5 losses
  *   (ADR 0050).
@@ -117,9 +118,7 @@ function allow(gap: {
  *   gained the Spartan as a fourth loss against its 2 wins.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  storm: allow({ losses: { fewest: 1 } }),
   titan: allow({ wins: { fewest: 1 }, losses: { fewest: 1 } }),
-  bomber: allow({ losses: { fewest: 1 } }),
   berserker: allow({ wins: { most: 5 } }),
   bloom: allow({ losses: { most: 5 } }),
   ghost: allow({ losses: { fewest: 1 } }),

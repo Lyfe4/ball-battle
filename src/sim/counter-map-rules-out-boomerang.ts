@@ -43,8 +43,9 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'boomerang',
-    intended: 'y',
-    reason: 'The slowest ball is the easiest to hit twice a throw, and it can’t catch the thrower.',
+    intended: 'even',
+    reason:
+      'The slowest ball is easy to hit twice a throw, but a slower thrower is easier to catch.',
   },
   {
     x: 'magnet',

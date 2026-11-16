@@ -80,6 +80,12 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly cruiseSpeed?: (state: S, stats: BallStats) => number;
   /**
+   * The fastest `cruiseSpeed` ever makes it travel (the Speedster's five stacks), for an ability
+   * that speeds it up. What players see of its speed: the manual's speed reads it and names the
+   * fastest ball by it (ADR 0056). Text only, never read in a fight. Defaults to `speed`.
+   */
+  readonly topSpeed?: number;
+  /**
    * Base contact damage in the ball's current state, for an ability that changes how hard it hits
    * (the Berserker's rage). A pure query, not a hook, read from the ball as it was before the
    * exchange; directness still scales it (ADR 0008, 0015). Defaults to `contactDamage`.
@@ -109,9 +115,16 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Spartan's
    * planted shield takes half of every hit (ADR 0047), the phased Ghost all of it (ADR 0049). A pure
    * query of its own state, applied on both damage paths before the hit lands and rounded to a whole number between
-   * 0 and `amount`. Defaults to the whole hit.
+   * 0 and `amount`. `via` is what dealt the hit ('contact' for a bump), so a defence can tell a
+   * strike from a bump (the Battery stores only big strikes and bursts, ADR 0056). Defaults to the
+   * whole hit.
    */
-  readonly incomingDamageOf?: (self: BallView<S>, amount: number, tick: number) => number;
+  readonly incomingDamageOf?: (
+    self: BallView<S>,
+    amount: number,
+    tick: number,
+    via: DamageVia | 'contact',
+  ) => number;
 }
 
 /** A ball as its own hooks see it: its ability state has the definition's type. */
@@ -180,6 +193,10 @@ export interface DamageTakenContext<S extends AbilityState = AbilityState> exten
   /** Health actually removed. */
   readonly amount: number;
   readonly cause: DamageCause;
+  /** Health its own defence (`incomingDamageOf`) took off this hit before it landed; 0 if none. */
+  readonly reduced: number;
+  /** What dealt it: the ability's `via`, or 'contact' for a bump. */
+  readonly via: DamageVia | 'contact';
 }
 
 /**

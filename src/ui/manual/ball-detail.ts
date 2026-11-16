@@ -131,7 +131,13 @@ export function createBallDetail(
       const values = [
         [shares.health, ball.maxHealth],
         [shares.hit, ball.contactDamage],
-        [shares.speed, ball.speed],
+        // A ball its ability speeds up shows the range it travels at, and its bar the top (ADR 0056).
+        [
+          shares.speed,
+          ball.topSpeed === undefined
+            ? ball.speed
+            : `${String(ball.speed)}–${String(ball.topSpeed)}`,
+        ],
       ] as const;
       const speed = speedTrait(ball, balls);
       setText(trait, speed ?? '');

@@ -4,7 +4,7 @@
 // damage). One rule in one place for both damage paths: contact damage (combat.ts) and ability
 // damage (the `damage` action every other source goes through).
 import { getDefinition } from './definitions.ts';
-import type { BallState, DefinitionLookup } from './types.ts';
+import type { BallState, DamageVia, DefinitionLookup } from './types.ts';
 
 /** A ball's defence took some or all of a hit; any rest lands as a damage event. */
 export interface HitReducedEvent {
@@ -30,10 +30,12 @@ export function defendHit(
   amount: number,
   definitions: DefinitionLookup,
   tick: number,
+  /** What dealt the hit ('contact' for a bump), for a defence that tells them apart. */
+  via: DamageVia | 'contact',
 ): { readonly rest: number; readonly event: HitReducedEvent | undefined } {
   const { incomingDamageOf } = getDefinition(definitions, target.definitionId);
   if (incomingDamageOf === undefined || amount <= 0) return { rest: amount, event: undefined };
-  const defended = incomingDamageOf(target, amount, tick);
+  const defended = incomingDamageOf(target, amount, tick, via);
   if (!Number.isFinite(defended)) {
     throw new Error(`Ball "${target.id}" defended a hit to a non-finite value`);
   }
