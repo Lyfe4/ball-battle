@@ -13,9 +13,9 @@ arena until one wins, and every decision is made before the fight starts.
 
 ## Features
 
-- **23 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+- **24 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that phases, a necromancer's skull minions, a boomerang, bombs,
-  a shield and spear, a curse, webs on the walls, and more.
+  a shield and spear, a curse, webs on the walls, a battery that stores big hits, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option on Other
@@ -127,6 +127,7 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Bloom       | Left alone for 2 s, it regrows five health a second; any hit closes it into a bud to wait again. |
 | Hex         | Its bump curses; 3 s later the curse bursts for a quarter of that ball's full health.            |
 | Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.              |
+| Battery     | Stores a third of every big strike or blast it takes; its next bump lets it all out.             |
 
 Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
@@ -138,7 +139,8 @@ least 62% of the time and aims for 65-72%, and each one comes from something you
 ([ADR 0045](docs/decisions/0045-roster-redesign.md),
 [ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
 [ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md),
-[ADR 0050](docs/decisions/0050-bloom-patient-regrowth.md)). No rule exists only where two abilities
+[ADR 0050](docs/decisions/0050-bloom-patient-regrowth.md),
+[ADR 0056](docs/decisions/0056-battery-venom-thorns.md)). No rule exists only where two abilities
 meet: every ability works the same on any ball.
 
 For example, the Archer and Sniper beat Thorns because they never touch its spikes, and the

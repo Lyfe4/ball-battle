@@ -76,12 +76,13 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
-Known gaps at ruleset 14 (ADR 0049, 0050):
+Known gaps at ruleset 16 (ADR 0049, 0050, 0056):
 
-- **Something that beats the Storm, the Titan or the Bomber.** Only the Chrono's rewind blunts a
-  big strike or blast, and only Thorns holds the grown Titan. The Storm and Bomber have two wins
-  but one loss; the Titan one each. A ball that dodges or soaks one big hit (a dash out of a
-  warning circle) would give each a second weakness.
+- **Something that beats the Titan.** Only Thorns holds the grown Titan, which beats one ball and
+  loses to one. **Closed in ruleset 16 (ADR 0056):** the Storm's and Bomber's second loss, the
+  Battery, which stores part of every big strike or blast and throws it back on its next bump. The
+  Battery and the Chrono now share the "blunts one big hit" niche, so the next ball for a gap
+  should find a different kind of hit.
 - **A second win for the Sniper and the Quake, and fewer losses for the Vampire.** The Sniper
   beats only Thorns. The Spider gave the Quake its second loss (ADR 0049), but the Quake's win over
   the Chrono dropped to the grey zone in the same retune. The Vampire beats the Berserker and the
@@ -100,9 +101,15 @@ Known gaps at ruleset 14 (ADR 0049, 0050):
   in time (a lasting area it can't leave, say) would give it a second weakness.
 - **The Brawler beats nobody (accepted).** It is the plain default, the ball to pick knowing
   nothing (ADR 0049).
-- **The Magnet is the candidate to replace.** Its pull is movement too soft to decide a pair, so it
-  is an even pick by accident rather than design; a new ball filling one of the gaps above could
-  take its slot.
+- **The Magnet stays (ADR 0056).** Its pull is movement too soft to decide a pair, so it is an even
+  pick by accident rather than design. The roster-expansion proposal put the Battery in its slot;
+  the owner kept it, and the Battery fitted beside it.
+- **The Slime's lessons (`proto/slime-2`, not shipped).** A ball that splits at half health wastes
+  one big aimed hit, so every version with an edge has it over the Sniper first, and the Sniper
+  can't take a third loss (the Speedster, at four losses, is next). Faster, smaller halves add the
+  Archer and Hex as prey; bigger or slower halves only grow the Speedster's and Sniper's edges;
+  weaker halves or earlier splits only lose. A splitting ball fits only once the Sniper has room
+  for another loss, or if its split answers something other than one big hit.
 - **A ball that stuns or silences, built on the ability clock.** The Glitch (its bump switched the
   other ball's ability off) was parked in ADR 0050: on its own it turns each fight into a plain
   stat check. Its engine work is kept on `proto/bloom-glitch`: each ball keeps an ability clock

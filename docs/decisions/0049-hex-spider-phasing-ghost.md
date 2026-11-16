@@ -7,6 +7,7 @@
 - Date: 2026-11-14
 - Amends: ADR 0026 and 0028 (phasing is one rule: a phased ball is aimed at and pulled like any
   other), ADR 0045 (the Ghost's fade is replaced), ADR 0047 (the Spartan's known gap closes)
+- Amended by: ADR 0056 (the Storm's and Bomber's one-loss allowances go: the Battery beats both)
 - Proposal: `docs/experiments/new-balls-proposal-3.md` (measured on `proto/hex-spider-ghost`, ruleset 12)
 
 ## Context
