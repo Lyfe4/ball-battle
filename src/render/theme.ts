@@ -123,6 +123,7 @@ export const theme = {
     bloom: '#831843',
     hex: '#3b0764',
     spider: '#18181b',
+    battery: '#172554',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',

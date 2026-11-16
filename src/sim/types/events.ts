@@ -48,6 +48,8 @@ export interface DamageEvent {
   readonly survivedLethal: boolean;
   /** Ability damage only: what delivered it (ADR 0036). */
   readonly via?: DamageVia;
+  /** What the target's own defence took off the hit before it landed (ADR 0045); absent if none. */
+  readonly reduced?: number;
 }
 
 export interface HealedEvent {

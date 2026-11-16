@@ -205,6 +205,8 @@ export function damageTakenInvocations(damage: readonly DamageEvent[]): Invocati
               attacker,
               amount: event.amount,
               cause: event.cause,
+              reduced: event.reduced ?? 0,
+              via: event.cause === 'contact' ? 'contact' : (event.via ?? 'onTick'),
             });
       },
     }));

@@ -95,6 +95,8 @@ interface PendingHit {
   readonly source: BallState;
   readonly raw: number;
   readonly multiplier: number;
+  /** What the target's defence took off the hit (0 before `defend`). */
+  readonly reduced: number;
 }
 
 /**
@@ -121,6 +123,7 @@ export function applyContactDamage(
       source,
       raw: impactDamage(contactDamageOf(source, definition), multiplier),
       multiplier,
+      reduced: 0,
     };
   };
 
@@ -141,15 +144,16 @@ export function applyContactDamage(
       healthAfter,
       multiplier,
       survivedLethal: survives,
+      ...(hit.reduced > 0 ? { reduced: hit.reduced } : {}),
     });
     return { ...target, health: healthAfter };
   };
 
   // The target's defence (armor, a fade) takes its share first (ADR 0045).
   const defend = (hit: PendingHit): PendingHit => {
-    const defended = defendHit(hit.target, hit.source.id, hit.raw, definitions, tick);
+    const defended = defendHit(hit.target, hit.source.id, hit.raw, definitions, tick, 'contact');
     if (defended.event !== undefined) reduced.push(defended.event);
-    return { ...hit, raw: defended.rest };
+    return { ...hit, raw: defended.rest, reduced: defended.event?.reduced ?? 0 };
   };
 
   for (const { ballIds, directness, phased } of newContacts) {

@@ -59,12 +59,13 @@ export interface StatShares {
   /** Each stat as a share of the roster's highest, 0 to 1, for bars that compare balls. */
   readonly health: number;
   readonly hit: number;
-  /** Base cruise speed: what every ball travels at (ADR 0008) before any ability changes it. */
+  /** Top speed (`topSpeed`, else its base cruise speed, ADR 0008, 0056) against the roster's. */
   readonly speed: number;
 }
 
 /**
- * Speed as a trait, only where it defines a ball: the roster's fastest or slowest by base speed.
+ * Speed as a trait, only where it defines a ball: the roster's fastest by the top speed it reaches
+ * in a fight (the Speedster, ADR 0056) or slowest by base speed.
  * Its bar starts from zero like the others, so a few percent barely shows; the chip names the two
  * extremes.
  */
@@ -73,7 +74,9 @@ export function speedTrait(
   roster: readonly BallDefinition[],
 ): 'Fastest ball' | 'Slowest ball' | undefined {
   const speeds = roster.map((b) => b.speed);
-  if (ball.speed === Math.max(...speeds)) return 'Fastest ball';
+  // The fastest is named by the speed it reaches in a fight (ADR 0056), the slowest by its base.
+  const top = (b: BallDefinition) => b.topSpeed ?? b.speed;
+  if (top(ball) === Math.max(...roster.map(top))) return 'Fastest ball';
   if (ball.speed === Math.min(...speeds)) return 'Slowest ball';
   return undefined;
 }
@@ -84,7 +87,7 @@ export function statShares(ball: BallDefinition, roster: readonly BallDefinition
   return {
     health: ball.maxHealth / most((b) => b.maxHealth),
     hit: ball.contactDamage / most((b) => b.contactDamage),
-    speed: ball.speed / most((b) => b.speed),
+    speed: (ball.topSpeed ?? ball.speed) / most((b) => b.topSpeed ?? b.speed),
   };
 }
 

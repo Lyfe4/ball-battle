@@ -114,8 +114,9 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spider',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Its boomerang flies at its own speed, but the slow keeps it in the nips’ reach.',
+    intended: 'y',
+    reason:
+      'A slow costs a returning boomerang nothing, and each pass chips it as nips can’t keep up.',
   },
   {
     x: 'spider',

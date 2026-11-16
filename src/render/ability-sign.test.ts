@@ -23,10 +23,10 @@ describe('the moment a ball’s ability shows (ADR 0036)', () => {
     for (const ball of BALLS) {
       const { ability } = ball;
       if (ability === undefined) continue;
-      // Against the Brawler (no ability of its own), and against Thorns for a ball whose ability
-      // only answers being hit.
+      // Against the Brawler (no ability of its own), against Thorns for a ball whose ability
+      // only answers being hit, and against the Storm for one that answers only a big strike.
       const shown = [1, 2, 3].some((seed) =>
-        ['brawler', 'thorns', 'vampire'].some((other) =>
+        ['brawler', 'thorns', 'vampire', 'storm'].some((other) =>
           eventsOf(ball.id, other, seed).some((event) =>
             showsAbility(event, 'ball-0', ability.shownBy),
           ),
