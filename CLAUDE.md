@@ -104,7 +104,13 @@ CI runs format, lint, typecheck, unit tests and build in one job, `test:slow`, `
 Work on a branch and open a pull request; never commit to `main`. Once every CI check passes (the
 CI jobs and Netlify's deploy preview; Netlify's header, pages-changed and redirect checks are
 informational), merge it yourself with a merge commit (no squash) and delete the branch. Never
-merge a red pull request: fix it on the branch.
+merge a red pull request: fix it on the branch. GitHub enforces part of this: the ruleset "main:
+CI must pass" requires a pull request (no reviews), merge commits only, and every CI job that runs
+on a pull request (the 11 jobs by name, from GitHub Actions); so `gh pr merge --auto --merge
+--delete-branch` waits for them. Netlify's preview is not required by it: check it yourself. When
+a CI job is added or renamed, update the ruleset's list in the same pull request (repository
+Settings → Rules → Rulesets), or merges wait forever for a check that never reports. `release` is
+not covered, so Publish still moves it.
 
 Merging doesn't publish. Production is the `release` branch (Netlify's Free plan charges 15 of 300
 monthly credits per production deploy, ADR 0052): publish a batch of merges with the Publish
