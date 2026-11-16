@@ -25,7 +25,7 @@ export const MOMENT_EVERY_TICKS = 15;
 export const REWIND_MOMENTS = 2;
 /** An ability hit of at least this much is a big hit: a heavy shot, a lightning strike. */
 export const BIG_HIT = 20;
-/** Ticks from a rewind until it can rewind again (5 s). */
+/** Ticks from a rewind until it can rewind again (10 s). */
 export const RECHARGE_TICKS = 600;
 
 /** The Chrono's recent moments, read from any ball state (empty for other balls). */
@@ -66,7 +66,7 @@ function rewind(state: ChronoState, tick: number): readonly AbilityAction<Chrono
 export const chrono = defineBall<ChronoState>({
   id: 'chrono',
   name: 'Chrono',
-  description: 'Rewinds big hits, then recharges.',
+  description: `Rewinds a hit of ${BIG_HIT} or more, then recharges for ${secondsOf(RECHARGE_TICKS)} s.`,
   color: '#d4a373',
   ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
   howItWorks: [
