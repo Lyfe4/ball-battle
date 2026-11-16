@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { endpoint } from '../http.ts';
 import { testDeps } from '../test/support.ts';
+import { RULESET_VERSION } from '../current-ruleset.ts';
 import { health } from './health.ts';
 
 const deps = testDeps();
@@ -20,7 +21,7 @@ describe('GET /api/v1/health', () => {
       status: 'ok',
       database: 'ok',
       auth: 'ok',
-      ruleset: 15,
+      ruleset: RULESET_VERSION,
       failed: [],
     });
   });
