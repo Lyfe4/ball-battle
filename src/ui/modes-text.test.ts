@@ -40,12 +40,8 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     );
   });
 
-  it('names each opponent card and says who it plays in a few words', () => {
-    expect(OPPONENT_CARDS.bot.name).toBe('vs Bot');
-    expect(OPPONENT_CARDS.friend.name).toBe('vs Friend');
-    for (const card of Object.values(OPPONENT_CARDS)) {
-      expect(card.line.split(' ').length).toBeLessThanOrEqual(7);
-    }
+  it('names each opponent card by its title alone: the title says who it plays', () => {
+    expect(OPPONENT_CARDS).toEqual({ bot: { name: 'vs Bot' }, friend: { name: 'vs Friend' } });
   });
 
   it('says what a live friend match asks before the lineup', () => {

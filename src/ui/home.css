@@ -82,7 +82,8 @@
 
 /*
  * The opponent cards: two side by side today; with Ranked and Casual a 2 x 2 grid, nothing else
- * on home moving (ADR 0055). A card is a raised slab like a button, its name over one quiet line.
+ * on home moving (ADR 0055). A card is a compact raised slab like the old Best of 3 / Best of 5
+ * toggles, its title centred: two quiet buttons under the yellow Play, never rivals to it.
  */
 .home-cards {
   display: grid;
@@ -104,18 +105,16 @@
 
 .home-card {
   display: grid;
-  align-content: start;
-  justify-items: start;
-  gap: 4px;
-  min-height: calc(var(--tap-target) * 2);
+  place-items: center;
+  min-height: calc(var(--tap-target) + 8px);
   margin-bottom: var(--press-depth);
-  padding: var(--space-gap);
+  padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
   background: var(--color-raised);
   box-shadow: var(--shadow-slab);
   color: var(--color-text);
   font: inherit;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   transition:
     transform 80ms ease-out,
@@ -148,12 +147,6 @@
   font-size: var(--font-size-lead);
   font-weight: 800;
   line-height: 1.15;
-}
-
-.home-card-line {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: 1.35;
 }
 
 /* Free play and the manual: quiet links, side by side under the cards. */
@@ -233,16 +226,11 @@
   }
 
   .home-card {
-    min-height: clamp(6rem, 16vh, 11rem);
-    padding: clamp(var(--space-gap), 2.4vh, 24px);
+    min-height: clamp(3.25rem, 7vh, 4.5rem);
   }
 
   .home-card-name {
-    font-size: clamp(1.25rem, 3vh, 1.75rem);
-  }
-
-  .home-card-line {
-    font-size: clamp(var(--font-size-small), 1.9vh, 1.0625rem);
+    font-size: clamp(1.125rem, 2.6vh, 1.5rem);
   }
 
   .home-link {

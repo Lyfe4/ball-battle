@@ -84,6 +84,26 @@ async function pickLineup(ids: readonly string[]): Promise<void> {
   }
 }
 
+/**
+ * The opponent cards are two compact buttons under Play (the old Best of 3 / Best of 5 toggles'
+ * size): the title alone, centred, a card no taller than Play.
+ */
+function checkCards(): void {
+  const play = visible('.home-play')[0]?.getBoundingClientRect();
+  for (const card of visible('.home-card')) {
+    expect(card.querySelectorAll('span')).toHaveLength(1);
+    const box = card.getBoundingClientRect();
+    const name = card.querySelector('.home-card-name')?.getBoundingClientRect();
+    expect(
+      Math.abs((name?.left ?? 0) + (name?.width ?? 0) / 2 - (box.left + box.width / 2)),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs((name?.top ?? 0) + (name?.height ?? 0) / 2 - (box.top + box.height / 2)),
+    ).toBeLessThan(2);
+    expect(box.height).toBeLessThan(play?.height ?? 0);
+  }
+}
+
 /** Play: the remembered series' lineup in one tap; the level changed there is Play's next time. */
 async function play(): Promise<void> {
   expect(search()).toBe('');
@@ -96,6 +116,7 @@ async function play(): Promise<void> {
   expect(playMeta()).toBe('Best of 3 · Reveal · vs Normal bot');
   // One card per opponent under Play: the bot in every build (vs Friend needs online play).
   expect(visible('.home-card-name').map((name) => name.textContent)).toContain('vs Bot');
+  checkCards();
   if (plays[0] !== undefined) await click(plays[0]);
   await settle();
 

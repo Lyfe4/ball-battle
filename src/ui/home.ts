@@ -99,10 +99,8 @@ export function createHome(
       const card = element('button', 'home-card');
       card.type = 'button';
       card.dataset['opponent'] = opponent;
-      card.append(
-        element('span', 'home-card-name', OPPONENT_CARDS[opponent].name),
-        element('span', 'home-card-line', OPPONENT_CARDS[opponent].line),
-      );
+      // The title alone: "vs Bot" and "vs Friend" say who it plays.
+      card.append(element('span', 'home-card-name', OPPONENT_CARDS[opponent].name));
       card.addEventListener('click', () => {
         actions.onOpponent(opponent);
       });
