@@ -7,6 +7,7 @@
   coin toss is said in the pick banner; the strip is gone), ADR 0036 (a rule gets a one-time hint)
 - Amended by: ADR 0045 (the spark and the rule words are removed with the rules they marked;
   the counter reasons stay)
+- Amended by: ADR 0061 (the coin toss as a moment, and together online)
 
 ## Context
 

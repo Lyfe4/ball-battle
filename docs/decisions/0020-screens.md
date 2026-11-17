@@ -7,6 +7,8 @@
   of 3 leads home, Free play, Strong vs / Weak vs, lineup gaps), ADR 0031 (desktop layouts; no
   paused match beside setup screens on a desktop), ADR 0042 (§3: a series and round 1's pick
   survive a reload)
+- Amended by: ADR 0032 (the Sticker Pop restyle: a calm platform, a playful arena), ADR 0046 (reveal
+  first on home, every other mode behind Other modes)
 
 ## Context
 

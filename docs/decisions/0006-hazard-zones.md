@@ -2,6 +2,9 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0026 (batch 3: Magnet, Ghost, Necromancer; steering, phasing, minions), ADR 0034
+  (batch 4: Chrono, Titan, Inferno; rewind, growth, lasting zones), ADR 0043 (batch 5: Boomerang,
+  Bomber, Guardian, Bloom; returning projectiles, bombs, shields)
 
 ## Context
 

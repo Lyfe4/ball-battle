@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Amends: ADR 0020 (§1 desktop adapts, §2 the paused match beside setup screens)
+- Amended by: ADR 0032 (the Sticker Pop restyle: a calm platform, a playful arena)
 
 ## Context
 

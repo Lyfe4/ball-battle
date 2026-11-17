@@ -3,6 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Amends: ADR 0020 (§6 fonts and the CSP), ADR 0031 (the look only; no layout changes)
+- Amended by: ADR 0033 (arena polish: a plain floor, the way out last, the Winner sticker at full
+  brightness)
 
 ## Context
 

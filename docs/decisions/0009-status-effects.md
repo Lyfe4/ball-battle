@@ -4,6 +4,8 @@
 - Date: 2026-11-04
 - Amended by: ADR 0045 (the `shocked` status and its heal cut are removed; slowed, poisoned and
   shielded remain)
+- Amended by: ADR 0043 (batch 5: Boomerang, Bomber, Guardian, Bloom; returning projectiles, bombs,
+  shields)
 
 ## Context
 

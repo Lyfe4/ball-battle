@@ -6,6 +6,11 @@
 - Amended by: ADR 0027 (no dead ends: the series screen model and its test), ADR 0038 (the
   legend has its own Close), ADR 0039 (§4: while a round is fought on a phone the track waits under the score line), ADR
   0042 (§3: a held series survives a reload; Leave series forgets it)
+- Amended by: ADR 0030 (symbol tooltips, a Rematch that works, and numbered lineup slots), ADR 0033
+  (arena polish: a plain floor, the way out last, the Winner sticker at full brightness), ADR 0035
+  (bot levels, Showdown, and pick screens that never give the bot's move away), ADR 0036 (teaching
+  in the arena), ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment,
+  a story led by its result)
 
 ## Context
 

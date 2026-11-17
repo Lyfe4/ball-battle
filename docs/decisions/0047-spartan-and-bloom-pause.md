@@ -5,6 +5,8 @@
 - Date: 2026-11-12
 - Amends: ADR 0045 (the Guardian's armor and the Bloom's regrowth, group 2; the known gaps, group 4)
 - Proposal: `docs/experiments/new-balls-proposal.md`, `docs/experiments/new-balls-proposal-2.md` (ruleset 11)
+- Amended by: ADR 0049 (the Hex, the Spider and the phasing Ghost (ruleset 13)), ADR 0050 (the
+  Bloom's patient regrowth, and the Glitch parked (ruleset 14))
 
 ## Context
 

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-01
+- Amended by: ADR 0059 (sides, and a ball that splits in two)
 
 ## Context
 

@@ -7,6 +7,8 @@
   not replayed at all, and bot picks must be the bot's.
 - Date: 2026-11-05
 - Amends: ADR 0017 (series setup, link, bot)
+- Amended by: ADR 0020 (screens: a home, a ball manual, setup screens and routes), ADR 0022 (ruleset
+  version, and one rule for a valid series)
 
 ## Context
 

@@ -5,6 +5,8 @@
 - Amends: ADR 0007 (the intro can run longer for the versus card), ADR 0025 (show less: tips are
   one-time, and the match story is closed by default)
 - Amended by: ADR 0040 (tips are two switches in settings), ADR 0041 (a rule gets a one-time hint)
+- Amended by: ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment, a
+  story led by its result)
 
 ## Context
 

@@ -5,6 +5,7 @@
 - Amends: ADR 0044 (§3 the match waits under settings: offline only), ADR 0053 (the lead to Fight!
   is 6 s with "Get ready" before the 3-2-1; buttons that move to another screen wait for it), ADR
   0038 (one look per state: the chosen option)
+- Amended by: ADR 0061 (the coin toss as a moment, and together online)
 
 ## Context
 

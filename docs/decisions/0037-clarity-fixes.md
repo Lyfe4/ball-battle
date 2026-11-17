@@ -7,6 +7,7 @@
 - Amended by: ADR 0038 (§4 the ready card always sits centred on the court, and Escape no longer
   starts the match), ADR 0040 ("Don’t show these again" is the settings’ cards switch), ADR 0044 (§5 the story is
   the same card between rounds)
+- Amended by: ADR 0062 (teaching in live matches: What to watch during the countdown)
 
 ## Context
 

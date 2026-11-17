@@ -5,6 +5,8 @@
 - Amends: ADR 0017 (the link, the bot), ADR 0019 (links, picks)
 - Amended by: ADR 0051 (a server verifies each series under the ruleset it was created with,
   from frozen sim bundles kept for a window)
+- Amended by: ADR 0023 (known match results, checked in every engine), ADR 0035 (bot levels,
+  Showdown, and pick screens that never give the bot's move away)
 
 ## Context
 

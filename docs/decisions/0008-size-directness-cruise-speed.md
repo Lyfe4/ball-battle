@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0034 (batch 4: Chrono, Titan, Inferno; rewind, growth, lasting zones)
 
 ## Context
 

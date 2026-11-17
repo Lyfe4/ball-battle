@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-01
+- Amended by: ADR 0023 (known match results, checked in every engine), ADR 0059 (sides, and a ball
+  that splits in two)
 
 ## Context
 

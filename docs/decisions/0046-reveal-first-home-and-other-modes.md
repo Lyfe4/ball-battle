@@ -6,6 +6,7 @@
   modes goes)
 - Amends: ADR 0020 (§5 home), ADR 0027 (§3 Best of 3 leads home; Free play moves to Other modes),
   ADR 0035 (Reveal is the main mode, see its addendum; the level is also chosen on the lineup step)
+- Amended by: ADR 0048 (best of 5, a longer series beside Best of 3)
 
 ## Context
 

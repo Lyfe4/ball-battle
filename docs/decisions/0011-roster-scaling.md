@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0020 (screens: a home, a ball manual, setup screens and routes)
 
 ## Context
 

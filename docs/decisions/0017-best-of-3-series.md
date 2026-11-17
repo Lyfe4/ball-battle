@@ -5,6 +5,11 @@
 - Implements: step 1 of `docs/vision.md` ("round structure against a bot lineup, locally")
 - Amended by: ADR 0051 (competitive play: the server issues secret per-round seeds; links and
   single-player keep the series seed)
+- Amended by: ADR 0019 (draft formats for best of 3), ADR 0020 (screens: a home, a ball manual,
+  setup screens and routes), ADR 0022 (ruleset version, and one rule for a valid series), ADR 0025
+  (show less, one set of Back rules, and Best of 3 as visuals), ADR 0035 (bot levels, Showdown, and
+  pick screens that never give the bot's move away), ADR 0048 (best of 5, a longer series beside
+  Best of 3)
 
 ## Context
 
