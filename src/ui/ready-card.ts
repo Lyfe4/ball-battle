@@ -1,9 +1,10 @@
 // The ready moment before a fight (ADR 0037): both balls stand still where the match starts (its
 // opening world, tick 0), a sticker card shows the pairing, and a Fight! button starts it. When the
 // pairing is new to this device, the card also says what to watch: who is favoured and the counter
-// map's reason, with time to read it. In Best of 3 every round waits on Fight!, a deliberate
+// map's reason, with time to read it; in a live round, during its Get ready and 3-2-1 (ADR 0062). In Best of 3 every round waits on Fight!, a deliberate
 // "ready, fight" beat between rounds; in Free play the card (and so the wait) shows only for a new
 // pairing, so a run of matches is never slowed by a tap. The home demo never waits.
+import { readyFor, type ReadyMoment } from '../app/ready-moment.ts';
 import type { Tips } from '../app/tips.ts';
 import { counterFor } from '../sim/counter-map.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
@@ -12,13 +13,7 @@ import { favouredOf } from './balls/matchups.ts';
 import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
-/**
- * What the arena is showing: the home demo (`still` while it waits on a still frame under reduced
- * motion, ADR 0055: the pairing shows over it, so it reads as a picture), a Free play match, a
- * series round, or a live round (ADR 0053), which starts at the server's time on both screens: a
- * countdown, no Fight!.
- */
-export type ReadyMoment = 'demo' | 'still' | 'quick' | 'series' | 'live';
+export type { ReadyMoment } from '../app/ready-moment.ts';
 
 export interface ReadyCard {
   /** A new match: true when it waits on Fight! (the card shows over its opening world). */
@@ -33,14 +28,6 @@ export interface ReadyCard {
 
 /** How long a live sticker takes to lift away at Fight! (ready-card.css, `ready-lift`). */
 const LIFT_MS = 180;
-
-/** Whether a match waits on Fight!, and whether its card says what to watch. */
-export function readyFor(moment: ReadyMoment, cardDue: boolean): { held: boolean; card: boolean } {
-  if (moment === 'demo' || moment === 'still') return { held: false, card: false };
-  // Live: every round waits for its time, and nobody reads a card in 3 s.
-  if (moment === 'live') return { held: true, card: false };
-  return { held: moment === 'series' || cardDue, card: cardDue };
-}
 
 /**
  * The card sits centred on the court, on every screen and in every round (ADR 0038), so the moment
@@ -132,10 +119,7 @@ export function createReadyCard(
       const live = moment === 'live';
       stopLift();
       card.dataset['live'] = String(live);
-      const { held, card: withCard } = readyFor(
-        moment,
-        !live && tips.takeReady(first.id, second.id),
-      );
+      const { held, card: withCard } = readyFor(moment, tips.takeReady(first.id, second.id));
       // A still demo is not held: home holds its frame; the pairing labels it, with no button.
       const still = moment === 'still';
       layer.hidden = !held && !still;
@@ -144,6 +128,9 @@ export function createReadyCard(
       if (!held && !still) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
+      // "Don't show these again" starts the fight it closes; a live fight starts at its own time
+      // (settings switch the cards off there, ADR 0040).
+      never.hidden = !withCard || live;
       return held;
     },
     release() {

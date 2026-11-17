@@ -80,14 +80,21 @@ export async function phone(phones: Phones): Promise<Page> {
 }
 
 /**
- * Fills the visible lineup tray with the first balls of the grid (a tray kept from the last lineup,
- * a rematch's, is used as it is), then presses `done`.
+ * Fills the visible lineup tray with `balls` first, then the first balls of the grid (a tray kept
+ * from the last lineup, a rematch's, is used as it is), then presses `done`.
  */
-export async function buildLineup(page: Page, done: string): Promise<void> {
+export async function buildLineup(
+  page: Page,
+  done: string,
+  balls: readonly string[] = [],
+): Promise<void> {
   // Until the tray is full the button says how many more ("Pick 2 more").
   const button = page.locator('#online-lineup .screen-footer .hud-button-primary:visible');
   const grid = page.locator('#online-lineup .ball-grid button');
   await button.waitFor();
+  for (const ball of balls) {
+    await page.locator(`#online-lineup .ball-grid button[data-ball-id="${ball}"]`).click();
+  }
   for (let index = 0; (await button.isDisabled()) && index < 12; index += 1) {
     await grid.nth(index).click();
   }
@@ -102,7 +109,7 @@ async function confirmAge(page: Page): Promise<void> {
 
 /**
  * The sender sends a live Best of 3 from home's vs Friend and waits in the lobby; the friend opens the link, sees the
- * line about staying, and accepts. Both end up in the series: the sender's lobby goes there by
+ * line about staying, and accepts, each with `lineups`' balls first in their lineup. Both end up in the series: the sender's lobby goes there by
  * itself. Returns the series id.
  */
 export async function startLiveMatch(
@@ -110,6 +117,10 @@ export async function startLiveMatch(
   sender: Page,
   friend: Page,
   format = 'reveal',
+  lineups: { readonly sender: readonly string[]; readonly friend: readonly string[] } = {
+    sender: [],
+    friend: [],
+  },
 ): Promise<string> {
   // From home, as a player starts it (ADR 0055): vs Friend, the 16+ question first, then its setup.
   await sender.goto(`${base}/`);
@@ -120,7 +131,7 @@ export async function startLiveMatch(
     await sender.locator('#online-lineup .rules-card', { hasText: /^Showdown/ }).click();
   }
   await sender.getByRole('button', { name: 'Choose lineup' }).click();
-  await buildLineup(sender, 'Send challenge');
+  await buildLineup(sender, 'Send challenge', lineups.sender);
   await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   // Send challenge stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
@@ -135,7 +146,7 @@ export async function startLiveMatch(
   await friend.getByRole('button', { name: 'Build your lineup' }).click();
   // The 16+ question comes before the lineup, never after it is built (ADR 0055).
   await confirmAge(friend);
-  await buildLineup(friend, 'Accept challenge');
+  await buildLineup(friend, 'Accept challenge', lineups.friend);
   await friend.waitForURL(/[?&]online=/);
   await sender.waitForURL(/[?&]online=/, { timeout: 20_000 });
   // Accept and the lobby each waited for the series: it showed complete on arrival.
