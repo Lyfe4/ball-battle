@@ -395,4 +395,9 @@
   .answer-step > .pick-rows {
     grid-area: 3 / 2 / -1 / 3;
   }
+
+  /* Reveal's coin toss (ADR 0061): across both columns under the bar, while the pick waits. */
+  .answer-step > .coin-toss {
+    grid-area: 4 / 1 / -1 / -1;
+  }
 }
