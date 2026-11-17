@@ -28,6 +28,7 @@ import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createArenaTips } from './ui/arena-tips.ts';
+import type { FrameTip } from './ui/frame-tip.ts';
 import { createReadyCard, type ReadyMoment } from './ui/ready-card.ts';
 import { settingsCoverCourt } from './ui/settings-menu.ts';
 import { element } from './ui/dom.ts';
@@ -52,11 +53,8 @@ export interface ArenaHost {
   readonly tips: Tips;
   /** What the match on screen is: the home demo, a Free play match or a series round (ADR 0037). */
   moment(): ReadyMoment;
-  /**
-   * The trail behind each ball on slow frames (ADR 0063 addendum); off only with `?smooth=off`, to
-   * compare on a phone.
-   */
-  readonly smooth: boolean;
+  /** Says once, after a fight, why fights drawn at about 30 a second look less smooth (ADR 0063). */
+  readonly frameTip: FrameTip;
 }
 
 /**
@@ -176,7 +174,7 @@ export function createArena(
     const { world, effectMs: now } = playback;
     const reduced = reducedMotionQuery.matches;
     const drawn = interpolateWorld(playback.previous, world, interpolationAlpha(playback));
-    const smears = host.smooth ? smearsOf(drawnBefore, drawn, drawingFrameMs, reduced) : [];
+    const smears = smearsOf(drawnBefore, drawn, drawingFrameMs, reduced);
     drawnBefore = [...drawnBefore, drawn].slice(-theme.smearFrames);
     drawWorld(ctx, drawn, lookup, canvasView, {
       flash: (ballId) => effects.flash(ballId, now),
@@ -203,6 +201,7 @@ export function createArena(
     sticker.update(world, effects.stickerVisible(now));
     tips.update(drawn, now);
     host.drawn(world, effects.resultVisible(now), effects.celebrationOver(now));
+    host.frameTip.settle(world.match.status === 'finished' && effects.celebrationOver(now));
   }
 
   /**
@@ -246,6 +245,10 @@ export function createArena(
       pending = 0;
       // Counted as the clock counts it: a stalled frame plays at most MAX_FRAME_MS.
       if (!held) played += Math.min(Math.max(frameMs, 0), MAX_FRAME_MS);
+      // A fight frame's real gap: sustained slow frames earn a line after the fight.
+      if (!held && playback.world.match.status === 'running') {
+        host.frameTip.frame(nowMs - lastFrameMs);
+      }
       const ticks = play(frameMs);
       host.afterTicks(playback.world);
       // Draw every frame while the match runs (balls move between ticks), while the intro, a
@@ -323,6 +326,7 @@ export function createArena(
       const moment = host.moment();
       tips.start(moment !== 'demo' && moment !== 'still' && !finished);
       audible = moment !== 'demo' && moment !== 'still' && !finished;
+      host.frameTip.start(audible);
       counted = '';
       fightReset();
       // A finished match never waits on Fight!: the ready card treats it as it treats the demo.

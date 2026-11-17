@@ -10,6 +10,8 @@ export const HINTS_SEEN_STORAGE_KEY = 'ballbattle.hintsSeen';
 export const READY_SEEN_STORAGE_KEY = 'ballbattle.readySeen';
 /** 'on' or 'off'; missing on a device from before ADR 0040, where the cards follow the old switch. */
 export const READY_CARD_STORAGE_KEY = 'ballbattle.readyCard';
+/** 'seen' once the slow-frames line has shown (frame-tip.ts, ADR 0063 addendum). */
+export const FRAME_TIP_STORAGE_KEY = 'ballbattle.frameTipSeen';
 /** ADR 0036's count of versus cards seen; cleared by a reset, never read. */
 const OLD_VERSUS_STORAGE_KEY = 'ballbattle.versusSeen';
 
@@ -30,7 +32,12 @@ export interface Tips {
    * says something new.
    */
   takeReady(a: string, b: string): boolean;
-  /** "Show all tips again": both switches on, and every hint and card unseen. */
+  /**
+   * True the first time this device is told why fights look less smooth (slow frames); marks it
+   * seen. Not a teaching tip, so the hints switch leaves it alone.
+   */
+  takeFrameTip(): boolean;
+  /** "Show all tips again": both switches on, and every hint, card and line unseen. */
   reset(): void;
 }
 
@@ -65,6 +72,7 @@ export function createTips(storage: TipStorage): Tips {
   if (storedCards === null && !cards) write(storage, READY_CARD_STORAGE_KEY, 'off');
   const seen = new Set(listOf(read(storage, HINTS_SEEN_STORAGE_KEY)));
   const pairs = new Set(listOf(read(storage, READY_SEEN_STORAGE_KEY)));
+  let frameTipSeen = read(storage, FRAME_TIP_STORAGE_KEY) !== null;
   return {
     enabled: () => on,
     setEnabled(next) {
@@ -89,7 +97,14 @@ export function createTips(storage: TipStorage): Tips {
       write(storage, READY_SEEN_STORAGE_KEY, [...pairs].join(','));
       return true;
     },
+    takeFrameTip() {
+      if (frameTipSeen) return false;
+      frameTipSeen = true;
+      write(storage, FRAME_TIP_STORAGE_KEY, 'seen');
+      return true;
+    },
     reset() {
+      frameTipSeen = false;
       seen.clear();
       pairs.clear();
       on = true;
@@ -99,6 +114,7 @@ export function createTips(storage: TipStorage): Tips {
         READY_SEEN_STORAGE_KEY,
         READY_CARD_STORAGE_KEY,
         TIPS_STORAGE_KEY,
+        FRAME_TIP_STORAGE_KEY,
         OLD_VERSUS_STORAGE_KEY,
       ]) {
         write(storage, key, undefined);
