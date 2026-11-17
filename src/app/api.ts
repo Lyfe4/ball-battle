@@ -74,6 +74,9 @@ export async function callApi<T>(
     response = await send(`/api/v1/${path}`, {
       method,
       credentials: 'same-origin',
+      // Never the browser's cache: the page keeps its own ETags (a 304 it asked for comes back as
+      // is), and a cached answer's X-Now would freeze a live page's clock (ADR 0061).
+      cache: 'no-store',
       headers: {
         Accept: 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
