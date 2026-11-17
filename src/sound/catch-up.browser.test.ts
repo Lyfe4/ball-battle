@@ -8,7 +8,7 @@ import { createTips } from '../app/tips.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { cue, installSound } from './sound.ts';
+import { cue, installSound, soundReady } from './sound.ts';
 
 const memory = new Map<string, string>();
 const storage = (): Storage =>
@@ -32,6 +32,18 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+/**
+ * Waits for audio to run after the first tap; false where it never does (a machine with no audio
+ * output, such as Firefox on CI), where these tests can't hear anything and skip.
+ */
+async function audioRuns(): Promise<boolean> {
+  for (let tries = 0; tries < 40; tries += 1) {
+    if (soundReady()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return false;
+}
+
 function balls(...ids: string[]): BallDefinition[] {
   return ids.map((id) => {
     const definition = BALL_LOOKUP.get(id);
@@ -41,13 +53,17 @@ function balls(...ids: string[]): BallDefinition[] {
 }
 
 describe.skipIf(noAudio)('a live fight caught up headlessly', () => {
-  it('makes no sound for what it skipped', async () => {
+  it('makes no sound for what it skipped', async (context) => {
     installSound(storage);
     // A real tap, so the page may start audio (as a player's first tap would).
     const tap = document.createElement('div');
     tap.textContent = 'tap';
     document.body.append(tap);
     await userEvent.click(tap);
+    if (!(await audioRuns())) {
+      context.skip('no audio output on this machine');
+      return;
+    }
 
     const container = document.createElement('div');
     container.style.width = '300px';
