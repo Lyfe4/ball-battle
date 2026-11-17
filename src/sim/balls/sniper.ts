@@ -17,13 +17,13 @@ export type SniperState = Readonly<{
 export const FIRST_CHARGE_TICK = 60;
 /** Ticks from one shot to the start of the next charge. */
 export const COOLDOWN_TICKS = 105;
-/** Ticks the aim stays locked, with the laser showing, before the shot (0.3 s). */
-export const CHARGE_TICKS = 18;
+/** Ticks the aim stays locked, with the laser showing, before the shot (0.2 s). */
+export const CHARGE_TICKS = 12;
 /** World units per second: fast, so the line is what decides a hit, not the flight time. */
 export const SHOT_SPEED = 2400;
 export const SHOT_RADIUS = 6;
 /** Below the Storm's zone damage, which stays the biggest single ability hit (identity rule). */
-export const SHOT_DAMAGE = 27;
+export const SHOT_DAMAGE = 22;
 /** Long enough to cross the arena; a wall normally ends the shot much sooner. */
 export const SHOT_LIFETIME_TICKS = 60;
 

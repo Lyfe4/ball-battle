@@ -53,7 +53,7 @@ describe('the counter map', () => {
 
   it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047, ADR 0049)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      ['berserker', 'bloom', 'ghost', 'quake', 'sniper', 'titan', 'vampire'].sort(),
+      ['berserker', 'bloom', 'ghost', 'quake', 'titan', 'vampire'].sort(),
     );
   });
 
@@ -80,13 +80,12 @@ describe('shapeProblem', () => {
   });
 
   it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's shape today (map and measured, ruleset 16) fits its allowance...
+    // Each ball's shape today (map and measured, ruleset 17) fits its allowance...
     const today: Readonly<Record<string, readonly [number, number]>> = {
       titan: [1, 1],
       berserker: [5, 4],
       bloom: [4, 5],
       ghost: [2, 1],
-      sniper: [1, 2],
       quake: [1, 2],
       vampire: [2, 4],
     };
@@ -110,8 +109,8 @@ describe('shapeProblem', () => {
     expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
     expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
     expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
-    expect(shapeProblem('sniper', some(1), some(1))).toBeDefined();
-    expect(shapeProblem('sniper', some(0), some(2))).toBeDefined();
+    // The Sniper lost its allowance to its quicker lock (ADR 0057): one win is off shape.
+    expect(shapeProblem('sniper', some(1), some(2))).toBeDefined();
     expect(shapeProblem('quake', some(1), some(1))).toBeDefined();
     expect(shapeProblem('quake', some(1), some(3))).toBeDefined();
     expect(shapeProblem('vampire', some(1), some(4))).toBeDefined();
@@ -131,7 +130,6 @@ describe('shapeProblem', () => {
       berserker: { wins: range(2, 5), losses: standard, within: 1 },
       bloom: { wins: standard, losses: range(2, 5), within: 1 },
       ghost: { wins: standard, losses: range(1, 4), within: 1 },
-      sniper: { wins: range(1, 4), losses: standard, within: 1 },
       quake: { wins: range(1, 4), losses: standard, within: 1 },
       vampire: { wins: standard, losses: standard, within: 2 },
     });

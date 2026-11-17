@@ -1,6 +1,7 @@
 # 0047: The Spartan replaces the Guardian, and the Bloom's regrowth pauses
 
 - Status: Accepted
+- Amended by: ADR 0057 (the Sniper's one-win allowance goes)
 - Date: 2026-11-12
 - Amends: ADR 0045 (the Guardian's armor and the Bloom's regrowth, group 2; the known gaps, group 4)
 - Proposal: `docs/experiments/new-balls-proposal.md`, `docs/experiments/new-balls-proposal-2.md` (ruleset 11)

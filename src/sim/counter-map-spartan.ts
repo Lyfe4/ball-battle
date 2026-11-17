@@ -66,8 +66,8 @@ export const SPARTAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spartan',
     y: 'sniper',
-    intended: 'even',
-    reason: 'A shot halves on a planted shield and lands whole in the open: timing decides it.',
+    intended: 'y',
+    reason: 'Planted, it is too slow to leave a 0.2 s lock: the shots keep landing, halved or not.',
   },
   {
     x: 'spartan',
