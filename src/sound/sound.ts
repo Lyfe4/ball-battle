@@ -152,6 +152,11 @@ export function boardCues(cues: readonly Cue[]): void {
 /** Time between a ball's sounds when the manual plays them. */
 const HEAR_GAP_MS = 550;
 
+/** Whether a sound played now would be heard: installed, on, and audio running (after a tap). */
+export function soundReady(): boolean {
+  return installed?.settings.on === true && installed.engine.ready();
+}
+
 /** Whether sound is on: the manual offers "Hear it" only then. */
 export function soundOn(): boolean {
   return installed?.settings.on === true;

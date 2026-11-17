@@ -2,7 +2,7 @@
 // Rematch carry `data-sound="tap"`; every other button is quiet, and a disabled one never taps.
 import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { installSound } from './sound.ts';
+import { installSound, soundReady } from './sound.ts';
 
 /** Playwright's WebKit on Linux and Windows is built without Web Audio: heard in Chromium and Firefox. */
 const noAudio = !('AudioContext' in globalThis);
@@ -27,14 +27,30 @@ function button(text: string, tap: boolean, disabled = false): HTMLButtonElement
   return press;
 }
 
+/**
+ * Waits for audio to run after the first tap; false where it never does (a machine with no audio
+ * output, such as Firefox on CI), where these tests can't hear anything and skip.
+ */
+async function audioRuns(): Promise<boolean> {
+  for (let tries = 0; tries < 40; tries += 1) {
+    if (soundReady()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return false;
+}
+
 describe.skipIf(noAudio)('button taps', () => {
-  it('sound on the key moments only', async () => {
+  it('sound on the key moments only', async (context) => {
     installSound(storage);
     const plain = button('Change balls', false);
     const play = button('Play', true);
     const waiting = button('Send challenge', true, true);
     // The first tap starts audio.
     await userEvent.click(plain);
+    if (!(await audioRuns())) {
+      context.skip('no audio output on this machine');
+      return;
+    }
     const before = made();
     await userEvent.click(plain);
     expect(made()).toBe(before);
