@@ -9,6 +9,8 @@ import type { Box } from './tooltip-place.ts';
 /** Room kept between the menu and its gear or the court, and between the menu and the screen's edge. */
 const GAP = 8;
 const EDGE = 16;
+/** The least height a capped menu may scroll in; with less room it keeps its own height. */
+const MIN_SCROLL_HEIGHT = 160;
 /** The narrowest the menu gets to fit beside a court: its longest row still fits on one line. */
 export const MENU_MIN_WIDTH = 240;
 
@@ -38,6 +40,8 @@ export interface Placement {
   readonly top: number;
   /** True when no place on screen keeps it off the court: the match waits while it is open. */
   readonly covers: boolean;
+  /** Set when even that place would be over its gear: the menu is capped and scrolls inside. */
+  readonly maxHeight?: number;
 }
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -111,6 +115,20 @@ export function placeMenu(
     if (candidate >= minTop && candidate <= maxTop && clear) {
       return { left, top: candidate, covers: false };
     }
+  }
+  // Nowhere clear of the court: it covers it (the caller tries the compact form, then lets the match
+  // wait), but never its own gear, which closes it: the first spot inside the screen clear of it,
+  // else the room above the gear, scrolling inside (large text or a short phone).
+  const offGear = [above, below, minTop, maxTop]
+    .map((candidate) => clamp(candidate, minTop, Math.max(minTop, maxTop)))
+    .find((candidate) => !overlaps({ left, top: candidate, ...size }, gear));
+  if (offGear !== undefined) {
+    return { left, top: offGear, covers: overlaps({ left, top: offGear, ...size }, court) };
+  }
+  const room = gear.top - GAP - minTop;
+  if (room >= MIN_SCROLL_HEIGHT) {
+    const box = { left, top: minTop, width: size.width, height: room };
+    return { left, top: minTop, covers: overlaps(box, court), maxHeight: room };
   }
   return { left, top, covers: overlaps({ left, top, ...size }, court) };
 }

@@ -222,6 +222,8 @@ function place(): void {
     delete panel.dataset['compact'];
     paused.hidden = false;
     spot = at();
+    // Over the court and too tall to clear its gear: capped above the gear, scrolling inside.
+    if (spot.maxHeight !== undefined) panel.style.maxHeight = `${String(spot.maxHeight)}px`;
   }
   menu.covers = spot.covers;
   paused.hidden = !spot.covers;

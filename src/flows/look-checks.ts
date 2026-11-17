@@ -76,14 +76,19 @@ export function notePanelLook(where: string, panel: HTMLElement | null): void {
         value,
       ]),
     ),
-    // Close sits at the panel's end, on its right padding.
+    // Close sits at the panel's end, on its right padding: the end of its content, so a panel
+    // capped to scroll inside (a short phone, large text) is measured as scrolled to the end.
     'close at the end': String(
       box !== undefined &&
         closeBox !== undefined &&
+        panel !== null &&
         Math.abs(box.right - inset - closeBox.right) <= 1 &&
         Math.abs(
-          box.bottom -
-            Number.parseFloat(getComputedStyle(panel ?? document.body).paddingBottom) -
+          box.top +
+            panel.clientTop +
+            panel.scrollHeight -
+            panel.scrollTop -
+            Number.parseFloat(getComputedStyle(panel).paddingBottom) -
             closeBox.bottom,
         ) <= 1,
     ),
