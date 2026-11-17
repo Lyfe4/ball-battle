@@ -87,8 +87,11 @@ export function createOnlinePlay(
       reconnecting = view !== undefined && isLive();
       return reconnecting;
     },
+    conditional: () => !isLive() || !live.asksInFull(),
     nextAsk: () =>
-      visible && view !== undefined && status === 'ready' ? nextAskOf(view, isLive()) : undefined,
+      visible && view !== undefined && status === 'ready'
+        ? nextAskOf(view, isLive(), live.askEvery())
+        : undefined,
   });
 
   const panel = createSeriesPanel(
@@ -113,9 +116,6 @@ export function createOnlinePlay(
         client.forfeit().then(() => {
           host.home();
         }),
-      onRedraw: () => {
-        host.redraw();
-      },
     },
     true,
   );

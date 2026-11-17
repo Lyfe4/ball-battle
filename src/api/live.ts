@@ -63,7 +63,8 @@ export type LiveEndReason = 'timeout' | 'left' | 'disconnected' | 'start_missed'
 /**
  * A live series' clock as a player is sent it (`SeriesView.live`), by the database's time in ms
  * since the epoch. The database's clock at the read comes in the `X-Now` header of every answer
- * (a 304 too), so the page can keep its own clock's offset.
+ * (the server sends it on a 304 too, but Netlify's edge drops it there: only a full answer is
+ * sure to carry it, ADR 0061), so the page can keep its own clock's offset.
  */
 export interface LiveView {
   /** When both players had arrived; null while waiting for the other one. */

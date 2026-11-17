@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { CLOCK_SAMPLES, NO_CLOCK, offsetOf, serverNowOf, withSample } from './live-clock.ts';
+import {
+  askEveryMs,
+  asksInFull,
+  CLOCK_SAMPLES,
+  NO_CLOCK,
+  offsetOf,
+  serverNowOf,
+  WARM_SAMPLES,
+  withSample,
+} from './live-clock.ts';
 
 describe('the server clock', () => {
   it('knows nothing before the first answer', () => {
@@ -36,5 +45,33 @@ describe('the server clock', () => {
   it('ignores an answer that arrived before it was sent (the device clock jumped)', () => {
     const clock = withSample(NO_CLOCK, { sentAt: 1_000, receivedAt: 900, serverNow: 0 });
     expect(clock.samples).toHaveLength(0);
+  });
+});
+
+describe('how often a live page asks', () => {
+  const sample = (at: number) => ({ sentAt: at, receivedAt: at + 300, serverNow: at + 150 });
+
+  it('asks four times a second until its clock rests on a few answers, then once a second', () => {
+    let clock = NO_CLOCK;
+    expect(askEveryMs(clock)).toBe(250);
+    for (let n = 0; n < WARM_SAMPLES - 1; n += 1) clock = withSample(clock, sample(n * 1000));
+    expect(askEveryMs(clock)).toBe(250);
+    clock = withSample(clock, sample(9_000));
+    expect(askEveryMs(clock)).toBe(1_000);
+  });
+});
+
+describe('when a live page asks in full', () => {
+  const sample = (at: number) => ({ sentAt: at, receivedAt: at + 300, serverNow: at + 150 });
+
+  // On Netlify a 304 comes back without X-Now: only a full answer tells the page the server's time.
+  it('asks in full until its clock rests on a few answers, then when its newest is 10 s old', () => {
+    let clock = NO_CLOCK;
+    expect(asksInFull(clock, 0)).toBe(true);
+    for (let n = 0; n < WARM_SAMPLES; n += 1) clock = withSample(clock, sample(n * 250));
+    const newest = (WARM_SAMPLES - 1) * 250 + 300;
+    expect(asksInFull(clock, newest + 1_000)).toBe(false);
+    expect(asksInFull(clock, newest + 9_999)).toBe(false);
+    expect(asksInFull(clock, newest + 10_000)).toBe(true);
   });
 });

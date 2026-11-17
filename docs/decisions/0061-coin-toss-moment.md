@@ -56,6 +56,30 @@ its own screen changed, one clock): the phone that arrived first saw Get ready 4
 other; both started the flip at the same millisecond, landed at the same millisecond, and showed
 the first pick card 3 ms apart (its ticker draws every 250 ms).
 
+## Addendum: measured on a deploy preview (2026-11-18)
+
+Locally both phones share `netlify dev` and a few ms of latency. On a deploy preview (round trips
+of about 630 ms from the owner's network), the first measurement put the two coins 170 ms to 1.2 s
+apart in Chromium and WebKit alike, while the same matches' fights started within 2 to 16 ms of
+each other. Recording every answer on both phones showed why:
+
+- **Netlify drops `X-Now` from a 304.** The page's heartbeat is a conditional read, so a page's
+  clock learned only from full answers: right after the start one phone had a single sample, from
+  a 1.9 s round trip, and kept it until the next move.
+- **The browser's cache froze the clock.** Series answers are `private, no-cache`; a read without
+  the page's own ETag was revalidated by the browser itself, and the page got the cached 200 with
+  its old `X-Now`.
+
+So every API call is now `cache: 'no-store'` (the page keeps its own ETags), and a live page asks
+in full, every 250 ms, until its clock rests on six answers, then in full again whenever its
+newest is 10 s old (`asksInFull`, `askEveryMs`). The toss also re-reads the clock on every display
+tick, so its stage and flip follow a better estimate. After these, six runs on the preview: the
+coins flipped 180 to 260 ms apart (no outliers), the first pick opened 3 to 215 ms apart. That is
+what a clock estimate a few seconds old can do over 630 ms round trips (each phone's is good to
+about half the shortest round trip); by the first fight the two phones agree within about 16 ms.
+Closing the rest would need a better clock in the first seconds (a dedicated time read at arrival,
+or a longer Get ready), noted for later.
+
 ## Consequences
 
 - Each live Reveal match starts 6.5 s later; the flow reads both join, Get ready, the flip

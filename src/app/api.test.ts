@@ -32,6 +32,16 @@ describe('callApi', () => {
     expect(plain.ok && plain.clock).toBeUndefined();
   });
 
+  // A series answer is `private, no-cache`: left to the browser, a read without the page's own ETag
+  // was revalidated from its cache and came back as the cached 200 with its old X-Now (Netlify's
+  // 304 carries none), so a live page's clock froze. The page keeps its own ETags.
+  it('never lets the browser’s cache answer: every call is no-store', async () => {
+    const send = vi.fn<Fetch>(() => Promise.resolve(json(200, {})));
+    await callApi('GET', 'series/x', undefined, {}, send);
+    await callApi('POST', 'series/x/picks', { round: 0, ball: 'slime' }, {}, send);
+    for (const [, init] of send.mock.calls) expect(init.cache).toBe('no-store');
+  });
+
   it('is offline when the browser says so, without sending anything', async () => {
     vi.stubGlobal('navigator', { onLine: false });
     const send = vi.fn<Fetch>();
