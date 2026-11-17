@@ -34,6 +34,8 @@ export interface OnlineMount {
   homeShown(): void;
   /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
   isLive(): boolean;
+  /** A live fight's rate: 1, or a little off while it catches up with the server (ADR 0063). */
+  liveRate(playedMs: number): number;
   /**
    * The line under a live fight, where the speed toggle sits: shown on the online screen when a
    * live match is on and the toggle would show (`noSpeed` false). True when the toggle hides.
@@ -143,6 +145,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       void askHome();
     },
     isLive: () => screens.play.isLive(),
+    liveRate: (playedMs) => screens.play.liveRate(playedMs),
     footLine: (onScreen, noSpeed) => {
       const live = onScreen && screens.play.isLive();
       liveLine.hidden = noSpeed || !live;

@@ -52,6 +52,9 @@ const FLIP: Keyframe[] = [
   },
   { offset: 1, transform: 'translateY(0) rotateX(1800deg) scale(1, 1)' },
 ];
+/** A flip this far from the clock's moment is put back on it (less is a frame's rounding). */
+const DRIFT_MS = 30;
+
 /** The shadow under it shrinks and fades as the coin rises. */
 const SHADOW: Keyframe[] = [
   { offset: 0, transform: 'scale(1)', opacity: 1, easing: 'cubic-bezier(0.2, 0.6, 0.35, 1)' },
@@ -116,7 +119,23 @@ export function createCoinToss(onStage: () => void): CoinToss {
     for (const flip of flips) flip.currentTime = Math.min(TOSS_FLIP_MS, Math.max(0, elapsed));
   }
 
-  /** Draws the stage now and sets one timer for the moment it next changes. */
+  /**
+   * The flip put back where it should be `elapsed` ms in, when it has drifted: live, this page's
+   * estimate of the server's clock improves with each answer (a toss comes right after the start,
+   * when it rests on a sample or two), and the other phone's coin is where the server's clock is.
+   */
+  function keepTime(elapsed: number): void {
+    const at = Math.min(TOSS_FLIP_MS, Math.max(0, elapsed));
+    for (const flip of flips) {
+      if (Math.abs(Number(flip.currentTime ?? 0) - at) > DRIFT_MS) flip.currentTime = at;
+    }
+  }
+
+  /**
+   * Draws the stage now and sets one timer for the moment it next changes. Asked again with the same
+   * toss (every display tick live), it re-reads the clock: the stage, the flip and the timer follow
+   * a better estimate of the server's time.
+   */
   function draw(): TossStage | undefined {
     if (timer !== undefined) window.clearTimeout(timer);
     timer = undefined;
@@ -130,7 +149,8 @@ export function createCoinToss(onStage: () => void): CoinToss {
     const now = play.now();
     const next = tossStage(play.times, now);
     root.hidden = next === 'done';
-    if (next !== shown) {
+    if (next === shown && next === 'flipping') keepTime(now - play.times.flipAt);
+    else if (next !== shown) {
       if (next === 'flipping') startFlip(now - play.times.flipAt);
       else stopFlip();
       shown = next;
@@ -154,7 +174,7 @@ export function createCoinToss(onStage: () => void): CoinToss {
         play?.key === current?.key &&
         play?.times.flipAt === current?.times.flipAt &&
         play?.times.doneAt === current?.times.doneAt;
-      if (same && shown !== undefined) return shown;
+      if (same && shown !== undefined) return draw();
       current = play;
       shown = undefined;
       if (play !== undefined) {

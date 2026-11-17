@@ -10,7 +10,8 @@ import {
   type Playback,
 } from './app/playback.ts';
 import { isClockBusy } from './app/presentation-clock.ts';
-import { scaleFrame, type PlaybackSpeed } from './app/speed.ts';
+import { MAX_FRAME_MS } from './app/fixed-step.ts';
+import { scaleFrame } from './app/speed.ts';
 import type { Tips } from './app/tips.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
 import { drawWorld } from './render/draw.ts';
@@ -35,7 +36,8 @@ import { createWinnerSticker } from './ui/winner-sticker.ts';
 export interface ArenaHost {
   /** True while something covers the match (a dialog): no time passes, like a hidden tab. */
   isPaused(): boolean;
-  readonly speed: () => PlaybackSpeed;
+  /** How fast real time plays: the chosen speed, or a live fight's rate (1, or catching up). */
+  readonly speed: () => number;
   /** After a frame's ticks: the series records a finished match here. */
   afterTicks(world: WorldState): void;
   /**
@@ -81,6 +83,11 @@ export interface Arena {
   focus(): void;
   /** True once the match's intro has played and both balls are fully drawn. */
   introOver(): boolean;
+  /**
+   * Real time played since the match left its ready moment (Fight!, a live fight's release, or the
+   * point `showAt` put it at): a live fight compares it with the server's clock to catch up.
+   */
+  playedMs(): number;
   /** The drawn court on screen, if it shows (none behind a setup screen, ADR 0044). */
   readonly court: () => Box | undefined;
 }
@@ -125,8 +132,13 @@ export function createArena(
   const tips = createArenaTips(container, lookup, host.tips);
   /** True while the match waits on its ready moment's Fight! (ADR 0037): no tick runs. */
   let held = false;
+  /** Real time played since the match left its ready moment, at whatever rate it ran. */
+  let played = 0;
+  /** The frame being played: its real time, counted in `playedMs` before its rate is chosen. */
+  let pending = 0;
   const ready = createReadyCard(container, lookup, host.tips, () => {
     held = false;
+    played = 0;
     lastFrameMs = undefined;
     canvas.focus({ preventScroll: true });
   });
@@ -206,7 +218,13 @@ export function createArena(
       const wasBusy = isClockBusy(playback.clock);
       const resultWasShown = effects.resultVisible(playback.effectMs);
       const wasCelebrated = effects.celebrationOver(playback.effectMs);
-      const ticks = play(scaleFrame(nowMs - lastFrameMs, host.speed()));
+      // The rate is chosen for the moment this frame shows, so it counts this frame's time too.
+      pending = held ? 0 : Math.min(Math.max(nowMs - lastFrameMs, 0), MAX_FRAME_MS);
+      const frameMs = scaleFrame(nowMs - lastFrameMs, host.speed());
+      pending = 0;
+      // Counted as the clock counts it: a stalled frame plays at most MAX_FRAME_MS.
+      if (!held) played += Math.min(Math.max(frameMs, 0), MAX_FRAME_MS);
+      const ticks = play(frameMs);
       host.afterTicks(playback.world);
       // Draw every frame while the match runs (balls move between ticks), while the intro, a
       // hit-stop or slow-mo runs, after the match ends while effects (the knockout sequence, the
@@ -289,6 +307,7 @@ export function createArena(
       rewinds.reset();
       moments.reset();
       sourceChips.reset();
+      played = 0;
       lastFrameMs = undefined;
       render();
     },
@@ -296,6 +315,7 @@ export function createArena(
       this.show(world);
       ready.release();
       held = false;
+      played = Math.max(0, elapsedMs);
       // Frame by frame at 60 Hz, as a page that had been watching would have played it.
       for (let left = elapsedMs; left > 0; left -= LIVE_FRAME_MS) {
         play(Math.min(left, LIVE_FRAME_MS));
@@ -306,6 +326,7 @@ export function createArena(
     release() {
       if (ready.release()) {
         held = false;
+        played = 0;
         lastFrameMs = undefined;
       }
     },
@@ -318,6 +339,7 @@ export function createArena(
     },
     world: () => playback.world,
     introOver: () => playback.effectMs >= theme.introMs,
+    playedMs: () => played + pending,
     court() {
       const box = canvas.getBoundingClientRect();
       return box.width > 0 && box.height > 0 ? box : undefined;

@@ -19,6 +19,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
     setVisible: () => undefined,
     homeShown: () => undefined,
     isLive: () => false,
+    liveRate: () => 1,
     footLine: (_onScreen, noSpeed) => noSpeed,
   };
 }
