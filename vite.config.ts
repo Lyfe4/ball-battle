@@ -89,6 +89,9 @@ function phoneProject(
 export default defineConfig({
   build: {
     target: 'es2023',
+    // PROTOTYPE (proto/sound): the sound board ships beside the game so a deploy preview can be
+    // judged on a phone. Not for main.
+    rolldownOptions: { input: { main: 'index.html', sounds: 'sounds.html' } },
   },
   server: {
     // One fixed port for every session and contributor; fail loudly if it is taken rather than
