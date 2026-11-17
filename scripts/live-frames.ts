@@ -6,13 +6,36 @@
 // answers to the series' reads, then prints each role's numbers. Not part of CI: timings depend on
 // the machine.
 //   node scripts/live-frames.ts [chromium|webkit] [base-url=http://localhost:8888] [--offline] [--cpu N]
+//     [--cap 30]
 // --offline: an offline Reveal Best of 3 against the bot on the same page size, for comparison.
+// --cap 30: animation frames run on every other frame of the browser's own, as Safari does in Low
+// Power Mode (ADR 0063); a frame is dropped when it comes a beat and a half late.
 import { chromium, webkit, type Browser, type Page } from 'playwright';
 
 const [engine = 'chromium', base = 'http://localhost:8888', ...rest] = process.argv.slice(2);
 const offline = rest.includes('--offline');
 const rateAt = rest.indexOf('--cpu');
 const rate = rateAt >= 0 ? Number(rest[rateAt + 1]) : 4;
+const capped = rest[rest.indexOf('--cap') + 1] === '30' && rest.includes('--cap');
+/** One frame's length: 60 a second, or 30 when held to every other frame. */
+const BEAT_MS = capped ? 1000 / 30 : 1000 / 60;
+
+/** Installed first when capped: every animation frame callback waits for every other frame. */
+const CAP = `
+  const native = window.requestAnimationFrame.bind(window);
+  let queue = [];
+  let odd = false;
+  const run = (now) => {
+    native(run);
+    odd = !odd;
+    if (odd) return;
+    const due = queue;
+    queue = [];
+    for (const callback of due) callback(now);
+  };
+  native(run);
+  window.requestAnimationFrame = (callback) => { queue.push(callback); return queue.length; };
+`;
 
 /** Installed before the page loads: notes frames and main-thread work while a fight plays. */
 const PROBE = `
@@ -88,6 +111,7 @@ interface Probe {
 async function phone(browser: Browser): Promise<Page> {
   const context = await browser.newContext({ viewport: { width: 390, height: 664 } });
   const page = await context.newPage();
+  if (capped) await page.addInitScript({ content: CAP });
   await page.addInitScript({ content: PROBE });
   if (engine === 'chromium') {
     const cdp = await context.newCDPSession(page);
@@ -101,7 +125,9 @@ async function phone(browser: Browser): Promise<Page> {
       const sent = { ...route.request().headers() };
       delete sent['if-none-match'];
       const headers = { ...sent, ...(cookie === '' ? {} : { cookie }) };
-      const response = await route.fetch({ headers });
+      // A read still under way when the phones close at the end is dropped, not an error.
+      const response = await route.fetch({ headers }).catch(() => undefined);
+      if (response === undefined) return;
       const set = response.headersArray().find((h) => h.name.toLowerCase() === 'set-cookie');
       if (set !== undefined) cookie = set.value.split(';')[0] ?? '';
       const kept = Object.fromEntries(
@@ -114,29 +140,48 @@ async function phone(browser: Browser): Promise<Page> {
 }
 
 async function lineup(page: Page, done: string): Promise<void> {
+  const button = page.locator('#online-lineup .screen-footer .hud-button-primary:visible');
   const grid = page.locator('#online-lineup .ball-grid button');
-  for (let index = 0; index < 3; index += 1) await grid.nth(index).click();
+  await button.waitFor();
+  for (let index = 0; (await button.isDisabled()) && index < 12; index += 1) {
+    await grid.nth(index).click();
+  }
   await page.getByRole('button', { name: done }).click();
 }
 
+/** The 16+ card: the first online action on a device (ADR 0055). */
 async function age(page: Page): Promise<void> {
   await page.getByRole('heading', { name: 'Play online' }).waitFor();
   await page.getByRole('button', { name: 'I’m 16 or older' }).click();
 }
 
-async function pickIfDue(page: Page): Promise<void> {
-  const pick = page.locator('#online-series .pick-row-pick').first();
-  if (await pick.isVisible()) await pick.click({ timeout: 2_000 }).catch(() => undefined);
+/**
+ * Presses what the series offers next (a pick, Fight!, Play round), found and clicked in the page
+ * with plain selectors: Playwright's role queries cost tens of ms each on a slowed CPU, which
+ * dropped the very frames being measured (about 7% of them in an offline series at 6x).
+ */
+async function pressNext(page: Page): Promise<void> {
+  await page.evaluate(`{
+    const shown = (element) => element.offsetParent !== null;
+    const pick = [...document.querySelectorAll('.pick-row-pick')].find(shown);
+    const button = [...document.querySelectorAll('button')].find(
+      (candidate) => shown(candidate) && /^(Fight!|Play round)/.test(candidate.textContent.trim()),
+    );
+    (pick ?? button)?.click();
+  }`);
 }
 
-const finished = (page: Page) => page.locator('#online-series .series-result').isVisible();
+const finished = (page: Page): Promise<boolean> =>
+  page.evaluate<boolean>(
+    "document.querySelector('#online-series .series-result')?.offsetParent != null",
+  );
 
 function summary(role: string, probe: Probe): string {
   const frames = probe.frames;
   const sorted = [...frames].sort((x, y) => x - y);
   const q = (p: number) =>
     (sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0).toFixed(1);
-  const dropped = frames.reduce((n, ms) => n + Math.max(0, Math.round(ms / (1000 / 60)) - 1), 0);
+  const dropped = frames.reduce((n, ms) => n + Math.max(0, Math.round(ms / BEAT_MS) - 1), 0);
   const seconds = frames.reduce((s, ms) => s + ms, 0) / 1000;
   return [
     role.padEnd(8),
@@ -160,22 +205,25 @@ function summary(role: string, probe: Probe): string {
 async function liveRun(browser: Browser): Promise<void> {
   const sender = await phone(browser);
   const friend = await phone(browser);
-  await sender.goto(`${base}/?view=send&fmt=reveal&mode=bo3`);
-  await lineup(sender, 'Send challenge');
+  // From home, as a player starts it (ADR 0055): vs Friend, the 16+ question, Reveal, the lineup.
+  await sender.goto(`${base}/`);
+  await sender.locator('.home-card[data-opponent="friend"]').click();
   await age(sender);
-  await sender.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
+  await sender.getByRole('button', { name: 'Choose lineup' }).click();
+  await lineup(sender, 'Send challenge');
+  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
   await friend.goto(`${base}/?challenge=${token}`);
   await friend.getByRole('button', { name: 'Build your lineup' }).click();
-  await lineup(friend, 'Accept challenge');
   await age(friend);
+  await lineup(friend, 'Accept challenge');
   await friend.waitForURL(/[?&]online=/);
   await sender.waitForURL(/[?&]online=/, { timeout: 20_000 });
   const started = Date.now();
   while (!((await finished(sender)) && (await finished(friend)))) {
     if (Date.now() - started > 400_000) throw new Error('The match never ended');
-    for (const page of [sender, friend]) await pickIfDue(page);
-    await sender.waitForTimeout(500);
+    for (const page of [sender, friend]) await pressNext(page);
+    await sender.waitForTimeout(1_000);
   }
   for (const [role, page] of [
     ['sender', sender],
@@ -194,23 +242,22 @@ async function offlineRun(browser: Browser): Promise<void> {
   for (let index = 0; index < 3; index += 1) await grid.nth(index).click();
   await page.getByRole('button', { name: 'Reveal lineups' }).click();
   const started = Date.now();
-  while (!(await page.locator('#series .series-result').isVisible())) {
+  while (
+    !(await page.evaluate<boolean>(
+      "document.querySelector('#series .series-result')?.offsetParent != null",
+    ))
+  ) {
     if (Date.now() - started > 400_000) throw new Error('The series never ended');
-    for (const target of [
-      page.locator('.pick-row-pick:visible').first(),
-      page.getByRole('button', { name: 'Fight!' }),
-      page.getByRole('button', { name: /^Play round/ }),
-    ]) {
-      if (await target.isVisible()) await target.click({ timeout: 2_000 }).catch(() => undefined);
-    }
-    await page.waitForTimeout(500);
+    await pressNext(page);
+    await page.waitForTimeout(1_000);
   }
   console.log(summary('offline', await page.evaluate<Probe>('window.__probe')));
 }
 
 const browser = await (engine === 'webkit' ? webkit : chromium).launch();
 console.log(
-  `${engine}${engine === 'chromium' ? `, ${String(rate)}x CPU throttling` : ''}, 390 x 664`,
+  `${engine}${engine === 'chromium' ? `, ${String(rate)}x CPU throttling` : ''}, 390 x 664` +
+    (capped ? ', frames held to 30 a second' : ''),
 );
 await (offline ? offlineRun(browser) : liveRun(browser));
 await browser.close();
