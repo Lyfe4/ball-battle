@@ -22,8 +22,9 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 
 - `pnpm dev`: the dev server on http://localhost:5199. Dev only: `/styleguide.html` (every ball
   design in each ability state, large and at phone size, and the shared UI parts; `?only=ui`,
-  `?only=phone-arena`) and `/brand.html` (icons and link-preview image drawn by the game's
-  renderer; save each canvas as the `public/` file it names and commit it).
+  `?only=phone-arena`), `/brand.html` (icons and link-preview image drawn by the game's
+  renderer; save each canvas as the `public/` file it names and commit it) and `/sounds.html`
+  (every sound, each ball's in turn, the busiest fights as sound alone).
 - `pnpm build`: typecheck and build to `dist/`. `pnpm preview`: serve `dist/` on
   http://localhost:4199 with the production security headers (`scripts/security-headers.ts`, kept
   in step with `netlify.toml` by a test); check the console for CSP errors after loading anything
@@ -308,6 +309,18 @@ Each line is a rule; its ADR has the reasoning.
   before its `@import`).
 - Ball and matchup text is read from the definitions and the counter map
   (`src/ui/balls/matchups.ts`, ADR 0024); it says "favoured", never a measured win rate.
+
+**Sound (ADR 0064)**
+
+- Sound is made in code (`src/sound/`), read from the arena's ticks like the effects: never from
+  the sim, which never knows it exists. Fight sounds are made after their frame, never in it.
+- A ball's ability has sounds of its own that say what kind of hit it is (`ball-sounds.ts`); a new
+  ball adds its cues to `cue-names.ts`, a voice, a cue rule and a gate rule (`rules.ts`), and the
+  tests fail until each is heard in a real fight and unlike every other ball's.
+- Keep the style: sines and soft triangles on C major pentatonic (`voices/scale.ts`), square and
+  sawtooth only through a low-pass, nothing but the series result over a second.
+- Only key moments tap (`data-sound="tap"`); walls are silent; the home demo is silent; a live
+  fight caught up headlessly is silent.
 
 **Code**
 
