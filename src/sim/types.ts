@@ -1,6 +1,7 @@
 import type { AbilityLabel } from './ability-label.ts';
 import type { MinionRequest } from './minions/types.ts';
 import type { RewindRequest } from './abilities/rewind.ts';
+import type { SplitRequest } from './abilities/split.ts';
 import type { SpawnRequest } from './projectiles/spawn.ts';
 import type { ZoneLinger, ZoneTriggerRequest } from './zones/spawn.ts';
 import type { StatusKind, StatusRequest } from './status.ts';
@@ -267,7 +268,12 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
    * Puts the hook owner back at an earlier position, velocity and health (the Chrono, ADR 0034).
    * The only action that acts on an owner at 0 health, from `onKnockedOut`.
    */
-  | ({ readonly kind: 'rewind' } & RewindRequest);
+  | ({ readonly kind: 'rewind' } & RewindRequest)
+  /**
+   * Splits the owner in two, once per ball (ADR 0059). The new ball is on its side (side.ts) and
+   * runs the same hooks; the side is out only when both are.
+   */
+  | ({ readonly kind: 'split' } & SplitRequest);
 
 export type Actions<S extends AbilityState = AbilityState> = readonly AbilityAction<S>[];
 

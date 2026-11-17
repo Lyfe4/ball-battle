@@ -1,3 +1,4 @@
+import { sideOfId, isAllyOf } from '../side.ts';
 import { applyActions, dealAbilityDamage, sceneOf } from '../abilities/apply-actions.ts';
 import { isAlive } from '../combat.ts';
 import type { MinionState } from '../minions/types.ts';
@@ -79,7 +80,8 @@ export function resolveZones(
     const damage: SimEvent[] = [];
     for (const ball of current) {
       // Current health, so a ball defeated by an earlier zone this tick is not hit again.
-      if (ball.id === zone.ownerId || !isAlive(ball) || !overlaps(zone, ball)) continue;
+      if (isAllyOf(current, ball, zone.ownerId) || !isAlive(ball) || !overlaps(zone, ball))
+        continue;
       const lasting = zone.endTick !== undefined;
       const burnKey = `${zone.ownerId}>${ball.id}`;
       if (lasting && burned.has(burnKey)) continue;
@@ -135,8 +137,10 @@ export function resolveZones(
       ...damage,
     );
     // Area attacks clear minions: every enemy minion inside the strike is destroyed (ADR 0026).
+    const allied = (minion: MinionState): boolean =>
+      sideOfId(current, minion.ownerId) === sideOfId(current, zone.ownerId);
     for (const minion of standing) {
-      if (minion.ownerId === zone.ownerId || !overlaps(zone, minion)) continue;
+      if (allied(minion) || !overlaps(zone, minion)) continue;
       events.push({
         type: 'minionDestroyed',
         tick,
@@ -147,9 +151,7 @@ export function resolveZones(
         byId: zone.ownerId,
       });
     }
-    standing = standing.filter(
-      (minion) => minion.ownerId === zone.ownerId || !overlaps(zone, minion),
-    );
+    standing = standing.filter((minion) => allied(minion) || !overlaps(zone, minion));
   }
   return { balls: current, zones: remaining, minions: standing, events };
 }

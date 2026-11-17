@@ -89,6 +89,10 @@ import type {
  *     `radiusOf` takes its radius for this tick and is kept inside the arena (ADR 0034). Last, so
  *     both read ability state and statuses after every hook of the tick; they emit no events.
  * 16. Contacts are updated and the match end is decided.
+ *
+ * Sides (ADR 0059): a `split` action (in any phase's actions, once per ball) appends a second ball
+ * on the owner's side. It runs every later phase like any ball; allies never touch or hit each
+ * other, and a side is out only when every ball on it is.
  */
 export function step(world: WorldState, definitions: DefinitionLookup): StepResult {
   if (world.match.status === 'finished') {
