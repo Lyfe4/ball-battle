@@ -1,0 +1,34 @@
+/* The sound board (sounds.html, dev only): every sound on a button, in the game's own look. */
+@import '../styles/tokens.css';
+@import '../styles/base.css';
+
+.board {
+  max-width: var(--sheet-width, 36rem);
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+
+.board h1 {
+  margin: 0 0 4px;
+}
+
+.board p {
+  margin: 0 0 12px;
+  color: var(--color-text-muted);
+}
+
+.board h2 {
+  margin: 20px 0 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 8px;
+}
+
+.board-grid button {
+  min-height: var(--tap-target);
+}
