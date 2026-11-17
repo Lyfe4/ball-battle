@@ -67,9 +67,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'archer',
-    intended: 'even',
-    reason:
-      'The pull drags the shooter into a brawl, but arrows land on the way: neither pulls ahead.',
+    intended: 'x',
+    reason: 'Every arrow that lands starts a pull, and the frail Archer is dragged into its bumps.',
   },
   {
     x: 'necromancer',

@@ -64,9 +64,9 @@ if matchups lean:
 These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4).
 
 - Every ball has **two to four counters it wins (62% or more) and two to four it loses**, the two
-  counts within one, so each has something to fear and something to hunt. **The even picks are
-  the exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049)
-  and the Magnet (loses only to Thorns) never lose the guess badly and never win it big.
+  counts within one, so each has something to fear and something to hunt. **The even pick is the
+  exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049) never
+  loses the guess badly and never wins it big. (The Magnet was the other until ruleset 18, ADR 0058.)
 - **No matchup worse than 22/78.**
 - **Every ball wins 45-55% overall.**
 
@@ -76,7 +76,7 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
-Known gaps at ruleset 17 (ADR 0049, 0050, 0056, 0057):
+Known gaps at ruleset 18 (ADR 0049, 0050, 0056, 0057, 0058):
 
 - **Something that beats the Titan.** Only Thorns holds the grown Titan, which beats one ball and
   loses to one. **Closed in ruleset 16 (ADR 0056):** the Storm's and Bomber's second loss, the
@@ -103,9 +103,11 @@ Known gaps at ruleset 17 (ADR 0049, 0050, 0056, 0057):
   in time (a lasting area it can't leave, say) would give it a second weakness.
 - **The Brawler beats nobody (accepted).** It is the plain default, the ball to pick knowing
   nothing (ADR 0049).
-- **The Magnet stays (ADR 0056).** Its pull is movement too soft to decide a pair, so it is an even
-  pick by accident rather than design. The roster-expansion proposal put the Battery in its slot;
-  the owner kept it, and the Battery fitted beside it.
+- **A second loss for the Magnet: a ball that beats it in a brawl (ruleset 18, ADR 0058).** A hit
+  from range (a projectile or minion) starts its pull at once, so it beats the Archer, Boomerang and
+  Necromancer and is no longer an even pick; only Thorns beats it. A ball that never hits from range
+  meets only its timed pull, so one that wins the brawl the pull forces would be its second loss.
+  (Every weaker Magnet lifts the Frost first, and the Frost has no room.)
 - **The Slime's lessons (`proto/slime-2`, not shipped).** A ball that splits at half health wastes
   one big aimed hit, so every version with an edge has it over the Sniper first, and the Sniper
   can't take a third loss (the Speedster, at four losses, is next). On `proto/sniper-slime` (ruleset
