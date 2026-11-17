@@ -88,7 +88,9 @@ export function createOnlinePlay(
       return reconnecting;
     },
     nextAsk: () =>
-      visible && view !== undefined && status === 'ready' ? nextAskOf(view, isLive()) : undefined,
+      visible && view !== undefined && status === 'ready'
+        ? nextAskOf(view, isLive(), live.askEvery())
+        : undefined,
   });
 
   const panel = createSeriesPanel(

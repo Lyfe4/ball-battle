@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CLOCK_SAMPLES, NO_CLOCK, offsetOf, serverNowOf, withSample } from './live-clock.ts';
+import {
+  askEveryMs,
+  CLOCK_SAMPLES,
+  NO_CLOCK,
+  offsetOf,
+  serverNowOf,
+  WARM_SAMPLES,
+  withSample,
+} from './live-clock.ts';
 
 describe('the server clock', () => {
   it('knows nothing before the first answer', () => {
@@ -36,5 +44,18 @@ describe('the server clock', () => {
   it('ignores an answer that arrived before it was sent (the device clock jumped)', () => {
     const clock = withSample(NO_CLOCK, { sentAt: 1_000, receivedAt: 900, serverNow: 0 });
     expect(clock.samples).toHaveLength(0);
+  });
+});
+
+describe('how often a live page asks', () => {
+  const sample = (at: number) => ({ sentAt: at, receivedAt: at + 300, serverNow: at + 150 });
+
+  it('asks four times a second until its clock rests on a few answers, then once a second', () => {
+    let clock = NO_CLOCK;
+    expect(askEveryMs(clock)).toBe(250);
+    for (let n = 0; n < WARM_SAMPLES - 1; n += 1) clock = withSample(clock, sample(n * 1000));
+    expect(askEveryMs(clock)).toBe(250);
+    clock = withSample(clock, sample(9_000));
+    expect(askEveryMs(clock)).toBe(1_000);
   });
 });

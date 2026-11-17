@@ -40,3 +40,15 @@ export function offsetOf(clock: ServerClock): number {
 /** The server's time now, by this device's clock `deviceNow` and the offset. */
 export const serverNowOf = (clock: ServerClock, deviceNow: number): number =>
   deviceNow + offsetOf(clock);
+
+/**
+ * A page's clock rests on too few answers to trust within a frame or two until it has this many
+ * (ADR 0061): a phone that has just arrived starts the match with one or two, one of them the slow
+ * read that started it, and its coin toss flipped 170 ms to 1 s after the other phone's on a deploy
+ * preview. Until then it asks four times a second.
+ */
+export const WARM_SAMPLES = 6;
+
+/** How often a live page asks the server: faster while its clock is still warming up. */
+export const askEveryMs = (clock: ServerClock): number =>
+  clock.samples.length < WARM_SAMPLES ? 250 : 1_000;

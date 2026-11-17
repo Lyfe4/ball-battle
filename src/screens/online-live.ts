@@ -10,7 +10,13 @@ import type { SeriesView } from '../api/series.ts';
 import { dueOf } from '../app/online-series.ts';
 import type { Side } from '../sim/series.ts';
 import type { OnlinePlayHost } from './online-play-types.ts';
-import { NO_CLOCK, serverNowOf, withSample, type ClockSample } from '../app/live-clock.ts';
+import {
+  askEveryMs,
+  NO_CLOCK,
+  serverNowOf,
+  withSample,
+  type ClockSample,
+} from '../app/live-clock.ts';
 import {
   countdownLine,
   livePlace,
@@ -46,6 +52,8 @@ export interface LiveDriver {
   heard(sample: ClockSample | undefined): void;
   /** The server's time now, as this page knows it. */
   now(): number;
+  /** How often to ask while live: faster until the clock rests on a few answers (ADR 0061). */
+  askEvery(): number;
   /** Where `view` is now for a page that has watched `watched` rounds. */
   place(view: SeriesView, watched: number): LivePlace;
   /**
@@ -123,6 +131,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
       if (sample !== undefined) clock = withSample(clock, sample);
     },
     now,
+    askEvery: () => askEveryMs(clock),
     place: (view, watched) => livePlace(view, watched, now(), (round) => ticksOf(view, round)),
     stage(next, match, showing) {
       const same = slot?.round === next.round && slot.attempt === next.attempt;
@@ -202,10 +211,17 @@ export function liveArenaOf(
   };
 }
 
-/** When to ask about a series again, in ms: live, every second while open (the heartbeat). */
-export function nextAskOf(view: SeriesView, live: boolean): number | undefined {
+/**
+ * When to ask about a series again, in ms: live, every `liveEvery` while open (the heartbeat: a
+ * second, faster while the page's clock warms up).
+ */
+export function nextAskOf(
+  view: SeriesView,
+  live: boolean,
+  liveEvery = LIVE_POLL_MS,
+): number | undefined {
   if (view.status !== 'open') return undefined;
-  if (live) return LIVE_POLL_MS;
+  if (live) return liveEvery;
   return dueOf(view).includes(view.you) ? undefined : TURNS_POLL_MS;
 }
 
