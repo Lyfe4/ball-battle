@@ -13,13 +13,13 @@ arena until one wins, and every decision is made before the fight starts.
 
 ## Features
 
-- **24 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+- **25 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that phases, a necromancer's skull minions, a boomerang, bombs,
-  a shield and spear, a curse, webs on the walls, a battery that stores big hits, and more.
+  a shield and spear, a curse, webs on the walls, a battery that stores big hits, a slime that splits in two, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
-  Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option on Other
-  modes ([ADR 0048](docs/decisions/0048-best-of-5.md)).
+  Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option in the vs
+  Bot setup ([ADR 0048](docs/decisions/0048-best-of-5.md)).
 - **Live friend matches** (deploy previews and staging for now,
   [ADR 0053](docs/decisions/0053-live-friend-matches.md)): send a link, wait in the lobby, and play
   Reveal or Showdown together. 30 s a pick, fights that start at the same moment on both phones at
@@ -79,12 +79,14 @@ batches from the `release` branch by a manual workflow (`.github/workflows/publi
 
 ## How it plays
 
-The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: a Best
-of 3 against the bot in Reveal, straight to choosing your lineup. **Other modes** holds every other
-way to play: a Best of 3 or Best of 5 (remembered) in Reveal, Showdown or Blind, and **Free play**, where you choose both balls of one match to try
-things out. While a series is held (left with Back, or after a reload), Play becomes **Resume
-series**, with its format and score, and a quiet **New series** starts afresh ([ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)). The **Ball
-manual** sits beside it. Every screen is designed for a phone first and has a
+The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: the
+last series set up against the bot, straight to choosing your lineup (a first visit plays Best of 3
+· Reveal · vs Normal bot). Under it is a card per opponent: **vs Bot** opens its setup (Best of 3 or
+Best of 5, Reveal, Showdown or Blind, and the bot's level), and **vs Friend** (in online builds)
+starts a live match. **Free play**, where you choose both balls of one match to try things out,
+and the **Ball manual** sit below. While a series is held (left with Back, or after a reload), Play
+becomes **Resume series**, with its format and score, and a quiet **New series** starts afresh
+([ADR 0055](docs/decisions/0055-home-and-online-screens.md)). Every screen is designed for a phone first and has a
 URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
@@ -115,7 +117,7 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Berserker   | The most health. Every hit it takes builds rage (up to 3); its next bump lets it all out.        |
 | Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                      |
 | Quake       | Every wall it hits sends out a small, wide shockwave, as often as five times a second.           |
-| Magnet      | Every 2 s it pulls its enemy in, forcing a brawl. Hits harder than all but one.                  |
+| Magnet      | Pulls its enemy in every 2 s, and at once when hit from range, forcing a brawl. Hits hard.       |
 | Ghost       | Phases 1 s in every 4: nothing touches it then, and it hits what it passes through.              |
 | Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after.   |
 | Chrono      | Rewinds a big hit (a shot, a strike, a blast or a knockout), then recharges for 10 s.            |
@@ -128,8 +130,9 @@ they hit; the match ends by knockout or at a 60-second time limit.
 | Hex         | Its bump curses; 3 s later the curse bursts for a quarter of that ball's full health.            |
 | Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.              |
 | Battery     | Stores a third of every big strike or blast it takes; its next bump lets it all out.             |
+| Slime       | At half health it splits in two smaller, faster halves; the enemy must finish both.              |
 
-Every ball but the Titan is the same size and keeps its own speed through collisions; a hit's damage depends
+Every ball but the Titan (which grows) and the Slime's halves (smaller) is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
@@ -157,8 +160,8 @@ even pick, the **Brawler**, which beats nobody and loses only to Thorns.
 
 ## Best of 3
 
-Tap **Play** on the home screen to play a series against a bot (Showdown and Blind are under
-**Other modes**): pick three different balls in order
+Tap **Play** on the home screen to play a series against a bot (Showdown, Blind and Best of 5 are
+in the **vs Bot** setup): pick three different balls in order
 (round 1 is your first ball against the bot's first, and so on), and the first to win two rounds
 takes the series. A track shows every round at a glance, the winner ringed and the loser dimmed,
 and a series left with Back (easy to do by accident on a phone) can be resumed where it was. A
@@ -184,9 +187,9 @@ There are three sets of rules ([ADR 0019](docs/decisions/0019-draft-formats.md),
   three: good play beats bad play by about 12 points of series chance at every bot level
   ([ADR 0029](docs/decisions/0029-reveal-coin-toss.md), [measurements](docs/reveal-measurements.md),
   [ADR 0046](docs/decisions/0046-reveal-first-home-and-other-modes.md)).
-- **Showdown** (Other modes): both lineups are revealed, both sides open round 1 at the same time,
+- **Showdown** (vs Bot setup): both lineups are revealed, both sides open round 1 at the same time,
   then the winner shows first and the loser answers.
-- **Blind** (Other modes): set your order, then watch. Both orders are set without seeing the
+- **Blind** (vs Bot setup): set your order, then watch. Both orders are set without seeing the
   other lineup, as above; there are no choices after that.
 
 An older `?mode=bo3` link still opens the rules step, where the format and level are chosen.
@@ -255,7 +258,7 @@ src/
   render/   draws sim state on a canvas; never changes it
   sim/balls/        one file per ball definition
   sim/abilities/    runs ability hooks and applies the actions they return
-  sim/series.ts     best-of-3 rules, pure so a server can re-run a series
+  sim/series.ts     series rules (best of 3 or 5), pure so a server can re-run a series
   sim/series-verify.ts   whether a series setup is valid: the browser and a server use it
   sim/ruleset.ts    the ruleset version every link records (bumped with any balance change)
   golden/   known match results, checked in Node and in Chromium, Firefox and WebKit
@@ -264,7 +267,7 @@ src/
   app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links,
             the series saved across a reload
   arena.ts  the match on screen and the requestAnimationFrame loop
-  screens/  each screen's wiring: home, quick (Free play), series setup and play, manual, modes
+  screens/  each screen's wiring: home, quick (Free play), series setup and play, manual, online
   main.ts   wires the screens together
 ```
 
