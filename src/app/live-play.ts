@@ -87,3 +87,23 @@ export function nextLineChange(startAt: number, now: number): number | undefined
   if (left > COUNTDOWN_MS) return left - COUNTDOWN_MS;
   return left % 1000 === 0 ? 1000 : left % 1000;
 }
+
+/**
+ * A live fight that has fallen behind the server's moment (its start timer fired late, a slow
+ * frame, the clock's estimate moved) catches up gently rather than jumping (ADR 0063): its playback
+ * runs faster by its lag over CATCH_UP_MS, at most MAX_CATCH_UP, so a 400 ms lag is nearly gone
+ * within a second and no frame skips more than half its own length ahead. One ahead (the clock's
+ * estimate moved the other way) eases back the same way, never below MIN_CATCH_UP. Presentation
+ * time only (ADR 0007): the same ticks run, only when they run changes.
+ */
+const CATCH_UP_MS = 300;
+const MAX_CATCH_UP = 1.5;
+const MIN_CATCH_UP = 0.85;
+/** Within this a fight is on time: a frame's rounding, not a lag. */
+const ON_TIME_MS = 8;
+
+/** The playback rate for a live fight `behindMs` behind the server's moment (ahead when < 0). */
+export function catchUpRate(behindMs: number): number {
+  if (Math.abs(behindMs) <= ON_TIME_MS) return 1;
+  return Math.min(MAX_CATCH_UP, Math.max(MIN_CATCH_UP, 1 + behindMs / CATCH_UP_MS));
+}

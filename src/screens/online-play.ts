@@ -299,6 +299,7 @@ export function createOnlinePlay(
     // The series on screen (as offline): the arena shows behind it, and makes way between rounds.
     isPlaying: () => visible && status === 'ready' && view !== undefined,
     isLive: () => visible && isLive(),
+    liveRate: (playedMs) => (visible && isLive() ? live.rate(playedMs) : 1),
     footLine: () =>
       visible && view !== undefined && isLive()
         ? liveFootLine(view, live.now(), reconnecting, watched === 0)

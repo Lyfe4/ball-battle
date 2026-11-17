@@ -37,6 +37,11 @@ export interface OnlinePlay {
   isPlaying(): boolean;
   /** A live match is on screen: its fights play at 1× (ADR 0053). */
   isLive(): boolean;
+  /**
+   * A live fight's playback rate, the arena having played `playedMs` of it: 1, or a little off 1
+   * while it catches up with the server's moment (ADR 0063).
+   */
+  liveRate(playedMs: number): number;
   /** The line under a live fight, where the speed toggle would be. */
   footLine(): string | undefined;
   setVisible(visible: boolean): void;

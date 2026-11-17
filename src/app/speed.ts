@@ -17,7 +17,7 @@ export function parseSpeed(raw: string | null | undefined): PlaybackSpeed {
 }
 
 /** Playback time for `realMs` of real time at `speed`. */
-export function scaleFrame(realMs: number, speed: PlaybackSpeed): number {
+export function scaleFrame(realMs: number, speed: number): number {
   return realMs * speed;
 }
 
