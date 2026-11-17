@@ -47,6 +47,8 @@ export function createReadyCard(
   const reason = element('p', 'ready-reason');
   const fight = element('button', 'ready-fight', 'Fight!');
   fight.type = 'button';
+  // Fight! has its own sound (arena.ts), not a button's tap.
+  fight.dataset['soundOwn'] = '';
   const never = element('button', 'text-link ready-never', 'Don’t show these again');
   never.type = 'button';
   // A live fight's countdown, where Fight! would be: announced as it changes.

@@ -2,6 +2,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
 import { leanOf, matchupTip, type Lean } from '../balls/matchups.ts';
+import { cue } from '../../sound/sound.ts';
 import { holdBusy } from '../busy-button.ts';
 import { element } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
@@ -100,11 +101,23 @@ export function createPickRows(
     pick.setAttribute('aria-label', `${verb} ${nameOf(ball)}: ${leans.join(', ')}`);
     // Online a pick is a request: the ball tapped shows it is working and the others wait, so a
     // second tap (on it or another ball) never sends a second pick (busy-button.ts).
+    // A pick has its own sound, as it locks in, not a button's tap.
+    pick.dataset['soundOwn'] = '';
     pick.addEventListener('click', () => {
       if (rows.getAttribute('aria-busy') === 'true') return;
       const out = onPick(ball);
-      if (!(out instanceof Promise)) return;
+      if (!(out instanceof Promise)) {
+        cue('lock');
+        return;
+      }
       rows.setAttribute('aria-busy', 'true');
+      // Online, heard once the server has taken it: a refused pick never sounds locked.
+      out.then(
+        () => {
+          cue('lock');
+        },
+        () => undefined,
+      );
       void holdBusy(pick, out, `Picking ${nameOf(ball)}…`).finally(() => {
         rows.removeAttribute('aria-busy');
       });

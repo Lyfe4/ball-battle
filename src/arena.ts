@@ -21,6 +21,7 @@ import { interpolateWorld } from './render/interpolate.ts';
 import { createMoments } from './render/moments.ts';
 import { createRewinds } from './render/rewind.ts';
 import { createSourceChips } from './render/source-chips.ts';
+import { cue, fightReset, fightTick } from './sound/sound.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
@@ -136,7 +137,16 @@ export function createArena(
   let played = 0;
   /** The frame being played: its real time, counted in `playedMs` before its rate is chosen. */
   let pending = 0;
+  /**
+   * Whether the fight's ticks are heard: not the home demo (a first impression, before any choice)
+   * and not a live fight being played on headlessly to its moment, which would sound every skipped
+   * hit at once.
+   */
+  let audible = false;
+  /** The countdown line last shown, so a line asked for again is not heard again. */
+  let counted = '';
   const ready = createReadyCard(container, lookup, host.tips, () => {
+    cue('fight');
     held = false;
     played = 0;
     lastFrameMs = undefined;
@@ -269,6 +279,7 @@ export function createArena(
       ? settleHold(outcome.playback, theme.introMs, READY_FLOOR_MS)
       : outcome.playback;
     for (const { previous, result } of outcome.ticks) {
+      if (audible) fightTick(result.events, previous, result.world, performance.now());
       effects.apply(result.events, playback.effectMs);
       rewinds.apply(result.events, playback.effectMs);
       moments.apply(result.events, previous, result.world, playback.effectMs);
@@ -297,6 +308,9 @@ export function createArena(
       failure.hidden = true;
       const moment = host.moment();
       tips.start(moment !== 'demo' && moment !== 'still' && !finished);
+      audible = moment !== 'demo' && moment !== 'still' && !finished;
+      counted = '';
+      fightReset();
       // A finished match never waits on Fight!: the ready card treats it as it treats the demo.
       held = ready.start(world, finished ? 'demo' : moment);
       // A finished match starts with its intro already over, so both balls are drawn at once.
@@ -316,21 +330,29 @@ export function createArena(
       ready.release();
       held = false;
       played = Math.max(0, elapsedMs);
-      // Frame by frame at 60 Hz, as a page that had been watching would have played it.
+      // Frame by frame at 60 Hz, as a page that had been watching would have played it, silently.
+      const heard = audible;
+      audible = false;
       for (let left = elapsedMs; left > 0; left -= LIVE_FRAME_MS) {
         play(Math.min(left, LIVE_FRAME_MS));
       }
+      audible = heard;
       lastFrameMs = undefined;
       render();
     },
     release() {
       if (ready.release()) {
+        cue('fight');
         held = false;
         played = 0;
         lastFrameMs = undefined;
       }
     },
     countdown(text) {
+      const line = text ?? '';
+      // Heard as each line appears, on the timer set for its moment: the same moment on both phones.
+      if (line !== counted && line !== '') cue(/^\d$/.test(line) ? 'count' : 'getReady');
+      counted = line;
       ready.countdown(text);
     },
     redraw: render,

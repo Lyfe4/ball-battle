@@ -1,0 +1,26 @@
+/* The Sound group's volume slider: the switch's track and thumb, as a slider (settings-sound.ts). */
+.settings-volume-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  min-height: var(--tap-target);
+}
+
+.settings-volume-row[data-off] {
+  opacity: 0.55;
+}
+
+.settings-volume {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.settings-volume:focus-visible {
+  border-radius: 999px;
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

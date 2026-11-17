@@ -27,8 +27,12 @@ import { createHud } from './ui/hud.ts';
 import { getElement } from './ui/dom.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 import { installSettings, refreshSettings } from './ui/settings-menu.ts';
+import { createSoundSettings } from './ui/settings-sound.ts';
+import { installSound } from './sound/sound.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 
+// Sound waits for the first tap, then follows the remembered choice (sound.ts).
+installSound(storage);
 const stage = getElement('stage', HTMLElement);
 // What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
 installSymbolTooltips();
@@ -257,7 +261,14 @@ function setSpeed(next: PlaybackSpeed): void {
 const speedToggle = createSpeedToggle(speedRoot, state.speed, setSpeed);
 // A live match plays on the server's clock: settings never make it wait (ADR 0054).
 const mayWait = () => !online.isLive();
-const settingsHost = { tips, speed: () => state.speed, setSpeed, court: arena.court, mayWait };
+const settingsHost = {
+  tips,
+  speed: () => state.speed,
+  setSpeed,
+  court: arena.court,
+  mayWait,
+  sound: createSoundSettings(),
+};
 installSettings({ ...settingsHost, ...online.settings });
 
 /** Every world put on the arena so far: a held series checks whether its match is still there. */
