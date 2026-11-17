@@ -10,12 +10,17 @@ function lerp(from: Vec2, to: Vec2, alpha: number): Vec2 {
 }
 
 /**
- * The world as it looks `alpha` (0 to 1) of the way from `previous` to `current`. Only positions
- * move: everything else (health, statuses, zones, the tick) is `current`'s, so what is drawn is
- * never ahead of the sim.
+ * The world as it looks `alpha` (0 to 1) of the way from `previous` to `current`. Positions and the
+ * time move: everything else (health, statuses, zones) is `current`'s, so what is drawn is never
+ * ahead of the sim.
  *
+ * - The tick is blended too (a fraction between the two), so everything drawn from it (a design's
+ *   animation, a boomerang's spin, a zone's pulse, a fuse, a fade) moves with the balls rather
+ *   than 1, 2 or 3 ticks a frame on an uneven display (iPhone Low Power Mode holds Safari to 30
+ *   frames a second, often unevenly) or not at all every other frame at 120 Hz.
  * - A ball moves along the straight line between its two positions. Over a wall bounce that
  *   cuts the corner by a fraction of a tick, and both ends are inside the arena, so the line is.
+ *   A ball split off this tick (a Slime's half, ADR 0059) glides out of the ball it split from.
  * - Projectiles and minions move the same way (everything that moves is blended, or it steps
  *   once a tick while the balls glide: on a 120 Hz phone it would stand still every other frame).
  *   One that appeared this tick has no previous position, so it is traced back along its velocity
@@ -34,7 +39,7 @@ export function interpolateWorld(
 
   const ballsBefore = new Map(previous.balls.map((ball) => [ball.id, ball]));
   const balls = current.balls.map((ball): BallState => {
-    const before = ballsBefore.get(ball.id);
+    const before = ballsBefore.get(ball.id) ?? splitFrom(ball, ballsBefore);
     return before === undefined
       ? ball
       : { ...ball, position: lerp(before.position, ball.position, t) };
@@ -42,8 +47,14 @@ export function interpolateWorld(
 
   const projectiles = blendMovers(previous.projectiles, current.projectiles, t);
   const minions = blendMovers(previous.minions, current.minions, t);
+  const tick = previous.tick + (current.tick - previous.tick) * t;
 
-  return { ...current, balls, projectiles, minions };
+  return { ...current, tick, balls, projectiles, minions };
+}
+
+/** The ball a ball new this tick split from (its side's first ball), as it was before the split. */
+function splitFrom(ball: BallState, before: ReadonlyMap<string, BallState>): BallState | undefined {
+  return ball.side === undefined || ball.side === ball.id ? undefined : before.get(ball.side);
 }
 
 /** Projectiles or minions `t` of the way from their previous positions to their current ones. */

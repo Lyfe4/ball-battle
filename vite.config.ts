@@ -132,6 +132,9 @@ export default defineConfig({
           name: 'online',
           include: ['src/flows/*.online.test.ts'],
           testTimeout: 600_000,
+          // One file at a time: each plays live matches on two phones against the server's clock,
+          // and six at once overload one machine until fights stop keeping time.
+          fileParallelism: false,
         },
       },
       {

@@ -9,6 +9,7 @@ import { createWorld } from '../sim/world.ts';
 import { advanceFrame, interpolationAlpha, startPlayback } from '../app/playback.ts';
 import type { MinionState } from '../sim/minions/types.ts';
 import { interpolateWorld } from './interpolate.ts';
+import { theme } from './theme.ts';
 
 const shot = (id: string, x: number): ProjectileState => ({
   id,
@@ -44,13 +45,73 @@ describe('interpolateWorld', () => {
     });
   });
 
-  it('keeps everything but positions from the current world', () => {
+  it('keeps everything but positions and the time from the current world', () => {
     const { before, after } = pair();
     const hurt = deepFreeze(withBalls(after, [{ health: 3 }]));
     const drawn = interpolateWorld(before, hurt, 0.5);
     expect(drawn.balls[0]?.health).toBe(3);
     expect(drawn.balls[0]?.velocity).toStrictEqual(hurt.balls[0]?.velocity);
-    expect(drawn.tick).toBe(hurt.tick);
+  });
+
+  // Low Power Mode on an iPhone holds Safari to 30 frames a second, often unevenly: everything
+  // drawn from the tick (a design's animation, a boomerang's spin, a zone's pulse, a bomb's fuse)
+  // moved 1, 2 or 3 ticks a frame while the balls glided.
+  it('blends the tick too, so what is drawn from it moves with the balls', () => {
+    const { before, after } = pair();
+    expect(interpolateWorld(before, after, 0.25).tick).toBe(before.tick + 0.25);
+    expect(interpolateWorld(before, after, 0).tick).toBe(before.tick);
+    expect(interpolateWorld(before, after, 1).tick).toBe(after.tick);
+  });
+
+  it('turns a boomerang evenly for the time each frame shows, at 30 fps and an uneven beat', () => {
+    const spin = (tick: number) => tick % theme.boomerangSpinTicks;
+    for (const beat of [() => 1000 / 30, (frame: number) => (frame % 2 === 0 ? 25 : 42)]) {
+      let playback = startPlayback(
+        createWorld(3, [
+          getDefinition(BALL_LOOKUP, 'brawler'),
+          getDefinition(BALL_LOOKUP, 'magnet'),
+        ]),
+        0,
+      );
+      let last: { tick: number; at: number } | undefined;
+      let at = 0;
+      const rates: number[] = [];
+      for (let frame = 0; frame < 90; frame++) {
+        const ms = beat(frame);
+        at += ms;
+        playback = advanceFrame(
+          playback,
+          ms,
+          (world) => step(world, BALL_LOOKUP),
+          () => ({ hitStopMs: 0 }),
+        ).playback;
+        const drawn = interpolateWorld(
+          playback.previous,
+          playback.world,
+          interpolationAlpha(playback),
+        );
+        if (last !== undefined) {
+          const turned = (spin(drawn.tick) - spin(last.tick) + theme.boomerangSpinTicks) % 10;
+          rates.push(turned / (at - last.at));
+        }
+        last = { tick: drawn.tick, at };
+      }
+      const steady = rates.slice(2);
+      const mean = steady.reduce((sum, rate) => sum + rate, 0) / steady.length;
+      const worst = Math.max(...steady.map((rate) => Math.abs(rate - mean) / mean));
+      expect(worst).toBeLessThan(0.01);
+    }
+  });
+
+  it('draws a ball split off this tick gliding out of the ball it split from', () => {
+    const { before, after } = pair();
+    const parent = after.balls[0];
+    if (parent === undefined) throw new Error('No ball');
+    const half = { ...parent, id: 'ball-0~1', side: 'ball-0', position: { x: 140, y: 190 } };
+    const split = deepFreeze({ ...after, balls: [...after.balls, half] });
+    const drawn = interpolateWorld(before, split, 0.5);
+    // From the whole ball's last position (100, 200) halfway to its own (140, 190).
+    expect(drawn.balls[2]?.position).toStrictEqual({ x: 120, y: 195 });
   });
 
   it('clamps alpha outside 0 to 1', () => {

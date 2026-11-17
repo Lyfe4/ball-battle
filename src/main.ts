@@ -219,7 +219,11 @@ const arena = createArena(
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
     // A live fight plays at 1x on both screens, whatever the toggle says (ADR 0053).
-    speed: () => (online.isLive() ? 1 : playbackSpeedFor(router.current(), state.speed)),
+    // A live fight plays at 1x, gently catching up with the server's moment (ADR 0053, 0063).
+    speed: () =>
+      online.isLive()
+        ? online.liveRate(arena.playedMs())
+        : playbackSpeedFor(router.current(), state.speed),
     afterTicks: (world) => {
       series.settle(world);
       online.settle(world);
