@@ -164,6 +164,7 @@
 }
 
 .settings-panel[data-compact] .settings-group,
+.settings-panel[data-compact] .settings-sound,
 .settings-panel[data-compact] .settings-foot {
   grid-column: 1 / -1;
   gap: 0 var(--space-gap);

@@ -36,6 +36,17 @@ describe('placeMenu', () => {
     });
   });
 
+  it('covers the court rather than its own gear when nowhere is clear (a short phone mid-fight)', () => {
+    // 390 x 664: the court on top, the gear under it, the menu too tall for the room below it and
+    // a little too tall for the room above it.
+    const short = { width: 390, height: 664, top: 0 };
+    const court = { left: 16, top: 16, width: 358, height: 358 };
+    const tall = { width: 320, height: 372 };
+    const spot = placeMenu(gear(330, 386), tall, short, undefined, court);
+    // Nowhere at full height is clear of the gear, so it takes the room above it and scrolls.
+    expect(spot).toStrictEqual({ left: 54, top: 16, covers: true, maxHeight: 362 });
+  });
+
   it('keeps clear of the safe areas and follows the visible screen', () => {
     const insets = { top: 47, right: 0, bottom: 34, left: 0 };
     expect(placeMenu(gear(300, 0), size, phone, insets).top).toBe(63);
