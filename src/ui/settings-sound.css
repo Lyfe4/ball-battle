@@ -1,22 +1,27 @@
-/* The Sound group's volume slider: the switch's track and thumb, as a slider (settings-sound.ts). */
-.settings-volume-row {
+/* The settings menu's Sound row (settings-sound.ts): its word, a volume slider, the menu's switch. */
+.settings-sound {
   display: flex;
   align-items: center;
   gap: var(--space-gap);
   min-height: var(--tap-target);
 }
 
-.settings-volume-row[data-off] {
-  opacity: 0.55;
+.settings-sound-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
 }
 
 .settings-volume {
   flex: 1;
   min-width: 0;
-  height: 28px;
+  height: var(--tap-target);
   margin: 0;
   accent-color: var(--color-accent);
   cursor: pointer;
+}
+
+.settings-sound[data-off] .settings-volume {
+  opacity: 0.5;
 }
 
 .settings-volume:focus-visible {
