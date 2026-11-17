@@ -1,6 +1,7 @@
 // Zones that can be set off (ADR 0043), the Bomber's bombs: once armed, the first solid enemy ball
 // to touch the bomb's body makes it strike at once. Swept on each ball's motion over the tick, like
 // projectiles (ADR 0005), so no speed can skip over a bomb.
+import { isAllyOf } from '../side.ts';
 import { isAlive, isPhased } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
 import { sweepHitTime } from '../projectiles/sweep.ts';
@@ -34,7 +35,7 @@ export function triggeredBy(
   const { trigger } = zone;
   if (trigger === undefined || tick < trigger.armTick || tick >= zone.strikeTick) return undefined;
   for (const ball of balls) {
-    if (ball.id === zone.ownerId || !isAlive(ball)) continue;
+    if (isAllyOf(balls, ball, zone.ownerId) || !isAlive(ball)) continue;
     if (isPhased(ball, getDefinition(definitions, ball.definitionId))) continue;
     const start = startPositions.get(ball.id) ?? ball.position;
     if (touched(zone.position, start, ball.position, trigger.radius + ball.radius)) return ball.id;

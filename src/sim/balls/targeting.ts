@@ -1,4 +1,5 @@
 import { isAlive } from '../combat.ts';
+import { sideOf, sideOfId } from '../side.ts';
 import type { MinionState } from '../minions/types.ts';
 import type { BallState, Vec2 } from '../types.ts';
 
@@ -8,13 +9,13 @@ import type { BallState, Vec2 } from '../types.ts';
  * on a ball (the Magnet's pull); aimed attacks use `nearestTarget`.
  */
 export function nearestEnemy(
-  self: Readonly<{ id: string; position: Vec2 }>,
+  self: Readonly<{ id: string; side?: string; position: Vec2 }>,
   balls: readonly BallState[],
 ): BallState | undefined {
   let nearest: BallState | undefined;
   let nearestDistance = Infinity;
   for (const ball of balls) {
-    if (ball.id === self.id || !isAlive(ball)) continue;
+    if (sideOf(ball) === sideOf(self) || !isAlive(ball)) continue;
     const dx = ball.position.x - self.position.x;
     const dy = ball.position.y - self.position.y;
     const distance = dx * dx + dy * dy;
@@ -42,7 +43,7 @@ export interface Target {
  * one in its array, so the choice is deterministic.
  */
 export function nearestTarget(
-  self: Readonly<{ id: string; position: Vec2 }>,
+  self: Readonly<{ id: string; side?: string; position: Vec2 }>,
   balls: readonly BallState[],
   minions: readonly MinionState[] = [],
 ): Target | undefined {
@@ -52,7 +53,7 @@ export function nearestTarget(
   let nearestDistance =
     ball === undefined ? Infinity : distanceSquared(self.position, ball.position);
   for (const minion of minions) {
-    if (minion.ownerId === self.id) continue;
+    if (sideOfId(balls, minion.ownerId) === sideOf(self)) continue;
     const distance = distanceSquared(self.position, minion.position);
     if (distance < nearestDistance) {
       nearest = { kind: 'minion', ...pick(minion) };

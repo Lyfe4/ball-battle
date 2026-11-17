@@ -1,3 +1,4 @@
+import { isAllyOf, sideOfId } from '../side.ts';
 import { dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { isAlive, isPhased } from '../combat.ts';
 import { DT } from '../constants.ts';
@@ -68,7 +69,7 @@ export function resolveProjectiles(
     let nearest: { readonly s: number; readonly ball: BallState } | undefined;
     for (const ball of current) {
       // Current health, so a ball killed earlier in this phase is not hit again.
-      if (ball.id === projectile.ownerId || !isAlive(ball)) continue;
+      if (isAllyOf(current, ball, projectile.ownerId) || !isAlive(ball)) continue;
       // A phased ball lets a shot through, as it does a ball (ADR 0049).
       if (isPhased(ball, getDefinition(definitions, ball.definitionId))) continue;
       const ballStart = startPositions.get(ball.id) ?? ball.position;
@@ -81,7 +82,7 @@ export function resolveProjectiles(
     }
     let minionHit: { readonly s: number; readonly minion: MinionState } | undefined;
     for (const minion of standing) {
-      if (minion.ownerId === projectile.ownerId) continue;
+      if (sideOfId(current, minion.ownerId) === sideOfId(current, projectile.ownerId)) continue;
       const minionStart = minionStarts.get(minion.id) ?? minion.position;
       const s = sweepHitTime(
         subtract(projectile.position, minionStart),

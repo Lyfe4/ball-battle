@@ -2,6 +2,7 @@
 // returns. Re-exported from ../types.ts, which every module imports.
 import type { MinionEvent } from '../minions/types.ts';
 import type { RewoundEvent } from '../abilities/rewind.ts';
+import type { SplitEvent } from '../abilities/split.ts';
 import type { HitReducedEvent } from '../defence.ts';
 import type { StatusAppliedEvent, StatusExpiredEvent } from '../status.ts';
 import type { DamageCause, DamageVia, HookName, Vec2 } from '../types.ts';
@@ -170,6 +171,7 @@ export type SimEvent =
   | StatusAppliedEvent
   | StatusExpiredEvent
   | RewoundEvent
+  | SplitEvent
   | HitReducedEvent
   | MinionEvent;
 

@@ -1,3 +1,4 @@
+import { sideOf } from './side.ts';
 import type { BallState, Vec2 } from './types.ts';
 import { addScaled, vec2 } from './vec2.ts';
 
@@ -199,6 +200,8 @@ export function resolveCollisions(
       const a = next[i];
       const b = next[j];
       if (a === undefined || b === undefined || !isActive(a) || !isActive(b)) continue;
+      // Allies (a ball and what split off it) never touch.
+      if (sideOf(a) === sideOf(b)) continue;
       if (passesThrough(a, b)) {
         if (overlaps(a.position, b.position, a.radius + b.radius)) {
           contacts.push({ ballIds: [a.id, b.id], ...passThrough(a, b), phased: true });

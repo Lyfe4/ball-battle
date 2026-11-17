@@ -1,5 +1,6 @@
 import { isAlive } from '../combat.ts';
 import { getDefinition } from '../definitions.ts';
+import { hasSplit, splitBall } from './split.ts';
 import { spawnMinion } from '../minions/spawn.ts';
 import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
@@ -225,6 +226,17 @@ export function applyActions(
         const rewound = rewindBall(self, action, maxHealth, arenaSize, tick);
         next[index] = rewound.ball;
         events.push(rewound.event);
+        break;
+      }
+      case 'split': {
+        const index = indexOf(ownerId);
+        const self = next[index];
+        // Once per ball: two hits in one tick both see the unsplit snapshot, so the second split is refused here.
+        if (self === undefined || !isAlive(self) || hasSplit(self)) break;
+        const split = splitBall(self, action, next, arenaSize, tick);
+        next[index] = split.owner;
+        next.push(split.added);
+        events.push(split.event);
         break;
       }
       default: {

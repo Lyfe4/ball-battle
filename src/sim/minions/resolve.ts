@@ -1,3 +1,4 @@
+import { isAllyOf } from '../side.ts';
 import { dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { BOUNCE_MAX_HALF_TAN, turnBounce } from '../bounce-variance.ts';
 import { isAlive, isPhased } from '../combat.ts';
@@ -134,7 +135,7 @@ export function resolveMinions(
       // A phased ball passes through minions as it passes through balls: a pop is a touch
       // (ADR 0026, 0028).
       if (
-        ball.id === minion.ownerId ||
+        isAllyOf(current, ball, minion.ownerId) ||
         !isAlive(ball) ||
         isPhased(ball, getDefinition(definitions, ball.definitionId))
       ) {

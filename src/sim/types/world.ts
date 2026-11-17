@@ -21,6 +21,11 @@ export interface BallState {
   readonly abilityState: AbilityState;
   /** Status effects on this ball (ADR 0009): at most one per kind, created only by actions. */
   readonly statuses: readonly StatusState[];
+  /**
+   * Present on a ball that has split or was split off another (the `split` action, ADR 0059): the
+   * id of the ball whose side it fights for. Absent: its own side, and it has never split (side.ts).
+   */
+  readonly side?: string;
 }
 
 /**

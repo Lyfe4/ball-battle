@@ -2,6 +2,7 @@
 // first wall it reaches, then homes back on its owner, who catches it. It is not used up by a hit:
 // it can hit each enemy ball once on the way out and once on the way back. Like every projectile
 // it is swept against each ball's motion over the tick (ADR 0005), so nothing skips through it.
+import { isAllyOf, sideOfId } from '../side.ts';
 import { dealAbilityDamage } from '../abilities/apply-actions.ts';
 import { isAlive, isPhased } from '../combat.ts';
 import { DT } from '../constants.ts';
@@ -97,7 +98,8 @@ export function resolveReturning(
 
   let ballHit: { readonly s: number; readonly ball: BallState } | undefined;
   for (const ball of balls) {
-    if (ball.id === projectile.ownerId || !isAlive(ball) || leg.hitIds.includes(ball.id)) continue;
+    if (isAllyOf(balls, ball, projectile.ownerId) || !isAlive(ball) || leg.hitIds.includes(ball.id))
+      continue;
     // A phased ball lets it through, as it does a ball (ADR 0049).
     if (isPhased(ball, getDefinition(definitions, ball.definitionId))) continue;
     const s = touchTime(projectile, travel, ball, startPositions.get(ball.id) ?? ball.position);
@@ -105,7 +107,7 @@ export function resolveReturning(
   }
   let minionHit: { readonly s: number; readonly minion: MinionState } | undefined;
   for (const minion of minions) {
-    if (minion.ownerId === projectile.ownerId) continue;
+    if (sideOfId(balls, minion.ownerId) === sideOfId(balls, projectile.ownerId)) continue;
     const s = touchTime(projectile, travel, minion, minionStarts.get(minion.id) ?? minion.position);
     if (s !== undefined && (minionHit === undefined || s < minionHit.s)) minionHit = { s, minion };
   }
