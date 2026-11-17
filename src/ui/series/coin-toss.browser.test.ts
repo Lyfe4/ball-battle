@@ -94,6 +94,25 @@ describe('the coin toss', () => {
     expect(Number(flip?.currentTime)).toBeLessThan(900);
   });
 
+  it('keeps time with the server’s clock as this page’s estimate of it improves', () => {
+    const seats = playerSeats('a', 'Player 4821');
+    const times = liveToss(T + 10_000);
+    let now = times.flipAt + 500;
+    const play = { first: 'a' as const, key: 'k', seats, times, now: () => now };
+    const toss = createCoinToss(() => undefined);
+    document.body.replaceChildren(toss.element);
+    expect(toss.show(play)).toBe('flipping');
+    // A later answer moves the estimate 200 ms on: the next tick puts the coin where it should be.
+    now += 200;
+    expect(toss.show(play)).toBe('flipping');
+    const [flip] = toss.element.querySelector('.coin-toss-coin')?.getAnimations() ?? [];
+    expect(Number(flip?.currentTime)).toBeGreaterThanOrEqual(700);
+    // And past the landing at once, rather than when the old timer would have fired.
+    now = times.landAt + 10;
+    expect(toss.show(play)).toBe('landed');
+    expect(toss.element.dataset['stage']).toBe('landed');
+  });
+
   it('is hidden once the result has been read', () => {
     const seats = playerSeats('a', 'Player 4821');
     const times = liveToss(T);
