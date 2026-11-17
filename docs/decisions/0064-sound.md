@@ -107,7 +107,8 @@ ruleset bump, the golden results unchanged.
 - `voices.browser.test.ts`: every sound heard, under full scale and short; the busiest moment.
 - `taps.browser.test.ts`, `cues.test.ts`, `gate.test.ts`, `sound-settings.test.ts`.
 - The audio tests skip in Playwright's WebKit on Linux and Windows, which is built without Web
-  Audio; Chromium and Firefox render them.
+  Audio; Chromium and Firefox render them. The two that need audio running (taps, catch-up) also
+  skip on a machine with no audio output, such as Firefox on CI; Chromium covers them there.
 
 ## Consequences
 
