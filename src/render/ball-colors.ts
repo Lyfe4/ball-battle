@@ -15,6 +15,14 @@ export function lighten(hex: string, amount: number): string {
   return `#${channel(16)}${channel(8)}${channel(0)}`;
 }
 
+/** A `#rrggbb` colour as `rgba(...)` at `alpha` (0 to 1), for gradients that fade it out. */
+export function withAlpha(hex: string, alpha: number): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (match?.[1] === undefined) return hex;
+  const value = Number.parseInt(match[1], 16);
+  return `rgba(${String((value >> 16) & 0xff)}, ${String((value >> 8) & 0xff)}, ${String(value & 0xff)}, ${String(alpha)})`;
+}
+
 /**
  * True for a ball whose definition already appeared on an earlier side of the match, e.g. ball B in
  * a mirror match. Such balls are drawn in a lighter shade with a ring so the two can be told apart.

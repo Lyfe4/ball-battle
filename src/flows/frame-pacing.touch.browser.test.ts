@@ -2,7 +2,9 @@
 // runs 60 ticks): the real page at phone size, its animation frames held to 30 a second (and to an
 // uneven 25/42 ms beat), and every ball's drawn centre recorded per frame. Smooth motion moves a
 // ball by the same distance for the same time; the measure is how far each frame's speed strays
-// from the ball's median speed, between bounces. Render-side only: the fight itself is never
+// from the ball's median speed, between bounces. Each frame's work is timed too: a frame that
+// takes its whole beat is dropped on a slow phone (ADR 0063 addendum), and on slow frames each
+// ball is smeared over its path since the last one. Render-side only: the fight itself is never
 // touched (the golden results stay as they are).
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
@@ -17,8 +19,11 @@ interface Drawn {
   readonly y: number;
 }
 
-/** Holds the page's animation frames to `beat(n)` ms apart, stamped with the real time. */
-function capFrames(beat: (n: number) => number): void {
+/**
+ * Holds the page's animation frames to `beat(n)` ms apart, stamped with the real time; each
+ * frame's callbacks are timed together into `work`.
+ */
+function capFrames(beat: (n: number) => number, work: number[]): void {
   let queue: FrameRequestCallback[] = [];
   let n = 0;
   const tick = () => {
@@ -27,6 +32,7 @@ function capFrames(beat: (n: number) => number): void {
     const at = performance.now();
     (globalThis as unknown as { __frame: number }).__frame = n;
     for (const callback of due) callback(at);
+    work.push(performance.now() - at);
     n += 1;
     setTimeout(tick, beat(n));
   };
@@ -50,6 +56,20 @@ function recordBalls(): Drawn[] {
     arc.call(this, x, y, radius, ...rest);
   };
   return drawn;
+}
+
+/** The frames that drew a smear (a stroked gradient band, motion-smear.ts) on the arena. */
+function recordSmears(): Set<number> {
+  const frames = new Set<number>();
+  const prototype = CanvasRenderingContext2D.prototype;
+  const gradient = Object.getOwnPropertyDescriptor(prototype, 'createLinearGradient')
+    ?.value as typeof prototype.createLinearGradient;
+  prototype.createLinearGradient = function (this, ...rest) {
+    if (this.canvas.id === 'arena')
+      frames.add((globalThis as unknown as { __frame: number }).__frame);
+    return gradient.apply(this, rest);
+  };
+  return frames;
 }
 
 /**
@@ -91,8 +111,10 @@ describe('a fight at a capped frame rate', () => {
   it(`moves each ball evenly at ${which}`, async () => {
     window.localStorage.setItem(READY_CARD_STORAGE_KEY, 'off');
     window.localStorage.setItem('ballbattle.speed', '1');
-    capFrames(BEATS[which] ?? (() => 1000 / 30));
+    const work: number[] = [];
+    capFrames(BEATS[which] ?? (() => 1000 / 30), work);
     const drawn = recordBalls();
+    const smeared = recordSmears();
     const body = new DOMParser().parseFromString(page, 'text/html').body;
     document.body.replaceChildren(...body.children);
     const start = new URL(location.href);
@@ -105,11 +127,33 @@ describe('a fight at a capped frame rate', () => {
     await new Promise((resolve) => setTimeout(resolve, 5_000));
     // After the intro's pop-in.
     const from = (drawn[0]?.at ?? 0) + 1_400;
-    const { p90, frames } = speedJitter(drawn.filter((point) => point.at > from));
+    const fighting = drawn.filter((point) => point.at > from);
+    const { p90, frames } = speedJitter(fighting);
+    const sorted = [...work].sort((a, b) => a - b);
+    const workP95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0;
+    // Each fight frame's real gap from the one before (the harness's timers may run slower than
+    // asked: WebKit's held to about 27 a second at the 60 fps beat).
+    const at = new Map(fighting.map((point) => [point.frame, point.at]));
+    const gaps = [...at.entries()].flatMap(([frame, time]) => {
+      const before = at.get(frame - 1);
+      return before === undefined ? [] : [{ frame, gap: time - before }];
+    });
+    const slow = gaps.filter(({ gap }) => gap >= 26);
+    const fast = gaps.filter(({ gap }) => gap <= 20);
+    const smearShare =
+      slow.filter(({ frame }) => smeared.has(frame)).length / Math.max(1, slow.length);
     console.log(
-      `frame pacing at ${which}: p90 speed jitter ${(p90 * 100).toFixed(1)}% over ${String(frames)} frames`,
+      `frame pacing at ${which}: p90 speed jitter ${(p90 * 100).toFixed(1)}% over ${String(frames)} frames, ` +
+        `work p95 ${workP95.toFixed(1)} ms, smeared ${(smearShare * 100).toFixed(0)}% of ${String(slow.length)} slow frames, ${String(fast.filter(({ frame }) => smeared.has(frame)).length)} of ${String(fast.length)} fast`,
     );
     expect(frames).toBeGreaterThan(60);
     expect(p90).toBeLessThan(0.1);
+    // A frame's work is a few tenths of a ms on a desktop and about 2 ms with the CPU slowed 6x
+    // (scripts/low-power-frames.ts): far inside a 33 ms beat. Half the 60 Hz beat leaves
+    // room for a slow CI machine and still fails if drawing ever costs a phone its frames.
+    expect(workP95).toBeLessThan(1000 / 60 / 2);
+    // Slow frames smear the moving balls; frames at 50 a second and faster never do.
+    expect(fast.filter(({ frame }) => smeared.has(frame))).toStrictEqual([]);
+    if (slow.length > 20) expect(smearShare).toBeGreaterThan(0.8);
   });
 });

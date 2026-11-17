@@ -3,9 +3,10 @@
 import { membersOf } from '../sim/side.ts';
 import { hasStatus } from '../sim/status.ts';
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
+import { ballColor, isRepeatOfEarlierBall, withAlpha } from './ball-colors.ts';
 import type { Knockout, Squash, WinnerRing } from './effects.ts';
 import { healthBarRect, healthColor } from './health-bar.ts';
+import type { Smear } from './motion-smear.ts';
 import { shardAt, shardPieces, type Dot } from './particles.ts';
 import { theme } from './theme.ts';
 
@@ -205,4 +206,40 @@ function drawPoisonRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: 
   ctx.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
+}
+
+/**
+ * Each smear (motion-smear.ts) under its ball: a band the ball's width along the stretch of path
+ * since the last frame, fading from nothing where its back edge was to `theme.smearAlpha` where its
+ * back edge is now. A stroked line, so it draws no circle (the frame-pacing test counts the balls'
+ * circles). A phased ball's smear is as see-through as the ball.
+ */
+export function drawSmears(
+  ctx: CanvasRenderingContext2D,
+  smears: readonly Smear[],
+  colorOf: (ballId: string) => string,
+  alphaOf: (ballId: string) => number,
+): void {
+  for (const { ballId, from, to, radius } of smears) {
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const back = { x: ((to.x - from.x) / length) * radius, y: ((to.y - from.y) / length) * radius };
+    const color = colorOf(ballId);
+    const fade = ctx.createLinearGradient(
+      from.x - back.x,
+      from.y - back.y,
+      to.x - back.x,
+      to.y - back.y,
+    );
+    fade.addColorStop(0, withAlpha(color, 0));
+    fade.addColorStop(1, withAlpha(color, theme.smearAlpha * alphaOf(ballId)));
+    ctx.save();
+    ctx.strokeStyle = fade;
+    ctx.lineWidth = radius * 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
