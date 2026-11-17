@@ -17,6 +17,7 @@ import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
 import { interpolateWorld } from './render/interpolate.ts';
+import { createMoments } from './render/moments.ts';
 import { createRewinds } from './render/rewind.ts';
 import { createSourceChips } from './render/source-chips.ts';
 import { introLook } from './render/motion.ts';
@@ -101,6 +102,7 @@ export function createArena(
   const ctx = context;
   const effects = createEffects();
   const rewinds = createRewinds();
+  const moments = createMoments();
   const sourceChips = createSourceChips();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
@@ -158,6 +160,8 @@ export function createArena(
       intro: (index) => introLook(index, now, reduced),
       glance: (ballId) => effects.glance(ballId, now),
       rewinds: rewinds.trails(now),
+      splits: moments.splits(now),
+      snaps: moments.snaps(now),
       chips: sourceChips.chips(now),
       reducedMotion: reduced,
     });
@@ -220,6 +224,7 @@ export function createArena(
         resultAppeared ||
         effects.isActive(playback.effectMs) ||
         rewinds.isActive(playback.effectMs) ||
+        moments.isActive(playback.effectMs) ||
         sourceChips.isActive(playback.effectMs) ||
         tips.isActive(playback.effectMs)
       ) {
@@ -248,6 +253,7 @@ export function createArena(
     for (const { previous, result } of outcome.ticks) {
       effects.apply(result.events, playback.effectMs);
       rewinds.apply(result.events, playback.effectMs);
+      moments.apply(result.events, previous, result.world, playback.effectMs);
       sourceChips.apply(result.events, playback.effectMs);
       tips.apply(result.events, result.world, playback.effectMs);
       effects.bounced(wallBounces(previous, result.world), playback.effectMs);
@@ -281,6 +287,7 @@ export function createArena(
         : startPlayback(world, theme.introMs);
       effects.reset();
       rewinds.reset();
+      moments.reset();
       sourceChips.reset();
       lastFrameMs = undefined;
       render();

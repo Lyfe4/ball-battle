@@ -28,6 +28,7 @@ function recorder() {
     lineTo(x, y) {
       points.push({ x, y, lineWidth: this.lineWidth });
     },
+    quadraticCurveTo: () => undefined,
     arc: () => undefined,
     rect: () => undefined,
     fill: () => {

@@ -17,6 +17,7 @@ import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { batchFiveExtras, batchFourExtras, batchSixState } from './arena-extras.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
+import { HALF_RADIUS } from '../sim/balls/slime.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
 
@@ -133,6 +134,21 @@ function phoneArena(): HTMLElement {
           : ball.health,
     }))
     .map((ball, _index, all) => batchSixState(ball, all));
+  // A Slime split in two (ADR 0060): the half beside it, smaller, on its side.
+  const slime = balls.find((ball) => ball.definitionId === 'slime');
+  if (slime !== undefined) {
+    const half = { ...slime, radius: HALF_RADIUS, abilityState: { split: true } };
+    balls.push(
+      { ...half, side: slime.id, position: { x: slime.position.x - 60, y: slime.position.y } },
+      {
+        ...half,
+        id: `${slime.id}~1`,
+        side: slime.id,
+        position: { x: slime.position.x + 60, y: slime.position.y },
+      },
+    );
+    balls.splice(balls.indexOf(slime), 1);
+  }
   const view = { canvasPixels: canvas.width, cssPixels: cssSize };
   // A Necromancer's minion beside it, at the size the game uses, to check it reads at phone size.
   const owner = balls.find((ball) => ball.definitionId === 'necromancer');

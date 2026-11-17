@@ -1,5 +1,6 @@
 // Drawing for battle feel (ADR 0007): squash and intro transforms, the health bar's ghost,
 // particles, knockout shards and the winner's ring. Reads state and effect values only.
+import { membersOf } from '../sim/side.ts';
 import { hasStatus } from '../sim/status.ts';
 import type { BallState, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { ballColor, isRepeatOfEarlierBall } from './ball-colors.ts';
@@ -50,6 +51,8 @@ export function drawHealthBar(
   fraction: number,
   ghostFraction: number,
   arenaSize: number,
+  /** The share its colour reads (a Slime half's is its side's, ADR 0060); else `fraction`. */
+  colorFraction = fraction,
 ): void {
   const rect = healthBarRect(ball, arenaSize);
   const health = clamp01(fraction);
@@ -71,7 +74,7 @@ export function drawHealthBar(
     pill(inner.x, inner.y, inner.width * ghost, innerHeight);
   }
   if (health > 0) {
-    ctx.fillStyle = healthColor(fraction);
+    ctx.fillStyle = healthColor(colorFraction);
     pill(inner.x, inner.y, inner.width * health, innerHeight);
   }
 }
@@ -130,8 +133,13 @@ export function drawWinnerRing(
   ring: WinnerRing | undefined,
 ): void {
   if (ring === undefined) return;
-  const ball = world.balls.find((candidate) => candidate.id === ring.ballId);
-  if (ball === undefined) return;
+  // Around every ball still standing on the winning side (a Slime's halves, ADR 0059).
+  for (const ball of membersOf(world.balls, ring.ballId)) {
+    if (ball.health > 0) drawRing(ctx, ball, ring);
+  }
+}
+
+function drawRing(ctx: CanvasRenderingContext2D, ball: BallState, ring: WinnerRing): void {
   ctx.save();
   ctx.globalAlpha = ring.alpha;
   ctx.strokeStyle = theme.winnerRing;

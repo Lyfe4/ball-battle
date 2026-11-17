@@ -20,6 +20,7 @@ export interface Painter {
   closePath(): void;
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
   arc(x: number, y: number, radius: number, start: number, end: number, ccw?: boolean): void;
   rect(x: number, y: number, width: number, height: number): void;
   fill(): void;
@@ -57,6 +58,12 @@ export interface DesignView {
  */
 export interface BallDesign {
   readonly draw: (painter: Painter, view: DesignView) => void;
+  /**
+   * The body's own outline, for a ball that isn't a plain circle (the Slime's wobbling jelly): a
+   * closed path in the design's frame, used for the fill, the flash and the outline. It may leave
+   * the circle by a few percent of r, never more than an icon's padding (12% of r).
+   */
+  readonly outline?: (painter: Painter, view: DesignView) => void;
   /**
    * Painted after the outline, in the same frame: a part that stands proud of the ball and may
    * break its edge a little (the Spartan's crest), never more than an icon's padding (12% of r).

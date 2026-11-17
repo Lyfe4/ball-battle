@@ -1,3 +1,4 @@
+import { sideOf } from '../sim/side.ts';
 import type { BallState, DefinitionLookup } from '../sim/types.ts';
 import { theme } from './theme.ts';
 
@@ -15,15 +16,18 @@ export function lighten(hex: string, amount: number): string {
 }
 
 /**
- * True for a ball whose definition already appeared earlier in the match, e.g. ball B in a mirror
- * match. Such balls are drawn in a lighter shade with a ring so the two can be told apart.
+ * True for a ball whose definition already appeared on an earlier side of the match, e.g. ball B in
+ * a mirror match. Such balls are drawn in a lighter shade with a ring so the two can be told apart.
+ * A half split off a ball (ADR 0059) is read as its side's first ball, so it keeps that ball's shade.
  */
 export function isRepeatOfEarlierBall(balls: readonly BallState[], index: number): boolean {
   const ball = balls[index];
-  return (
-    ball !== undefined &&
-    balls.slice(0, index).some((other) => other.definitionId === ball.definitionId)
-  );
+  if (ball === undefined) return false;
+  const side = sideOf(ball);
+  const first = balls.findIndex((other) => other.id === side);
+  return balls
+    .slice(0, first === -1 ? index : first)
+    .some((other) => other.definitionId === ball.definitionId && sideOf(other) !== side);
 }
 
 /** The colour to draw a ball in: its definition's colour, lightened for a repeat. */
