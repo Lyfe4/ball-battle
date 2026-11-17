@@ -1,0 +1,31 @@
+/* The settings menu's Sound row (settings-sound.ts): its word, a volume slider, the menu's switch. */
+.settings-sound {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  min-height: var(--tap-target);
+}
+
+.settings-sound-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.settings-volume {
+  flex: 1;
+  min-width: 0;
+  height: var(--tap-target);
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.settings-sound[data-off] .settings-volume {
+  opacity: 0.5;
+}
+
+.settings-volume:focus-visible {
+  border-radius: 999px;
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

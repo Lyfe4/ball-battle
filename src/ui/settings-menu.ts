@@ -28,6 +28,8 @@ export interface SettingsHost {
    * live match, which plays on the server's clock: the menu then never covers the court (ADR 0054).
    */
   readonly mayWait: () => boolean;
+  /** The sound group (settings-sound.ts): on or off, and a volume. */
+  readonly sound?: { readonly element: HTMLElement; refresh(): void };
   /** Online play's group ("Forget me"), in builds that have it (ADR 0052). */
   readonly online?: { readonly element: HTMLElement; refresh(): void };
 }
@@ -77,7 +79,7 @@ interface Menu {
 }
 
 /** A switch: its words, and a pill that shows on or off (role=switch, aria-checked). */
-function createSwitch(text: string, onToggle: () => void): HTMLButtonElement {
+export function createSwitch(text: string, onToggle: () => void): HTMLButtonElement {
   const toggle = element('button', 'settings-switch');
   toggle.type = 'button';
   toggle.setAttribute('role', 'switch');
@@ -132,6 +134,7 @@ function buildMenu(): Menu {
   const foot = element('div', 'settings-foot');
   foot.append(again, close);
   panel.append(title, paused, speedRow, tipsGroup, foot);
+  if (host?.sound !== undefined) speedRow.after(host.sound.element);
   if (host?.online !== undefined) foot.before(host.online.element);
 
   function render(): void {
@@ -151,6 +154,7 @@ function buildMenu(): Menu {
     speed.select(host.speed());
     hints.setAttribute('aria-checked', String(host.tips.enabled()));
     cards.setAttribute('aria-checked', String(host.tips.readyCards()));
+    host.sound?.refresh();
     host.online?.refresh();
   }
   const probe = element('div', 'settings-safe-probe');
