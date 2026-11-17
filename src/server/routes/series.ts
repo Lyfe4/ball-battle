@@ -7,7 +7,8 @@
 // - POST /api/v1/series/:id/forfeit: "Leave and forfeit", a live series only (ADR 0053).
 // - GET and POST /api/v1/series/:id/rematch: a rematch after a live match (ADR 0055): where it
 //   stands; ask or answer {answer: 'yes' | 'no'}, then the new lineup {lineup}.
-// A live series' answers carry the database's clock in `X-Now`, a 304's too (ADR 0053).
+// A live series' answers carry the database's clock in `X-Now`, a 304's too (ADR 0053), though
+// Netlify's edge drops it from a 304 (ADR 0061).
 // Expired turns are settled when anyone reads, and by the scheduled sweep.
 // Queries go one at a time, never two at once (`Promise.all`): the pooler (Supavisor, transaction
 // mode) never answers two queries pipelined on one connection, so such a request hangs until the
