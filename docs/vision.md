@@ -1,8 +1,10 @@
 # Vision
 
 Where BallBattle is heading. It guides design and balance decisions so today's work doesn't paint
-the future into a corner. Step 1 of the planned order (best of 3 against a bot) is built
-(ADR 0017); the rest is not.
+the future into a corner. Built so far: series against a bot (Best of 3 and 5, ADR 0017, 0048), a
+backend that issues secret seeds and verifies every series with its ruleset's frozen bundle
+(ADR 0051, 0052), and live friend matches in Reveal and Showdown (ADR 0053). Accounts, ranked
+play, an open queue, progression and an app-store release are not.
 
 ## Long-term goal
 
@@ -11,17 +13,25 @@ then live PvP, leaderboards, a game currency, random unlocks and in-app purchase
 below the draft (the deterministic sim, `verifySeries`, ruleset versions) is built so that this
 can sit on top of it. Rules that hold however it is built:
 
-- **Unlocks and rarities add variety, never power.** A rare ball or skin is a new option or a new
-  look, never a stronger version of something a player already has; every ball stays inside the
-  balance targets.
+- **Progression: start with about 5 balls, unlock the rest with an in-game currency** (owner's
+  decision, 2026-11-18). The currency is earned by playing; it may also be sold to skip the grind,
+  but everything stays unlockable by playing.
+- **A ball is never a stronger version of another ball**, and every ball stays inside the balance
+  targets. Owning more balls is allowed to be an advantage: more options in the guessing game.
+  Fairness comes from three things instead: **rating-based matchmaking** (a new player meets other
+  new players), **never selling a ball directly for real money**, and **a starter set that can win
+  on its own**.
 - **The server issues seeds and verifies every result with `verifySeries`.** A client never picks
-  a seed and its reported result is never trusted (step 2 of the planned order below).
+  a seed and its reported result is never trusted (built for friend matches, ADR 0052).
 - **Currency and unlocks are stored on the server, never trusted from the client.** A client shows
   what the server says it owns; it never grants itself anything.
 - **Paid random rewards need a legal check before shipping.** In Australia, in-game purchases with
   random rewards force at least an M rating, and simulated gambling (such as a roulette wheel)
   forces R18+. Prefer a pack or chest reveal over a roulette wheel, and check every market the game
-  ships in.
+  ships in. **If the currency can be bought, chests opened with it count as paid loot boxes**:
+  Australia rates the game M at minimum, the app stores require the odds of every item to be shown
+  before purchase, and Belgium bans them. **Buying a chosen ball directly with the currency, with no
+  chests, avoids all three.**
 
 Rough order:
 
@@ -169,8 +179,9 @@ blind picks. See Decisions below.
      another ruleset is replayed under the server's or rejected, never accepted as reported. The
      known match results checked in Chromium, Firefox and WebKit (ADR 0023) are what let a
      browser's fight and the server's re-simulation be the same fight.
-3. **Progression and unlocks** (see Long-term goal). Unlocks add **variety, not power**: a new
-   ball is a new option in the guessing game, never a stronger version of an old one.
+3. **Progression and unlocks** (see Long-term goal). About 5 starter balls, the rest bought with a
+   currency earned by playing. A new ball is a new option in the guessing game, never a stronger
+   version of an old one; owning more is an advantage that rating-based matchmaking keeps fair.
 
 ## Decisions
 
