@@ -104,7 +104,7 @@ function allow(gap: {
  * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
  * fill (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on
  * any other ball, and on these beyond their allowance. Each allowance is exactly the ball's gap
- * today (map and measured, ruleset 18) and no wider, so any ball slipping one more step fails; a
+ * today (map and measured, ruleset 19) and no wider, so any ball slipping one more step fails; a
  * ball moving back towards the shape still passes, and its allowance can then be tightened.
  * - The Ghost loses to one ball, and the Titan beats one and loses to one: while the Ghost is
  *   phased nothing touches it, so only the Bloom's regrowth beats it (ADR 0049), and only Thorns
@@ -113,9 +113,12 @@ function allow(gap: {
  * - The Berserker beats nearly every ball that hits rarely: 5 wins (its 4 losses keep the gap 1).
  * - The Bloom regrows only after 2 s untouched, so every ball that hits it often wins: 5 losses
  *   (ADR 0050).
- * - Since the Guardian left (ADR 0047): the Quake beats one ball, and the Vampire gained the Spartan
- *   as a fourth loss against its 2 wins. (The Sniper lost its allowance in ruleset 17: its quicker
- *   lock beats the planted Spartan, ADR 0057.)
+ * - Since the Guardian left (ADR 0047): the Quake beats one ball. (The Sniper lost its allowance in
+ *   ruleset 17: its quicker lock beats the planted Spartan, ADR 0057; the Vampire lost its own in
+ *   ruleset 19: it beats the Slime, a third win against its 4 losses, ADR 0060.)
+ * - The Archer loses to five balls (owner's decision, ruleset 19, ADR 0060): the Slime's split
+ *   outlasts one arrow at a time, a fifth loss beside the Magnet, Necromancer, Speedster and
+ *   Berserker. The gap is for a change that takes one of its losses; its 4 wins keep it within 1.
  * - The Magnet loses to one ball, Thorns, and beats three: a hit from range starts its pull, so it
  *   beats the Archer, Boomerang and Necromancer (ADR 0058). The gap is for a ball that beats it in
  *   a brawl; three wins over one loss is a gap of 2.
@@ -123,11 +126,11 @@ function allow(gap: {
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
   titan: allow({ wins: { fewest: 1 }, losses: { fewest: 1 } }),
   berserker: allow({ wins: { most: 5 } }),
+  archer: allow({ losses: { most: 5 } }),
   bloom: allow({ losses: { most: 5 } }),
   ghost: allow({ losses: { fewest: 1 } }),
   magnet: allow({ losses: { fewest: 1 }, within: 2 }),
   quake: allow({ wins: { fewest: 1 } }),
-  vampire: allow({ within: 2 }),
 };
 
 /**

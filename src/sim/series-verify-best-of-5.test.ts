@@ -69,7 +69,8 @@ describe('verifySeries, Best of 5', () => {
     'refuses a bot lineup or a bot pick the bot would not make, and a missing or extra pick',
     { timeout: WHOLE_RUN_TIMEOUT_MS },
     () => {
-      const setup = decided('reveal', 3, 'normal');
+      // Seed 4 goes the whole five rounds (ruleset 19; seed 3 did until ruleset 18).
+      const setup = decided('reveal', 4, 'normal');
       const [x = '', y = '', ...rest] = setup.b;
       expect(reasonOf({ ...setup, b: [y, x, ...rest] })).toMatch(/lineup the normal bot picks/);
       const picks = setup.picks ?? [];

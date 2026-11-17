@@ -15,63 +15,65 @@ failure.
 
 | Ball        |   Win | Map: strong |  Map: even | Map: weak | Map gap | Measured: strong | Measured: even | Measured: weak | Measured gap |
 | ----------- | ----: | ----------: | ---------: | --------: | ------: | ---------------: | -------------: | -------------: | -----------: |
-| Brawler     | 47.0% |           0 | 22 (48.0%) | 1 (24.7%) |      -1 |                0 |     22 (48.0%) |      1 (24.7%) |           -1 |
-| Speedster   | 45.8% |   3 (67.3%) | 16 (45.4%) | 4 (31.3%) |      -1 |        3 (67.3%) |     16 (45.4%) |      4 (31.3%) |           -1 |
-| Vampire     | 51.8% |   2 (75.3%) | 17 (54.0%) | 4 (30.8%) | -2 WARN |        2 (75.3%) |     17 (54.0%) |      4 (30.8%) |      -2 WARN |
-| Archer      | 49.5% |   4 (66.2%) | 15 (50.5%) | 4 (28.8%) |       0 |        4 (66.2%) |     15 (50.5%) |      4 (28.8%) |            0 |
-| Storm       | 49.2% |   2 (69.8%) | 19 (49.5%) | 2 (24.9%) |       0 |        2 (69.8%) |     19 (49.5%) |      2 (24.9%) |            0 |
-| Frost       | 49.0% |   3 (64.9%) | 18 (48.4%) | 2 (29.8%) |      +1 |        3 (64.9%) |     18 (48.4%) |      2 (29.8%) |           +1 |
-| Thorns      | 51.0% |   4 (72.2%) | 16 (48.6%) | 3 (35.6%) |      +1 |        4 (72.2%) |     16 (48.6%) |      3 (35.6%) |           +1 |
-| Venom       | 51.1% |   3 (66.6%) | 18 (51.1%) | 2 (28.0%) |      +1 |        3 (66.6%) |     18 (51.1%) |      2 (28.0%) |           +1 |
-| Berserker   | 50.3% |   5 (67.3%) | 14 (49.9%) | 4 (30.9%) |      +1 |        5 (67.3%) |     14 (49.9%) |      4 (30.9%) |           +1 |
-| Sniper      | 50.6% |   2 (64.7%) | 19 (50.6%) | 2 (36.0%) |       0 |        2 (64.7%) |     19 (50.6%) |      2 (36.0%) |            0 |
-| Quake       | 48.3% |   1 (64.9%) | 20 (48.7%) | 2 (35.5%) |      -1 |        1 (64.9%) |     19 (49.3%) |      3 (36.3%) |      -2 WARN |
-| Magnet      | 51.6% |   3 (68.9%) | 19 (50.3%) | 1 (24.9%) | +2 WARN |        3 (68.9%) |     18 (51.0%) |      2 (31.1%) |           +1 |
-| Ghost       | 50.4% |   2 (67.5%) | 20 (49.7%) | 1 (30.4%) |      +1 |        2 (67.5%) |     20 (49.7%) |      1 (30.4%) |           +1 |
-| Necromancer | 47.1% |   2 (69.3%) | 18 (46.6%) | 3 (35.4%) |      -1 |        2 (69.3%) |     17 (47.1%) |      4 (36.0%) |      -2 WARN |
-| Chrono      | 48.3% |   4 (69.2%) | 15 (46.5%) | 4 (34.3%) |       0 |        4 (69.2%) |     14 (47.2%) |      5 (34.9%) |           -1 |
-| Titan       | 50.1% |   1 (65.9%) | 21 (50.1%) | 1 (33.9%) |       0 |        1 (65.9%) |     21 (50.1%) |      1 (33.9%) |            0 |
-| Inferno     | 49.7% |   3 (67.1%) | 18 (48.4%) | 2 (35.5%) |      +1 |        3 (67.1%) |     18 (48.4%) |      2 (35.5%) |           +1 |
-| Boomerang   | 51.1% |   3 (66.2%) | 16 (52.7%) | 4 (33.4%) |      -1 |        3 (66.2%) |     16 (52.7%) |      4 (33.4%) |           -1 |
-| Bomber      | 52.0% |   2 (63.0%) | 19 (53.2%) | 2 (29.6%) |       0 |        2 (63.0%) |     19 (53.2%) |      2 (29.6%) |            0 |
-| Spartan     | 51.3% |   2 (68.1%) | 18 (52.5%) | 3 (32.9%) |      -1 |        2 (68.1%) |     18 (52.5%) |      3 (32.9%) |           -1 |
-| Bloom       | 49.5% |   4 (69.0%) | 14 (51.3%) | 5 (29.1%) |      -1 |        4 (69.0%) |     14 (51.3%) |      5 (29.1%) |           -1 |
-| Hex         | 51.6% |   4 (65.1%) | 15 (53.4%) | 4 (31.2%) |       0 |        4 (65.1%) |     15 (53.4%) |      4 (31.2%) |            0 |
-| Spider      | 48.9% |   4 (65.6%) | 16 (47.0%) | 3 (36.6%) |      +1 |        4 (65.6%) |     15 (47.7%) |      4 (36.9%) |            0 |
-| Battery     | 48.5% |   3 (72.2%) | 17 (47.0%) | 3 (33.1%) |       0 |        3 (72.2%) |     16 (47.6%) |      4 (34.2%) |           -1 |
+| Brawler     | 47.2% |           0 | 23 (48.2%) | 1 (24.7%) |      -1 |                0 |     23 (48.2%) |      1 (24.7%) |           -1 |
+| Speedster   | 45.6% |   3 (67.3%) | 17 (45.2%) | 4 (30.9%) |      -1 |        3 (67.3%) |     17 (45.2%) |      4 (30.9%) |           -1 |
+| Vampire     | 52.2% |   3 (71.4%) | 17 (53.8%) | 4 (30.8%) |      -1 |        3 (71.4%) |     17 (53.8%) |      4 (30.8%) |           -1 |
+| Archer      | 48.7% |   4 (66.3%) | 15 (50.5%) | 5 (29.3%) |      -1 |        4 (66.3%) |     15 (50.5%) |      5 (29.3%) |           -1 |
+| Storm       | 49.0% |   2 (69.8%) | 20 (49.4%) | 2 (24.9%) |       0 |        2 (69.8%) |     20 (49.4%) |      2 (24.9%) |            0 |
+| Frost       | 49.4% |   3 (64.9%) | 19 (49.0%) | 2 (29.8%) |      +1 |        3 (64.9%) |     19 (49.0%) |      2 (29.8%) |           +1 |
+| Thorns      | 51.2% |   4 (72.2%) | 17 (49.0%) | 3 (35.6%) |      +1 |        4 (72.2%) |     17 (49.0%) |      3 (35.6%) |           +1 |
+| Venom       | 51.6% |   3 (66.6%) | 19 (51.7%) | 2 (28.0%) |      +1 |        3 (66.6%) |     19 (51.7%) |      2 (28.0%) |           +1 |
+| Berserker   | 50.4% |   5 (67.3%) | 15 (50.0%) | 4 (30.9%) |      +1 |        5 (67.3%) |     15 (50.0%) |      4 (30.9%) |           +1 |
+| Sniper      | 49.7% |   2 (64.7%) | 19 (50.5%) | 3 (34.9%) |      -1 |        2 (64.7%) |     19 (50.5%) |      3 (34.9%) |           -1 |
+| Quake       | 48.5% |   1 (64.9%) | 21 (49.0%) | 2 (35.1%) |      -1 |        1 (64.9%) |     20 (49.5%) |      3 (36.1%) |      -2 WARN |
+| Magnet      | 51.4% |   3 (68.9%) | 20 (50.1%) | 1 (24.9%) | +2 WARN |        3 (68.9%) |     19 (50.7%) |      2 (31.1%) |           +1 |
+| Ghost       | 50.8% |   2 (67.5%) | 21 (50.1%) | 1 (30.4%) |      +1 |        2 (67.5%) |     21 (50.1%) |      1 (30.4%) |           +1 |
+| Necromancer | 46.9% |   2 (69.3%) | 19 (46.3%) | 3 (35.4%) |      -1 |        2 (69.3%) |     18 (46.8%) |      4 (36.0%) |      -2 WARN |
+| Chrono      | 48.8% |   4 (69.2%) | 17 (46.7%) | 3 (33.6%) |      +1 |        4 (69.2%) |     16 (47.3%) |      4 (34.5%) |            0 |
+| Titan       | 50.4% |   1 (65.9%) | 22 (50.4%) | 1 (33.9%) |       0 |        1 (65.9%) |     22 (50.4%) |      1 (33.9%) |            0 |
+| Inferno     | 49.7% |   3 (67.1%) | 19 (48.5%) | 2 (35.5%) |      +1 |        3 (67.1%) |     19 (48.5%) |      2 (35.5%) |           +1 |
+| Boomerang   | 50.9% |   3 (65.9%) | 17 (52.3%) | 4 (33.4%) |      -1 |        3 (65.9%) |     17 (52.3%) |      4 (33.4%) |           -1 |
+| Bomber      | 51.8% |   2 (63.7%) | 20 (52.8%) | 2 (29.6%) |       0 |        2 (63.7%) |     20 (52.8%) |      2 (29.6%) |            0 |
+| Spartan     | 51.0% |   3 (66.1%) | 18 (51.4%) | 3 (32.9%) |       0 |        3 (66.1%) |     18 (51.4%) |      3 (32.9%) |            0 |
+| Bloom       | 49.8% |   4 (69.0%) | 15 (51.6%) | 5 (29.1%) |      -1 |        4 (69.0%) |     15 (51.6%) |      5 (29.1%) |           -1 |
+| Hex         | 51.1% |   4 (65.1%) | 16 (52.5%) | 4 (31.2%) |       0 |        4 (65.1%) |     16 (52.5%) |      4 (31.2%) |            0 |
+| Spider      | 49.7% |   4 (66.3%) | 16 (48.9%) | 4 (36.6%) |       0 |        4 (66.3%) |     16 (48.9%) |      4 (36.6%) |            0 |
+| Battery     | 48.5% |   3 (72.2%) | 18 (47.2%) | 3 (33.0%) |       0 |        3 (72.2%) |     17 (47.8%) |      4 (34.1%) |           -1 |
+| Slime       | 48.8% |   2 (67.7%) | 20 (48.3%) | 2 (35.1%) |       0 |        2 (67.7%) |     19 (48.9%) |      3 (36.0%) |           -1 |
 
-Lopsided: Vampire, Quake, Magnet, Necromancer.
+Lopsided: Quake, Magnet, Necromancer.
 
 ## Counters
 
 Each ball’s counters by the map, with its measured win rate against each.
 
-| Ball        | Beats (▲)                                                              | Loses to (▼)                                                           |
-| ----------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Brawler     | -                                                                      | Thorns 24.7%                                                           |
-| Speedster   | Archer 71.0%, Boomerang 67.0%, Sniper 64.0%                            | Spider 25.6%, Frost 29.3%, Hex 33.4%, Bomber 36.7%                     |
-| Vampire     | Hex 75.5%, Berserker 75.0%                                             | Storm 26.1%, Spartan 27.1%, Archer 33.2%, Boomerang 36.7%              |
-| Archer      | Bloom 73.8%, Vampire 66.4%, Spider 62.4%, Thorns 62.2%                 | Magnet 24.4%, Necromancer 26.5%, Speedster 28.8%, Berserker 35.5%      |
-| Storm       | Vampire 73.7%, Spartan 65.9%                                           | Chrono 24.9%, Battery 24.9%                                            |
-| Frost       | Speedster 70.2%, Battery 62.4%, Berserker 62.2%                        | Bloom 28.9%, Hex 30.7%                                                 |
-| Thorns      | Brawler 75.2%, Magnet 74.8%, Battery 72.9%, Titan 65.8%                | Venom 34.5%, Sniper 34.6%, Archer 37.6%                                |
-| Venom       | Bloom 69.0%, Chrono 66.0%, Thorns 64.9%                                | Berserker 25.4%, Ghost 30.6%                                           |
-| Berserker   | Venom 74.2%, Boomerang 67.1%, Inferno 66.6%, Archer 64.5%, Quake 64.1% | Vampire 24.4%, Bloom 26.7%, Hex 35.6%, Frost 36.7%                     |
-| Sniper      | Thorns 64.9%, Spartan 64.4%                                            | Speedster 35.8%, Chrono 36.2%                                          |
-| Quake       | Necromancer 64.9%                                                      | Berserker 35.5%, Spider 35.5%                                          |
-| Magnet      | Archer 75.5%, Boomerang 66.1%, Necromancer 65.2%                       | Thorns 24.9%                                                           |
-| Ghost       | Venom 69.0%, Hex 66.0%                                                 | Bloom 30.4%                                                            |
-| Necromancer | Archer 73.3%, Boomerang 65.2%                                          | Quake 34.0%, Magnet 34.6%, Inferno 37.6%                               |
-| Chrono      | Storm 75.1%, Spartan 70.2%, Bomber 68.0%, Sniper 63.5%                 | Inferno 33.2%, Venom 33.5%, Bloom 34.2%, Spider 36.3%                  |
-| Titan       | Bloom 65.9%                                                            | Thorns 33.9%                                                           |
-| Inferno     | Bloom 72.6%, Chrono 66.6%, Necromancer 62.2%                           | Berserker 33.2%, Hex 37.7%                                             |
-| Boomerang   | Bloom 71.4%, Spider 63.9%, Vampire 63.2%                               | Speedster 32.7%, Berserker 32.8%, Magnet 33.7%, Necromancer 34.5%      |
-| Bomber      | Speedster 63.1%, Spider 62.9%                                          | Battery 27.2%, Chrono 32.0%                                            |
-| Spartan     | Vampire 72.7%, Hex 63.5%                                               | Chrono 29.2%, Storm 34.0%, Sniper 35.4%                                |
-| Bloom       | Berserker 72.0%, Frost 70.6%, Ghost 68.5%, Chrono 64.8%                | Archer 25.9%, Inferno 27.3%, Boomerang 28.5%, Venom 30.6%, Titan 33.2% |
-| Hex         | Frost 69.0%, Speedster 65.1%, Berserker 64.3%, Inferno 62.2%           | Vampire 24.4%, Battery 31.0%, Ghost 33.7%, Spartan 35.7%               |
-| Spider      | Speedster 73.9%, Quake 63.3%, Chrono 62.8%, Battery 62.4%              | Boomerang 36.0%, Bomber 36.4%, Archer 37.4%                            |
-| Battery     | Storm 74.8%, Bomber 72.8%, Hex 68.9%                                   | Thorns 26.6%, Frost 35.6%, Spider 37.1%                                |
+| Ball        | Beats (▲)                                                              | Loses to (▼)                                                                   |
+| ----------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Brawler     | -                                                                      | Thorns 24.7%                                                                   |
+| Speedster   | Archer 71.0%, Boomerang 67.0%, Sniper 64.0%                            | Spider 24.4%, Frost 29.3%, Hex 33.4%, Bomber 36.7%                             |
+| Vampire     | Hex 75.5%, Berserker 75.0%, Slime 63.7%                                | Storm 26.1%, Spartan 27.1%, Archer 33.2%, Boomerang 36.7%                      |
+| Archer      | Bloom 73.8%, Vampire 66.4%, Spider 62.9%, Thorns 62.2%                 | Magnet 24.4%, Necromancer 26.5%, Speedster 28.8%, Slime 31.2%, Berserker 35.5% |
+| Storm       | Vampire 73.7%, Spartan 65.9%                                           | Chrono 24.9%, Battery 24.9%                                                    |
+| Frost       | Speedster 70.2%, Battery 62.4%, Berserker 62.2%                        | Bloom 28.9%, Hex 30.7%                                                         |
+| Thorns      | Brawler 75.2%, Magnet 74.8%, Battery 72.9%, Titan 65.8%                | Venom 34.5%, Sniper 34.6%, Archer 37.6%                                        |
+| Venom       | Bloom 69.0%, Chrono 66.0%, Thorns 64.9%                                | Berserker 25.4%, Ghost 30.6%                                                   |
+| Berserker   | Venom 74.2%, Boomerang 67.1%, Inferno 66.6%, Archer 64.5%, Quake 64.1% | Vampire 24.4%, Bloom 26.7%, Hex 35.6%, Frost 36.7%                             |
+| Sniper      | Thorns 64.9%, Spartan 64.4%                                            | Slime 32.6%, Speedster 35.8%, Chrono 36.2%                                     |
+| Quake       | Necromancer 64.9%                                                      | Spider 34.8%, Berserker 35.5%                                                  |
+| Magnet      | Archer 75.5%, Boomerang 66.1%, Necromancer 65.2%                       | Thorns 24.9%                                                                   |
+| Ghost       | Venom 69.0%, Hex 66.0%                                                 | Bloom 30.4%                                                                    |
+| Necromancer | Archer 73.3%, Boomerang 65.2%                                          | Quake 34.0%, Magnet 34.6%, Inferno 37.6%                                       |
+| Chrono      | Storm 75.1%, Spartan 70.2%, Bomber 68.0%, Sniper 63.5%                 | Inferno 33.2%, Venom 33.5%, Bloom 34.2%                                        |
+| Titan       | Bloom 65.9%                                                            | Thorns 33.9%                                                                   |
+| Inferno     | Bloom 72.6%, Chrono 66.6%, Necromancer 62.2%                           | Berserker 33.2%, Hex 37.7%                                                     |
+| Boomerang   | Bloom 71.4%, Vampire 63.2%, Spider 63.0%                               | Speedster 32.7%, Berserker 32.8%, Magnet 33.7%, Necromancer 34.5%              |
+| Bomber      | Spider 64.4%, Speedster 63.1%                                          | Battery 27.2%, Chrono 32.0%                                                    |
+| Spartan     | Vampire 72.7%, Hex 63.5%, Spider 62.1%                                 | Chrono 29.2%, Storm 34.0%, Sniper 35.4%                                        |
+| Bloom       | Berserker 72.0%, Frost 70.6%, Ghost 68.5%, Chrono 64.8%                | Archer 25.9%, Inferno 27.3%, Boomerang 28.5%, Venom 30.6%, Titan 33.2%         |
+| Hex         | Frost 69.0%, Speedster 65.1%, Berserker 64.3%, Inferno 62.2%           | Vampire 24.4%, Battery 31.0%, Ghost 33.7%, Spartan 35.7%                       |
+| Spider      | Speedster 74.9%, Quake 64.1%, Slime 63.7%, Battery 62.5%               | Bomber 35.2%, Archer 36.7%, Boomerang 36.9%, Spartan 37.6%                     |
+| Battery     | Storm 74.8%, Bomber 72.8%, Hex 68.9%                                   | Thorns 26.6%, Frost 35.6%, Spider 36.7%                                        |
+| Slime       | Archer 68.2%, Sniper 67.1%                                             | Spider 34.9%, Vampire 35.4%                                                    |
 
 ## Known gaps
 
@@ -83,11 +85,11 @@ these, which `pnpm balance` allows by name and nothing else: gaps for future bal
 | --------- | ---: | -----: | ---------------------: |
 | Titan     |  1-4 |    1-4 |                      1 |
 | Berserker |  2-5 |    2-4 |                      1 |
+| Archer    |  2-4 |    2-5 |                      1 |
 | Bloom     |  2-4 |    2-5 |                      1 |
 | Ghost     |  2-4 |    1-4 |                      1 |
 | Magnet    |  2-4 |    1-4 |                      2 |
 | Quake     |  1-4 |    2-4 |                      1 |
-| Vampire   |  2-4 |    2-4 |                      2 |
 
 ## Below target
 
@@ -106,7 +108,7 @@ is in the grey zone (ADR 0045, group 4).
 | Brawler vs Bomber        | even                 | 44.2% / 55.8% |
 | Bloom vs Brawler         | even                 | 55.8% / 43.9% |
 | Hex vs Brawler           | even                 | 55.2% / 44.6% |
-| Spider vs Brawler        | even                 | 57.4% / 42.2% |
+| Spider vs Brawler        | even                 | 55.7% / 43.7% |
 | Battery vs Brawler       | even                 | 44.1% / 54.8% |
 | Vampire vs Speedster     | even                 | 59.0% / 40.9% |
 | Speedster vs Storm       | even                 | 56.9% / 42.8% |
@@ -123,7 +125,8 @@ is in the grey zone (ADR 0045, group 4).
 | Bomber vs Speedster      | Bomber favoured      |         63.1% |
 | Spartan vs Speedster     | even                 | 43.4% / 56.1% |
 | Bloom vs Speedster       | even                 | 58.6% / 41.0% |
-| Spider vs Speedster      | Spider favoured      |         73.9% |
+| Spider vs Speedster      | Spider favoured      |         74.9% |
+| Slime vs Speedster       | even                 | 57.1% / 42.4% |
 | Storm vs Vampire         | Storm favoured       |         73.7% |
 | Frost vs Vampire         | even                 | 39.4% / 59.9% |
 | Thorns vs Vampire        | even                 | 38.5% / 60.4% |
@@ -139,6 +142,7 @@ is in the grey zone (ADR 0045, group 4).
 | Vampire vs Bloom         | even                 | 60.2% / 39.0% |
 | Hex vs Vampire           | Vampire favoured     |         75.5% |
 | Battery vs Vampire       | even                 | 38.1% / 59.6% |
+| Slime vs Vampire         | Vampire favoured     |         63.7% |
 | Frost vs Archer          | even                 | 40.6% / 59.0% |
 | Archer vs Thorns         | Archer favoured      |         62.2% |
 | Venom vs Archer          | even                 | 55.8% / 43.9% |
@@ -149,7 +153,7 @@ is in the grey zone (ADR 0045, group 4).
 | Titan vs Archer          | even                 | 61.0% / 38.9% |
 | Archer vs Bloom          | Archer favoured      |         73.8% |
 | Hex vs Archer            | even                 | 40.1% / 59.7% |
-| Spider vs Archer         | Archer favoured      |         62.4% |
+| Spider vs Archer         | Archer favoured      |         62.9% |
 | Storm vs Thorns          | even                 | 54.8% / 44.9% |
 | Berserker vs Storm       | even                 | 56.6% / 43.3% |
 | Necromancer vs Storm     | even                 | 43.7% / 55.9% |
@@ -165,6 +169,7 @@ is in the grey zone (ADR 0045, group 4).
 | Frost vs Bomber          | even                 | 44.6% / 55.2% |
 | Spartan vs Frost         | even                 | 59.3% / 40.2% |
 | Battery vs Frost         | Frost favoured       |         62.4% |
+| Slime vs Frost           | even                 | 37.7% / 61.0% |
 | Venom vs Thorns          | Venom favoured       |         64.9% |
 | Thorns vs Berserker      | even                 | 60.5% / 38.9% |
 | Sniper vs Thorns         | Sniper favoured      |         64.9% |
@@ -178,19 +183,21 @@ is in the grey zone (ADR 0045, group 4).
 | Spartan vs Thorns        | even                 | 59.1% / 40.5% |
 | Bloom vs Thorns          | even                 | 59.5% / 40.3% |
 | Hex vs Thorns            | even                 | 61.0% / 38.4% |
-| Spider vs Thorns         | even                 | 43.6% / 54.1% |
+| Spider vs Thorns         | even                 | 42.2% / 55.5% |
 | Battery vs Thorns        | Thorns favoured      |         72.9% |
+| Slime vs Thorns          | even                 | 43.4% / 54.3% |
 | Berserker vs Venom       | Berserker favoured   |         74.2% |
 | Venom vs Necromancer     | even                 | 57.1% / 42.2% |
 | Venom vs Inferno         | even                 | 55.0% / 44.8% |
 | Spartan vs Venom         | even                 | 56.3% / 43.6% |
 | Battery vs Venom         | even                 | 43.5% / 56.2% |
+| Slime vs Venom           | even                 | 38.8% / 60.8% |
 | Quake vs Berserker       | Berserker favoured   |         64.1% |
 | Berserker vs Necromancer | even                 | 61.5% / 38.0% |
 | Chrono vs Berserker      | even                 | 56.0% / 42.3% |
 | Titan vs Berserker       | even                 | 57.2% / 42.3% |
 | Hex vs Berserker         | Hex favoured         |         64.3% |
-| Spider vs Berserker      | even                 | 43.6% / 56.4% |
+| Spider vs Berserker      | even                 | 43.5% / 55.8% |
 | Magnet vs Sniper         | even                 | 54.8% / 44.7% |
 | Necromancer vs Sniper    | even                 | 57.1% / 42.6% |
 | Chrono vs Sniper         | Chrono favoured      |         63.5% |
@@ -202,34 +209,42 @@ is in the grey zone (ADR 0045, group 4).
 | Quake vs Necromancer     | Quake favoured       |         64.9% |
 | Chrono vs Quake          | even                 | 38.4% / 60.9% |
 | Hex vs Quake             | even                 | 57.6% / 40.8% |
-| Spider vs Quake          | Spider favoured      |         63.3% |
+| Spider vs Quake          | Spider favoured      |         64.1% |
 | Magnet vs Inferno        | even                 | 55.4% / 44.3% |
 | Spartan vs Magnet        | even                 | 43.1% / 55.8% |
 | Bloom vs Magnet          | even                 | 44.8% / 54.9% |
 | Chrono vs Ghost          | even                 | 42.6% / 54.6% |
 | Ghost vs Bomber          | even                 | 39.9% / 59.9% |
+| Slime vs Ghost           | even                 | 40.6% / 58.7% |
 | Inferno vs Necromancer   | Inferno favoured     |         62.2% |
 | Necromancer vs Bomber    | even                 | 42.7% / 56.4% |
 | Bloom vs Necromancer     | even                 | 56.9% / 42.5% |
 | Hex vs Necromancer       | even                 | 60.0% / 39.2% |
+| Slime vs Necromancer     | even                 | 56.7% / 43.0% |
 | Chrono vs Boomerang      | even                 | 40.0% / 59.8% |
 | Chrono vs Bloom          | Bloom favoured       |         64.8% |
-| Spider vs Chrono         | Spider favoured      |         62.8% |
+| Spider vs Chrono         | even                 | 60.0% / 39.6% |
+| Slime vs Chrono          | even                 | 41.1% / 57.4% |
 | Inferno vs Titan         | even                 | 59.0% / 40.3% |
 | Spartan vs Titan         | even                 | 61.3% / 38.2% |
 | Hex vs Titan             | even                 | 58.1% / 41.9% |
+| Slime vs Titan           | even                 | 42.2% / 57.5% |
 | Boomerang vs Inferno     | even                 | 58.5% / 41.4% |
 | Spartan vs Inferno       | even                 | 61.6% / 38.2% |
 | Bloom vs Inferno         | Inferno favoured     |         72.6% |
 | Hex vs Inferno           | Hex favoured         |         62.2% |
 | Hex vs Boomerang         | even                 | 41.0% / 58.7% |
-| Spider vs Boomerang      | Boomerang favoured   |         63.9% |
+| Spider vs Boomerang      | Boomerang favoured   |         63.0% |
 | Spartan vs Bomber        | even                 | 55.1% / 44.5% |
 | Bloom vs Bomber          | even                 | 38.8% / 61.0% |
-| Spider vs Bomber         | Bomber favoured      |         62.9% |
+| Spider vs Bomber         | Bomber favoured      |         64.4% |
 | Battery vs Bomber        | Battery favoured     |         72.8% |
 | Hex vs Spartan           | Spartan favoured     |         63.5% |
-| Spider vs Spartan        | even                 | 37.8% / 61.6% |
+| Spider vs Spartan        | Spartan favoured     |         62.1% |
+| Slime vs Spartan         | even                 | 57.5% / 42.3% |
 | Battery vs Bloom         | even                 | 37.6% / 61.5% |
-| Hex vs Spider            | even                 | 60.3% / 39.3% |
-| Battery vs Spider        | Spider favoured      |         62.4% |
+| Slime vs Bloom           | even                 | 39.5% / 60.3% |
+| Hex vs Spider            | even                 | 60.1% / 39.2% |
+| Slime vs Hex             | even                 | 59.4% / 40.4% |
+| Battery vs Spider        | Spider favoured      |         62.5% |
+| Slime vs Spider          | Spider favoured      |         63.7% |

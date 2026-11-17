@@ -9,6 +9,8 @@ export type AbilitySign =
   | { readonly kind: 'zoneSpawned' }
   | { readonly kind: 'minionSpawned' }
   | { readonly kind: 'rewound' }
+  /** The ball split in two (the Slime, ADR 0060). */
+  | { readonly kind: 'split' }
   | { readonly kind: 'hitReduced' }
   | { readonly kind: 'healed' }
   | { readonly kind: 'status'; readonly status: StatusKind }

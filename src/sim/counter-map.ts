@@ -18,6 +18,7 @@ import { HEX_ENTRIES } from './counter-map-hex.ts';
 import { SPIDER_ENTRIES } from './counter-map-spider.ts';
 import { SPARTAN_ENTRIES } from './counter-map-spartan.ts';
 import { BATTERY_ENTRIES } from './counter-map-battery.ts';
+import { SLIME_ENTRIES } from './counter-map-slime.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
 export type Intended = 'x' | 'y' | 'even';
@@ -47,6 +48,7 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
   ...SPIDER_ENTRIES,
   ...GHOST_ENTRIES,
   ...BATTERY_ENTRIES,
+  ...SLIME_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */

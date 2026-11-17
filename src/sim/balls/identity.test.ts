@@ -24,6 +24,7 @@ import { LIFESTEAL, vampire } from './vampire.ts';
 import { BIG_HIT, chrono, MOMENT_EVERY_TICKS, RECHARGE_TICKS, REWIND_MOMENTS } from './chrono.ts';
 import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
 import { GROWN_HIT, MAX_RADIUS, titan, titanRadius } from './titan.ts';
+import { HALF_RADIUS, slime } from './slime.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -49,6 +50,11 @@ describe('the ball roster: identity rules', () => {
     const RADIUS_EXCEPTIONS: Readonly<Record<string, readonly [number, number]>> = {
       titan: [STANDARD_BALL_RADIUS, MAX_RADIUS],
     };
+    // The Slime is the standard size whole, and each of its halves is smaller (ADR 0060).
+    const half = createWorld(1, [slime, slime]).balls[0];
+    if (half === undefined) throw new Error('no ball');
+    expect(slime.radiusOf?.({ ...half, abilityState: { split: true } }, 0)).toBe(HALF_RADIUS);
+    expect(HALF_RADIUS).toBeLessThan(STANDARD_BALL_RADIUS);
     for (const ball of BALLS) {
       const [start, largest] = RADIUS_EXCEPTIONS[ball.id] ?? [
         STANDARD_BALL_RADIUS,
@@ -195,6 +201,8 @@ describe('the ball roster: identity rules', () => {
       spider: WEB_NIP,
       // What it stores comes back as contact damage on its next bump, not an ability hit.
       battery: 0,
+      // Splitting deals nothing; its halves hit by contact.
+      slime: 0,
     };
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {
