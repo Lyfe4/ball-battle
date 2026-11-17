@@ -126,7 +126,8 @@ Each line is a rule; its ADR has the reasoning.
 - Bump `RULESET_VERSION` (`src/sim/ruleset.ts`) in the same commit as anything that can change a
   fight, a bot's choice or a series: stats, abilities, combat rules, counter-map sides, the roster
   or its order, seeds and salts. Add the new fingerprint to `ruleset.test.ts` (never edit an old
-  one), then `pnpm golden` and `pnpm ruleset:freeze` (ADR 0022, 0023, 0052). A series records
+  one), then `pnpm golden`, `pnpm ruleset:freeze` and, after the bump, `pnpm balance:summary`
+  (ADR 0022, 0023, 0052; a test checks the summary names the current ruleset). A series records
   its ruleset and is verified by that ruleset's frozen bundle.
 - `verifySeries` (`src/sim/series-verify.ts`) alone decides whether a series is valid: `playSeries`,
   the route, a saved series after a reload and a future server all use it; no second check.
@@ -221,7 +222,8 @@ Each line is a rule; its ADR has the reasoning.
   NEAR (passes), further out a MISS. The map is labelled from the full run; a designed counter
   that measures under 62% is marked even. A full run judges the measured shape, CI's the map's.
 - Shape: every ball 2-4 counters each way, the counts within 1, except the even picks
-  (`EVEN_PICKS`: Brawler and Magnet, beating nobody and losing only to Thorns, ADR 0013, 0049) and
+  (`EVEN_PICKS`: the Brawler, beating nobody and losing only to Thorns, ADR 0013, 0049; the Magnet
+  left it in ruleset 18, ADR 0058) and
   the known gaps (`SHAPE_EXCEPTIONS`, each allowed exactly its gap today, `docs/vision.md`).
 - Counters come from mechanics (ADR 0010): a new ball adds an entry with a mechanical reason for
   every pair (`src/sim/counter-map-*.ts`); measure what its mechanic moves before choosing its
