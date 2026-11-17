@@ -10,8 +10,9 @@ import {
   PICK_SECONDS,
   roundWatchMs,
   START_WINDOW_MS,
+  TOSS_LEAD_MS,
 } from '../api/live.ts';
-import type { Side } from '../sim/index.ts';
+import type { Format, Side } from '../sim/index.ts';
 
 /** What the clock decides from: a live series' times, by the database's clock. */
 export interface LiveFacts {
@@ -96,14 +97,25 @@ export function fightTimes(
   return times;
 }
 
-/** The next pick phase: it opens when the last fight ends (or at the lock), for PICK_SECONDS. */
+/**
+ * The next pick phase: it opens when the last fight ends (or at the lock, or at `notBefore` if that
+ * is later), for PICK_SECONDS.
+ */
 export function pickPhase(
   lockedAt: number,
   fights: readonly FightTime[],
+  notBefore = lockedAt,
 ): { readonly opensAt: number; readonly deadline: number } {
-  const opensAt = fights.at(-1)?.endsAt ?? lockedAt;
+  const opensAt = Math.max(fights.at(-1)?.endsAt ?? lockedAt, notBefore);
   return { opensAt, deadline: opensAt + PICK_SECONDS * 1000 };
 }
+
+/**
+ * When a live series that started at `startedAt` opens its first pick: in Reveal after the coin
+ * toss both phones play together (ADR 0061), in Showdown at once (it has no toss).
+ */
+export const firstPickOpensAt = (format: Format, startedAt: number): number =>
+  format === 'reveal' ? startedAt + TOSS_LEAD_MS : startedAt;
 
 /** A ball from those left, chosen by `random` (0 ≤ x < 1); undefined when none is left. */
 export const randomBall = (left: readonly string[], random: number): string | undefined =>

@@ -15,6 +15,7 @@ import { busyOnClick } from './busy-button.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
 import { createPairing } from './balls/pairing.ts';
 import { createLeaveConfirm } from './series/leave-confirm.ts';
+import { createSeriesToss } from './series/coin-toss.ts';
 import { createPickBanner } from './series/pick-banner.ts';
 import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesBar } from './series/series-bar.ts';
@@ -51,6 +52,8 @@ export interface SeriesActions {
   readonly onNewSeries: () => void;
   /** Leaves the series before it is decided (it is held, to resume). */
   readonly onLeave: () => unknown;
+  /** Something on the panel moved on by itself (the coin toss's stages): draw it again. */
+  readonly onRedraw?: () => void;
 }
 
 export type { SeriesPhase } from './series/series-view.ts';
@@ -125,6 +128,9 @@ export function createSeriesPanel(
   const sticker = createSticker();
   result.append(sticker.element);
 
+  // Reveal's coin toss before round 1's pick (ADR 0061): offline it flips as the pick opens here
+  // (a rematch), once per series; live at the server's time on both phones.
+  const toss = createSeriesToss(() => actions.onRedraw?.());
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
 
@@ -175,6 +181,7 @@ export function createSeriesPanel(
     status,
     result,
     note,
+    toss.element,
     track.element,
     banner.element,
     picks.element,
@@ -288,16 +295,19 @@ export function createSeriesPanel(
 
       // Your pick: the banner names what is answered, the rows are the options.
       const reveal = formatOf(state.setup) === 'reveal';
-      // Reveal's coin toss leads round 1's pick when the series opens here, a rematch (ADR 0041).
-      const toss =
-        reveal && roundsPlayed === 0 && state.pending.length === 0
-          ? { first: firstToShowOf(state.setup), key: state.setup.seed }
+      // Reveal's coin toss leads round 1's pick when the series opens here: a rematch, or live
+      // (ADR 0041, 0061). Its words stay on the banner once the coin has landed.
+      const first =
+        reveal && roundsPlayed === 0 && state.pending.length === 0 && !finished
+          ? firstToShowOf(state.setup)
           : undefined;
-      setHidden(banner.element, !actions.includes('pick'));
-      setHidden(picks.element, !actions.includes('pick'));
+      const tossing = toss.tossing(moment, first, actions.includes('pick'));
+      setHidden(track.element, tossing);
+      setHidden(banner.element, !actions.includes('pick') || tossing);
+      setHidden(picks.element, !actions.includes('pick') || tossing);
       if (choice !== undefined) {
         picks.show(choice, seats);
-        banner.show(choice, toss, seats);
+        banner.show(choice, first, seats);
       }
 
       // Between rounds with nothing to decide: the next pairing, and one button to play it.
@@ -333,8 +343,9 @@ export function createSeriesPanel(
       if (playing && current !== undefined) {
         text = playingLine(current, nameOf, bestOfOf(state.setup), seats);
       } else if (finished) text = finalLine(state, seats);
+      else if (tossing) text = '';
       else if (due === true && choice !== undefined) {
-        text = pickLine(choice, roundsPlayed, remainingOf(state, them), nameOf, toss?.first, seats);
+        text = pickLine(choice, roundsPlayed, remainingOf(state, them), nameOf, first, seats);
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf, seats);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       else if (said !== undefined) text = said;

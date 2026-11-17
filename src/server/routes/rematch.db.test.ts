@@ -39,7 +39,7 @@ const code = (body: unknown) => errorOf(body)?.code;
 
 /** A live match that ended: A left it, so B won by forfeit. */
 async function ended() {
-  const made = await startedLive(deps);
+  const made = await startedLive(deps, admin);
   const left = await made.players.a.browser.call(
     seriesOne,
     'POST',
@@ -61,7 +61,7 @@ const travelRematch = (id: string, ms: number) => {
 
 describe('a rematch', () => {
   it('is offered once a live match ends, a forfeit too, and not before', async () => {
-    const live = await startedLive(deps);
+    const live = await startedLive(deps, admin);
     expect(await view(live.players.a, live.id)).toMatchObject({ state: 'none', offered: false });
     const asked = await rematch(live.players.a, live.id, { answer: 'yes' });
     expect(asked.status).toBe(409);

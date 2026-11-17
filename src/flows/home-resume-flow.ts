@@ -8,7 +8,15 @@ import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SERIES_STORAGE_KEY } from '../app/series-save.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { pinSeed } from './fixed-seed.ts';
-import { backIn, openFramed, reload, shown, waitFor, type Framed } from './reload-support.ts';
+import {
+  backIn,
+  openFramed,
+  reload,
+  shown,
+  tossedIn,
+  type Framed,
+  waitFor,
+} from './reload-support.ts';
 import { settle } from './page-support.ts';
 
 const search = (framed: Framed) => framed.win().location.search;
@@ -62,6 +70,7 @@ async function holdAfterRound1(framed: Framed): Promise<string> {
     await press(framed, `.lineup-step .ball-tile[data-ball-id="${id}"]`);
   }
   await press(framed, '.lineup-step .screen-footer .hud-button-primary');
+  await tossedIn(framed);
   shown(framed, '.answer-step .pick-row-pick')[0]?.click();
   await settle();
   expect(step(framed)).toBe('play');

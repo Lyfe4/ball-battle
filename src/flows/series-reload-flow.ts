@@ -29,9 +29,10 @@ import {
   reload,
   seriesPhase,
   shown,
+  tossedIn,
+  type Framed,
   visit,
   waitFor,
-  type Framed,
 } from './reload-support.ts';
 
 import {
@@ -76,6 +77,7 @@ async function liveSeries(
     // Round 1's pick: the same toss, the same bot ball shown, the same rows.
     expect(paramOf(framed, 'step')).toBe('answer');
     await reloadsTo(framed, `${label}: round 1 pick`, false);
+    await tossedIn(framed);
     shown(framed, '.answer-step .pick-row-pick')[0]?.click();
     await settle();
   }

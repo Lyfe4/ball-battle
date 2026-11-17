@@ -3,7 +3,7 @@
 // refused, and a player who goes quiet. Time is moved by shifting the series' stored past.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
-import { LEAD_MS, PICK_SECONDS, START_WINDOW_MS } from '../../api/live.ts';
+import { LEAD_MS, PICK_SECONDS, START_WINDOW_MS, TOSS_LEAD_MS } from '../../api/live.ts';
 import { sweep } from '../sweep.ts';
 import {
   liveRounds,
@@ -34,7 +34,7 @@ const code = (body: unknown) => errorOf(body)?.code;
 const PICK_MS = PICK_SECONDS * 1000;
 
 describe('the start', () => {
-  it('waits for both players, refusing picks until then, then opens the first pick for 30 s', async () => {
+  it('waits for both players, refusing picks until then, then opens the first pick for 30 s after the toss', async () => {
     const { id, players } = await newLive(deps);
     const before = await liveRow(admin, id);
     expect(before.started).toBeNull();
@@ -47,9 +47,20 @@ describe('the start', () => {
     await read(players.a, id);
     const row = await liveRow(admin, id);
     expect(row.started).not.toBeNull();
-    expect(row.opens).toBe(row.started);
-    expect(row.deadline).toBe((row.started ?? 0) + PICK_MS);
+    // Reveal's coin toss plays on both phones first (ADR 0061): a pick during it is refused.
+    expect(row.opens).toBe((row.started ?? 0) + TOSS_LEAD_MS);
+    expect(row.deadline).toBe((row.opens ?? 0) + PICK_MS);
     expect(row.now - (row.started ?? 0)).toBeLessThan(5_000);
+    const tossing = await pick(players.b, id, 0, leftOf(waiting, 'b')[0] ?? '');
+    expect(code(tossing.body)).toBe('too_early');
+  });
+
+  it('opens a Showdown’s first pick at once: it has no toss', async () => {
+    const { id, players } = await newLive(deps, 'showdown');
+    await read(players.b, id);
+    await read(players.a, id);
+    const row = await liveRow(admin, id);
+    expect(row.opens).toBe(row.started);
   });
 
   it('forfeits to the friend who came when the sender misses the start window', async () => {
@@ -66,7 +77,7 @@ describe('the start', () => {
 
 describe('a pick that runs out', () => {
   it('is made at random from the balls left, as of its deadline, and says so', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     const seen = await read(players.a, id);
     const [side] = dueSides(seen);
     const { deadline } = await liveRow(admin, id);
@@ -83,7 +94,7 @@ describe('a pick that runs out', () => {
   });
 
   it('is made once when both players’ reads race to settle it', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await travel(admin, id, PICK_MS + 1_000);
     const tab = { ...players.b, browser: players.b.browser.elsewhere(other) };
     const [one, two] = await Promise.all([read(players.a, id), read(tab, id)]);
@@ -94,7 +105,7 @@ describe('a pick that runs out', () => {
   });
 
   it('in Showdown’s opener, is made for each side that hadn’t locked, the locked pick kept', async () => {
-    const { id, players } = await startedLive(deps, 'showdown');
+    const { id, players } = await startedLive(deps, admin, 'showdown');
     const ball = leftOf(await read(players.a, id), 'a')[0] ?? '';
     view(await pick(players.a, id, 0, ball));
     await travel(admin, id, PICK_MS + 1_000);
@@ -110,7 +121,7 @@ describe('a pick that runs out', () => {
 
 describe('a fight', () => {
   it('starts LEAD_MS after the lock that completes its round; the next pick opens when it ends', async () => {
-    const { id, players } = await startedLive(deps, 'showdown');
+    const { id, players } = await startedLive(deps, admin, 'showdown');
     for (const side of ['a', 'b'] as const) {
       view(await pick(players[side], id, 0, leftOf(await read(players[side], id), side)[0] ?? ''));
     }
@@ -126,7 +137,7 @@ describe('a fight', () => {
   });
 
   it('refuses the next pick while it is on, and takes it once it has ended', async () => {
-    const { id, players } = await startedLive(deps, 'showdown');
+    const { id, players } = await startedLive(deps, admin, 'showdown');
     for (const side of ['a', 'b'] as const) {
       view(await pick(players[side], id, 0, leftOf(await read(players[side], id), side)[0] ?? ''));
     }
@@ -142,7 +153,7 @@ describe('a fight', () => {
   });
 
   it('of Reveal’s last round plays after the one before, and the series ends verified', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     for (let round = 0; round < 2; round += 1) {
       for (let move = 0; move < 2; move += 1) {
         const [side] = dueSides(await read(players.a, id));
@@ -165,21 +176,21 @@ describe('a fight', () => {
 
 describe('a player who goes quiet', () => {
   it('can come back within the grace period and carry on', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await silence(admin, id, 'a', 20_000);
     expect((await read(players.b, id)).status).toBe('open');
     expect((await read(players.a, id)).status).toBe('open');
   });
 
   it('loses by forfeit once silent past the notice and the grace period', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await silence(admin, id, 'a', 37_000);
     expect(await read(players.b, id)).toMatchObject({ status: 'forfeit', winner: 'b' });
     expect((await liveRow(admin, id)).end_reason).toBe('disconnected');
   });
 
   it('is settled by the sweep when both have gone: whoever went first loses', async () => {
-    const { id } = await startedLive(deps);
+    const { id } = await startedLive(deps, admin);
     await silence(admin, id, 'b', 50_000);
     await silence(admin, id, 'a', 45_000);
     const swept = await sweep(deps);

@@ -2,6 +2,7 @@
 // moved through time by shifting every stored time back (the database's `now()` can't be moved, so
 // the series' past is moved instead). Times compared here are the database's.
 import type { Accepted, ChallengeLink } from '../../api/challenges.ts';
+import { TOSS_LEAD_MS } from '../../api/live.ts';
 import type { BestOf, Format, Side } from '../../sim/index.ts';
 import type { Sql } from '../db.ts';
 import type { Deps } from '../http.ts';
@@ -29,10 +30,19 @@ export async function newLive(
   return { id, players };
 }
 
-/** A live series that has started: both players have read it once. */
-export async function startedLive(deps: Deps, format: Format = 'reveal', bestOf: BestOf = 3) {
+/**
+ * A live series that has started: both players have read it once, and Reveal's coin toss is over
+ * (ADR 0061), so its first pick is open.
+ */
+export async function startedLive(
+  deps: Deps,
+  admin: Sql,
+  format: Format = 'reveal',
+  bestOf: BestOf = 3,
+) {
   const made = await newLive(deps, format, bestOf);
   await read(made.players.a, made.id);
+  if (format === 'reveal') await travel(admin, made.id, TOSS_LEAD_MS);
   return made;
 }
 

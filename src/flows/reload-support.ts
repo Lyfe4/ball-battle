@@ -3,7 +3,7 @@
 // the page inside is laid out at the project's screen size (375 x 812, 390 x 664, 1280 x 800).
 import { expect } from 'vitest';
 import { seedUsed } from './fixed-seed.ts';
-import { settle } from './page-support.ts';
+import { settle, TOSS_WAIT_MS } from './page-support.ts';
 
 export interface Framed {
   readonly frame: HTMLIFrameElement;
@@ -132,3 +132,13 @@ export const paramOf = (framed: Framed, key: string) =>
 
 export const seriesPhase = (framed: Framed) =>
   shown(framed, '#series')[0]?.dataset['phase'] ?? 'none';
+
+/** Waits for Reveal's coin toss in the frame to land and its result to be read (ADR 0061). */
+export async function tossedIn(framed: Framed): Promise<void> {
+  await waitFor(
+    framed,
+    () => shown(framed, '.coin-toss').length === 0,
+    TOSS_WAIT_MS,
+    'the coin toss to land',
+  );
+}

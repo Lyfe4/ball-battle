@@ -12,7 +12,7 @@ import page from '../../index.html?raw';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { PLAY_FORMAT_STORAGE_KEY } from '../app/modes.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
-import { back, button, settle, until, visible } from './page-support.ts';
+import { back, button, settle, tossed, until, visible } from './page-support.ts';
 
 const search = () => location.search;
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
@@ -272,6 +272,7 @@ async function resume(): Promise<void> {
   await settle();
   await click(button('Reveal lineups'));
   await settle();
+  await tossed();
   const pick = visible('.answer-step .pick-row-pick')[0];
   if (pick === undefined) throw new Error('No round-1 pick');
   await click(pick);

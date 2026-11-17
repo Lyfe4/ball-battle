@@ -136,6 +136,9 @@ export function createSeriesController(
     onRematch: () => {
       if (session !== undefined) start(rematchOf(session.state.setup, generateSeed()));
     },
+    onRedraw: () => {
+      host.redraw();
+    },
     onNewSeries: () => {
       const last = session?.state.setup;
       keep(undefined);
