@@ -414,6 +414,19 @@ export const theme = {
   healthMid: '#ffd23f',
   healthLow: '#ff8a4c',
 
+  /**
+   * The trail behind a ball on slow frames (motion-smear.ts, ADR 0063 addendum): only on frames at
+   * least this far apart (below about 42 a second: Low Power Mode's 30), over its path through
+   * the last `smearFrames` frames, each step between `smearMinStep` world units and
+   * `smearMaxStepRadii` of the ball's radius (more is a jump: a rewind or a new match), fading to
+   * `smearAlpha` at the ball's back edge.
+   */
+  smearMinFrameMs: 24,
+  smearFrames: 2,
+  smearMinStep: 2,
+  smearMaxStepRadii: 2,
+  smearAlpha: 0.35,
+
   /** Caps the backing-store resolution; beyond 2x the extra pixels cost more than they show. */
   maxPixelRatio: 2,
 } as const;

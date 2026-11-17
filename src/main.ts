@@ -28,10 +28,13 @@ import { getElement } from './ui/dom.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
+import { installFrameMeter } from './ui/frame-meter.ts';
 
 const stage = getElement('stage', HTMLElement);
 // What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
 installSymbolTooltips();
+// A diagnostic for a real phone: `?frames` shows the frame rate (ADR 0063 addendum).
+installFrameMeter(new URL(window.location.href).searchParams);
 const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);
@@ -218,6 +221,9 @@ const arena = createArena(
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
+    // The trail on slow frames; `?smooth=off` (read once, at load) shows a fight without it, to
+    // compare on a phone (ADR 0063 addendum).
+    smooth: new URL(window.location.href).searchParams.get('smooth') !== 'off',
     // A live fight plays at 1x on both screens, whatever the toggle says (ADR 0053).
     // A live fight plays at 1x, gently catching up with the server's moment (ADR 0053, 0063).
     speed: () =>

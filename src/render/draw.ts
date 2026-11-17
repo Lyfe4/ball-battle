@@ -11,12 +11,14 @@ import {
   drawHealthBar,
   drawKnockouts,
   drawParticles,
+  drawSmears,
   drawStatuses,
   drawWinnerRing,
   withBallTransform,
 } from './draw-feel.ts';
 import type { Knockout, Spark, Squash, Strike, WinnerRing } from './effects.ts';
 import type { Dot } from './particles.ts';
+import type { Smear } from './motion-smear.ts';
 import { drawHealPulse, drawSourceChip } from './draw-cues.ts';
 import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
@@ -67,6 +69,8 @@ export interface FrameEffects {
   /** Slimes splitting and webs snapping (ADR 0060). */
   readonly splits: readonly SplitMoment[];
   readonly snaps: readonly SnapMoment[];
+  /** Slow frames only: each ball's path since the last frame (motion-smear.ts). */
+  readonly smears: readonly Smear[];
   /** Holds animated details (a heal's swelling ring, a glance's shards, the chip's pop) still. */
   readonly reducedMotion: boolean;
 }
@@ -90,6 +94,7 @@ export const NO_EFFECTS: FrameEffects = {
   chips: [],
   splits: [],
   snaps: [],
+  smears: [],
   reducedMotion: false,
 };
 
@@ -136,6 +141,16 @@ export function drawWorld(
     effects.splits,
     (ballId) => ownerColor(world.balls, definitions, ballId),
     effects.reducedMotion,
+  );
+  drawSmears(
+    ctx,
+    effects.smears,
+    (ballId) => ownerColor(world.balls, definitions, ballId),
+    (ballId) => {
+      const ball = world.balls.find((candidate) => candidate.id === ballId);
+      const definition = ball === undefined ? undefined : definitions.get(ball.definitionId);
+      return ball !== undefined && definition?.phasedOf?.(ball) === true ? theme.phasedAlpha : 1;
+    },
   );
   const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
