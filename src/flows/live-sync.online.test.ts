@@ -48,6 +48,21 @@ const RECORD = `
   raf(count);
 `;
 
+/**
+ * Counts the sound this page makes (each sound makes at least one oscillator, ADR 0064): sound is on
+ * by default, so the timing below is measured with both phones heard, countdown and Fight! included.
+ */
+const HEARD = `
+  window.__sounds = 0;
+  if ('AudioContext' in window) {
+    const make = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function (...rest) {
+      window.__sounds += 1;
+      return make.apply(this, rest);
+    };
+  }
+`;
+
 /** Holds this page's animation frames to an uneven 25/42 ms beat. */
 const UNEVEN_FRAMES = `
   let queue = [];
@@ -94,7 +109,10 @@ describe('a live fight on a slow phone', () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
       await friend.addInitScript(UNEVEN_FRAMES);
-      for (const page of [sender, friend]) await page.addInitScript(RECORD);
+      for (const page of [sender, friend]) {
+        await page.addInitScript(RECORD);
+        await page.addInitScript(HEARD);
+      }
       await startLiveMatch(BASE, sender, friend, 'reveal', {
         sender: ['brawler', 'magnet', 'titan'],
         friend: ['magnet', 'brawler', 'titan'],
@@ -137,6 +155,12 @@ describe('a live fight on a slow phone', () => {
       );
       expect(settled.length).toBeGreaterThan(10);
       expect(median).toBeLessThan(20);
+      // ...with sound playing on both phones all along.
+      const heard = await Promise.all(
+        [sender, friend].map((page) => page.evaluate<number>('window.__sounds')),
+      );
+      console.log(`live sync: sounds made, sender ${String(heard[0])}, friend ${String(heard[1])}`);
+      for (const sounds of heard) expect(sounds).toBeGreaterThan(0);
       expect(phones.errors).toStrictEqual([]);
     },
   );
