@@ -71,7 +71,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'The pull drags it into a brawl, but the skull keeps biting: neither pulls ahead.',
+    intended: 'x',
+    reason: 'Every skull bite starts a pull that drags the Necromancer into its bumps.',
   },
 ];

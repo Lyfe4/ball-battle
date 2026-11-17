@@ -53,12 +53,12 @@ describe('the counter map', () => {
 
   it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047, ADR 0049)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      ['berserker', 'bloom', 'ghost', 'quake', 'titan', 'vampire'].sort(),
+      ['berserker', 'bloom', 'ghost', 'magnet', 'quake', 'titan', 'vampire'].sort(),
     );
   });
 
   it('keeps each even pick even against everyone but its listed counters (docs/vision.md)', () => {
-    expect(Object.keys(EVEN_PICKS)).toStrictEqual(['brawler', 'magnet']);
+    expect(Object.keys(EVEN_PICKS)).toStrictEqual(['brawler']);
     expect(EVEN_PICKS['brawler']?.losesTo).toStrictEqual(['thorns']);
     for (const [id, { beats, losesTo }] of Object.entries(EVEN_PICKS)) {
       const own = countersOf(id);
@@ -80,12 +80,13 @@ describe('shapeProblem', () => {
   });
 
   it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's shape today (map and measured, ruleset 17) fits its allowance...
+    // Each ball's shape today (map and measured, ruleset 18) fits its allowance...
     const today: Readonly<Record<string, readonly [number, number]>> = {
       titan: [1, 1],
       berserker: [5, 4],
       bloom: [4, 5],
       ghost: [2, 1],
+      magnet: [3, 1],
       quake: [1, 2],
       vampire: [2, 4],
     };
@@ -103,6 +104,10 @@ describe('shapeProblem', () => {
     expect(shapeProblem('bomber', some(2), some(1))).toBeDefined();
     expect(shapeProblem('ghost', some(1), some(1))).toBeDefined();
     expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
+    // The Magnet (ADR 0058): one loss and up to three wins over it, never none or a fourth.
+    expect(shapeProblem('magnet', some(4), some(1))).toBeDefined();
+    expect(shapeProblem('magnet', some(3), some(0))).toBeDefined();
+    expect(shapeProblem('magnet', some(2), some(1))).toBeUndefined();
     expect(shapeProblem('berserker', some(6), some(5))).toBeDefined();
     expect(shapeProblem('berserker', some(5), some(5))).toBeDefined();
     expect(shapeProblem('berserker', some(5), some(3))).toBeDefined();
@@ -130,6 +135,7 @@ describe('shapeProblem', () => {
       berserker: { wins: range(2, 5), losses: standard, within: 1 },
       bloom: { wins: standard, losses: range(2, 5), within: 1 },
       ghost: { wins: standard, losses: range(1, 4), within: 1 },
+      magnet: { wins: standard, losses: range(1, 4), within: 2 },
       quake: { wins: range(1, 4), losses: standard, within: 1 },
       vampire: { wins: standard, losses: standard, within: 2 },
     });
@@ -138,8 +144,8 @@ describe('shapeProblem', () => {
   it('holds an even pick to exactly its listed counters', () => {
     expect(shapeProblem('brawler', [], ['thorns'])).toBeUndefined();
     expect(shapeProblem('brawler', ['ghost'], ['thorns'])).toBeDefined();
-    expect(shapeProblem('magnet', [], ['thorns'])).toBeUndefined();
-    expect(shapeProblem('magnet', ['ghost'], ['thorns'])).toBeDefined();
+    // The Magnet is no longer an even pick (ADR 0058): beating nobody is off its shape.
+    expect(shapeProblem('magnet', [], ['thorns'])).toBeDefined();
   });
 });
 

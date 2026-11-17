@@ -50,9 +50,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'boomerang',
-    intended: 'even',
-    reason:
-      'The pull drags the thrower into a brawl, but the boomerang keeps hitting: neither pulls ahead.',
+    intended: 'x',
+    reason: 'Every boomerang that hits it starts a pull, and the thrower is dragged into a brawl.',
   },
   {
     x: 'necromancer',

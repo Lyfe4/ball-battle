@@ -153,7 +153,7 @@ with a side between 58% and 62% sits in a grey zone, shown as even and counted b
 
 Every ball has two to four counters each way, the two counts within one, except the known gaps for
 future balls to fill (each allowed exactly as it is today, listed in the balance summary) and the
-two even picks, the **Brawler** and **Magnet**, which beat nobody and lose only to Thorns.
+even pick, the **Brawler**, which beats nobody and loses only to Thorns.
 
 ## Best of 3
 

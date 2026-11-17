@@ -55,17 +55,16 @@ export const HARD_WORST_MATCHUP = 0.22;
 export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
 
 /**
- * The even picks, the exception to the shape (docs/vision.md): even against nearly everyone, with
+ * The even pick, the exception to the shape (docs/vision.md): even against nearly everyone, with
  * exactly these counters. The Brawler, the plain bump, loses to the Thorns (reflection scales with
  * the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049; the phasing Ghost no
- * longer loses to it). The Magnet's pull is movement too soft to decide a pair; it is a candidate for replacement
- * (docs/vision.md). Adding one is a design decision.
+ * longer loses to it). The Magnet was the other until ruleset 18, when a hit from range started its
+ * pull and gave it three wins (ADR 0058). Adding one is a design decision.
  */
 export const EVEN_PICKS: Readonly<
   Record<string, { readonly beats: readonly string[]; readonly losesTo: readonly string[] }>
 > = {
   brawler: { beats: [], losesTo: ['thorns'] },
-  magnet: { beats: [], losesTo: ['thorns'] },
 };
 
 /** The fewest and most counters a ball may have on one side (the balls it beats, or loses to). */
@@ -105,7 +104,7 @@ function allow(gap: {
  * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
  * fill (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on
  * any other ball, and on these beyond their allowance. Each allowance is exactly the ball's gap
- * today (map and measured, ruleset 17) and no wider, so any ball slipping one more step fails; a
+ * today (map and measured, ruleset 18) and no wider, so any ball slipping one more step fails; a
  * ball moving back towards the shape still passes, and its allowance can then be tightened.
  * - The Ghost loses to one ball, and the Titan beats one and loses to one: while the Ghost is
  *   phased nothing touches it, so only the Bloom's regrowth beats it (ADR 0049), and only Thorns
@@ -117,12 +116,16 @@ function allow(gap: {
  * - Since the Guardian left (ADR 0047): the Quake beats one ball, and the Vampire gained the Spartan
  *   as a fourth loss against its 2 wins. (The Sniper lost its allowance in ruleset 17: its quicker
  *   lock beats the planted Spartan, ADR 0057.)
+ * - The Magnet loses to one ball, Thorns, and beats three: a hit from range starts its pull, so it
+ *   beats the Archer, Boomerang and Necromancer (ADR 0058). The gap is for a ball that beats it in
+ *   a brawl; three wins over one loss is a gap of 2.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
   titan: allow({ wins: { fewest: 1 }, losses: { fewest: 1 } }),
   berserker: allow({ wins: { most: 5 } }),
   bloom: allow({ losses: { most: 5 } }),
   ghost: allow({ losses: { fewest: 1 } }),
+  magnet: allow({ losses: { fewest: 1 }, within: 2 }),
   quake: allow({ wins: { fewest: 1 } }),
   vampire: allow({ within: 2 }),
 };
