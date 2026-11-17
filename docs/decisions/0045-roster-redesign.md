@@ -8,6 +8,9 @@
 - Amended by: ADR 0047 (the Guardian replaced by the Spartan, the Bloom's regrowth pauses after a
   hit, the known gaps), ADR 0056 (a defence is told what dealt a hit; the known gaps), ADR 0057 (the Sniper's second
   win; the known gaps)
+- Amended by: ADR 0049 (the Hex, the Spider and the phasing Ghost (ruleset 13)), ADR 0058 (the
+  Magnet pulls shooters in (ruleset 18)), ADR 0060 (the Slime, and the Spider's webs are used up
+  (ruleset 19))
 
 ## Context
 

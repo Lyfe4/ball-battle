@@ -4,6 +4,7 @@
 - Date: 2026-11-05
 - Amends: ADR 0012 (Frost), 0014 (Venom), 0015 (Berserker, Sniper, Quake)
 - Amended by: ADR 0045 (numbed rage and stagger are removed with every interaction rule)
+- Amended by: ADR 0028 (the counter pass: sharper favoured band, balanced shapes, visible rules)
 
 ## Context
 

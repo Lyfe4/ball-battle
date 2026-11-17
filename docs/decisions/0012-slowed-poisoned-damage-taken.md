@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0016 (counter density: status resistance, numbed rage, staggered)
 
 ## Context
 

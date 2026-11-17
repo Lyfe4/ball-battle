@@ -2,6 +2,11 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0013 (thorns, the Brawler's one counter), ADR 0026 (batch 3: Magnet, Ghost,
+  Necromancer; steering, phasing, minions), ADR 0028 (the counter pass: sharper favoured band,
+  balanced shapes, visible rules), ADR 0034 (batch 4: Chrono, Titan, Inferno; rewind, growth,
+  lasting zones), ADR 0043 (batch 5: Boomerang, Bomber, Guardian, Bloom; returning projectiles,
+  bombs, shields), ADR 0045 (the roster redesign)
 
 ## Context
 

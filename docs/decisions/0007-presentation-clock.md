@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-04
+- Amended by: ADR 0036 (teaching in the arena), ADR 0063 (smooth fights at any frame rate, and live
+  fights that catch up gently)
 
 ## Context
 

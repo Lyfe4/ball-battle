@@ -11,6 +11,9 @@
   now, for friend challenges, and play by turns is hidden (kept in the code)
 - Amended by: ADR 0054 (6 s to Fight!: Get ready, then the whole 3-2-1; settings never make a live
   match wait; buttons wait for the next screen, no loading pages)
+- Amended by: ADR 0061 (the coin toss as a moment, and together online), ADR 0062 (teaching in live
+  matches: What to watch during the countdown), ADR 0063 (smooth fights at any frame rate, and live
+  fights that catch up gently)
 
 ## Context
 

@@ -1,6 +1,9 @@
 # 0056: The Battery, Venom over Thorns, and the fastest ball by what players see (ruleset 16)
 
 > **Scripts:** the measuring harness this cites (`scripts/new-balls/`, including
+
+- Amended by: ADR 0058 (the Magnet pulls shooters in (ruleset 18))
+
 > `speed-probe.ts`) lives on `proto/battery-r16` and was never merged to `main`. The numbers here
 > are the record.
 

@@ -1,6 +1,11 @@
 # 0049: The Hex, the Spider and the phasing Ghost (ruleset 13)
 
 > **Scripts:** the measuring scripts this cites (under `scripts/`) were never merged to `main`: they
+
+- Amended by: ADR 0050 (the Bloom's patient regrowth, and the Glitch parked (ruleset 14)), ADR 0058
+  (the Magnet pulls shooters in (ruleset 18)), ADR 0060 (the Slime, and the Spider's webs are used
+  up (ruleset 19))
+
 > lived on the experiment's own branch. The numbers here are the record.
 
 - Status: Accepted

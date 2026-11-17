@@ -4,6 +4,8 @@
 - Date: 2026-11-06
 - Amends: ADR 0020 (§5 home, manual wording, lineup), ADR 0025 (§4 Best of 3 screens), ADR 0026
   (rendering)
+- Amended by: ADR 0030 (symbol tooltips, a Rematch that works, and numbered lineup slots), ADR 0046
+  (reveal first on home, every other mode behind Other modes)
 
 ## Context
 

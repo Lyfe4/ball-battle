@@ -7,6 +7,7 @@
   its tips row is gone; the series bar holds the gear)
 - Amended by: ADR 0044 (the panel keeps off the court, has a compact form, makes the match wait
   when it must cover it, returns focus on a tap outside, and shares the legend's look)
+- Amended by: ADR 0064 (sound: a Sound row beside Speed)
 
 ## Context
 

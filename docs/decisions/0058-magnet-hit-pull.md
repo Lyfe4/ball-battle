@@ -1,6 +1,9 @@
 # 0058: The Magnet pulls shooters in (ruleset 18)
 
 > **Scripts:** the measuring harness the proposal cites (`scripts/new-balls/`) lives on
+
+- Amended by: ADR 0060 (the Slime, and the Spider's webs are used up (ruleset 19))
+
 > `proto/magnet-shooters` and was never merged to `main`. The numbers here are from `pnpm balance`
 > on the shipped code, and match the proposal's config A game for game.
 

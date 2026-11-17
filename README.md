@@ -34,8 +34,11 @@ arena until one wins, and every decision is made before the fight starts.
 - **A ball manual and matchup chart**, read from the same data the game runs on, so they never go
   stale.
 - **Every fight is a link.** A match or a whole series replays exactly from its URL.
+- **Sound made in code**, with a voice for every ball, so a counter can be heard working: the
+  Chrono's rewind plays backwards, the Thorns' spikes shing, the Bloom chimes open and is pinched
+  shut (ADR 0064). On by default; it follows an iPhone's silent switch.
 - **Phone first**, with a deliberate desktop layout, reduced-motion support and smooth motion at
-  60, 90 and 120 Hz.
+  60, 90 and 120 Hz, and at 30 in iPhone Low Power Mode (ADR 0063).
 
 ## Tech stack
 
@@ -222,9 +225,12 @@ Online play (ADR 0052, live friend matches ADR 0053) runs only in deploy preview
 `pnpm exec supabase start`, `node scripts/local-env.ts > .env`, `pnpm build:online` and
 `netlify dev` (http://localhost:8888), which serves the game and the API on one origin.
 
-Two pages exist only under `pnpm dev`: `/styleguide.html` shows every ball design and the shared
-UI parts, and `/brand.html` draws the icons and the link-preview image with the game's own
-renderer.
+Three pages exist only under `pnpm dev`: `/styleguide.html` shows every ball design and the
+shared UI parts, `/brand.html` draws the icons and the link-preview image with the game's own
+renderer, and `/sounds.html` plays every sound and the busiest fights as sound alone.
+
+Two switches in a game URL help on a real phone: `?frames` shows the frame rate, late frames and
+the worst gap, and `?smooth=off` turns off the trail balls leave on slow frames, to compare.
 
 The **Speed 1× / 2×** toggle under a match plays everything twice as fast (the fight,
 hit-stops and effects alike) without changing the result; your choice is remembered in this
@@ -296,9 +302,9 @@ Why: every decision has a short record in [docs/decisions](docs/decisions/README
 with its status and what superseded it; ADR 0001 to 0003 cover the rules above.
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle (November 2026, ruleset 14): 231.55 kB JS (73.82 kB gzipped), 49.94 kB CSS
-(9.05 kB gzipped), and the self-hosted font's Latin subset at 41.34 kB. First version baseline:
-5.05 kB JS (2.41 kB gzipped).
+Production bundle (November 2026, ruleset 19): 288.37 kB JS (92.60 kB gzipped), of which sound is
+23.87 kB (7.49 kB gzipped); 64.21 kB CSS (11.77 kB gzipped); and the self-hosted font's Latin
+subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License
 

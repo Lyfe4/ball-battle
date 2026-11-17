@@ -4,6 +4,10 @@
 - Date: 2026-11-05
 - Amends: ADR 0002 (phased balls pass through), ADR 0005 (projectiles meet minions), ADR 0006
   (zones clear minions), ADR 0010 (counter map)
+- Amended by: ADR 0027 (no dead ends, Free play, softer counter words, and minions between ticks),
+  ADR 0028 (the counter pass: sharper favoured band, balanced shapes, visible rules), ADR 0049 (the
+  Hex, the Spider and the phasing Ghost (ruleset 13)), ADR 0058 (the Magnet pulls shooters in
+  (ruleset 18))
 
 ## Context
 

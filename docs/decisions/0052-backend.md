@@ -1,14 +1,17 @@
 # 0052: The backend: Supabase for accounts and data, Netlify Functions as the game server
 
 - Status: Accepted (2026-11-14), with the decisions in section 11: player vs player comes first
-  (slice 1, guests welcome, unrated), then accounts, ranked play and the bot ladder. Built so far:
-  batch publishing (section 1, "Publishing in batches") and slice 0 (section 8), including the
-  first frozen ruleset, which section 3 had placed in slice 1.
+  (slice 1, guests welcome, unrated), then accounts, ranked play and the bot ladder. Built: batch
+  publishing (section 1, "Publishing in batches"), slice 0 (section 8), including the first frozen
+  ruleset, which section 3 had placed in slice 1, and slice 1: friend challenges for guests, played
+  live in Reveal and Showdown (ADR 0053, 0055), on staging and deploy previews. Not built:
+  accounts, ranked play, the bot ladder, and online play in the published game.
 - Date: 2026-11-14
 - Builds on: ADR 0051 (secret seeds, pinned rulesets, the checklist before accounts), ADR 0022
   (one gate for a valid series), ADR 0048 (Best of 5), `docs/vision.md` ("Long-term goal")
 - Amends: ADR 0051 in three places, each said where it comes up: the bot's own seed is secret too
   ("Seeds"), no `packages/sim` workspace yet, and no worker pool ("Deliberately simple")
+- Amended by: ADR 0053 (live friend matches)
 
 ## Context
 

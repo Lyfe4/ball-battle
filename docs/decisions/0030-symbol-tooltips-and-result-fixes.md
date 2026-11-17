@@ -5,6 +5,8 @@
   inside one, and pick screens show a one-line key)
 - Date: 2026-11-06
 - Amends: ADR 0025 (§1 symbols, §4 the end of a series), ADR 0027 (§5 the lineup)
+- Amended by: ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment, a
+  story led by its result)
 
 ## Context
 
