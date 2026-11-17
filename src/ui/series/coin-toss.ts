@@ -9,6 +9,7 @@ import {
   type TossTimes,
 } from '../../app/coin-toss.ts';
 import type { Side } from '../../sim/series.ts';
+import { cue } from '../../sound/sound.ts';
 import { element, setAttr, setText } from '../dom.ts';
 import { BOT_SEATS, otherSide, type Seats } from './seats.ts';
 import type { SeriesMoment } from './series-view.ts';
@@ -52,6 +53,9 @@ const FLIP: Keyframe[] = [
   },
   { offset: 1, transform: 'translateY(0) rotateX(1800deg) scale(1, 1)' },
 ];
+/** A flip joined later than this into it makes no sound: the ting would no longer match the coin. */
+const JOIN_SOUND_MS = 300;
+
 /** A flip this far from the clock's moment is put back on it (less is a frame's rounding). */
 const DRIFT_MS = 30;
 
@@ -153,6 +157,9 @@ export function createCoinToss(onStage: () => void): CoinToss {
     else if (next !== shown) {
       if (next === 'flipping') startFlip(now - play.times.flipAt);
       else stopFlip();
+      // Heard only from its start: a page that joins the flip late, or sees it landed, stays quiet.
+      if (next === 'flipping' && now - play.times.flipAt < JOIN_SOUND_MS) cue('coinFlip');
+      if (next === 'landed' && shown === 'flipping') cue('coinLand');
       shown = next;
       setAttr(root, 'data-stage', next);
       setText(words, tossWords(next, play.first, play.seats));

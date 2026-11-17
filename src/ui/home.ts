@@ -78,6 +78,8 @@ export function createHome(
 
   // Play leads, one tap to the remembered series' lineup, saying what it plays (ADR 0055).
   const play = element('button', 'hud-button hud-button-primary home-play');
+  // One of the few buttons that tap (sound.ts): Play is a key moment.
+  play.dataset['sound'] = 'tap';
   play.type = 'button';
   const playLabel = element('span', 'home-play-label');
   const playMeta = element('span', 'home-play-meta');

@@ -1,0 +1,59 @@
+// Every sound a fight makes, by name: kept apart from the audio code (voices.ts) so the rules and
+// the density measurement (scripts/sound-density.ts) run in Node. voices.ts has one voice for each.
+export const FIGHT_CUES = [
+  // Shared: every ball, and all the Brawler says.
+  'bump',
+  'hit',
+  'knockout',
+  // From range.
+  'arrowFire',
+  'arrowHit',
+  'boomThrow',
+  'boomHit',
+  'boomBack',
+  'boomCatch',
+  'lockOn',
+  'snipe',
+  'snipeHit',
+  'shieldUp',
+  'glance',
+  'spear',
+  'spearHit',
+  'raise',
+  'bite',
+  'boneBreak',
+  // Through the court.
+  'bombDrop',
+  'bombBlast',
+  'stormWarn',
+  'thunder',
+  'quake',
+  'quakeHit',
+  'burn',
+  'webLay',
+  'webCatch',
+  // In the body.
+  'rage',
+  'rageHit',
+  'speedHit',
+  'grow',
+  'thorns',
+  'phaseIn',
+  'ghostPass',
+  'pull',
+  // Health and time.
+  'frost',
+  'poison',
+  'poisonTick',
+  'drain',
+  'bloomOpen',
+  'bloomShut',
+  'rewind',
+  'store',
+  'release',
+  'curse',
+  'curseBurst',
+  'split',
+] as const;
+
+export type FightCue = (typeof FIGHT_CUES)[number];

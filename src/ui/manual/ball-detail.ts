@@ -3,6 +3,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { matchupsOf, speedTrait, statShares, type MatchupLine } from '../balls/matchups.ts';
 import { element, setText } from '../dom.ts';
+import { hearBall, soundOn } from '../../sound/sound.ts';
 
 export interface BallDetail {
   readonly element: HTMLElement;
@@ -41,8 +42,15 @@ export function createBallDetail(
   icon.setAttribute('aria-hidden', 'true');
   const description = element('p', 'ball-detail-description');
   const trait = element('span', 'ball-detail-trait');
+  // Its ability as it sounds in a fight (ADR 0064): offered while sound is on.
+  const hear = element('button', 'text-link ball-detail-hear', 'Hear it');
+  hear.type = 'button';
+  let heard = '';
+  hear.addEventListener('click', () => {
+    hearBall(heard);
+  });
   const text = element('div', 'ball-detail-text');
-  text.append(description, trait);
+  text.append(description, trait, hear);
   hero.append(icon, text);
 
   const stats = element('dl', 'ball-detail-stats');
@@ -127,6 +135,9 @@ export function createBallDetail(
       if (ball === undefined) return;
       drawBallIcon(icon, ball, HERO_PX);
       setText(description, ball.description);
+      heard = id;
+      hear.hidden = !soundOn();
+      hear.setAttribute('aria-label', `Hear the ${ball.name}`);
       const shares = statShares(ball, balls);
       const values = [
         [shares.health, ball.maxHealth],

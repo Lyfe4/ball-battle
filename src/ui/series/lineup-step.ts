@@ -118,6 +118,8 @@ export function createLineupStep(
   });
   const footer = element('div', 'screen-footer');
   footer.append(done);
+  /** The same button, by a name `open`'s `done` (its words) doesn't hide. */
+  const doneButton = done;
   root.append(header.element, mode, tray, grid.element, footer);
 
   /** Reveal and Showdown pick each round's ball as they go, so the lineup has no order. */
@@ -174,6 +176,10 @@ export function createLineupStep(
       format = nextFormat;
       size = bestOf;
       doneText = done;
+      // Send challenge, Accept challenge and Start rematch tap (sound.ts); a lineup against the
+      // bot goes on quietly.
+      if (done === undefined) delete doneButton.dataset['sound'];
+      else doneButton.dataset['sound'] = 'tap';
       setText(modeName, setupLine(format, size));
       // Five slots share the row in a Best of 5 (series-setup.css).
       tray.style.setProperty('--tray-slots', String(size));

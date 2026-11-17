@@ -10,6 +10,7 @@ import {
 } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
+import { cue } from '../sound/sound.ts';
 import { createSticker } from './sticker.ts';
 import { busyOnClick } from './busy-button.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
@@ -152,6 +153,8 @@ export function createSeriesPanel(
     () => undefined,
   );
   busyOnClick(rematch, actions.onRematch);
+  // One of the few buttons that tap (sound.ts).
+  rematch.dataset['sound'] = 'tap';
   if (online) {
     rematch.replaceChildren(
       element('span', 'hud-button-label', 'Rematch'),
@@ -219,6 +222,8 @@ export function createSeriesPanel(
   }
 
   let phase: SeriesPhase = 'playing';
+  /** The phase last drawn, none before the first: a series already over when opened is quiet. */
+  let drawnPhase: SeriesPhase | undefined;
   return {
     setVisible(visible) {
       root.hidden = !visible;
@@ -238,7 +243,9 @@ export function createSeriesPanel(
       // What shows and which controls, from the pure model: never a screen with no way on.
       const screen = seriesScreenOf(moment);
       const { choice, pairing: pair, actions } = screen;
+      const phaseBefore = drawnPhase;
       phase = screen.phase;
+      drawnPhase = phase;
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       setAttr(root, 'data-phase', phase);
@@ -291,6 +298,10 @@ export function createSeriesPanel(
       // Styled by who won from the player's side: `a` is always the player's colour.
       setAttr(result, 'data-winner', state.winner === undefined ? '' : won ? 'a' : 'b');
       if (finished) sticker.show(words);
+      // Heard as the series ends on this screen; a finished series opened later is quiet.
+      if (finished && phaseBefore !== undefined && phaseBefore !== 'finished') {
+        cue(won ? 'seriesWin' : 'seriesLoss');
+      }
       setAttr(result, 'aria-label', words.spoken);
 
       // Your pick: the banner names what is answered, the rows are the options.

@@ -177,7 +177,7 @@ async function measure(browser: Browser, a: string, b: string, seed: number): Pr
   await page.addInitScript({ content: PROBE });
   await page.addInitScript({
     content: `localStorage.setItem('ballbattle.speed', '1');
-      localStorage.setItem('ballbattle.sound', ${sound ? "'on'" : "'off'"});`,
+      localStorage.setItem('ballbattle.sound', ${sound ? "'on:0.7'" : "'off:0.7'"});`,
   });
   const cdp = engine === 'chromium' ? await page.context().newCDPSession(page) : undefined;
   if (cdp !== undefined && cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu });
