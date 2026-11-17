@@ -8,8 +8,8 @@ play, an open queue, progression and an app-store release are not.
 
 ## Long-term goal
 
-BallBattle is heading towards a real downloadable game: accounts, a backend, asynchronous and
-then live PvP, leaderboards, a game currency, random unlocks and in-app purchases. Everything
+BallBattle is heading towards a real downloadable game: accounts, a backend, live PvP with friends
+and then ranked, leaderboards, a game currency, random unlocks and in-app purchases. Everything
 below the draft (the deterministic sim, `verifySeries`, ruleset versions) is built so that this
 can sit on top of it. Rules that hold however it is built:
 
@@ -35,20 +35,23 @@ can sit on top of it. Rules that hold however it is built:
 
 Rough order:
 
-1. A backend and asynchronous PvP: friend challenges and an open queue, guests welcome, unrated
-   (ADR 0052).
-2. Accounts, ranked play with seasons, and leaderboards (then a weekly ladder against the bot).
-3. A free currency and unlocks earned by playing.
-4. An app-store release (likely Capacitor around the web build).
-5. Live PvP.
+1. **Built:** a backend and live friend matches: a friend challenge played live in Reveal or
+   Showdown, guests welcome, unrated, on staging and deploy previews (ADR 0052, 0053, 0055). Live
+   play with a friend came before any open queue; play by turns is built and hidden.
+2. **Next:** a public beta of friend matches, online play in the published game.
+3. Accounts, ranked play with seasons, and leaderboards: an open queue with rating-based
+   matchmaking (then a weekly ladder against the bot).
+4. Progression and unlocks: a free currency earned by playing.
+5. An app-store release (likely Capacitor around the web build).
 6. Paid cosmetics; paid random unlocks only after the legal check.
 
-## Future mode: player vs player
+## Player vs player
 
-- Each player picks **3 balls, blind and in order**. Neither sees the other's lineup until the
-  match starts.
-- **Round 1** is each player's first ball against the other's first ball, round 2 the second
-  balls, round 3 the third.
+- **Live friend matches are Reveal and Showdown only** (ADR 0053): each takes turns, so both
+  players watch and answer each other's picks. **Blind is played against the bot only.**
+- Each player builds a lineup of **3 balls** (5 in a Best of 5) without seeing the other's; the
+  format decides how they meet: Reveal takes turns showing first and answering, Showdown opens
+  round 1 together and then the round's winner shows first (ADR 0021, 0035).
 - **Best of 3** decides the match. It stops as soon as one player has two round wins (2-0 ends
   it; round 3 is only played at 1-1).
 - **Best of 5 is the planned default for ranked play against real players** (2026-11-14): five
@@ -167,9 +170,10 @@ blind picks. See Decisions below.
      points at every level, and Reveal keeps more skill than Showdown, so Reveal stays the main
      mode for now. Pick screens show each ball's odds against every opponent ball, never the
      bot's move.
-2. **Asynchronous PvP.** Players fight other players' saved lineups. The server generates the
-   seeds and can re-simulate any match to verify a reported result, which the deterministic sim
-   makes cheap. Two rules for it (2026-11-05):
+2. **PvP: live friend matches came first (ADR 0052, 0053).** Planned as asynchronous play against
+   saved lineups; built as friend challenges played live, with play by turns kept and hidden. The
+   server issues the seeds and re-simulates every series with its ruleset's frozen bundle. The two
+   rules set for it (2026-11-05) hold:
    - **The server issues the seed, after both players have locked in their lineups.** A client
      never picks it (today's `generateSeed` is for local play only): a seed known before lock-in
      lets a player choose a lineup for that seed, and a client-chosen seed can be rerolled until
