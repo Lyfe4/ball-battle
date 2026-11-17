@@ -8,7 +8,7 @@
 // Needs a running server (pnpm preview, or pnpm dev with --profile). Not part of CI: timings
 // depend on the machine.
 //   node scripts/low-power-frames.ts [chromium|webkit] [base=http://localhost:4199/]
-//     [--cpu N] [--cap 30|native] [--dpr N] [--profile] [--sound]
+//     [--cpu N] [--cap 30|native] [--dpr N] [--profile] [--sound] [--match a,b,seed]
 import { chromium, webkit, type Browser, type CDPSession, type Page } from 'playwright';
 import { BALL_LOOKUP } from '../src/sim/balls/index.ts';
 import { getDefinition } from '../src/sim/definitions.ts';
@@ -29,6 +29,7 @@ const cap = flag('--cap') ?? '30';
 const dpr = Number(flag('--dpr') ?? 3);
 const profile = args.includes('--profile');
 const sound = args.includes('--sound');
+const only = flag('--match')?.split(',');
 
 /** Busy fights: webs and a fast ball, a curse among webs, poison and fire, a volley, a split. */
 const MATCHES: readonly (readonly [string, string, number])[] = [
@@ -221,5 +222,9 @@ const browser = await (engine === 'webkit' ? webkit : chromium).launch();
 console.log(
   `${engine}, CPU ${engine === 'chromium' ? `${String(cpu)}x slower` : 'as is'}, frames ${cap === '30' ? 'held to every other one' : 'as the browser gives them'}, ${String(dpr)}x pixels${sound ? ', sound on' : ''}`,
 );
-for (const [a, b, seed] of MATCHES) await measure(browser, a, b, seed);
+const chosen: typeof MATCHES =
+  only === undefined
+    ? MATCHES
+    : [[only[0] ?? 'brawler', only[1] ?? 'brawler', Number(only[2] ?? 1)]];
+for (const [a, b, seed] of chosen) await measure(browser, a, b, seed);
 await browser.close();
