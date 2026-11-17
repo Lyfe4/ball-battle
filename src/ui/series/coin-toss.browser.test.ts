@@ -10,10 +10,18 @@ import { playerSeats, type Seats } from './seats.ts';
 
 const T = 1_800_000_000_000;
 
+/** The coin's smallest size (a phone's narrowest column) and its desktop size (coin-toss.css). */
+const COIN_PX = { narrow: 88, wide: 128 };
+
 function mount(width: number, play: TossPlay) {
   const column = document.createElement('div');
   column.style.width = `${String(width)}px`;
   const toss = createCoinToss(() => undefined);
+  // The coin at the size this column gets, whatever this browser's own viewport is.
+  toss.element.style.setProperty(
+    '--coin-size',
+    `${String(width < 600 ? COIN_PX.narrow : COIN_PX.wide)}px`,
+  );
   column.append(toss.element);
   document.body.replaceChildren(column);
   const stage = toss.show(play);
@@ -37,9 +45,11 @@ const landed = (seats: Seats, first: 'a' | 'b'): TossPlay => ({
 describe('the coin toss', () => {
   for (const name of ['Player 4821', 'Someone with a very long name indeed', null]) {
     for (const width of [300, 1200]) {
-      it(`keeps "${String(name)}" on the coin and in its column at ${String(width)} px`, () => {
+      it(`keeps "${String(name)}" on the coin and in its column at ${String(width)} px`, async () => {
         const seats = playerSeats('a', name);
         const { column, root, stage } = mount(width, landed(seats, 'b'));
+        // Measured in the game's own font (a fallback is wider: the smaller label fits both).
+        await document.fonts.ready;
         expect(stage).toBe('landed');
         expect(root.hidden).toBe(false);
         for (const face of root.querySelectorAll<HTMLElement>('.coin-toss-face')) {

@@ -69,6 +69,11 @@
   white-space: nowrap;
 }
 
+/* "P4821", "Them": four or five characters, set smaller so they fit the smallest coin. */
+.coin-toss-label[data-long='true'] {
+  font-size: calc(var(--coin-size) * 0.17);
+}
+
 /* Before the flip (and through it with reduced motion): a "?" over the coin, gone as it lands. */
 .coin-toss-blank {
   background: var(--color-raised);

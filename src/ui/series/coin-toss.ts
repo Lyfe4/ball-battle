@@ -93,6 +93,11 @@ export function createCoinToss(onStage: () => void): CoinToss {
   root.append(stage, words);
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  /** A face's label: one of four or five characters ("P4821") is set smaller, to fit the coin. */
+  const label = (node: HTMLElement, text: string) => {
+    setText(node, text);
+    setAttr(node, 'data-long', String(text.length > 3));
+  };
   let current: TossPlay | undefined;
   let shown: TossStage | undefined;
   let timer: number | undefined;
@@ -155,8 +160,8 @@ export function createCoinToss(onStage: () => void): CoinToss {
       if (play !== undefined) {
         // The winner's face lands up; the colours follow the seats: yellow is always the player's.
         setAttr(coin, 'data-first', play.first === play.seats.you ? 'you' : 'them');
-        setText(frontLabel, coinFace(play.seats, play.first));
-        setText(backLabel, coinFace(play.seats, otherSide(play.first)));
+        label(frontLabel, coinFace(play.seats, play.first));
+        label(backLabel, coinFace(play.seats, otherSide(play.first)));
       }
       return draw();
     },
