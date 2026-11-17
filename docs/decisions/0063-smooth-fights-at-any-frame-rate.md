@@ -3,7 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-17
 - Amends: ADR 0007 (presentation time), ADR 0053 (live fights at 1x)
-- Addendum (2026-11-18): Low Power Mode measured; a smear on slow frames and the `?frames` meter
+- Addendum (2026-11-18): Low Power Mode measured; a trail on slow frames, `?smooth=off` and the
+  `?frames` meter
 
 ## Context
 
@@ -65,7 +66,7 @@ All of it is presentation (ADR 0007): no sim change, the same ticks, the golden 
 - Not measurable here: a real iPhone in Low Power Mode. If fights still look choppy there, the
   next suspect is drawing cost on a throttled phone (frames dropped below 30), not pacing.
 
-## Addendum: what Low Power Mode really costs, and a smear at 30 (2026-11-18)
+## Addendum: what Low Power Mode really costs, and a trail at 30 (2026-11-18)
 
 Fights still looked choppy on the owner's iPhone in Low Power Mode on the published build, after
 the decision above. Measured first, with no fix assumed (`scripts/low-power-frames.ts`,
@@ -92,19 +93,26 @@ are. What can't be measured here is a real iPhone's canvas drawing: `?frames` in
 shows the frame rate, the late frames and the worst gap on the phone itself (`frame-meter.ts`).
 A steady 30 with few late frames confirms the cap; many late frames would point at drawing cost.
 
-**Decision: a smear on slow frames** (`motion-smear.ts`). On a frame 24 ms or more after the last
-(below about 42 a second), each moving ball trails a band its own width over its path since the
-last picture, fading from nothing where its back edge was to 35% at its back edge now, as motion
-blur does for film. Trailing only, so nothing is drawn ahead of the sim; not for a ball that stood
-still (a hit-stop) or jumped (a rewind, a split, a new match); as see-through as a phased ball;
-off under reduced motion. At 50 a second and faster nothing changes, so desktops and 60/120 Hz
-phones look as before. Presentation only (ADR 0007): no sim change. Considered and not taken:
-snapping each frame's time to the median beat (Safari's frame times are already the display's,
-so there is nothing to smooth), and smearing shots and minions too (small, and drawn with their
-own trails or briefly; the balls are what the eye follows).
+**Decision: a light trail on slow frames** (`motion-smear.ts`). On a frame 24 ms or more after the
+last (below about 42 a second), each moving ball trails a band its own width along its path
+through the last two pictures, fading from nothing at its back edge two frames ago to 35% at its
+back edge now: the jumps are filled in and the eye has a line to follow, as motion blur does for
+film. One stroked path, so a bounce has no doubled joint. Trailing only, so nothing is drawn ahead
+of the sim; it stops at a step where the ball stood still (a hit-stop) or jumped (a rewind, a
+split, a new match); as see-through as a phased ball; off under reduced motion. At 50 a second and
+faster nothing changes, so desktops and 60/120 Hz phones look as before. `?smooth=off` in the URL
+shows a fight without it on the same build, to compare on a phone. Presentation only (ADR 0007):
+no sim change.
+
+**Tried and dropped: even frame pacing** (each frame played as the median beat, the difference
+paid back over later frames, so no time is lost). It makes motion worse wherever frame times are
+the real display times: speed jitter at 30 fps went from 0.6% to 20.3% (Chromium) and at the
+uneven beat from 3.2% to 24.7% (WebKit). Safari stamps each frame with the display's own time, so
+there is nothing to even out. Also not taken: trailing shots and minions (small, and the balls are
+what the eye follows).
 
 **Kept from coming back:** `frame-pacing.touch.browser.test.ts` now also times each frame's work
 (p95 under half a 60 Hz beat; about 0.3-1 ms today) and checks that frames 26 ms or more apart
-draw a smear and frames 20 ms or less never do, judged per frame from its real gap (WebKit's
-harness timers run near 27 a second at the 60 fps beat). A/B in WebKit, the smear costs no
-measurable frames.
+draw a trail and frames 20 ms or less never do, judged per frame from its real gap (WebKit's
+harness timers run near 27 a second at the 60 fps beat). A/B in WebKit, the trail costs no
+measurable frames (1.4-1.6% late with it, 1.5-2.0% without).

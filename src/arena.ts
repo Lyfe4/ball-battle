@@ -51,6 +51,11 @@ export interface ArenaHost {
   readonly tips: Tips;
   /** What the match on screen is: the home demo, a Free play match or a series round (ADR 0037). */
   moment(): ReadyMoment;
+  /**
+   * The trail behind each ball on slow frames (ADR 0063 addendum); off only with `?smooth=off`, to
+   * compare on a phone.
+   */
+  readonly smooth: boolean;
 }
 
 /**
@@ -115,8 +120,8 @@ export function createArena(
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
-  /** The world drawn last frame (blended), and this frame's real length: a slow frame smears. */
-  let lastDrawn: WorldState | undefined;
+  /** The worlds drawn on the last frames (blended), oldest first, and this frame's real length. */
+  let drawnBefore: WorldState[] = [];
   let drawingFrameMs = 0;
   let canvasView = { canvasPixels: 0, cssPixels: 0 };
   /**
@@ -161,8 +166,8 @@ export function createArena(
     const { world, effectMs: now } = playback;
     const reduced = reducedMotionQuery.matches;
     const drawn = interpolateWorld(playback.previous, world, interpolationAlpha(playback));
-    const smears = smearsOf(lastDrawn, drawn, drawingFrameMs, reduced);
-    lastDrawn = drawn;
+    const smears = host.smooth ? smearsOf(drawnBefore, drawn, drawingFrameMs, reduced) : [];
+    drawnBefore = [...drawnBefore, drawn].slice(-theme.smearFrames);
     drawWorld(ctx, drawn, lookup, canvasView, {
       flash: (ballId) => effects.flash(ballId, now),
       heal: (ballId) => effects.heal(ballId, now),
@@ -318,7 +323,7 @@ export function createArena(
       sourceChips.reset();
       played = 0;
       lastFrameMs = undefined;
-      lastDrawn = undefined;
+      drawnBefore = [];
       render();
     },
     showAt(world, elapsedMs) {

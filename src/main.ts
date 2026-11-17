@@ -221,6 +221,9 @@ const arena = createArena(
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
+    // The trail on slow frames; `?smooth=off` (read once, at load) shows a fight without it, to
+    // compare on a phone (ADR 0063 addendum).
+    smooth: new URL(window.location.href).searchParams.get('smooth') !== 'off',
     // A live fight plays at 1x on both screens, whatever the toggle says (ADR 0053).
     // A live fight plays at 1x, gently catching up with the server's moment (ADR 0053, 0063).
     speed: () =>

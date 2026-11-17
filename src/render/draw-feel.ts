@@ -209,10 +209,10 @@ function drawPoisonRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: 
 }
 
 /**
- * Each smear (motion-smear.ts) under its ball: a band the ball's width along the stretch of path
- * since the last frame, fading from nothing where its back edge was to `theme.smearAlpha` where its
- * back edge is now. A stroked line, so it draws no circle (the frame-pacing test counts the balls'
- * circles). A phased ball's smear is as see-through as the ball.
+ * Each trail (motion-smear.ts) under its ball: one band the ball's width along its path through the
+ * last frames, fading from nothing where its back edge was to `theme.smearAlpha` where its back
+ * edge is now. One stroked path, so a bend has no doubled joint, and no circle is drawn (the
+ * frame-pacing test counts the balls' circles). A phased ball's trail is as see-through as it is.
  */
 export function drawSmears(
   ctx: CanvasRenderingContext2D,
@@ -220,15 +220,23 @@ export function drawSmears(
   colorOf: (ballId: string) => string,
   alphaOf: (ballId: string) => number,
 ): void {
-  for (const { ballId, from, to, radius } of smears) {
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
-    const back = { x: ((to.x - from.x) / length) * radius, y: ((to.y - from.y) / length) * radius };
+  for (const { ballId, points, radius } of smears) {
+    const first = points[0];
+    const last = points.at(-1);
+    if (first === undefined || last === undefined) continue;
+    const length = Math.hypot(last.x - first.x, last.y - first.y);
+    if (length === 0) continue;
+    // From each end's back edge along the way it went: the part of the band the ball doesn't cover.
+    const back = {
+      x: ((last.x - first.x) / length) * radius,
+      y: ((last.y - first.y) / length) * radius,
+    };
     const color = colorOf(ballId);
     const fade = ctx.createLinearGradient(
-      from.x - back.x,
-      from.y - back.y,
-      to.x - back.x,
-      to.y - back.y,
+      first.x - back.x,
+      first.y - back.y,
+      last.x - back.x,
+      last.y - back.y,
     );
     fade.addColorStop(0, withAlpha(color, 0));
     fade.addColorStop(1, withAlpha(color, theme.smearAlpha * alphaOf(ballId)));
@@ -236,9 +244,10 @@ export function drawSmears(
     ctx.strokeStyle = fade;
     ctx.lineWidth = radius * 2;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
+    ctx.moveTo(first.x, first.y);
+    for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
     ctx.stroke();
     ctx.restore();
   }
