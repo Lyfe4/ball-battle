@@ -24,6 +24,7 @@ import { bloom } from './bloom.ts';
 import { hex } from './hex.ts';
 import { spider } from './spider.ts';
 import { battery } from './battery.ts';
+import { slime } from './slime.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
 export const BALLS: readonly BallDefinition[] = [
@@ -51,6 +52,7 @@ export const BALLS: readonly BallDefinition[] = [
   hex,
   spider,
   battery,
+  slime,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);

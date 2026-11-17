@@ -76,7 +76,7 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
-Known gaps at ruleset 18 (ADR 0049, 0050, 0056, 0057, 0058):
+Known gaps at ruleset 19 (ADR 0049, 0050, 0056, 0057, 0058, 0060):
 
 - **Something that beats the Titan.** Only Thorns holds the grown Titan, which beats one ball and
   loses to one. **Closed in ruleset 16 (ADR 0056):** the Storm's and Bomber's second loss, the
@@ -90,7 +90,9 @@ Known gaps at ruleset 18 (ADR 0049, 0050, 0056, 0057, 0058):
   to lose to small shockwaves, would close these. **Closed in ruleset 13:** the Spartan's second
   win (the Hex: a small burst, halved again by its shield). **Closed in ruleset 17 (ADR 0057):** the
   Sniper's second win, the Spartan: a 0.2 s lock is too quick for a planted shield to step off, so
-  the Sniper beats the Spartan and Thorns. The Quake and the Vampire are still open.
+  the Sniper beats the Spartan and Thorns. **Closed in ruleset 19 (ADR 0060):** the Vampire's third
+  win, the Slime, whose two halves feed its lifesteal twice; its allowance is gone. The Quake is
+  still open.
 - **Fewer wins for the Berserker.** It beats five balls that hit rarely. The Hex (one burst, one
   rage) and the Frost now beat it, so it loses to four (ADR 0049), but it still needs its "up to
   five wins" allowance.
@@ -108,13 +110,15 @@ Known gaps at ruleset 18 (ADR 0049, 0050, 0056, 0057, 0058):
   Necromancer and is no longer an even pick; only Thorns beats it. A ball that never hits from range
   meets only its timed pull, so one that wins the brawl the pull forces would be its second loss.
   (Every weaker Magnet lifts the Frost first, and the Frost has no room.)
-- **The Slime's lessons (`proto/slime-2`, not shipped).** A ball that splits at half health wastes
-  one big aimed hit, so every version with an edge has it over the Sniper first, and the Sniper
-  can't take a third loss (the Speedster, at four losses, is next). On `proto/sniper-slime` (ruleset
-  17's Sniper) the closest Slime was one pair from passing: it gives the Spider a fifth win. Faster, smaller halves add the
-  Archer and Hex as prey; bigger or slower halves only grow the Speedster's and Sniper's edges;
-  weaker halves or earlier splits only lose. A splitting ball fits only once the Sniper has room
-  for another loss, or if its split answers something other than one big hit.
+- **Five losses for the Archer (ruleset 19, ADR 0060, owner's decision).** The Slime's split
+  outlasts one arrow at a time, a fifth loss beside the Magnet, Necromancer, Speedster and
+  Berserker; its four wins keep it within 1. It has an "up to 5 losses" allowance, like the
+  Bloom's. A change that takes one of the Archer's losses (the Magnet's is the newest, the
+  Necromancer's 73% the largest) closes it. Every Slime that beats the Sniper beats the Archer by
+  as much or more, so the Slime itself can't be tuned off it.
+- **The Slime didn't fill the Magnet's gap (ADR 0060).** It brawls up close, so it meets only the
+  timed pull, as planned, but the brawl is dead even (51%); a Slime strong enough to beat the
+  Magnet beats the Speedster, Archer and Sniper far too hard first.
 - **A ball that stuns or silences, built on the ability clock.** The Glitch (its bump switched the
   other ball's ability off) was parked in ADR 0050: on its own it turns each fight into a plain
   stat check. Its engine work is kept on `proto/bloom-glitch`: each ball keeps an ability clock
@@ -266,6 +270,11 @@ blind picks. See Decisions below.
   untouched, then 1 health every 12 ticks, and stays a closed bud while it waits (vs Frost,
   Berserker, Ghost, Chrono; the Archer, Boomerang, Inferno, Venom and Titan over it). The Titan
   goes from speed 740 to 750 to keep its one win. The Glitch, measured alongside, is parked.
+- **The Slime and the Spider's used-up webs** (2026-11-17, ADR 0059, 0060): the **Slime** splits
+  in two at half health and the enemy must finish both halves (vs Archer, Sniper: one aimed hit
+  finishes one half; the Spider and Vampire over it: webs catch both halves, lifesteal feeds on
+  two). A **Spider**'s web that catches a ball is used up, so a ball that keeps bouncing back to
+  one wall (the Chrono) is even with it; the Spartan now beats it.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

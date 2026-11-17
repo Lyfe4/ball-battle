@@ -5,8 +5,9 @@ import type { CounterEntry } from './counter-map.ts';
 /**
  * The Spider webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.
  * The slow is the decider, so it beats the balls whose ability feeds on speed or walls, and the
- * Chrono, which can't rewind a nip. It loses to the balls a slow costs nothing (the Archer's
- * arrows, the Bomber's blasts) and to the Bloom, which regrows each small nip.
+ * Slime, whose two halves both bounce into webs. A web that catches is used up (ADR 0060), so a
+ * ball that keeps coming back to one wall (the Chrono) is even. It loses to the balls a slow costs nothing
+ * (the Archer's arrows, the Boomerang, the Bomber's blasts, the Spartan's spear behind its shield).
  */
 export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
@@ -96,8 +97,8 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spider',
     y: 'chrono',
-    intended: 'x',
-    reason: 'Its nips are far too small to rewind, and they keep coming.',
+    intended: 'even',
+    reason: 'It bumps back to the same wall, but each web catches it only once: even.',
   },
   {
     x: 'spider',
@@ -127,8 +128,8 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spider',
     y: 'spartan',
-    intended: 'even',
-    reason: 'The shield halves the nips and slows it anyway: neither pulls ahead.',
+    intended: 'y',
+    reason: 'The shield halves the nips, and the spear lands however slow it is.',
   },
   {
     x: 'spider',

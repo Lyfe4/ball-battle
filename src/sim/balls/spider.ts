@@ -15,15 +15,15 @@ export type SpiderState = Readonly<{
 }>;
 
 /** A web reaches this far along its wall on each side of where the Spider touched it. */
-export const WEB_HALF_LENGTH = 140;
+export const WEB_HALF_LENGTH = 145;
 /** At most this many webs at once; a new one replaces the oldest. */
 export const MOST_WEBS = 6;
 /** A web lasts this long (12 s). */
 export const WEB_TICKS = 720;
 /** A ball that bounces off a web takes this much damage. */
 export const WEB_NIP = 3;
-/** ... and is slowed (the Frost's slow, ADR 0012) for this long (6.5 s). */
-export const WEB_SLOW_TICKS = 390;
+/** ... and is slowed (the Frost's slow, ADR 0012) for this long (6 s). */
+export const WEB_SLOW_TICKS = 360;
 /** One bounce catches once: a ball caught this recently is not caught again. */
 const CATCH_GAP_TICKS = 10;
 
@@ -74,10 +74,11 @@ function bouncedOff(ball: BallState, web: Web, size: number): boolean {
 }
 
 /**
- * Webs (ADR 0049): every wall it bounces off gets a web where it touched, reaching
+ * Webs (ADR 0049, 0060): every wall it bounces off gets a web where it touched, reaching
  * WEB_HALF_LENGTH each way. An enemy that bounces off a webbed stretch of wall is nipped for
- * WEB_NIP and slowed for WEB_SLOW_TICKS. At most MOST_WEBS at once, each lasting WEB_TICKS; a web
- * spun again on the same stretch is moved and renewed, not doubled. A phased ball slips through.
+ * WEB_NIP and slowed for WEB_SLOW_TICKS, and the web that caught it is used up (gone): it spins a
+ * new one on its next bounce off that wall. At most MOST_WEBS at once, each lasting WEB_TICKS; a
+ * web spun again on the same stretch is moved and renewed, not doubled. A phased ball slips through.
  */
 export const spider = defineBall<SpiderState>({
   id: 'spider',
@@ -87,7 +88,7 @@ export const spider = defineBall<SpiderState>({
   ability: { name: 'Webs', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
   howItWorks: [
     'Each wall it bounces off gets a web where it touched.',
-    `A ball that bounces off a web takes ${WEB_NIP} damage and is slowed for ${WEB_SLOW_TICKS / TICK_RATE} s.`,
+    `A ball that bounces off a web takes ${WEB_NIP} damage and is slowed for ${WEB_SLOW_TICKS / TICK_RATE} s, and the web snaps.`,
     `Up to ${MOST_WEBS} webs at once, each lasting ${WEB_TICKS / TICK_RATE} s.`,
   ],
   radius: STANDARD_BALL_RADIUS,
@@ -111,13 +112,17 @@ export const spider = defineBall<SpiderState>({
     },
     onTick: ({ world, self, isPhased }) => {
       const size = world.arena.size;
-      const webs = self.abilityState.webs.filter((web) => web.until > world.tick);
+      let webs = self.abilityState.webs.filter((web) => web.until > world.tick);
+      const live = webs.length;
       const actions: AbilityAction<SpiderState>[] = [];
       const caught: Record<string, number> = { ...self.abilityState.caught };
       for (const ball of world.balls) {
         if (ball.id === self.id || ball.health <= 0 || isPhased(ball)) continue;
         if ((caught[ball.id] ?? -CATCH_GAP_TICKS) > world.tick - CATCH_GAP_TICKS) continue;
-        if (!webs.some((web) => bouncedOff(ball, web, size))) continue;
+        const web = webs.find((one) => bouncedOff(ball, one, size));
+        if (web === undefined) continue;
+        // A web that catches is used up (ADR 0060): one catch a web.
+        webs = webs.filter((one) => one !== web);
         caught[ball.id] = world.tick;
         actions.push(
           { kind: 'damage', targetId: ball.id, amount: WEB_NIP },
@@ -129,7 +134,7 @@ export const spider = defineBall<SpiderState>({
           },
         );
       }
-      if (actions.length === 0 && webs.length === self.abilityState.webs.length) return [];
+      if (actions.length === 0 && live === self.abilityState.webs.length) return [];
       return [{ kind: 'setAbilityState', state: { webs, caught } }, ...actions];
     },
   },

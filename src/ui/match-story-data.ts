@@ -2,8 +2,10 @@
 // match is replayed headlessly from its opening world, which is (seed, balls), so the story is
 // the fight itself and can never disagree with what was on screen (ADR 0001).
 import { TICK_RATE } from '../sim/constants.ts';
+import { sideHealth } from '../sim/side.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
+import { sideEvents } from './side-events.ts';
 
 /** Damage one ball dealt by one source: its contact hits, or its ability. */
 export interface DamageShare {
@@ -114,8 +116,12 @@ export function startReplay(start: WorldState, lookup: DefinitionLookup): StoryR
         events.push(...result.events);
         shares.push({
           tick: world.tick,
+          // By side: a Slime's halves add up (ADR 0059).
           share: new Map(
-            world.balls.map((ball) => [ball.id, ball.health / (max.get(ball.id) ?? 1)]),
+            start.balls.map((ball) => [
+              ball.id,
+              sideHealth(world.balls, ball.id) / (max.get(ball.id) ?? 1),
+            ]),
           ),
         });
       }
@@ -123,7 +129,7 @@ export function startReplay(start: WorldState, lookup: DefinitionLookup): StoryR
     },
     story(labels) {
       replay.advance(Infinity);
-      return tell(start, lookup, events, shares, labels);
+      return tell(start, lookup, sideEvents(events, world.balls), shares, labels);
     },
   };
   return replay;

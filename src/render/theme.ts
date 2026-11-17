@@ -96,6 +96,23 @@ export const theme = {
   webDepth: 0.55,
   webFadeTicks: 90,
   /**
+   * A web that catches a ball snaps (ADR 0060): its two halves spring this far apart along the
+   * wall, turning back by this much, over webSnapMs; for the first part (the twang) the silk is bright.
+   */
+  webSnapMs: 420,
+  webSnapSpring: 46,
+  webSnapTurn: 0.45,
+  webSnapTwangShare: 0.35,
+  /**
+   * A Slime splitting (ADR 0060), over splitMs: a band of jelly joins the halves and thins away in
+   * the first splitStretchShare, then splitDroplets droplets are thrown splitDropletReach out.
+   */
+  splitMs: 380,
+  splitStretchShare: 0.55,
+  splitDroplets: 7,
+  splitDropletReach: 78,
+  splitDropletRadius: 8,
+  /**
    * Ball designs (src/render/ball-designs): flat shapes in the ball's own colour plus one accent
    * per ball, keyed by definition id. White is only for small highlights.
    */
@@ -124,6 +141,7 @@ export const theme = {
     hex: '#3b0764',
     spider: '#18181b',
     battery: '#172554',
+    slime: '#3a4104',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',

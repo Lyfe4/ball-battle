@@ -53,7 +53,7 @@ describe('the counter map', () => {
 
   it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047, ADR 0049)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      ['berserker', 'bloom', 'ghost', 'magnet', 'quake', 'titan', 'vampire'].sort(),
+      ['archer', 'berserker', 'bloom', 'ghost', 'magnet', 'quake', 'titan'].sort(),
     );
   });
 
@@ -73,14 +73,14 @@ describe('shapeProblem', () => {
 
   it('holds every other ball to SHAPE', () => {
     expect(SHAPE).toStrictEqual({ fewest: 2, most: 4, within: 1 });
-    expect(shapeProblem('archer', some(2), some(3))).toBeUndefined();
-    expect(shapeProblem('archer', some(1), some(2))).toBeDefined();
-    expect(shapeProblem('archer', some(5), some(4))).toBeDefined();
-    expect(shapeProblem('archer', some(2), some(4))).toBeDefined();
+    expect(shapeProblem('venom', some(2), some(3))).toBeUndefined();
+    expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
+    expect(shapeProblem('venom', some(5), some(4))).toBeDefined();
+    expect(shapeProblem('venom', some(2), some(4))).toBeDefined();
   });
 
   it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's shape today (map and measured, ruleset 18) fits its allowance...
+    // Each ball's shape today (map and measured, ruleset 19) fits its allowance...
     const today: Readonly<Record<string, readonly [number, number]>> = {
       titan: [1, 1],
       berserker: [5, 4],
@@ -88,7 +88,7 @@ describe('shapeProblem', () => {
       ghost: [2, 1],
       magnet: [3, 1],
       quake: [1, 2],
-      vampire: [2, 4],
+      archer: [4, 5],
     };
     for (const [id, [wins, losses]] of Object.entries(today)) {
       expect({ id, problem: shapeProblem(id, some(wins), some(losses)) }).toStrictEqual({
@@ -118,12 +118,15 @@ describe('shapeProblem', () => {
     expect(shapeProblem('sniper', some(1), some(2))).toBeDefined();
     expect(shapeProblem('quake', some(1), some(1))).toBeDefined();
     expect(shapeProblem('quake', some(1), some(3))).toBeDefined();
-    expect(shapeProblem('vampire', some(1), some(4))).toBeDefined();
-    expect(shapeProblem('vampire', some(2), some(5))).toBeDefined();
-    expect(shapeProblem('vampire', some(1), some(3))).toBeDefined();
+    // The Archer (ADR 0060): up to five losses, its wins within 1, never a sixth.
+    expect(shapeProblem('archer', some(4), some(6))).toBeDefined();
+    expect(shapeProblem('archer', some(3), some(5))).toBeDefined();
+    expect(shapeProblem('archer', some(5), some(5))).toBeDefined();
+    // The Vampire lost its allowance to the Slime (ADR 0060): 2 wins over 4 losses is off shape.
+    expect(shapeProblem('vampire', some(2), some(4))).toBeDefined();
     // A ball that moves back towards the shape still passes.
     expect(shapeProblem('titan', some(2), some(2))).toBeUndefined();
-    expect(shapeProblem('vampire', some(3), some(4))).toBeUndefined();
+    expect(shapeProblem('archer', some(4), some(4))).toBeUndefined();
     expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
   });
 
@@ -137,7 +140,7 @@ describe('shapeProblem', () => {
       ghost: { wins: standard, losses: range(1, 4), within: 1 },
       magnet: { wins: standard, losses: range(1, 4), within: 2 },
       quake: { wins: range(1, 4), losses: standard, within: 1 },
-      vampire: { wins: standard, losses: standard, within: 2 },
+      archer: { wins: standard, losses: range(2, 5), within: 1 },
     });
   });
 

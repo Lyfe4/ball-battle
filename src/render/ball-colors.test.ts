@@ -20,6 +20,19 @@ describe('ball colours', () => {
     expect(isRepeatOfEarlierBall(different, 1)).toBe(false);
   });
 
+  it('gives a half split off a ball its side’s shade, in a mirror too (ADR 0059)', () => {
+    const [a, b] = createWorld(1, [red, red]).balls;
+    if (a === undefined || b === undefined) throw new Error('No balls');
+    const half = (of: typeof a) => ({ ...of, id: `${of.id}~1`, side: of.id });
+    const balls = [{ ...a, side: a.id }, { ...b, side: b.id }, half(a), half(b)];
+    expect(balls.map((_, index) => isRepeatOfEarlierBall(balls, index))).toStrictEqual([
+      false,
+      true,
+      false,
+      true,
+    ]);
+  });
+
   it('lightens a repeat and leaves other balls alone', () => {
     expect(ballColor(red.color, false)).toBe(red.color);
     expect(ballColor(red.color, true)).toBe(lighten(red.color, theme.repeatLighten));

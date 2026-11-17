@@ -30,6 +30,7 @@ import { spartan } from './spartan.ts';
 import { hex } from './hex.ts';
 import { spider } from './spider.ts';
 import { battery } from './battery.ts';
+import { HALF_RADIUS, HALF_SPEED, slime } from './slime.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -84,11 +85,15 @@ describe('the ball roster', () => {
       spider: spider.speed,
       // Storing a hit only changes how hard its next bump lands, never its speed.
       battery: battery.speed,
+      // Its halves are quicker than it, and smaller (ADR 0060); two halves never touch.
+      slime: slime.speed * HALF_SPEED,
     };
+    // The smallest a ball gets: only the Slime's halves are smaller than it starts.
+    const smallest = (ball: BallDefinition) => (ball.id === slime.id ? HALF_RADIUS : ball.radius);
     expect(Object.keys(topCruiseSpeed).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const [a, b] of matchups) {
       const closing = (topCruiseSpeed[a.id] ?? Infinity) + (topCruiseSpeed[b.id] ?? Infinity);
-      expect(closing / ((a.radius + b.radius) / DT)).toBeLessThan(0.6);
+      expect(closing / ((smallest(a) + smallest(b)) / DT)).toBeLessThan(0.6);
     }
   });
 

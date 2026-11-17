@@ -1,4 +1,5 @@
-// The style guide's tiles for the Hex and the Spider (ADR 0049) and the Battery (ADR 0056), kept
+// The style guide's tiles for the Hex and the Spider (ADR 0049), the Battery (ADR 0056) and the
+// Slime (ADR 0060), kept
 // apart so each file stays readable. sections.ts lists them in roster order with the rest; the
 // curse and the webs show in the phone arena.
 import type { Tile } from './sections.ts';
@@ -32,6 +33,16 @@ export const BATCH_SIX: readonly (readonly [string, readonly Tile[]])[] = [
       { label: 'hit flash', id: 'battery', flash: 0.6 },
       { label: 'mirror B', id: 'battery', repeat: true },
       { label: 'defeated', id: 'battery', defeated: true },
+    ],
+  ],
+  [
+    'Slime: a glossy lemon-lime jelly with two eyes; its edge wobbles slowly, and while whole a wavy seam runs down its middle where it will split. Each half is the same jelly, smaller, with no seam (see the phone arena)',
+    [
+      { label: 'whole', id: 'slime' },
+      { label: 'a half', id: 'slime', abilityState: { split: true } },
+      { label: 'hit flash', id: 'slime', flash: 0.6 },
+      { label: 'mirror B', id: 'slime', repeat: true },
+      { label: 'defeated', id: 'slime', defeated: true },
     ],
   ],
 ];

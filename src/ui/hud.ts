@@ -1,5 +1,6 @@
 import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
 import { readableOn } from '../render/contrast.ts';
+import { isFirstOfSide, sideHealth } from '../sim/side.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
 import { createMatchStory } from './match-story.ts';
@@ -101,7 +102,9 @@ export function createHud(
       start = world;
       list.replaceChildren();
       rows.clear();
+      // One row a side (ADR 0059): a match starts with one ball each.
       world.balls.forEach((ball, index) => {
+        if (!isFirstOfSide(ball)) return;
         const definition = definitions.get(ball.definitionId);
         const item = element('li', 'hud-ball');
         // Same shade as the canvas, so a mirror match's B row matches the lighter ball B.
@@ -144,8 +147,10 @@ export function createHud(
         const row = rows.get(ball.id);
         const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
         if (row === undefined || maxHealth === undefined) continue;
-        setText(row.health, `${Math.ceil(ball.health)} / ${maxHealth}`);
-        const percent = `${Math.max(0, (ball.health / maxHealth) * 100)}%`;
+        // A side's health: a Slime's two halves added up (ADR 0060).
+        const health = sideHealth(world.balls, ball.id);
+        setText(row.health, `${Math.ceil(health)} / ${maxHealth}`);
+        const percent = `${Math.max(0, (health / maxHealth) * 100)}%`;
         if (row.fill.style.width !== percent) row.fill.style.width = percent;
         if (row.ghost.style.width !== percent) row.ghost.style.width = percent;
         const outcome = !finished

@@ -1,3 +1,4 @@
+import { sideHealth, sideOf } from '../sim/side.ts';
 import { ownerColor } from './ball-colors.ts';
 import { drawRewinds } from './draw-rewind.ts';
 import type { RewindTrail } from './rewind.ts';
@@ -25,6 +26,8 @@ import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 import { drawCurses } from './curse.ts';
 import { drawWebs } from './webs.ts';
+import { drawSnaps, drawSplits } from './draw-moments.ts';
+import type { SnapMoment, SplitMoment } from './moments.ts';
 
 /** How big the canvas is: its backing store, and how large it appears on screen. */
 export interface CanvasView {
@@ -61,6 +64,9 @@ export interface FrameEffects {
   readonly rewinds: readonly RewindTrail[];
   /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
   readonly chips: readonly SourceChip[];
+  /** Slimes splitting and webs snapping (ADR 0060). */
+  readonly splits: readonly SplitMoment[];
+  readonly snaps: readonly SnapMoment[];
   /** Holds animated details (a heal's swelling ring, a glance's shards, the chip's pop) still. */
   readonly reducedMotion: boolean;
 }
@@ -82,6 +88,8 @@ export const NO_EFFECTS: FrameEffects = {
   glance: () => 0,
   rewinds: [],
   chips: [],
+  splits: [],
+  snaps: [],
   reducedMotion: false,
 };
 
@@ -113,6 +121,7 @@ export function drawWorld(
   // Pending zones go under the balls, so a warning never hides a ball.
   drawZones(ctx, world, definitions);
   drawWebs(ctx, world);
+  drawSnaps(ctx, world, effects.snaps, effects.reducedMotion);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(
@@ -120,6 +129,13 @@ export function drawWorld(
     effects.rewinds,
     (ballId) => world.balls.find((ball) => ball.id === ballId)?.radius ?? 0,
     (ballId) => ownerColor(world.balls, definitions, ballId),
+  );
+  drawSplits(
+    ctx,
+    world,
+    effects.splits,
+    (ballId) => ownerColor(world.balls, definitions, ballId),
+    effects.reducedMotion,
   );
   const breaking = new Set(effects.knockouts.map(({ ballId }) => ballId));
   world.balls.forEach((ball, index) => {
@@ -165,7 +181,9 @@ export function drawWorld(
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
     if (ball.health > 0 && maxHealth !== undefined) {
       const ghost = effects.ghost(ball.id, ball.health);
-      drawHealthBar(ctx, ball, ball.health / maxHealth, ghost / maxHealth, size);
+      // A Slime half's bar is its own share of the whole, coloured by its side's (ADR 0060).
+      const side = sideHealth(world.balls, sideOf(ball)) / maxHealth;
+      drawHealthBar(ctx, ball, ball.health / maxHealth, ghost / maxHealth, size, side);
     }
   }
   // Unseen damage: who dealt it, beside the bar it came off (ADR 0036).
@@ -230,16 +248,23 @@ export function drawBall(
   if (ball.health <= 0) ctx.globalAlpha = theme.defeatedAlpha;
   else if (look.phased === true) ctx.globalAlpha = theme.phasedAlpha;
 
-  ctx.beginPath();
-  ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
+  const view = design === undefined ? undefined : designView(design, ball, world, look);
+  /** The body's path: a circle, or the design's own outline (built in its frame, kept in world). */
+  const body = (): void => {
+    ctx.beginPath();
+    if (design?.outline !== undefined && view !== undefined) {
+      paintDesign(ctx, view, design.outline);
+    } else {
+      ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
+    }
+  };
+  body();
   ctx.fillStyle = color;
   ctx.fill();
-  const view = design === undefined ? undefined : designView(design, ball, world, look);
   if (design !== undefined && view !== undefined) paintDesign(ctx, view, design.draw);
   // The design leaves its own path behind (paths are not part of save/restore), so the flash and
   // outline rebuild the body's.
-  ctx.beginPath();
-  ctx.arc(x, y, ball.radius, 0, Math.PI * 2);
+  body();
   if (flash > 0) {
     ctx.save();
     ctx.globalAlpha *= flash * theme.flashMaxAlpha;
