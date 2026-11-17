@@ -6,7 +6,8 @@
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)
 - Design: `docs/roster-redesign.md` (approved 2026-11-08 with the decisions in its section 0)
 - Amended by: ADR 0047 (the Guardian replaced by the Spartan, the Bloom's regrowth pauses after a
-  hit, the known gaps), ADR 0056 (a defence is told what dealt a hit; the known gaps)
+  hit, the known gaps), ADR 0056 (a defence is told what dealt a hit; the known gaps), ADR 0057 (the Sniper's second
+  win; the known gaps)
 
 ## Context
 
