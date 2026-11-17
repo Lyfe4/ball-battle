@@ -13,7 +13,7 @@ import { randomBot } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { setupWithPicks } from '../sim/series.ts';
 import { playLikeTheGame } from '../sim/test-support.ts';
-import { button, settle, until, visible } from './page-support.ts';
+import { button, settle, tossed, until, visible } from './page-support.ts';
 
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
 const score = () => visible('.series-track-points')[0]?.textContent;
@@ -87,10 +87,12 @@ describe('the Best of 3 result screen', () => {
     expect(new URL(copied).searchParams.get('picks')).toBe(decided.picks?.join(','));
     expect(button('Link copied')).toBeDefined();
 
-    // Rematch: round 1 of a new series, on screen at once, with the toss.
+    // Rematch: round 1 of a new series, on screen at once, with the toss (ADR 0061).
     await browserPage.getByRole('button', { name: 'Rematch' }).click();
     await settle();
     expect(phase()).not.toBe('finished');
+    expect(visible('#series .coin-toss')).toHaveLength(1);
+    await tossed();
     expect(score()).toBe('0 – 0');
     expect(visible('.series-result')).toHaveLength(0);
     if (phase() === 'between') {

@@ -113,3 +113,11 @@ export async function until(
     await settle();
   }
 }
+
+/** Longest Reveal's coin toss shows before round 1's pick (ADR 0061), with room to spare. */
+export const TOSS_WAIT_MS = 6_000;
+
+/** Waits for Reveal's coin toss to land and its result to be read: round 1's pick then shows. */
+export async function tossed(): Promise<void> {
+  await until(() => visible('.coin-toss').length === 0, TOSS_WAIT_MS, 'the coin toss to land');
+}

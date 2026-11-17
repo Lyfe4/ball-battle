@@ -5,7 +5,7 @@
 // 1280 (wide) and 1920 (full) wide.
 import { expect } from 'vitest';
 import page from '../../index.html?raw';
-import { button, pressFight, settle, until, visible } from './page-support.ts';
+import { button, pressFight, settle, tossed, until, visible } from './page-support.ts';
 
 const NEAR = 1;
 
@@ -98,6 +98,7 @@ export async function runPanelPartsFlow(desktop: boolean): Promise<void> {
   button('Reveal lineups').click();
   await settle();
   checkSeriesBar(desktop);
+  await tossed();
   visible('.answer-step .pick-row-pick')[0]?.click();
   await until(() => visible('.hud-health-track').length === 2, 15_000, 'both health bars', false);
   pressFight();
@@ -124,6 +125,7 @@ export async function runPanelPartsFlow(desktop: boolean): Promise<void> {
   button('Reveal lineups').click();
   await settle();
   checkSeriesBar(desktop, longest);
+  await tossed();
   visible('.answer-step .pick-row-pick')[0]?.click();
   await until(() => visible('.hud-health-track').length === 2, 15_000, 'both health bars', false);
   pressFight();

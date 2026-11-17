@@ -1,6 +1,7 @@
 // What the best-of-3 screens show, as pure functions of the series state, so the visuals (the
 // round track, the pick rows, the next pairing; ADR 0025) are tested without a DOM. Only what the
 // player is allowed to know is ever returned: the bot's hidden balls are `undefined`.
+import type { TossTimes } from '../../app/coin-toss.ts';
 import {
   attemptSeed,
   awaitingPick,
@@ -248,6 +249,10 @@ export interface SeriesMoment {
      * `answer`, the other player asked, so Rematch or No thanks.
      */
     readonly rematch?: 'offer' | 'answer' | undefined;
+    /** A live Reveal's coin toss on the server's clock (ADR 0061), from the start to the first pick. */
+    readonly toss?: TossTimes;
+    /** The server's clock as this page knows it (live). */
+    readonly now?: () => number;
   };
 }
 

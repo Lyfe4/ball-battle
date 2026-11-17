@@ -14,7 +14,7 @@ import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, READY_SEEN_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
 import { checkPanelLooks, checkStoryLook, notePanelLook } from './look-checks.ts';
-import { button, settle, until, visible } from './page-support.ts';
+import { button, settle, tossed, until, visible } from './page-support.ts';
 import { checkSettings } from './settings-checks.ts';
 
 /** A real click; a control that can't be reached fails fast rather than at the test's timeout. */
@@ -181,7 +181,8 @@ export async function runConsistencyFlow(): Promise<void> {
   expect(visible('.answer-step .series-bar-about')[0]?.textContent).toBe(
     'Best of 3 · Reveal · Hard',
   );
-  // Reveal's coin toss in words, leading the pick (ADR 0041).
+  // Reveal's coin toss lands first (ADR 0061), then leads the pick in words (ADR 0041).
+  await tossed();
   expect(visible('.answer-step .series-banner')[0]?.textContent).toMatch(
     /Coin toss: (you show|the bot shows) first\./,
   );

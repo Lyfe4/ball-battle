@@ -3,7 +3,7 @@
 // can't be reached again, so leaving can't be used to retry round 1 on the same seed (ADR 0025).
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
-import { back, button, settle, visible } from './page-support.ts';
+import { back, button, settle, tossed, visible } from './page-support.ts';
 
 const step = () => new URL(location.href).searchParams.get('step');
 /** The names in the HUD's rows: the round being played, as "You X" and "Bot Y". */
@@ -22,6 +22,7 @@ describe('a Reveal series left with Back', () => {
     button('Reveal lineups').click();
     await settle();
     expect(step()).toBe('answer');
+    await tossed();
     const answer = visible('.pick-row .pick-row-pick')[0];
     if (answer === undefined) throw new Error('No answer to pick');
     answer.click();

@@ -113,6 +113,9 @@ export function createOnlinePlay(
         client.forfeit().then(() => {
           host.home();
         }),
+      onRedraw: () => {
+        host.redraw();
+      },
     },
     true,
   );
@@ -342,7 +345,7 @@ export function createOnlinePlay(
         linkState: undefined,
         seats: seatsOf(view),
         due: all ? dueAt(view, live.now()) : [],
-        online: extras.moment(tick),
+        online: { ...extras.moment(tick), now: () => live.now() },
       });
       extras.shown(tick, next, fair);
       if (next !== phase) {

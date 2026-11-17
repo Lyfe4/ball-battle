@@ -9,7 +9,7 @@ import page from '../../index.html?raw';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, READY_SEEN_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
-import { atRest, button, frames, settle, until, visible } from './page-support.ts';
+import { atRest, button, frames, settle, tossed, until, visible } from './page-support.ts';
 
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
@@ -140,6 +140,7 @@ export async function runPhoneArenaFlow(): Promise<void> {
   // A Showdown on Hard, as the bug was found: the ready moment and rounds 1 and 2 mid-fight.
   button('Reveal lineups').click();
   await settle();
+  await tossed();
   visible('.answer-step .pick-row-pick')[0]?.click();
   for (let round = 1; round <= 2; round += 1) {
     const where = `series round ${String(round)}`;

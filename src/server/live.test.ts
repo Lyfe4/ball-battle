@@ -1,10 +1,18 @@
 // The live series' clock (ADR 0053), pure.
 import { describe, expect, it } from 'vitest';
-import { GRACE_MS, LEAD_MS, PICK_SECONDS, roundWatchMs, START_WINDOW_MS } from '../api/live.ts';
+import {
+  GRACE_MS,
+  LEAD_MS,
+  PICK_SECONDS,
+  roundWatchMs,
+  START_WINDOW_MS,
+  TOSS_LEAD_MS,
+} from '../api/live.ts';
 import {
   fightTimes,
   forfeitAtOf,
   nextLiveEvent,
+  firstPickOpensAt,
   pickPhase,
   randomBall,
   type LiveFacts,
@@ -117,6 +125,16 @@ describe('fight times', () => {
 
   it('open the next pick at the lock when no fight was started', () => {
     expect(pickPhase(T, []).opensAt).toBe(T);
+  });
+
+  it('open the first pick of a Reveal series after the coin toss both phones show', () => {
+    expect(firstPickOpensAt('reveal', T)).toBe(T + TOSS_LEAD_MS);
+    expect(firstPickOpensAt('showdown', T)).toBe(T);
+    const phase = pickPhase(T, [], T + TOSS_LEAD_MS);
+    expect(phase).toStrictEqual({
+      opensAt: T + TOSS_LEAD_MS,
+      deadline: T + TOSS_LEAD_MS + PICK_SECONDS * 1000,
+    });
   });
 });
 

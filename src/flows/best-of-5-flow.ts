@@ -23,9 +23,10 @@ import {
   reload,
   seriesPhase,
   shown,
+  tossedIn,
+  type Framed,
   visit,
   waitFor,
-  type Framed,
 } from './reload-support.ts';
 
 const NAMES: Readonly<Record<Format, string>> = {
@@ -131,6 +132,7 @@ async function playOut(framed: Framed, format: Format): Promise<void> {
   if (format !== 'blind') {
     expect(paramOf(framed, 'step')).toBe('answer');
     checkChart(framed, `${format} round 1 pick`);
+    await tossedIn(framed);
     shown(framed, '.answer-step .pick-row-pick')[0]?.click();
     await settle();
   }

@@ -7,7 +7,7 @@ import { liveSeriesToSettle } from './db/live.ts';
 import { loadSeries, type LoadedSeries } from './db/series-record.ts';
 import { forfeitSeries, writeSeries } from './db/series-write.ts';
 import type { Deps } from './http.ts';
-import { nextLiveEvent, randomBall, secureRandom } from './live.ts';
+import { firstPickOpensAt, nextLiveEvent, randomBall, secureRandom } from './live.ts';
 import { dueOf, stateOf } from './machine.ts';
 import { rulesetSim } from './rulesets.ts';
 import { moveOf, storedOf, type MovePick } from './series-move.ts';
@@ -51,7 +51,11 @@ export async function settleLive(deps: Deps, loaded: LoadedSeries): Promise<Load
     } else {
       const picks = event.kind === 'timeout' ? await randomPicks(deps, series) : [];
       const lockedAt = event.kind === 'timeout' ? event.at : clock.now;
-      const startedAt = event.kind === 'start' ? { startedAt: clock.now } : {};
+      // The start: the first pick opens after Reveal's coin toss (ADR 0061).
+      const startedAt =
+        event.kind === 'start'
+          ? { startedAt: clock.now, opensFrom: firstPickOpensAt(series.format, clock.now) }
+          : {};
       const move = await moveOf(deps.config, series, picks, false, { lockedAt, ...startedAt });
       await writeSeries(deps.sql, series.id, series.version, move);
     }

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
 import page from '../../index.html?raw';
-import { button, settle, visible } from './page-support.ts';
+import { button, settle, tossed, visible } from './page-support.ts';
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
@@ -30,6 +30,7 @@ describe('pick rows on a touch phone', () => {
     button('Reveal lineups').click();
     await settle();
     expect(step()).toBe('answer');
+    await tossed();
 
     // Each mark is a 44 px tap target of its own.
     const badge = visible('.answer-step .pick-row-badge')[0];

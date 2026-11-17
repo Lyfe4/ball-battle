@@ -51,6 +51,8 @@ export type MovePick = PickRecord & { readonly auto?: boolean };
 export interface LiveMoment {
   readonly lockedAt: number;
   readonly startedAt?: number;
+  /** The next pick phase opens no earlier than this (the first one, after Reveal's toss). */
+  readonly opensFrom?: number;
 }
 
 /**
@@ -77,7 +79,8 @@ export async function moveOf(
           moment.lockedAt,
           series.live?.fights.at(-1)?.endsAt ?? null,
         );
-  const phase = moment === undefined ? undefined : pickPhase(moment.lockedAt, fights);
+  const phase =
+    moment === undefined ? undefined : pickPhase(moment.lockedAt, fights, moment.opensFrom);
   const round = (index: number) => ({
     purpose: 'round',
     index,

@@ -48,7 +48,7 @@ const matchOf = async (player: Player) => {
 
 describe('the live view', () => {
   it('carries the clock, and every answer the database’s time, a 304’s too', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     const answer = await get(players.a, id);
     const seen = view(answer);
     const row = await liveRow(admin, id);
@@ -62,7 +62,7 @@ describe('the live view', () => {
   });
 
   it('names the picks made at random and the fights the server timed', async () => {
-    const { id, players } = await startedLive(deps, 'showdown');
+    const { id, players } = await startedLive(deps, admin, 'showdown');
     await travel(admin, id, 31_000);
     const seen = await read(players.b, id);
     expect(seen.live?.auto).toHaveLength(2);
@@ -72,7 +72,7 @@ describe('the live view', () => {
   });
 
   it('shows the opponent away after 6 s, with when they lose, and changes the ETag', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     const before = await get(players.b, id);
     await silence(admin, id, 'a', AWAY_AFTER_MS + 1_000);
     const after = await get(players.b, id, { 'If-None-Match': before.headers.get('ETag') ?? '' });
@@ -96,7 +96,7 @@ describe('the live view', () => {
 
 describe('leave and forfeit', () => {
   it('ends the live series at once, the other player winning, and says why', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     const left = view(await leave(players.a, id));
     expect(left).toMatchObject({ status: 'forfeit', winner: 'b' });
     expect(left.live?.endReason).toBe('left');
@@ -106,7 +106,7 @@ describe('leave and forfeit', () => {
   });
 
   it('answers a series that already ended as it ended', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await silence(admin, id, 'b', 40_000);
     expect(view(await leave(players.a, id))).toMatchObject({ winner: 'a' });
     expect((await liveRow(admin, id)).end_reason).toBe('disconnected');
@@ -116,7 +116,7 @@ describe('leave and forfeit', () => {
     const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
     const byTurns = await newSeries(deps, players, 'reveal');
     expect(code((await leave(players.a, byTurns)).body)).toBe('not_your_turn');
-    const { id } = await startedLive(deps);
+    const { id } = await startedLive(deps, admin);
     expect((await leave(await newPlayer(deps), id)).status).toBe(404);
   });
 });
@@ -168,7 +168,7 @@ describe('the match to go back to', () => {
   });
 
   it('is gone once the player has been away past the grace period (asking from home is not being there)', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await silence(admin, id, 'a', 20_000);
     expect(await matchOf(players.a)).toMatchObject({ id });
     await silence(admin, id, 'a', AWAY_AFTER_MS + GRACE_MS + 1_000);
@@ -179,7 +179,7 @@ describe('the match to go back to', () => {
 
 describe('reads', () => {
   it('are rate limited per account, in the same statement as the read', async () => {
-    const { id, players } = await startedLive(deps);
+    const { id, players } = await startedLive(deps, admin);
     await admin`
       insert into game.rate_limits (subject, bucket, window_start, count)
       values (${players.a.userId}, 'read',

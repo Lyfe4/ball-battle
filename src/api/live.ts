@@ -13,6 +13,16 @@ export const PICK_SECONDS = 30;
 export const LEAD_MS = 6_000;
 /** The 3-2-1 at the end of the lead; before it the ready card says "Get ready". */
 export const COUNTDOWN_MS = 3_000;
+/**
+ * Reveal's coin toss in a live match (ADR 0061): from the start, "Get ready" while the other phone
+ * learns of it (as the lead into a fight), then the flip both phones play at once, then the result
+ * held to be read. The first pick opens when it ends (`TOSS_LEAD_MS` after the start). Offline the
+ * toss is the flip and the hold alone.
+ */
+export const TOSS_READY_MS = 3_000;
+export const TOSS_FLIP_MS = 2_000;
+export const TOSS_HOLD_MS = 1_500;
+export const TOSS_LEAD_MS = TOSS_READY_MS + TOSS_FLIP_MS + TOSS_HOLD_MS;
 /** A player not heard from for this long shows as disconnected to the other. */
 export const AWAY_AFTER_MS = 6_000;
 /** Then this long to come back before losing by forfeit. */

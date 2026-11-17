@@ -3,6 +3,7 @@
 // end of a live match offers. online-play.ts asks it, every display tick, what the panel's online
 // part says (`moment`), then shows the card and the line for the phase the panel chose (`shown`).
 import type { SeriesView } from '../api/series.ts';
+import { liveTossOf } from '../app/coin-toss.ts';
 import type { FairPlay } from '../app/online-series.ts';
 import { writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { SeriesState } from '../sim/series.ts';
@@ -75,10 +76,12 @@ export function createSeriesExtras(
         ? (rematch.note() ?? liveNote(view, tick.watched))
         : waitNote(view, Date.now());
       const choice = rematch.choice();
+      const toss = live ? liveTossOf(view) : undefined;
       return {
         note: all ? note : undefined,
         live,
         ...(choice === undefined ? {} : { rematch: choice }),
+        ...(toss === undefined ? {} : { toss }),
       };
     },
     shown(tick, phase, fair) {
