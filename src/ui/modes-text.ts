@@ -36,11 +36,9 @@ export function playSpoken(setup: PlaySetup): string {
 }
 
 /** Each opponent card on home, and the heading of the setup screen it opens. */
-export const OPPONENT_CARDS: Readonly<
-  Record<Opponent, { readonly name: string; readonly line: string }>
-> = {
-  bot: { name: 'vs Bot', line: 'A series against the computer' },
-  friend: { name: 'vs Friend', line: 'Live, by a link you send' },
+export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }>> = {
+  bot: { name: 'vs Bot' },
+  friend: { name: 'vs Friend' },
 };
 
 /** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
