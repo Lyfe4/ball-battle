@@ -1,8 +1,11 @@
 # 0051: Competitive integrity: secret seeds, pinned rulesets, and what comes before accounts
 
 - Status: Accepted (2026-11-14): option B for seeds, pinned rulesets with frozen bundles for
-  verification. Its sim side is built (ADR 0052 slice 0: the entry file, explicit seeds at
-  ruleset 15, commitments and the HMAC derivation, frozen rulesets); the server is not.
+  verification. Built: the sim side (ADR 0052 slice 0: the entry file, explicit seeds at ruleset
+  15, commitments and the HMAC derivation, frozen rulesets) and the server, which issues each
+  series' secret seeds, commits to them at the start and verifies every friend series with its
+  ruleset's frozen bundle (ADR 0052 slice 1, ADR 0053). Online play is built for staging and deploy
+  previews only (`VITE_ONLINE`), not the published game.
 - Date: 2026-11-14
 - Amends: ADR 0017 (a series' seed), ADR 0022 (one ruleset per build, verifying a
   series)
