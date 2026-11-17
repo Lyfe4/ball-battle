@@ -28,10 +28,13 @@ import { getElement } from './ui/dom.ts';
 import { createSpeedToggle } from './ui/speed-toggle.ts';
 import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
+import { installFrameMeter } from './ui/frame-meter.ts';
 
 const stage = getElement('stage', HTMLElement);
 // What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
 installSymbolTooltips();
+// A diagnostic for a real phone: `?frames` shows the frame rate (ADR 0063 addendum).
+installFrameMeter(new URL(window.location.href).searchParams);
 const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
 const speedRoot = getElement('hud-speed', HTMLDivElement);

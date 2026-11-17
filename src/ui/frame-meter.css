@@ -1,0 +1,14 @@
+/* The frame meter (`?frames`, ADR 0063 addendum): a diagnostic line, top left, never in the way of a tap. */
+.frame-meter {
+  position: fixed;
+  top: max(var(--space-gap), env(safe-area-inset-top));
+  left: max(var(--space-gap), env(safe-area-inset-left));
+  z-index: 100;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-tiny);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
