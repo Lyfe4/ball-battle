@@ -5,6 +5,7 @@ import type { RoundRecord } from '../sim/series.ts';
 import { COUNTDOWN_MS, LEAD_MS } from '../api/live.ts';
 import {
   attemptSlots,
+  catchUpRate,
   countdownLine,
   livePlace,
   nextLineChange,
@@ -115,5 +116,36 @@ describe('the countdown before a live fight (ADR 0054)', () => {
     expect(nextLineChange(start, start - 2_400)).toBe(400);
     expect(nextLineChange(start, start - 1)).toBe(1);
     expect(nextLineChange(start, start)).toBeUndefined();
+  });
+});
+
+describe('catching up with the server’s moment', () => {
+  it('plays at 1x when on time, to within a frame’s rounding', () => {
+    expect(catchUpRate(0)).toBe(1);
+    expect(catchUpRate(5)).toBe(1);
+    expect(catchUpRate(-5)).toBe(1);
+  });
+
+  it('plays a little faster while behind and a little slower while ahead, within bounds', () => {
+    expect(catchUpRate(60)).toBeCloseTo(1.2, 9);
+    expect(catchUpRate(10_000)).toBe(1.5);
+    expect(catchUpRate(-30)).toBeCloseTo(0.9, 9);
+    expect(catchUpRate(-10_000)).toBe(0.85);
+  });
+
+  it('closes a lag gently: most of it within about a second, never in one jump', () => {
+    for (const fps of [30, 60, 120]) {
+      const frame = 1000 / fps;
+      let behind = 400;
+      let largest = 0;
+      for (let at = 0; at < 1_000; at += frame) {
+        const gained = frame * (catchUpRate(behind) - 1);
+        largest = Math.max(largest, gained);
+        behind -= gained;
+      }
+      expect(behind).toBeLessThan(40);
+      // No frame skips ahead by more than half its own length.
+      expect(largest).toBeLessThanOrEqual(frame / 2 + 1e-9);
+    }
   });
 });

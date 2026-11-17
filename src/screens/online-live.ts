@@ -12,6 +12,7 @@ import type { Side } from '../sim/series.ts';
 import type { OnlinePlayHost } from './online-play-types.ts';
 import { NO_CLOCK, serverNowOf, withSample, type ClockSample } from '../app/live-clock.ts';
 import {
+  catchUpRate,
   countdownLine,
   livePlace,
   nextLineChange,
@@ -57,6 +58,11 @@ export interface LiveDriver {
   staged(): AttemptSlot | undefined;
   /** A staged attempt is under way now: the arena's own frames draw it. */
   fighting(): boolean;
+  /**
+   * The staged fight's playback rate, the arena having played `playedMs` of it: 1 before its start,
+   * then gently faster or slower until it is at the server's moment (ADR 0063).
+   */
+  rate(playedMs: number): number;
   /** Nothing to stage (a pick phase, the end): any countdown and start timer stop. */
   clear(): void;
   /**
@@ -147,6 +153,12 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
     },
     staged: () => slot,
     fighting: () => slot !== undefined && now() >= slot.startAt && now() < slot.endAt,
+    rate(playedMs) {
+      const at = now();
+      return slot === undefined || at < slot.startAt
+        ? 1
+        : catchUpRate(at - slot.startAt - playedMs);
+    },
     clear() {
       slot = undefined;
       stopStart();
