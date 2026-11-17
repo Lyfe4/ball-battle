@@ -199,8 +199,10 @@ Each line is a rule; its ADR has the reasoning.
   shown by `hitReduced` (ADR 0045, 0047, 0049). Hitting harder is `contactDamageOf(self, stats)`,
   never a `damage` action on hit (ADR 0015). A returning projectile uses `returnAfterTicks`; a zone
   an enemy can set off declares a swept `trigger` (ADR 0043).
-- Every ball uses `STANDARD_BALL_RADIUS`; the Titan, growing through `radiusOf`, is the one listed
-  exception (ADR 0008, 0034).
+- Every ball uses `STANDARD_BALL_RADIUS`; the listed exceptions go through `radiusOf`: the Titan
+  grows, the Slime's halves are smaller (ADR 0008, 0034, 0060).
+- A side can be more than one ball (a Slime's halves, ADR 0059): enemy checks read `sideOf`
+  (`src/sim/side.ts`), never ball ids, and the client shows a side as one (`sideHealth`).
 - The pass-through property (`pass-through.slow.test.ts`, closing speed below 0.6 of the
   detection limit) must not be loosened; past it, implement swept ball-to-ball collision.
 - Sim tests share `src/sim/test-support.ts` (`run`, `withBalls`, `deepFreeze`, the ability-free
