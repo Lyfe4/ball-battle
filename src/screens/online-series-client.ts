@@ -21,6 +21,8 @@ export interface SeriesClientHost {
   dropped(): boolean;
   /** When to ask again, in ms, or undefined for not now. */
   nextAsk(): number | undefined;
+  /** Whether a read may be answered with a 304: live, not while the clock needs a full answer. */
+  conditional(): boolean;
 }
 
 export interface SeriesClient {
@@ -57,7 +59,7 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     if (id === undefined) return;
     const view = host.view();
     const headers: Record<string, string> =
-      view?.id === id && etag !== null ? { 'If-None-Match': etag } : {};
+      view?.id === id && etag !== null && host.conditional() ? { 'If-None-Match': etag } : {};
     take(await callApi<unknown>('GET', `series/${id}`, undefined, headers));
   }
 

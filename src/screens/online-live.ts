@@ -12,6 +12,7 @@ import type { Side } from '../sim/series.ts';
 import type { OnlinePlayHost } from './online-play-types.ts';
 import {
   askEveryMs,
+  asksInFull,
   NO_CLOCK,
   serverNowOf,
   withSample,
@@ -54,6 +55,8 @@ export interface LiveDriver {
   now(): number;
   /** How often to ask while live: faster until the clock rests on a few answers (ADR 0061). */
   askEvery(): number;
+  /** The next read must come back in full: only that tells this page the server's time. */
+  asksInFull(): boolean;
   /** Where `view` is now for a page that has watched `watched` rounds. */
   place(view: SeriesView, watched: number): LivePlace;
   /**
@@ -132,6 +135,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
     },
     now,
     askEvery: () => askEveryMs(clock),
+    asksInFull: () => asksInFull(clock, Date.now()),
     place: (view, watched) => livePlace(view, watched, now(), (round) => ticksOf(view, round)),
     stage(next, match, showing) {
       const same = slot?.round === next.round && slot.attempt === next.attempt;

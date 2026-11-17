@@ -52,3 +52,18 @@ export const WARM_SAMPLES = 6;
 /** How often a live page asks the server: faster while its clock is still warming up. */
 export const askEveryMs = (clock: ServerClock): number =>
   clock.samples.length < WARM_SAMPLES ? 250 : 1_000;
+
+/** A clock whose newest answer is this old asks in full again. */
+const STALE_MS = 10_000;
+
+/**
+ * Whether a live page should ask in full (without its ETag): a 304 comes back from Netlify without
+ * X-Now (only the local `netlify dev` keeps it), so only a full answer tells the page the server's
+ * time (ADR 0061). In full until the clock rests on WARM_SAMPLES answers, then whenever its newest
+ * is STALE_MS old; otherwise a 304 is enough.
+ */
+export function asksInFull(clock: ServerClock, deviceNow: number): boolean {
+  const newest = clock.samples.at(-1);
+  if (newest === undefined || clock.samples.length < WARM_SAMPLES) return true;
+  return deviceNow - newest.receivedAt >= STALE_MS;
+}
