@@ -89,6 +89,15 @@ function phoneProject(
 export default defineConfig({
   build: {
     target: 'es2023',
+    // The game, and the privacy policy and terms as pages of their own (ADR 0069): plain HTML that
+    // reads without the game's script. The dev-only pages (styleguide, brand, sounds) stay out.
+    rolldownOptions: {
+      input: {
+        main: 'index.html',
+        privacy: 'privacy.html',
+        terms: 'terms.html',
+      },
+    },
   },
   server: {
     // One fixed port for every session and contributor; fail loudly if it is taken rather than

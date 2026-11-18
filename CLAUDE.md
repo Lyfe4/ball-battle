@@ -166,6 +166,9 @@ Each line is a rule; its ADR has the reasoning.
 - The two hosted projects (`scripts/supabase-projects.ts`) are checked daily
   (`supabase-daily.yml`: awake, IP forwarding works). The workflows' `SUPABASE_ACCESS_TOKEN` (the
   `supabase` environment, `main` only) expires 2027-11-17.
+- What the server stores, for how long, and who handles it is written in `privacy.html` (ADR
+  0069; `scripts/legal-pages.test.ts` reads it against the constants). A change to any of them changes the
+  policy, and its date, in the same pull request.
 - The client tells failures apart (`callApi`, `failureKindOf`): "You're offline" only when the
   device is offline or no response came; a timeout, a server error and a refusal each say so
   with Try again (`online-failure-text.ts`).

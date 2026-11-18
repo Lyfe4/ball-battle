@@ -185,14 +185,23 @@ function shareButton(actions: CardActions) {
  * The first online action asks once (ADR 0052 section 6): online play is for players 16 and over,
  * and says what is kept. Confirming makes the guest.
  */
+/** The privacy policy and terms (ADR 0069), read before the first online action. */
+export const LEGAL_LINKS = [
+  { text: 'Privacy policy', href: '/privacy.html' },
+  { text: 'Terms of use', href: '/terms.html' },
+] as const;
+
 export function adultCard(confirm: () => Promise<unknown>, cancel: () => void): NoticeContent {
   return {
     title: 'Play online',
     body: [
       'Online play is for players 16 and over.',
-      'You’ll play as a guest with a made-up name. We keep a random id, your games, and when you ' +
-        'confirmed your age: nothing else. “Forget me” in settings deletes it all.',
+      'You’ll play as a guest with a made-up name. We keep a random id, your games, when you ' +
+        'confirmed your age and the IP address you signed in from. “Forget me” in settings deletes ' +
+        'your guest; finished games stay in your opponent’s history as “Deleted player”.',
+      'By playing online you agree to the terms.',
     ],
+    links: LEGAL_LINKS,
     buttons: [
       { text: 'I’m 16 or older', onClick: confirm },
       { text: 'Not now', onClick: cancel },

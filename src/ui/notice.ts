@@ -72,6 +72,19 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         parts.push(waiting);
       }
       parts.push(...content.body.map((text) => element('p', 'notice-text', text)));
+      if (content.links !== undefined) {
+        const links = element('p', 'notice-text notice-links');
+        links.append(
+          ...content.links.map(({ text, href }) => {
+            const anchor = element('a', 'text-link', text);
+            anchor.href = href;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener';
+            return anchor;
+          }),
+        );
+        parts.push(links);
+      }
       if (content.steps !== undefined) {
         const steps = element('section', 'notice-steps');
         const list = element('ol', 'notice-steps-list');
