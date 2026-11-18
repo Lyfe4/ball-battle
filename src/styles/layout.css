@@ -54,6 +54,13 @@
   }
 }
 
+/*
+ * Beside (ADR 0067): any landscape screen, a phone turned sideways included, puts the court at the
+ * screen's full height and the panel beside it; the phone column would squeeze the court to nothing
+ * there. One of three layouts, each with one query used verbatim (layout-queries.test.ts): the phone
+ * column (no query), beside `(min-aspect-ratio: 5/4)`, and desktop below, which refines beside.
+ * Checked at 812 x 375 by the browsers-landscape project.
+ */
 @media (min-aspect-ratio: 5/4) {
   .stage {
     flex-direction: row;

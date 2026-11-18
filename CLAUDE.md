@@ -37,7 +37,7 @@ lint-staged, plain HTML Canvas 2D. No game engine, no physics library, no React.
 - `pnpm test:browsers`: the known match results (`src/golden`, ADR 0023) and flows through the
   real page (`*.browser.test.ts`, ADR 0025) in headless Chromium, Firefox and WebKit. Projects by
   suffix: `wide` 1280 x 800, `full` 1920 x 1080 (ADR 0038), `touch` 375 x 812 with real taps (ADR
-  0037), `iphone` 390 x 844 and `safari` 390 x 664 (ADR 0039). Never resize the viewport in a
+  0037), `iphone` 390 x 844 and `safari` 390 x 664 (ADR 0039), `landscape` 812 x 375 (ADR 0067). Never resize the viewport in a
   test. Browser tests never use a random seed: each file starts as a fresh device on a pinned
   seed (`src/flows/browser-setup.ts`, `fixed-seed.ts`; a flow pins its own with `pinSeed`), and
   every wait names what it waits for (`waitFor`, `until`). Locally, one engine at a time is what
@@ -246,7 +246,9 @@ Each line is a rule; its ADR has the reasoning.
 
 - Phone first (about 375 px), then a deliberate layout for larger screens (ADR 0020, 0031):
   re-arranged for the space, never the phone column centred. Desktop rules go in the one query
-  `(min-width: 64rem) and (min-aspect-ratio: 5/4)` beside the phone rules. Prefer the page scrolling to inner scroll boxes; keep sensible maximum widths (`--sheet-width`). Check every screen at 375×812, 1280×800, 1440×900 and
+  `(min-width: 64rem) and (min-aspect-ratio: 5/4)` beside the phone rules. Between them, any
+  landscape screen (a phone turned sideways) is the beside layout, `(min-aspect-ratio: 5/4)`
+  verbatim: the court at full height, the panel beside it (ADR 0067, `layout-queries.test.ts`). Prefer the page scrolling to inner scroll boxes; keep sensible maximum widths (`--sheet-width`). Check every screen at 375×812, 1280×800, 1440×900 and
   1920×1080.
 - The arena shows only when something fights; setup and reading screens take the whole phone
   screen and show no arena on a desktop, and start at the top; only the panel beside a match
