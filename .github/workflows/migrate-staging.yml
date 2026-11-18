@@ -1,0 +1,59 @@
+name: Migrate staging
+
+# Applies supabase/migrations to the staging project (ADR 0068), which every deploy preview and the
+# main branch deploy use. It runs on every push to main that changes a migration, so nobody applies
+# one by hand. A pull request's preview that needs its new migration before merging gets it with
+#   gh workflow run migrate-staging.yml -f ref=<branch>
+# This workflow's own code always comes from main (the `supabase` environment allows only main);
+# `ref` chooses only which migrations it applies. Migrations are expand only, so the live preview and
+# main keep working on the new schema.
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'The branch or commit whose migrations to apply (default: main)'
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-staging
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: supabase
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The migrations of the chosen ref, with main's scripts and lockfile.
+      - name: Take the chosen migrations
+        if: inputs.ref != '' && inputs.ref != 'main'
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          git fetch --no-tags origin "$REF"
+          rm -rf supabase/migrations
+          git checkout FETCH_HEAD -- supabase/migrations
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: node scripts/migrate.ts staging
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

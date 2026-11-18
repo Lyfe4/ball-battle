@@ -116,7 +116,7 @@ not covered, so Publish still moves it.
 Merging doesn't publish. Production is the `release` branch (Netlify's Free plan charges 15 of 300
 monthly credits per production deploy, ADR 0052): publish a batch of merges with the Publish
 workflow (`gh workflow run publish.yml`), which fast-forwards `release` to a `main` commit whose CI
-passed. Publish only when the user asks.
+passed, after applying its migrations to production (ADR 0068). Publish only when the user asks.
 
 ## Conventions
 
@@ -155,8 +155,15 @@ Each line is a rule; its ADR has the reasoning.
 - Queries on one connection go one at a time, never in `Promise.all`: Supabase's pooler
   (transaction mode) never answers two pipelined queries, so the request hangs. The API, the
   database tests and `netlify dev` connect through the local pooler, as on Netlify.
-- Migrations reach staging by hand (`pnpm exec supabase db push --remote`), before the code that
-  needs them is merged: every deploy preview and `main` use staging. Expand only.
+- Migrations are never applied by hand (ADR 0068): Migrate staging applies them on every push to
+  `main`, and a pull request whose preview needs its migration first runs
+  `gh workflow run migrate-staging.yml -f ref=<branch>` before merging (every deploy preview and
+  `main` use staging); Publish applies them to production before `release` moves, or publishes
+  nothing. Expand only. An applied migration is never edited: a change is a new migration, pinned
+  in `scripts/supabase-tools.test.ts`.
+- The two hosted projects (`scripts/supabase-projects.ts`) are checked daily
+  (`supabase-daily.yml`: awake, IP forwarding works). The workflows' `SUPABASE_ACCESS_TOKEN` (the
+  `supabase` environment, `main` only) expires 2027-11-17.
 - The client tells failures apart (`callApi`, `failureKindOf`): "You're offline" only when the
   device is offline or no response came; a timeout, a server error and a refusal each say so
   with Try again (`online-failure-text.ts`).

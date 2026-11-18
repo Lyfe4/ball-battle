@@ -5,6 +5,11 @@ name: Publish
 # and this workflow publishes one: it fast-forwards `release` to a `main` commit whose CI passed,
 # and Netlify deploys `release`. Deploy previews on pull requests are unchanged.
 #
+# Before `release` moves, it applies that commit's supabase/migrations to the production database
+# and checks production then holds exactly those (ADR 0068). If it can't, nothing is published:
+# the new code never goes live on a database without its migrations. Migrations are expand only, so
+# the deploy still live keeps working on the migrated schema while Netlify builds the new one.
+#
 # Run it from the Actions tab or with `gh workflow run publish.yml` (optionally `-f ref=<sha>`).
 
 on:
@@ -27,7 +32,9 @@ jobs:
   publish:
     name: Fast-forward release
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    # SUPABASE_ACCESS_TOKEN lives here, usable from main only.
+    environment: supabase
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,6 +63,29 @@ jobs:
             echo "::error::CI on $SHA is '${conclusion:-not run}', not success"
             exit 1
           fi
+
+      # The published commit's migrations, applied with main's scripts (an older commit may predate
+      # them).
+      - name: Take the commit's migrations
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          rm -rf supabase/migrations
+          git checkout "$SHA" -- supabase/migrations
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Migrate production, or refuse to publish
+        run: node scripts/migrate.ts production
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       # Fast-forward only: `release` never holds a commit that isn't on main, and a publish never
       # moves it backwards (an older ref fails here; roll back in Netlify's dashboard instead).
