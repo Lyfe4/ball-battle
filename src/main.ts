@@ -31,6 +31,7 @@ import { createSoundSettings } from './ui/settings-sound.ts';
 import { installSound } from './sound/sound.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 import { installFrameMeter } from './ui/frame-meter.ts';
+import { createFrameTip } from './ui/frame-tip.ts';
 
 // Sound waits for the first tap, then follows the remembered choice (sound.ts).
 installSound(storage);
@@ -225,10 +226,7 @@ const arena = createArena(
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
       isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
-    // The trail on slow frames; `?smooth=off` (read once, at load) shows a fight without it, to
-    // compare on a phone (ADR 0063 addendum).
-    smooth: new URL(window.location.href).searchParams.get('smooth') !== 'off',
-    // A live fight plays at 1x on both screens, whatever the toggle says (ADR 0053).
+    frameTip: createFrameTip(getElement('frame-tip', HTMLParagraphElement), tips),
     // A live fight plays at 1x, gently catching up with the server's moment (ADR 0053, 0063).
     speed: () =>
       online.isLive()

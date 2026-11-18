@@ -97,5 +97,20 @@ describe('tips', () => {
     expect(() => {
       tips.setEnabled(false);
     }).not.toThrow();
+    expect(tips.takeFrameTip()).toBe(true);
+    expect(tips.takeFrameTip()).toBe(false);
+  });
+
+  it('tells a device about slow frames once, across page loads, hints on or off, until a reset', () => {
+    const { storage } = memory();
+    const tips = createTips(storage);
+    tips.setEnabled(false);
+    expect(tips.takeFrameTip()).toBe(true);
+    expect(tips.takeFrameTip()).toBe(false);
+    const later = createTips(storage);
+    expect(later.takeFrameTip()).toBe(false);
+    later.reset();
+    expect(later.takeFrameTip()).toBe(true);
+    expect(createTips(storage).takeFrameTip()).toBe(false);
   });
 });

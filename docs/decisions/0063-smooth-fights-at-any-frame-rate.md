@@ -3,8 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-17
 - Amends: ADR 0007 (presentation time), ADR 0053 (live fights at 1x)
-- Addendum (2026-11-18): Low Power Mode measured; a trail on slow frames, `?smooth=off` and the
-  `?frames` meter
+- Addendum (2026-11-18): Low Power Mode measured; a trail on slow frames and the `?frames` meter
+- Addendum (2026-11-18): the trail kept (`?smooth=off` removed); a one-time line on slow frames
 
 ## Context
 
@@ -100,9 +100,9 @@ back edge now: the jumps are filled in and the eye has a line to follow, as moti
 film. One stroked path, so a bounce has no doubled joint. Trailing only, so nothing is drawn ahead
 of the sim; it stops at a step where the ball stood still (a hit-stop) or jumped (a rewind, a
 split, a new match); as see-through as a phased ball; off under reduced motion. At 50 a second and
-faster nothing changes, so desktops and 60/120 Hz phones look as before. `?smooth=off` in the URL
-shows a fight without it on the same build, to compare on a phone. Presentation only (ADR 0007):
-no sim change.
+faster nothing changes, so desktops and 60/120 Hz phones look as before. Presentation only (ADR
+0007): no sim change. (A `?smooth=off` switch to compare on a phone came with it; removed in the
+next addendum.)
 
 **Tried and dropped: even frame pacing** (each frame played as the median beat, the difference
 paid back over later frames, so no time is lost). It makes motion worse wherever frame times are
@@ -116,3 +116,36 @@ what the eye follows).
 draw a trail and frames 20 ms or less never do, judged per frame from its real gap (WebKit's
 harness timers run near 27 a second at the 60 fps beat). A/B in WebKit, the trail costs no
 measurable frames (1.4-1.6% late with it, 1.5-2.0% without).
+
+## Addendum: the trail stays, and a line says why at 30 (2026-11-18)
+
+On the owner's iPhone the trail helped, but a fight at Safari's Low Power Mode cap still can't look
+as smooth as at 60, and nothing in the page can lift the cap. So the trail stays as it is, the
+comparison switch `?smooth=off` is removed (one code path), `?frames` stays for bug reports, and
+the player is told once why, and what fixes it.
+
+**When:** the arena hands each frame's real gap to `slow-frames.ts` while a fight runs (never held
+on Fight!, paused under a dialog, away in a hidden tab, or between fights; never the home demo).
+Slow means the last 150 frames (about 5 s at 30 a second) averaged 26 ms or more apart, each gap
+counted at most 100 ms: an uneven 25/42 ms beat and a 20-a-second old phone count, 40 a second
+does not, and a stall or a few at 60 never tip it (a 600 ms stall adds at most 0.6 ms to the
+average). The window runs across fights, since a short fight at 2x is only a few seconds.
+
+**What and where:** "Fights look less smooth on this device. Try turning off Low Power Mode or
+battery saver." It names both settings (iPhone and Android), says "this device" rather than
+"your phone", and is a suggestion, so it stays true on an old phone with neither. It shows only
+after a fight, once the Winner moment has passed (the same moment the round screen waits for), in
+the HUD under the result in a surface box like the match story's (`frame-tip.ts`), never over the
+court and never during a fight, so a live match is never delayed. Two lines at 375 wide, with
+about a tenth of the width to spare. A polite status, so a screen reader hears it once. It goes
+when the next match starts.
+
+**Once:** `Tips.takeFrameTip` remembers it on the device (`ballbattle.frameTipSeen`); "Show all
+tips again" brings it back. It is about the device, not teaching, so the ability-hints switch
+leaves it alone.
+
+**Kept from coming back:** `slow-frames.test.ts` (the thresholds) and
+`frame-tip.touch.browser.test.ts`: the real page with frames stamped on a clock of their own, a
+fight at 60 with a 600 ms stall shows nothing, a fight at 30 shows the line after the result,
+under the court, in two lines, and the next fight clears it for good. Shown to fail with the
+arena's frames not handed in, and with a detector a single stall could trip.

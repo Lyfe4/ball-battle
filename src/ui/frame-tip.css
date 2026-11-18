@@ -1,0 +1,20 @@
+/*
+ * Why fights look less smooth (frame-tip.ts, ADR 0063 addendum): one quiet line in the HUD after a
+ * fight, in a notice's surface box (notice.css), never over the court. Only where a match is
+ * watched: home, the manual and the setup screens never show it.
+ */
+.frame-tip {
+  margin: 0;
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+}
+
+.frame-tip[hidden],
+.stage[data-setup] .frame-tip,
+.stage:not([data-screen='match'], [data-screen='series'], [data-screen='online']) .frame-tip {
+  display: none;
+}

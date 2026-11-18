@@ -79,7 +79,7 @@ describe.skipIf(noAudio)('a live fight caught up headlessly', () => {
       drawn: () => undefined,
       tips: createTips(storage),
       moment: () => 'live',
-      smooth: true,
+      frameTip: { start: () => undefined, frame: () => undefined, settle: () => undefined },
     });
 
     const before = made();
