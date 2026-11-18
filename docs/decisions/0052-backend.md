@@ -722,6 +722,20 @@ The first thing players see from the backend. It contains:
 - Rate limits are fixed windows in `game.rate_limits` by database time. Per account, except guest
   creation: 60 an hour per client IP (a class on one network fits), keyed on an HMAC of the IP
   under the server key, so no IP is stored.
+- (2026-11-18) Guest creation is limited per **network**: 150 an hour and 500 a day (UTC) per IPv4
+  address or IPv6 /64 (`network.ts`). Real use: a class of 30 on a school's one address makes 30
+  to 45 guests (some open the link in an app's browser, then Safari: a second guest), so 60 an hour
+  fit one class but not two or three in the same hour, and the rest waited until the hour turned,
+  told "Too many tries" after one tap. Now three classes fit in an hour and a school day in a day;
+  a refusal says "Lots of new players on this network just now: try again in 12 min". A phone
+  carrier's shared IPv4 address is the same case: strangers behind it share the count, which at
+  beta scale stays far under it. The IPv6 change closes a hole: keyed on the full address, anyone
+  with a /64 (every home line) could make guests without limit by changing the rest. A script on
+  one network now makes at most 500 a day, a third of what 60 an hour allowed. IPs rotated through
+  proxies are past any IP limit; per-account limits and the inactive-guest cleanup cover them.
+  Supabase's own limit (30 anonymous sign-ins an hour per IP, "Still open" below) is now the
+  lower one if hosted Auth counts our forwarded client IP, and all players' if it counts
+  Netlify's: raise it in the dashboard to match, after the probe.
 - Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, and is
   reported to Sentry, since it may be everyone's limit at once.
 - Headers: `connect-src 'self'`, `require-trusted-types-for 'script'` (the client writes no HTML,

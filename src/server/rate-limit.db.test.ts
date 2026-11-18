@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ApiError } from './http.ts';
-import { ipSubject, spend } from './rate-limit.ts';
+import { ipSubject, LIMITS, spend, waitWords } from './rate-limit.ts';
 import { adminSql, testDeps } from './test/support.ts';
 
 const deps = testDeps();
@@ -14,6 +14,14 @@ afterAll(async () => {
 });
 
 const limit = { bucket: 'test', max: 3, windowSeconds: 3600 };
+
+/** Spends `max` times, then once more: the refusal. */
+async function spendUntilRefused(subject: string, over: typeof limit): Promise<ApiError> {
+  for (let n = 0; n < over.max; n += 1) await spend(deps.sql, subject, over);
+  const refused = await spend(deps.sql, subject, over).catch((error: unknown) => error);
+  expect(refused).toBeInstanceOf(ApiError);
+  return refused as ApiError;
+}
 
 describe('a rate limit', () => {
   it('lets the limit through, then refuses with how long to wait', async () => {
@@ -41,5 +49,33 @@ describe('a rate limit', () => {
     expect(subject).not.toContain('203');
     expect(await ipSubject(deps.config, '203.0.113.77')).toBe(subject);
     expect(await ipSubject(deps.config, '203.0.113.78')).not.toBe(subject);
+  });
+
+  it('keys an IPv6 client on its /64, so changing the rest of the address makes no new count', async () => {
+    const home = await ipSubject(deps.config, '2001:db8:aa:bb::1');
+    expect(await ipSubject(deps.config, '2001:db8:aa:bb:dead:beef:0:7')).toBe(home);
+    expect(await ipSubject(deps.config, '2001:db8:aa:bc::1')).not.toBe(home);
+  });
+
+  it('counts guests by the hour and by the day, the day the tighter over time', async () => {
+    const day = await spendUntilRefused('net-day', { ...LIMITS.guestsDaily, max: 2 });
+    expect(day.message).toMatch(/^Lots of new players on this network just now: try again in /);
+    expect(Number(day.headers['Retry-After'])).toBeLessThanOrEqual(86_400);
+    expect(LIMITS.guestsDaily.max).toBeLessThan(LIMITS.guests.max * 24);
+    expect(LIMITS.guestsDaily.bucket).not.toBe(LIMITS.guests.bucket);
+  });
+
+  it('says how long to wait in words a player reads', () => {
+    expect([waitWords(1), waitWords(60), waitWords(61), waitWords(3_540)]).toStrictEqual([
+      '1 min',
+      '1 min',
+      '2 min',
+      '59 min',
+    ]);
+    expect([waitWords(3_600), waitWords(3_601), waitWords(20_000)]).toStrictEqual([
+      '1 h',
+      '2 h',
+      '6 h',
+    ]);
   });
 });

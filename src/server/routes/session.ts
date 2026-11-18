@@ -29,8 +29,12 @@ async function createGuest(...[request, context]: Parameters<RouteHandler>): Pro
     return json(200, { name: existing.name } satisfies PlayerResponse);
   }
   const { config, sql } = context.deps;
-  if (context.ip !== undefined)
-    await spend(sql, await ipSubject(config, context.ip), LIMITS.guests);
+  if (context.ip !== undefined) {
+    // One statement at a time on the connection (ADR 0052): the hour's count, then the day's.
+    const subject = await ipSubject(config, context.ip);
+    await spend(sql, subject, LIMITS.guests);
+    await spend(sql, subject, LIMITS.guestsDaily);
+  }
   const guest = await signUpGuest(config, context.ip).catch(async (error: unknown) => {
     // Auth's own anonymous sign-in limit (ADR 0052 section 11): the player gets a clear answer,
     // and we hear about it, since it may be every player's limit at once.

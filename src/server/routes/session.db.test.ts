@@ -4,6 +4,7 @@ import { errorOf } from '../../api/errors.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { TestBrowser } from '../test/client.ts';
 import { me } from './me.ts';
+import { LIMITS } from '../rate-limit.ts';
 import { session } from './session.ts';
 
 const deps = testDeps();
@@ -72,14 +73,28 @@ describe('making a guest', () => {
     expect(again.body).toStrictEqual(first.body);
   });
 
-  it('makes 50 guests from one IP (a class on one network) without our limit refusing', async () => {
+  it('makes an hour’s guests on one network (several classes on a school’s address), then says to wait', async () => {
     const ip = '192.0.2.50';
-    for (let n = 0; n < 50; n += 1) {
-      const answer = await new TestBrowser(deps, ip).call(session, 'POST', '/api/v1/session', {
-        adult: true,
-      });
-      expect(answer.status, `guest ${String(n + 1)}`).toBe(201);
+    const make = () =>
+      new TestBrowser(deps, ip).call(session, 'POST', '/api/v1/session', { adult: true });
+    for (let n = 0; n < LIMITS.guests.max; n += 1) {
+      expect((await make()).status, `guest ${String(n + 1)}`).toBe(201);
     }
+    const refused = await make();
+    expect(refused.status).toBe(429);
+    // The network's count, never "too many tries" to a player who tapped once, and how long.
+    expect(errorOf(refused.body)?.message).toMatch(
+      /^Lots of new players on this network just now: try again in \d+ (min|h)$/,
+    );
+    expect(Number(refused.headers.get('Retry-After'))).toBeGreaterThan(0);
+    // Another network is untouched.
+    expect(
+      (
+        await new TestBrowser(deps, '192.0.2.51').call(session, 'POST', '/api/v1/session', {
+          adult: true,
+        })
+      ).status,
+    ).toBe(201);
   });
 });
 
