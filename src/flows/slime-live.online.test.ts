@@ -15,8 +15,8 @@ import {
   closePhones,
   finished,
   openPhones,
-  panelOf,
   phone,
+  pickIfDue,
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
@@ -80,33 +80,13 @@ const TEACHING_OFF = `
 const seenOn = (page: Page) =>
   page.evaluate(() => (globalThis as unknown as { __seen: Seen }).__seen);
 
-/**
- * Picks `prefer` when it is offered, else the first ball offered. True when it picked. The rows of
- * a pick that has just opened can show one at a time: once any pick shows, the preferred one gets
- * a moment to show too, or a mirror the test plans could be lost to the first row (a CI flake).
- */
-async function pickPreferring(page: Page, prefer: string): Promise<boolean> {
-  const rows = panelOf(page).locator('.pick-row');
-  const wanted = panelOf(page).locator(`.pick-row[data-ball="${prefer}"] .pick-row-pick`);
-  const first = rows.locator('.pick-row-pick').first();
-  if (!(await first.isVisible())) return false;
-  const offered = await wanted
-    .waitFor({ timeout: 1_500 })
-    .then(() => true)
-    .catch(() => false);
-  const pick = offered ? wanted : first;
-  if (!(await pick.isVisible())) return false;
-  await pick.click().catch(() => undefined);
-  return true;
-}
-
 /** Plays the match out, each phone picking its own ball when it can. */
 async function playOut(sides: readonly { page: Page; prefer: string }[]): Promise<void> {
   const [first, second] = sides;
   if (first === undefined || second === undefined) throw new Error('Two phones');
   for (let step = 0; !((await finished(first.page)) && (await finished(second.page))); step += 1) {
     expect(step, 'the match never ended').toBeLessThan(600);
-    for (const side of sides) await pickPreferring(side.page, side.prefer);
+    for (const side of sides) await pickIfDue(side.page, side.prefer);
     await first.page.waitForTimeout(500);
   }
 }
