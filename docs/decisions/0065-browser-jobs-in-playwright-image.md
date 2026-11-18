@@ -37,4 +37,5 @@ just spend it); retries (the same mirror).
   plus `pnpm install`.
 - Positive: every run uses the same browsers and the same fonts and libraries.
 - Negative: a Playwright update needs the image tag and digest changed too (the test says so).
-- Negative: the image is large; its pull is the setup's main cost (measured on this PR's runs).
+- Negative: the image is large; its pull is the setup's main cost: 22-32 s on this PR's first run
+  (six jobs), against 15-65 s of apt on a good day before and up to 15 minutes on a bad one.
