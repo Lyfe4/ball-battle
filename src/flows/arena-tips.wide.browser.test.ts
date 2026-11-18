@@ -58,11 +58,13 @@ describe('tips in the arena', () => {
 
     // The first poisoning shows the Venom's hint, and the device remembers it.
     await until(
-      () => visible('.ability-hint')[0]?.textContent === 'Poison!',
+      () => visible('.ability-hint-name')[0]?.textContent === 'Poison!',
       20_000,
       'the Poison! hint',
       false,
     );
+    // Marked as a tip, so it never reads as something gone wrong.
+    expect(visible('.ability-hint-label')[0]?.textContent).toBe('Tip');
     expect(window.localStorage.getItem(HINTS_SEEN_STORAGE_KEY)).toContain('venom');
 
     // At the end, "How it was won" is offered, closed, its summary the result in one line.

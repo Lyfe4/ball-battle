@@ -55,7 +55,7 @@ const PROBE = `
     held = now;
     const reason = document.querySelector('.ready-reason');
     if (shown(reason) && !seen.reasons.includes(reason.textContent)) seen.reasons.push(reason.textContent);
-    const hint = document.querySelector('.ability-hint');
+    const hint = document.querySelector('.ability-hint-name');
     if (shown(hint) && !seen.hints.includes(hint.textContent)) seen.hints.push(hint.textContent);
     const rows = [...document.querySelectorAll('.hud-ball')].filter(shown);
     seen.maxRows = Math.max(seen.maxRows, rows.length);
