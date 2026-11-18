@@ -1,13 +1,17 @@
 // GET /api/v1/health: is this deploy's API up? It reads the database (as the API's own role),
 // loads the current ruleset's frozen bundle and checks Supabase Auth (reachable, both keys
-// accepted, anonymous sign-ins on, asymmetric signing keys), so a deploy whose settings or bundled
+// accepted, anonymous sign-ins on, asymmetric signing keys: one call to Auth, the key settings' pass
+// kept a few minutes, auth-health.ts), so a deploy whose settings or bundled
 // files are wrong says so here before any player meets it. A failed check answers 503 naming the
 // check (`database`, `ruleset`, `auth_anonymous_sign_ins`, ...); what went wrong is in the log line
 // only (stage and kind, failure.ts).
 import type { HealthCheck, HealthResponse } from '../../api/health.ts';
-import { authChecks } from '../auth-health.ts';
+import { createAuthHealth } from '../auth-health.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { CURRENT_RULESET, rulesetSim } from '../rulesets.ts';
+
+/** Auth's checks, one call per request (auth-health.ts). */
+const authChecks = createAuthHealth();
 
 export const health: RouteHandler = async (request, { deps, noteFailure }) => {
   if (request.method !== 'GET') {

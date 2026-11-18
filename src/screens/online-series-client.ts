@@ -19,8 +19,8 @@ export interface SeriesClientHost {
   failed(kind: FailureKind | 'error', message?: string): void;
   /** A read failed while a live match is on screen: it plays on, and says so. */
   dropped(): boolean;
-  /** When to ask again, in ms, or undefined for not now. */
-  nextAsk(): number | undefined;
+  /** When to ask again, in ms, or undefined for not now; the last read took `readMs`. */
+  nextAsk(readMs: number): number | undefined;
   /** Whether a read may be answered with a 304: live, not while the clock needs a full answer. */
   conditional(): boolean;
 }
@@ -47,11 +47,13 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
    * opponent shows as away (ADR 0053), so a version alone would get a 304 when they come back.
    */
   let etag: string | null = null;
+  /** How long the last read took, from asking to its answer (0 before the first). */
+  let readMs = 0;
 
   function schedule(): void {
     if (timer !== undefined) window.clearTimeout(timer);
     timer = undefined;
-    const delay = host.nextAsk();
+    const delay = host.nextAsk(readMs);
     if (delay !== undefined) timer = window.setTimeout(() => void load(), delay);
   }
 
@@ -60,7 +62,10 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     const view = host.view();
     const headers: Record<string, string> =
       view?.id === id && etag !== null && host.conditional() ? { 'If-None-Match': etag } : {};
-    take(await callApi<unknown>('GET', `series/${id}`, undefined, headers));
+    const sent = performance.now();
+    const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
+    readMs = performance.now() - sent;
+    take(answer);
   }
 
   /** What a read answered. */

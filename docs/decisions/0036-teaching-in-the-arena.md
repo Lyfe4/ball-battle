@@ -110,3 +110,16 @@ Screenshots in `docs/images/teaching/`:
 - `phone-hint-and-chip.png`: "Poison!" with a Thorns chip by the Venom's bar;
 - `phone-how-it-was-won.png` and `desktop-how-it-was-won.png`;
 - `phone-series-story-and-tips.png`: a series round's story, and the legend with the tips line.
+
+## Addendum (2026-11-18): a hint says it is a tip
+
+The owner once took an ability hint for a bug: a cream label popping up mid-fight with one word
+on it ("Poison!") looked like something gone wrong, not like the game teaching. Each hint now
+carries a small "Tip" over the ability's name, in the sticker's quiet colour (the ready card's
+`--color-on-sticker-muted`), so it reads as the same kind of thing as the tips in settings ("Show
+all tips again") at a glance. The sticker, its colours and its pop are unchanged; it is two short
+lines, about 73 × 39 px, so it fits by a ball at 375 px wide.
+
+| Before                                           | After, phone                                             | After, desktop                                                          |
+| ------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| ![Poison! alone](../images/tips/hint-before.png) | ![Tip over Poison!](../images/tips/hint-after-phone.png) | ![Tip over Poison! on a desktop](../images/tips/hint-after-desktop.png) |

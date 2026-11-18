@@ -15,8 +15,8 @@ import {
   closePhones,
   finished,
   openPhones,
-  panelOf,
   phone,
+  pickIfDue,
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
@@ -55,7 +55,7 @@ const PROBE = `
     held = now;
     const reason = document.querySelector('.ready-reason');
     if (shown(reason) && !seen.reasons.includes(reason.textContent)) seen.reasons.push(reason.textContent);
-    const hint = document.querySelector('.ability-hint');
+    const hint = document.querySelector('.ability-hint-name');
     if (shown(hint) && !seen.hints.includes(hint.textContent)) seen.hints.push(hint.textContent);
     const rows = [...document.querySelectorAll('.hud-ball')].filter(shown);
     seen.maxRows = Math.max(seen.maxRows, rows.length);
@@ -80,33 +80,13 @@ const TEACHING_OFF = `
 const seenOn = (page: Page) =>
   page.evaluate(() => (globalThis as unknown as { __seen: Seen }).__seen);
 
-/**
- * Picks `prefer` when it is offered, else the first ball offered. True when it picked. The rows of
- * a pick that has just opened can show one at a time: once any pick shows, the preferred one gets
- * a moment to show too, or a mirror the test plans could be lost to the first row (a CI flake).
- */
-async function pickPreferring(page: Page, prefer: string): Promise<boolean> {
-  const rows = panelOf(page).locator('.pick-row');
-  const wanted = panelOf(page).locator(`.pick-row[data-ball="${prefer}"] .pick-row-pick`);
-  const first = rows.locator('.pick-row-pick').first();
-  if (!(await first.isVisible())) return false;
-  const offered = await wanted
-    .waitFor({ timeout: 1_500 })
-    .then(() => true)
-    .catch(() => false);
-  const pick = offered ? wanted : first;
-  if (!(await pick.isVisible())) return false;
-  await pick.click().catch(() => undefined);
-  return true;
-}
-
 /** Plays the match out, each phone picking its own ball when it can. */
 async function playOut(sides: readonly { page: Page; prefer: string }[]): Promise<void> {
   const [first, second] = sides;
   if (first === undefined || second === undefined) throw new Error('Two phones');
   for (let step = 0; !((await finished(first.page)) && (await finished(second.page))); step += 1) {
     expect(step, 'the match never ended').toBeLessThan(600);
-    for (const side of sides) await pickPreferring(side.page, side.prefer);
+    for (const side of sides) await pickIfDue(side.page, side.prefer);
     await first.page.waitForTimeout(500);
   }
 }
@@ -157,11 +137,14 @@ describe('the Slime in a live friend match', () => {
       await friend.addInitScript(TEACHING_OFF);
       const id = await startLiveMatch(BASE, sender, friend, 'reveal', {
         sender: ['slime', 'archer', 'sniper'],
-        friend: ['spider', 'vampire', 'archer'],
+        // The Slime's round is the only one it plays, and its seeds are the server's, so the
+        // friend answers it with the Thorns: the Slime split in all but 2 of 10,000 such fights
+        // (the Spider let it win unsplit in 63, and once on CI).
+        friend: ['thorns', 'vampire', 'archer'],
       });
       await playOut([
         { page: sender, prefer: 'slime' },
-        { page: friend, prefer: 'spider' },
+        { page: friend, prefer: 'thorns' },
       ]);
       for (const page of [sender, friend]) {
         await page.locator('#online-series .fair-play[data-result="fair"]').waitFor();

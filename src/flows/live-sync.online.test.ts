@@ -10,7 +10,7 @@ import { NOW_HEADER } from '../api/live.ts';
 import {
   closePhones,
   openPhones,
-  panelOf,
+  pickIfDue,
   phone,
   startLiveMatch,
   type Phones,
@@ -113,13 +113,6 @@ async function msUntilFirstFight(page: Page, id: string): Promise<number | undef
   );
 }
 
-async function pickPreferring(page: Page, prefer: string): Promise<void> {
-  const wanted = panelOf(page).locator(`.pick-row[data-ball="${prefer}"] .pick-row-pick`);
-  const any = panelOf(page).locator('.pick-row-pick').first();
-  const pick = (await wanted.isVisible()) ? wanted : any;
-  if (await pick.isVisible()) await pick.click().catch(() => undefined);
-}
-
 describe('a live fight on a slow phone', () => {
   it(
     'catches up with the server’s moment and stays with the other phone',
@@ -146,8 +139,8 @@ describe('a live fight on a slow phone', () => {
       let untilFight: number | undefined;
       for (let tries = 0; untilFight === undefined; tries += 1) {
         expect(tries, 'round 1 was never scheduled').toBeLessThan(120);
-        await pickPreferring(sender, 'brawler');
-        await pickPreferring(friend, 'magnet');
+        await pickIfDue(sender, 'brawler');
+        await pickIfDue(friend, 'magnet');
         await friend.waitForTimeout(250);
         untilFight = await msUntilFirstFight(friend, id);
       }

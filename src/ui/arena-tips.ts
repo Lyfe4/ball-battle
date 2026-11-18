@@ -1,5 +1,6 @@
 // Teaching in the arena, at the moment things happen (ADR 0036): a short label by a ball the first
-// time this device sees its ability ("Lightning!"). Read from sim events and the definitions, so it
+// time this device sees its ability ("Lightning!"), under a small "Tip" so it reads as the game
+// teaching, never as something gone wrong. Read from sim events and the definitions, so it
 // can't disagree with the fight; decoration (aria-hidden) that respects reduced motion
 // (arena-tips.css). Hints can be turned off in settings (ADR 0040). The pairing's "what to watch"
 // is the ready card's (ready-card.ts, ADR 0037).
@@ -40,6 +41,8 @@ export function createArenaTips(
   layer.setAttribute('aria-hidden', 'true');
   const hint = element('span', 'ability-hint');
   hint.hidden = true;
+  const name = element('span', 'ability-hint-name');
+  hint.append(element('span', 'ability-hint-label', 'Tip'), name);
   layer.append(hint);
   container.append(layer);
 
@@ -82,8 +85,8 @@ export function createArenaTips(
         setHidden(hint, true);
         return;
       }
-      if (hint.hidden || hint.textContent !== showing.text) {
-        hint.textContent = showing.text;
+      if (hint.hidden || name.textContent !== showing.text) {
+        name.textContent = showing.text;
         hint.hidden = false;
         // Restart the pop for a new label.
         hint.classList.remove('ability-hint-pop');

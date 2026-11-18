@@ -5,16 +5,18 @@
 // a check every so often). A page that learned of the round too late for the whole 3-2-1 says
 // "Get ready" until its Fight!. A page that comes back from the background, or
 // opens the match late, fights the attempt that is on from the point it has reached; rounds that
-// ended meanwhile count as watched. Polling is the heartbeat: about once a second while visible.
+// ended meanwhile count as watched. Polling is the heartbeat, and how a move of the other player's
+// arrives: every second while waiting on one, else every 2 s (live-ask.ts).
 import type { SeriesView } from '../api/series.ts';
 import { dueOf } from '../app/online-series.ts';
 import type { Side } from '../sim/series.ts';
 import type { OnlinePlayHost } from './online-play-types.ts';
+import { liveAskMs } from '../app/live-ask.ts';
 import {
-  askEveryMs,
   asksInFull,
   NO_CLOCK,
   serverNowOf,
+  warmUpAskMs,
   withSample,
   type ClockSample,
 } from '../app/live-clock.ts';
@@ -30,8 +32,6 @@ import { matchWorld, playToEnd } from '../sim/series-verify.ts';
 import type { NextMatch } from '../sim/series.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 
-/** How often a live page asks the server: its heartbeat, and how soon it learns of a move. */
-export const LIVE_POLL_MS = 1_000;
 /** How often a page waiting on the other side of a series by turns asks whether it moved. */
 const TURNS_POLL_MS = 15_000;
 /** How often the pick timers on screen are redrawn (display only: no fight starts on it). */
@@ -54,8 +54,11 @@ export interface LiveDriver {
   heard(sample: ClockSample | undefined): void;
   /** The server's time now, as this page knows it. */
   now(): number;
-  /** How often to ask while live: faster until the clock rests on a few answers (ADR 0061). */
-  askEvery(): number;
+  /**
+   * Ms until a live page asks about `view` again, its last read having taken `readMs`: four times a
+   * second until the clock rests on a few answers (ADR 0061), then as live-ask.ts says.
+   */
+  askEvery(view: SeriesView, readMs: number): number;
   /** The next read must come back in full: only that tells this page the server's time. */
   asksInFull(): boolean;
   /** Where `view` is now for a page that has watched `watched` rounds. */
@@ -140,7 +143,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
       if (sample !== undefined) clock = withSample(clock, sample);
     },
     now,
-    askEvery: () => askEveryMs(clock),
+    askEvery: (view, readMs) => warmUpAskMs(clock) ?? liveAskMs(view, now(), readMs),
     asksInFull: () => asksInFull(clock, Date.now()),
     place: (view, watched) => livePlace(view, watched, now(), (round) => ticksOf(view, round)),
     stage(next, match, showing) {
@@ -228,16 +231,16 @@ export function liveArenaOf(
 }
 
 /**
- * When to ask about a series again, in ms: live, every `liveEvery` while open (the heartbeat: a
- * second, faster while the page's clock warms up).
+ * When to ask about a series again, in ms: live, `liveEvery(view)` while open (the live driver's
+ * `askEvery`); by turns, now and then while waiting on the other side.
  */
 export function nextAskOf(
   view: SeriesView,
   live: boolean,
-  liveEvery = LIVE_POLL_MS,
+  liveEvery: (view: SeriesView) => number,
 ): number | undefined {
   if (view.status !== 'open') return undefined;
-  if (live) return liveEvery;
+  if (live) return liveEvery(view);
   return dueOf(view).includes(view.you) ? undefined : TURNS_POLL_MS;
 }
 

@@ -49,9 +49,9 @@ export const serverNowOf = (clock: ServerClock, deviceNow: number): number =>
  */
 export const WARM_SAMPLES = 6;
 
-/** How often a live page asks the server: faster while its clock is still warming up. */
-export const askEveryMs = (clock: ServerClock): number =>
-  clock.samples.length < WARM_SAMPLES ? 250 : 1_000;
+/** While a live page's clock is still warming up it asks this often; undefined once warm. */
+export const warmUpAskMs = (clock: ServerClock): number | undefined =>
+  clock.samples.length < WARM_SAMPLES ? 250 : undefined;
 
 /** A clock whose newest answer is this old asks in full again. */
 const STALE_MS = 10_000;

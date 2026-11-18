@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  askEveryMs,
+  warmUpAskMs,
   asksInFull,
   CLOCK_SAMPLES,
   NO_CLOCK,
@@ -53,11 +53,11 @@ describe('how often a live page asks', () => {
 
   it('asks four times a second until its clock rests on a few answers, then once a second', () => {
     let clock = NO_CLOCK;
-    expect(askEveryMs(clock)).toBe(250);
+    expect(warmUpAskMs(clock)).toBe(250);
     for (let n = 0; n < WARM_SAMPLES - 1; n += 1) clock = withSample(clock, sample(n * 1000));
-    expect(askEveryMs(clock)).toBe(250);
+    expect(warmUpAskMs(clock)).toBe(250);
     clock = withSample(clock, sample(9_000));
-    expect(askEveryMs(clock)).toBe(1_000);
+    expect(warmUpAskMs(clock)).toBeUndefined();
   });
 });
 

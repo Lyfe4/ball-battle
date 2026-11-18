@@ -2,8 +2,8 @@
 // at 390 x 664 on this one machine, so one clock) play a match and this prints what it measured as
 // JSON. Not a test: the page carries no instrumentation, so everything is read from outside it.
 //   node scripts/live-measure.ts <base url> <bo3|bo5|disconnect> [--slow] [--shots <dir>]
-// bo3/bo5: the lobby, a whole match with picks after 3-12 s (the friend lets their first pick run
-// out), how far apart the two screens start each fight (when each page's countdown card lifts),
+// bo3/bo5: the lobby, a whole match with picks after 3-12 s, the same each run so runs compare (the
+// friend lets their first pick run out), how far apart the two screens start each fight (when each page's countdown card lifts),
 // how long a pick takes to reach the other screen (the first read there with the new version),
 // the requests both pages made and how long a read takes.
 // disconnect: the friend drops for 12 s and comes back, then drops for good (a forfeit).
@@ -38,6 +38,15 @@ function reached(picks: readonly number[], other: Phone): number[] {
   });
 }
 
+/**
+ * The other player shown away: the pick card's clock between fights (ADR 0055), the line under a
+ * fight (live-match.online.test.ts reads it the same way).
+ */
+const awayOn = (page: Page) =>
+  page
+    .locator('#online-series .pick-clock[data-kind="away"]:visible')
+    .or(page.locator('.live-line:visible', { hasText: /disconnected · \d+ s/ }));
+
 const browser = await chromium.launch();
 try {
   const begun = Date.now();
@@ -48,20 +57,15 @@ try {
     await sender.page.waitForTimeout(5_000);
     await friend.context.setOffline(true);
     const dropped = Date.now();
-    await sender.page
-      .getByText(/disconnected · /)
-      .first()
-      .waitFor({ timeout: 30_000 });
+    await awayOn(sender.page).first().waitFor({ timeout: 30_000 });
     const noticeAfterMs = Date.now() - dropped;
     await shot(sender.page, 'disconnected');
     await sender.page.waitForTimeout(Math.max(0, 12_000 - noticeAfterMs));
     await friend.context.setOffline(false);
     const back = Date.now();
-    await sender.page
-      .getByText(/disconnected · /)
-      .first()
-      .waitFor({ state: 'detached', timeout: 30_000 })
-      .catch(() => undefined);
+    while ((await awayOn(sender.page).count()) > 0 && Date.now() - back < 30_000) {
+      await sender.page.waitForTimeout(50);
+    }
     const noticeGoneAfterMs = Date.now() - back;
     const stillOpen = !(await sender.page.locator('#online-series .series-result').isVisible());
     await sender.page.goto(`${base}/`);
@@ -89,11 +93,13 @@ try {
     );
   } else {
     const picks = { sender: [] as number[], friend: [] as number[] };
-    const wait = () => 3_000 + Math.random() * 9_000;
+    // How long each player takes over each pick: 3-12 s, the same every run.
+    const WAITS = [5_000, 9_000, 3_500, 11_000, 6_500, 4_000, 8_000, 12_000, 7_000, 3_000];
+    const waitOf = (who: number) => (n: number) => WAITS[(n * 3 + who) % WAITS.length] ?? 5_000;
     let autoSeenAt: number | undefined;
     await Promise.all([
-      player(sender, wait, picks.sender),
-      player(friend, (n) => (n === 0 ? undefined : wait()), picks.friend),
+      player(sender, waitOf(0), picks.sender),
+      player(friend, (n) => (n === 0 ? undefined : waitOf(1)(n)), picks.friend),
       (async () => {
         await friend.page
           .locator('#online-series .series-note', { hasText: /random ball/ })
@@ -127,6 +133,14 @@ try {
           mode,
           slow,
           seconds: Math.round((Date.now() - begun) / 1000),
+          seriesReadsPerMinute:
+            Math.round(
+              ([...sender.requests, ...friend.requests].filter(
+                (r) => r.route === 'GET /api/v1/series/:id',
+              ).length /
+                ((Date.now() - begun) / 60_000)) *
+                10,
+            ) / 10,
           lobbyToMatchMs,
           sawRandomPick: autoSeenAt !== undefined,
           fights: { sender: a.length, friend: b.length },

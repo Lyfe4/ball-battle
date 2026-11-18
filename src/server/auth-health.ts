@@ -1,6 +1,11 @@
 // Auth's part of GET /api/v1/health (ADR 0052): is Supabase Auth reachable, are both keys
 // accepted, can guests be made, and are access tokens signed with keys we can verify? Each failed
 // check is named after the setting to fix; why it failed goes to the log line only (failure.ts).
+//
+// One call to Auth per request, not three: Auth itself, the publishable key and anonymous sign-ins
+// (what every new player needs) are asked every time, so an outage shows at once; the secret key and
+// the signing keys are settings that change only by hand, so a pass of theirs stands for
+// SETTINGS_PASS_MS on this function instance. A failure is never kept: it is asked again next time.
 import { importJWK, type JWK } from 'jose';
 import { AuthError, fetchAuth, refusalOf, SIGNING_ALGORITHMS } from './auth.ts';
 import type { Config } from './config.ts';
@@ -69,36 +74,81 @@ async function signingKeys(config: Config): Promise<void> {
   throw new AuthSettingError('no asymmetric signing key (still on the legacy JWT secret?)');
 }
 
-/** The checks that failed; each failure is noted with its cause. */
-export async function authChecks(
-  config: Config,
-  noteFailure: (error: unknown, stage: Stage) => void,
-): Promise<AuthCheck[]> {
-  const run = (check: () => Promise<void>, onFail: (error: unknown) => AuthCheck) =>
-    check().then(
-      () => undefined,
-      (error: unknown) => {
-        noteFailure(error, 'auth');
-        return onFail(error);
-      },
-    );
-  const failed = await Promise.all([
-    run(
-      () => publicSide(config),
-      (error) =>
-        error instanceof AuthSettingError
-          ? 'auth_anonymous_sign_ins'
-          : keyCheck(error, 'auth_publishable_key'),
-    ),
-    run(
-      () => adminSide(config),
-      (error) => keyCheck(error, 'auth_secret_key'),
-    ),
-    run(
-      () => signingKeys(config),
-      (error) => (error instanceof AuthSettingError ? 'auth_signing_keys' : 'auth'),
-    ),
-  ]);
-  // Auth unreachable fails every check the same way: name it once.
-  return [...new Set(failed.filter((check) => check !== undefined))];
+type NoteFailure = (error: unknown, stage: Stage) => void;
+
+/** One check: undefined when it passed, else the check to name (its cause noted). */
+const run = (
+  check: () => Promise<void>,
+  onFail: (error: unknown) => AuthCheck,
+  noteFailure: NoteFailure,
+): Promise<AuthCheck | undefined> =>
+  check().then(
+    () => undefined,
+    (error: unknown) => {
+      noteFailure(error, 'auth');
+      return onFail(error);
+    },
+  );
+
+/** Auth answers, with the publishable key, and anonymous sign-ins are on: asked every time. */
+const liveCheck = (config: Config, noteFailure: NoteFailure) =>
+  run(
+    () => publicSide(config),
+    (error) =>
+      error instanceof AuthSettingError
+        ? 'auth_anonymous_sign_ins'
+        : keyCheck(error, 'auth_publishable_key'),
+    noteFailure,
+  );
+
+/** The settings that change only by hand: the secret key and the signing keys. */
+const settingChecks = (config: Config, noteFailure: NoteFailure) => [
+  run(
+    () => adminSide(config),
+    (error) => keyCheck(error, 'auth_secret_key'),
+    noteFailure,
+  ),
+  run(
+    () => signingKeys(config),
+    (error) => (error instanceof AuthSettingError ? 'auth_signing_keys' : 'auth'),
+    noteFailure,
+  ),
+];
+
+/** Auth unreachable fails every check the same way: name it once. */
+const named = (failed: readonly (AuthCheck | undefined)[]): AuthCheck[] => [
+  ...new Set(failed.filter((check) => check !== undefined)),
+];
+
+/** Every check, asked now: the checks that failed, each failure noted with its cause. */
+export async function authChecks(config: Config, noteFailure: NoteFailure): Promise<AuthCheck[]> {
+  return named(
+    await Promise.all([liveCheck(config, noteFailure), ...settingChecks(config, noteFailure)]),
+  );
+}
+
+/**
+ * How long a pass of the setting checks stands on one function instance. What it can hide: a
+ * secret key revoked or rotated in the dashboard (Forget me fails), or the signing keys switched
+ * back to the legacy secret (new players' tokens can't be verified), for at most this long per warm
+ * instance after the change. Auth down, the publishable key or anonymous sign-ins are never hidden.
+ */
+export const SETTINGS_PASS_MS = 5 * 60_000;
+
+/**
+ * The health route's checks: the live one every time, the setting checks only when their last
+ * pass on this instance is older than SETTINGS_PASS_MS (`now` is this instance's own clock, only
+ * ever compared with itself).
+ */
+export function createAuthHealth(now: () => number = Date.now) {
+  let passedAt: number | undefined;
+  return async (config: Config, noteFailure: NoteFailure): Promise<AuthCheck[]> => {
+    const fresh = passedAt !== undefined && now() - passedAt < SETTINGS_PASS_MS;
+    const [live, ...settings] = await Promise.all([
+      liveCheck(config, noteFailure),
+      ...(fresh ? [] : settingChecks(config, noteFailure)),
+    ]);
+    if (!fresh) passedAt = settings.every((check) => check === undefined) ? now() : undefined;
+    return named([live, ...settings]);
+  };
 }
