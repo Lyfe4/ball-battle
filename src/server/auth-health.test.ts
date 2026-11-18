@@ -1,7 +1,7 @@
 // Health's Auth checks name the setting to fix, and never put a key in the log line.
 import { exportJWK, generateKeyPair } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authChecks } from './auth-health.ts';
+import { authChecks, createAuthHealth, SETTINGS_PASS_MS } from './auth-health.ts';
 import type { Config } from './config.ts';
 import { failureOf } from './failure.ts';
 
@@ -94,5 +94,59 @@ describe('health’s Auth checks', () => {
     const failed = await authChecks(config, (error, stage) => notes.push(failureOf(error, stage)));
     expect(failed).toStrictEqual(['auth']);
     expect(notes[0]).toBe('auth: Supabase Auth unreachable (ENOTFOUND host not found (DNS))');
+  });
+});
+
+describe('health’s Auth checks, one call per request', () => {
+  /** The fake Auth for `project`, counting the calls to each endpoint. */
+  function counted(project: Project) {
+    const calls: string[] = [];
+    const answer = auth(project);
+    vi.stubGlobal('fetch', (input: string | URL, init?: RequestInit) => {
+      calls.push(new URL(String(input)).pathname.replace('/auth/v1/', ''));
+      return answer(input, init);
+    });
+    return calls;
+  }
+  const quiet = () => undefined;
+
+  it('asks Auth once a request while the setting checks’ last pass stands', async () => {
+    let now = 0;
+    const checks = createAuthHealth(() => now);
+    const calls = counted({});
+    expect(await checks(config, quiet)).toStrictEqual([]);
+    expect(calls).toHaveLength(3);
+    calls.length = 0;
+    now = SETTINGS_PASS_MS - 1;
+    expect(await checks(config, quiet)).toStrictEqual([]);
+    expect(calls).toStrictEqual(['settings']);
+    // Past it, every check again.
+    calls.length = 0;
+    now = SETTINGS_PASS_MS;
+    await checks(config, quiet);
+    expect(calls).toHaveLength(3);
+  });
+
+  it('never hides Auth down, the publishable key or anonymous sign-ins being off', async () => {
+    const checks = createAuthHealth(() => 0);
+    counted({});
+    await checks(config, quiet);
+    counted({ anonymous: false });
+    expect(await checks(config, quiet)).toStrictEqual(['auth_anonymous_sign_ins']);
+    counted({ publishable: 'rotated' });
+    expect(await checks(config, quiet)).toStrictEqual(['auth_publishable_key']);
+    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('fetch failed')));
+    expect(await checks(config, quiet)).toStrictEqual(['auth']);
+  });
+
+  it('keeps no failure: a refused key is asked about again until it passes', async () => {
+    const checks = createAuthHealth(() => 0);
+    let calls = counted({ secret: 'revoked' });
+    expect(await checks(config, quiet)).toStrictEqual(['auth_secret_key']);
+    expect(await checks(config, quiet)).toStrictEqual(['auth_secret_key']);
+    expect(calls).toHaveLength(6);
+    calls = counted({});
+    expect(await checks(config, quiet)).toStrictEqual([]);
+    expect(calls).toHaveLength(3);
   });
 });
