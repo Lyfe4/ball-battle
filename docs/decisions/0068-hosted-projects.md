@@ -82,6 +82,16 @@ schedule.
   edited (it would never run again), a change is a new migration.
 - Neither workflow runs on pull requests, so the `main` ruleset's required checks are unchanged.
 
+### Guests nobody has seen for 90 days are deleted
+
+ADR 0052 promised this ("Guests") but it wasn't built, and Supabase Auth keeps the IP it records on
+each guest's session (`auth.sessions.ip`, the player's own since forwarding) for as long as the
+guest exists. The scheduled sweep now deletes up to 25 guests a run whose `last_seen_at` (any
+request of theirs, written at most daily) is over 90 days old (`src/server/inactive.ts`), through
+Auth, exactly as Forget me: sessions and profile go, open series are forfeited, finished series stay
+as "Deleted player". Netlify runs scheduled functions on production only, and with vs Friend off
+the sweep does nothing, so this runs from the day the switch is on.
+
 ## Consequences
 
 - Nobody applies a migration by hand. A migration that fails on production blocks publishing until
