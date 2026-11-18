@@ -140,7 +140,10 @@ async function confirmAge(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'I’m 16 or older' }).click();
 }
 
-/** The sender sends a live challenge, the friend accepts it, and both reach the match. */
+/**
+ * The sender sends a live Reveal challenge from home's vs Friend (the 16+ question first, ADR
+ * 0055), the friend accepts it, and both reach the match.
+ */
 export async function startMatch(
   base: string,
   bestOf: 3 | 5,
@@ -150,16 +153,19 @@ export async function startMatch(
 ): Promise<{ lobbyToMatchMs: number }> {
   await sender.page.goto(`${base}/`);
   await shot(sender.page, 'home-no-match');
-  await sender.page.goto(`${base}/?view=send&fmt=reveal&mode=bo${String(bestOf)}`);
-  await lineup(sender.page, 'Send challenge', 0, bestOf);
+  await sender.page.locator('.home-card[data-opponent="friend"]').click();
   await confirmAge(sender.page);
-  await sender.page.getByRole('heading', { name: 'Waiting for your friend…' }).waitFor();
+  await sender.page.getByRole('heading', { name: 'vs Friend' }).waitFor();
+  await sender.page.getByRole('button', { name: `Best of ${String(bestOf)}` }).click();
+  await sender.page.getByRole('button', { name: 'Choose lineup' }).click();
+  await lineup(sender.page, 'Send challenge', 0, bestOf);
+  await sender.page.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   await shot(sender.page, 'lobby');
   const token = new URL(sender.page.url()).searchParams.get('challenge') ?? '';
   await friend.page.goto(`${base}/?challenge=${token}`);
   await friend.page.getByRole('button', { name: 'Build your lineup' }).click();
-  await lineup(friend.page, 'Accept challenge', bestOf, bestOf);
   await confirmAge(friend.page);
+  await lineup(friend.page, 'Accept challenge', bestOf, bestOf);
   const accepted = Date.now();
   await friend.page.waitForURL(/[?&]online=/);
   await sender.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
@@ -183,15 +189,17 @@ export async function player(
         .catch(() => false)
     )
       return;
-    const pick = panel.locator('.pick-row-pick').first();
-    const open = await pick.isVisible().catch(() => false);
+    // The row seen now, tapped as it is: a locator's click would wait for the next pick's rows if
+    // this one went first, and tap one of those (live-support.ts, pickIfDue).
+    const pick = await phone.page.$('#online-series .pick-row-pick');
+    const open = pick !== null && (await pick.isVisible().catch(() => false));
     if (open && due === undefined) {
       const wait = delay(phases);
       phases += 1;
       due = wait === undefined ? Infinity : Date.now() + wait;
     }
     if (!open) due = undefined;
-    if (due !== undefined && Date.now() >= due) {
+    if (pick !== null && due !== undefined && Date.now() >= due) {
       picks.push(Date.now());
       await pick.click().catch(() => undefined);
       due = Infinity;
