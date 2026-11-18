@@ -465,14 +465,14 @@ misconfigured exposure leaks nothing.
 
 ### Abuse
 
-| Abuse                                                   | Answer                                                                                                                                                                                                                 |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Farming a ladder streak with many guests                | Boards show signed-in accounts only, and a rate limit on series per account                                                                                                                                            |
-| Win trading between two accounts                        | Matchmaking avoids repeat opponents within 24 h, and friend series are unrated. Watch for pairs that meet often                                                                                                        |
-| Queue or pick spam, or guests who join and walk away    | Per-account rate limits, one queue entry, 3 open series by turns. A walked-away series is a forfeit after 24 h. Guest creation is rate-limited too, so a new guest per series costs the abuser time                    |
-| Display names                                           | Optional, signed-in only, 3-20 characters. NFC-normalised, length counted in graphemes (`Intl.Segmenter`, so non-English names aren't cut mid-character), a word list, and a report button. No chat                    |
-| Supabase's anonymous sign-in limit (30 per hour per IP) | **Our functions make that call, so every player shares Netlify's few outgoing IPs.** Test in slice 1 whether Supabase honours a forwarded client IP. If not, raise its limit and rely on ours (section 11, still open) |
-| A player using a solver for picks                       | Allowed in effect: the counter map is public and the pick screens show the odds. Option B stops what matters, solving the seed                                                                                         |
+| Abuse                                                   | Answer                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Farming a ladder streak with many guests                | Boards show signed-in accounts only, and a rate limit on series per account                                                                                                                                                                                                                                                                                |
+| Win trading between two accounts                        | Matchmaking avoids repeat opponents within 24 h, and friend series are unrated. Watch for pairs that meet often                                                                                                                                                                                                                                            |
+| Queue or pick spam, or guests who join and walk away    | Per-account rate limits, one queue entry, 3 open series by turns. A walked-away series is a forfeit after 24 h. Guest creation is rate-limited too, so a new guest per series costs the abuser time                                                                                                                                                        |
+| Display names                                           | Optional, signed-in only, 3-20 characters. NFC-normalised, length counted in graphemes (`Intl.Segmenter`, so non-English names aren't cut mid-character), a word list, and a report button. No chat                                                                                                                                                        |
+| Supabase's anonymous sign-in limit (30 per hour per IP) | **Our functions make that call, so without forwarding every player shares Netlify's IP.** Measured on staging (2026-11-18): Auth ignores `X-Forwarded-For`. The functions send `Sb-Forwarded-For` with the secret key and each project turns IP Address Forwarding on, so each player has their own; the limit is raised to 150 to match ours (section 11) |
+| A player using a solver for picks                       | Allowed in effect: the counter map is public and the pick screens show the odds. Option B stops what matters, solving the seed                                                                                                                                                                                                                             |
 
 ### Logging, monitoring, backups
 
@@ -733,9 +733,9 @@ The first thing players see from the backend. It contains:
   with a /64 (every home line) could make guests without limit by changing the rest. A script on
   one network now makes at most 500 a day, a third of what 60 an hour allowed. IPs rotated through
   proxies are past any IP limit; per-account limits and the inactive-guest cleanup cover them.
-  Supabase's own limit (30 anonymous sign-ins an hour per IP, "Still open" below) is now the
-  lower one if hosted Auth counts our forwarded client IP, and all players' if it counts
-  Netlify's: raise it in the dashboard to match, after the probe.
+  Supabase's own limit (30 anonymous sign-ins an hour per IP) counted Netlify's IP for every
+  player until 2026-11-18; with IP Address Forwarding it counts each player's, raised to 150 an hour
+  so ours is the one that answers (section 11).
 - Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, and is
   reported to Sentry, since it may be everyone's limit at once.
 - Headers: `connect-src 'self'`, `require-trusted-types-for 'script'` (the client writes no HTML,
@@ -890,7 +890,11 @@ turn (n)" list is replaced by "Back to your match". The open queue and Web Push 
 
 **Before its public launch:** the launch checklist (section 6: minimal data, the privacy policy
 and terms pages, deletion, the 16+ confirmation), the Netlify Personal plan, and Supabase Pro if
-the series kept are worth backing up (recommended: yes, from launch).
+the series kept are worth backing up (recommended: yes, from launch). In the production Supabase
+project, as on staging (section 11, "Supabase's anonymous limit counts each player"): IP Address
+Forwarding on, and anonymous sign-ins raised to 150 an hour (Authentication > Rate Limits); then
+run `scripts/anon-limit-probe.ts` against it once and check it says each player has their own
+allowance.
 
 ### Slice 2: real accounts (M-L, about 3 PRs)
 
@@ -973,22 +977,37 @@ After that, in `docs/vision.md`'s order:
    privacy policy and terms drafted with Claude for the owner to review, data deletion, and a 16+
    confirmation at the first online action (section 6).
 
+### Decided later: Supabase's anonymous limit counts each player (2026-11-18)
+
+Measured locally first (2026-11-15, GoTrue v2.197): Auth counts anonymous sign-ins per value of one
+configured header, 30 an hour each, and with no header configured counts nothing (why
+`supabase start` never refuses). On staging, `scripts/anon-limit-probe.ts` signed up 35 times
+straight at Auth with `X-Forwarded-For: 198.51.100.1` (30 accepted, then 429), then 35 times with
+`198.51.100.2` (all 429). **Hosted Auth ignores `X-Forwarded-For` and counts the address that
+connects to it.** Through our functions that is Netlify's, so every new player in the world shared
+30 guests an hour: a beta's first busy hour, or one class, would have hit it.
+
+Supabase's fix is documented (Auth > Rate limits, "IP Address Forwarding"): with forwarding on,
+Auth counts the first value of `Sb-Forwarded-For` on a request made with a **secret** key
+(publishable and legacy keys are not supported), and falls back to the connecting IP when it's
+absent. So:
+
+- `signUpGuest` now signs up with the secret key and sends the player's IP (Netlify's
+  `context.ip`, never a header the player sets) as `Sb-Forwarded-For`. With forwarding off this
+  behaves exactly as before, so it ships ahead of the dashboard change.
+- IP Address Forwarding is turned on per project (Authentication > Rate Limits).
+- The anonymous limit is raised from 30 to 150 an hour per IP, our own limit per network: a class
+  of 30 to 45 on one school address would otherwise be refused by Auth at 30, before ours. Ours
+  stays the one that answers, in our words, with its daily 500.
+- What is left: if forwarding is ever off in a project, every player shares one 150 an hour again;
+  `/health` can't see the setting, so the probe is run against a project after any change to it,
+  and Auth's 429 is reported to Sentry (`guests_busy`). Not taken: the browser calling Supabase
+  directly (it never talks to Supabase, by design) or a CAPTCHA (a third-party script).
+
 ### Still open
 
 - **Population.** The open queue may be empty early on. Friend links and the bot fill the wait.
   Watch how long entries wait before deciding when ranked opens.
-- **Supabase's per-IP anonymous limit seen through our functions.** Measured locally (2026-11-15,
-  GoTrue v2.197): Auth counts anonymous sign-ins per value of one configured header
-  (`GOTRUE_RATE_LIMIT_HEADER`), 30 an hour each; with no header configured it counts nothing
-  (why `supabase start` never refuses); a different header value is a fresh bucket. So the answer
-  on hosted Supabase depends on which header its gateway sets and whether a forwarded IP from our
-  function survives it, which only staging can show: `scripts/anon-limit-probe.ts`. Our functions
-  forward the client's IP either way. If a forwarded IP or a raised limit doesn't fix it, there
-  are two ways out:
-  - the browser calls Supabase directly for the guest, and the tokens go straight to our cookie
-    endpoint;
-  - or a Turnstile CAPTCHA (a third-party script, and CSP changes).
-  - Slice 1's second PR answers this.
 - **iPhone players in Safari get no push** until they add the game to the home screen or the
   native app ships. Watch the forfeit rate by platform. If it's high, the Capacitor release moves
   up.

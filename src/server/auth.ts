@@ -103,15 +103,11 @@ async function tokenCall(
   config: Config,
   path: string,
   body: unknown,
-  headers: Readonly<Record<string, string>> = {},
+  headers: Readonly<Record<string, string>> = { apikey: config.supabasePublishableKey },
 ): Promise<AuthSession> {
   const response = await fetchAuth(`${config.supabaseUrl}/auth/v1/${path}`, {
     method: 'POST',
-    headers: {
-      apikey: config.supabasePublishableKey,
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
   });
@@ -131,14 +127,22 @@ async function tokenCall(
 }
 
 /**
- * A new anonymous user. Auth limits anonymous sign-ins per IP, keyed on a header its gateway sets;
- * the client's IP is forwarded in case the gateway honours it (ADR 0052 section 11, measured on
- * staging with `scripts/anon-limit-probe.ts`).
+ * A new anonymous user. Auth limits anonymous sign-ins per IP (ADR 0052 section 11). Hosted Auth
+ * counts the address that connects to it, which is our function's, shared by every player, and
+ * ignores `X-Forwarded-For` (measured on staging, 2026-11-18). It counts the player's own IP only
+ * from `Sb-Forwarded-For` on a request made with a secret key, and only once the project's "IP
+ * Address Forwarding" is on; until then the header is ignored, as before.
  */
 export function signUpGuest(config: Config, clientIp: string | undefined): Promise<AuthSession> {
-  const forwarded: Record<string, string> =
-    clientIp === undefined ? {} : { 'X-Forwarded-For': clientIp };
-  return tokenCall(config, 'signup', {}, forwarded);
+  return tokenCall(
+    config,
+    'signup',
+    {},
+    {
+      apikey: config.supabaseSecretKey,
+      ...(clientIp === undefined ? {} : { 'Sb-Forwarded-For': clientIp }),
+    },
+  );
 }
 
 /**
