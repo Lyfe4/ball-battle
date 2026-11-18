@@ -173,10 +173,20 @@
   list-style: none;
 }
 
+/* Source, Privacy and Terms: quiet, in a row that wraps, each a full tap target. */
 .home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: var(--space-gutter);
   margin: 0;
   font-size: var(--font-size-small);
-  text-align: center;
+}
+
+.home-footer .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
 }
 
 @media (min-aspect-ratio: 5/4) {

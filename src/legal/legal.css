@@ -1,0 +1,181 @@
+/*
+ * The privacy policy and terms (privacy.html, terms.html; ADR 0069): reading pages in the game's own
+ * look, with no script. Phone first: one column with a chunky way back to the game at the top. On a
+ * desktop the way back and the other page sit in a column of their own beside the text, which keeps
+ * a readable line length rather than stretching.
+ */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '../styles/tokens.css';
+@import '../styles/base.css';
+@import '../ui/button.css';
+
+html,
+body {
+  height: auto;
+  min-height: 100%;
+}
+
+.legal {
+  --legal-measure: 40rem;
+  max-width: var(--legal-measure);
+  margin: 0 auto;
+  padding: max(var(--space-gutter), env(safe-area-inset-top))
+    max(var(--space-gutter), env(safe-area-inset-right))
+    max(var(--space-sheet), env(safe-area-inset-bottom))
+    max(var(--space-gutter), env(safe-area-inset-left));
+  line-height: 1.55;
+}
+
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+  margin-bottom: var(--space-sheet);
+}
+
+/* The way back to the game: the chunky raised look of a Back button, with its name. */
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-gap);
+  margin-bottom: var(--press-depth);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.legal-back:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.legal-back:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+.legal-nav .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+}
+
+.legal-title {
+  margin: 0;
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+  line-height: 1.1;
+}
+
+.legal-updated {
+  margin-top: var(--space-small);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.legal h2 {
+  margin: var(--space-sheet) 0 var(--space-small);
+  font-size: 1.375rem;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+}
+
+.legal p,
+.legal ul,
+.legal ol {
+  margin: var(--space-gap) 0;
+}
+
+.legal ul,
+.legal ol {
+  padding-left: 1.25rem;
+}
+
+.legal li + li {
+  margin-top: var(--space-small);
+}
+
+/*
+ * Links inside the text keep the body's size, so a sentence doesn't shrink around them, and drop the
+ * trailing chevron, which would sit between an address and its full stop.
+ */
+.legal p .text-link,
+.legal li .text-link {
+  font-size: inherit;
+}
+
+.legal p .text-link::after,
+.legal li .text-link::after {
+  content: none;
+}
+
+/* The chevron ‹ reads as a bracket in the display family, so it keeps the system font. */
+.legal-back-chevron {
+  margin-right: 0.25em;
+  font-family: var(--font-family-symbol);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* What is kept, as cards: the item, why, and for how long (quieter, last). */
+.legal-facts {
+  display: grid;
+  gap: var(--space-small);
+  margin: var(--space-gap) 0;
+}
+
+.legal-facts > div {
+  padding: var(--space-gap) var(--space-gutter);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.legal-facts dt {
+  font-weight: 700;
+}
+
+.legal-facts dd {
+  margin: 4px 0 0;
+}
+
+.legal-facts .legal-keep {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.legal-terms li::marker {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-display);
+}
+
+/* Desktop (ADR 0031): the way back and the other page in a column beside the text, kept in view. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .legal {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, var(--legal-measure));
+    column-gap: var(--space-columns);
+    max-width: calc(12rem + var(--space-columns) + var(--legal-measure));
+    padding-top: var(--space-sheet);
+  }
+
+  .legal > * {
+    grid-column: 2;
+  }
+
+  .legal-nav {
+    grid-column: 1;
+    grid-row: 1 / span 40;
+    position: sticky;
+    top: var(--space-sheet);
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: start;
+    margin: 0;
+  }
+}

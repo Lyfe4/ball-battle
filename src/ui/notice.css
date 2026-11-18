@@ -249,3 +249,16 @@
     background: var(--color-surface);
   }
 }
+
+/* Pages to read before going on (the privacy policy and terms): a row of full tap targets. */
+.notice-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-gutter);
+}
+
+.notice-links .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+}

@@ -28,6 +28,9 @@ export interface NoticeContent {
   readonly steps?: { readonly title: string; readonly items: readonly string[] };
   /** A link in a quiet box under the buttons, with Copy where there is a clipboard. */
   readonly link?: { readonly url: string; readonly copy?: () => Promise<string> };
+  /** Pages to read, as links after the body (the privacy policy and terms); each opens in a tab of
+   * its own, so the screen it was read from stays where it was. */
+  readonly links?: readonly { readonly text: string; readonly href: string }[];
   /** One paragraph after the link box. */
   readonly note?: string;
   /** A quiet action, as a text link, last: Cancel challenge, Not now. */
