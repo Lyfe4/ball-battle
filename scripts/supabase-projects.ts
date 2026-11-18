@@ -36,9 +36,20 @@ const CLI = createRequire(import.meta.url).resolve('supabase/dist/supabase.js');
 
 /** The project's secret API key (sb_secret_…): Auth's admin calls and forwarded sign-ups need it. */
 export function secretKeyOf(ref: string): string {
-  const keys = JSON.parse(
-    supabase(['projects', 'api-keys', `--remote=${ref}`, '--reveal', '-o', 'json']),
-  ) as readonly { readonly type?: string; readonly api_key?: string }[];
+  let listed: string;
+  try {
+    listed = supabase(['projects', 'api-keys', `--remote=${ref}`, '--reveal', '-o', 'json']);
+  } catch {
+    // Supabase answers 403 when the token lacks a scope: say which, so it can be added.
+    throw new Error(
+      `Reading ${ref}'s secret API key was refused: the token needs API gateway keys read, API ` +
+        'gateway keys secret read and projects read (supabase projects api-keys --help)',
+    );
+  }
+  const keys = JSON.parse(listed) as readonly {
+    readonly type?: string;
+    readonly api_key?: string;
+  }[];
   const key = keys.find((entry) => entry.type === 'secret')?.api_key;
   // Masked when the token may list keys but not read secrets: Auth would refuse it.
   if (key === undefined || !key.startsWith('sb_secret_') || key.includes('·')) {
