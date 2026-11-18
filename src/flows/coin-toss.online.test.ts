@@ -119,6 +119,10 @@ describe('a live Reveal match’s coin toss', () => {
         const seen = await seenOn(page);
         expect(seen.words.filter((words) => words === 'Get ready')).toHaveLength(1);
       }
+      // Answers still held back when the phones close are dropped, not left to fail.
+      for (const page of [sender, friend]) {
+        await page.context().unrouteAll({ behavior: 'ignoreErrors' });
+      }
       expect(phones.errors).toStrictEqual([]);
     },
   );
@@ -148,10 +152,15 @@ async function slowReads(context: BrowserContext): Promise<void> {
   const delays = [1_400, 900, 600, 1_100, 400, 700, 300, 500, 350];
   let next = 0;
   await context.route(/\/api\/v1\/series\/[^/]+$/, async (route) => {
-    const response = await route.fetch();
     const delay = delays[next] ?? 250;
     next += 1;
-    await new Promise((done) => setTimeout(done, delay));
-    await route.fulfill({ response });
+    try {
+      const response = await route.fetch();
+      await new Promise((done) => setTimeout(done, delay));
+      await route.fulfill({ response });
+    } catch (error) {
+      // The phone closed with this answer held back (the test is over): nothing to answer.
+      if (!context.pages().every((page) => page.isClosed())) throw error;
+    }
   });
 }
