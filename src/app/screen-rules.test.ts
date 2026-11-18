@@ -4,6 +4,7 @@ import { DEFAULT_MATCHUP } from './matchup.ts';
 import { createRouter, type ScreenHandlers } from './router.ts';
 import {
   initialAppState,
+  isCalmMoment,
   isSetupScreen,
   readyMomentOf,
   resumesMatch,
@@ -123,6 +124,23 @@ describe('isSetupScreen', () => {
     expect(isSetupScreen('match', false)).toBe(false);
     expect(isSetupScreen('series', false)).toBe(true);
     expect(isSetupScreen('series', true)).toBe(false);
+  });
+});
+
+describe('isCalmMoment', () => {
+  it('is home and an offline series that is over: never a fight, a setup or anything online', () => {
+    expect(isCalmMoment('home', undefined)).toBe(true);
+    expect(isCalmMoment('series', 'finished')).toBe(true);
+    expect(isCalmMoment('series', 'playing')).toBe(false);
+    expect(isCalmMoment('series', 'between')).toBe(false);
+    expect(isCalmMoment('series', undefined)).toBe(false);
+    for (const screen of ['match', 'pick', 'manual', 'outdated', 'send', 'challenge'] as const) {
+      expect(isCalmMoment(screen, undefined)).toBe(false);
+    }
+    // A live match, or an online series even once it is over (a rematch can be on its way).
+    for (const phase of ['playing', 'between', 'finished', undefined]) {
+      expect(isCalmMoment('online', phase)).toBe(false);
+    }
   });
 });
 

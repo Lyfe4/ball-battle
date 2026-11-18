@@ -5,7 +5,13 @@ import { createNavigation } from './app/navigation.ts';
 import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
-import { initialAppState, isSetupScreen, readyMomentOf, screenTitle } from './app/screen-rules.ts';
+import {
+  initialAppState,
+  isCalmMoment,
+  isSetupScreen,
+  readyMomentOf,
+  screenTitle,
+} from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
@@ -19,6 +25,7 @@ import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
 import { offlineMount } from './screens/online-off.ts';
 import { createSeriesScreens } from './screens/series.ts';
+import { installNewVersion } from './screens/new-version.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
 import type { WorldState } from './sim/types.ts';
@@ -42,6 +49,8 @@ installSymbolTooltips();
 installFrameMeter(new URL(window.location.href).searchParams);
 const canvas = getElement('arena', HTMLCanvasElement);
 const hudRoot = getElement('hud-status', HTMLDivElement);
+// A tab left open across a deploy says so at a calm moment (ADR 0066).
+const newVersion = installNewVersion(getElement('update-notice', HTMLDivElement));
 const speedRoot = getElement('hud-speed', HTMLDivElement);
 
 // Which screen a URL is on, for the Back rules (ADR 0025); no series replay is needed for that.
@@ -179,6 +188,7 @@ const router = createRouter(
         if (window.location.search !== '') navigation.replace(writeHomeParams);
         home.open();
         online.homeShown();
+        newVersion.homeShown();
       },
       leave: () => {
         home.leave();
@@ -312,6 +322,7 @@ function showControls(): void {
   const phase = screen === 'online' ? online.phase() : series.phase();
   const roundOver = seriesOnScreen() && phase !== undefined && phase !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
+  newVersion.setCalm(isCalmMoment(screen, screen === 'series' ? phase : undefined));
   hudRoot.hidden = setup || screen === 'home' || roundOver;
   const noSpeed = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   // Live fights are 1x only (ADR 0053): a line takes the toggle's place.
