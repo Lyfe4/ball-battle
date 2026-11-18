@@ -30,6 +30,8 @@ export function createSoundSettings(): { element: HTMLElement; refresh(): void }
   toggle.type = 'button';
   toggle.setAttribute('role', 'switch');
   toggle.setAttribute('aria-label', 'Sound effects');
+  // It taps once it has switched (below), so turning sound on is heard too.
+  toggle.dataset['sound'] = 'own';
   const track = element('span', 'settings-switch-track');
   track.setAttribute('aria-hidden', 'true');
   track.append(element('span', 'settings-switch-thumb'));

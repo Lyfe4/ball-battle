@@ -26,6 +26,8 @@ export interface RematchHost {
 export interface OnlineRematch {
   /** The series on screen (a finished live one is watched) and whether the screen shows. */
   watch(view: SeriesView | undefined, visible: boolean): void;
+  /** The ended live series whose end screen shows now, if any: it asks about its own rematch. */
+  watching(): string | undefined;
   /** The end screen's buttons. */
   choice(): 'offer' | 'answer' | undefined;
   /** The card counting the answer or the lineups down. */
@@ -132,6 +134,7 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
       if (series !== undefined && visible) void ask();
       else stop();
     },
+    watching: () => (visible ? series?.id : undefined),
     choice: () =>
       series === undefined || rematch === undefined
         ? undefined

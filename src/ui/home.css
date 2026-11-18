@@ -122,7 +122,7 @@
     filter 120ms ease-out;
 }
 
-.home-card:active {
+.home-card:is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -131,10 +131,15 @@
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 
+/* Pointed at or pressed by a finger (press.ts): the same look. */
 @media (hover: hover) {
   .home-card:hover {
     filter: brightness(1.08);
   }
+}
+
+.home-card[data-pressed] {
+  filter: brightness(1.08);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -88,7 +88,7 @@
   cursor: pointer;
 }
 
-.ready-fight:active {
+.ready-fight:is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -187,7 +187,11 @@
     animation: ready-count-pop 120ms ease-out both;
   }
 
-  .ready-lift .ready-card {
+  /*
+   * More specific than the pop above (the layer is still `:not([hidden])` while it lifts), or the
+   * pop keeps the sticker where it is and it vanishes without lifting.
+   */
+  .ready-layer.ready-lift:not([hidden]) .ready-card {
     animation: ready-lift 180ms ease-in both;
   }
 }
@@ -205,4 +209,15 @@
     translate: 0 -24px;
     scale: 1.05;
   }
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .ready-fight:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.ready-fight[data-pressed] {
+  filter: brightness(1.08);
 }

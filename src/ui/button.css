@@ -40,13 +40,18 @@
   font-weight: 800;
 }
 
+/* Pointed at or pressed by a finger (press.ts): the same look. A press also pushes it down. */
 @media (hover: hover) {
   .hud-button:not(:disabled):hover {
     filter: brightness(1.08);
   }
 }
 
-.hud-button:not(:disabled):active {
+.hud-button:not(:disabled)[data-pressed] {
+  filter: brightness(1.08);
+}
+
+.hud-button:not(:disabled):is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -79,6 +84,19 @@
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .text-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.text-link[data-pressed] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .text-link::after {

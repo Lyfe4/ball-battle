@@ -6,7 +6,14 @@
 import { isCommitted } from '../api/fairness.ts';
 import type { SeriesView } from '../api/series.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
-import { recordOutcome, type SeriesSetup, type SeriesState, type Side } from '../sim/series.ts';
+import {
+  nextMatch,
+  recordOutcome,
+  type SeriesSetup,
+  type SeriesState,
+  type Side,
+} from '../sim/series.ts';
+import type { SeriesSession } from './series-session.ts';
 import { verifySeries } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { otherSide, playerSeats, type Seats } from '../ui/series/seats.ts';
@@ -64,6 +71,19 @@ export function stateAtAttempt(view: SeriesView, watched: number, attempt: numbe
 
 export const seatsOf = (view: SeriesView): Seats =>
   playerSeats(view.you, view.names[otherSide(view.you)]);
+
+/** The session at `seen` rounds watched: the next one to watch on the arena, if any. */
+export function sessionOf(view: SeriesView, seen: number): SeriesSession {
+  const state = stateAt(view, seen);
+  const current = seen < view.rounds.length ? nextMatch(state) : undefined;
+  return { state, current, recorded: false, replay: undefined };
+}
+
+/** The health bars' labels, side A's first: "You" on the player's side, the other's name. */
+export function sidesOf(view: SeriesView): readonly string[] {
+  const { them } = seatsOf(view);
+  return view.you === 'a' ? ['You', them] : [them, 'You'];
+}
 
 /** The sides whose turn the server says it is. */
 export const dueOf = (view: SeriesView): readonly Side[] =>

@@ -59,9 +59,17 @@ export const UI_VOICES = {
     tone(kit, { from: 3700, at, length: 0.35, gain: 0.05 });
     tone(kit, { type: 'triangle', from: E5, at: at + 0.08, length: 0.3, gain: 0.12 });
   },
-  /** A button: barely there, a tiny tick. */
+  /** A key moment's button (Play, Send challenge, Accept, Rematch): barely there, a tiny tick. */
   tap(kit, at) {
     tone(kit, { from: 1500, to: 1000, at, length: 0.035, gain: 0.12 });
+  },
+  /** Any other control (a button, a switch, a tab, a chip): a softer, rounder tick, half as loud. */
+  press(kit, at, { gain, detune }) {
+    tone(kit, { from: E6, to: C6, at, length: 0.03, gain: 0.06 * gain, detune });
+  },
+  /** Back and Close: the same tick stepping down, a way out. */
+  back(kit, at, { gain, detune }) {
+    tone(kit, { from: C6, to: G5, at, length: 0.04, gain: 0.06 * gain, detune });
   },
   /** A pick locked in: a click and two quick notes up. */
   lock(kit, at) {

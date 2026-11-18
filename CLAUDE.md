@@ -193,6 +193,8 @@ Each line is a rule; its ADR has the reasoning.
   it at 1x, and shows nothing of a round before its `ends_at`.
 - One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
   Live is Reveal and Showdown only. Play by turns stays in the code and its tests, hidden.
+- A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): a floating card on
+  any screen but over a fight, Accept straight to the lineup, the asker told of a no.
 - A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2
   minutes of a live match's end, answered within 30 s, both lineups within 60 s, then a new live
   series (new seeds). Its timers are read against `now()`, never written; every move locks the old
@@ -312,6 +314,9 @@ Each line is a rule; its ADR has the reasoning.
   spinner or a disabled button for it. A button that moves to another online screen stays busy
   until that screen is read (`online-prime.ts`); no "Loading…" page between screens. A screen
   that loads on its own (a cold link, a reload) shows its skeleton (`skeleton.ts`, ADR 0054).
+- A tap shows on what it presses (ADR 0070, `press.ts`): a finger marks the control
+  `data-pressed`, styled exactly as its hover, and every hover sits in `(hover: hover)`
+  (`press.test.ts`).
 - A chosen option has one look (`choice.css`, ADR 0054): a control marks its options `.choice`
   and the chosen one with `aria-pressed` or `aria-checked`; no other stylesheet draws a chosen
   state (`choice.test.ts`).
@@ -333,7 +338,8 @@ Each line is a rule; its ADR has the reasoning.
   tests fail until each is heard in a real fight and unlike every other ball's.
 - Keep the style: sines and soft triangles on C major pentatonic (`voices/scale.ts`), square and
   sawtooth only through a low-pass, nothing but the series result over a second.
-- Only key moments tap (`data-sound="tap"`); walls are silent; the home demo is silent; a live
+- Every control sounds once per tap (ADR 0070): key moments `tap` (`data-sound="tap"`), Back and
+  Close `back`, a control with its own sound `own`, every other a soft `press`; walls are silent; the home demo is silent; a live
   fight caught up headlessly is silent.
 
 **Code**

@@ -68,6 +68,19 @@ export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
 }
 
 /**
+ * A fight is on screen: a Free play match before its result, a series round on the arena (its
+ * ready card too), or a live match at any moment. A rematch notice waits until it is over.
+ */
+export function isFighting(
+  screen: Screen,
+  now: { readonly matchOver: boolean; readonly phase: string | undefined; readonly live: boolean },
+): boolean {
+  if (screen === 'match') return !now.matchOver;
+  if (screen === 'online' && now.live) return true;
+  return (screen === 'series' || screen === 'online') && now.phase === 'playing';
+}
+
+/**
  * A calm moment for the new-version line (ADR 0066): home, or an offline series that is over,
  * where a reload loses nothing (a series against the bot is saved after every change, ADR 0042).
  * Never during a match, a setup, or anything online: a live match runs on the server's clock.

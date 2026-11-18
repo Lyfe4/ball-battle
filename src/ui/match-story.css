@@ -100,3 +100,14 @@
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .match-story-summary:hover {
+    background: var(--color-raised);
+  }
+}
+
+.match-story-summary[data-pressed] {
+  background: var(--color-raised);
+}

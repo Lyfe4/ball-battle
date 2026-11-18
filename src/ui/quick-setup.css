@@ -81,6 +81,18 @@
   border-radius: var(--radius);
   color: var(--color-text-muted);
   text-decoration: none;
+  cursor: pointer;
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look, the mark at full strength. */
+@media (hover: hover) {
+  .quick-slot-about:hover {
+    color: var(--color-text);
+  }
+}
+
+.quick-slot-about[data-pressed] {
+  color: var(--color-text);
 }
 
 .quick-vs {
@@ -183,4 +195,26 @@
   .quick-setup > .ball-grid {
     grid-area: 3 / 2 / -1 / 3;
   }
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .quick-slot:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+}
+
+.quick-slot:not(:disabled)[data-pressed] {
+  filter: brightness(1.08);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .quick-why-summary:hover {
+    background: var(--color-raised);
+  }
+}
+
+.quick-why-summary[data-pressed] {
+  background: var(--color-raised);
 }

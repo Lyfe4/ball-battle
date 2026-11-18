@@ -88,6 +88,8 @@ export function createPickRows(
     holder.dataset['symbolScope'] = '';
     holder.dataset['ball'] = ball;
     const pick = element('button', 'pick-row-pick');
+    // Its sound is the lock, once the pick is taken (sound.ts): never a tap before it as well.
+    pick.dataset['sound'] = 'own';
     pick.type = 'button';
     const own = element('span', 'pick-row-own');
     own.setAttribute('aria-hidden', 'true');

@@ -202,3 +202,16 @@
   visibility: hidden;
   pointer-events: none;
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .settings-toggle:hover,
+  .settings-switch:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.settings-toggle[data-pressed],
+.settings-switch[data-pressed] {
+  filter: brightness(1.08);
+}

@@ -52,3 +52,37 @@ export function rematchChoiceOf(rematch: RematchView, you: Side): 'offer' | 'ans
   if (rematch.state === 'none' && rematch.offered) return 'offer';
   return rematch.state === 'asked' && rematch.askedBy !== you ? 'answer' : undefined;
 }
+
+/**
+ * What a player away from the end screen is told of a rematch (playtest 2026-11-19), at server time
+ * `now`: asked by the other player (`asked`: who, with the seconds to answer); both said yes and
+ * this player's lineup is still to come (`lineup`: straight to it); or, to the player who asked,
+ * how it ended without a match (`ended`). Undefined while there is nothing to say.
+ */
+export type RematchNotice =
+  | { readonly kind: 'asked'; readonly clock: PickClock }
+  | { readonly kind: 'lineup' }
+  | { readonly kind: 'ended'; readonly line: string };
+
+export function rematchNoticeOf(
+  rematch: RematchView,
+  you: Side,
+  they: string,
+  now: number,
+): RematchNotice | undefined {
+  if (rematch.state === 'asked' && rematch.askedBy !== you) {
+    const clock = rematchClockOf(rematch, you, they, now);
+    return clock === undefined || clock.seconds <= 0 ? undefined : { kind: 'asked', clock };
+  }
+  if (rematch.state === 'agreed' && !rematch.lineupIn) return { kind: 'lineup' };
+  // The end screen's words, to the one who asked: the other knows (they said no, or let it go).
+  if (rematch.askedBy !== you || rematch.declinedBy === you) return undefined;
+  const line = rematchEnding(rematch, you, they);
+  return line === undefined ? undefined : { kind: 'ended', line };
+}
+
+/** Whether a rematch can still move: asked for, being asked, or waiting on this player's lineup. */
+export const rematchOpen = (rematch: RematchView): boolean =>
+  (rematch.state === 'none' && rematch.offered) ||
+  rematch.state === 'asked' ||
+  (rematch.state === 'agreed' && !rematch.lineupIn);

@@ -37,10 +37,15 @@
   color: var(--color-focus);
 }
 
+/* Pointed at or pressed by a finger (press.ts): the same look. */
 @media (hover: hover) {
   .series-leave:hover {
     color: var(--color-focus);
   }
+}
+
+.series-leave[data-pressed] {
+  color: var(--color-focus);
 }
 
 /* The track: the score over a grid of rounds, the player's ball over the bot's. */

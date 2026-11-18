@@ -48,6 +48,7 @@ export function createSymbolLegend(): SymbolLegend {
   // Its own way out at its end (ADR 0038), so it closes even when the ? has scrolled out of view.
   const close = element('button', 'text-link panel-close symbol-legend-close', 'Close');
   close.type = 'button';
+  close.dataset['sound'] = 'back';
   close.setAttribute('aria-label', 'Close the legend');
   close.addEventListener('click', () => {
     open(false);

@@ -36,3 +36,14 @@
   color: var(--color-text-muted);
   text-align: center;
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .fair-play-summary:hover {
+    background: var(--color-raised);
+  }
+}
+
+.fair-play-summary[data-pressed] {
+  background: var(--color-raised);
+}

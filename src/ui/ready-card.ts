@@ -49,6 +49,9 @@ export function createReadyCard(
   fight.type = 'button';
   const never = element('button', 'text-link ready-never', 'Don’t show these again');
   never.type = 'button';
+  // Both start the fight, which has its sound (arena.ts): a tap is that one sound.
+  fight.dataset['sound'] = 'own';
+  never.dataset['sound'] = 'own';
   // A live fight's countdown, where Fight! would be: announced as it changes.
   const count = element('p', 'ready-count');
   count.setAttribute('role', 'status');
@@ -125,6 +128,9 @@ export function createReadyCard(
       layer.hidden = !held && !still;
       fight.hidden = live || still;
       count.hidden = !live;
+      // A new sticker starts with no line: the last one's stays only while it lifts away.
+      count.textContent = '';
+      count.classList.remove('ready-count-pop');
       if (!held && !still) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
@@ -148,6 +154,10 @@ export function createReadyCard(
     },
     countdown(text) {
       const line = text ?? '';
+      // At Fight! the sticker keeps its last line (the 1) as it lifts away: emptied first, it was
+      // re-laid out without its line for a moment, a different card flashing before the fight.
+      // Nothing but Fight! ever empties a showing sticker's line; a new one starts empty.
+      if (lifting !== undefined || (line === '' && !layer.hidden)) return;
       if (count.textContent === line) return;
       count.textContent = line;
       // "Get ready" as a word, 3, 2 and 1 huge; each new line pops in (not with reduced motion).

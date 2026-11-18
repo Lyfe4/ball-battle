@@ -107,8 +107,11 @@ export async function moveRematch(
     if ('answer' in request) {
       if (request.answer === 'yes') {
         if (state === 'none' && offerable(before)) await askRematch(db, seriesId, side);
-        else if (state === 'asked' && before.askedBy !== side) await agreeRematch(db, seriesId);
-        else if (state !== 'asked' && state !== 'agreed' && state !== 'started') throw closed();
+        else if (state === 'asked' && before.askedBy !== side) {
+          // A player in another live match or lobby is told now, not after building a lineup.
+          await checkNotLive(db, userId);
+          await agreeRematch(db, seriesId);
+        } else if (state !== 'asked' && state !== 'agreed' && state !== 'started') throw closed();
       } else if (state === 'asked') await declineRematch(db, seriesId, side);
       else if (state !== 'declined') throw closed();
     } else {

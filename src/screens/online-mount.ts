@@ -14,6 +14,7 @@ import { getElement } from '../ui/dom.ts';
 import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
+import { createRematchWatch } from './rematch-watch.ts';
 
 /** How often home asks again while it shows a way back to a live match. */
 const HOME_ASK_MS = 10_000;
@@ -36,6 +37,11 @@ export interface OnlineMount {
   isLive(): boolean;
   /** A live fight's rate: 1, or a little off while it catches up with the server (ADR 0063). */
   liveRate(playedMs: number): number;
+  /**
+   * The screen changed (another screen, a fight started or ended): a rematch notice may show, or
+   * waits while `fighting` (rematch-watch.ts).
+   */
+  screenChanged(fighting: boolean): void;
   /**
    * The line under a live fight, where the speed toggle sits: shown on the online screen when a
    * live match is on and the toggle would show (`noSpeed` false). True when the toggle hides.
@@ -60,7 +66,22 @@ export function mountOnline(context: MountContext): OnlineMount {
   // The HUD the online screens sit in (beside the offline ones), and its foot for the way out.
   const hud = getElement('hud-status', HTMLElement).parentElement ?? document.body;
   const foot = getElement('hud-speed', HTMLElement).parentElement ?? document.body;
+  // A rematch asked while the player is elsewhere in the game reaches them there (rematch-watch.ts).
+  let fighting = false;
+  const rematchRoot = document.createElement('div');
+  document.body.append(rematchRoot);
+  const rematchWatch = createRematchWatch(rematchRoot, BALL_LOOKUP, {
+    storage: browserStorage,
+    go: (write) => {
+      context.go(write);
+    },
+    fighting: () => fighting,
+    endScreen: () => screens.play.endScreen(),
+  });
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
+    ended: (view) => {
+      rematchWatch.ended(view);
+    },
     navigation: context.navigation,
     go: (write) => {
       context.go(write);
@@ -146,6 +167,10 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
+    screenChanged: (now) => {
+      fighting = now;
+      rematchWatch.refresh();
+    },
     footLine: (onScreen, noSpeed) => {
       const live = onScreen && screens.play.isLive();
       liveLine.hidden = noSpeed || !live;

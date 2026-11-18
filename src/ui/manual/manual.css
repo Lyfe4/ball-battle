@@ -344,3 +344,38 @@
     width: var(--setup-width);
   }
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .ball-detail-how-summary:hover {
+    background: var(--color-raised);
+  }
+}
+
+.ball-detail-how-summary[data-pressed] {
+  background: var(--color-raised);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .ball-detail-even-button:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.ball-detail-even-button[data-pressed] {
+  filter: brightness(1.08);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look, the name underlined as a link. */
+@media (hover: hover) {
+  .ball-detail-opponent:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.ball-detail-opponent[data-pressed] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

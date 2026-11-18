@@ -2,7 +2,7 @@
 // both coins flip at the same moment (timed by the server's clock), both land together, and only
 // then does the first pick open on both. Both phones run on this machine, so their clocks are one:
 // each records when its own screen changed. Chromium only, against `netlify dev` (`pnpm test:online`).
-import type { Page } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TOSS_FLIP_MS, TOSS_HOLD_MS } from '../api/live.ts';
 import { closePhones, openPhones, phone, startLiveMatch, type Phones } from './live-support.ts';
@@ -90,4 +90,80 @@ describe('a live Reveal match’s coin toss', () => {
       expect(phones.errors).toStrictEqual([]);
     },
   );
+
+  it(
+    'flips smoothly on a first game whose clock is still settling (playtest: first game)',
+    { timeout: 120_000 },
+    async () => {
+      const sender = await phone(phones);
+      const friend = await phone(phones);
+      for (const page of [sender, friend]) {
+        await page.addInitScript(TOSS_PROBE);
+        await page.addInitScript(FLIP_PROBE);
+        await slowReads(page.context());
+      }
+      await startLiveMatch(BASE, sender, friend);
+      for (const page of [sender, friend]) {
+        await page
+          .locator('#online-series .pick-clock:is([data-kind="yours"], [data-kind="theirs"])')
+          .waitFor({ timeout: 30_000 });
+      }
+      for (const page of [sender, friend]) {
+        const frames = await flipFrames(page);
+        expect(frames.length, 'the coin flipped').toBeGreaterThan(20);
+        // Each frame moves the flip by the real time that passed, at most 1.5x: never backwards,
+        // never a jump (a slow frame moves it further, but no faster).
+        const steps = frames.slice(1).map(([at, real], index) => {
+          const [was = 0, wasReal = 0] = frames[index] ?? [];
+          return { flip: at - was, ahead: at - was - 1.5 * (real - wasReal) };
+        });
+        expect(Math.min(...steps.map((one) => one.flip)), 'never back').toBeGreaterThanOrEqual(0);
+        expect(Math.max(...steps.map((one) => one.ahead)), 'never a jump').toBeLessThan(30);
+        const seen = await seenOn(page);
+        expect(seen.words.filter((words) => words === 'Get ready')).toHaveLength(1);
+      }
+      // Answers still held back when the phones close are dropped, not left to fail.
+      for (const page of [sender, friend]) {
+        await page.context().unrouteAll({ behavior: 'ignoreErrors' });
+      }
+      expect(phones.errors).toStrictEqual([]);
+    },
+  );
 });
+
+/** Records the coin flip's own time on every frame it runs (its animation's currentTime). */
+const FLIP_PROBE = `
+  window.__flip = [];
+  const frame = () => {
+    const coin = document.querySelector('#online-series .coin-toss-coin');
+    const flip = coin?.getAnimations()[0];
+    if (flip !== undefined && flip.playState === 'running') window.__flip.push([Number(flip.currentTime), performance.now()]);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+`;
+
+const flipFrames = (page: Page) =>
+  page.evaluate(() => (globalThis as unknown as { __flip: [number, number][] }).__flip);
+
+/**
+ * A phone's network on a first game: the series' answers come back late and unevenly, the first
+ * ones slowest (a cold function, a radio waking up), so the page's estimate of the server's clock
+ * moves by hundreds of ms in the seconds the toss plays.
+ */
+async function slowReads(context: BrowserContext): Promise<void> {
+  const delays = [1_400, 900, 600, 1_100, 400, 700, 300, 500, 350];
+  let next = 0;
+  await context.route(/\/api\/v1\/series\/[^/]+$/, async (route) => {
+    const delay = delays[next] ?? 250;
+    next += 1;
+    try {
+      const response = await route.fetch();
+      await new Promise((done) => setTimeout(done, delay));
+      await route.fulfill({ response });
+    } catch (error) {
+      // The phone closed with this answer held back (the test is over): nothing to answer.
+      if (!context.pages().every((page) => page.isClosed())) throw error;
+    }
+  });
+}

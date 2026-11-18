@@ -75,7 +75,14 @@
   touch-action: manipulation;
 }
 
-.pick-row:has(.pick-row-pick:hover) {
+/* Pointed at or pressed by a finger (press.ts): the same look. A touch hover sticks, so never on one. */
+@media (hover: hover) {
+  .pick-row:has(.pick-row-pick:hover) {
+    background: var(--color-selected);
+  }
+}
+
+.pick-row:has(.pick-row-pick[data-pressed]) {
   background: var(--color-selected);
 }
 
@@ -220,4 +227,15 @@
 /* A pick on its way to the server (busy-button.ts): the other rows wait, dimmed. */
 .pick-rows-list[aria-busy='true'] .pick-row:not(:has([aria-busy='true'])) {
   opacity: 0.5;
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look, the mark at full strength. */
+@media (hover: hover) {
+  .pick-row-badge:hover {
+    color: var(--color-text);
+  }
+}
+
+.pick-row-badge[data-pressed] {
+  color: var(--color-text);
 }

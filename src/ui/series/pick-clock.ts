@@ -4,6 +4,8 @@ import { element, setAttr, setHidden, setText } from '../dom.ts';
 import type { PickClock } from '../../screens/pick-clock-text.ts';
 
 export interface PickClockCard {
+  /** The card, placed by the series panel above its track, or by its owner (a rematch notice). */
+  readonly element: HTMLElement;
   /** Shows `clock`, or hides both parts; writes only what changed (it runs every display tick). */
   show(clock: PickClock | undefined): void;
 }
@@ -51,6 +53,7 @@ export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): P
   let width = '';
 
   return {
+    element: root,
     show(clock) {
       setHidden(root, clock === undefined);
       setHidden(next, clock?.next === undefined);

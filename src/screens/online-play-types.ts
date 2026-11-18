@@ -1,6 +1,7 @@
 // The online series screen's parts as the page sees them (ADR 0052, 0053): what it needs from the
 // arena and the page, and what it offers back.
 import type { ApiResult } from '../app/api.ts';
+import type { SeriesView } from '../api/series.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { WorldState } from '../sim/types.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
@@ -25,18 +26,22 @@ export interface OnlinePlayHost {
   go(write: (params: URLSearchParams) => void): void;
   /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
   primeSeries(id: string): Promise<void>;
+  /** A live series ended on this device: a rematch of it reaches the player anywhere. */
+  readonly ended?: (view: SeriesView) => void;
 }
 
 export interface OnlinePlay {
   /** Opens the series `id` (a route). */
   open(id: string): void;
-  /** Leaving its screen: stop asking the server. */
+  /** Leaving its screen: stop asking the server (a rematch is then asked about from anywhere). */
   leave(): void;
   phase(): SeriesPhase | undefined;
   /** True while a round is on the arena, being fought or just fought. */
   isPlaying(): boolean;
   /** A live match is on screen: its fights play at 1× (ADR 0053). */
   isLive(): boolean;
+  /** The ended live series whose end screen shows now, which offers its own rematch. */
+  endScreen(): string | undefined;
   /**
    * A live fight's playback rate, the arena having played `playedMs` of it: 1, or a little off 1
    * while it catches up with the server's moment (ADR 0063).
