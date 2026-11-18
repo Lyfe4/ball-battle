@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Amends: ADR 0001 (cross-engine determinism is now tested), ADR 0022 (the step it left open)
+- Amended by: ADR 0065 (browser jobs run in Playwright's Docker image: no apt)
 
 ## Context
 

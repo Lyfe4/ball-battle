@@ -6,6 +6,7 @@
 // Chromium against `netlify dev`.
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { NOW_HEADER } from '../api/live.ts';
 import {
   closePhones,
   openPhones,
@@ -92,6 +93,26 @@ function placeAt(points: readonly Point[], at: number): Point | undefined {
   return { at, x: last.x + (next.x - last.x) * t, y: last.y + (next.y - last.y) * t };
 }
 
+/**
+ * Ms until round 1's Fight! by the server's clock, read through `page` as it reads its series
+ * (ADR 0053); undefined until the round is scheduled.
+ */
+async function msUntilFirstFight(page: Page, id: string): Promise<number | undefined> {
+  return page.evaluate(
+    async ([series, header]) => {
+      const answer = await fetch(`/api/v1/series/${series}`, { cache: 'no-store' });
+      if (!answer.ok) return undefined;
+      const body = (await answer.json()) as {
+        live?: { fights?: { round: number; fightAt: number }[] } | null;
+      };
+      const fight = body.live?.fights?.find((scheduled) => scheduled.round === 0);
+      const now = Number(answer.headers.get(header));
+      return fight === undefined || !Number.isFinite(now) ? undefined : fight.fightAt - now;
+    },
+    [id, NOW_HEADER] as const,
+  );
+}
+
 async function pickPreferring(page: Page, prefer: string): Promise<void> {
   const wanted = panelOf(page).locator(`.pick-row[data-ball="${prefer}"] .pick-row-pick`);
   const any = panelOf(page).locator('.pick-row-pick').first();
@@ -113,19 +134,24 @@ describe('a live fight on a slow phone', () => {
         await page.addInitScript(RECORD);
         await page.addInitScript(HEARD);
       }
-      await startLiveMatch(BASE, sender, friend, 'reveal', {
+      const id = await startLiveMatch(BASE, sender, friend, 'reveal', {
         sender: ['brawler', 'magnet', 'titan'],
         friend: ['magnet', 'brawler', 'titan'],
       });
-      // Round 1's picks, then its countdown: the friend's page is busy across Fight!.
-      const counting = friend.locator('.ready-count[data-number="true"]', { hasText: /^1$/ });
-      for (let tries = 0; !(await counting.isVisible()); tries += 1) {
-        expect(tries, 'round 1 never counted down').toBeLessThan(120);
+      // Round 1's picks, then the friend's page is busy across its Fight!. The moment comes from the
+      // server's fight time, as the friend's page reads it, not from the countdown on screen: a page
+      // that learns of a round late (a slow answer on a loaded machine) rightly says "Get ready"
+      // until Fight! and never shows the 3-2-1, which left this waiting for a "1" that by design
+      // never came (CI, 2026-11-17 and 18).
+      let untilFight: number | undefined;
+      for (let tries = 0; untilFight === undefined; tries += 1) {
+        expect(tries, 'round 1 was never scheduled').toBeLessThan(120);
         await pickPreferring(sender, 'brawler');
         await pickPreferring(friend, 'magnet');
         await friend.waitForTimeout(250);
+        untilFight = await msUntilFirstFight(friend, id);
       }
-      await friend.waitForTimeout(700);
+      await friend.waitForTimeout(Math.max(0, untilFight - 300));
       await friend.evaluate(() => {
         const end = Date.now() + 500;
         while (Date.now() < end) {
