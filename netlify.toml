@@ -48,6 +48,13 @@
 # Online play is built only where it is switched on: deploy previews and the main branch deploy
 # (staging), never production until launch (ADR 0052 section 6). The functions read their own
 # BALLBATTLE_ONLINE, set per context in the dashboard with their secrets.
+# Production follows the vs Friend switch (ADR 0068): BALLBATTLE_ONLINE, set or unset for the
+# production context in Netlify's dashboard (or `node scripts/friend-switch.ts on|off`), builds the
+# client with or without online play, and the functions read the same variable. One variable, one
+# redeploy, so the page and the API are never switched apart. Unset is off.
+[context.production]
+  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" pnpm build"
+
 [context.deploy-preview.environment]
   VITE_ONLINE = "1"
 

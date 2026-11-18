@@ -1,4 +1,4 @@
-# 0068: The hosted projects: a production database, a daily check, migrations on publish
+# 0068: The hosted projects: a production database, a daily check, migrations on publish, and the vs Friend switch
 
 - Status: Accepted
 - Date: 2026-11-18
@@ -91,6 +91,28 @@ request of theirs, written at most daily) is over 90 days old (`src/server/inact
 Auth, exactly as Forget me: sessions and profile go, open series are forfeited, finished series stay
 as "Deleted player". Netlify runs scheduled functions on production only, and with vs Friend off
 the sweep does nothing, so this runs from the day the switch is on.
+
+### The vs Friend switch: one variable, one redeploy
+
+vs Friend on the live site is `BALLBATTLE_ONLINE` in Netlify's production context: `1` is on,
+unset is off (it starts off). Production's build command (`netlify.toml`, `[context.production]`)
+builds the client with `VITE_ONLINE` from that same variable, and the functions read it too, so the
+page and the API switch together in one deploy and can never disagree. Off, the production bundle
+holds no online code at all (`check-bundle.ts`), and the offline game is the same either way.
+
+- **Flip it:** `node scripts/friend-switch.ts on` (or `off`; `status` reads the live API). It sets
+  the variable, starts a production deploy of `release` and waits until `/api/v1/health` answers
+  200 (on) or 404 `online_off` (off). By hand: Netlify > battle-ball > Project configuration >
+  Environment variables > `BALLBATTLE_ONLINE` > Edit > Production `1` or empty > Save, then Deploys
+  > Trigger deploy > Deploy project.
+- **Cost and time:** one production deploy, 15 of the Free plan's 300 monthly credits, about 3 to
+  5 minutes. The script refuses to switch on while `release` predates this switch.
+- Switched off mid-match, live matches stop answering; the players' pages show the failure with
+  Try again, and the new build drops vs Friend from home.
+- Not taken: a runtime flag in the database. It is faster (seconds, no deploy), but needs either a
+  read on every request (about 200 ms from Ohio to Sydney) or a cache that differs per function
+  instance, and the client would still be built with online play. For a beta of ten friends, 3 to
+  5 minutes is fast enough.
 
 ## Consequences
 
