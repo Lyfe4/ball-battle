@@ -3,11 +3,11 @@
 // They are pages of their own, built with the game, each with a way back (ADR 0027: no dead ends).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GRACE_MS, START_WINDOW_MS } from '../api/live.ts';
-import { LEGAL_LINKS, adultCard } from '../screens/online-challenge-text.ts';
-import { INACTIVE_DAYS } from '../server/inactive.ts';
+import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
+import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
+import { INACTIVE_DAYS } from '../src/server/inactive.ts';
 
-const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
+const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
 const privacy = read('privacy.html');
 const terms = read('terms.html');
 const pages = { 'privacy.html': privacy, 'terms.html': terms };

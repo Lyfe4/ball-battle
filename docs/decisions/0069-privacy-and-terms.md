@@ -50,7 +50,7 @@ script.
 | No other service                                                          | `SENTRY_DSN` is unset in every context                                               |
 | Leaving, being away about half a minute, or missing the start loses       | `GRACE_MS`, `START_WINDOW_MS` (`src/api/live.ts`); a timed-out pick is random        |
 
-`src/legal/legal-pages.test.ts` reads the pages back against the constants that decide them, so
+`scripts/legal-pages.test.ts` reads the pages back against the constants that decide them, so
 a change to either fails until both agree. The 16+ card says the same in short.
 
 ### Corrections to the owner's draft
