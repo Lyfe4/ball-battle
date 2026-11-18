@@ -76,3 +76,14 @@
     display: none;
   }
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .series-bar-score:hover {
+    background: var(--color-raised);
+  }
+}
+
+.series-bar-score[data-pressed] {
+  background: var(--color-raised);
+}

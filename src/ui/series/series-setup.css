@@ -226,7 +226,7 @@
   cursor: pointer;
 }
 
-.lineup-level-toggle:active {
+.lineup-level-toggle:is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -400,4 +400,19 @@
   .answer-step > .coin-toss {
     grid-area: 4 / 1 / -1 / -1;
   }
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .rules-card:hover,
+  .lineup-tray-slot:hover,
+  .lineup-level-toggle:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.rules-card[data-pressed],
+.lineup-tray-slot[data-pressed],
+.lineup-level-toggle[data-pressed] {
+  filter: brightness(1.08);
 }

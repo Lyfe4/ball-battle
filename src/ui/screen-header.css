@@ -116,8 +116,8 @@
   color: var(--color-text-muted);
 }
 
-.screen-back:not(:disabled):active,
-.symbol-legend-toggle:active {
+.screen-back:not(:disabled):is(:active, [data-pressed]),
+.symbol-legend-toggle:is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -151,4 +151,17 @@
     position: static;
     padding-block: 0;
   }
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .screen-back:not(:disabled):hover,
+  .symbol-legend-toggle:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.screen-back:not(:disabled)[data-pressed],
+.symbol-legend-toggle[data-pressed] {
+  filter: brightness(1.08);
 }

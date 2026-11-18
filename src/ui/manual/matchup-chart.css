@@ -131,3 +131,14 @@
     top: var(--space-sheet);
   }
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .matchup-button:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.matchup-button[data-pressed] {
+  filter: brightness(1.08);
+}

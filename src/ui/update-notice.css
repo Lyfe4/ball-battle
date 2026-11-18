@@ -1,11 +1,12 @@
 /*
- * A new version is ready (update-notice.ts, ADR 0066): one card with Reload, in a notice's surface
- * box like the slow-frames line (frame-tip.css). It floats at the bottom, clear of the home bar,
+ * A card that floats over every screen (`.floating-notice`): a new version is ready
+ * (update-notice.ts, ADR 0066), or a rematch is asked (rematch-notice.ts). The new version is one
+ * card with Reload, in a notice's surface box like the slow-frames line (frame-tip.css). It floats at the bottom, clear of the home bar,
  * so it never moves what is on screen, and the page gains room under its end while it shows, so
  * it never covers the last thing on a page either. On a phone it spans the column; on a desktop it
  * sits in the corner, out of the way of the menu and the arena.
  */
-.update-notice {
+.floating-notice {
   position: fixed;
   right: max(var(--space-gutter), env(safe-area-inset-right));
   bottom: max(var(--space-gutter), env(safe-area-inset-bottom));
@@ -23,7 +24,7 @@
   color: var(--color-text);
 }
 
-.update-notice[hidden] {
+.floating-notice[hidden] {
   display: none;
 }
 
@@ -39,12 +40,12 @@
   padding: 0 var(--space-gap);
 }
 
-body[data-update] .stage {
+body:is([data-update], [data-rematch-notice]) .stage {
   padding-bottom: calc(max(var(--space-gutter), env(safe-area-inset-bottom)) + 5rem);
 }
 
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  .update-notice {
+  .floating-notice {
     left: auto;
     max-width: 24rem;
   }

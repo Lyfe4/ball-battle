@@ -69,3 +69,14 @@
 .ball-tile-mark[data-lean='unfavoured'] {
   color: var(--color-unfavoured);
 }
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .ball-tile:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+}
+
+.ball-tile:not(:disabled)[data-pressed] {
+  filter: brightness(1.08);
+}
