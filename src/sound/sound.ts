@@ -8,17 +8,33 @@ import { BALL_SOUNDS } from './ball-sounds.ts';
 import { cuesOf, type Cue, type FightCue } from './cues.ts';
 import { createSoundEngine, type SoundEngine } from './engine.ts';
 import { createGate } from './gate.ts';
-import { FIGHT_RULES } from './rules.ts';
+import { FIGHT_RULES, MENU_RULES } from './rules.ts';
+import { PRESSABLE } from '../ui/press.ts';
 import type { Play, SoundName, UiCue } from './voices.ts';
 
 /** Cents each repeat is moved by in turn, so a run of the same sound never sounds copied. */
 const VARIETY = [0, 35, -25, 55, -45, 15];
 
 /**
- * The buttons that tap: only the key moments (Play, Send challenge, Accept, Rematch), marked
- * `data-sound="tap"`. A pick has its own sound as it locks in; every other button is quiet.
+ * What a control says when pressed, by its `data-sound`: the key moments (Play, Send challenge,
+ * Accept, Rematch) `tap`, as they always have; Back and Close `back`; a control that makes a sound
+ * of its own (a pick locking in, Fight!, Hear it, the sound switch) `own`, so a tap is one sound;
+ * every other control a soft `press`, half as loud as a key moment's tap.
  */
-const TAPS = '[data-sound="tap"]';
+export type PressSound = 'tap' | 'back' | 'press' | undefined;
+
+/** The sound a click on `target` makes, if any: none for a disabled or busy control. */
+export function pressSoundOf(target: EventTarget | null): PressSound {
+  if (!(target instanceof Element)) return undefined;
+  const control = target.closest<HTMLElement>(PRESSABLE);
+  if (control === null) return undefined;
+  if (control instanceof HTMLButtonElement && control.disabled) return undefined;
+  if (control.getAttribute('aria-disabled') === 'true') return undefined;
+  if (control.getAttribute('aria-busy') === 'true') return undefined;
+  const sound = control.dataset['sound'];
+  if (sound === 'own') return undefined;
+  return sound === 'tap' || sound === 'back' ? sound : 'press';
+}
 
 interface Installed {
   readonly engine: SoundEngine;
@@ -28,6 +44,7 @@ interface Installed {
 
 let installed: Installed | undefined;
 const gate = createGate(FIGHT_RULES);
+const menuGate = createGate(MENU_RULES);
 let turn = 0;
 
 const nextDetune = (): number => {
@@ -35,22 +52,30 @@ const nextDetune = (): number => {
   return VARIETY[turn] ?? 0;
 };
 
-/** Starts sound for the page, with the remembered choice. Buttons tap from now on. */
+/**
+ * Starts sound for the page, with the remembered choice. Controls sound from now on: a click (a tap,
+ * a mouse, or Enter or Space on a focused control) is heard once, before its handler runs. Only a
+ * person's click: a page passing a click on, or the home demo, makes none.
+ */
 export function installSound(storage: () => Storage): void {
   const settings = loadSound(storage);
   installed = { engine: createSoundEngine(gainOf(settings)), storage, settings };
   document.addEventListener(
     'click',
     (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const press = target.closest(TAPS);
-      if (press === null) return;
-      if (press instanceof HTMLButtonElement && press.disabled) return;
-      cue('tap');
+      const sound = pressSoundOf(event.target);
+      if (sound === 'tap') cue('tap');
+      else if (sound !== undefined && event.isTrusted) menuCue(sound);
     },
     { capture: true },
   );
+}
+
+/** A control's soft tick, through its own gate: one per tap, quieter in a quick run. */
+function menuCue(name: 'press' | 'back'): void {
+  if (installed?.settings.on !== true) return;
+  const [share = 0] = menuGate.pass([{ kind: name, strength: 1 }], performance.now());
+  if (share > 0) installed.engine.play(name, { gain: share, detune: nextDetune() });
 }
 
 export function soundSettings(): SoundSettings | undefined {

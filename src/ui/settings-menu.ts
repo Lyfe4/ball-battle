@@ -127,6 +127,7 @@ function buildMenu(): Menu {
   paused.hidden = true;
   const close = element('button', 'text-link panel-close settings-close', 'Close');
   close.type = 'button';
+  close.dataset['sound'] = 'back';
   close.setAttribute('aria-label', 'Close settings');
   close.addEventListener('click', () => {
     closeMenu(true);

@@ -34,6 +34,7 @@ export function createScreenHeader(
   const header = element('header', 'screen-header');
   const back = element('button', 'screen-back', '‹');
   back.type = 'button';
+  back.dataset['sound'] = 'back';
   back.setAttribute('aria-label', backLabel);
   back.addEventListener('click', onBack);
   const heading = element('h1', 'screen-title', title);

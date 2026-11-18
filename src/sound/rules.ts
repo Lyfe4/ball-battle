@@ -6,6 +6,13 @@
 import type { FightCue } from './cue-names.ts';
 import type { GateRule } from './gate.ts';
 
+/**
+ * A control's soft tick (sound.ts): one per tap even if a click is passed on to a second control,
+ * and a run of quick taps through a menu gets quieter rather than tiring.
+ */
+const MENU: GateRule = { gapMs: 60, runMs: 600 };
+export const MENU_RULES = { press: MENU, back: MENU } as const satisfies Record<string, GateRule>;
+
 /** A hit: close repeats allowed, each quieter. */
 const HIT: GateRule = { gapMs: 70, runMs: 300 };
 /** A moment that happens once in a while: never twice in quick succession. */
