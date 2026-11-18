@@ -227,6 +227,8 @@ export default defineConfig({
       // shown (390 x 664), where the series arena shrank (ADR 0039).
       phoneProject('browsers-iphone', 'iphone', 390, 844),
       phoneProject('browsers-safari', 'safari', 390, 664),
+      // A phone turned sideways: the beside layout below the desktop width (ADR 0067).
+      phoneProject('browsers-landscape', 'landscape', 812, 375),
     ],
   },
 });
