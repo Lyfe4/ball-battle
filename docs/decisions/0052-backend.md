@@ -695,7 +695,8 @@ The first thing players see from the backend. It contains:
 - **Sentry without its SDK.** `src/server/monitor.ts` posts Sentry's envelope format with `fetch`:
   the error's type, message and stack, the route and the request id, nothing else. The Node SDK
   brings OpenTelemetry instrumentation a function doesn't need, and Netlify's bundler couldn't
-  trace one of its packages under pnpm.
+  trace one of its packages under pnpm. Built but not yet on: no `SENTRY_DSN` is set in any Netlify
+  context (checked 2026-11-18), so until one is, a fault is only in that request's log line.
 - `SEED_KEYS` is the JSON map of key id to base64 key; the greatest id (date ids, e.g. `2026-11`)
   seeds new series. The server loads a series' sim only from `rulesets/r<N>/sim.mjs`
   (`src/server/rulesets.ts`, shipped with `included_files`); ESLint lets `src/server` import only
@@ -736,8 +737,8 @@ The first thing players see from the backend. It contains:
   Supabase's own limit (30 anonymous sign-ins an hour per IP) counted Netlify's IP for every
   player until 2026-11-18; with IP Address Forwarding it counts each player's, raised to 150 an hour
   so ours is the one that answers (section 11).
-- Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, and is
-  reported to Sentry, since it may be everyone's limit at once.
+- Auth refusing a sign-up (its own limit) answers `503 guests_busy` with `Retry-After`, logged as
+  a failure and reported to Sentry once a DSN is set, since it may be everyone's limit at once.
 - Headers: `connect-src 'self'`, `require-trusted-types-for 'script'` (the client writes no HTML,
   so nothing changed) and `Strict-Transport-Security: max-age=63072000; includeSubDomains`. On
   `*.netlify.app` Netlify sends its own HSTS (one year, `preload`) in place of ours; ours applies
@@ -992,16 +993,20 @@ Auth counts the first value of `Sb-Forwarded-For` on a request made with a **sec
 (publishable and legacy keys are not supported), and falls back to the connecting IP when it's
 absent. So:
 
-- `signUpGuest` now signs up with the secret key and sends the player's IP (Netlify's
-  `context.ip`, never a header the player sets) as `Sb-Forwarded-For`. With forwarding off this
+- `signUpGuest` now signs up with the secret key and sends the player's IP as
+  `Sb-Forwarded-For`. That IP, like the key of our own guest limit, is Netlify's `context.ip`
+  alone. Measured on a draft deploy: `context.ip` is the `x-nf-client-connection-ip` Netlify sets,
+  which overwrites any the client sends, while a client's own `X-Forwarded-For` survives as the
+  first entry, so no request header is ever read for it (`session.db.test.ts` sends spoofed ones). With forwarding off this
   behaves exactly as before, so it ships ahead of the dashboard change.
 - IP Address Forwarding is turned on per project (Authentication > Rate Limits).
 - The anonymous limit is raised from 30 to 150 an hour per IP, our own limit per network: a class
   of 30 to 45 on one school address would otherwise be refused by Auth at 30, before ours. Ours
   stays the one that answers, in our words, with its daily 500.
 - What is left: if forwarding is ever off in a project, every player shares one 150 an hour again;
-  `/health` can't see the setting, so the probe is run against a project after any change to it,
-  and Auth's 429 is reported to Sentry (`guests_busy`). Not taken: the browser calling Supabase
+  `/health` can't see the setting, so the probe is run against a project after any change to it.
+  Auth's 429 shows as `guests_busy` in the function log (and in Sentry once `SENTRY_DSN` is set;
+  it isn't yet). Not taken: the browser calling Supabase
   directly (it never talks to Supabase, by design) or a CAPTCHA (a third-party script).
 
 ### Still open

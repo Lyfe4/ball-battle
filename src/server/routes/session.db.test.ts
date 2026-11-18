@@ -1,5 +1,5 @@
 // Guests and sessions against the local Supabase (ADR 0052, sections 2 and 10).
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { TestBrowser } from '../test/client.ts';
@@ -12,6 +12,9 @@ const admin = adminSql();
 // Each run starts with no counted attempts: earlier runs' windows are still open.
 beforeAll(async () => {
   await admin`delete from game.rate_limits`;
+});
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 afterAll(async () => {
   await deps.sql.end();
@@ -26,6 +29,18 @@ function device(): TestBrowser {
 }
 
 const code = (body: unknown) => errorOf(body)?.code;
+
+/**
+ * Forwarding headers a client can send itself. The client's IP is Netlify's `context.ip` alone;
+ * a header from the request must never move a guest to another network's count or Auth's.
+ */
+const SPOOFED = {
+  'X-Forwarded-For': '192.0.2.200',
+  'X-Real-IP': '192.0.2.201',
+  'Client-IP': '192.0.2.202',
+  'x-nf-client-connection-ip': '192.0.2.203',
+  'Sb-Forwarded-For': '192.0.2.204',
+};
 
 async function guest(browser = device()): Promise<TestBrowser> {
   const made = await browser.call(session, 'POST', '/api/v1/session', { adult: true });
@@ -73,6 +88,17 @@ describe('making a guest', () => {
     expect(again.body).toStrictEqual(first.body);
   });
 
+  it('tells Auth the IP Netlify saw, never a forwarding header the client sent', async () => {
+    const browser = device();
+    const auth = vi.spyOn(globalThis, 'fetch');
+    const made = await browser.call(session, 'POST', '/api/v1/session', { adult: true }, SPOOFED);
+    expect(made.status).toBe(201);
+    const signUp = auth.mock.calls.find(
+      ([url]) => typeof url === 'string' && url.endsWith('/auth/v1/signup'),
+    );
+    expect(new Headers(signUp?.[1]?.headers).get('Sb-Forwarded-For')).toBe(browser.ip);
+  });
+
   it('makes an hour’s guests on one network (several classes on a school’s address), then says to wait', async () => {
     const ip = '192.0.2.50';
     const make = () =>
@@ -82,6 +108,15 @@ describe('making a guest', () => {
     }
     const refused = await make();
     expect(refused.status).toBe(429);
+    // A forwarding header the client sets itself is no way round it.
+    const spoofed = await new TestBrowser(deps, ip).call(
+      session,
+      'POST',
+      '/api/v1/session',
+      { adult: true },
+      SPOOFED,
+    );
+    expect(spoofed.status).toBe(429);
     // The network's count, never "too many tries" to a player who tapped once, and how long.
     expect(errorOf(refused.body)?.message).toMatch(
       /^Lots of new players on this network just now: try again in \d+ (min|h)$/,
