@@ -141,7 +141,7 @@ they are: `localStorage`, no network, offline. Nothing in this ADR changes them.
 - A guest can delete itself ("Forget me" in settings) from the first slice.
 - A guest lives as long as its cookie. Clearing site data loses it; the UI says so before it
   matters ("Sign in to keep your progress").
-- Guests with no activity for 90 days are deleted by a scheduled job.
+- Guests with no activity for 90 days are deleted by a scheduled job (built with ADR 0068).
 
 ### Signing in
 
