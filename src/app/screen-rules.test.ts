@@ -5,6 +5,7 @@ import { createRouter, type ScreenHandlers } from './router.ts';
 import {
   initialAppState,
   isCalmMoment,
+  isFighting,
   isSetupScreen,
   readyMomentOf,
   resumesMatch,
@@ -163,5 +164,25 @@ describe('readyMomentOf', () => {
     expect(readyMomentOf('home', false, false, true)).toBe('still');
     expect(readyMomentOf('series', true, true, true)).toBe('live');
     expect(readyMomentOf('match', false, false, true)).toBe('quick');
+  });
+});
+
+describe('isFighting', () => {
+  const at = (matchOver: boolean, phase: string | undefined, live = false) => ({
+    matchOver,
+    phase,
+    live,
+  });
+  it('is a Free play match before its result, a series round, and a live match at any moment', () => {
+    expect(isFighting('match', at(false, undefined))).toBe(true);
+    expect(isFighting('match', at(true, undefined))).toBe(false);
+    expect(isFighting('series', at(false, 'playing'))).toBe(true);
+    expect(isFighting('series', at(false, 'between'))).toBe(false);
+    expect(isFighting('series', at(false, 'finished'))).toBe(false);
+    expect(isFighting('online', at(false, 'between', true))).toBe(true);
+    expect(isFighting('online', at(false, 'finished'))).toBe(false);
+    for (const screen of ['home', 'pick', 'manual', 'outdated', 'send', 'challenge'] as const) {
+      expect(isFighting(screen, at(false, undefined))).toBe(false);
+    }
   });
 });

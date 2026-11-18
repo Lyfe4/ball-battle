@@ -8,7 +8,8 @@ import {
   fairPlayOf,
   reportReplay,
   seatsOf,
-  stateAt,
+  sessionOf,
+  sidesOf,
   stateAtAttempt,
   type FairPlay,
 } from '../app/online-series.ts';
@@ -130,12 +131,7 @@ export function createOnlinePlay(
   });
 
   /** The session at `seen` rounds watched: the next one to watch on the arena, if any. */
-  function sessionAt(seen: number): SeriesSession | undefined {
-    if (view === undefined) return undefined;
-    const state = stateAt(view, seen);
-    const current = seen < view.rounds.length ? nextMatch(state) : undefined;
-    return { state, current, recorded: false, replay: undefined };
-  }
+  const sessionAt = (seen: number) => (view === undefined ? undefined : sessionOf(view, seen));
 
   function playCurrent(): void {
     const current = session?.current;
@@ -210,6 +206,8 @@ export function createOnlinePlay(
     }
     const first = view?.id !== next.id;
     view = next;
+    // A live match that ended here: its rematch reaches the player anywhere (rematch-watch.ts).
+    if (next.live != null && next.status !== 'open') host.ended?.(next);
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
     // here: the server plays it on its own frozen sim, and this page shows its rounds on the track.
     const replayable = next.ruleset === RULESET_VERSION;
@@ -266,7 +264,6 @@ export function createOnlinePlay(
     void client.load();
   });
 
-  /** Who must pick now: nobody before a live match starts or while its fight is still on. */
   return {
     open(next) {
       visible = true;
@@ -292,6 +289,7 @@ export function createOnlinePlay(
     },
     leave() {
       visible = false;
+      extras.rematch.watch(undefined, false);
       client.schedule();
       render();
     },
@@ -299,16 +297,13 @@ export function createOnlinePlay(
     // The series on screen (as offline): the arena shows behind it, and makes way between rounds.
     isPlaying: () => visible && status === 'ready' && view !== undefined,
     isLive: () => visible && isLive(),
+    endScreen: () => (visible ? extras.rematch.watching() : undefined),
     liveRate: (playedMs) => (visible && isLive() ? live.rate(playedMs) : 1),
     footLine: () =>
       visible && view !== undefined && isLive()
         ? liveFootLine(view, live.now(), reconnecting, watched === 0)
         : undefined,
-    sides() {
-      if (view === undefined) return undefined;
-      const { them } = seatsOf(view);
-      return view.you === 'a' ? ['You', them] : [them, 'You'];
-    },
+    sides: () => (view === undefined ? undefined : sidesOf(view)),
     setVisible(next) {
       panel.setVisible(next && visible && status === 'ready');
       roots.loading.hidden = !(next && visible && status === 'loading');

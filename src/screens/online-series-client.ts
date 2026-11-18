@@ -115,7 +115,10 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
     async forfeit() {
       const view = host.view();
       if (id === undefined || view?.live == null || view.status !== 'open') return;
-      await callApi('POST', `series/${id}/forfeit`, {});
+      const left = await callApi<unknown>('POST', `series/${id}/forfeit`, {});
+      // The lost match as the server now has it: its end, and the rematch it offers, are known here.
+      const ended = left.ok ? decodeSeriesView(left.body) : undefined;
+      if (ended !== undefined) host.adopt(ended);
     },
     schedule,
   };

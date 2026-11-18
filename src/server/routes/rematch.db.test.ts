@@ -176,6 +176,19 @@ describe('a rematch', () => {
     expect(code(lineup.body)).toBe('rematch_closed');
   });
 
+  it('refuses a yes from a player who is in another live match by then', async () => {
+    const { id, players } = await ended();
+    await view(players.a, id, { answer: 'yes' });
+    const busy = await newLive(deps);
+    await admin`update game.series set player_b = ${players.b.userId} where id = ${busy.id}`;
+    const refused = await rematch(players.b, id, { answer: 'yes' });
+    expect(refused.status).toBe(409);
+    expect(code(refused.body)).toBe('in_a_match');
+    // Still asked: they can still say no, and the asker's clock runs on.
+    expect((await view(players.a, id)).state).toBe('asked');
+    expect((await view(players.b, id, { answer: 'no' })).state).toBe('declined');
+  });
+
   it('refuses a lineup that isn’t one, and a player who is in another live match', async () => {
     const { id, players } = await ended();
     await view(players.a, id, { answer: 'yes' });

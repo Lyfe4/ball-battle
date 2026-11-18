@@ -8,6 +8,7 @@ import { createRouter } from './app/router.ts';
 import {
   initialAppState,
   isCalmMoment,
+  isFighting,
   isSetupScreen,
   readyMomentOf,
   screenTitle,
@@ -36,12 +37,14 @@ import { createSpeedToggle } from './ui/speed-toggle.ts';
 import { installSettings, refreshSettings } from './ui/settings-menu.ts';
 import { createSoundSettings } from './ui/settings-sound.ts';
 import { installSound } from './sound/sound.ts';
+import { installPressFeedback } from './ui/press.ts';
 import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 import { installFrameMeter } from './ui/frame-meter.ts';
 import { createFrameTip } from './ui/frame-tip.ts';
 
-// Sound waits for the first tap, then follows the remembered choice (sound.ts).
+// Sound waits for the first tap (sound.ts); a finger's tap shows on what it presses (press.ts).
 installSound(storage);
+installPressFeedback();
 const stage = getElement('stage', HTMLElement);
 // What each symbol means, on hover with a mouse or on keyboard focus (never on touch).
 installSymbolTooltips();
@@ -323,6 +326,7 @@ function showControls(): void {
   const roundOver = seriesOnScreen() && phase !== undefined && phase !== 'playing';
   stage.toggleAttribute('data-round-over', roundOver);
   newVersion.setCalm(isCalmMoment(screen, screen === 'series' ? phase : undefined));
+  online.screenChanged(isFighting(screen, { matchOver, phase, live: online.isLive() }));
   hudRoot.hidden = setup || screen === 'home' || roundOver;
   const noSpeed = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   // Live fights are 1x only (ADR 0053): a line takes the toggle's place.

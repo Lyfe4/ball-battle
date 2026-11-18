@@ -11,6 +11,7 @@ import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import type { CurrentMatch } from '../api/live.ts';
+import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
@@ -35,6 +36,8 @@ export interface OnlineHost {
   layoutChanged(): void;
   redraw(): void;
   readonly storage: DeviceStorage;
+  /** A live series ended on this device: a rematch of it reaches the player anywhere. */
+  readonly ended?: (view: SeriesView) => void;
 }
 
 export interface OnlineScreens {
