@@ -1,56 +1,81 @@
-// Measures Supabase Auth's anonymous sign-in limit (30 an hour per IP by default) as our functions
-// meet it: ADR 0052 section 11's open risk. Every guest is made by a Netlify function, so if Auth
-// counts the IP that connects to it, all players share Netlify's few outgoing IPs and one limit.
+// Checks that Supabase Auth counts its anonymous sign-in limit against each player's own IP, not
+// our functions' shared one (ADR 0052 section 11). Hosted Auth counts the address that connects to
+// it and ignores X-Forwarded-For (measured on staging, 2026-11-18); it counts a forwarded IP only
+// from `Sb-Forwarded-For` on a request made with a secret key, and only once the project's "IP
+// Address Forwarding" (Authentication > Rate Limits) is on. That is how `signUpGuest` calls it.
 //
-// Run it against staging from your own machine (never production):
-//   node scripts/anon-limit-probe.ts --url https://<ref>.supabase.co \
-//     --key <publishable key> --secret <secret key> [--count 35]
-//   node scripts/anon-limit-probe.ts --site https://deploy-preview-<n>--battle-ball.netlify.app \
-//     [--count 35]
+// Run it from your own machine against staging, or production once before launch. The keys come
+// from the Supabase CLI and are never printed (bash):
+//   SECRET=$(pnpm exec supabase projects api-keys --project-ref <ref> --reveal -o json \
+//     | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0)).find(k => k.type === 'secret').api_key)")
+//   node scripts/anon-limit-probe.ts --url https://<ref>.supabase.co --secret "$SECRET" [--count 160]
+// (--reveal matters: without it the CLI masks the secret key and Auth refuses it.)
 //
-// --url: calls Auth directly, first with one fixed X-Forwarded-For, then with a different one. If
-//   the second run is refused too, Auth ignores a forwarded IP and counts the connecting IP.
-// --site: makes guests through the deployed API (POST /api/v1/session), as players do. Our own
-//   limit allows 60 an hour per client IP, so a refusal before that is Auth's.
-// Each guest made directly is deleted again when --secret is given; guests made through --site
-// are left for the inactive-guest cleanup (they are ordinary guests). Auth's local
-// `supabase start` doesn't count at all unless a rate-limit header is configured, which is why
-// this runs against staging (findings from the local run are in ADR 0052, section 11).
+// 1. Signs up without a forwarded IP until Auth refuses (at most --count; set it above the
+//    project's limit): this spends your own IP's allowance, as Netlify's would be spent.
+// 2. Then signs up 3 times with a made-up forwarded IP. Accepted means Auth counts the forwarded
+//    IP, so every player has their own allowance. Refused means forwarding is off.
+// Every guest it makes is deleted again; a delete that fails is reported. Your own IP stays spent
+// for up to an hour.
+//
+//   node scripts/anon-limit-probe.ts --site https://deploy-preview-<n>--battle-ball.netlify.app
+// makes guests through the deployed API as players do (503 is Auth's refusal, 429 ours after 150
+// an hour per network). Those are ordinary guests, left for the inactive-guest cleanup.
 import { parseArgs } from 'node:util';
 
 const { values } = parseArgs({
   options: {
     url: { type: 'string' },
-    key: { type: 'string' },
     secret: { type: 'string' },
     site: { type: 'string' },
-    count: { type: 'string', default: '35' },
+    count: { type: 'string', default: '160' },
   },
 });
 const count = Number(values.count);
+let failedDeletes = 0;
 
-async function direct(url: string, key: string, forwardedFor: string): Promise<number[]> {
-  const statuses: number[] = [];
-  for (let n = 0; n < count; n += 1) {
-    const response = await fetch(`${url}/auth/v1/signup`, {
-      method: 'POST',
-      headers: { apikey: key, 'Content-Type': 'application/json', 'X-Forwarded-For': forwardedFor },
-      body: '{}',
+async function signUp(url: string, secret: string, forwardedFor?: string): Promise<number> {
+  const response = await fetch(`${url}/auth/v1/signup`, {
+    method: 'POST',
+    headers: {
+      apikey: secret,
+      'Content-Type': 'application/json',
+      ...(forwardedFor === undefined ? {} : { 'Sb-Forwarded-For': forwardedFor }),
+    },
+    body: '{}',
+  });
+  const body = (await response.json()) as { user?: { id?: string } };
+  const id = body.user?.id;
+  if (id !== undefined) {
+    const deleted = await fetch(`${url}/auth/v1/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: { apikey: secret },
     });
-    statuses.push(response.status);
-    const body = (await response.json()) as { user?: { id?: string } };
-    const id = body.user?.id;
-    if (id !== undefined && values.secret !== undefined) {
-      await fetch(`${url}/auth/v1/admin/users/${id}`, {
-        method: 'DELETE',
-        headers: { apikey: values.secret },
-      });
-    }
+    if (!deleted.ok) failedDeletes += 1;
   }
-  return statuses;
+  return response.status;
 }
 
-async function throughSite(site: string): Promise<number[]> {
+async function direct(url: string, secret: string): Promise<void> {
+  const own: number[] = [];
+  for (let n = 0; n < count && own.at(-1) !== 429; n += 1) own.push(await signUp(url, secret));
+  console.log('Without a forwarded IP:', summary(own));
+  if (own.at(-1) !== 429) {
+    console.log(`Never refused: raise --count above the project's limit. Nothing is shown yet.`);
+    return;
+  }
+  const made = `198.51.100.${String(1 + Math.floor(Math.random() * 254))}`;
+  const forwarded: number[] = [];
+  for (let n = 0; n < 3; n += 1) forwarded.push(await signUp(url, secret, made));
+  console.log(`With Sb-Forwarded-For ${made}:`, summary(forwarded));
+  console.log(
+    forwarded.every((status) => status === 200)
+      ? 'Auth counts the forwarded IP: each player has their own allowance.'
+      : 'Refused: Auth ignores the forwarded IP (is IP Address Forwarding on?).',
+  );
+}
+
+async function throughSite(site: string): Promise<void> {
   const statuses: number[] = [];
   for (let n = 0; n < count; n += 1) {
     const response = await fetch(`${site}/api/v1/session`, {
@@ -60,10 +85,10 @@ async function throughSite(site: string): Promise<number[]> {
     });
     statuses.push(response.status);
   }
-  return statuses;
+  console.log(`Through ${site}:`, summary(statuses));
 }
 
-/** "201 ×30, then 429 ×5": the first refusal is the limit. */
+/** "200 ×30, then 429 ×5": the first refusal is the limit. */
 function summary(statuses: readonly number[]): string {
   const runs: string[] = [];
   for (let i = 0; i < statuses.length;) {
@@ -75,22 +100,15 @@ function summary(statuses: readonly number[]): string {
   return runs.join(', then ');
 }
 
-if (values.url !== undefined && values.key !== undefined) {
-  console.log(
-    'Auth directly, X-Forwarded-For 198.51.100.1:',
-    summary(await direct(values.url, values.key, '198.51.100.1')),
-  );
-  console.log(
-    'Auth directly, X-Forwarded-For 198.51.100.2:',
-    summary(await direct(values.url, values.key, '198.51.100.2')),
-  );
-  console.log(
-    'If the second line is refused from its start, Auth counts the connecting IP, not a forwarded one.',
-  );
+if (values.url !== undefined && values.secret !== undefined) {
+  await direct(values.url, values.secret);
+  if (failedDeletes > 0) {
+    console.error(`${String(failedDeletes)} guests could not be deleted: delete them by hand.`);
+    process.exitCode = 1;
+  }
 } else if (values.site !== undefined) {
-  console.log(`Through ${values.site}:`, summary(await throughSite(values.site)));
-  console.log('503 means Auth refused (guests_busy); our own limit answers 429 after guest 60.');
+  await throughSite(values.site);
 } else {
-  console.error('Give --url and --key (Auth directly), or --site (through the API).');
+  console.error('Give --url and --secret (Auth directly), or --site (through the API).');
   process.exit(1);
 }
