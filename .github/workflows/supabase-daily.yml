@@ -1,0 +1,46 @@
+name: Supabase daily check
+
+# Every day, for staging and production (ADR 0068): keeps each free Supabase project awake (Supabase
+# pauses one after 7 days without activity) and checks that Auth still counts each player's own IP
+# (one forwarded guest sign-up, then deleted). A failure fails the run, and GitHub emails whoever
+# last changed this schedule. Run it by hand from the Actions tab or `gh workflow run
+# supabase-daily.yml`.
+#
+# It signs in with SUPABASE_ACCESS_TOKEN from the `supabase` environment (main only), a token scoped
+# to the two projects: database read-write, API keys read, API key secrets read. It expires
+# 2027-11-17: make a new one before then, or this fails that day and says why.
+
+on:
+  schedule:
+    # 20:17 UTC: early morning in Sydney, off the hour when scheduled runs queue longest.
+    - cron: '17 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: supabase
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [staging, production]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: node scripts/project-check.ts ${{ matrix.project }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
