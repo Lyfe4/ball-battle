@@ -159,12 +159,28 @@ export const panelOf = (page: Page) => page.locator('#online-series');
 export const noteOf = (page: Page) => page.locator('#online-series .series-note');
 export const footOf = (page: Page) => page.locator('.live-line');
 
-/** Picks the first ball offered, if a pick is offered now. True when it picked. */
-export async function pickIfDue(page: Page): Promise<boolean> {
-  const pick = panelOf(page).locator('.pick-row-pick').first();
-  if (!(await pick.isVisible())) return false;
-  await pick.click().catch(() => undefined);
-  return true;
+/**
+ * Picks `prefer` if a pick offers it now, else the first ball offered. True when it tapped one.
+ *
+ * It taps the row it saw, never whatever row matches later: a locator's click re-resolves when its
+ * row goes (the pick's answer arrives) and waits, up to Playwright's 30 s, for the next pick's
+ * rows, then taps one of those. With two phones taking turns in one loop, that held the other
+ * phone past its 30 s pick clock, so the server picked for it at random (a Slime mirror that
+ * wasn't, on CI). A row that has gone fails at once, and the loop asks again.
+ */
+export async function pickIfDue(page: Page, prefer?: string): Promise<boolean> {
+  // While a pick is being sent its rows are busy: nothing to tap.
+  const list = '#online-series .pick-rows-list:not([aria-busy="true"])';
+  const wanted =
+    prefer === undefined
+      ? null
+      : await page.$(`${list} .pick-row[data-ball="${prefer}"] .pick-row-pick`);
+  const row = wanted ?? (await page.$(`${list} .pick-row-pick`));
+  if (row === null || !(await row.isVisible())) return false;
+  return row.click().then(
+    () => true,
+    () => false,
+  );
 }
 
 /** True once the series' result shows. */
