@@ -826,6 +826,13 @@ authentication failed`. `/health` checks the database and the ruleset bundle sep
   `auth_publishable_key` and `auth_secret_key` (refused), `auth_anonymous_sign_ins` (off) and
   `auth_signing_keys` (no asymmetric key of an algorithm we verify). An Auth refusal's log line
   carries Auth's own error code (`auth: Supabase Auth answered 422 anonymous_provider_disabled`).
+- (2026-11-18) One call to Auth per `/health` request, not three. Auth itself, the publishable key
+  and anonymous sign-ins (what every new player needs) are asked every time, so an outage shows at
+  once. The secret key and the signing keys change only by hand, so a pass of theirs stands for 5
+  minutes on each function instance (`SETTINGS_PASS_MS`, `auth-health.ts`); a failure is never
+  kept. What that can hide, for at most 5 minutes per warm instance after the change: a secret key
+  revoked or rotated in the dashboard (Forget me fails), or the signing keys switched back to the
+  legacy secret (new sessions can't be verified, which players' own requests show at once).
 
 **As built (staging, 2026-11-15): a fresh login role:**
 
