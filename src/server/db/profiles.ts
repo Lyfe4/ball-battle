@@ -37,3 +37,16 @@ export async function profileOf(sql: Sql, userId: string): Promise<Profile | und
     select display_name from game.profiles where user_id = ${userId}`;
   return row === undefined ? undefined : { userId, name: row.display_name };
 }
+
+/**
+ * Players not seen for `days` (ADR 0052: guests inactive for 90 days are deleted), the longest
+ * gone first, at most `limit`. Seen means any request of theirs, written at most once a day.
+ */
+export async function inactivePlayers(sql: Sql, days: number, limit: number): Promise<string[]> {
+  const rows = await sql<{ readonly user_id: string }[]>`
+    select user_id from game.profiles
+    where last_seen_at < now() - make_interval(days => ${days}::int)
+    order by last_seen_at
+    limit ${limit}`;
+  return rows.map((row) => row.user_id);
+}
