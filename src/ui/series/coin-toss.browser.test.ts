@@ -131,6 +131,7 @@ describe('the coin toss', () => {
     const coin = toss.element.querySelector<HTMLElement>('.coin-toss-coin');
     const stages: string[] = [];
     const flipTimes: number[] = [];
+    const realTimes: number[] = [];
     const frame = () => new Promise((done) => requestAnimationFrame(done));
     while (performance.now() - started < 1_400) {
       const elapsed = performance.now() - started;
@@ -139,16 +140,24 @@ describe('the coin toss', () => {
       // The live display tick: every frame here, the most it could ever be asked.
       stages.push(toss.show(play) ?? 'none');
       const [flip] = coin?.getAnimations() ?? [];
-      if (flip !== undefined) flipTimes.push(Number(flip.currentTime));
+      if (flip !== undefined) {
+        flipTimes.push(Number(flip.currentTime));
+        realTimes.push(performance.now());
+      }
       await frame();
     }
     const firstFlip = stages.indexOf('flipping');
     expect(firstFlip, 'it flips').toBeGreaterThanOrEqual(0);
     expect(stages.slice(firstFlip), 'never back to Get ready').not.toContain('ready');
+    // Each frame moves the flip by the real time that passed, at most 1.5x (a slow frame on a loaded
+    // machine moves it further, but no faster): never backwards, never a jump.
     const steps = flipTimes.slice(1).map((at, index) => at - (flipTimes[index] ?? 0));
-    // A frame is at most ~50 ms on a loaded machine, at most 1.5x: never a jump, never backwards.
+    const ahead = steps.map((step, index) => {
+      const real = (realTimes[index + 1] ?? 0) - (realTimes[index] ?? 0);
+      return step - 1.5 * real;
+    });
     expect(Math.min(...steps), 'the coin never turns back').toBeGreaterThanOrEqual(0);
-    expect(Math.max(...steps), 'the coin never jumps ahead').toBeLessThan(120);
+    expect(Math.max(...ahead), 'the coin never jumps ahead').toBeLessThan(30);
   });
 
   it('is hidden once the result has been read', () => {

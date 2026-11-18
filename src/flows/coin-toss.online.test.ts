@@ -111,11 +111,14 @@ describe('a live Reveal match’s coin toss', () => {
       for (const page of [sender, friend]) {
         const frames = await flipFrames(page);
         expect(frames.length, 'the coin flipped').toBeGreaterThan(20);
-        const steps = frames.slice(1).map((at, index) => at - (frames[index] ?? 0));
-        // A frame moves the flip by its own length at most 1.5x (a slow headless frame is 60 ms):
-        // never backwards, never a jump.
-        expect(Math.min(...steps), 'the coin never turns back').toBeGreaterThanOrEqual(0);
-        expect(Math.max(...steps), 'the coin never jumps').toBeLessThan(150);
+        // Each frame moves the flip by the real time that passed, at most 1.5x: never backwards,
+        // never a jump (a slow frame moves it further, but no faster).
+        const steps = frames.slice(1).map(([at, real], index) => {
+          const [was = 0, wasReal = 0] = frames[index] ?? [];
+          return { flip: at - was, ahead: at - was - 1.5 * (real - wasReal) };
+        });
+        expect(Math.min(...steps.map((one) => one.flip)), 'never back').toBeGreaterThanOrEqual(0);
+        expect(Math.max(...steps.map((one) => one.ahead)), 'never a jump').toBeLessThan(30);
         const seen = await seenOn(page);
         expect(seen.words.filter((words) => words === 'Get ready')).toHaveLength(1);
       }
@@ -134,14 +137,14 @@ const FLIP_PROBE = `
   const frame = () => {
     const coin = document.querySelector('#online-series .coin-toss-coin');
     const flip = coin?.getAnimations()[0];
-    if (flip !== undefined && flip.playState === 'running') window.__flip.push(Number(flip.currentTime));
+    if (flip !== undefined && flip.playState === 'running') window.__flip.push([Number(flip.currentTime), performance.now()]);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 `;
 
 const flipFrames = (page: Page) =>
-  page.evaluate(() => (globalThis as unknown as { __flip: number[] }).__flip);
+  page.evaluate(() => (globalThis as unknown as { __flip: [number, number][] }).__flip);
 
 /**
  * A phone's network on a first game: the series' answers come back late and unevenly, the first
