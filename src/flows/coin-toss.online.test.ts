@@ -2,7 +2,7 @@
 // both coins flip at the same moment (timed by the server's clock), both land together, and only
 // then does the first pick open on both. Both phones run on this machine, so their clocks are one:
 // each records when its own screen changed. Chromium only, against `netlify dev` (`pnpm test:online`).
-import type { Page } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TOSS_FLIP_MS, TOSS_HOLD_MS } from '../api/live.ts';
 import { closePhones, openPhones, phone, startLiveMatch, type Phones } from './live-support.ts';
@@ -90,4 +90,68 @@ describe('a live Reveal match’s coin toss', () => {
       expect(phones.errors).toStrictEqual([]);
     },
   );
+
+  it(
+    'flips smoothly on a first game whose clock is still settling (playtest: first game)',
+    { timeout: 120_000 },
+    async () => {
+      const sender = await phone(phones);
+      const friend = await phone(phones);
+      for (const page of [sender, friend]) {
+        await page.addInitScript(TOSS_PROBE);
+        await page.addInitScript(FLIP_PROBE);
+        await slowReads(page.context());
+      }
+      await startLiveMatch(BASE, sender, friend);
+      for (const page of [sender, friend]) {
+        await page
+          .locator('#online-series .pick-clock:is([data-kind="yours"], [data-kind="theirs"])')
+          .waitFor({ timeout: 30_000 });
+      }
+      for (const page of [sender, friend]) {
+        const frames = await flipFrames(page);
+        expect(frames.length, 'the coin flipped').toBeGreaterThan(20);
+        const steps = frames.slice(1).map((at, index) => at - (frames[index] ?? 0));
+        // A frame moves the flip by its own length at most 1.5x (a slow headless frame is 60 ms):
+        // never backwards, never a jump.
+        expect(Math.min(...steps), 'the coin never turns back').toBeGreaterThanOrEqual(0);
+        expect(Math.max(...steps), 'the coin never jumps').toBeLessThan(150);
+        const seen = await seenOn(page);
+        expect(seen.words.filter((words) => words === 'Get ready')).toHaveLength(1);
+      }
+      expect(phones.errors).toStrictEqual([]);
+    },
+  );
 });
+
+/** Records the coin flip's own time on every frame it runs (its animation's currentTime). */
+const FLIP_PROBE = `
+  window.__flip = [];
+  const frame = () => {
+    const coin = document.querySelector('#online-series .coin-toss-coin');
+    const flip = coin?.getAnimations()[0];
+    if (flip !== undefined && flip.playState === 'running') window.__flip.push(Number(flip.currentTime));
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+`;
+
+const flipFrames = (page: Page) =>
+  page.evaluate(() => (globalThis as unknown as { __flip: number[] }).__flip);
+
+/**
+ * A phone's network on a first game: the series' answers come back late and unevenly, the first
+ * ones slowest (a cold function, a radio waking up), so the page's estimate of the server's clock
+ * moves by hundreds of ms in the seconds the toss plays.
+ */
+async function slowReads(context: BrowserContext): Promise<void> {
+  const delays = [1_400, 900, 600, 1_100, 400, 700, 300, 500, 350];
+  let next = 0;
+  await context.route(/\/api\/v1\/series\/[^/]+$/, async (route) => {
+    const response = await route.fetch();
+    const delay = delays[next] ?? 250;
+    next += 1;
+    await new Promise((done) => setTimeout(done, delay));
+    await route.fulfill({ response });
+  });
+}

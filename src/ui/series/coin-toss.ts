@@ -1,4 +1,5 @@
 import { TOSS_FLIP_MS } from '../../api/live.ts';
+import { catchUpRate } from '../../app/live-play.ts';
 import {
   coinFace,
   offlineToss,
@@ -56,8 +57,10 @@ const FLIP: Keyframe[] = [
 /** A flip joined later than this into it makes no sound: the ting would no longer match the coin. */
 const JOIN_SOUND_MS = 300;
 
-/** A flip this far from the clock's moment is put back on it (less is a frame's rounding). */
-const DRIFT_MS = 30;
+/** The stages in the order a toss passes through them: a shown toss never goes back. */
+const ORDER: readonly TossStage[] = ['ready', 'flipping', 'landed', 'done'];
+const later = (one: TossStage, other: TossStage | undefined): TossStage =>
+  other !== undefined && ORDER.indexOf(other) > ORDER.indexOf(one) ? other : one;
 
 /** The shadow under it shrinks and fades as the coin rises. */
 const SHADOW: Keyframe[] = [
@@ -124,14 +127,19 @@ export function createCoinToss(onStage: () => void): CoinToss {
   }
 
   /**
-   * The flip put back where it should be `elapsed` ms in, when it has drifted: live, this page's
-   * estimate of the server's clock improves with each answer (a toss comes right after the start,
-   * when it rests on a sample or two), and the other phone's coin is where the server's clock is.
+   * The flip steered towards where it should be `elapsed` ms in: live, this page's estimate of the
+   * server's clock improves with each answer, and a toss comes right after the start, when the
+   * estimate rests on an answer or two and can move by hundreds of ms. Put straight back there, the
+   * coin jumped, or flipped again from part-way (a playtest saw it stutter on the first game, the
+   * one whose clock is new). Like a live fight (ADR 0063) it runs a little faster or slower instead
+   * until it is on the clock again, so it always plays smoothly and still lands with the other
+   * phone's.
    */
   function keepTime(elapsed: number): void {
     const at = Math.min(TOSS_FLIP_MS, Math.max(0, elapsed));
     for (const flip of flips) {
-      if (Math.abs(Number(flip.currentTime ?? 0) - at) > DRIFT_MS) flip.currentTime = at;
+      if (flip.playState === 'finished') continue;
+      flip.playbackRate = catchUpRate(at - Number(flip.currentTime ?? 0));
     }
   }
 
@@ -151,12 +159,14 @@ export function createCoinToss(onStage: () => void): CoinToss {
       return undefined;
     }
     const now = play.now();
-    const next = tossStage(play.times, now);
+    // Forwards only: a clock estimate that moves back never takes the coin back to Get ready.
+    const next = later(tossStage(play.times, now), shown);
     root.hidden = next === 'done';
-    if (next === shown && next === 'flipping') keepTime(now - play.times.flipAt);
-    else if (next !== shown) {
+    // A flip under way runs to its landing on its own clock, steered, never cut short or restarted.
+    if (next === 'flipping' || next === 'landed') keepTime(now - play.times.flipAt);
+    if (next !== shown) {
       if (next === 'flipping') startFlip(now - play.times.flipAt);
-      else stopFlip();
+      else if (next !== 'landed') stopFlip();
       // Heard only from its start: a page that joins the flip late, or sees it landed, stays quiet.
       if (next === 'flipping' && now - play.times.flipAt < JOIN_SOUND_MS) cue('coinFlip');
       if (next === 'landed' && shown === 'flipping') cue('coinLand');

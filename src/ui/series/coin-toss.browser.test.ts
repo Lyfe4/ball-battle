@@ -94,7 +94,7 @@ describe('the coin toss', () => {
     expect(Number(flip?.currentTime)).toBeLessThan(900);
   });
 
-  it('keeps time with the server’s clock as this page’s estimate of it improves', () => {
+  it('catches up with the server’s clock smoothly as this page’s estimate of it improves', () => {
     const seats = playerSeats('a', 'Player 4821');
     const times = liveToss(T + 10_000);
     let now = times.flipAt + 500;
@@ -102,15 +102,53 @@ describe('the coin toss', () => {
     const toss = createCoinToss(() => undefined);
     document.body.replaceChildren(toss.element);
     expect(toss.show(play)).toBe('flipping');
-    // A later answer moves the estimate 200 ms on: the next tick puts the coin where it should be.
+    const [flip] = toss.element.querySelector('.coin-toss-coin')?.getAnimations() ?? [];
+    const before = Number(flip?.currentTime);
+    // A later answer moves the estimate 200 ms on: the coin speeds up, it never jumps.
     now += 200;
     expect(toss.show(play)).toBe('flipping');
-    const [flip] = toss.element.querySelector('.coin-toss-coin')?.getAnimations() ?? [];
-    expect(Number(flip?.currentTime)).toBeGreaterThanOrEqual(700);
-    // And past the landing at once, rather than when the old timer would have fired.
+    expect(Number(flip?.currentTime) - before).toBeLessThan(50);
+    expect(flip?.playbackRate).toBeGreaterThan(1);
+    // Past the landing, the words say so at once; the coin finishes its flip rather than snapping.
     now = times.landAt + 10;
     expect(toss.show(play)).toBe('landed');
     expect(toss.element.dataset['stage']).toBe('landed');
+    expect(flip?.playState).toBe('running');
+  });
+
+  it('plays the flip smoothly through the first seconds of a new clock (playtest: first game)', async () => {
+    const seats = playerSeats('a', 'Player 4821');
+    const times = liveToss(T + 10_000);
+    // The clock's estimate as a new page's answers come in: it moves back 400 ms (across the start
+    // of the flip), then forward 300 ms, while the display ticks redraw the toss.
+    let offset = 0;
+    const started = performance.now();
+    const now = () => times.flipAt - 100 + (performance.now() - started) + offset;
+    const play = { first: 'a' as const, key: 'k', seats, times, now };
+    const toss = createCoinToss(() => undefined);
+    document.body.replaceChildren(toss.element);
+    toss.show(play);
+    const coin = toss.element.querySelector<HTMLElement>('.coin-toss-coin');
+    const stages: string[] = [];
+    const flipTimes: number[] = [];
+    const frame = () => new Promise((done) => requestAnimationFrame(done));
+    while (performance.now() - started < 1_400) {
+      const elapsed = performance.now() - started;
+      if (elapsed > 300 && offset === 0) offset = -400;
+      if (elapsed > 800 && offset === -400) offset = -100;
+      // The live display tick: every frame here, the most it could ever be asked.
+      stages.push(toss.show(play) ?? 'none');
+      const [flip] = coin?.getAnimations() ?? [];
+      if (flip !== undefined) flipTimes.push(Number(flip.currentTime));
+      await frame();
+    }
+    const firstFlip = stages.indexOf('flipping');
+    expect(firstFlip, 'it flips').toBeGreaterThanOrEqual(0);
+    expect(stages.slice(firstFlip), 'never back to Get ready').not.toContain('ready');
+    const steps = flipTimes.slice(1).map((at, index) => at - (flipTimes[index] ?? 0));
+    // A frame is at most ~50 ms on a loaded machine, at most 1.5x: never a jump, never backwards.
+    expect(Math.min(...steps), 'the coin never turns back').toBeGreaterThanOrEqual(0);
+    expect(Math.max(...steps), 'the coin never jumps ahead').toBeLessThan(120);
   });
 
   it('is hidden once the result has been read', () => {
