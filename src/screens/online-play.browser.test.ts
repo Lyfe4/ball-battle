@@ -117,6 +117,23 @@ interface Answers {
   bump?: boolean;
 }
 
+/**
+ * An answer whose body is read on the fake clock. A real Response's body is read in real time, by
+ * the engine and partly off the page's thread, so the fake clock could run ahead of the page: in
+ * Firefox on a busy CI runner the wait for the first answer ran out before its body was read
+ * (2026-11-18). Everything the page does here then moves only with the fake clock.
+ */
+function answerOf(status: number, body: unknown, headers: Record<string, string>): Response {
+  const text = body === undefined ? '' : JSON.stringify(body);
+  const answer: Pick<Response, 'status' | 'ok' | 'headers' | 'text'> = {
+    status,
+    ok: status >= 200 && status < 300,
+    headers: new Headers(headers),
+    text: () => Promise.resolve(text),
+  };
+  return answer as Response;
+}
+
 function server(view: SeriesView, answer: Answers) {
   let version = view.version;
   const fetch = vi.fn(
@@ -130,8 +147,8 @@ function server(view: SeriesView, answer: Answers) {
         setTimeout(() => {
           resolve(
             sent === '"v4"' && !answer.full
-              ? new Response(null, { status: 304, headers })
-              : Response.json(body, { headers }),
+              ? answerOf(304, undefined, headers)
+              : answerOf(200, body, headers),
           );
         }, answer.trip);
       }),
@@ -140,23 +157,9 @@ function server(view: SeriesView, answer: Answers) {
   return fetch;
 }
 
-/** A real task: reading a response's body waits on one, which fake timers don't run. */
-const task = () =>
-  new Promise<void>((resolve) => {
-    const channel = new MessageChannel();
-    channel.port1.onmessage = () => {
-      resolve();
-    };
-    channel.port2.postMessage(0);
-  });
-
 /** Moves the clock on by `ms` in small steps, letting answers land as they come. */
 async function pass(ms: number): Promise<void> {
-  for (let left = ms; left > 0; left -= 50) {
-    await vi.advanceTimersByTimeAsync(Math.min(50, left));
-    await task();
-    await task();
-  }
+  for (let left = ms; left > 0; left -= 50) await vi.advanceTimersByTimeAsync(Math.min(50, left));
 }
 
 function roots() {
@@ -185,8 +188,8 @@ describe.each([
     const fetch = server(liveView(you), answer);
     const { host, calls } = countingHost();
     createOnlinePlay(roots(), BALL_LOOKUP, host).open(ID);
-    // Until the first answer has put the fight on the arena (an engine may need a few more tasks).
-    for (let waited = 0; calls.staged === 0 && waited < 3_000; waited += 50) await pass(50);
+    // The first answer lands after its round trip and puts the fight on the arena.
+    await pass(answer.trip);
     expect(calls.staged, 'the fight under way is put on the arena once').toBe(1);
     return { fetch, calls };
   }
@@ -254,7 +257,7 @@ describe('arriving at a live series (ADR 0054)', () => {
     expect(parts.notice.hidden).toBe(true);
     const headings = [...document.querySelectorAll('h1')].map((h) => h.textContent);
     expect(headings).not.toContain('Loading…');
-    for (let waited = 0; calls.staged === 0 && waited < 3_000; waited += 50) await pass(50);
+    await pass(600);
     expect(calls.staged).toBe(1);
     expect(parts.loading.hidden).toBe(true);
   });
