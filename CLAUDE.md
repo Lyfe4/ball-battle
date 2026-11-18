@@ -49,7 +49,9 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
 - `netlify dev`: an online build (`pnpm build:online` first) and the API on one origin,
   http://localhost:8888, with `.env` (`node scripts/local-env.ts > .env`). Online play is built
   only where `VITE_ONLINE=1` (previews, the main branch deploy, `build:online`) and served only
-  where the functions have `BALLBATTLE_ONLINE=1`. `pnpm test:online`: two phones through live
+  where the functions have `BALLBATTLE_ONLINE=1`; production builds `VITE_ONLINE` from
+  `BALLBATTLE_ONLINE`, the vs Friend switch (`node scripts/friend-switch.ts on|off|status`, ADR
+  0068). Never switch it on unless the user asks. `pnpm test:online`: two phones through live
   friend matches in Chromium (a whole match, a pick running out, Leave and forfeit, a disconnect),
   against `netlify dev`. After changing `src/server`, restart `netlify dev`: it can keep serving
   the old functions.
