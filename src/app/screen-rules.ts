@@ -67,6 +67,15 @@ export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
   return ['pick', 'manual', 'outdated', 'challenge', 'send'].includes(screen);
 }
 
+/**
+ * A calm moment for the new-version line (ADR 0066): home, or an offline series that is over,
+ * where a reload loses nothing (a series against the bot is saved after every change, ADR 0042).
+ * Never during a match, a setup, or anything online: a live match runs on the server's clock.
+ */
+export function isCalmMoment(screen: Screen, seriesPhase: string | undefined): boolean {
+  return screen === 'home' || (screen === 'series' && seriesPhase === 'finished');
+}
+
 const TITLES: Readonly<Record<Screen, string>> = {
   home: 'BallBattle: build a lineup, watch it fight',
   pick: 'Free play · BallBattle',

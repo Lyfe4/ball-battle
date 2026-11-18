@@ -1,0 +1,51 @@
+/*
+ * A new version is ready (update-notice.ts, ADR 0066): one card with Reload, in a notice's surface
+ * box like the slow-frames line (frame-tip.css). It floats at the bottom, clear of the home bar,
+ * so it never moves what is on screen, and the page gains room under its end while it shows, so
+ * it never covers the last thing on a page either. On a phone it spans the column; on a desktop it
+ * sits in the corner, out of the way of the menu and the arena.
+ */
+.update-notice {
+  position: fixed;
+  right: max(var(--space-gutter), env(safe-area-inset-right));
+  bottom: max(var(--space-gutter), env(safe-area-inset-bottom));
+  left: max(var(--space-gutter), env(safe-area-inset-left));
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: var(--space-small) var(--space-small) var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+}
+
+.update-notice[hidden] {
+  display: none;
+}
+
+.update-notice-text {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+}
+
+.update-notice-reload {
+  flex: 0 0 auto;
+  padding: 0 var(--space-gap);
+}
+
+body[data-update] .stage {
+  padding-bottom: calc(max(var(--space-gutter), env(safe-area-inset-bottom)) + 5rem);
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .update-notice {
+    left: auto;
+    max-width: 24rem;
+  }
+}
