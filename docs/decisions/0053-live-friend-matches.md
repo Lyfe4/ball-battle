@@ -454,6 +454,42 @@ on one PC, a whole live match, frames noted only while a fight plays):
 | ---------------------------------------- | ---------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
 | ![Working](../images/live/busy-send.png) | ![Working](../images/live/busy-pick.png) | ![Working](../images/live/busy-leave.png) | ![Three still dots](../images/live/busy-accept-reduced.png) | ![Open in Safari first](../images/live/in-app-card.png) |
 
+### Adaptive polling (2026-11-18)
+
+Planned above ("Cut its cost before launch"), now built (`src/app/live-ask.ts`). A live page asks
+**every second only while the other player can move**: before they arrive, or while the pick open is
+theirs (looking one heartbeat ahead, so a pick of theirs that opens at a fight's end is asked about
+from that moment). Otherwise (its own pick, a countdown, a fight, the coin toss) it asks **every
+2 s**: only the heartbeat matters then. After a slow read the wait shortens (down to 1 s), so two
+heartbeats are never further apart than with the old 1 s cadence: the other phone calls a player
+away after 6 s, and a cold function's read has taken 3.3 s. The clock's warm-up (250 ms for the
+first six answers, ADR 0061) is unchanged.
+
+Measured with `scripts/live-measure.ts` (two Chromium phones at 390 × 664, `netlify dev` on one
+PC; the same pick timings every run: 3-12 s a pick, the friend's first runs out):
+
+| Run         | Fights | Requests (both) | Series reads a minute | Pick → other screen (ms)                        | Fight start gap (ms) |
+| ----------- | ------ | --------------- | --------------------- | ----------------------------------------------- | -------------------- |
+| Before, Bo3 | 3      | 186             | 58.2                  | 1,335, 1,368, 757                               | 0, 0, 0              |
+| Before, Bo5 | 3      | 216             | 63.8                  | 1,114, 1,428, 1,531, 1,687, 664                 | 0, 0, 0              |
+| Before, Bo5 | 4      | 248             | 58.5                  | 2,672, 1,132, 1,233, 1,960, 2,189, 2,103, 1,009 | 16, 6, 0, 35         |
+| After, Bo3  | 2      | 126             | 52.1                  | 999, 1,229, 1,166                               | 0, 0                 |
+| After, Bo3  | 2      | 104             | 43.6                  | 1,882, 1,879, 1,812                             | 16, 0                |
+| After, Bo5  | 4      | 198             | 52.3                  | 1,501, 1,376, 1,439, 972, 629, 1,804, 1,222     | 0, 0, 0, 0           |
+| After, Bo5  | 4      | 180             | 46.0                  | 2,296, 1,699, 1,172, 2,012, 788, 1,446, 1,932   | 15, 4, 15, 0         |
+
+- **About a fifth fewer reads** a minute (about 60 to about 48), a quarter fewer for a Best of 5 of
+  the same length (248 to 180-198 with four fights). Less than the third estimated above: at this
+  pace one phone is always waiting during a pick (rightly at 1 s), and a 30 s pick that runs out
+  is all waiting; fights and countdowns halve. Slower, Ohio-to-Sydney reads save less, since a
+  read's own time is part of each gap. (One before run, left out, had reads twice as slow and
+  33 reads a minute.)
+- **Picks reach the other screen as before** (0.6-2.7 s locally): the waiting phone still asks
+  every second. Fights still start within 35 ms of each other.
+- **Disconnects as before:** the other page said "disconnected" 5.4 s after the drop (7.5 s
+  before), cleared it 1.7 s after the player came back (2.7 s) and showed the forfeit at 36.1 s
+  (35.6 s). `pnpm test:online` passes (both disconnect flows, live sync, the coin toss, a rematch).
+
 ## Consequences
 
 - Friend matches become something two people do together; play by turns is kept for later.

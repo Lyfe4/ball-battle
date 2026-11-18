@@ -1,8 +1,8 @@
 // Playing an online series (ADR 0052) on the series screens. The server holds the series; this page
 // shows its view. By turns, every round this device hasn't watched is fought again on the arena from
 // its revealed seed when the player presses Play round. Live (ADR 0053), each round is fought at the
-// server's time on both screens (online-live.ts), and the page asks every second, which is its
-// heartbeat. Requests are online-series-client.ts's; at the end, the fair-play check.
+// server's time on both screens (online-live.ts), and the page asks every second or two, which is
+// its heartbeat (live-ask.ts). Requests are online-series-client.ts's; at the end, the fair-play check.
 import { rememberWatched, watchedOf } from '../app/online-device.ts';
 import {
   fairPlayOf,
@@ -88,9 +88,9 @@ export function createOnlinePlay(
       return reconnecting;
     },
     conditional: () => !isLive() || !live.asksInFull(),
-    nextAsk: () =>
+    nextAsk: (readMs) =>
       visible && view !== undefined && status === 'ready'
-        ? nextAskOf(view, isLive(), live.askEvery())
+        ? nextAskOf(view, isLive(), (shown) => live.askEvery(shown, readMs))
         : undefined,
   });
 
