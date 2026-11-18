@@ -120,7 +120,9 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      # The browser only, no apt: the runner image already has Chromium's system libraries (it
+      # ships Chrome), and apt from the Ubuntu mirror can stall for minutes (ADR 0065).
+      - run: pnpm exec playwright install chromium
       - run: >-
           pnpm exec supabase start
           -x studio,mailpit,postgres-meta,imgproxy,logflare,vector,edge-runtime,realtime,storage-api
@@ -161,9 +163,17 @@ jobs:
             name: Firefox
           - browser: webkit
             name: WebKit
-    # Pinned: Playwright's browser builds follow the OS, and ubuntu-latest moving to 26.04 left the
-    # cached WebKit (built for 24.04) without its ICU library. Move it deliberately, not by default.
     runs-on: ubuntu-24.04
+    # Playwright's own image, with this Playwright's browsers and every system library they need
+    # already installed (ADR 0065): no apt at all. Installing WebKit's libraries from the Ubuntu
+    # mirror took 15-65 s on a good run and 6-15 minutes on a slow one, which ran jobs out of time
+    # before any test (2026-11-18, four times). The tag must be the Playwright in pnpm-lock.yaml
+    # (scripts/ci-image.test.ts); the digest pins it, as the actions are pinned. User 1001 is the
+    # runner's own, as in Playwright's docs for GitHub Actions, so the checkout and caches keep
+    # their owner.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+      options: --user 1001
     # The reload flows (ADR 0042) play three whole series per size and engine.
     timeout-minutes: 15
     steps:
@@ -177,28 +187,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
-      # Each Playwright release pins its own browser builds, so the cache is keyed on its version.
-      - name: Read the Playwright version
-        id: playwright
-        run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache the browsers
-        id: browser-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          # Keyed on the image too, so a new OS never reuses browsers built for another.
-          key: playwright-${{ env.ImageOS }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}
-
-      - name: Install the browsers and their system libraries
-        if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
-
-      # The browsers come from the cache; the system libraries they need are not cached.
-      - name: Install the browsers' system libraries
-        if: steps.browser-cache.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps ${{ matrix.browser }}
 
       # The same golden test the unit suite runs in Node, in V8, SpiderMonkey and JavaScriptCore:
       # every recorded match must end the same way, on the same tick, with the same hash (ADR 0023),
