@@ -51,6 +51,37 @@ const LOADING_PROBE = `
   new MutationObserver(note).observe(document, { childList: true, subtree: true, attributes: true, characterData: true });
 `;
 
+/**
+ * Notes every look of the live ready card as it changes (playtest 2026-11-19): its countdown line
+ * ("Get ready", "3", "2", "1"), "" while it shows without one, "gone" once hidden. After a number the
+ * card only ever goes: nothing else flashes before the fight.
+ */
+const READY_PROBE = `
+  window.__ready = [];
+  const look = () => {
+    const layer = document.querySelector('.ready-layer');
+    const card = layer?.querySelector('.ready-card[data-live="true"]');
+    if (!card) return;
+    const shown = layer.getClientRects().length > 0 && !layer.hidden;
+    const now = shown ? (card.querySelector('.ready-count')?.textContent ?? '') : 'gone';
+    if (window.__ready.at(-1) !== now) window.__ready.push(now);
+  };
+  new MutationObserver(look).observe(document, { childList: true, subtree: true, attributes: true, characterData: true });
+`;
+
+/** Every look of the live ready card `page` has shown, in order (READY_PROBE). */
+export const readySeen = (page: Page): Promise<string[]> =>
+  page.evaluate(() => (globalThis as unknown as { __ready: string[] }).__ready);
+
+/** Where a countdown number was followed by anything but the card going: a flash. */
+export const readyFlashes = (seen: readonly string[]): string[] =>
+  seen.flatMap((now, index) => {
+    const next = seen[index + 1];
+    return /^d$/.test(now) && next !== undefined && next !== 'gone' && !/^d$/.test(next)
+      ? [`${now} → "${next}"`]
+      : [];
+  });
+
 /** The loading states `page` has shown since it opened or since the last `forgetLoading`. */
 export const loadingSeen = (page: Page): Promise<string[]> =>
   page.evaluate(() => (globalThis as unknown as { __loading: string[] }).__loading);
@@ -66,6 +97,7 @@ export async function phone(phones: Phones): Promise<Page> {
   phones.contexts.push(context);
   const page = await context.newPage();
   await page.addInitScript(LOADING_PROBE);
+  await page.addInitScript(READY_PROBE);
   page.on('console', (message) => {
     // A request the page meant to fail (offline on purpose) is not an error of the page's.
     if (

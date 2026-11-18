@@ -15,6 +15,8 @@ import {
   panelOf,
   phone,
   pickIfDue,
+  readyFlashes,
+  readySeen,
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
@@ -86,6 +88,12 @@ describe('a live friend match', () => {
       }
       expect(fights).toBeGreaterThan(0);
       expect(counted).toBe(true);
+      // After each 3-2-1 the card only goes: no other card flashes before the fight.
+      for (const page of [sender, friend]) {
+        const seen = await readySeen(page);
+        expect(seen.filter((one) => one === '1').length).toBeGreaterThan(0);
+        expect(readyFlashes(seen), seen.join(' | ')).toStrictEqual([]);
+      }
       for (const page of [sender, friend]) {
         await page.locator('#online-series .fair-play[data-result="fair"]').waitFor();
       }
