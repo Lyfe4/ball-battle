@@ -167,6 +167,7 @@ export default defineConfig({
             '**/*.touch.browser.test.ts',
             '**/*.iphone.browser.test.ts',
             '**/*.safari.browser.test.ts',
+            '**/*.landscape.browser.test.ts',
           ],
           setupFiles: [BROWSER_SETUP],
           browser: {
