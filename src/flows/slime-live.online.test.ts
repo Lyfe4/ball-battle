@@ -137,11 +137,14 @@ describe('the Slime in a live friend match', () => {
       await friend.addInitScript(TEACHING_OFF);
       const id = await startLiveMatch(BASE, sender, friend, 'reveal', {
         sender: ['slime', 'archer', 'sniper'],
-        friend: ['spider', 'vampire', 'archer'],
+        // The Slime's round is the only one it plays, and its seeds are the server's, so the
+        // friend answers it with the Thorns: the Slime split in all but 2 of 10,000 such fights
+        // (the Spider let it win unsplit in 63, and once on CI).
+        friend: ['thorns', 'vampire', 'archer'],
       });
       await playOut([
         { page: sender, prefer: 'slime' },
-        { page: friend, prefer: 'spider' },
+        { page: friend, prefer: 'thorns' },
       ]);
       for (const page of [sender, friend]) {
         await page.locator('#online-series .fair-play[data-result="fair"]').waitFor();
