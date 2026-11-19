@@ -38,6 +38,11 @@ export interface OnlinePlay {
   phase(): SeriesPhase | undefined;
   /** True while a round is on the arena, being fought or just fought. */
   isPlaying(): boolean;
+  /**
+   * The arena holds one of this series' rounds. Until then (its lineups, picks and coin toss before
+   * round 1) the arena behind it shows nothing, never what was on it before (the home demo).
+   */
+  roundOnArena(): boolean;
   /** A live match is on screen: its fights play at 1× (ADR 0053). */
   isLive(): boolean;
   /** The ended live series whose end screen shows now, which offers its own rematch. */

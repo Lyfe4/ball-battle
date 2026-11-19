@@ -206,6 +206,8 @@ export function createOnlinePlay(
     }
     const first = view?.id !== next.id;
     view = next;
+    // A new series (a rematch, another link): what the arena holds is not one of its rounds.
+    if (first) shownAt = -1;
     // A live match that ended here: its rematch reaches the player anywhere (rematch-watch.ts).
     if (next.live != null && next.status !== 'open') host.ended?.(next);
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
@@ -296,6 +298,7 @@ export function createOnlinePlay(
     phase: () => (visible && status === 'ready' && view !== undefined ? phase : undefined),
     // The series on screen (as offline): the arena shows behind it, and makes way between rounds.
     isPlaying: () => visible && status === 'ready' && view !== undefined,
+    roundOnArena: () => host.worldsShown() === shownAt,
     isLive: () => visible && isLive(),
     endScreen: () => (visible ? extras.rematch.watching() : undefined),
     liveRate: (playedMs) => (visible && isLive() ? live.rate(playedMs) : 1),

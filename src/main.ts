@@ -9,7 +9,6 @@ import {
   initialAppState,
   isCalmMoment,
   isFighting,
-  isSetupScreen,
   readyMomentOf,
   screenTitle,
 } from './app/screen-rules.ts';
@@ -26,6 +25,7 @@ import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
 import { offlineMount } from './screens/online-off.ts';
 import { createSeriesScreens } from './screens/series.ts';
+import { createSeriesStage } from './screens/series-stage.ts';
 import { installNewVersion } from './screens/new-version.ts';
 import { BALL_LOOKUP, BALLS } from './sim/balls/index.ts';
 import { getDefinition } from './sim/definitions.ts';
@@ -238,7 +238,8 @@ const arena = createArena(
     // Nothing plays behind a setup screen, nor on home while the demo waits (reduced motion): it
     // holds the frame after its intro, so both balls show.
     isPaused: () =>
-      isSetup() || (router.current() === 'home' && home.isWaiting() && arena.introOver()),
+      seriesStage.isSetup() ||
+      (router.current() === 'home' && home.isWaiting() && arena.introOver()),
     frameTip: createFrameTip(getElement('frame-tip', HTMLParagraphElement), tips),
     // A live fight plays at 1x, gently catching up with the server's moment (ADR 0053, 0063).
     speed: () =>
@@ -251,7 +252,7 @@ const arena = createArena(
     },
     tips,
     moment: () =>
-      readyMomentOf(router.current(), seriesOnScreen(), online.isLive(), home.isWaiting()),
+      readyMomentOf(router.current(), seriesStage.onScreen(), online.isLive(), home.isWaiting()),
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // A finished Free play match has no use for speed: it makes way (ADR 0039).
@@ -300,18 +301,17 @@ function showWorld(world: WorldState, shownSeed: number, finished = false): void
   state.seed = shownSeed;
   hud.setMatch(world);
   arena.show(world, finished);
+  // After the series that showed it has noted the world as its own (its shownAt).
+  queueMicrotask(seriesStage.markRoundOnArena);
 }
 
-/** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
-const seriesOnScreen = () => router.current() === 'series' || router.current() === 'online';
-/** The series on screen, offline or online, is being played. */
-const seriesPlaying = () => (router.current() === 'online' ? online.playing() : series.isPlaying());
-const isSetup = () => isSetupScreen(router.current(), seriesPlaying());
+// The series on screen: whether a setup is up instead, and whether its round is on the arena.
+const seriesStage = createSeriesStage(stage, () => router.current(), online, series);
 
 /** Which controls show on the screen: home, a setup alone, or the match with its controls. */
 function showControls(): void {
   const screen = router.current();
-  const setup = isSetup();
+  const setup = seriesStage.isSetup();
   stage.toggleAttribute('data-setup', setup);
   stage.toggleAttribute('data-home', screen === 'home');
   stage.dataset['screen'] = screen;
@@ -323,8 +323,8 @@ function showControls(): void {
   // Between series rounds and at the end the arena, health and speed make way for the round
   // screen (ADR 0025): the track and the result say what they would.
   const phase = screen === 'online' ? online.phase() : series.phase();
-  const roundOver = seriesOnScreen() && phase !== undefined && phase !== 'playing';
-  stage.toggleAttribute('data-round-over', roundOver);
+  const roundOver = seriesStage.onScreen() && phase !== undefined && phase !== 'playing';
+  seriesStage.markRound(roundOver);
   newVersion.setCalm(isCalmMoment(screen, screen === 'series' ? phase : undefined));
   online.screenChanged(isFighting(screen, { matchOver, phase, live: online.isLive() }));
   hudRoot.hidden = setup || screen === 'home' || roundOver;
@@ -334,7 +334,7 @@ function showControls(): void {
   series.setVisible(screen === 'series');
   online.setVisible(screen);
   hud.setSeriesMode(
-    seriesOnScreen() && seriesPlaying(),
+    seriesStage.onScreen() && seriesStage.playing(),
     screen === 'online' ? online.sides() : undefined,
   );
   // A series screen's title names its length (ADR 0048); its setup, its opponent (ADR 0055).

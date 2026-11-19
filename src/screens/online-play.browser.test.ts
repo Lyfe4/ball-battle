@@ -222,6 +222,29 @@ describe.each([
   });
 });
 
+describe('the arena behind a live series', () => {
+  it('holds none of its rounds before round 1, whatever was on it, then round 1', async () => {
+    vi.setSystemTime(FIGHT_AT - 20_000);
+    const full = liveView('a');
+    const live = full.live ?? undefined;
+    if (live === undefined) throw new Error('Not live');
+    // Lineups shown, no fight yet: what the arena holds (the home demo) is not this series'.
+    server(
+      { ...full, rounds: [], live: { ...live, fights: [] } },
+      { offset: 0, trip: 300, full: true },
+    );
+    const { host } = countingHost();
+    host.showWorld();
+    const play = createOnlinePlay(roots(), BALL_LOOKUP, host);
+    play.open(ID);
+    await pass(600);
+    expect(play.roundOnArena()).toBe(false);
+    server(full, { offset: 0, trip: 300, full: true });
+    await pass(2_000);
+    expect(play.roundOnArena()).toBe(true);
+  });
+});
+
 describe('arriving at a live series (ADR 0054)', () => {
   it('shows a series read just before moving at once, with no read of its own first', async () => {
     vi.setSystemTime(FIGHT_AT - 4_000);
