@@ -1,6 +1,7 @@
 // PROTOTYPE ONLY (proto/ball-looks): the six redesigned balls, old and new side by side, cycling
 // through their states at phone and desktop size, as the game's own drawBall draws them. Served as
 // /ballgallery.html on the branch's deploy preview for review; never merged.
+import './gallery.css';
 import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import type { BallDesign } from '../render/ball-designs/types.ts';
 import { ballColor } from '../render/ball-colors.ts';
