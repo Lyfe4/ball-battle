@@ -10,7 +10,7 @@ function storedOf(state: Readonly<Record<string, unknown>>): number {
 }
 
 /** How full it is, 0 to 1: its stored charge as a share of CAPACITY. */
-export function batteryLevel(stored: number): number {
+function batteryLevel(stored: number): number {
   return Math.min(CAPACITY, Math.max(0, stored)) / CAPACITY;
 }
 

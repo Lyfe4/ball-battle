@@ -164,7 +164,7 @@ export const theme = {
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,
-  /** The Titan's stone (prototype): its lit forehead, shaded side and the shadow under its brow. */
+  /** The Titan's stone (ADR 0071): its lit forehead, shaded side, brow shadow and shaded jaw. */
   titanLitAlpha: 0.32,
   titanShadeAlpha: 0.2,
   titanBrowShadowAlpha: 0.34,

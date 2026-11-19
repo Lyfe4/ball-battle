@@ -4,6 +4,7 @@
 - Date: 2026-11-06
 - Amends: ADR 0002 (a knocked-out ball may still act), ADR 0006 (zones that last), ADR 0008 (one
   size exception), ADR 0010 (counter map)
+- Amended by: ADR 0071 (the Titan's look: a stone colossus)
 
 ## Context
 

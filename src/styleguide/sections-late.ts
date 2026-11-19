@@ -50,9 +50,11 @@ export const BATCH_THREE_AND_FOUR: readonly (readonly [string, readonly Tile[]])
     ],
   ],
   [
-    'Titan: a helm with a visor and crest; it grows over the match (shown at one size here)',
+    'Titan: an ancient stone colossus, its brow heavier as it grows; the same parts at every size, drawn here at one size (ADR 0071)',
     [
-      { label: 'idle', id: 'titan' },
+      { label: 'start', id: 'titan' },
+      { label: 'half grown', id: 'titan', radius: 70 },
+      { label: 'full grown', id: 'titan', radius: 90 },
       { label: 'hit flash', id: 'titan', flash: 0.6 },
       { label: 'mirror B', id: 'titan', repeat: true },
       { label: 'defeated', id: 'titan', defeated: true },

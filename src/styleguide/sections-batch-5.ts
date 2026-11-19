@@ -6,7 +6,7 @@ import { TICK } from './tick.ts';
 
 export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
   [
-    'Boomerang: a bent bar; its boomerang spins in flight (see the phone arena)',
+    'Boomerang: the bent bar it holds; only a faint shape while its boomerang is in the air (see the phone arena) (ADR 0071)',
     [
       { label: 'idle', id: 'boomerang' },
       { label: 'hit flash', id: 'boomerang', flash: 0.6 },

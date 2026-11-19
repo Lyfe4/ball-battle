@@ -37,6 +37,7 @@ function tileWorld(tile: Tile): { world: WorldState; ball: BallState } {
     velocity: { x: toward.x * definition.speed, y: toward.y * definition.speed },
     health: tile.defeated === true ? 0 : Math.round((tile.health ?? 1) * definition.maxHealth),
     abilityState: tile.abilityState ?? definition.initialAbilityState,
+    radius: tile.radius ?? first.radius,
   };
   const enemy: BallState = { ...second, position: { x: toward.x * 800, y: toward.y * 800 } };
   return { world: { ...base, tick: TICK, balls: [ball, enemy] }, ball };
@@ -127,7 +128,7 @@ function phoneArena(): HTMLElement {
       // The Titan as big as it is this far into a match (ADR 0034).
       radius: ball.definitionId === 'titan' ? titanRadius(TICK) : ball.radius,
       abilityState: arenaAbilityState(ball),
-      // A hurt Berserker, so its cracks show.
+      // A hurt Berserker.
       health:
         ball.definitionId === 'berserker'
           ? Math.round(getDefinition(BALL_LOOKUP, 'berserker').maxHealth * 0.3)

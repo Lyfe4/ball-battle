@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { STANDARD_BALL_RADIUS } from '../../sim/constants.ts';
 import { MAX_RADIUS, titan } from '../../sim/balls/titan.ts';
 import { createWorld } from '../../sim/world.ts';
-import { TITAN_LOOKS, titanDesign, titanGrowth } from './titan.ts';
+import { titanDesign, titanGrowth } from './titan.ts';
 import type { BallDesign, DesignView, Painter } from './types.ts';
 
 /** Every call a design makes, numbers divided by r so drawings at two sizes can be compared. */
@@ -73,48 +73,50 @@ const SIZES = Array.from(
 );
 
 describe('Titan design', () => {
-  for (const [name, design] of Object.entries(TITAN_LOOKS)) {
-    it(`${name}: draws the very same parts at every size, so nothing appears or disappears`, () => {
-      const first = parts(record(design, view(STANDARD_BALL_RADIUS, true)));
-      for (const radius of SIZES) {
-        for (const simple of [true, false]) {
-          expect(parts(record(design, view(radius, simple)))).toStrictEqual(first);
-        }
+  it('draws the very same parts at every size, so nothing appears or disappears', () => {
+    const first = parts(record(titanDesign, view(STANDARD_BALL_RADIUS, true)));
+    for (const radius of SIZES) {
+      for (const simple of [true, false]) {
+        expect(parts(record(titanDesign, view(radius, simple)))).toStrictEqual(first);
       }
-    });
+    }
+  });
 
-    it(`${name}: ignores the small-size switch: phone and desktop draw it alike`, () => {
-      for (const radius of SIZES) {
-        expect(record(design, view(radius, true))).toStrictEqual(
-          record(design, view(radius, false)),
-        );
-      }
-    });
+  it('ignores the small-size switch: phone and desktop draw it alike', () => {
+    for (const radius of SIZES) {
+      expect(record(titanDesign, view(radius, true))).toStrictEqual(
+        record(titanDesign, view(radius, false)),
+      );
+    }
+  });
 
-    it(`${name}: changes only a little between neighbouring sizes, never with a jump`, () => {
-      const numbers = (radius: number) =>
-        record(design, view(radius, false)).flatMap((call) =>
-          [...call.matchAll(/-?\d+\.\d+/g)].map((match) => Number(match[0])),
-        );
-      for (let i = 1; i < SIZES.length; i++) {
-        const before = numbers(SIZES[i - 1] ?? 0);
-        const after = numbers(SIZES[i] ?? 0);
-        expect(after).toHaveLength(before.length);
-        after.forEach((value, index) => {
-          expect(Math.abs(value - (before[index] ?? 0))).toBeLessThan(0.02);
-        });
-      }
-    });
-  }
+  it('changes only a little between neighbouring sizes, never with a jump', () => {
+    const numbers = (radius: number) =>
+      record(titanDesign, view(radius, false)).flatMap((call) =>
+        [...call.matchAll(/-?\d+\.\d+/g)].map((match) => Number(match[0])),
+      );
+    for (let i = 1; i < SIZES.length; i++) {
+      const before = numbers(SIZES[i - 1] ?? 0);
+      const after = numbers(SIZES[i] ?? 0);
+      expect(after).toHaveLength(before.length);
+      after.forEach((value, index) => {
+        expect(Math.abs(value - (before[index] ?? 0))).toBeLessThan(0.02);
+      });
+    }
+  });
 
-  it('gets heavier as it grows: growth runs from 0 at the start to 1 at its largest', () => {
+  it('gets a heavier brow as it grows: its eyes sit deeper under it at its largest', () => {
+    // The eyes are the two arcs of radius 0.085 r, set just under the brow's shadow.
+    const eyeY = (radius: number) =>
+      record(titanDesign, view(radius, false))
+        .filter((call) => call.startsWith('arc(') && call.endsWith(',0.0850)'))
+        .map((call) => Number(call.slice(4).split(',')[1]));
+    const [start] = eyeY(STANDARD_BALL_RADIUS);
+    const [full] = eyeY(MAX_RADIUS);
+    expect(eyeY(STANDARD_BALL_RADIUS)).toHaveLength(2);
+    expect((full ?? 0) - (start ?? 0)).toBeGreaterThan(0.1);
     expect(titanGrowth(STANDARD_BALL_RADIUS)).toBe(0);
     expect(titanGrowth(MAX_RADIUS)).toBe(1);
     expect(titanGrowth(MAX_RADIUS + 10)).toBe(1);
-  });
-
-  it('draws as the chosen variation', () => {
-    const shown = view(70, false);
-    expect(record(titanDesign, shown)).toStrictEqual(record(TITAN_LOOKS.lintel, shown));
   });
 });
