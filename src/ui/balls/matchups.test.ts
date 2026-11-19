@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../../sim/balls/index.ts';
-import { COUNTER_MAP } from '../../sim/counter-map.ts';
+import { COUNTER_MAP, levelOf } from '../../sim/counter-map.ts';
 import { favouredOf, leanOf, matchupsOf, speedTrait, statShares } from './matchups.ts';
 
 const ids = BALLS.map((ball) => ball.id);
@@ -44,9 +44,9 @@ describe('matchups', () => {
     const brawler = matchupsOf('brawler', ids);
     expect(brawler.strong.map((line) => line.opponent)).toStrictEqual([]);
     expect(brawler.weak.map((line) => line.opponent)).toStrictEqual(['thorns']);
-    // Every pair as the map has it, whichever order it is asked in.
-    for (const { x, y, intended } of COUNTER_MAP) {
-      const favoured = intended === 'even' ? undefined : intended === 'x' ? x : y;
+    // PROTOTYPE: every pair as its measured level has it, whichever order it is asked in.
+    for (const { x, y } of COUNTER_MAP) {
+      const favoured = levelOf(x, y)?.favoured;
       expect([favouredOf(x, y), favouredOf(y, x)]).toStrictEqual([favoured, favoured]);
     }
     expect(favouredOf('storm', 'storm')).toBeUndefined();

@@ -7,10 +7,9 @@
 
 /* The marks' key, one line under the rows (ADR 0035): read without any gesture. */
 .pick-key {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 var(--space-small);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
@@ -18,6 +17,10 @@
 
 .pick-key-mark {
   font-family: var(--font-family-symbol);
+}
+
+.pick-key-dot {
+  padding-inline: var(--space-small);
 }
 
 .pick-key-mark[data-lean='favoured'] {
@@ -238,4 +241,45 @@
 
 .pick-row-badge[data-pressed] {
   color: var(--color-text);
+}
+
+/*
+ * PROTOTYPE, three levels (owner, 2026-11-20): a strong counter is two arrows on a disc filled in
+ * its side's colour; an edge is one arrow on the plain disc; even is =. Fill and arrow count read
+ * without colour; the direction reads from the arrow.
+ */
+.pick-row-badge[data-strength='strong'] {
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.pick-row-badge[data-strength='strong'][data-lean='favoured']::before {
+  background: var(--color-favoured);
+}
+
+.pick-row-badge[data-strength='strong'][data-lean='unfavoured']::before {
+  background: var(--color-unfavoured);
+}
+
+.pick-row-badge[data-strength='strong'][data-pressed] {
+  color: var(--color-page);
+}
+
+.pick-key-line {
+  margin: 0;
+}
+
+.pick-key-mark[data-strength='strong'] {
+  padding: 0 4px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.pick-key-mark[data-strength='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.pick-key-mark[data-strength='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
 }

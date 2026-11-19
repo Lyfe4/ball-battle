@@ -142,3 +142,24 @@
 .matchup-button[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* PROTOTYPE, three levels: a strong counter's cell is filled in its side's colour, arrow in the
+   page colour; an edge is the arrow alone; even is blank. */
+.matchup-button[data-strength='strong'] {
+  color: var(--color-page);
+  font-size: calc(var(--chart-cell) * 0.55);
+  line-height: 1;
+}
+
+.matchup-button[data-strength='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.matchup-button[data-strength='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}
+
+.matchup-button[data-strength='strong'][tabindex='0'] {
+  outline: 2px solid var(--color-text);
+  outline-offset: -2px;
+}

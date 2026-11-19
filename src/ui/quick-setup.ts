@@ -3,8 +3,8 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createBallGrid } from './balls/ball-grid.ts';
 import type { BallInfoLink } from './balls/ball-link.ts';
-import { LEAN_WORDS, MARKS } from './balls/marks.ts';
-import { leanOf, matchupTip } from './balls/matchups.ts';
+import { MARKS } from './balls/marks.ts';
+import { leanOf, leanWordsOf, matchupTip, setMark, strengthOf } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
 import { markSymbol } from './symbol-tooltip.ts';
@@ -117,10 +117,20 @@ export function createQuickSetup(
     markSymbol(mark, lean);
     return mark;
   };
+  const strongMark = (lean: 'favoured' | 'unfavoured') => {
+    const mark = legendMark(lean);
+    mark.textContent = lean === 'favoured' ? '▲▲' : '▼▼';
+    mark.dataset['lean'] = lean;
+    mark.dataset['strength'] = 'strong';
+    mark.className = 'quick-legend-strong';
+    return mark;
+  };
   legend.append(
+    strongMark('favoured'),
     legendMark('favoured'),
     ' strong · ',
     legendMark('unfavoured'),
+    strongMark('unfavoured'),
     ' weak vs ',
     legendIcon,
   );
@@ -143,13 +153,12 @@ export function createQuickSetup(
       const other = picks[slot === 'a' ? 'b' : 'a'];
       const lean = leanOf(ball.id, other);
       setText(name, ball.name);
-      setText(badge, MARKS[lean]);
-      badge.dataset['lean'] = lean;
+      setMark(badge, ball.id, other);
       markSymbol(badge, lean, { tip: matchupTip(ball.id, other, nameOf, 'neutral') });
       button.setAttribute('aria-pressed', String(slot === active));
       button.setAttribute(
         'aria-label',
-        `${SLOT_NAMES[slot]}: ${ball.name}, ${LEAN_WORDS[lean]} ${nameOf(other)}`,
+        `${SLOT_NAMES[slot]}: ${ball.name}, ${leanWordsOf(ball.id, other)} ${nameOf(other)}`,
       );
       about.href = actions.ballLink.href(ball.id);
       about.setAttribute('aria-label', `About ${ball.name}`);
@@ -162,6 +171,7 @@ export function createQuickSetup(
       marks: {
         against: nameOf(other),
         leans: new Map(balls.map((ball) => [ball.id, leanOf(ball.id, other)])),
+        strengths: new Map(balls.map((ball) => [ball.id, strengthOf(ball.id, other)])),
         tips: new Map(
           balls.map((ball) => [ball.id, matchupTip(ball.id, other, nameOf, 'neutral')]),
         ),

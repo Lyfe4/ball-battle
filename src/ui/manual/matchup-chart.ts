@@ -1,7 +1,6 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupLine, matchupTip } from '../balls/matchups.ts';
-import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
+import { leanWordsOf, matchupLine, matchupTip, setMark, strengthOf } from '../balls/matchups.ts';
 import { verdictOf } from '../balls/verdict.ts';
 import { element, setText } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
@@ -70,13 +69,21 @@ export function createMatchupChart(
         return;
       }
       const { lean } = matchupLine(ball.id, opponent.id);
-      const button = element('button', 'matchup-button', lean === 'even' ? '' : MARKS[lean]);
+      const button = element('button', 'matchup-button');
+      setMark(button, ball.id, opponent.id);
+      // Even is left blank; the chart's cells are too small for two arrows, so a strong counter
+      // is one arrow on a filled cell, the fill the pick rows' ▲▲ discs use.
+      if (lean === 'even') button.textContent = '';
+      else if (strengthOf(ball.id, opponent.id) === 'strong')
+        button.textContent = lean === 'favoured' ? '▲' : '▼';
       button.type = 'button';
-      button.dataset['lean'] = lean;
       markSymbol(button, lean === 'even' ? undefined : lean, {
         tip: matchupTip(ball.id, opponent.id, nameOf, 'neutral'),
       });
-      button.setAttribute('aria-label', `${ball.name} ${LEAN_WORDS[lean]} ${opponent.name}`);
+      button.setAttribute(
+        'aria-label',
+        `${ball.name} ${leanWordsOf(ball.id, opponent.id)} ${opponent.name}`,
+      );
       button.addEventListener('focus', () => {
         select(row, col);
       });

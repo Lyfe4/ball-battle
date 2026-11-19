@@ -23,6 +23,8 @@ export interface BallGridState {
   readonly marks?: {
     readonly against: string;
     readonly leans: ReadonlyMap<string, Lean>;
+    /** PROTOTYPE: each tile's level against the other ball, when not even. */
+    readonly strengths?: ReadonlyMap<string, 'strong' | 'edge' | undefined>;
     /** Each mark's tooltip, naming both balls and who has the edge (ADR 0037). */
     readonly tips?: ReadonlyMap<string, readonly string[]>;
   };
@@ -128,8 +130,11 @@ export function createBallGrid(
       const spoken = reason ?? tapNote?.spoken;
       const lean = next.marks?.leans.get(ball.id) ?? 'even';
       // Even is left blank in a grid, so the counters stand out (the legend says so).
-      setText(mark, lean === 'even' ? '' : MARKS[lean]);
+      const strong = next.marks?.strengths?.get(ball.id) === 'strong';
+      setText(mark, lean === 'even' ? '' : strong ? MARKS[lean] + MARKS[lean] : MARKS[lean]);
       mark.dataset['lean'] = lean;
+      if (strong) mark.dataset['strength'] = 'strong';
+      else delete mark.dataset['strength'];
       const tip = next.marks?.tips?.get(ball.id);
       markSymbol(mark, lean === 'even' ? undefined : lean, tip === undefined ? {} : { tip });
       const against =

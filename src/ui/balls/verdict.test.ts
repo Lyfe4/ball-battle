@@ -15,14 +15,15 @@ describe('verdictOf', () => {
     const { x, y, intended, reason } = favouredPair;
     const winner = intended === 'x' ? x : y;
     const asX = verdictOf(x, y, nameOf);
+    // PROTOTYPE: the Frost's strong counter, with its odds words before the reason.
     expect(asX).toStrictEqual({
-      headline: `${nameOf(winner)} is favoured`,
-      reason,
+      headline: `${nameOf(winner)} is strongly favoured`,
+      reason: `Wins about 7 in 10. ${reason}`,
       leanOfA: winner === x ? 'favoured' : 'unfavoured',
     });
     const asY = verdictOf(y, x, nameOf);
     expect(asY.headline).toBe(asX.headline);
-    expect(asY.reason).toBe(reason);
+    expect(asY.reason).toBe(`Wins about 7 in 10. ${reason}`);
     expect(asY.leanOfA).toBe(winner === y ? 'favoured' : 'unfavoured');
     expect(reason).not.toBe('');
   });

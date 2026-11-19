@@ -77,6 +77,19 @@ export function uiPartsSection(): HTMLElement {
   const rows = createPickRows(BALL_LOOKUP, () => undefined);
   const choice = pickChoiceOf(reveal);
   if (choice !== undefined) rows.show(choice);
+  // PROTOTYPE, three levels: a Best of 5 show-first pick with every level on it.
+  const five = startSeries({
+    ruleset: RULESET_VERSION,
+    seed: 0,
+    a: ['vampire', 'storm', 'archer', 'chrono', 'spider'],
+    b: ['hex', 'spartan', 'bloom', 'thorns', 'speedster'],
+    opponent: { kind: 'player' },
+    format: 'reveal',
+    bestOf: 5,
+  });
+  const levelRows = createPickRows(BALL_LOOKUP, () => undefined);
+  const fiveChoice = pickChoiceOf(five, 'a', ['a']);
+  if (fiveChoice !== undefined) levelRows.show(fiveChoice);
   const legend = createSymbolLegend();
   legend.panel.hidden = false;
 
@@ -101,6 +114,7 @@ export function uiPartsSection(): HTMLElement {
   row.append(
     example('Series track, Reveal after round 1', track.element),
     example('Pick rows: show first, with the bot’s possible answers', rows.element),
+    example('Pick rows, three levels: Best of 5, every level (prototype)', levelRows.element),
     example('Buttons waiting on the server', footer),
     example('Pick rows: a pick on its way, the rest waiting', waiting.element),
     example('Symbol legend, open', legend.panel),

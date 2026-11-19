@@ -1,7 +1,6 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
-import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
-import { leanOf, matchupTip, type Lean } from '../balls/matchups.ts';
+import { leanOf, leanWordsOf, matchupTip, setMark, type Lean } from '../balls/matchups.ts';
 import { cue } from '../../sound/sound.ts';
 import { holdBusy } from '../busy-button.ts';
 import { element } from '../dom.ts';
@@ -23,7 +22,6 @@ const OWN_WIDE_PX = 28;
 /** More columns than a Best of 3 ever shows: the chart lays each row out narrower. */
 const WIDE_FROM = 4;
 const HEAD_PX = 26;
-const KEY_ORDER: readonly Lean[] = ['favoured', 'even', 'unfavoured'];
 
 /**
  * A pick as a type chart (ADR 0025, 0035, 0037): the bot's balls once, as column heads ("vs the
@@ -45,22 +43,39 @@ export function createPickRows(
   const rows = element('div', 'pick-rows-list');
   rows.setAttribute('role', 'group');
   rows.setAttribute('aria-label', 'Your pick');
-  const key = element('p', 'pick-key');
-  /** The other side's edge in the key: "bot’s favoured", or "they’re favoured" for a player. */
-  let theirEdge: HTMLElement | undefined;
+  const key = element('div', 'pick-key');
   // The rows' names already say each lean in words.
   key.setAttribute('aria-hidden', 'true');
-  for (const [index, lean] of KEY_ORDER.entries()) {
-    if (index > 0) key.append(element('span', 'pick-key-dot', '·'));
-    const mark = element('span', 'pick-key-mark', MARKS[lean]);
+  const keyMark = (symbol: string, lean: Lean, strong = false) => {
+    const mark = element('span', 'pick-key-mark', symbol);
     mark.dataset['lean'] = lean;
-    markSymbol(mark, lean);
-    const item = element('span', 'pick-key-item');
-    const words = element('span', '', ` ${KEY_WORDS[lean]}`);
-    if (lean === 'unfavoured') theirEdge = words;
-    item.append(mark, words);
-    key.append(item);
-  }
+    if (strong) mark.dataset['strength'] = 'strong';
+    markSymbol(mark, strong ? (lean === 'favoured' ? 'strongFavoured' : 'strongUnfavoured') : lean);
+    return mark;
+  };
+  // Line 1, whose edge each direction is; line 2, how big each level is.
+  const sides = element('p', 'pick-key-line');
+  /** The other side's edge in the key: "bot’s favoured", or "they’re favoured" for a player. */
+  const theirEdge = element('span', '', ' bot’s favoured');
+  sides.append(
+    keyMark('▲', 'favoured'),
+    ' you’re favoured',
+    element('span', 'pick-key-dot', '·'),
+    keyMark('=', 'even'),
+    ' even',
+    element('span', 'pick-key-dot', '·'),
+    keyMark('▼', 'unfavoured'),
+    theirEdge,
+  );
+  const sizes = element('p', 'pick-key-line');
+  sizes.append(
+    keyMark('▲▲', 'favoured', true),
+    ' strong, about 7 in 10',
+    element('span', 'pick-key-dot', '·'),
+    keyMark('▲', 'favoured'),
+    ' slight, about 6 in 10',
+  );
+  key.append(sides, sizes);
   root.append(head, rows, key);
   const nameOf = (id: string) => lookup.get(id)?.name ?? id;
   let shown = '';
@@ -96,9 +111,7 @@ export function createPickRows(
     const px = choice.opponents.length >= WIDE_FROM ? OWN_WIDE_PX : OWN_PX;
     own.append(icon(ball, px), element('span', 'pick-row-name', nameOf(ball)));
     pick.append(own);
-    const leans = choice.opponents.map(
-      (face) => `${LEAN_WORDS[leanOf(ball, face)]} ${nameOf(face)}`,
-    );
+    const leans = choice.opponents.map((face) => `${leanWordsOf(ball, face)} ${nameOf(face)}`);
     const verb = choice.kind === 'show' ? 'Show' : choice.kind === 'open' ? 'Open with' : 'Play';
     pick.setAttribute('aria-label', `${verb} ${nameOf(ball)}: ${leans.join(', ')}`);
     // Online a pick is a request: the ball tapped shows it is working and the others wait, so a
@@ -125,12 +138,12 @@ export function createPickRows(
     // The marks beside the pick button, never inside it: a tap on one explains, never picks.
     const marks = choice.opponents.map((face) => {
       const lean = leanOf(ball, face);
-      const badge = element('button', 'pick-row-badge', MARKS[lean]);
+      const badge = element('button', 'pick-row-badge');
+      setMark(badge, ball, face);
       badge.type = 'button';
       // Words for the eyes only: the pick button's name already says them.
       badge.tabIndex = -1;
       badge.setAttribute('aria-hidden', 'true');
-      badge.dataset['lean'] = lean;
       if (face === choice.facing) badge.dataset['facing'] = 'true';
       markSymbol(badge, lean, { tip: matchupTip(ball, face, nameOf, 'yours'), tap: true });
       return badge;
@@ -146,9 +159,7 @@ export function createPickRows(
       const next = JSON.stringify([choice, seats]);
       if (next === shown) return;
       shown = next;
-      if (theirEdge !== undefined) {
-        theirEdge.textContent = ` ${seats.they === BOT_SEATS.they ? KEY_WORDS.unfavoured : 'they’re favoured'}`;
-      }
+      theirEdge.textContent = ` ${seats.they === BOT_SEATS.they ? 'bot’s favoured' : 'they’re favoured'}`;
       root.style.setProperty('--pick-columns', String(choice.opponents.length));
       // Four or five of the bot's balls (a Best of 5, ADR 0048): the narrower rows (pick-rows.css).
       root.classList.toggle('pick-rows-wide', choice.opponents.length >= WIDE_FROM);
@@ -160,10 +171,3 @@ export function createPickRows(
     },
   };
 }
-
-/** The key's words, short enough for one line on a phone, and saying whose edge each mark is. */
-const KEY_WORDS: Readonly<Record<Lean, string>> = {
-  favoured: 'you’re favoured',
-  even: 'even',
-  unfavoured: 'bot’s favoured',
-};

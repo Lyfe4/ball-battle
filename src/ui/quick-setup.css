@@ -218,3 +218,29 @@
 .quick-why-summary[data-pressed] {
   background: var(--color-raised);
 }
+
+/* PROTOTYPE, three levels: a strong counter's badge is filled. */
+.quick-slot-badge[data-strength='strong'] {
+  width: auto;
+  padding-inline: 3px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.quick-slot-badge[data-strength='strong'][data-lean='favoured'],
+.quick-legend-strong[data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.quick-slot-badge[data-strength='strong'][data-lean='unfavoured'],
+.quick-legend-strong[data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}
+
+.quick-legend-strong {
+  padding-inline: 3px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}

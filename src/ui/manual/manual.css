@@ -379,3 +379,34 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
+
+/* PROTOTYPE, three levels: each matchup line led by its mark, a strong one filled. */
+.ball-detail-mark {
+  flex: none;
+  order: -1;
+  padding-inline: 4px;
+  border-radius: 999px;
+  font-family: var(--font-family-symbol);
+  font-size: var(--font-size-small);
+  letter-spacing: -0.12em;
+}
+
+.ball-detail-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.ball-detail-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.ball-detail-mark[data-strength='strong'] {
+  color: var(--color-page);
+}
+
+.ball-detail-mark[data-strength='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.ball-detail-mark[data-strength='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}

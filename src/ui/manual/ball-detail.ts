@@ -1,7 +1,14 @@
 import type { Matchup } from '../../app/matchup.ts';
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupsOf, speedTrait, statShares, type MatchupLine } from '../balls/matchups.ts';
+import {
+  matchupsOf,
+  setMark,
+  speedTrait,
+  statShares,
+  strengthOf,
+  type MatchupLine,
+} from '../balls/matchups.ts';
 import { element, setText } from '../dom.ts';
 import { hearBall, soundOn } from '../../sound/sound.ts';
 
@@ -121,10 +128,20 @@ export function createBallDetail(
 
   function matchupRows(lines: readonly MatchupLine[]): HTMLElement[] {
     if (lines.length === 0) return [element('li', 'ball-detail-none', 'None in particular.')];
-    return lines.map((line) => {
+    // PROTOTYPE, three levels: strong counters first, each line led by its mark.
+    const own = heard;
+    const strongFirst = [...lines].sort(
+      (a, b) =>
+        Number(strengthOf(own, b.opponent) === 'strong') -
+        Number(strengthOf(own, a.opponent) === 'strong'),
+    );
+    return strongFirst.map((line) => {
       const item = element('li', 'ball-detail-row');
       const button = opponentButton(line.opponent, ROW_ICON_PX, 'ball-detail-opponent');
-      button.append(element('span', 'ball-detail-opponent-name', nameOf(line.opponent)));
+      const mark = element('span', 'ball-detail-mark');
+      setMark(mark, own, line.opponent);
+      mark.setAttribute('aria-hidden', 'true');
+      button.append(mark, element('span', 'ball-detail-opponent-name', nameOf(line.opponent)));
       item.append(button, element('p', 'ball-detail-reason', line.reason));
       return item;
     });
@@ -137,7 +154,6 @@ export function createBallDetail(
       if (ball === undefined) return;
       drawBallIcon(icon, ball, HERO_PX);
       setText(description, ball.description);
-      heard = id;
       hear.hidden = !soundOn();
       hear.setAttribute('aria-label', `Hear the ${ball.name}`);
       const shares = statShares(ball, balls);
@@ -164,6 +180,7 @@ export function createBallDetail(
       howRules.replaceChildren(...rules.map((rule) => element('li', 'ball-detail-how-rule', rule)));
       how.hidden = rules.length === 0;
       how.open = false;
+      heard = id;
       const lines = matchupsOf(id, roster);
       strong.replaceChildren(...matchupRows(lines.strong));
       weak.replaceChildren(...matchupRows(lines.weak));

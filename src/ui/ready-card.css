@@ -221,3 +221,12 @@
 .ready-fight[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* PROTOTYPE, three levels: a strong counter's ▲▲ on a filled pill. */
+.ready-mark[data-strength='strong'] {
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--color-on-sticker-favoured);
+  color: var(--color-sticker, #fff);
+  letter-spacing: -0.12em;
+}

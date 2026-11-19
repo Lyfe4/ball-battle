@@ -1,5 +1,4 @@
-import { counterFor } from '../../sim/counter-map.ts';
-import { favouredOf, type Lean } from './matchups.ts';
+import { favouredOf, oddsWordsOf, reasonOf, strengthOf, type Lean } from './matchups.ts';
 
 export interface Verdict {
   /** E.g. "Storm is favoured", "Even matchup". */
@@ -22,12 +21,13 @@ export function verdictOf(a: string, b: string, nameOf: (id: string) => string):
       leanOfA: 'even',
     };
   }
-  const reason = counterFor(a, b)?.reason ?? '';
+  const reason = reasonOf(a, b);
   const favoured = favouredOf(a, b);
   if (favoured === undefined) return { headline: 'Even matchup', reason, leanOfA: 'even' };
+  const how = strengthOf(a, b) === 'strong' ? 'strongly' : 'slightly';
   return {
-    headline: `${nameOf(favoured)} is favoured`,
-    reason,
+    headline: `${nameOf(favoured)} is ${how} favoured`,
+    reason: `Wins ${oddsWordsOf(a, b)}. ${reason}`,
     leanOfA: favoured === a ? 'favoured' : 'unfavoured',
   };
 }

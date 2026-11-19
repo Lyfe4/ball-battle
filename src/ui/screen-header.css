@@ -165,3 +165,21 @@
 .symbol-legend-toggle[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* PROTOTYPE, three levels: the strong marks as filled pills, as on the pick rows. */
+.symbol-legend-mark[data-swatch='strongFavoured'],
+.symbol-legend-mark[data-swatch='strongUnfavoured'] {
+  width: auto;
+  padding-inline: 4px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.symbol-legend-mark[data-swatch='strongFavoured'] {
+  background: var(--color-favoured);
+}
+
+.symbol-legend-mark[data-swatch='strongUnfavoured'] {
+  background: var(--color-unfavoured);
+}

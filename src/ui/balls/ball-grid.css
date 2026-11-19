@@ -80,3 +80,19 @@
 .ball-tile:not(:disabled)[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* PROTOTYPE, three levels: ▲▲ / ▼▼ on a filled pill for a strong counter. */
+.ball-tile-mark[data-strength='strong'] {
+  padding: 1px 3px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.ball-tile-mark[data-strength='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.ball-tile-mark[data-strength='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}

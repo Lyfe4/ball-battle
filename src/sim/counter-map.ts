@@ -19,6 +19,7 @@ import { SPIDER_ENTRIES } from './counter-map-spider.ts';
 import { SPARTAN_ENTRIES } from './counter-map-spartan.ts';
 import { BATTERY_ENTRIES } from './counter-map-battery.ts';
 import { SLIME_ENTRIES } from './counter-map-slime.ts';
+import { MEASURED_LEVELS } from './counter-levels.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
 export type Intended = 'x' | 'y' | 'even';
@@ -56,6 +57,22 @@ export function counterFor(a: string, b: string): CounterEntry | undefined {
   return COUNTER_MAP.find(
     (entry) => (entry.x === a && entry.y === b) || (entry.x === b && entry.y === a),
   );
+}
+
+/** How far a favoured ball is ahead (owner, 2026-11-20): a strong counter, or a slight edge. */
+export type Strength = 'strong' | 'edge';
+
+/**
+ * PROTOTYPE: the favoured ball of a pair and by how much, from the measured levels
+ * (counter-levels.ts); undefined for an even pair. The screens read this; the bots still read
+ * `isFavoured` until the proposal is decided.
+ */
+export function levelOf(
+  a: string,
+  b: string,
+): { readonly favoured: string; readonly strength: Strength } | undefined {
+  const found = MEASURED_LEVELS.find(([w, l]) => (w === a && l === b) || (w === b && l === a));
+  return found === undefined ? undefined : { favoured: found[0], strength: found[2] };
 }
 
 /** True when the map says `ball` is favoured against `opponent` (it counters it). */

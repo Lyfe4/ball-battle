@@ -6,7 +6,16 @@ import type { Lean } from './balls/matchups.ts';
 import { MARKS } from './balls/marks.ts';
 
 export type SymbolKey =
-  Lean | 'unknown' | 'won' | 'lost' | 'replay' | 'suddenDeath' | 'more' | 'fairPlay';
+  | Lean
+  | 'strongFavoured'
+  | 'strongUnfavoured'
+  | 'unknown'
+  | 'won'
+  | 'lost'
+  | 'replay'
+  | 'suddenDeath'
+  | 'more'
+  | 'fairPlay';
 
 export interface SymbolEntry {
   /** The symbol as text; empty for one drawn as a swatch (a colour or a ring). */
@@ -19,17 +28,25 @@ export interface SymbolEntry {
 
 /** In the legend's order. */
 export const SYMBOLS: Readonly<Record<SymbolKey, SymbolEntry>> = {
+  strongFavoured: {
+    mark: '▲▲',
+    meaning: 'Strongly favoured: this ball wins about 7 in 10',
+    legendNote: 'filled; on a pick row, your ball against the bot’s',
+  },
   favoured: {
     mark: MARKS.favoured,
-    meaning: 'Favoured: this ball tends to win the matchup',
-    legendNote: 'on a pick row, your ball against the bot’s',
+    meaning: 'Slightly favoured: this ball wins about 6 in 10',
   },
+  even: { mark: MARKS.even, meaning: 'Even: about 1 in 2', legendNote: 'left blank in grids' },
   unfavoured: {
     mark: MARKS.unfavoured,
-    meaning: 'Unfavoured: the other ball tends to win',
-    legendNote: 'on a pick row, the bot’s ball',
+    meaning: 'Slightly unfavoured: the other ball wins about 6 in 10',
   },
-  even: { mark: MARKS.even, meaning: 'Even matchup', legendNote: 'left blank in grids' },
+  strongUnfavoured: {
+    mark: '▼▼',
+    meaning: 'Strongly unfavoured: the other ball wins about 7 in 10',
+    legendNote: 'filled',
+  },
   unknown: { mark: '?', meaning: 'Not shown yet' },
   won: { mark: '', meaning: 'Won the round' },
   lost: { mark: '', meaning: 'Lost the round' },
