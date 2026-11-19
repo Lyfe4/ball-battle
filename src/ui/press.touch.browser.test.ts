@@ -29,19 +29,35 @@ function control(className: string, text: string): HTMLButtonElement {
   return node;
 }
 
-/** What `node` looked like when it was lit, and for how long it stayed lit (ms). */
+/** The CSS transition `node` runs into `property`'s new value, if any. */
+function transitionOf(node: HTMLElement, property: string): CSSTransition | undefined {
+  return node
+    .getAnimations()
+    .find(
+      (a): a is CSSTransition => a instanceof CSSTransition && a.transitionProperty === property,
+    );
+}
+
+/**
+ * The look `node` takes when lit, how long it takes to get there (ms), and for how long it stayed
+ * lit (ms). A transition into the look is read by where it ends, not sampled on frames: a computed
+ * style mid-transition advances only when the page renders, and a busy CI machine can render
+ * nothing for over 100 ms, which read a 120 ms transition part-way (brightness(1.069)).
+ */
 function watch(node: HTMLElement, property: string) {
-  const seen = { lit: undefined as string | undefined, litAt: 0, unlitAt: 0 };
-  // Read each frame while lit, so a transition into the look has settled by the last reading.
-  const look = () => {
-    if (!node.hasAttribute('data-pressed')) return;
-    seen.lit = getComputedStyle(node).getPropertyValue(property);
-    requestAnimationFrame(look);
-  };
+  const seen = { lit: undefined as string | undefined, settleMs: 0, litAt: 0, unlitAt: 0 };
   new MutationObserver(() => {
     if (node.hasAttribute('data-pressed')) {
       seen.litAt = performance.now();
-      look();
+      // Reading the style starts any transition into the lit look.
+      const now = getComputedStyle(node).getPropertyValue(property);
+      const transition = transitionOf(node, property);
+      const effect = transition?.effect;
+      const frames = effect instanceof KeyframeEffect ? effect.getKeyframes() : [];
+      const end = frames[frames.length - 1]?.[property];
+      seen.lit = typeof end === 'string' ? end : now;
+      const timing = transition?.effect?.getComputedTiming();
+      seen.settleMs = (timing?.delay ?? 0) + Number(timing?.duration ?? 0);
     } else if (seen.litAt > 0) seen.unlitAt = performance.now();
   }).observe(node, { attributes: true, attributeFilter: ['data-pressed'] });
   return seen;
@@ -58,6 +74,9 @@ describe('a tap on a touch phone', () => {
     await wait(PRESS_SHOWN_MS + 250);
     expect(resting).toBe('none');
     expect(seen.lit).toBe('brightness(1.08)');
+    // The whole look shows while lit: the transition into it ends before the light goes.
+    expect(seen.settleMs).toBeGreaterThan(0);
+    expect(seen.settleMs).toBeLessThan(PRESS_SHOWN_MS);
     expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 20);
     expect(send.hasAttribute('data-pressed'), 'never stuck lit').toBe(false);
     expect(getComputedStyle(send).filter).toBe('none');
