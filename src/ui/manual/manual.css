@@ -340,7 +340,15 @@
     padding-block: 2px 5px;
   }
 
-  /* A pointer needs no 44 px target: seven rows (the Speedster's Weak vs) still fit 800 high. */
+  /*
+   * An edge's line is compact here (ADR 0073): its name and mark, its reason the mark's tooltip, so
+   * ten lines (the Vampire's Strong vs) still fit 800 high. A phone shows every reason.
+   */
+  .ball-detail-row[data-level='edge'] .ball-detail-reason {
+    display: none;
+  }
+
+  /* A pointer needs no 44 px target: ten rows still fit 800 high. */
   .ball-detail-strong-group .ball-detail-opponent,
   .ball-detail-weak-group .ball-detail-opponent {
     min-height: 32px;

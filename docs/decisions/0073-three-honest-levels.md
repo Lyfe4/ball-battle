@@ -111,6 +111,9 @@ against Normal or Hard fail, and every series saved for reload be dropped. Inste
   10"). The prototype's two lines both repeated "favoured" and "strong / slight"; this says
   direction once and level once, and fits two lines at 375 px.
 - Ball page: Strong vs and Weak vs lead with their strong counters, each line led by its mark.
+  With edges listed, a list runs to ten lines (the Vampire's Strong vs), so on a desktop an edge's
+  line is compact and its reason is the mark's tooltip and the line's description; the entry still
+  fits 1280 x 800 (`desktop-layout.wide.browser.test.ts`). A phone shows every reason on its card.
   Hovering a ball underlines its name only, never the mark; "How it works" has its own rounded
   corners, so its hover fill follows the box (square only where it opens).
 - **Matchup chart, a fork.** On a desktop, the full grid as in the prototype. On a phone, 25
