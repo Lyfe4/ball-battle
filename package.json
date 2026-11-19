@@ -21,6 +21,7 @@
     "balance": "node scripts/balance.ts",
     "balance:ci": "node scripts/balance.ts 150 --ci",
     "balance:summary": "node scripts/balance.ts --write-summary && prettier --write docs/balance-summary.md",
+    "balance:matrix": "node scripts/balance-matrix.ts",
     "golden": "node scripts/golden.ts",
     "ruleset:freeze": "node scripts/freeze-ruleset.ts",
     "test": "vitest run --project unit",
