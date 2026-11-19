@@ -1,0 +1,26 @@
+ruleset,ball,win_pct,counters_won,counters_won_rates,counters_lost,counters_lost_rates,weakest_counter,weakest_counter_pct
+19,Brawler,47.2,0,,1,Thorns 24.7,,
+19,Speedster,45.6,3,Archer 71.0; Boomerang 67.0; Sniper 64.0,4,Spider 24.4; Frost 29.3; Hex 33.4; Bomber 36.7,Sniper,64.0
+19,Vampire,52.2,3,Hex 75.5; Berserker 75.0; Slime 63.7,4,Storm 26.1; Spartan 27.1; Archer 33.2; Boomerang 36.7,Slime,63.7
+19,Archer,48.7,4,Bloom 73.8; Vampire 66.4; Spider 62.9; Thorns 62.2,5,Magnet 24.4; Necromancer 26.5; Speedster 28.8; Slime 31.2; Berserker 35.5,Thorns,62.2
+19,Storm,49.0,2,Vampire 73.7; Spartan 65.9,2,Chrono 24.9; Battery 24.9,Spartan,65.9
+19,Frost,49.4,3,Speedster 70.2; Battery 62.4; Berserker 62.2,2,Bloom 28.9; Hex 30.7,Berserker,62.2
+19,Thorns,51.2,4,Brawler 75.2; Magnet 74.8; Battery 72.9; Titan 65.8,3,Venom 34.5; Sniper 34.6; Archer 37.6,Titan,65.8
+19,Venom,51.6,3,Bloom 69.0; Chrono 66.0; Thorns 64.9,2,Berserker 25.4; Ghost 30.6,Thorns,64.9
+19,Berserker,50.4,5,Venom 74.2; Boomerang 67.1; Inferno 66.6; Archer 64.5; Quake 64.1,4,Vampire 24.4; Bloom 26.7; Hex 35.6; Frost 36.7,Quake,64.1
+19,Sniper,49.7,2,Thorns 64.9; Spartan 64.4,3,Slime 32.6; Speedster 35.8; Chrono 36.2,Spartan,64.4
+19,Quake,48.5,1,Necromancer 64.9,2,Spider 34.8; Berserker 35.5,Necromancer,64.9
+19,Magnet,51.4,3,Archer 75.5; Boomerang 66.1; Necromancer 65.2,1,Thorns 24.9,Necromancer,65.2
+19,Ghost,50.8,2,Venom 69.0; Hex 66.0,1,Bloom 30.4,Hex,66.0
+19,Necromancer,46.9,2,Archer 73.3; Boomerang 65.2,3,Quake 34.0; Magnet 34.6; Inferno 37.6,Boomerang,65.2
+19,Chrono,48.8,4,Storm 75.1; Spartan 70.2; Bomber 68.0; Sniper 63.5,3,Inferno 33.2; Venom 33.5; Bloom 34.2,Sniper,63.5
+19,Titan,50.4,1,Bloom 65.9,1,Thorns 33.9,Bloom,65.9
+19,Inferno,49.7,3,Bloom 72.6; Chrono 66.6; Necromancer 62.2,2,Berserker 33.2; Hex 37.7,Necromancer,62.2
+19,Boomerang,50.9,3,Bloom 71.4; Vampire 63.2; Spider 63.0,4,Speedster 32.7; Berserker 32.8; Magnet 33.7; Necromancer 34.5,Spider,63.0
+19,Bomber,51.8,2,Spider 64.4; Speedster 63.1,2,Battery 27.2; Chrono 32.0,Speedster,63.1
+19,Spartan,51.0,3,Vampire 72.7; Hex 63.5; Spider 62.1,3,Chrono 29.2; Storm 34.0; Sniper 35.4,Spider,62.1
+19,Bloom,49.8,4,Berserker 72.0; Frost 70.6; Ghost 68.5; Chrono 64.8,5,Archer 25.9; Inferno 27.3; Boomerang 28.5; Venom 30.6; Titan 33.2,Chrono,64.8
+19,Hex,51.1,4,Frost 69.0; Speedster 65.1; Berserker 64.3; Inferno 62.2,4,Vampire 24.4; Battery 31.0; Ghost 33.7; Spartan 35.7,Inferno,62.2
+19,Spider,49.7,4,Speedster 74.9; Quake 64.1; Slime 63.7; Battery 62.5,4,Bomber 35.2; Archer 36.7; Boomerang 36.9; Spartan 37.6,Battery,62.5
+19,Battery,48.5,3,Storm 74.8; Bomber 72.8; Hex 68.9,3,Thorns 26.6; Frost 35.6; Spider 36.7,Hex,68.9
+19,Slime,48.8,2,Archer 68.2; Sniper 67.1,2,Spider 34.9; Vampire 35.4,Sniper,67.1
