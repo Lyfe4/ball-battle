@@ -161,8 +161,12 @@ export const theme = {
   berserkerHeat: '#fde047',
   /** The Speedster's gauge bars it has not filled. */
   speedsterEmptyAlpha: 0.22,
-  /** The Battery's stored charge in its cells. */
+  /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
+  batteryWellAlpha: 0.12,
+  /** The Titan's Boulder face (prototype): its lit and shaded flat faces. */
+  titanLitAlpha: 0.32,
+  titanShadeAlpha: 0.2,
   /** The Vampire's collar edge flushes this colour when it heals. */
   vampireHeal: '#e11d48',
   /** The Storm's bolt brightens from this alpha as it charges, then flickers near the strike. */
@@ -217,8 +221,6 @@ export const theme = {
   rewindTrailDash: [4, 12] as readonly number[],
   rewindMs: 900,
   rewindGhostAlpha: 0.5,
-  /** The Titan's tree rings, in world units: thin at the start, thick at its largest. */
-  titanRing: [3.5, 6.5] as readonly [number, number],
   /**
    * The Inferno (ADR 0034): its flame's pale heart and how far the tip flickers (a share of r). Its
    * burning patches: a warm disc under the balls, brighter just after a burn, fading as it burns

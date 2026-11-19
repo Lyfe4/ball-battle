@@ -61,12 +61,13 @@ export const berserkerDesign: BallDesign = {
     p.strokeStyle = accent;
 
     // The seams still closed: thin and faint, so the three slots read even when calm.
-    p.globalAlpha = theme.berserkerSeamAlpha;
+    const alpha = p.globalAlpha;
+    p.globalAlpha = alpha * theme.berserkerSeamAlpha;
     p.lineWidth = r * theme.markLine * (simple ? 0.9 : 0.55);
     p.beginPath();
     for (const fault of FAULTS.slice(open)) faultPath(p, r, fault, fault.length - 1);
     p.stroke();
-    p.globalAlpha = 1;
+    p.globalAlpha = alpha;
     if (open === 0) {
       p.restore();
       return;

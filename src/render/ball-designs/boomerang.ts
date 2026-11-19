@@ -30,7 +30,7 @@ export const boomerangDesign: BallDesign = {
     const width = simple ? theme.boomerangArmSimple : theme.boomerangArm;
     p.save();
     if (shotsOut > 0) {
-      p.globalAlpha = theme.boomerangOutAlpha;
+      p.globalAlpha *= theme.boomerangOutAlpha;
       drawBoomerangBar(p, r, width * 0.6, accent);
       p.restore();
       return;

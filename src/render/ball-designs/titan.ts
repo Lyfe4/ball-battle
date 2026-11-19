@@ -3,22 +3,10 @@ import { MAX_RADIUS } from '../../sim/balls/titan.ts';
 import { theme } from '../theme.ts';
 import type { BallDesign, Painter } from './types.ts';
 
-/** The heartwood: a solid core, in world units, the same size all match. */
-const CORE = 15;
-/**
- * Its rings, in world units from the centre, never fractions of r: the body grows out past them,
- * as a tree grows past its old rings. The first two are there from the start; each later one
- * appears once the body has grown RING_ROOM past it, one every 12 units of growth.
- */
-const RINGS: readonly number[] = [26, 38, 50, 61, 73];
-const RING_ROOM = 12;
-/**
- * Rings drift off-centre the further out they are, as a tree's do (wider on its sunny side): so it
- * reads as wood, never as a target. Per world unit of ring radius.
- */
-const DRIFT = { x: -0.06, y: -0.045 } as const;
-/** A new ring fades in over this much growth, in world units, so it grows in rather than pops. */
-const RING_FADE = 3;
+// PROTOTYPE (proto/ball-looks): three stone-giant faces for the Titan, for the owner to pick one.
+// The chosen one stays; the other two and the `?titan=` switch go.
+
+type Point = readonly [number, number];
 
 /** How grown the Titan is, 0 at the start to 1 at its largest. */
 export function titanGrowth(radius: number): number {
@@ -28,107 +16,196 @@ export function titanGrowth(radius: number): number {
   );
 }
 
-/** How much of the ring at `ring` units shows on a body `radius` across, 0 to 1. */
-export function titanRingShown(ring: number, radius: number): number {
-  return Math.min(1, Math.max(0, (radius - ring - RING_ROOM) / RING_FADE + 1));
-}
-
-function circle(p: Painter, radius: number, x = 0, y = 0): void {
+function shape(p: Painter, r: number, points: readonly Point[]): void {
   p.beginPath();
-  p.arc(x, y, radius, 0, Math.PI * 2);
-}
-
-/** Points round a ring; joined by curves through their midpoints, so it stays smooth. */
-const RING_POINTS = 14;
-/** How far a ring wanders from round, as a share of its radius. */
-const RING_WANDER = 0.05;
-
-type Point = readonly [number, number];
-
-/**
- * One ring as a log's grows them: never quite round, each ring wandering its own way. Its corner
- * points and the midpoints between them on a ring of radius 1, worked out once: a frame only
- * scales them.
- */
-function ringShape(seed: number): { readonly corners: Point[]; readonly mids: Point[] } {
-  const corners = Array.from({ length: RING_POINTS }, (_, i): Point => {
-    const angle = (i / RING_POINTS) * Math.PI * 2;
-    const wander =
-      1 +
-      RING_WANDER * 0.6 * Math.sin(3 * angle + seed * 1.7) +
-      RING_WANDER * 0.4 * Math.sin(5 * angle + seed * 2.9);
-    return [Math.cos(angle) * wander, Math.sin(angle) * wander];
+  points.forEach(([x, y], index) => {
+    if (index === 0) p.moveTo(x * r, y * r);
+    else p.lineTo(x * r, y * r);
   });
-  const mids = corners.map((corner, i): Point => {
-    const next = corners[(i + 1) % RING_POINTS] ?? corner;
-    return [(corner[0] + next[0]) / 2, (corner[1] + next[1]) / 2];
-  });
-  return { corners, mids };
-}
-const RING_SHAPES = RINGS.map((_, index) => ringShape(index));
-
-function woodRing(p: Painter, radius: number, x: number, y: number, index: number): void {
-  const shape = RING_SHAPES[index];
-  if (shape === undefined) return;
-  const at = ([px, py]: Point): Point => [x + px * radius, y + py * radius];
-  p.moveTo(...at(shape.mids[RING_POINTS - 1] ?? [1, 0]));
-  for (let i = 0; i < RING_POINTS; i++) {
-    const corner = shape.corners[i];
-    const mid = shape.mids[i];
-    if (corner === undefined || mid === undefined) continue;
-    p.quadraticCurveTo(...at(corner), ...at(mid));
-  }
   p.closePath();
 }
 
-/** The check: a thin split from the heartwood out towards the bark, as a log end has. */
-const CHECK = { cos: Math.cos(-0.7), sin: Math.sin(-0.7), width: 0.09 } as const;
+function dot(p: Painter, x: number, y: number, radius: number): void {
+  p.beginPath();
+  p.arc(x, y, radius, 0, Math.PI * 2);
+  p.fill();
+}
+
+/** A small white glint at the upper left of an eye, at full size only. */
+function glint(p: Painter, r: number, x: number, y: number, simple: boolean): void {
+  if (simple) return;
+  p.fillStyle = theme.highlight;
+  dot(p, (x - 0.035) * r, (y - 0.035) * r, 0.035 * r);
+}
 
 /**
- * Tree rings (the Titan grows and gets heavier, ADR 0034): a dark heartwood core and rings drawn
- * at fixed sizes in the world, a little off-centre and never quite round, with a split from the heart, like a log's end, so the body visibly grows out past them and a new ring appears at
- * its edge every few seconds; at its largest it carries five. The rings thicken as it grows, as its
- * bump does. At small size the lines are heavier.
+ * Variation A, "Brow": one heavy slab of brow across the face, dipping in the middle in a frown,
+ * over two small square eyes and a flat, set mouth. The brow gets heavier as the Titan grows.
  */
-export const titanDesign: BallDesign = {
+const brow: BallDesign = {
   facing: 'none',
   draw(p, { ball, radius: r, accent, simple }) {
     const grown = titanGrowth(ball.radius);
-    // Drawn in the ball's own units: a design is scaled so r is the ball's radius.
-    const unit = r / ball.radius;
-    const [thin, thick] = theme.titanRing;
-    p.strokeStyle = accent;
-    p.lineWidth = (thin + (thick - thin) * grown) * (simple ? 1.5 : 1) * unit;
-    // Every whole ring in one stroke; only a ring still growing in is stroked on its own, fainter.
-    const ringAt = (ring: number, index: number) => {
-      woodRing(p, ring * unit, ring * DRIFT.x * unit, ring * DRIFT.y * unit, index);
-    };
-    p.beginPath();
-    RINGS.forEach((ring, index) => {
-      if (titanRingShown(ring, ball.radius) >= 1) ringAt(ring, index);
-    });
-    p.stroke();
-    RINGS.forEach((ring, index) => {
-      const shown = titanRingShown(ring, ball.radius);
-      if (shown <= 0 || shown >= 1) return;
-      p.globalAlpha = shown;
-      p.beginPath();
-      ringAt(ring, index);
-      p.stroke();
-      p.globalAlpha = 1;
-    });
+    const depth = 0.16 + 0.11 * grown + (simple ? 0.04 : 0);
+    const top = -0.38;
     p.fillStyle = accent;
-    // The check runs from the core to just inside the edge, so it lengthens as the Titan grows.
-    const reach = (ball.radius - 9) * unit;
-    const { cos, sin } = CHECK;
-    const half = CHECK.width * reach * (simple ? 1.4 : 1);
+    p.strokeStyle = accent;
+    p.lineJoin = 'round';
+    p.lineWidth = 0.06 * r;
+    shape(p, r, [
+      [-0.62, top],
+      [0.62, top],
+      [0.6, top + depth],
+      [0.14, top + depth],
+      [0, top + depth + 0.09],
+      [-0.14, top + depth],
+      [-0.6, top + depth],
+    ]);
+    p.fill();
+    p.stroke();
+    const eye = (simple ? 0.2 : 0.15) * r;
+    const eyeY = top + depth + 0.2;
+    for (const x of [-0.27, 0.27]) {
+      p.fillStyle = accent;
+      p.beginPath();
+      p.rect(x * r - eye / 2, eyeY * r - eye / 2, eye, eye);
+      p.fill();
+      glint(p, r, x, eyeY, simple);
+    }
+    p.strokeStyle = accent;
+    p.lineCap = 'round';
+    p.lineWidth = (simple ? 0.12 : 0.09) * r;
     p.beginPath();
-    p.moveTo(-sin * half, cos * half);
-    p.lineTo(cos * reach, sin * reach);
-    p.lineTo(sin * half, -cos * half);
-    p.closePath();
+    p.moveTo(-0.22 * r, 0.5 * r);
+    p.lineTo(0.22 * r, 0.5 * r);
+    p.stroke();
+  },
+};
+
+/**
+ * Variation B, "Carved": a face cut into stone. Two brow blocks slant down to the middle, glaring;
+ * narrow slit eyes sit under them, and a wide stone jaw grits its teeth (the gaps at full size).
+ */
+const carved: BallDesign = {
+  facing: 'none',
+  draw(p, { radius: r, accent, simple }) {
+    const heavy = simple ? 0.04 : 0;
+    p.fillStyle = accent;
+    p.strokeStyle = accent;
+    p.lineJoin = 'round';
+    p.lineWidth = 0.05 * r;
+    for (const side of [-1, 1]) {
+      shape(p, r, [
+        [side * 0.62, -0.44],
+        [side * 0.07, -0.26],
+        [side * 0.07, -0.1 + heavy],
+        [side * 0.62, -0.27 + heavy],
+      ]);
+      p.fill();
+      p.stroke();
+      p.beginPath();
+      p.rect((side * 0.3 - 0.13) * r, 0.03 * r, 0.26 * r, (simple ? 0.11 : 0.08) * r);
+      p.fill();
+    }
+    const jaw = { x: -0.38, y: 0.3, w: 0.76, h: simple ? 0.24 : 0.2 };
+    p.beginPath();
+    p.rect(jaw.x * r, jaw.y * r, jaw.w * r, jaw.h * r);
     p.fill();
-    circle(p, CORE * unit, CORE * DRIFT.x * unit, CORE * DRIFT.y * unit);
+    p.stroke();
+    if (simple) return;
+    p.strokeStyle = theme.highlight;
+    p.lineWidth = 0.035 * r;
+    p.lineCap = 'butt';
+    p.beginPath();
+    p.moveTo(jaw.x * r, (jaw.y + jaw.h / 2) * r);
+    p.lineTo((jaw.x + jaw.w) * r, (jaw.y + jaw.h / 2) * r);
+    for (const x of [-0.19, 0, 0.19]) {
+      p.moveTo(x * r, (jaw.y + 0.03) * r);
+      p.lineTo(x * r, (jaw.y + jaw.h - 0.03) * r);
+    }
+    p.stroke();
+  },
+};
+
+/** The boulder's flat faces: a lit one at the upper left and a shaded one at the lower right. */
+const LIT: readonly Point[] = [
+  [-0.74, -0.34],
+  [-0.32, -0.76],
+  [0.12, -0.8],
+  [-0.16, -0.5],
+  [-0.62, -0.1],
+];
+const SHADED: readonly Point[] = [
+  [0.8, 0.1],
+  [0.58, 0.56],
+  [0.12, 0.8],
+  [0.36, 0.4],
+];
+
+/**
+ * Variation C, "Boulder": a chiselled rock, a lit face at its upper left and a shaded one at its
+ * lower right, with one thick frowning ridge of brow, two small dark eyes and a grim, set mouth.
+ */
+const boulder: BallDesign = {
+  facing: 'none',
+  draw(p, { radius: r, accent, simple }) {
+    // Scaled by what the ball is drawn at, so a defeated Titan stays see-through.
+    const alpha = p.globalAlpha;
+    p.fillStyle = theme.highlight;
+    p.globalAlpha = alpha * theme.titanLitAlpha;
+    shape(p, r, LIT);
     p.fill();
+    p.fillStyle = accent;
+    p.globalAlpha = alpha * theme.titanShadeAlpha;
+    shape(p, r, SHADED);
+    p.fill();
+    p.globalAlpha = alpha;
+    p.strokeStyle = accent;
+    p.lineCap = 'round';
+    p.lineJoin = 'round';
+    p.lineWidth = (simple ? 0.2 : 0.16) * r;
+    p.beginPath();
+    p.moveTo(-0.5 * r, -0.26 * r);
+    p.lineTo(0, -0.12 * r);
+    p.lineTo(0.5 * r, -0.26 * r);
+    p.stroke();
+    for (const x of [-0.24, 0.24]) {
+      p.fillStyle = accent;
+      dot(p, x * r, 0.08 * r, (simple ? 0.11 : 0.085) * r);
+      glint(p, r, x, 0.08, simple);
+    }
+    p.strokeStyle = accent;
+    p.lineWidth = (simple ? 0.1 : 0.075) * r;
+    // A grim set mouth, barely turned down: determined, never sad.
+    p.beginPath();
+    p.arc(0, 1.0 * r, 0.52 * r, Math.PI * 1.38, Math.PI * 1.62);
+    p.stroke();
+  },
+};
+
+/** The three faces by name, for the gallery and the `?titan=` switch. */
+export const TITAN_LOOKS = { brow, carved, boulder } as const;
+export type TitanLook = keyof typeof TITAN_LOOKS;
+
+/** True for a name of one of the three faces. */
+export function isTitanLook(look: unknown): look is TitanLook {
+  return look === 'brow' || look === 'carved' || look === 'boulder';
+}
+
+let chosen: TitanLook = 'brow';
+
+/** Picks the face every Titan on this page is drawn with. */
+export function chooseTitanLook(look: TitanLook): void {
+  chosen = look;
+}
+
+/**
+ * A stone giant (ADR 0034): big and heavy, its face cut in the dark accent on its green. The body
+ * already grows on screen, so the face says weight rather than growth. Drawn as the chosen face.
+ */
+export const titanDesign: BallDesign = {
+  facing: 'none',
+  draw(p, view) {
+    TITAN_LOOKS[chosen].draw(p, view);
   },
 };

@@ -24,6 +24,8 @@ import { hexDesign } from './hex.ts';
 import { spiderDesign } from './spider.ts';
 import { batteryDesign } from './battery.ts';
 import { slimeDesign } from './slime.ts';
+// PROTOTYPE ONLY (proto/ball-looks): applies `?titan=` before any Titan is drawn.
+import '../../app/titan-look.ts';
 
 /**
  * How each kind of ball looks, keyed by definition id. A ball without an entry is drawn as a

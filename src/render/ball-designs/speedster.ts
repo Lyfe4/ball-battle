@@ -52,15 +52,17 @@ export const speedsterDesign: BallDesign = {
   draw(p, { ball, radius: r, accent, simple }) {
     const stacks = Math.min(MAX_STACKS, streakCount(stacksOf(ball)));
     p.save();
+    // Scaled by what the ball is drawn at, so a defeated or phased Speedster stays see-through.
+    const alpha = p.globalAlpha;
     p.fillStyle = accent;
     p.strokeStyle = accent;
     p.lineCap = 'butt';
     p.lineWidth = (simple ? GAUGE.widthSimple : GAUGE.width) * r;
     for (let index = 0; index < MAX_STACKS; index++) {
-      p.globalAlpha = index < stacks ? 1 : theme.speedsterEmptyAlpha;
+      p.globalAlpha = alpha * (index < stacks ? 1 : theme.speedsterEmptyAlpha);
       gaugeBar(p, r, index);
     }
-    p.globalAlpha = 1;
+    p.globalAlpha = alpha;
 
     // A filled, notched dart rather than an open angle: an open chevron facing diagonally has one
     // arm near horizontal and reads as a "7"; a solid point reads as a pointer at any angle.
