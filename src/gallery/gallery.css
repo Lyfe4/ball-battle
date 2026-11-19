@@ -28,7 +28,7 @@ h1 {
   display: grid;
   gap: 16px;
 }
-@media (min-width: 64rem) {
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   #gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -40,6 +40,12 @@ h1 {
 }
 h2 {
   font-size: 18px;
+  margin: 0 0 6px;
+}
+.status {
+  font-size: 13px;
+  font-weight: 600;
+  color: #86efac;
   margin: 0 0 6px;
 }
 .why {
@@ -60,6 +66,7 @@ h2 {
 }
 .pair {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: flex-end;
 }
@@ -123,4 +130,9 @@ details {
 pre {
   white-space: pre-wrap;
   font-size: 12px;
+}
+.which {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: -2px;
 }

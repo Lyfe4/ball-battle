@@ -96,7 +96,7 @@ function titan(tick: number): GalleryState {
   return {
     caption:
       t >= growTicks
-        ? 'Fully grown: 1.8× as wide, bump 1.85× as hard. Five rings.'
+        ? 'Fully grown: 1.8× as wide, bump 1.85× as hard.'
         : `${seconds.toFixed(1)} s into a fight (shown at 2× speed): radius ${radius.toFixed(0)}.`,
     radius,
     tick,

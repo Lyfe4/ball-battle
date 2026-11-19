@@ -6,11 +6,10 @@ import { RULESET_VERSION } from '../src/sim/ruleset.ts';
 const BASE = process.argv[2] ?? 'http://localhost:5199';
 const OUT = 'docs/proposals/ball-looks';
 const FIGHTS = [
-  ['titan', 'brawler', 14_000],
-  ['berserker', 'venom', 9_000],
-  ['speedster', 'thorns', 7_000],
-  ['boomerang', 'battery', 6_500],
-  ['battery', 'storm', 12_000],
+  ['titan', 'brawler', 9_000, 'brow'],
+  ['titan', 'brawler', 9_000, 'carved'],
+  ['titan', 'brawler', 9_000, 'boulder'],
+  ['battery', 'storm', 12_000, ''],
 ] as const;
 
 const browser = await chromium.launch();
@@ -19,16 +18,20 @@ for (const [name, viewport, scale, reducedMotion] of [
   ['desktop', { width: 1280, height: 800 }, 2, 'no-preference'],
   ['phone-reduced', { width: 390, height: 664 }, 3, 'reduce'],
 ] as const) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion });
-  for (const [a, b, wait] of FIGHTS) {
-    if (name === 'phone-reduced' && a !== 'berserker') continue;
+  for (const [a, b, wait, look] of FIGHTS) {
+    if (name === 'phone-reduced') continue;
+    // A fresh device each time: a matchup seen once skips its Fight! card.
+    const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion });
     const page = await context.newPage();
-    await page.goto(`${BASE}/?a=${a}&b=${b}&seed=7&v=${String(RULESET_VERSION)}`);
+    await page.goto(
+      `${BASE}/?a=${a}&b=${b}&seed=7&v=${String(RULESET_VERSION)}${look === '' ? '' : `&titan=${look}`}`,
+    );
     await page.getByRole('button', { name: 'Fight!' }).click();
     await page.waitForTimeout(wait);
-    await page.screenshot({ path: `${OUT}/fight-${a}-${b}-${name}.png` });
-    await page.close();
+    await page.screenshot({
+      path: `${OUT}/fight-${a}${look === '' ? '' : `-${look}`}-${b}-${name}.png`,
+    });
+    await context.close();
   }
-  await context.close();
 }
 await browser.close();

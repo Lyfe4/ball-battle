@@ -2,7 +2,6 @@
 // through their states at phone and desktop size, as the game's own drawBall draws them. Served as
 // /ballgallery.html on the branch's deploy preview for review; never merged.
 import './gallery.css';
-import { BALL_DESIGNS } from '../render/ball-designs/index.ts';
 import type { BallDesign } from '../render/ball-designs/types.ts';
 import { ballColor } from '../render/ball-colors.ts';
 import { drawBall } from '../render/draw.ts';
@@ -13,12 +12,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import type { BallState, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
-import { oldBatteryDesign } from './old/battery.ts';
-import { oldBerserkerDesign } from './old/berserker.ts';
-import { oldBoomerangDesign } from './old/boomerang.ts';
-import { oldSpeedsterDesign } from './old/speedster.ts';
-import { oldThornsDesign } from './old/thorns.ts';
-import { oldTitanDesign } from './old/titan.ts';
+import { ENTRIES, type Entry } from './entries.ts';
 import { TIMELINES, type GalleryState } from './timelines.ts';
 
 /** CSS px per world unit: a phone arena (about 340 px of court) and a desktop one (about 720). */
@@ -26,52 +20,6 @@ const PHONE = 340 / 1016;
 const DESKTOP = 720 / 1016;
 /** The picker and manual icons: 44 px across, the start-of-match state. */
 const ICON = 44;
-
-interface Entry {
-  readonly id: string;
-  readonly old: BallDesign;
-  readonly why: string;
-  readonly against: string;
-}
-
-const ENTRIES: readonly Entry[] = [
-  {
-    id: 'titan',
-    old: oldTitanDesign,
-    against: 'brawler',
-    why: 'Tree rings: the rings stay their size in the world while the body grows out past them, a new ring every few seconds and every ring heavier, like the end of a log, so you watch it grow and get heavier.',
-  },
-  {
-    id: 'berserker',
-    old: oldBerserkerDesign,
-    against: 'venom',
-    why: 'Three seams, one per hit of rage it can store: each hit it takes cracks one open with a hot glow, full they meet white-hot in the middle, and the bump that lets it out closes them.',
-  },
-  {
-    id: 'speedster',
-    old: oldSpeedsterDesign,
-    against: 'brawler',
-    why: 'A five-bar speed gauge wrapped round the back of its dart: every wall bounce lights a bar, a bump empties them, and the empty bars stay faint so it always reads as “3 of 5”, at every size.',
-  },
-  {
-    id: 'thorns',
-    old: oldThornsDesign,
-    against: 'brawler',
-    why: 'Its spikes now break out of its edge, so its silhouette is the warning (the only spiky ball); it stores nothing, so the look never changes.',
-  },
-  {
-    id: 'boomerang',
-    old: oldBoomerangDesign,
-    against: 'spartan',
-    why: 'It holds its boomerang only while it has it: thrown, the ball shows a faint empty shape until the catch, so you never see two boomerangs at once.',
-  },
-  {
-    id: 'battery',
-    old: oldBatteryDesign,
-    against: 'storm',
-    why: 'A battery lying across it, as on a phone: four cells fill with yellow charge as it stores part of each big strike or blast and empty on its bump; empty cells stay as dark slots.',
-  },
-];
 
 function canvasFor(cssSize: number): HTMLCanvasElement {
   const ratio = Math.min(window.devicePixelRatio || 1, theme.maxPixelRatio);
@@ -160,64 +108,70 @@ function figure(label: string, canvas: HTMLCanvasElement): HTMLElement {
   return element;
 }
 
+function looksOf(entry: Entry): readonly (readonly [string, BallDesign])[] {
+  return [['old', entry.old], ...entry.looks.map((look) => [look.label, look.design] as const)];
+}
+
 function card(entry: Entry): { element: HTMLElement; live: Live } {
   const definition = getDefinition(BALL_LOOKUP, entry.id);
-  const fresh = BALL_DESIGNS.get(entry.id);
-  if (fresh === undefined) throw new Error(`no design for ${entry.id}`);
   const element = document.createElement('section');
   element.className = 'ball';
   element.id = entry.id;
   const title = document.createElement('h2');
   title.textContent = definition.name;
-  const why = document.createElement('p');
-  why.className = 'why';
-  why.textContent = entry.why;
+  const status = document.createElement('p');
+  status.className = 'status';
+  status.textContent = entry.status;
+  const whys = entry.looks.map((look) => {
+    const why = document.createElement('p');
+    why.className = 'why';
+    why.textContent = look.why;
+    return why;
+  });
   const caption = document.createElement('p');
   caption.className = 'state';
   const canvases: [HTMLCanvasElement, BallDesign, number][] = [];
   const grid = document.createElement('div');
   grid.className = 'grid';
   const maxRadius = entry.id === 'titan' ? 90 : 55;
-  for (const [label, unit] of [
+  for (const [size, unit] of [
     ['phone', PHONE],
     ['desktop', DESKTOP],
   ] as const) {
     const row = document.createElement('div');
     row.className = 'pair';
-    for (const [which, design] of [
-      ['old', entry.old],
-      ['new', fresh],
-    ] as const) {
+    for (const [label, design] of looksOf(entry)) {
       const canvas = canvasFor(Math.ceil(maxRadius * 2 * unit + 10));
       canvases.push([canvas, design, unit]);
-      row.append(figure(`${which} · ${label}`, canvas));
+      row.append(figure(`${label} · ${size}`, canvas));
     }
     grid.append(row);
   }
   // The icon: the start-of-match state, at the picker's size and detail.
   const icons = document.createElement('div');
   icons.className = 'pair';
-  for (const [which, design] of [
-    ['old', entry.old],
-    ['new', fresh],
-  ] as const) {
+  for (const [label, design] of looksOf(entry)) {
     const canvas = canvasFor(ICON);
-    const definitionRadius = definition.radius;
-    paint(canvas, entry.id, design, { caption: '', tick: 0 }, ICON / 2 / 1.12 / definitionRadius);
-    icons.append(figure(`${which} · icon`, canvas));
+    paint(canvas, entry.id, design, { caption: '', tick: 0 }, ICON / 2 / 1.12 / definition.radius);
+    icons.append(figure(`${label} · icon`, canvas));
   }
   grid.append(icons);
   const links = document.createElement('p');
   links.className = 'links';
-  const fight = document.createElement('a');
   const other = getDefinition(BALL_LOOKUP, entry.against);
-  fight.href = `/?a=${entry.id}&b=${entry.against}&seed=7&v=${String(RULESET_VERSION)}`;
-  fight.textContent = `Free play: ${definition.name} vs ${other.name} →`;
+  for (const look of entry.looks) {
+    const fight = document.createElement('a');
+    const query = look.query === undefined ? '' : `&${look.query}`;
+    fight.href = `/?a=${entry.id}&b=${entry.against}&seed=7&v=${String(RULESET_VERSION)}${query}`;
+    const named = entry.looks.length > 1 ? ` (${look.label})` : '';
+    fight.textContent = `Free play${named}: ${definition.name} vs ${other.name} →`;
+    links.append(fight);
+  }
   const manual = document.createElement('a');
   manual.href = `/?view=manual&ball=${entry.id}`;
   manual.textContent = 'Manual entry →';
-  links.append(fight, manual);
-  element.append(title, why, caption, grid, links);
+  links.append(manual);
+  element.append(title, status, ...whys, caption, grid, links);
   return { element, live: { id: entry.id, canvases, caption } };
 }
 
@@ -257,7 +211,7 @@ function start(): void {
 
 function wireBenchLater(): void {
   void import('./bench.ts').then(({ wireBench }) => {
-    wireBench(ENTRIES.map(({ id, old }) => ({ id, old })));
+    wireBench(ENTRIES);
   });
 }
 
