@@ -18,7 +18,7 @@ export function lifestealFor(amount: number): number {
 export const vampire = defineBall({
   id: 'vampire',
   name: 'Vampire',
-  description: 'Heals most of what its bumps deal, on little health.',
+  description: 'Heals most of what its bumps deal; has little health.',
   color: '#a855f7',
   ability: { name: 'Lifesteal', shownBy: { kind: 'healed' } },
   howItWorks: [

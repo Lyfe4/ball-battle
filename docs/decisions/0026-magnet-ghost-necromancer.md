@@ -8,6 +8,7 @@
   ADR 0028 (the counter pass: sharper favoured band, balanced shapes, visible rules), ADR 0049 (the
   Hex, the Spider and the phasing Ghost (ruleset 13)), ADR 0058 (the Magnet pulls shooters in
   (ruleset 18))
+- Amended by: ADR 0072 (the Necromancer's look: the next skull forms in its hood)
 
 ## Context
 

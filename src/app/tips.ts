@@ -27,6 +27,11 @@ export interface Tips {
   /** True the first time this device sees `key` (a ball's ability) while hints are on. */
   takeHint(key: string): boolean;
   /**
+   * A hint taken but never shown (nothing of its ball was left on the court by its turn, or the
+   * fight ended first): unseen again, so it shows in a later fight.
+   */
+  giveBackHint(key: string): void;
+  /**
    * True the first time this device meets the pairing of `a` and `b` (either order), while the
    * cards are on; marks it seen. The card's reason is per pairing, so it shows exactly when it
    * says something new.
@@ -89,6 +94,10 @@ export function createTips(storage: TipStorage): Tips {
       seen.add(key);
       write(storage, HINTS_SEEN_STORAGE_KEY, [...seen].join(','));
       return true;
+    },
+    giveBackHint(key) {
+      if (!seen.delete(key)) return;
+      write(storage, HINTS_SEEN_STORAGE_KEY, seen.size === 0 ? undefined : [...seen].join(','));
     },
     takeReady(a, b) {
       const key = pairKey(a, b);

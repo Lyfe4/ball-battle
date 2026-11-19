@@ -27,6 +27,19 @@ describe('tips', () => {
     expect(later.takeHint('archer')).toBe(true);
   });
 
+  it('gives back a hint that was taken but never shown, here and across page loads', () => {
+    const { storage, store } = memory();
+    const tips = createTips(storage);
+    expect(tips.takeHint('slime')).toBe(true);
+    expect(tips.takeHint('storm')).toBe(true);
+    tips.giveBackHint('slime');
+    expect(createTips(storage).takeHint('storm')).toBe(false);
+    expect(tips.takeHint('slime')).toBe(true);
+    tips.giveBackHint('slime');
+    tips.giveBackHint('storm');
+    expect(store.has('ballbattle.hintsSeen')).toBe(false);
+  });
+
   it('shows the what-to-watch card once per pairing, in either order, across page loads', () => {
     const { storage } = memory();
     const tips = createTips(storage);

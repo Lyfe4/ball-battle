@@ -58,7 +58,8 @@ export const necromancer = defineBall<NecromancerState>({
   color: '#4d7c0f',
   ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
   howItWorks: [
-    `Every ${secondsOf(SUMMON_TICKS)} s it raises a skull, up to ${String(MAX_MINIONS)} out at once. A skull bounces around and bites the first enemy it reaches for ${MINION_DAMAGE}.`,
+    `Every ${secondsOf(SUMMON_TICKS)} s, if its skull is gone, it raises a new one: one out at a time.`,
+    `A skull bounces around and bites the first enemy it reaches for ${MINION_DAMAGE}.`,
     `A skull lasts ${secondsOf(MINION_LIFETIME_TICKS)} s. Aimed attacks go for it when it is nearer, and an area hit clears it.`,
   ],
   radius: STANDARD_BALL_RADIUS,

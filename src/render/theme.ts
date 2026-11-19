@@ -169,7 +169,7 @@ export const theme = {
   titanShadeAlpha: 0.2,
   titanBrowShadowAlpha: 0.34,
   titanJawAlpha: 0.3,
-  /** The Vampire's collar edge flushes this colour when it heals. */
+  /** The Vampire's collar edge flushes this colour when it heals; its thirst drips it too. */
   vampireHeal: '#e11d48',
   /** The Storm's bolt brightens from this alpha as it charges, then flickers near the strike. */
   stormBoltMinAlpha: 0.25,
@@ -246,7 +246,7 @@ export const theme = {
   boomerangArmSimple: 0.28,
   boomerangSpinTicks: 10,
   boomerangFlightScale: 3.4,
-  /** The Bomber's bomb: its fuse spark, which flickers with the sim tick. */
+  /** The Bomber's bomb: the spark on the burning end of its fuse. */
   bomberSpark: '#fde68a',
   /**
    * Its bombs on the floor: a dark body ringed in the owner's colour, a fuse arc around it that
@@ -283,8 +283,9 @@ export const theme = {
    */
   spartanBronze: '#e0a83e',
   spartanCrest: '#fef3c7',
-  /** The Necromancer's eyes, glowing out of its hood. */
+  /** The Necromancer's eyes, glowing out of its hood; dim while its skull is out. */
   necromancerEyes: '#bef264',
+  necromancerDimEyesAlpha: 0.35,
   /**
    * Minions (ADR 0026): a bone-white skull ringed in the owner's colour, with dark eye sockets and
    * nose. Fractions of the minion's radius. Below `minionSimpleBelowPx` of radius on screen (a

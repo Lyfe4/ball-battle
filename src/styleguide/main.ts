@@ -40,7 +40,21 @@ function tileWorld(tile: Tile): { world: WorldState; ball: BallState } {
     radius: tile.radius ?? first.radius,
   };
   const enemy: BallState = { ...second, position: { x: toward.x * 800, y: toward.y * 800 } };
-  return { world: { ...base, tick: TICK, balls: [ball, enemy] }, ball };
+  const minions =
+    tile.minionOut === true
+      ? [
+          {
+            id: 'minion-0',
+            ownerId: ball.id,
+            position: { x: 5000, y: 5000 },
+            velocity: { x: 1, y: 0 },
+            radius: MINION_RADIUS,
+            damage: 0,
+            ticksLeft: 100,
+          },
+        ]
+      : [];
+  return { world: { ...base, tick: TICK, balls: [ball, enemy], minions }, ball };
 }
 
 function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {

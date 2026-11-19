@@ -7,6 +7,7 @@
 - Amended by: ADR 0045 (the Guardian's armor and the Bloom's regrowth, group 2), ADR 0047 (the
   Guardian is replaced by the Spartan)
 - Amended by: ADR 0071 (the Boomerang's look: only what it holds)
+- Amended by: ADR 0072 (the Bomber's look: its fuse burns down to the next drop)
 
 ## Context
 

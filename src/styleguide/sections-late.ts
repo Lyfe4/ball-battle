@@ -1,5 +1,6 @@
 // The style guide's tiles for batches 3 and 4 (ADR 0026, 0034), kept apart so each file stays
 // readable. sections.ts lists them in roster order with the rest.
+import { SUMMON_TICKS } from '../sim/balls/necromancer.ts';
 import type { Tile } from './sections.ts';
 import { TICK } from './tick.ts';
 
@@ -32,9 +33,15 @@ export const BATCH_THREE_AND_FOUR: readonly (readonly [string, readonly Tile[]])
     ],
   ],
   [
-    'Necromancer: a hood with glowing eyes; its minions are skulls ringed in its colour',
+    'Necromancer: a hood with glowing eyes; while no skull is out, the next forms in the hood as its summon nears; while one is out (a skull ringed in its colour) the hood is empty and the eyes dim (ADR 0072)',
     [
-      { label: 'idle', id: 'necromancer' },
+      {
+        label: 'skull forming',
+        id: 'necromancer',
+        abilityState: { nextSummonTick: TICK + Math.round(SUMMON_TICKS / 2) },
+      },
+      { label: 'skull ready', id: 'necromancer', abilityState: { nextSummonTick: TICK + 2 } },
+      { label: 'skull out', id: 'necromancer', minionOut: true },
       { label: 'hit flash', id: 'necromancer', flash: 0.6 },
       { label: 'mirror B', id: 'necromancer', repeat: true },
       { label: 'defeated', id: 'necromancer', defeated: true },

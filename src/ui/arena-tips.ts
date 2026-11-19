@@ -7,7 +7,8 @@
 import type { Tips } from '../app/tips.ts';
 import { showsAbility } from '../render/ability-sign.ts';
 import { theme } from '../render/theme.ts';
-import type { DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
+import { sideOf } from '../sim/side.ts';
+import type { BallState, DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
 import { element, setHidden } from './dom.ts';
 
 /** How long an ability hint shows, in effect-time milliseconds. */
@@ -21,6 +22,26 @@ export interface ArenaTips {
   /** Places the hint over `drawn` at `nowMs`. */
   update(drawn: WorldState, nowMs: number): void;
   isActive(nowMs: number): boolean;
+}
+
+interface Hint {
+  readonly ballId: string;
+  /** Its ball's definition id: the key it was taken under. */
+  readonly key: string;
+  readonly text: string;
+}
+
+/**
+ * The ball a hint shows over: its own ball while it is in the fight, else another of the same kind
+ * on its side (a Slime's surviving half), else none.
+ */
+function hintBall(hint: Hint, balls: readonly BallState[]): BallState | undefined {
+  const own = balls.find((ball) => ball.id === hint.ballId);
+  if (own !== undefined && own.health > 0) return own;
+  const side = own === undefined ? hint.ballId : sideOf(own);
+  return balls.find(
+    (ball) => ball.health > 0 && ball.definitionId === hint.key && sideOf(ball) === side,
+  );
 }
 
 /** Where a world point sits over the arena, as a share of its box (the rim is outside 0..size). */
@@ -47,12 +68,26 @@ export function createArenaTips(
   container.append(layer);
 
   /** Hints due, in order: one shows at a time, so two never overlap. */
-  let queue: { ballId: string; text: string }[] = [];
-  let showing: { ballId: string; text: string; startMs: number } | undefined;
+  let queue: Hint[] = [];
+  let showing: (Hint & { startMs: number }) | undefined;
   let teachingNow = false;
+
+  /**
+   * The next hint whose ball is still there to show it over. One with nothing left to point at
+   * (knocked out while it waited behind another) is given back, not lost: it shows next time.
+   */
+  const nextFor = (balls: readonly BallState[], nowMs: number) => {
+    for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+      if (hintBall(next, balls) !== undefined) return { ...next, startMs: nowMs };
+      tips.giveBackHint(next.key);
+    }
+    return undefined;
+  };
 
   return {
     start(teaching) {
+      // Hints still waiting when a fight ends were never seen.
+      for (const waiting of queue) tips.giveBackHint(waiting.key);
       queue = [];
       showing = undefined;
       hint.hidden = true;
@@ -65,23 +100,18 @@ export function createArenaTips(
           const ability = lookup.get(ball.definitionId)?.ability;
           if (ability === undefined || !showsAbility(event, ball.id, ability.shownBy)) continue;
           if (tips.takeHint(ball.definitionId)) {
-            queue.push({ ballId: ball.id, text: `${ability.name}!` });
+            queue.push({ ballId: ball.id, key: ball.definitionId, text: `${ability.name}!` });
           }
         }
       }
-      if (showing === undefined && queue.length > 0) {
-        const next = queue.shift();
-        if (next !== undefined) showing = { ...next, startMs: nowMs };
-      }
+      showing ??= nextFor(world.balls, nowMs);
     },
     update(drawn, nowMs) {
       if (showing !== undefined && nowMs - showing.startMs >= HINT_MS) {
-        const next = queue.shift();
-        showing = next === undefined ? undefined : { ...next, startMs: nowMs };
+        showing = nextFor(drawn.balls, nowMs);
       }
-      const ball =
-        showing === undefined ? undefined : drawn.balls.find((b) => b.id === showing?.ballId);
-      if (showing === undefined || ball === undefined || ball.health <= 0) {
+      const ball = showing === undefined ? undefined : hintBall(showing, drawn.balls);
+      if (showing === undefined || ball === undefined) {
         setHidden(hint, true);
         return;
       }
