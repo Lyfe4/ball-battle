@@ -33,6 +33,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'storm',
     intended: 'x',
+    level: 'strong',
     reason: 'A strike is a big hit, and the rewind undoes it.',
   },
   {
@@ -106,6 +107,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'storm',
     y: 'vampire',
     intended: 'x',
+    level: 'strong',
     reason: 'One strike takes most of its small health, and lightning gives it nothing to drink.',
   },
   {
@@ -135,15 +137,16 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves are far too small to rewind, but they come only off walls: plain trades.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Shockwaves are far too small to rewind, and they keep chipping it off every wall.',
   },
   {
     x: 'frost',
     y: 'quake',
-    intended: 'even',
-    reason:
-      'Slowed, it hits fewer walls, but the Frost still meets its shockwaves: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Slowed, it reaches the walls less often, so fewer shockwaves go out.',
   },
   {
     x: 'inferno',
@@ -161,6 +164,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'berserker',
     intended: 'y',
+    level: 'edge',
     reason: 'Every small shockwave stores rage, so its next bump hits far harder.',
   },
   {
@@ -185,6 +189,7 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'necromancer',
     intended: 'x',
+    level: 'edge',
     reason: 'Wide shockwaves keep popping the skull before it reaches the Quake.',
   },
   {

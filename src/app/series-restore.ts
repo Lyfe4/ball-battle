@@ -11,7 +11,7 @@
 // link itself. Anything else (another ruleset, a tampered pick or lineup, a broken save) is
 // refused, and the caller starts over.
 import { botPick } from '../sim/bot.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { replaysHere } from '../sim/ruleset.ts';
 import {
   awaitingPick,
   nextMatch,
@@ -91,7 +91,7 @@ export function restoreSeries(
 
 function restore(saved: SavedSeries, definitions: DefinitionLookup): SeriesSession | undefined {
   const { setup, plays, recorded, link } = saved;
-  if (setup.ruleset !== RULESET_VERSION) return undefined;
+  if (!replaysHere(setup.ruleset)) return undefined;
   // Before the first match is recorded the session has always moved on to it.
   if (!Number.isInteger(plays) || plays < 0 || (plays === 0 && recorded)) return undefined;
   const picks = setup.picks ?? [];

@@ -20,6 +20,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     x: 'spider',
     y: 'speedster',
     intended: 'x',
+    level: 'strong',
     reason: 'The fastest ball hits the most walls, and every web slows it right down.',
   },
   {
@@ -32,6 +33,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     x: 'spider',
     y: 'archer',
     intended: 'y',
+    level: 'edge',
     reason: 'Its arrows don’t need speed, so a slow costs it nothing, and they land from afar.',
   },
   {
@@ -74,6 +76,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     x: 'spider',
     y: 'quake',
     intended: 'x',
+    level: 'edge',
     reason: 'Slowed, it reaches fewer walls, so it sends fewer shockwaves.',
   },
   {
@@ -97,8 +100,9 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spider',
     y: 'chrono',
-    intended: 'even',
-    reason: 'It bumps back to the same wall, but each web catches it only once: even.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Webs nip and slow it on every wall, and a nip is too small to rewind.',
   },
   {
     x: 'spider',
@@ -116,6 +120,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     x: 'spider',
     y: 'boomerang',
     intended: 'y',
+    level: 'edge',
     reason:
       'A slow costs a returning boomerang nothing, and each pass chips it as nips can’t keep up.',
   },
@@ -123,12 +128,14 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     x: 'spider',
     y: 'bomber',
     intended: 'y',
+    level: 'edge',
     reason: 'A slow doesn’t stop a blast, and each bomb it runs into costs more than nips win.',
   },
   {
     x: 'spider',
     y: 'spartan',
     intended: 'y',
+    level: 'edge',
     reason: 'The shield halves the nips, and the spear lands however slow it is.',
   },
   {

@@ -2,13 +2,7 @@
 // CSV, for reading in a spreadsheet. Pure, so it is tested without playing matches; the rates come
 // from the same runs and the same band checks as `pnpm balance` (scripts/counter-map.ts).
 import type { BallSummary } from './balance-summary.ts';
-import {
-  checkCounter,
-  COUNTER_BANDS,
-  counterFor,
-  inGreyZone,
-  type CounterEntry,
-} from './counter-map.ts';
+import { checkCounter, counterFor, labelOf, measuredOf, type CounterEntry } from './counter-map.ts';
 
 /** One pair as played: x and y in roster order, win and draw counts over `games`. */
 export interface PlayedPair {
@@ -20,13 +14,12 @@ export interface PlayedPair {
   readonly games: number;
 }
 
-/** How a pair sits against its counter-map band, in the words of `pnpm balance`. */
-export type BandResult = 'pass' | 'warn' | 'near' | 'miss' | 'grey zone';
+/** How a pair sits against its level's band, in the words of `pnpm balance` (ADR 0073). */
+export type BandResult = 'pass' | 'warn' | 'miss';
 
 /**
  * The band result for a pair (rates for the entry's own x and y) and a short note on why it is
- * not a plain pass. A full run's noise allowance (2 points) decides NEAR. An even pair with a side
- * at 58-62% is the grey zone rather than a WARN; a NEAR or MISS outranks it.
+ * not a plain pass: a full run has no NEAR, so a pair outside its band measures another level.
  */
 export function bandResult(
   entry: CounterEntry,
@@ -34,18 +27,12 @@ export function bandResult(
   yRate: number,
 ): { readonly result: BandResult; readonly note: string } {
   const verdict = checkCounter(entry, xRate, yRate);
-  if (verdict === 'miss' || verdict === 'near') {
-    return { result: verdict, note: 'outside the floor' };
-  }
-  if (inGreyZone(entry, xRate, yRate)) return { result: 'grey zone', note: 'a side at 58-62%' };
   if (verdict === 'ok') return { result: 'pass', note: '' };
-  if (verdict === 'warn') return { result: 'warn', note: 'near a target edge' };
-  // Inside the floor, outside the target.
-  if (entry.intended === 'even') return { result: 'warn', note: 'outside the target' };
-  const rate = entry.intended === 'x' ? xRate : yRate;
+  const measured = measuredOf(Math.max(xRate, yRate));
+  if (verdict === 'warn') return { result: 'warn', note: 'off the aim' };
   return {
-    result: 'warn',
-    note: rate < COUNTER_BANDS.counter[0] ? 'below the target' : 'above the target',
+    result: 'miss',
+    note: measured === labelOf(entry) ? 'outside the band' : `measures ${measured}`,
   };
 }
 
@@ -87,8 +74,10 @@ export function matrixCsv(
     const yRate = pair.yWins / pair.games;
     const [entryX, entryY] = entry.x === pair.x ? [xRate, yRate] : [yRate, xRate];
     const { result, note } = bandResult(entry, entryX, entryY);
-    const favoured = entry.intended === 'even' ? undefined : entry[entry.intended];
-    const map = favoured === undefined ? 'even' : favoured === pair.x ? 'A favoured' : 'B favoured';
+    const map =
+      entry.intended === 'even'
+        ? 'even'
+        : `${entry[entry.intended] === pair.x ? 'A' : 'B'} ${entry.level}`;
     return line([
       ruleset,
       nameOf(pair.x),
@@ -113,13 +102,17 @@ export const BALLS_HEADER = [
   'counters_won_rates',
   'counters_lost',
   'counters_lost_rates',
+  'edges_won',
+  'edges_won_rates',
+  'edges_lost',
+  'edges_lost_rates',
   'weakest_counter',
   'weakest_counter_pct',
 ] as const;
 
 /**
- * docs/balance-balls.csv: one row per ball, its overall win rate and its counters by the map with
- * its own win rate against each (wins sharpest first, losses worst first). Its weakest counter is
+ * docs/balance-balls.csv: one row per ball, its overall win rate, and its strong counters and edges
+ * by the map with its own win rate against each (wins sharpest first, losses worst first). Its weakest counter is
  * the ball it is favoured against that it beats least often; none for a ball that beats nobody.
  */
 export function ballsCsv(summaries: readonly BallSummary[], ruleset: number): string {
@@ -136,6 +129,10 @@ export function ballsCsv(summaries: readonly BallSummary[], ruleset: number): st
       list(ball.beats),
       ball.losesTo.length,
       list(ball.losesTo),
+      ball.edges.length,
+      list(ball.edges),
+      ball.edgedBy.length,
+      list(ball.edgedBy),
       weakest === undefined ? '' : nameOf(weakest.opponent),
       weakest === undefined ? '' : pct(weakest.rate, 1),
     ]);

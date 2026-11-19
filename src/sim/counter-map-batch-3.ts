@@ -27,19 +27,23 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'speedster',
-    intended: 'even',
-    reason: 'The pull drags it into a brawl, but its rush hits back hard: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'The pull turns it off the walls before its speed builds, into the Magnet’s heavy bumps.',
   },
   {
     x: 'magnet',
     y: 'frost',
-    intended: 'even',
-    reason: 'The Frost is sturdy up close, so a forced brawl is an even trade.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The pull only brings it into a brawl with the sturdier Frost, slowed by every bump.',
   },
   {
     x: 'thorns',
     y: 'magnet',
     intended: 'x',
+    level: 'strong',
     reason: 'The Magnet drags the spikes into itself, and every hard hit comes back.',
   },
   // The Ghost.
@@ -72,6 +76,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'magnet',
     y: 'necromancer',
     intended: 'x',
+    level: 'strong',
     reason: 'Every skull bite starts a pull that drags the Necromancer into its bumps.',
   },
 ];

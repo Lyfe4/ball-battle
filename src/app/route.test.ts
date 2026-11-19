@@ -77,6 +77,18 @@ describe('parseRoute', () => {
     expect(route('a=storm&b=frost&seed=42&v=latest')).toMatchObject({ made: 0 });
   });
 
+  it('replays a link from ruleset 19, whose fights are today’s, and holds one from 18 (ADR 0073)', () => {
+    expect(route('a=storm&b=frost&seed=42&v=19')).toMatchObject({ screen: 'match', seed: 42 });
+    expect(route('a=storm&b=frost&seed=42&v=18')).toStrictEqual({
+      screen: 'outdated',
+      kind: 'match',
+      made: 18,
+    });
+    const series = 'mode=bo3&la=storm,frost,venom&lb=quake,thorns,archer&seed=9';
+    expect(route(`${series}&v=19`)).toMatchObject({ screen: 'series' });
+    expect(route(`${series}&v=18`)).toMatchObject({ screen: 'outdated', made: 18 });
+  });
+
   it('plays an outdated link under today’s rules once asked to, and nothing else changes', () => {
     const match = new URLSearchParams('a=storm&b=frost&seed=42');
     writeTodaysRuleset(match);

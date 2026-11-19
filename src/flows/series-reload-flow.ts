@@ -18,7 +18,6 @@ import {
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
 import type { Format, Lineup } from '../sim/series.ts';
 import { settle } from './page-support.ts';
 import {
@@ -256,7 +255,7 @@ async function leavingAndBadSaves(framed: Framed): Promise<void> {
 
   const old = JSON.stringify({
     save: 1,
-    setup: { ...fight.state.setup, ruleset: RULESET_VERSION - 1 },
+    setup: { ...fight.state.setup, ruleset: 18 },
     plays: 0,
     recorded: false,
   });

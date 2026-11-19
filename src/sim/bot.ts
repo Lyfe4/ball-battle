@@ -1,12 +1,15 @@
 // Opponents for a series (ADR 0017, 0019, 0021, 0035, 0048): three levels, Easy, Normal and
-// Hard, plus the original bot kept for old links. Each level is a weighting of its balls for every
+// Hard, plus the original bot kept for old links (and ruleset 19's Normal and Hard, bots-r19.ts). Each level is a weighting of its balls for every
 // kind of choice, drawn on a seeded stream, so a choice is a pure function of the series and a
 // verifier makes the same one (ADR 0022). The measurement scripts read the same weights, so what
 // they measure is what plays. Pure and seeded, like the rest of the sim.
-import { afterRound, type Memo, type Position } from './bot-model.ts';
+import { afterRound, mapOdds, type Memo, type Odds, type Position } from './bot-model.ts';
 import { maximinMix } from './maximin.ts';
-import { isFavoured } from './counter-map.ts';
+import { standingOf } from './counter-map.ts';
+import { bestBy, blend, draw, LEVEL_SALTS, pickLineup, ROLE_SALTS, uniform } from './bot-draw.ts';
+import { R19_READING } from './bot-r19.ts';
 import { createStream, deriveSeed } from './rng.ts';
+import { RULESET_VERSION } from './ruleset.ts';
 import { botSeedOf } from './series-seeds.ts';
 import {
   formatOf,
@@ -71,97 +74,44 @@ export interface LineupBot {
   choose(view: BotView): string;
 }
 
-/** Keeps each of the bot's choices on its own stream, apart from the series' round seeds. */
-const BOT_SALT = 0xb07;
-const SHOW_SALT = 0x5409;
-const ANSWER_SALT = 0xa45e;
-const OPEN_SALT = 0x0be7;
-/** Normal and Hard draw on streams of their own, so a level never shares another's draws. */
-const LEVEL_SALTS: Readonly<Record<string, number>> = {
-  easy: 0xea5,
-  normal: 0x707a1,
-  hard: 0x4a7d,
-};
-const ROLE_SALTS: Readonly<Record<BotRole, number>> = {
-  show: SHOW_SALT,
-  answer: ANSWER_SALT,
-  open: OPEN_SALT,
-};
-
 /** How often Normal plays the counter map's best choice; otherwise it picks at random. */
 export const NORMAL_COUNTER_SHARE = 0.6;
 /** Hard mixes the balls it may show first whose value is this close to its best (ADR 0035). */
 export const HARD_SHOW_MARGIN = 0.03;
 
 /**
- * Different balls uniformly at random, in a random order: every level picks this way. Each ball is
- * one draw on the stream, so a Best of 5 lineup is its Best of 3 lineup and two more.
+ * How a bot reads the counter map: a ball's standing against another (higher is better for it),
+ * and the round odds Hard plays by. Today's is the three levels (ADR 0073); a retired bot keeps
+ * the map it played by.
  */
-function pickLineup(seed: number, roster: readonly string[], size = DEFAULT_BEST_OF): Lineup {
-  if (new Set(roster).size < size) {
-    throw new Error(`A lineup needs ${String(size)} different balls`);
-  }
-  const random = createStream(deriveSeed([seed, BOT_SALT]));
-  const pool = [...new Set(roster)];
-  const picked: string[] = [];
-  while (picked.length < size) {
-    const index = Math.floor(random() * pool.length);
-    picked.push(...pool.splice(index, 1));
-  }
-  return picked;
+export interface MapReading {
+  readonly standing: (ball: string, opponent: string) => number;
+  readonly odds: Odds;
 }
 
-const uniform = (balls: readonly string[]): Weights =>
-  balls.map((ball) => [ball, 1 / balls.length] as const);
+/** The three levels: strong 2, edge 1, even 0, and the levels' odds. */
+export const LEVELS_READING: MapReading = { standing: standingOf, odds: mapOdds };
 
-/** The balls in `balls` with the highest score, in their order. */
-function bestBy(balls: readonly string[], score: (ball: string) => number, margin = 1e-9) {
-  const scores = balls.map(score);
-  const best = Math.max(...scores);
-  return balls.filter((_, index) => (scores[index] ?? -Infinity) >= best - margin);
-}
+/** Its best counter to `shown` by the map: the ball that stands best against it. */
+const counterTo = (map: MapReading, own: readonly string[], shown: string): Weights =>
+  uniform(bestBy(own, (ball) => map.standing(ball, shown)));
 
-/** Mixes two weightings: `share` of the first, the rest of the second. */
-function blend(share: number, first: Weights, second: Weights): Weights {
-  const total = new Map<string, number>();
-  for (const [ball, weight] of first) total.set(ball, (total.get(ball) ?? 0) + share * weight);
-  for (const [ball, weight] of second)
-    total.set(ball, (total.get(ball) ?? 0) + (1 - share) * weight);
-  return [...total].filter(([, weight]) => weight > 0);
-}
+/** The balls that do best by the map against the opponent's whole lineup. */
+const bestAgainstLineup = (
+  map: MapReading,
+  own: readonly string[],
+  opponent: readonly string[],
+): Weights =>
+  uniform(bestBy(own, (ball) => opponent.reduce((sum, y) => sum + map.standing(ball, y), 0)));
 
-/** 2 favoured, 1 even, 0 unfavoured, by the counter map. */
-const rank = (ball: string, opponent: string) =>
-  isFavoured(ball, opponent) ? 2 : isFavoured(opponent, ball) ? 0 : 1;
-
-/** Its best counter to `shown` by the counter map: favoured, else even, else unfavoured. */
-const counterTo = (own: readonly string[], shown: string): Weights =>
-  uniform(bestBy(own, (ball) => rank(ball, shown)));
-
-/** The balls that do best by the counter map against the opponent's whole lineup. */
-const bestAgainstLineup = (own: readonly string[], opponent: readonly string[]): Weights =>
-  uniform(bestBy(own, (ball) => opponent.reduce((sum, y) => sum + rank(ball, y) - 1, 0)));
-
-/** A seeded draw from `weights`, in their order. */
-function draw(weights: Weights, seed: number): string {
-  const roll = createStream(seed)();
-  let sum = 0;
-  for (const [ball, weight] of weights) {
-    sum += weight;
-    if (roll < sum) return ball;
-  }
-  const last = weights.at(-1);
-  if (last === undefined) throw new Error('No ball to choose from');
-  return last[0];
-}
-
-const positionOf = (view: BotView): Position => ({
+const positionOf = (view: BotView, odds: Odds): Position => ({
   format: view.format,
   own: view.own,
   opponent: view.opponent,
   wins: view.wins,
   losses: view.losses,
   winsNeeded: winsNeededOf(view.bestOf ?? DEFAULT_BEST_OF),
+  odds,
 });
 
 function shownOf(view: BotView): string {
@@ -170,7 +120,7 @@ function shownOf(view: BotView): string {
 }
 
 /** A bot level: its weights, and choices drawn from them on its own streams. */
-function level(id: string, weights: (view: BotView) => Weights): LineupBot {
+export function level(id: string, weights: (view: BotView) => Weights): LineupBot {
   const salt = LEVEL_SALTS[id] ?? 0;
   return {
     id,
@@ -187,17 +137,22 @@ export const easyBot = level('easy', (view) => uniform(view.own));
 
 /**
  * Normal: usually its counter-map best, sometimes anything. Answering, its best counter to the
- * shown ball; opening a Showdown, its balls that fare best against the opponent's lineup; each
- * NORMAL_COUNTER_SHARE of the time, otherwise at random. It shows first at random.
+ * shown ball (a strong counter, else an edge, else even...); opening a Showdown, its balls that
+ * fare best against the opponent's lineup; each NORMAL_COUNTER_SHARE of the time, otherwise at
+ * random. It shows first at random.
  */
-export const normalBot = level('normal', (view) => {
-  if (view.role === 'show') return uniform(view.own);
-  const best =
-    view.role === 'answer'
-      ? counterTo(view.own, shownOf(view))
-      : bestAgainstLineup(view.own, view.opponent);
-  return blend(NORMAL_COUNTER_SHARE, best, uniform(view.own));
-});
+export const normalWeights =
+  (map: MapReading) =>
+  (view: BotView): Weights => {
+    if (view.role === 'show') return uniform(view.own);
+    const best =
+      view.role === 'answer'
+        ? counterTo(map, view.own, shownOf(view))
+        : bestAgainstLineup(map, view.own, view.opponent);
+    return blend(NORMAL_COUNTER_SHARE, best, uniform(view.own));
+  };
+
+export const normalBot = level('normal', normalWeights(LEVELS_READING));
 
 /**
  * Hard: plays the whole series, not just the round (ADR 0035), valuing positions by the counter
@@ -207,49 +162,64 @@ export const normalBot = level('normal', (view) => {
  * Showing first, a ball whose worst answer leaves it within HARD_SHOW_MARGIN of its best, at random
  * among them. Opening a Showdown, the mix of balls that no opener of the opponent's can exploit.
  */
-export const hardBot = level('hard', (view) => {
-  const position = positionOf(view);
-  // One memo per choice: positions repeat within a choice, never across series (bot-model.ts).
-  const memo: Memo = new Map();
-  if (view.role === 'answer') {
-    const shown = shownOf(view);
-    return uniform(bestBy(view.own, (ball) => afterRound(position, 'opponent', ball, shown, memo)));
-  }
-  if (view.role === 'show') {
-    const worstAnswer = (ball: string) =>
-      Math.min(...view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)));
-    return uniform(bestBy(view.own, worstAnswer, HARD_SHOW_MARGIN));
-  }
-  // Round 1 of a Showdown: both open at once, so neither leads; the winner leads round 2.
-  const matrix = view.own.map((ball) =>
-    view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)),
-  );
-  const mix = maximinMix(matrix);
-  return view.own
-    .map((ball, index) => [ball, mix[index] ?? 0] as const)
-    .filter(([, weight]) => weight > 0);
-});
+export const hardWeights =
+  (map: MapReading) =>
+  (view: BotView): Weights => {
+    const position = positionOf(view, map.odds);
+    // One memo per choice: positions repeat within a choice, never across series (bot-model.ts).
+    const memo: Memo = new Map();
+    if (view.role === 'answer') {
+      const shown = shownOf(view);
+      return uniform(
+        bestBy(view.own, (ball) => afterRound(position, 'opponent', ball, shown, memo)),
+      );
+    }
+    if (view.role === 'show') {
+      const worstAnswer = (ball: string) =>
+        Math.min(...view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)));
+      return uniform(bestBy(view.own, worstAnswer, HARD_SHOW_MARGIN));
+    }
+    // Round 1 of a Showdown: both open at once, so neither leads; the winner leads round 2.
+    const matrix = view.own.map((ball) =>
+      view.opponent.map((y) => afterRound(position, 'bot', ball, y, memo)),
+    );
+    const mix = maximinMix(matrix);
+    return view.own
+      .map((ball, index) => [ball, mix[index] ?? 0] as const)
+      .filter(([, weight]) => weight > 0);
+  };
+
+export const hardBot = level('hard', hardWeights(LEVELS_READING));
+
+/** Favoured or not, at either level: how the first bot reads the map (it predates levels). */
+const SIDES_READING: MapReading = {
+  standing: (ball, opponent) => Math.sign(standingOf(ball, opponent)),
+  odds: mapOdds,
+};
 
 /**
  * The first bot (ADR 0017, 0021, 0029), kept so links played against it still replay: it shows
  * first at random and answers with its best counter, ties on a seeded coin. Not offered to new
  * series. Its streams are the ones it always used.
  */
-const firstBotWeights = (view: BotView): Weights =>
-  view.role === 'answer' ? counterTo(view.own, shownOf(view)) : uniform(view.own);
+export function firstBot(map: MapReading): LineupBot {
+  const weights = (view: BotView): Weights =>
+    view.role === 'answer' ? counterTo(map, view.own, shownOf(view)) : uniform(view.own);
+  return {
+    id: 'random',
+    pickLineup,
+    weights,
+    choose(view) {
+      const pool = weights(view).map(([ball]) => ball);
+      const random = createStream(deriveSeed([view.seed, ROLE_SALTS[view.role], view.round]));
+      const choice = pool[Math.floor(random() * pool.length)];
+      if (choice === undefined) throw new Error('No ball to choose from');
+      return choice;
+    },
+  };
+}
 
-export const randomBot: LineupBot = {
-  id: 'random',
-  pickLineup,
-  weights: firstBotWeights,
-  choose(view) {
-    const pool = firstBotWeights(view).map(([ball]) => ball);
-    const random = createStream(deriveSeed([view.seed, ROLE_SALTS[view.role], view.round]));
-    const choice = pool[Math.floor(random() * pool.length)];
-    if (choice === undefined) throw new Error('No ball to choose from');
-    return choice;
-  },
-};
+export const randomBot = firstBot(SIDES_READING);
 
 /** The levels a player can choose, easiest first. */
 export const BOT_LEVELS: readonly LineupBot[] = [easyBot, normalBot, hardBot];
@@ -260,9 +230,27 @@ export const BOTS: ReadonlyMap<string, LineupBot> = new Map(
   [...BOT_LEVELS, randomBot].map((bot) => [bot.id, bot]),
 );
 
-/** The bot an opponent names, or the default level for a player or an unknown id. */
-export function botFor(opponent: Opponent): LineupBot {
-  return (opponent.kind === 'bot' ? BOTS.get(opponent.bot) : undefined) ?? DEFAULT_BOT;
+/**
+ * Ruleset 19's bots (ADR 0073), by id: Easy never read the map, so it is today's; Normal, Hard and
+ * the first bot read ruleset 19's two levels. Same ids, so the same streams.
+ */
+const R19_BOTS: ReadonlyMap<string, LineupBot> = new Map(
+  [
+    easyBot,
+    level('normal', normalWeights(R19_READING)),
+    level('hard', hardWeights(R19_READING)),
+    firstBot(R19_READING),
+  ].map((bot) => [bot.id, bot]),
+);
+
+/** The bot named `id` as it played under `ruleset`, if any. */
+export function botNamed(id: string, ruleset: number = RULESET_VERSION): LineupBot | undefined {
+  return (ruleset === 19 ? R19_BOTS : BOTS).get(id);
+}
+
+/** The bot an opponent names under a ruleset, or the default level for a player or unknown id. */
+export function botFor(opponent: Opponent, ruleset: number = RULESET_VERSION): LineupBot {
+  return (opponent.kind === 'bot' ? botNamed(opponent.bot, ruleset) : undefined) ?? DEFAULT_BOT;
 }
 
 /**

@@ -25,6 +25,7 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     x: 'bomber',
     y: 'speedster',
     intended: 'x',
+    level: 'edge',
     reason: 'The fastest ball covers the most ground, so it runs into the most bombs.',
   },
   {

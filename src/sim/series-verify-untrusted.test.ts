@@ -58,8 +58,9 @@ describe('verifySeries, given untrusted input', () => {
     expect(reasonOf({ ...showdown, ruleset: String(RULESET_VERSION) })).toBe(
       'The ruleset is not a 32-bit unsigned integer',
     );
-    expect(reasonOf({ ...showdown, ruleset: RULESET_VERSION - 1 })).toBe(
-      `Played under ruleset ${String(RULESET_VERSION - 1)}, not ${String(RULESET_VERSION)}`,
+    // Ruleset 19 still replays here (its fights are today's, ADR 0073); 18 doesn't.
+    expect(reasonOf({ ...showdown, ruleset: 18 })).toBe(
+      `Played under ruleset 18, not ${String(RULESET_VERSION)}`,
     );
   });
 });

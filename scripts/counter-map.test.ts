@@ -1,34 +1,51 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../src/sim/balls/index.ts';
 import {
   checkCounter,
   ciAllowance,
-  COUNTER_BANDS,
   COUNTER_MAP,
   counterFor,
   EVEN_PICKS,
-  inGreyZone,
-  outsideFinalBand,
+  FIFTH_FROM_ONE_MECHANIC,
+  labelOf,
+  measuredOf,
   SHAPE,
   SHAPE_EXCEPTIONS,
   shapeProblem,
   type CounterEntry,
 } from './counter-map.ts';
 
-const favoured: CounterEntry = { x: 'a', y: 'b', intended: 'x', reason: '' };
+const strong: CounterEntry = { x: 'a', y: 'b', intended: 'x', level: 'strong', reason: '' };
+const edge: CounterEntry = { x: 'a', y: 'b', intended: 'x', level: 'edge', reason: '' };
 const even: CounterEntry = { x: 'a', y: 'b', intended: 'even', reason: '' };
 
-/** The balls the map says `id` beats and loses to. */
-function countersOf(id: string): { beats: string[]; losesTo: string[] } {
+/** The balls the map says `id` beats and loses to outright (strong counters). */
+function strongCountersOf(id: string): { beats: string[]; losesTo: string[] } {
   const beats: string[] = [];
   const losesTo: string[] = [];
   for (const entry of COUNTER_MAP) {
-    if (entry.intended === 'even' || (entry.x !== id && entry.y !== id)) continue;
+    if (entry.intended === 'even' || entry.level !== 'strong') continue;
+    if (entry.x !== id && entry.y !== id) continue;
     const winner = entry.intended === 'x' ? entry.x : entry.y;
     const other = entry.x === id ? entry.y : entry.x;
     (winner === id ? beats : losesTo).push(other);
   }
   return { beats, losesTo };
+}
+
+/** The committed matchup sheet (`pnpm balance:matrix`, 500 seeds): each pair's two win rates. */
+function sheet(): { a: string; b: string; aRate: number; bRate: number }[] {
+  const text = readFileSync(new URL('../docs/balance-matrix.csv', import.meta.url), 'utf8');
+  const id = (name: string) => BALLS.find((ball) => ball.name === name)?.id ?? name;
+  return text
+    .trim()
+    .split('\n')
+    .slice(1)
+    .map((row) => {
+      const [, a = '', b = '', aPct = '', bPct = ''] = row.split(',');
+      return { a: id(a), b: id(b), aRate: Number(aPct) / 100, bRate: Number(bPct) / 100 };
+    });
 }
 
 describe('the counter map', () => {
@@ -44,16 +61,62 @@ describe('the counter map', () => {
     }
   });
 
-  it('gives every ball its shape: 2-4 counters each way, within 1, but for the named exceptions', () => {
+  it('labels every pair by the one rule, from the committed 500-seed sheet (ADR 0073)', () => {
+    const rows = sheet();
+    expect(rows).toHaveLength(COUNTER_MAP.length);
+    const wrong = rows.flatMap(({ a, b, aRate, bRate }) => {
+      const entry = counterFor(a, b);
+      if (entry === undefined) return [`${a} vs ${b}: not in the map`];
+      const measured = measuredOf(Math.max(aRate, bRate));
+      const favoured = measured === 'even' ? undefined : aRate > bRate ? a : b;
+      const mapFavoured = entry.intended === 'even' ? undefined : entry[entry.intended];
+      return labelOf(entry) === measured && mapFavoured === favoured
+        ? []
+        : [`${a} vs ${b}: labelled ${labelOf(entry)}, measures ${measured}`];
+    });
+    expect(wrong).toStrictEqual([]);
+  });
+
+  it('gives every edge a reason of its own, short enough for a phone card', () => {
+    for (const entry of COUNTER_MAP) {
+      const pair = `${entry.x} vs ${entry.y}`;
+      expect(entry.reason, pair).not.toMatch(/still to be written/i);
+      // A favoured pair's reason says why one side leans, never that neither does.
+      if (entry.intended !== 'even') {
+        expect(entry.reason, pair).not.toMatch(/neither|evens out|: even\.?$/i);
+      }
+      expect(entry.reason.length, pair).toBeLessThanOrEqual(97);
+    }
+  });
+
+  it('gives every ball its shape, strong counters only, but for the named exceptions', () => {
     for (const { id } of BALLS) {
-      const { beats, losesTo } = countersOf(id);
+      const { beats, losesTo } = strongCountersOf(id);
       expect(shapeProblem(id, beats, losesTo), id).toBeUndefined();
     }
   });
 
-  it('names only the known gaps as exceptions (ADR 0045 group 4, ADR 0047, ADR 0049)', () => {
+  it('names exactly the balls off the shape today as exceptions (ADR 0073)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      ['archer', 'berserker', 'bloom', 'ghost', 'magnet', 'quake', 'titan'].sort(),
+      [
+        'titan',
+        'ghost',
+        'quake',
+        'slime',
+        'spider',
+        'spartan',
+        'sniper',
+        'inferno',
+        'frost',
+        'boomerang',
+        'archer',
+        'thorns',
+        'magnet',
+        'necromancer',
+        'bomber',
+        'bloom',
+        'battery',
+      ].sort(),
     );
   });
 
@@ -61,7 +124,7 @@ describe('the counter map', () => {
     expect(Object.keys(EVEN_PICKS)).toStrictEqual(['brawler']);
     expect(EVEN_PICKS['brawler']?.losesTo).toStrictEqual(['thorns']);
     for (const [id, { beats, losesTo }] of Object.entries(EVEN_PICKS)) {
-      const own = countersOf(id);
+      const own = strongCountersOf(id);
       expect([...own.beats].sort(), id).toStrictEqual([...beats].sort());
       expect([...own.losesTo].sort(), id).toStrictEqual([...losesTo].sort());
     }
@@ -74,166 +137,144 @@ describe('shapeProblem', () => {
   it('holds every other ball to SHAPE', () => {
     expect(SHAPE).toStrictEqual({ fewest: 2, most: 4, within: 1 });
     expect(shapeProblem('venom', some(2), some(3))).toBeUndefined();
+    expect(shapeProblem('venom', some(4), some(4))).toBeUndefined();
     expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
     expect(shapeProblem('venom', some(5), some(4))).toBeDefined();
     expect(shapeProblem('venom', some(2), some(4))).toBeDefined();
   });
 
+  it('allows a fifth on one side only where one visible mechanic gives it', () => {
+    expect(Object.keys(FIFTH_FROM_ONE_MECHANIC)).toStrictEqual(['bloom']);
+    // The Bloom may lose to five (any hit shuts the bud); its gap today is allowed on top.
+    expect(shapeProblem('bloom', some(3), some(5))).toBeUndefined();
+    expect(shapeProblem('bloom', some(3), some(6))).toBeDefined();
+    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
+  });
+
   it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's shape today (map and measured, ruleset 19) fits its allowance...
+    // Each ball's strong-only shape today (ruleset 20, map and measured) fits its allowance...
     const today: Readonly<Record<string, readonly [number, number]>> = {
       titan: [1, 1],
-      berserker: [5, 4],
-      bloom: [4, 5],
       ghost: [2, 1],
+      quake: [0, 0],
+      slime: [2, 0],
+      spider: [1, 0],
+      spartan: [1, 2],
+      sniper: [0, 1],
+      inferno: [2, 1],
+      frost: [1, 2],
+      boomerang: [1, 4],
+      archer: [2, 4],
+      thorns: [4, 0],
       magnet: [3, 1],
-      quake: [1, 2],
-      archer: [4, 5],
+      necromancer: [2, 1],
+      bomber: [0, 2],
+      bloom: [3, 5],
+      battery: [3, 1],
     };
+    expect(Object.keys(today).sort()).toStrictEqual(Object.keys(SHAPE_EXCEPTIONS).sort());
     for (const [id, [wins, losses]] of Object.entries(today)) {
       expect({ id, problem: shapeProblem(id, some(wins), some(losses)) }).toStrictEqual({
         id,
         problem: undefined,
       });
+      // ...and one more step off the shape fails: one fewer than its fewest on a side, or the
+      // two sides one further apart than allowed.
+      const allowance = SHAPE_EXCEPTIONS[id];
+      if (allowance === undefined) throw new Error(id);
+      const { wins: w, losses: l, within } = allowance;
+      expect([w.fewest, l.fewest, within], id).toStrictEqual([
+        Math.min(wins, 2),
+        Math.min(losses, 2),
+        Math.max(Math.abs(wins - losses), 1),
+      ]);
+      if (w.fewest > 0)
+        expect(shapeProblem(id, some(w.fewest - 1), some(losses)), id).toBeDefined();
+      if (l.fewest > 0) expect(shapeProblem(id, some(wins), some(l.fewest - 1)), id).toBeDefined();
+      expect(shapeProblem(id, some(losses + within + 1), some(losses)), id).toBeDefined();
     }
-    // ...and one more step off the shape on any side fails.
-    expect(shapeProblem('titan', some(0), some(1))).toBeDefined();
-    expect(shapeProblem('titan', some(1), some(0))).toBeDefined();
-    // The Storm and Bomber lost their allowances to the Battery (ADR 0056): one loss is off shape.
-    expect(shapeProblem('storm', some(2), some(1))).toBeDefined();
-    expect(shapeProblem('bomber', some(2), some(1))).toBeDefined();
-    expect(shapeProblem('ghost', some(1), some(1))).toBeDefined();
-    expect(shapeProblem('ghost', some(2), some(0))).toBeDefined();
-    // The Magnet (ADR 0058): one loss and up to three wins over it, never none or a fourth.
-    expect(shapeProblem('magnet', some(4), some(1))).toBeDefined();
-    expect(shapeProblem('magnet', some(3), some(0))).toBeDefined();
-    expect(shapeProblem('magnet', some(2), some(1))).toBeUndefined();
-    expect(shapeProblem('berserker', some(6), some(5))).toBeDefined();
-    expect(shapeProblem('berserker', some(5), some(5))).toBeDefined();
-    expect(shapeProblem('berserker', some(5), some(3))).toBeDefined();
-    expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
-    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
-    expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
-    // The Sniper lost its allowance to its quicker lock (ADR 0057): one win is off shape.
-    expect(shapeProblem('sniper', some(1), some(2))).toBeDefined();
-    expect(shapeProblem('quake', some(1), some(1))).toBeDefined();
-    expect(shapeProblem('quake', some(1), some(3))).toBeDefined();
-    // The Archer (ADR 0060): up to five losses, its wins within 1, never a sixth.
-    expect(shapeProblem('archer', some(4), some(6))).toBeDefined();
-    expect(shapeProblem('archer', some(3), some(5))).toBeDefined();
-    expect(shapeProblem('archer', some(5), some(5))).toBeDefined();
-    // The Vampire lost its allowance to the Slime (ADR 0060): 2 wins over 4 losses is off shape.
-    expect(shapeProblem('vampire', some(2), some(4))).toBeDefined();
     // A ball that moves back towards the shape still passes.
     expect(shapeProblem('titan', some(2), some(2))).toBeUndefined();
-    expect(shapeProblem('archer', some(4), some(4))).toBeUndefined();
-    expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
-  });
-
-  it('pins each allowance', () => {
-    const range = (fewest: number, most: number) => ({ fewest, most });
-    const standard = range(2, 4);
-    expect(SHAPE_EXCEPTIONS).toStrictEqual({
-      titan: { wins: range(1, 4), losses: range(1, 4), within: 1 },
-      berserker: { wins: range(2, 5), losses: standard, within: 1 },
-      bloom: { wins: standard, losses: range(2, 5), within: 1 },
-      ghost: { wins: standard, losses: range(1, 4), within: 1 },
-      magnet: { wins: standard, losses: range(1, 4), within: 2 },
-      quake: { wins: range(1, 4), losses: standard, within: 1 },
-      archer: { wins: standard, losses: range(2, 5), within: 1 },
-    });
+    expect(shapeProblem('thorns', some(4), some(3))).toBeUndefined();
+    expect(shapeProblem('quake', some(2), some(2))).toBeUndefined();
   });
 
   it('holds an even pick to exactly its listed counters', () => {
     expect(shapeProblem('brawler', [], ['thorns'])).toBeUndefined();
     expect(shapeProblem('brawler', ['ghost'], ['thorns'])).toBeDefined();
-    // The Magnet is no longer an even pick (ADR 0058): beating nobody is off its shape.
-    expect(shapeProblem('magnet', [], ['thorns'])).toBeDefined();
+  });
+});
+
+describe('measuredOf', () => {
+  it('labels by the better side: 65% or more strong, 58% up to 65% an edge, else even', () => {
+    expect(measuredOf(0.78)).toBe('strong');
+    expect(measuredOf(0.65)).toBe('strong');
+    expect(measuredOf(650 / 1000)).toBe('strong');
+    expect(measuredOf(0.6499)).toBe('edge');
+    expect(measuredOf(0.58)).toBe('edge');
+    expect(measuredOf(580 / 1000)).toBe('edge');
+    expect(measuredOf(0.5799)).toBe('even');
+    expect(measuredOf(0.5)).toBe('even');
   });
 });
 
 describe('checkCounter', () => {
-  it('checks a counter against its 65-72% target, warning near the edges', () => {
-    expect(checkCounter(favoured, 0.68, 0.31)).toBe('ok');
-    expect(checkCounter(favoured, 0.66, 0.33)).toBe('warn');
-    expect(checkCounter(favoured, 0.71, 0.28)).toBe('warn');
-    expect(checkCounter({ ...favoured, intended: 'y' }, 0.31, 0.68)).toBe('ok');
+  it('passes a strong counter at 68-75%, warns at 65-68% and 75-78%, misses outside 65-78%', () => {
+    expect(checkCounter(strong, 0.7, 0.29)).toBe('ok');
+    expect(checkCounter(strong, 0.68, 0.31)).toBe('ok');
+    expect(checkCounter(strong, 0.75, 0.25)).toBe('ok');
+    expect(checkCounter(strong, 0.66, 0.33)).toBe('warn');
+    expect(checkCounter(strong, 0.65, 0.35)).toBe('warn');
+    expect(checkCounter(strong, 0.77, 0.23)).toBe('warn');
+    expect(checkCounter(strong, 0.78, 0.22)).toBe('warn');
+    expect(checkCounter(strong, 0.649, 0.35)).toBe('miss');
+    expect(checkCounter(strong, 0.781, 0.21)).toBe('miss');
+    expect(checkCounter({ ...strong, intended: 'y' }, 0.29, 0.7)).toBe('ok');
   });
 
-  it('counts the target edges themselves as in the target', () => {
-    expect(checkCounter(favoured, 0.65, 0.35)).toBe('warn');
-    expect(checkCounter(favoured, 0.72, 0.28)).toBe('warn');
-    expect(checkCounter(even, 0.45, 0.55)).toBe('warn');
+  it('passes an edge at 59-64%, warns within a point of 58% or 65%, misses outside 58-65%', () => {
+    expect(checkCounter(edge, 0.61, 0.38)).toBe('ok');
+    expect(checkCounter(edge, 0.59, 0.4)).toBe('ok');
+    expect(checkCounter(edge, 0.64, 0.35)).toBe('ok');
+    expect(checkCounter(edge, 0.585, 0.41)).toBe('warn');
+    expect(checkCounter(edge, 0.58, 0.41)).toBe('warn');
+    expect(checkCounter(edge, 0.645, 0.35)).toBe('warn');
+    // 65% is a strong counter, so an edge there is mislabelled.
+    expect(checkCounter(edge, 0.65, 0.35)).toBe('miss');
+    expect(checkCounter(edge, 0.579, 0.42)).toBe('miss');
   });
 
-  it('calls a counter between its 62-78% floor and the target below target, not a miss', () => {
-    expect(checkCounter(favoured, 0.62, 0.38)).toBe('short');
-    expect(checkCounter(favoured, 0.64, 0.36)).toBe('short');
-    expect(checkCounter(favoured, 0.75, 0.25)).toBe('short');
-    expect(checkCounter(favoured, 0.78, 0.22)).toBe('short');
-  });
-
-  it('calls a counter up to 2 points outside its floor NEAR, and further out MISS', () => {
-    expect(checkCounter(favoured, 0.61, 0.39)).toBe('near');
-    expect(checkCounter(favoured, 0.6, 0.4)).toBe('near');
-    expect(checkCounter(favoured, 0.5999, 0.4)).toBe('miss');
-    expect(checkCounter(favoured, 0.8, 0.2)).toBe('near');
-    expect(checkCounter(favoured, 0.8001, 0.19)).toBe('miss');
-  });
-
-  it('treats a rate exactly 2 points out as NEAR despite floating-point rounding', () => {
-    // 300/500 = 0.6 and 400/500 = 0.8, computed the way pnpm balance computes rates.
-    expect(checkCounter(favoured, 300 / 500, 200 / 500)).toBe('near');
-    expect(checkCounter(favoured, 400 / 500, 100 / 500)).toBe('near');
-    expect(checkCounter(even, 320 / 500, 180 / 500)).toBe('near');
-  });
-
-  it('needs both sides of an even pair in 45-55% for the target and 22-62% for the floor', () => {
+  it('passes an even pair with neither side over 55%, warns at 55-58%, misses at 58%', () => {
     expect(checkCounter(even, 0.5, 0.49)).toBe('ok');
-    expect(checkCounter(even, 0.53, 0.46)).toBe('warn');
-    expect(checkCounter(even, 0.56, 0.43)).toBe('short');
-    expect(checkCounter(even, 0.61, 0.39)).toBe('short');
-    // Draws can push the other side under 38%: still even while nobody reaches 62%.
-    expect(checkCounter(even, 0.598, 0.369)).toBe('short');
-    expect(checkCounter(even, 0.63, 0.37)).toBe('near');
-    expect(checkCounter(even, 0.6401, 0.3599)).toBe('miss');
+    expect(checkCounter(even, 0.45, 0.55)).toBe('ok');
+    expect(checkCounter(even, 0.56, 0.43)).toBe('warn');
+    expect(checkCounter(even, 0.42, 0.575)).toBe('warn');
+    expect(checkCounter(even, 0.58, 0.41)).toBe('miss');
+    expect(checkCounter(even, 0.38, 0.6)).toBe('miss');
   });
 
-  it('passes a wider miss as NEAR when given a larger allowance, as the CI check does', () => {
-    expect(checkCounter(favoured, 0.55, 0.45)).toBe('miss');
-    expect(checkCounter(favoured, 0.55, 0.45, 0.087)).toBe('near');
-    expect(checkCounter(favoured, 0.52, 0.48, 0.087)).toBe('miss');
+  it('has no gap and no grey zone: every rate passes exactly one label', () => {
+    for (let wins = 500; wins <= 780; wins += 1) {
+      const rate = wins / 1000;
+      const passing = [strong, edge, even].filter(
+        (entry) => checkCounter(entry, rate, 1 - rate) !== 'miss',
+      );
+      expect(passing.map(labelOf), String(rate)).toStrictEqual([measuredOf(rate)]);
+    }
   });
-});
 
-describe('outsideFinalBand', () => {
-  it('uses the final floors with no allowance: counter 62-78%, even sides 22-62%', () => {
-    expect(outsideFinalBand(favoured, 0.62, 0.38)).toBe(false);
-    expect(outsideFinalBand(favoured, 0.619, 0.38)).toBe(true);
-    expect(outsideFinalBand(favoured, 0.78, 0.22)).toBe(false);
-    expect(outsideFinalBand(favoured, 0.781, 0.21)).toBe(true);
-    expect(outsideFinalBand({ ...favoured, intended: 'y' }, 0.3, 0.7)).toBe(false);
-    expect(outsideFinalBand(even, 0.62, 0.38)).toBe(false);
-    expect(outsideFinalBand(even, 0.37, 0.63)).toBe(true);
-    expect(outsideFinalBand(even, 0.369, 0.598)).toBe(false);
-  });
-});
-
-describe('inGreyZone', () => {
-  it('flags an even pair with a side above 58% up to 62%, and nothing else', () => {
-    expect(inGreyZone(even, 0.58, 0.41)).toBe(false);
-    expect(inGreyZone(even, 0.581, 0.41)).toBe(true);
-    expect(inGreyZone(even, 0.4, 0.62)).toBe(true);
-    expect(inGreyZone(even, 0.37, 0.621)).toBe(false);
-    expect(inGreyZone(favoured, 0.6, 0.4)).toBe(false);
-    expect(COUNTER_BANDS.greyFrom).toBe(0.58);
+  it('has no NEAR in a full run, and passes a near miss as NEAR in the CI check', () => {
+    expect(checkCounter(strong, 0.64, 0.36)).toBe('miss');
+    expect(checkCounter(strong, 0.64, 0.36, ciAllowance(300))).toBe('near');
+    expect(checkCounter(edge, 0.55, 0.45, ciAllowance(300))).toBe('near');
+    expect(checkCounter(edge, 0.49, 0.5, ciAllowance(300))).toBe('miss');
+    expect(checkCounter(even, 0.36, 0.64, ciAllowance(300))).toBe('near');
   });
 });
 
 describe('ciAllowance', () => {
-  it('is three standard errors of a pair over the sample, never under the full run’s 2 points', () => {
+  it('is three standard errors of a pair over the sample', () => {
     expect(ciAllowance(300)).toBeCloseTo(0.0866, 4);
     expect(ciAllowance(200)).toBeCloseTo(0.1061, 4);
-    expect(ciAllowance(1_000_000)).toBe(COUNTER_BANDS.nearWithin);
   });
 });

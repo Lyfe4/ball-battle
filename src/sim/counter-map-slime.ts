@@ -25,12 +25,14 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
     x: 'slime',
     y: 'vampire',
     intended: 'y',
+    level: 'edge',
     reason: 'Two bodies to bite means twice the lifesteal.',
   },
   {
     x: 'slime',
     y: 'archer',
     intended: 'x',
+    level: 'strong',
     reason: 'An arrow finishes one half at most; the other is already on it.',
   },
   {
@@ -42,8 +44,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'frost',
-    intended: 'even',
-    reason: 'Its slows reach both halves, but every frosty hit splits them sooner.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Its slow takes away the halves’ extra speed, and its big health outlasts them.',
   },
   {
     x: 'slime',
@@ -54,8 +57,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'venom',
-    intended: 'even',
-    reason: 'Poison splits it, but the new half arrives clean: even.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Each bump poisons again, and the poison keeps ticking whichever half it lands on.',
   },
   {
     x: 'slime',
@@ -67,6 +71,7 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
     x: 'slime',
     y: 'sniper',
     intended: 'x',
+    level: 'strong',
     reason: 'One heavy shot finishes one half; the other closes in while it reloads.',
   },
   {
@@ -84,8 +89,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'ghost',
-    intended: 'even',
-    reason: 'Two halves wait out a phase as well as one: even.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Phasing, it hits each half it passes through, and no half can touch it then.',
   },
   {
     x: 'slime',
@@ -132,19 +138,22 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Two small halves hit often enough to keep the bud shut, no more.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The halves’ lighter bumps leave gaps it regrows in.',
   },
   {
     x: 'slime',
     y: 'hex',
-    intended: 'even',
-    reason: 'The curse lands on one half; the other is free: even.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Once it splits, a curse lands on one half, and the other bumps free.',
   },
   {
     x: 'slime',
     y: 'spider',
     intended: 'y',
+    level: 'edge',
     reason: 'Both halves bounce off the walls, and every web slows the one it catches.',
   },
   {

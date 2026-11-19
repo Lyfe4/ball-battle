@@ -14,12 +14,14 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'archer',
     intended: 'x',
+    level: 'edge',
     reason: 'Every arrow stores rage, so each bump it lands on the frail Archer hits far harder.',
   },
   {
     x: 'berserker',
     y: 'bloom',
     intended: 'y',
+    level: 'strong',
     reason: 'Its raging bumps come with long gaps, and the Bloom regrows in each.',
   },
   {
@@ -33,12 +35,14 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'boomerang',
     intended: 'x',
+    level: 'strong',
     reason: 'Every boomerang hit stores rage, and the thrower can’t keep away from its bumps.',
   },
   {
     x: 'berserker',
     y: 'frost',
     intended: 'y',
+    level: 'edge',
     reason:
       'Slowed, it reaches the Frost less often, and the Frost’s big health outlasts its rage.',
   },
@@ -46,14 +50,15 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'inferno',
     intended: 'x',
+    level: 'strong',
     reason: 'Every burn stores rage, so the Inferno takes a raging bump each time they meet.',
   },
   {
     x: 'berserker',
     y: 'necromancer',
-    intended: 'even',
-    reason:
-      'Every skull bite stores rage, but the Necromancer raises another: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Every skull bite stores rage, so it meets the Necromancer with a full next bump.',
   },
   {
     x: 'berserker',
@@ -65,6 +70,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'berserker',
     y: 'venom',
     intended: 'x',
+    level: 'strong',
     reason: 'Every poison tick stores rage, so each bump it lands hits far harder.',
   },
   {
@@ -95,9 +101,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'thorns',
     y: 'berserker',
-    intended: 'even',
-    reason:
-      'Its raging bumps come back off the spikes, but its big health soaks them: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Its raging bumps come back off the spikes, and the spikes store it no rage.',
   },
   {
     x: 'titan',
@@ -109,12 +115,14 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'vampire',
     y: 'berserker',
     intended: 'x',
+    level: 'strong',
     reason: 'The Berserker only bumps, and the Vampire drinks back most of every bump it trades.',
   },
   {
     x: 'archer',
     y: 'vampire',
     intended: 'x',
+    level: 'strong',
     reason: 'Arrows never touch it, so it has nothing to drink, and its health is small.',
   },
   {
@@ -126,8 +134,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Slowing does not change a contact trade, and Frost never stops the healing.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Being slowed doesn’t change a bump trade, and it drinks back most of every one.',
   },
   {
     x: 'magnet',
@@ -150,34 +159,37 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'thorns',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Reflection hurts the Vampire, but lifesteal heals back part of every trade.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The spikes hurt it back, but its lifesteal heals more than they take.',
   },
   {
     x: 'vampire',
     y: 'bloom',
-    intended: 'even',
-    reason:
-      'Each bump restarts the wait and is drunk back, but on little health it can’t pull away.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Each bump shuts the bud and is drunk back, so the Bloom never regrows its lead.',
   },
   {
     x: 'vampire',
     y: 'bomber',
-    intended: 'even',
-    reason:
-      'A blast takes much of its small health, but it drinks back most of every bump: it evens out.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A blast takes two thirds of its small health, and a blast heals it nothing.',
   },
   {
     x: 'vampire',
     y: 'boomerang',
     intended: 'y',
+    level: 'edge',
     reason: 'The boomerang never touches it, so it has nothing to drink, and its health is small.',
   },
   {
     x: 'vampire',
     y: 'chrono',
-    intended: 'even',
-    reason: 'A rewind never undoes what the Vampire drank, but bumps decide it.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Bumps are never rewound, and it drinks back most of each one it trades.',
   },
   {
     x: 'vampire',
@@ -188,14 +200,17 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'speedster',
-    intended: 'even',
-    reason: 'It heals off every exchange, and the faster stacks hit back as hard as it drinks.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Its hard bumps drink back most of each rush, and the plain bumps between barely dent it.',
   },
   {
     x: 'vampire',
     y: 'titan',
-    intended: 'even',
-    reason: 'A bigger target means more bumps to drink from, and harder ones back.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'It drinks back most of each trade before the Titan grows big enough to outhit it.',
   },
   {
     x: 'vampire',

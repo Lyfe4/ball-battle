@@ -20,8 +20,10 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'speedster',
-    intended: 'even',
-    reason: 'A rush is never big enough to rewind, though a rewind can undo the last one.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Its bumps outweigh the Speedster’s plain ones, and a rush adds too little to swing it.',
   },
   {
     x: 'chrono',
@@ -39,6 +41,7 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'venom',
     intended: 'y',
+    level: 'strong',
     reason: 'Poison ticks are too small to rewind.',
   },
   {
@@ -63,18 +66,21 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'inferno',
     intended: 'y',
+    level: 'strong',
     reason: 'Burns are too small to rewind.',
   },
   {
     x: 'chrono',
     y: 'bomber',
     intended: 'x',
+    level: 'strong',
     reason: 'Each big blast is big enough to rewind.',
   },
   {
     x: 'chrono',
     y: 'bloom',
     intended: 'y',
+    level: 'edge',
     reason: 'Bumps only, and slow: the Bloom gets its 2 s alone again and again.',
   },
 ];

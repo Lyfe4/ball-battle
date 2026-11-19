@@ -5,7 +5,7 @@
 import { parseMatchup, writeMatchParams, type Matchup } from './matchup.ts';
 import { ONLINE_BUILD } from './online-build.ts';
 import { parseOnlineRoute, type OnlineRoute } from './online-url.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { replaysHere, RULESET_VERSION } from '../sim/ruleset.ts';
 import { verifySeries } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { parseSeed, parseVersion } from './seed.ts';
@@ -130,7 +130,7 @@ export function parseRoute(
   const parsed = parseSeriesParams(params, validIds);
   if (parsed !== undefined) {
     const made = parsed.setup?.ruleset ?? parsed.retiredFrom;
-    if (made !== undefined && made !== RULESET_VERSION) {
+    if (made !== undefined && !replaysHere(made)) {
       return { screen: 'outdated', kind: 'series', made };
     }
     const link = verify ? replayable(parsed, definitions) : parsed;
@@ -142,7 +142,7 @@ export function parseRoute(
   const seed = parseSeed(params.get('seed'));
   // Without a seed a new match is played, so there is nothing to replay and no version to check.
   const made = parseVersion(params.get(VERSION));
-  if (seed !== undefined && made !== RULESET_VERSION) {
+  if (seed !== undefined && !replaysHere(made)) {
     return { screen: 'outdated', kind: 'match', made };
   }
   return { screen: 'match', matchup: parseMatchup(params, validIds), seed };

@@ -24,8 +24,9 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'battery',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Lifesteal drinks its bumps back, but its harder bumps keep it level.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The Battery stores no bumps, and it drinks back most of each one they trade.',
   },
   {
     x: 'battery',
@@ -37,18 +38,21 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
     x: 'battery',
     y: 'storm',
     intended: 'x',
+    level: 'strong',
     reason: 'It stores part of every big strike and bumps the Storm back with it.',
   },
   {
     x: 'battery',
     y: 'frost',
     intended: 'y',
+    level: 'edge',
     reason: 'Its speed is its strength, and every frosty hit slows it right down.',
   },
   {
     x: 'battery',
     y: 'thorns',
     intended: 'y',
+    level: 'strong',
     reason: 'Its hard bumps, and anything it lets out, meet the spikes.',
   },
   {
@@ -115,6 +119,7 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
     x: 'battery',
     y: 'bomber',
     intended: 'x',
+    level: 'strong',
     reason: 'It stores part of every blast and bumps the Bomber back with it.',
   },
   {
@@ -126,13 +131,15 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'battery',
     y: 'bloom',
-    intended: 'even',
-    reason: 'It hits often enough to keep the bud shut, but not hard: even.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'It has no big hit for the Battery to store, so it regrows between plain trades.',
   },
   {
     x: 'battery',
     y: 'hex',
     intended: 'x',
+    level: 'strong',
     reason: 'It stores part of every curse burst, and its next bump answers it.',
   },
   {
@@ -145,6 +152,7 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
     x: 'battery',
     y: 'spider',
     intended: 'y',
+    level: 'edge',
     reason: 'It bounces off walls at speed, and every web it hits slows it down.',
   },
 ];

@@ -1,9 +1,9 @@
 // Replaying and verifying a whole series headlessly (ADR 0017, 0022): the one rule for whether a
 // series setup is valid. A server runs it to verify a reported result, and the browser runs it
 // before replaying a series link, so the two can't disagree about what a link means.
-import { BOTS, botPick } from './bot.ts';
+import { botNamed, botPick } from './bot.ts';
 import { getDefinition } from './definitions.ts';
-import { RULESET_VERSION } from './ruleset.ts';
+import { replaysHere, RULESET_VERSION } from './ruleset.ts';
 import { decodeSeriesSetup } from './series-decode.ts';
 import {
   awaitingPick,
@@ -48,7 +48,7 @@ const fail = (reason: string): SeriesVerdict => ({ ok: false, reason });
  * (a link, a save, a request body) and never throws. Valid means: a setup in form
  * (`decodeSeriesSetup`: known fields, format and opponent; a length the game plays, Best of 3 or
  * 5, ADR 0048; two lineups of that many different balls from the roster); played under today's
- * ruleset; for a bot opponent, the lineup that bot picks from its lineup seed and, at every pick it
+ * ruleset or one whose fights are today's (`replaysHere`, ADR 0073); for a bot opponent, the lineup that bot picks from its lineup seed and, at every pick it
  * was due, the pick it makes; every pick legal when it was made, none missing and none left over.
  * The roster is the lookup's ids in insertion order (the order the bot picks from), which
  * `indexDefinitions` keeps.
@@ -58,12 +58,12 @@ export function verifySeries(raw: unknown, definitions: DefinitionLookup): Serie
   const decoded = decodeSeriesSetup(raw, roster);
   if (!decoded.ok) return fail(decoded.reason);
   const { setup } = decoded;
-  if (setup.ruleset !== RULESET_VERSION) {
+  if (!replaysHere(setup.ruleset)) {
     return fail(`Played under ruleset ${String(setup.ruleset)}, not ${String(RULESET_VERSION)}`);
   }
   const bestOf = setup.bestOf ?? DEFAULT_BEST_OF;
   const { opponent } = setup;
-  const bot = opponent.kind === 'bot' ? BOTS.get(opponent.bot) : undefined;
+  const bot = opponent.kind === 'bot' ? botNamed(opponent.bot, setup.ruleset) : undefined;
   // The decoder has made sure a bot opponent names a bot and a lineup seed.
   if (opponent.kind === 'bot' && bot !== undefined) {
     const picked = bot.pickLineup(opponent.lineupSeed, roster, bestOf);
