@@ -60,7 +60,9 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   cores; prints the matrix, each ball's shape and whether the targets are met; exits 1 on any
   MISS. Run after any change to a ball's stats or ability or the combat rules; `--ball` plays one
   ball's matchups (a new ball), `--serial` one thread with byte-identical output. `pnpm balance:summary` also rewrites `docs/balance-summary.md` (commit it after such a change);
-  `pnpm balance:ci` is CI's reduced run (150 seeds, map shape, ADR 0011 addendum).
+  `pnpm balance:matrix` writes the matchup sheet, `docs/balance-matrix.csv` (every pair: rates,
+  map, band) and `docs/balance-balls.csv` (every ball's counters), from the same fights without
+  the sensitivity runs; `pnpm balance:ci` is CI's reduced run (150 seeds, map shape, ADR 0011 addendum).
 - `pnpm golden`: rewrite `src/golden/golden-matches.json` after a `RULESET_VERSION` bump. It
   refuses otherwise: results that move without a bump are a bug.
 - `pnpm ruleset:freeze`: after `pnpm golden`, freeze the new ruleset as `rulesets/r<N>/` (its
@@ -130,7 +132,7 @@ Each line is a rule; its ADR has the reasoning.
   fight, a bot's choice or a series: stats, abilities, combat rules, counter-map sides, the roster
   or its order, seeds and salts. Add the new fingerprint to `ruleset.test.ts` (never edit an old
   one), then `pnpm golden`, `pnpm ruleset:freeze` and, after the bump, `pnpm balance:summary`
-  (ADR 0022, 0023, 0052; a test checks the summary names the current ruleset). A series records
+  and `pnpm balance:matrix` (ADR 0022, 0023, 0052; tests check both name the current ruleset). A series records
   its ruleset and is verified by that ruleset's frozen bundle.
 - `verifySeries` (`src/sim/series-verify.ts`) alone decides whether a series is valid: `playSeries`,
   the route, a saved series after a reload and a future server all use it; no second check.
