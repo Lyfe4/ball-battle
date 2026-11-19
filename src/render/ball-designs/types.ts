@@ -52,6 +52,8 @@ export interface DesignView {
   readonly simple: boolean;
   /** How many of the ball's own projectiles are in the air (a thrown boomerang, a spear). */
   readonly shotsOut: number;
+  /** How many of the ball's own minions are in play (the Necromancer's skull). */
+  readonly minionsOut: number;
 }
 
 /**

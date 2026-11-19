@@ -8,6 +8,8 @@ import { frostDesign } from './frost.ts';
 import { ghostDesign } from './ghost.ts';
 import { magnetDesign } from './magnet.ts';
 import { necromancerDesign } from './necromancer.ts';
+// PROTOTYPE ONLY (proto/ball-looks-2): applies `?necro=` before any Necromancer is drawn.
+import '../../app/necromancer-look.ts';
 import { quakeDesign } from './quake.ts';
 import { sniperDesign } from './sniper.ts';
 import { speedsterDesign } from './speedster.ts';

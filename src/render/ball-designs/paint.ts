@@ -40,6 +40,7 @@ export function designView(
         ? useSimpleDesign(ball.radius * look.cssPixelsPerUnit)
         : look.detail === 'simple',
     shotsOut: world.projectiles.filter((shot) => shot.ownerId === ball.id).length,
+    minionsOut: world.minions.filter((minion) => minion.ownerId === ball.id).length,
   };
 }
 

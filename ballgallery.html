@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Ball looks: proposal</title>
+  </head>
+  <body>
+    <main>
+      <h1>Ball looks, round 2: Necromancer, Bomber, Vampire (proposal)</h1>
+      <p class="intro">
+        Temporary page on the prototype branch only. Each ball is drawn by the game's own drawBall,
+        old beside new, at phone size (as in a 390 px arena) and desktop size, playing what its
+        ability does as the sim plays it. Hold any moment, drag the slider, or change the speed.
+        Looks only: no fight changes.
+      </p>
+      <p class="intro">
+        Not here: the Quake. Its 0.2 s recharge after a shockwave is exactly the shockwave's own 0.2
+        s warning, so the warning ring on the floor already shows when its next wall hit can't shock
+        (about 1 wall hit in 11, nearly all the second bounce in a corner).
+      </p>
+      <p class="intro">
+        <a href="?strips">Every state at once (old above new)</a> ·
+        <a href="/ballgallery.html">Animated</a>
+      </p>
+      <div id="gallery"></div>
+      <details>
+        <summary>Draw cost (old vs new)</summary>
+        <button id="bench-run" type="button">Measure</button>
+        <pre id="bench-out"></pre>
+      </details>
+    </main>
+    <script type="module" src="/src/gallery/main.ts"></script>
+  </body>
+</html>

@@ -54,6 +54,7 @@ function view(simple: boolean): DesignView {
     tick: 0,
     heading: undefined,
     shotsOut: 0,
+    minionsOut: 0,
     heal: 0,
     simple,
   };
