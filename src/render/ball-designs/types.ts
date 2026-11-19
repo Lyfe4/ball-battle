@@ -50,6 +50,8 @@ export interface DesignView {
    * main shape so it still reads at phone size.
    */
   readonly simple: boolean;
+  /** How many of the ball's own projectiles are in the air (a thrown boomerang, a spear). */
+  readonly shotsOut: number;
 }
 
 /**

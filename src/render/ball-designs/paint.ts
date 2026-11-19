@@ -39,6 +39,7 @@ export function designView(
       look.detail === undefined
         ? useSimpleDesign(ball.radius * look.cssPixelsPerUnit)
         : look.detail === 'simple',
+    shotsOut: world.projectiles.filter((shot) => shot.ownerId === ball.id).length,
   };
 }
 

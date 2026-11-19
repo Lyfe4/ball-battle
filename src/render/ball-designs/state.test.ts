@@ -8,7 +8,6 @@ import {
   aimHeading,
   chargeFraction,
   rageCrackCount,
-  simpleStreakCount,
   stormFlicker,
   streakCount,
   useSimpleDesign,
@@ -38,14 +37,10 @@ describe('ball designs', () => {
     });
   });
 
-  it('shows one Speedster streak per whole stack', () => {
+  it('lights one Speedster gauge bar per whole stack', () => {
     expect([0, 1, 2, 3, 4, 5].map(streakCount)).toStrictEqual([0, 1, 2, 3, 4, 5]);
     expect(streakCount(-1)).toBe(0);
     expect(streakCount(2.7)).toBe(2);
-  });
-
-  it('collapses Speedster streaks to at most two at small size', () => {
-    expect([0, 1, 2, 3, 4, 5].map(simpleStreakCount)).toStrictEqual([0, 1, 1, 2, 2, 2]);
   });
 
   it('simplifies designs only below the on-screen size threshold', () => {
@@ -93,14 +88,13 @@ describe('ball designs', () => {
   });
 
   describe('rageCrackCount', () => {
-    it('shows one crack when calm and every crack at full rage, evenly between', () => {
-      expect([0, 1, 2, 3].map((rage) => rageCrackCount(rage, 3, 6))).toStrictEqual([1, 3, 4, 6]);
-      expect([0, 1, 2, 3].map((rage) => rageCrackCount(rage, 3, 4))).toStrictEqual([1, 2, 3, 4]);
+    it('opens exactly one crack per stored hit: none when calm, all three when full', () => {
+      expect([0, 1, 2, 3].map((rage) => rageCrackCount(rage, 3))).toStrictEqual([0, 1, 2, 3]);
     });
 
     it('clamps rage outside 0 to its most', () => {
-      expect(rageCrackCount(-1, 3, 6)).toBe(1);
-      expect(rageCrackCount(9, 3, 6)).toBe(6);
+      expect(rageCrackCount(-1, 3)).toBe(0);
+      expect(rageCrackCount(9, 3)).toBe(3);
     });
   });
 });
