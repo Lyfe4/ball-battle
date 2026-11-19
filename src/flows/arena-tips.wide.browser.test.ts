@@ -36,11 +36,11 @@ describe('tips in the arena', () => {
     await import('../main.ts');
     await settle();
 
-    // The ready card names both balls, who is favoured and what to watch.
+    // The ready card names both balls, who is favoured and how much (ADR 0073), and what to watch.
     const card = visible('.ready-card')[0];
     expect(card?.textContent).toContain('Venom');
     expect(card?.textContent).toContain('Chrono');
-    expect(card?.querySelector('.ready-edge')?.textContent).toBe('▲ Venom is favoured');
+    expect(card?.querySelector('.ready-edge')?.textContent).toBe('▲▲ Venom is strongly favoured');
     expect(card?.querySelector('.ready-reason')?.textContent).toMatch(/^What to watch: \S/);
     expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('chrono|venom');
 
