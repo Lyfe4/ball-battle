@@ -9,7 +9,15 @@ export interface SymbolLegend {
 }
 
 /** Symbols drawn as a swatch (a colour or a ring) rather than as plain text. */
-const SWATCHES = new Set(['favoured', 'unfavoured', 'even', 'won', 'lost']);
+const SWATCHES = new Set([
+  'strongFavoured',
+  'favoured',
+  'even',
+  'unfavoured',
+  'strongUnfavoured',
+  'won',
+  'lost',
+]);
 
 let legends = 0;
 

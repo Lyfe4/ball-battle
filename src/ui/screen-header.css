@@ -93,6 +93,24 @@
   color: var(--color-text-muted);
 }
 
+/* The strong marks as on the pick rows (ADR 0073): two arrows on a pill in their side's colour. */
+.symbol-legend-mark[data-swatch='strongFavoured'],
+.symbol-legend-mark[data-swatch='strongUnfavoured'] {
+  width: auto;
+  padding-inline: 4px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.symbol-legend-mark[data-swatch='strongFavoured'] {
+  background: var(--color-favoured);
+}
+
+.symbol-legend-mark[data-swatch='strongUnfavoured'] {
+  background: var(--color-unfavoured);
+}
+
 /* The track's two looks for a played round, drawn as a small disc. */
 .symbol-legend-mark[data-swatch='won'],
 .symbol-legend-mark[data-swatch='lost'] {

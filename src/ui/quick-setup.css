@@ -218,3 +218,32 @@
 .quick-why-summary[data-pressed] {
   background: var(--color-raised);
 }
+
+/* The key's marks in their sides' colours, as on the tiles. */
+.quick-legend-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.quick-legend-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+/* A strong counter (ADR 0073): the slot's badge and the legend's ▲▲ / ▼▼ on a filled pill. */
+.quick-slot-badge[data-level='strong'],
+.quick-legend-mark[data-level='strong'] {
+  width: auto;
+  padding-inline: 3px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.quick-slot-badge[data-level='strong'][data-lean='favoured'],
+.quick-legend-mark[data-level='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.quick-slot-badge[data-level='strong'][data-lean='unfavoured'],
+.quick-legend-mark[data-level='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}

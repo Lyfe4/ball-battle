@@ -221,3 +221,12 @@
 .ready-fight[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* A strong counter's ▲▲ on a filled pill (ADR 0073), as on the pick rows. */
+.ready-mark[data-level='strong'] {
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--color-on-sticker-favoured);
+  color: var(--color-sticker, #fff);
+  letter-spacing: -0.12em;
+}
