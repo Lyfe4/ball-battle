@@ -39,25 +39,35 @@ function transitionOf(node: HTMLElement, property: string): CSSTransition | unde
 }
 
 /**
- * The look `node` takes when lit, how long it takes to get there (ms), and for how long it stayed
- * lit (ms). A transition into the look is read by where it ends, not sampled on frames: a computed
- * style mid-transition advances only when the page renders, and a busy CI machine can render
- * nothing for over 100 ms, which read a 120 ms transition part-way (brightness(1.069)).
+ * The look `node` is taking for `property`, and how long it takes to get there (ms; 0 when already
+ * there). A transition is read by where it ends, never sampled part-way: a computed style
+ * mid-transition advances only when the page renders, and a busy CI machine can render nothing for
+ * over 100 ms, which read the 120 ms transitions part-way, into the look (brightness(1.069)) and
+ * back out of it (brightness(1.009)).
  */
+function lookOf(node: HTMLElement, property: string) {
+  // Reading the style starts any transition into the new look.
+  const now = getComputedStyle(node).getPropertyValue(property);
+  const effect = transitionOf(node, property)?.effect;
+  if (!(effect instanceof KeyframeEffect)) return { look: now, settleMs: 0 };
+  const frames = effect.getKeyframes();
+  const end = frames[frames.length - 1]?.[property];
+  const timing = effect.getComputedTiming();
+  return {
+    look: typeof end === 'string' ? end : now,
+    settleMs: (timing.delay ?? 0) + Number(timing.duration ?? 0),
+  };
+}
+
+/** The look `node` takes when lit, how long it takes to get there, and how long it stayed lit (ms). */
 function watch(node: HTMLElement, property: string) {
   const seen = { lit: undefined as string | undefined, settleMs: 0, litAt: 0, unlitAt: 0 };
   new MutationObserver(() => {
     if (node.hasAttribute('data-pressed')) {
       seen.litAt = performance.now();
-      // Reading the style starts any transition into the lit look.
-      const now = getComputedStyle(node).getPropertyValue(property);
-      const transition = transitionOf(node, property);
-      const effect = transition?.effect;
-      const frames = effect instanceof KeyframeEffect ? effect.getKeyframes() : [];
-      const end = frames[frames.length - 1]?.[property];
-      seen.lit = typeof end === 'string' ? end : now;
-      const timing = transition?.effect?.getComputedTiming();
-      seen.settleMs = (timing?.delay ?? 0) + Number(timing?.duration ?? 0);
+      const { look, settleMs } = lookOf(node, property);
+      seen.lit = look;
+      seen.settleMs = settleMs;
     } else if (seen.litAt > 0) seen.unlitAt = performance.now();
   }).observe(node, { attributes: true, attributeFilter: ['data-pressed'] });
   return seen;
@@ -79,7 +89,7 @@ describe('a tap on a touch phone', () => {
     expect(seen.settleMs).toBeLessThan(PRESS_SHOWN_MS);
     expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 20);
     expect(send.hasAttribute('data-pressed'), 'never stuck lit').toBe(false);
-    expect(getComputedStyle(send).filter).toBe('none');
+    expect(lookOf(send, 'filter').look).toBe('none');
   });
 
   it('turns Leave series pink, as a mouse pointing at it does', async () => {
@@ -98,7 +108,7 @@ describe('a tap on a touch phone', () => {
     document.body.append(probe);
     expect(seen.lit).toBe(getComputedStyle(probe).color);
     expect(seen.lit).not.toBe(muted);
-    expect(getComputedStyle(leave).color).toBe(muted);
+    expect(lookOf(leave, 'color').look).toBe(muted);
   });
 
   it('leaves a disabled button and a scroll alone', async () => {
