@@ -163,8 +163,7 @@ function card(entry: Entry, reduced: boolean): { element: HTMLElement; live: Liv
   const other = getDefinition(BALL_LOOKUP, entry.against);
   for (const look of entry.looks) {
     const fight = document.createElement('a');
-    const query = look.query === undefined ? '' : `&${look.query}`;
-    fight.href = `/?a=${entry.id}&b=${entry.against}&seed=7&v=${String(RULESET_VERSION)}${query}`;
+    fight.href = `/?a=${entry.id}&b=${entry.against}&seed=7&v=${String(RULESET_VERSION)}`;
     const named = entry.looks.length > 1 ? ` (${look.label})` : '';
     fight.textContent = `Free play${named}: ${definition.name} vs ${other.name} →`;
     links.append(fight);

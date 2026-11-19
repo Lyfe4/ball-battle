@@ -29,7 +29,7 @@ export interface Timeline {
 
 const seconds = (ticks: number): string => (ticks / 60).toFixed(1);
 
-/** One drop every DROP_TICKS: the fuse ring burns down from whole to the drop. */
+/** One drop every DROP_TICKS: the fuse burns down from whole to the drop. */
 const bomber: Timeline = {
   length: DROP_TICKS,
   samples: [1, 55, 110, 165, 205, 219],
@@ -39,8 +39,8 @@ const bomber: Timeline = {
     const left = next - t;
     const caption =
       t < 12
-        ? `Drops a bomb (its own fuse full on the floor); its fuse ring is whole again: next in ${seconds(left)} s.`
-        : `Next bomb in ${seconds(left)} s: the spark burns back to the cap.`;
+        ? `Drops a bomb; its fuse is whole again: next in ${seconds(left)} s.`
+        : `Next bomb in ${seconds(left)} s: the spark creeps down the fuse to the bomb.`;
     return { caption, abilityState: { nextDropTick: next }, tick: t };
   },
 };

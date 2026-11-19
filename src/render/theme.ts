@@ -246,10 +246,8 @@ export const theme = {
   boomerangArmSimple: 0.28,
   boomerangSpinTicks: 10,
   boomerangFlightScale: 3.4,
-  /** The Bomber's bomb: the spark at the burning end of its fuse ring. */
+  /** The Bomber's bomb: the spark on the burning end of its fuse. */
   bomberSpark: '#fde68a',
-  /** The burnt part of its fuse ring: a faint track, so what is left reads as a share. */
-  bomberFuseTrackAlpha: 0.32,
   /**
    * Its bombs on the floor: a dark body ringed in the owner's colour, a fuse arc around it that
    * burns down to the blast, and a faint dashed circle for the blast's reach. Dim until armed.
@@ -288,8 +286,6 @@ export const theme = {
   /** The Necromancer's eyes, glowing out of its hood; dim while its skull is out. */
   necromancerEyes: '#bef264',
   necromancerDimEyesAlpha: 0.35,
-  /** The empty track of its summon ring (the ring look). */
-  necromancerRingTrackAlpha: 0.3,
   /**
    * Minions (ADR 0026): a bone-white skull ringed in the owner's colour, with dark eye sockets and
    * nose. Fractions of the minion's radius. Below `minionSimpleBelowPx` of radius on screen (a

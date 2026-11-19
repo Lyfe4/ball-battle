@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bomber, DROP_TICKS } from '../../sim/balls/bomber.ts';
+import { bomber, DROP_TICKS, FIRST_DROP_TICK } from '../../sim/balls/bomber.ts';
 import { necromancer, SUMMON_TICKS } from '../../sim/balls/necromancer.ts';
 import { lifestealFor, vampire } from '../../sim/balls/vampire.ts';
 import type { BallDefinition, BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { bomberDesign, fuseLeft } from './bomber.ts';
-import { NECROMANCER_LOOKS } from './necromancer.ts';
+import { necromancerDesign } from './necromancer.ts';
 import { record } from './test-support.ts';
 import type { BallDesign, DesignView } from './types.ts';
 import { thirstOf, vampireDesign } from './vampire.ts';
@@ -39,8 +39,7 @@ const SIZES = Array.from({ length: 21 }, (_, i) => 10 + i * 5);
 
 const CASES: readonly (readonly [string, BallDesign, BallDefinition, Partial<BallState>])[] = [
   ['Bomber', bomberDesign, bomber, {}],
-  ['Necromancer skull', NECROMANCER_LOOKS.skull, necromancer, {}],
-  ['Necromancer ring', NECROMANCER_LOOKS.ring, necromancer, {}],
+  ['Necromancer', necromancerDesign, necromancer, {}],
   ['Vampire', vampireDesign, vampire, { health: 20 }],
 ];
 
@@ -57,14 +56,33 @@ describe('the round-2 state looks', () => {
   }
 
   it('Bomber: the fuse is whole just after a drop and burns down to none at the next', () => {
-    expect(fuseLeft(DROP_TICKS, 0)).toBe(1);
-    expect(fuseLeft(DROP_TICKS, DROP_TICKS / 2)).toBeCloseTo(0.5, 12);
-    expect(fuseLeft(DROP_TICKS, DROP_TICKS)).toBe(0);
+    const dropped = FIRST_DROP_TICK;
+    expect(fuseLeft(dropped + DROP_TICKS, dropped)).toBe(1);
+    expect(fuseLeft(dropped + DROP_TICKS, dropped + DROP_TICKS / 2)).toBeCloseTo(0.5, 12);
+    expect(fuseLeft(dropped + DROP_TICKS, dropped + DROP_TICKS)).toBe(0);
+  });
+
+  it('Bomber: a fight, and so the icon, opens on a whole fuse burning to the first drop', () => {
+    expect(fuseLeft(FIRST_DROP_TICK, 0)).toBe(1);
+    expect(fuseLeft(FIRST_DROP_TICK, FIRST_DROP_TICK)).toBe(0);
+    const start = record(bomberDesign, view(bomber, 50, false, {}, { tick: 0 }));
+    const late = record(bomberDesign, view(bomber, 50, false, {}, { tick: FIRST_DROP_TICK - 5 }));
+    // The spark sits on the fuse's far end at the start, and near the bomb just before the drop.
+    const sparkY = (calls: readonly string[]) =>
+      Number(
+        calls
+          .filter((call) => call.startsWith('arc('))
+          .at(1)
+          ?.split(',')[1],
+      );
+    expect(sparkY(start)).toBeCloseTo(-0.66, 3);
+    expect(sparkY(late)).toBeGreaterThan(-0.3);
   });
 
   it('Necromancer: no skull forms while its skull is out, only once it is gone', () => {
     const tick = SUMMON_TICKS - 10;
-    for (const design of Object.values(NECROMANCER_LOOKS)) {
+    {
+      const design = necromancerDesign;
       const out = record(design, view(necromancer, 50, false, {}, { tick, minionsOut: 1 }));
       const none = record(design, view(necromancer, 50, false, {}, { tick, minionsOut: 0 }));
       // While one is out the eyes are dim, and nothing of the next skull is drawn.

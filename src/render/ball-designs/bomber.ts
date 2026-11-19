@@ -4,12 +4,19 @@ import { chargeFraction } from './state.ts';
 import type { BallDesign } from './types.ts';
 
 /**
- * The bomb, as fractions of r: its body, the cap the fuse leaves from, and the fuse ring around it
- * (its radius, width and the spark at its burning end). One set of sizes at every size on screen.
+ * The bomb and its fuse, as fractions of r: the body, and the fuse as a gentle curve from the
+ * bomb's top up to the right (from, bend, to) with its width and the spark on its burning end. One
+ * set of sizes at every size on screen.
  */
-const BOMB = { y: 0.08, radius: 0.38 } as const;
-const CAP = { half: 0.11, top: -0.46, bottom: -0.26 } as const;
-const FUSE = { radius: 0.6, width: 0.12, spark: 0.12, core: 0.055 } as const;
+const BOMB = { y: 0.14, radius: 0.4 } as const;
+const FUSE = {
+  from: [0.1, -0.22],
+  bend: [0.12, -0.58],
+  to: [0.46, -0.66],
+  width: 0.12,
+  spark: 0.13,
+  core: 0.055,
+} as const;
 
 /** Its next drop tick, read from any ball state (undefined for other balls). */
 function nextDropOf(state: Readonly<Record<string, unknown>>): number | undefined {
@@ -18,60 +25,60 @@ function nextDropOf(state: Readonly<Record<string, unknown>>): number | undefine
 }
 
 /**
- * How much of its fuse is left, 1 just after a drop down to 0 at the next. The first drop comes
- * FIRST_DROP_TICK into a fight, so a fight opens on that share of a fuse, as the sim has it.
+ * How much of its fuse is left, 1 just after a drop down to 0 at the next. Its first wait is
+ * shorter (FIRST_DROP_TICK, before which its next drop is still that tick), and the fuse burns over
+ * that wait, so a fight, and the icon, open on a whole fuse.
  */
 export function fuseLeft(nextDropTick: number, tick: number): number {
-  return 1 - chargeFraction(nextDropTick, tick, DROP_TICKS);
+  const wait = nextDropTick <= FIRST_DROP_TICK ? FIRST_DROP_TICK : DROP_TICKS;
+  return 1 - chargeFraction(nextDropTick, tick, wait);
+}
+
+/** A point `t` of the way along the fuse's curve, from the bomb (0) to its full end (1). */
+function along(t: number): readonly [number, number] {
+  const u = 1 - t;
+  return [
+    u * u * FUSE.from[0] + 2 * u * t * FUSE.bend[0] + t * t * FUSE.to[0],
+    u * u * FUSE.from[1] + 2 * u * t * FUSE.bend[1] + t * t * FUSE.to[1],
+  ];
 }
 
 /**
- * A round bomb in the dark accent, its fuse wrapped round it as a yellow ring that burns down
- * clockwise to the next drop: the spark at its end runs back to the cap, the bomb drops, and the
- * ring is whole again. The bombs on the floor burn their fuse the same way to their blast (ADR
- * 0043), so the ball hands its fuse on. The burnt part stays a faint track, so what is left reads
- * as a share at a glance. Moves only as the sim's clock does; no flicker.
+ * A round bomb in the dark accent with a stick fuse and a pale spark on its end: the ball that
+ * leaves bombs behind it (ADR 0043). The fuse burns down to its next drop: whole just after a drop,
+ * it gets shorter as the spark creeps down to the bomb, the bomb drops, and the fuse is whole
+ * again. It moves only as the sim's clock does; no flicker.
  */
 export const bomberDesign: BallDesign = {
   facing: 'none',
   strike: 'blast',
   draw(p, { ball, radius: r, accent, tick }) {
     const left = fuseLeft(nextDropOf(ball.abilityState) ?? FIRST_DROP_TICK, tick);
-    const alpha = p.globalAlpha;
-    const cy = BOMB.y * r;
-    const ring = FUSE.radius * r;
-    const top = -Math.PI / 2;
-
     p.fillStyle = accent;
     p.beginPath();
-    p.arc(0, cy, BOMB.radius * r, 0, Math.PI * 2);
-    p.rect(-CAP.half * r, CAP.top * r, 2 * CAP.half * r, (CAP.bottom - CAP.top) * r);
+    p.arc(0, BOMB.y * r, BOMB.radius * r, 0, Math.PI * 2);
     p.fill();
 
+    // What is left of the fuse: the first `left` of the curve, split exactly (de Casteljau), so
+    // the same curve shortens rather than changing shape.
+    const [ex, ey] = along(left);
+    const cx = FUSE.from[0] + (FUSE.bend[0] - FUSE.from[0]) * left;
+    const cy = FUSE.from[1] + (FUSE.bend[1] - FUSE.from[1]) * left;
+    p.strokeStyle = accent;
     p.lineCap = 'round';
     p.lineWidth = FUSE.width * r;
-    p.strokeStyle = accent;
-    p.globalAlpha = alpha * theme.bomberFuseTrackAlpha;
     p.beginPath();
-    p.arc(0, cy, ring, 0, Math.PI * 2);
+    p.moveTo(FUSE.from[0] * r, FUSE.from[1] * r);
+    p.quadraticCurveTo(cx * r, cy * r, ex * r, ey * r);
     p.stroke();
-    p.globalAlpha = alpha;
 
-    // What is left of the fuse, from the cap clockwise; the spark sits on its burning end.
-    const end = top + Math.PI * 2 * left;
-    p.strokeStyle = theme.bombFuse;
-    p.beginPath();
-    p.arc(0, cy, ring, top, end);
-    p.stroke();
-    const sx = Math.cos(end) * ring;
-    const sy = cy + Math.sin(end) * ring;
     p.fillStyle = theme.bomberSpark;
     p.beginPath();
-    p.arc(sx, sy, FUSE.spark * r, 0, Math.PI * 2);
+    p.arc(ex * r, ey * r, FUSE.spark * r, 0, Math.PI * 2);
     p.fill();
     p.fillStyle = theme.highlight;
     p.beginPath();
-    p.arc(sx, sy, FUSE.core * r, 0, Math.PI * 2);
+    p.arc(ex * r, ey * r, FUSE.core * r, 0, Math.PI * 2);
     p.fill();
   },
 };

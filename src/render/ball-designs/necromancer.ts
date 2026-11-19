@@ -7,7 +7,7 @@ import type { BallDesign, DesignView, Painter } from './types.ts';
 const HOOD = { crown: 0.46, crownY: -0.04, point: -0.72, flare: 0.64, bottom: 0.66 } as const;
 /** Eyes glowing out of the hood, as fractions of r. One size at every size on screen. */
 const EYES = { x: 0.19, y: 0.06, radius: 0.11 } as const;
-/** The skull forming in the hood (the skull look), grown to full: centre, size, sockets and jaw. */
+/** The skull forming in the hood, grown to full: centre, size, sockets and jaw. */
 const SKULL = {
   from: 0.45,
   y: 0.1,
@@ -17,8 +17,6 @@ const SKULL = {
   jawHalf: 0.16,
   teeth: 0.07,
 } as const;
-/** The summon ring (the ring look): just inside the rim, and its width. */
-const RING = { radius: 0.84, width: 0.13 } as const;
 
 /**
  * How far its next skull has come, 0 to 1, or undefined while one is out. Its summon comes every
@@ -59,12 +57,13 @@ function eyes(p: Painter, r: number, lit: boolean): void {
 }
 
 /**
- * Skull look: a bone-white skull forms in the hood as its next summon nears, from nothing to a
- * full face round its glowing eyes, the very skull it then sends out. While its skull is out the
- * hood is empty and the eyes dim; when that skull is gone a new one starts forming, part-grown if
- * the next summon is already near.
+ * A pointed hood in the dark accent with two glowing eyes inside: the one who raises the skeleton
+ * minions (ADR 0026). A bone-white skull forms in the hood as its next summon nears, fading in from
+ * half size to a full face round its glowing eyes, the very skull it then sends out. While its skull
+ * is out the hood is empty and the eyes dim; when that skull is gone a new one starts forming,
+ * part-grown if the next summon is already near.
  */
-const skullLook: BallDesign = {
+export const necromancerDesign: BallDesign = {
   facing: 'none',
   draw(p, view) {
     const { radius: r, accent } = view;
@@ -98,63 +97,5 @@ const skullLook: BallDesign = {
       p.globalAlpha = alpha;
     }
     eyes(p, r, progress !== undefined);
-  },
-};
-
-/**
- * Ring look: the hood as before, and a ring just inside the rim in the eyes' green that fills
- * clockwise from the top as its next summon nears and empties as the skull goes out. While its skull
- * is out the ring stays empty and the eyes dim.
- */
-const ringLook: BallDesign = {
-  facing: 'none',
-  draw(p, view) {
-    const { radius: r, accent } = view;
-    const progress = summonProgress(view);
-    p.fillStyle = accent;
-    hood(p, r);
-    const alpha = p.globalAlpha;
-    p.strokeStyle = accent;
-    p.lineWidth = RING.width * r;
-    p.lineCap = 'round';
-    p.globalAlpha = alpha * theme.necromancerRingTrackAlpha;
-    p.beginPath();
-    p.arc(0, 0, RING.radius * r, 0, Math.PI * 2);
-    p.stroke();
-    p.globalAlpha = alpha;
-    const s = progress ?? 0;
-    if (s > 0) {
-      const top = -Math.PI / 2;
-      p.strokeStyle = theme.necromancerEyes;
-      p.beginPath();
-      p.arc(0, 0, RING.radius * r, top, top + Math.PI * 2 * s);
-      p.stroke();
-    }
-    eyes(p, r, progress !== undefined);
-  },
-};
-
-// PROTOTYPE ONLY (proto/ball-looks-2): two looks to choose from, picked by `?necro=skull|ring`
-// (src/app/necromancer-look.ts). Goes once one is chosen.
-export const NECROMANCER_LOOKS = { skull: skullLook, ring: ringLook } as const;
-export type NecromancerLook = keyof typeof NECROMANCER_LOOKS;
-let chosen: NecromancerLook = 'skull';
-
-export function isNecromancerLook(value: unknown): value is NecromancerLook {
-  return value === 'skull' || value === 'ring';
-}
-
-export function chooseNecromancerLook(look: NecromancerLook): void {
-  chosen = look;
-}
-
-/**
- * A pointed hood in the dark accent with two glowing eyes inside: the one who raises the skeleton
- * minions (ADR 0026). Its look shows when the next skull comes (one of the two above).
- */
-export const necromancerDesign: BallDesign = {
-  facing: 'none',
-  draw: (p, view) => {
-    NECROMANCER_LOOKS[chosen].draw(p, view);
   },
 };

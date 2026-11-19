@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 
 const BASE = process.argv[2] ?? 'http://localhost:5199';
 const OUT = 'docs/proposals/ball-looks-2';
-const BALLS = ['necromancer', 'bomber', 'vampire'];
+const BALLS = ['bomber'];
 
 const browser = await chromium.launch();
 for (const [name, viewport, scale] of [
@@ -13,12 +13,12 @@ for (const [name, viewport, scale] of [
 ] as const) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: scale });
   await page.goto(`${BASE}/ballgallery.html?strips`);
-  await page.locator('#strip-vampire canvas').first().waitFor();
+  await page.locator('#strip-bomber canvas').first().waitFor();
   for (const id of BALLS) {
     await page.locator(`#strip-${id}`).screenshot({ path: `${OUT}/${id}-${name}.png` });
   }
   await page.goto(`${BASE}/ballgallery.html`);
-  await page.locator('#vampire canvas').first().waitFor();
+  await page.locator('#bomber canvas').first().waitFor();
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${OUT}/gallery-${name}.png` });
   await page.close();
