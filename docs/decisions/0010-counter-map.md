@@ -7,6 +7,7 @@
   balanced shapes, visible rules), ADR 0034 (batch 4: Chrono, Titan, Inferno; rewind, growth,
   lasting zones), ADR 0043 (batch 5: Boomerang, Bomber, Guardian, Bloom; returning projectiles,
   bombs, shields), ADR 0045 (the roster redesign)
+- Amended by: ADR 0073 (each favoured pair labelled strong or an edge, from the full run)
 
 ## Context
 

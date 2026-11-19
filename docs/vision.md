@@ -74,12 +74,18 @@ if matchups lean:
 
 ## Future balance targets for this mode
 
-These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4).
+These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4), with
+three honest levels since ruleset 20 (ADR 0073).
 
-- Every ball has **two to four counters it wins (62% or more) and two to four it loses**, the two
-  counts within one, so each has something to fear and something to hunt. **The even pick is the
-  exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049) never
-  loses the guess badly and never wins it big. (The Magnet was the other until ruleset 18, ADR 0058.)
+- **Three levels, one rule.** From the full run, a pair whose better side wins 65% or more is a
+  **strong counter** (▲▲, about 7 in 10), 58% up to 65% an **edge** (▲, about 6 in 10), anything
+  closer **even** (=). Players see all three; the bots read them (Normal ranks by level, Hard plays
+  70 / 60 / 50 / 40 / 30%).
+- Every ball has **two to four strong counters it wins and two to four it loses**, the two counts
+  within one (a fifth allowed where one visible mechanic gives it), so each has something to fear
+  and something to hunt. Edges aren't counted: a small lean a player can't plan around. **The even
+  pick is the exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049) never loses the guess badly and never wins it big. (The Magnet was the other until ruleset
+  18, ADR 0058.)
 - **No matchup worse than 22/78.**
 - **Every ball wins 45-55% overall.**
 
@@ -88,6 +94,14 @@ These are the targets `pnpm balance` checks since the roster redesign (ADR 0045,
 The roster has known gaps in that shape, allowed by name in `scripts/counter-map.ts` and listed in
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
+
+Since ruleset 20 the shape counts strong counters only (ADR 0073), and 17 balls are off it, each
+named with its reason in `SHAPE_EXCEPTIONS`: the Titan, Ghost, Quake, Slime, Spider, Spartan,
+Sniper, Inferno, Frost and Boomerang wait on ability tweaks or new balls (one-number changes move a
+ball's whole row; the Vampire joins them if the planned Batch 2 lands as measured), and the Archer,
+Thorns, Magnet, Necromancer, Bomber, Bloom and Battery on the next run's planned number changes
+(`docs/experiments/three-levels-proposal.md` on `proto/three-levels`, part C). The history below
+counts counters at 62%, as the map did then.
 
 Known gaps at ruleset 19 (ADR 0049, 0050, 0056, 0057, 0058, 0060):
 
@@ -293,12 +307,13 @@ blind picks. See Decisions below.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.
-- Bands, checked by `pnpm balance` (`COUNTER_BANDS` in `scripts/counter-map.ts`; ADR 0028
-  addendum, ADR 0045 group 4): a counter (▲▼) targets **65-72%** with a floor of **62-78%**, and a
-  pair that wins under 62% is not a counter, however it is designed; an even pair targets
-  **45-55%** for both sides with no side above **62%**, and a side over 58% is the grey zone
-  (counted and warned, never failed); **no matchup is worse than 22/78**. A pair between target
-  and floor is a WARN, within 2 points outside the floor a NEAR (passes), further out a MISS.
+- Bands, checked by `pnpm balance` (`LEVEL_BANDS` in `scripts/counter-map.ts`; ADR 0073, replacing
+  ADR 0028's addendum and ADR 0045 group 4's): a **strong counter** passes at 68-75%, warns at 65-68%
+  or 75-78% and fails outside 65-78%; an **edge** passes at 59-64%, warns within a point of 58% or
+  65% and fails outside 58-65%; an **even** pair passes with no side over 55%, warns at 55-58% and
+  fails at 58%; **no matchup is worse than 22/78**. The bands meet, so there is no grey zone, and a
+  full run has no NEAR: a pair outside its band is mislabelled. CI's 150-seed run keeps a NEAR
+  allowance of three standard errors.
 
 ### Mirror draws (2026-11-04)
 

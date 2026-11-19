@@ -7,6 +7,7 @@
   from frozen sim bundles kept for a window)
 - Amended by: ADR 0023 (known match results, checked in every engine), ADR 0035 (bot levels,
   Showdown, and pick screens that never give the bot's move away)
+- Amended by: ADR 0073 (an older ruleset whose fights are today's still replays, with its bots)
 
 ## Context
 

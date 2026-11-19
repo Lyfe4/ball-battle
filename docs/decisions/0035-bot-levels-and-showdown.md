@@ -10,6 +10,7 @@
   level is also chosen on the lineup step)
 - Amended by: ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment, a
   story led by its result), ADR 0048 (best of 5, a longer series beside Best of 3)
+- Amended by: ADR 0073 (Normal ranks by level; Hard plays 70 / 60 / 50 / 40 / 30%)
 
 ## Context
 
