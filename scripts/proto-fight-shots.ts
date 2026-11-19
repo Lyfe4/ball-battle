@@ -6,10 +6,9 @@ import { RULESET_VERSION } from '../src/sim/ruleset.ts';
 const BASE = process.argv[2] ?? 'http://localhost:5199';
 const OUT = 'docs/proposals/ball-looks';
 const FIGHTS = [
-  ['titan', 'brawler', 9_000, 'brow'],
-  ['titan', 'brawler', 9_000, 'carved'],
-  ['titan', 'brawler', 9_000, 'boulder'],
-  ['battery', 'storm', 12_000, ''],
+  ['titan', 'brawler', 9_000, 'lintel'],
+  ['titan', 'brawler', 9_000, 'glower'],
+  ['titan', 'brawler', 9_000, 'weathered'],
 ] as const;
 
 const browser = await chromium.launch();
@@ -23,13 +22,11 @@ for (const [name, viewport, scale, reducedMotion] of [
     // A fresh device each time: a matchup seen once skips its Fight! card.
     const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion });
     const page = await context.newPage();
-    await page.goto(
-      `${BASE}/?a=${a}&b=${b}&seed=7&v=${String(RULESET_VERSION)}${look === '' ? '' : `&titan=${look}`}`,
-    );
+    await page.goto(`${BASE}/?a=${a}&b=${b}&seed=7&v=${String(RULESET_VERSION)}&titan=${look}`);
     await page.getByRole('button', { name: 'Fight!' }).click();
     await page.waitForTimeout(wait);
     await page.screenshot({
-      path: `${OUT}/fight-${a}${look === '' ? '' : `-${look}`}-${b}-${name}.png`,
+      path: `${OUT}/fight-${a}-${look}-${b}-${name}.png`,
     });
     await context.close();
   }

@@ -13,6 +13,7 @@ import { RULESET_VERSION } from '../sim/ruleset.ts';
 import type { BallState, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { ENTRIES, type Entry } from './entries.ts';
+import { titanScrub } from './scrub.ts';
 import { TIMELINES, type GalleryState } from './timelines.ts';
 
 /** CSS px per world unit: a phone arena (about 340 px of court) and a desktop one (about 720). */
@@ -98,6 +99,8 @@ interface Live {
   readonly id: string;
   readonly canvases: readonly (readonly [HTMLCanvasElement, BallDesign, number])[];
   readonly caption: HTMLElement;
+  /** Its own state each frame instead of its timeline (the Titan's growth controls). */
+  readonly override?: (ms: number) => GalleryState;
 }
 
 function figure(label: string, canvas: HTMLCanvasElement): HTMLElement {
@@ -171,8 +174,10 @@ function card(entry: Entry): { element: HTMLElement; live: Live } {
   manual.href = `/?view=manual&ball=${entry.id}`;
   manual.textContent = 'Manual entry →';
   links.append(manual);
-  element.append(title, status, ...whys, caption, grid, links);
-  return { element, live: { id: entry.id, canvases, caption } };
+  const scrub = entry.id === 'titan' ? titanScrub() : undefined;
+  element.append(title, status, ...whys, caption, ...(scrub ? [scrub.element] : []), grid, links);
+  const live = { id: entry.id, canvases, caption };
+  return { element, live: scrub === undefined ? live : { ...live, override: scrub.state } };
 }
 
 function start(): void {
@@ -196,7 +201,7 @@ function start(): void {
   const frame = (now: number): void => {
     const tick = Math.floor(((now - began) / 1000) * 60);
     for (const live of lives) {
-      const state = TIMELINES[live.id]?.(tick);
+      const state = live.override?.(now - began) ?? TIMELINES[live.id]?.(tick);
       if (state === undefined) continue;
       if (live.caption.textContent !== state.caption) live.caption.textContent = state.caption;
       const shown = reduced ? { ...state, flash: 0 } : state;

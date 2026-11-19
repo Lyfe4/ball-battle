@@ -11,7 +11,7 @@ const DESKTOP = 720 / 1016;
 
 /** The ticks that show each step of a ball's timeline, settled (any hit flash faded). */
 const SAMPLES: Readonly<Record<string, readonly number[]>> = {
-  titan: [0, 167, 334],
+  titan: [0, 84, 167, 250, 334],
   berserker: [0, 1, 2, 3, 5, 6, 7].map((step) => step * 66 + 40),
   speedster: [0, 1, 2, 3, 4, 5, 7].map((step) => step * 66 + 40),
   thorns: [40],

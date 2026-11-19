@@ -5,9 +5,9 @@ unchanged (`src/golden` passes), no `RULESET_VERSION` bump. The render reads one
 the world, how many of a ball's own projectiles are in the air (`DesignView.shotsOut`), and never
 writes to it.
 
-**Round 2 (after the owner's review):** the Berserker, Speedster, Thorns and Boomerang are approved
-as they are. The Battery is now one smooth fill. The Titan's rings are dropped: it is now a stone
-giant's face, in three variations to pick from (`?titan=brow|carved|boulder`, below).
+**Review so far:** the Berserker, Speedster, Thorns, Boomerang and (round 2's smooth-fill) Battery
+are approved. The Titan is in round 3: an ancient stone colossus, in three variations to pick from
+(`?titan=lintel|glower|weathered`, below).
 
 Gallery on the deploy preview: `/ballgallery.html` (animated, old beside new, phone and desktop
 size, the icon, a Free play link per ball) and `/ballgallery.html?strips` (every state at once,
@@ -17,29 +17,37 @@ old above new). The gallery and the `scripts/proto-*` files exist only on this b
 
 | Ball      | New look, in one sentence                                                                                                                                                                                                                                  |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Titan     | A stone giant's face, one of three (below).                                                                                                                                                                                                                |
+| Titan     | An ancient stone colossus, one of three variations (below).                                                                                                                                                                                                |
 | Berserker | Three faint seams, one per hit of rage it can store (the sim's MAX_RAGE is 3): each hit it takes cracks one open, dark with a yellow glow; at 3 they meet in the middle, white-hot; the bump that lets it out closes them.                                 |
 | Speedster | Its dart, wrapped at the back by a five-bar speed gauge: each wall bounce lights a bar, a bump empties them, the empty bars stay faint so it always reads as "3 of 5", and at 5 the dart's heart lights white. Five bars at every size.                    |
 | Thorns    | Its spikes now break out of its edge, so its silhouette itself is the warning (the only spiky ball); it stores nothing, so the look never changes.                                                                                                         |
 | Boomerang | It shows its boomerang only while it holds it: thrown, the ball keeps a faint empty shape until the catch, so you never see two boomerangs at once.                                                                                                        |
 | Battery   | An empty battery outline lying across it from the start, filled smoothly with yellow in proportion to what it has stored (a third of each big strike, blast or burst, up to 40) and drained on its bump; no cells, since a hit stores a share, not a unit. |
 
-### The Titan: three stone-giant faces (pick one)
+### The Titan: an ancient stone colossus, three variations (pick one)
 
-The body already grows on screen, so the face says big and heavy. Each is drawn in the dark accent
-on the Titan's green, reads at phone size, and is unlike the Spartan's helmet and the Ghost's and
-Slime's faces. Try each in a fight: the gallery's Free play links add `&titan=brow|carved|boulder`;
-the choice is kept for the browser tab (sessionStorage), so the manual and picker icons match.
+Round 3. The round-2 faces read as small grumpy emoji in the middle of the ball. Now the face fills
+the ball: a massive brow ridge across the top third casting a band of shadow, small eyes deep in
+it, a broad stone nose, a broad heavy jaw, a lit forehead and a shaded side (C's stone), and a brow
+that gets heavier as it grows (A's). Try each in a fight with the gallery's Free play links
+(`&titan=lintel|glower|weathered`, kept for the browser tab, so the icons match).
 
-- **A, Brow:** one heavy slab of brow dipping in a frown over small square eyes and a flat, set
-  mouth; the only one that reacts to growth, its brow getting heavier as the Titan grows.
-- **B, Carved:** a face cut in stone: two brow blocks slanting down to a glare, slit eyes, and a
-  wide stone jaw gritting its teeth (the gaps between the teeth at full size only).
-- **C, Boulder:** a chiselled rock with a lit face and a shaded face, one thick frowning ridge of
-  brow, two small dark eyes and a grim, set mouth.
+- **1, Lintel:** a flat stone lintel of a brow that gets heavier as it grows, two narrow slit eyes
+  deep in its shadow, and a mouth cut across a broad, shadowed jaw.
+- **2, Glower:** the brow dips into a deep V that deepens as it grows, small square eyes glare from
+  under it, and two stubby stone tusks rise from a dark underbite of a jaw (it can read a little
+  like a beard).
+- **3, Weathered:** two rounded brow bones, heavier as it grows, round eyes deep beneath them, and a
+  mouth cut straight across a broad jaw with a cleft chin.
 
-The switch is prototype-only (`src/app/titan-look.ts`, applied when the ball designs load); the
-final build keeps the chosen face and drops the other two and the switch.
+**Nothing switches at a size.** The Titan's drawing has no size threshold at all: it ignores the
+small-size switch (`simple`) the other balls use, every part is drawn at every size in fractions
+of r, and only the brow deepens, smoothly, with growth. `titan.test.ts` holds it to that across 41
+sizes from start to full, for each variation: the same parts in the same order at every size,
+phone and desktop drawn alike, and no number moving more than 0.02 r between neighbouring sizes.
+Shown to fail with a part hidden above a size (6 failures) and with the lighting's alpha changing at
+a size (3 failures). The gallery plays each growing at 2×, 1× or ¼× speed, or holds it at any size on
+a slider.
 
 Why the Berserker was confusing: the old design drew **one crack at rage 0** and spread 3 rage
 over 6 cracks (0, 1, 2, 3 rage showed 1, 3, 4, 6 cracks), and the bump that releases rage usually
@@ -57,7 +65,7 @@ Icons, the in-fight look and HUD: the picker and manual icons are drawn by the s
   scale and a 1280 px desktop arena's scale (the gallery's `?strips` view).
 - `gallery-phone.png`, `gallery-desktop.png`: the animated gallery.
 - `fight-*.png`: the new looks in real Free play fights (phone 390 x 664, desktop 1280 x 800, and
-  the Berserker with reduced motion); `fight-titan-<face>-brawler-*.png` for each Titan face.
+  the Berserker with reduced motion); `fight-titan-<variation>-brawler-*.png` for each Titan variation.
 
 ## Descriptions against the sim (wording only)
 
@@ -88,18 +96,17 @@ timeline, best of 6 passes, Chromium, microseconds per ball per frame (`draw-cos
 
 | Ball      | Old (1x / 6x slower CPU) | New (1x / 6x)   |
 | --------- | ------------------------ | --------------- |
-| Titan A   | 3.3 / 34-36              | 4.1 / 45-47     |
-| Titan B   | 3.1-3.3 / 31-35          | 4.3-4.5 / 46-48 |
-| Titan C   | 2.8-3.1 / 28-31          | 4.3-4.5 / 43-46 |
+| Titan 1-3 | 2.8-3.5 / 29-40          | 7.1-8.0 / 78-93 |
 | Berserker | 3.3 / 33                 | 4.2 / 42        |
 | Speedster | 3.2 / 31                 | 3.7-4.0 / 36-41 |
 | Thorns    | 4.5-5.0 / 46-50          | 8.0-9.5 / 85-94 |
 | Boomerang | 2.3-2.5 / 25             | 2.7-2.8 / 27-28 |
 | Battery   | 2.8-3.1 / 30             | 3.3 / 34        |
 
-(Round 2 numbers for the Titan and Battery; the first round's tree rings cost 85 µs at 6x.) The
-Thorns' spiky outline costs the most, about 0.05 ms more a frame at 6x; each Titan face about
-0.012 ms more and the Battery 0.004 ms, against a frame whose median was 2.2 ms at 6x (ADR 0063). `frame-pacing.touch.browser.test.ts`
+(Titan: round 3, the colossus; Battery: round 2.) The Thorns' spiky outline and the Titan's
+colossus cost the most, each about 0.05 ms more a frame at 6x (the colossus is seven fills inside a
+clip to the ball); the Battery 0.004 ms; against a frame whose median was 2.2 ms at 6x (ADR 0063),
+about 2% each. `frame-pacing.touch.browser.test.ts`
 (p95 frame work under half a 60 Hz beat, and the trail on frames 26 ms or more apart) passes.
 
 ## Low Power Mode and reduced motion
@@ -112,9 +119,9 @@ Thorns' spiky outline costs the most, about 0.05 ms more a frame at 6x; each Tit
 
 ## Checks run
 
-`pnpm typecheck`, ESLint and Prettier on every changed file, `pnpm test` (187 files, 1226
+`pnpm typecheck`, ESLint and Prettier on every changed file, `pnpm test` (188 files, 1237
 tests), and the whole browser suite in Chromium (54 files, 155 tests, golden results included),
-then the built gallery and a `?titan=` fight under `pnpm preview`'s production headers (no
+then the built gallery, its `?strips` view and a `?titan=` fight under `pnpm preview`'s production headers (no
 console errors). Fixed in round 2: designs now scale the alpha they are drawn at (a defeated or
 phased ball stayed partly opaque), and the gallery's stylesheet uses the allowed desktop media
 query (`layout-queries.test.ts` failed on it in the first push's CI). CI's WebKit phones job fails

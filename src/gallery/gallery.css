@@ -136,3 +136,27 @@ pre {
   color: #9ca3af;
   margin-top: -2px;
 }
+.scrub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.scrub button {
+  min-height: 44px;
+  min-width: 52px;
+  border-radius: 10px;
+  border: 0;
+  background: #2a3042;
+  color: #e5e7eb;
+  font: inherit;
+}
+.scrub button[data-on='true'] {
+  background: #86efac;
+  color: #052e16;
+}
+.scrub input {
+  flex: 1 1 100%;
+  min-height: 44px;
+}
