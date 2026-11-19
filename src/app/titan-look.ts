@@ -1,5 +1,5 @@
-// PROTOTYPE ONLY (proto/ball-looks): `?titan=brow|carved|boulder` picks which of the three Titan
-// faces this page draws, so the owner can try each in a real fight. Kept for the tab's session,
+// PROTOTYPE ONLY (proto/ball-looks): `?titan=lintel|glower|weathered` picks which of the three Titan
+// variations this page draws, so the owner can try each in a real fight. Kept for the tab's session,
 // since the game rewrites its URL as it moves between screens. Applied once, when the ball designs
 // load (ball-designs/index.ts), before anything is drawn. Goes once a face is chosen.
 import { chooseTitanLook, isTitanLook } from '../render/ball-designs/titan.ts';

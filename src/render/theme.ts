@@ -164,9 +164,11 @@ export const theme = {
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,
-  /** The Titan's Boulder face (prototype): its lit and shaded flat faces. */
+  /** The Titan's stone (prototype): its lit forehead, shaded side and the shadow under its brow. */
   titanLitAlpha: 0.32,
   titanShadeAlpha: 0.2,
+  titanBrowShadowAlpha: 0.34,
+  titanJawAlpha: 0.3,
   /** The Vampire's collar edge flushes this colour when it heals. */
   vampireHeal: '#e11d48',
   /** The Storm's bolt brightens from this alpha as it charges, then flickers near the strike. */
