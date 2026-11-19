@@ -24,7 +24,7 @@ export const BATCH_SIX: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Battery: a dark battery seen side on, on electric blue, with four cells that light from the bottom as it stores big hits; its next bump empties them (at phone size the cells merge into one gauge)',
+    'Battery: an empty battery outline across it, filled smoothly with yellow in proportion to what it stores; its next bump drains it (ADR 0071)',
     [
       { label: 'empty', id: 'battery' },
       { label: 'storing (10)', id: 'battery', abilityState: { stored: 10 } },

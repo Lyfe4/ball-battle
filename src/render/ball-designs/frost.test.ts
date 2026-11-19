@@ -53,6 +53,7 @@ function view(simple: boolean): DesignView {
     accent: '#0c4a6e',
     tick: 0,
     heading: undefined,
+    shotsOut: 0,
     heal: 0,
     simple,
   };

@@ -11,6 +11,7 @@
 - Amended by: ADR 0049 (the Hex, the Spider and the phasing Ghost (ruleset 13)), ADR 0058 (the
   Magnet pulls shooters in (ruleset 18)), ADR 0060 (the Slime, and the Spider's webs are used up
   (ruleset 19))
+- Amended by: ADR 0071 (the Berserker's cracks, one per stored hit, and the Titan's look)
 
 ## Context
 

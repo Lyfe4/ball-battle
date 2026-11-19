@@ -16,6 +16,8 @@ export interface Tile {
   readonly label: string;
   readonly id: string;
   readonly abilityState?: AbilityState;
+  /** Its radius in world units, for a ball that grows (the Titan); its definition's otherwise. */
+  readonly radius?: number;
   /** Where the ball is heading (Speedster) or where its enemy is (Archer). */
   readonly toward?: Vec2;
   readonly repeat?: boolean;
@@ -56,7 +58,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Speedster: one streak per stack, facing its travel',
+    'Speedster: a dart facing its travel, wrapped by a five-bar gauge, one bar lit per stack; five bars at every size (ADR 0071)',
     [
       ...[0, 1, 2, 3, 4, 5].map((stacks): Tile => ({
         label: `${stacks} stacks`,
@@ -132,7 +134,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Thorns: a ring of spikes to the edge; fewer, fatter spikes at small size',
+    'Thorns: spikes break out of its edge, a dark spine in each; fewer, fatter spikes at small size (ADR 0071)',
     [
       { label: 'idle', id: 'thorns' },
       { label: 'hit flash', id: 'thorns', flash: 0.6 },
@@ -150,7 +152,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Berserker: every hit it takes runs more cracks in, heavier; its next bump lets them out',
+    'Berserker: three seams, one cracking open per hit of rage, white-hot and joined when full; its next bump closes them (ADR 0071)',
     [
       ...[0, 1, 2, 3].map((rage): Tile => ({
         label: rage === 0 ? 'calm' : `rage ${rage}`,
@@ -221,6 +223,10 @@ export function arenaAbilityState(ball: BallState): BallState['abilityState'] {
   switch (ball.definitionId) {
     case 'speedster':
       return { stacks: 3 };
+    case 'berserker':
+      return { rage: 2 };
+    case 'battery':
+      return { stored: 22 };
     case 'archer':
       return charged('nextShotTick', ARCHER_COOLDOWN, 0.6);
     case 'storm':

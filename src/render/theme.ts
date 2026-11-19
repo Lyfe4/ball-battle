@@ -154,6 +154,21 @@ export const theme = {
   simpleDesignBelowPx: 24,
   /** Small highlights: the Vampire's fangs, the Storm's bolt. */
   highlight: '#ffffff',
+  /** The Berserker: its closed seams, its open cracks (fractions of r) and the glow inside them. */
+  berserkerSeamAlpha: 0.4,
+  berserkerCrack: 0.16,
+  berserkerCrackSimple: 0.22,
+  berserkerHeat: '#fde047',
+  /** The Speedster's gauge bars it has not filled. */
+  speedsterEmptyAlpha: 0.22,
+  /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
+  batteryCharge: '#fde047',
+  batteryWellAlpha: 0.12,
+  /** The Titan's stone (ADR 0071): its lit forehead, shaded side, brow shadow and shaded jaw. */
+  titanLitAlpha: 0.32,
+  titanShadeAlpha: 0.2,
+  titanBrowShadowAlpha: 0.34,
+  titanJawAlpha: 0.3,
   /** The Vampire's collar edge flushes this colour when it heals. */
   vampireHeal: '#e11d48',
   /** The Storm's bolt brightens from this alpha as it charges, then flickers near the strike. */
@@ -208,11 +223,6 @@ export const theme = {
   rewindTrailDash: [4, 12] as readonly number[],
   rewindMs: 900,
   rewindGhostAlpha: 0.5,
-  /** The Titan's crest, as a share of r (heavier at small size). */
-  titanCrest: 0.12,
-  /** The Titan's visor slit, as a fraction of r: it widens as the Titan grows and hits harder. */
-  titanVisor: [0.2, 0.36] as readonly [number, number],
-  titanCrestSimple: 0.18,
   /**
    * The Inferno (ADR 0034): its flame's pale heart and how far the tip flickers (a share of r). Its
    * burning patches: a warm disc under the balls, brighter just after a burn, fading as it burns
@@ -230,6 +240,8 @@ export const theme = {
    * Batch 5 (ADR 0043). The Boomerang's mark and its boomerang in flight: a bent bar as thick as
    * this share of r (heavier at small size), spinning a full turn every few ticks while it flies.
    */
+  /** The faint shape left on the Boomerang while its boomerang is in the air. */
+  boomerangOutAlpha: 0.3,
   boomerangArm: 0.2,
   boomerangArmSimple: 0.28,
   boomerangSpinTicks: 10,

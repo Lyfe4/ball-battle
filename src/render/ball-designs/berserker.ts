@@ -1,76 +1,101 @@
 import { MAX_RAGE, rageOf } from '../../sim/balls/berserker.ts';
 import { theme } from '../theme.ts';
 import { rageCrackCount } from './state.ts';
-import type { BallDesign } from './types.ts';
+import type { BallDesign, Painter } from './types.ts';
+
+type Point = readonly [number, number];
 
 /**
- * Cracks from the edge inwards, as [x, y] fractions of r, in the order they appear as the
- * Berserker stores rage. Each one stays inside the ball, so its outline stays round.
+ * Its three fault lines, one per hit of rage it can store (MAX_RAGE), from the edge in to the
+ * centre as [x, y] fractions of r, 120° apart: up, lower right, lower left. They open in this order.
  */
-const CRACKS: readonly (readonly (readonly [number, number])[])[] = [
+const FAULTS: readonly (readonly Point[])[] = [
   [
-    [-0.16, -0.93],
-    [-0.06, -0.62],
-    [-0.2, -0.42],
-    [-0.05, -0.16],
+    [0.04, -0.92],
+    [-0.1, -0.62],
+    [0.08, -0.4],
+    [-0.04, -0.16],
+    [0, 0],
   ],
   [
-    [0.9, 0.3],
-    [0.6, 0.17],
-    [0.47, 0.35],
-    [0.22, 0.2],
+    [0.78, 0.5],
+    [0.5, 0.42],
+    [0.42, 0.18],
+    [0.16, 0.12],
+    [0, 0],
   ],
   [
-    [-0.84, 0.46],
-    [-0.58, 0.3],
-    [-0.5, 0.07],
-    [-0.26, 0.02],
-  ],
-  [
-    [0.3, 0.9],
-    [0.2, 0.6],
-    [0.36, 0.43],
-    [0.13, 0.28],
-  ],
-  [
-    [0.66, -0.66],
-    [0.43, -0.42],
-    [0.5, -0.22],
-    [0.28, -0.1],
-  ],
-  [
-    [-0.46, 0.82],
-    [-0.36, 0.55],
-    [-0.16, 0.5],
-    [-0.12, 0.26],
+    [-0.82, 0.42],
+    [-0.52, 0.22],
+    [-0.36, 0.38],
+    [-0.12, 0.06],
+    [0, 0],
   ],
 ];
 
+function faultPath(p: Painter, r: number, fault: readonly Point[], reach: number): void {
+  const points = fault.slice(0, reach);
+  points.forEach(([x, y], index) => {
+    if (index === 0) p.moveTo(x * r, y * r);
+    else p.lineTo(x * r, y * r);
+  });
+}
+
 /**
- * A ball cracking under its rage (ADR 0045): one crack when calm, and every hit it takes runs more
- * cracks in from the edge, heavier, until its next bump lets the rage out and they close again. So
- * the stored rage, and the big bump coming, read at a glance. At small size fewer, thicker cracks.
+ * Rage you can count (ADR 0045): three faint seams where it will crack, and every hit it takes
+ * breaks one open, dark with a hot glow inside, up to three. Full, the three meet in the middle and
+ * the glow is white-hot: the next bump lets it all out and the cracks close. (The bump's own hit
+ * back stores one again at once, so after a trade it shows one crack, as the sim has it.) At small
+ * size the seams and cracks are heavier.
  */
-const SIMPLE_CRACKS = 4;
 export const berserkerDesign: BallDesign = {
   facing: 'none',
   draw(p, { ball, radius: r, accent, simple }) {
     const rage = rageOf(ball.abilityState);
-    const count = rageCrackCount(rage, MAX_RAGE, simple ? SIMPLE_CRACKS : CRACKS.length);
-    const weight = (simple ? 1.7 : 0.8) + Math.min(1, Math.max(0, rage / MAX_RAGE)) * 0.9;
+    // One open crack per stored hit: exactly the sim's count, never a share of it.
+    const open = rageCrackCount(rage, MAX_RAGE);
+    const full = open >= FAULTS.length;
     p.save();
-    p.strokeStyle = accent;
-    p.lineWidth = r * theme.markLine * weight;
     p.lineCap = 'round';
     p.lineJoin = 'round';
+    p.strokeStyle = accent;
+
+    // The seams still closed: thin and faint, so the three slots read even when calm.
+    const alpha = p.globalAlpha;
+    p.globalAlpha = alpha * theme.berserkerSeamAlpha;
+    p.lineWidth = r * theme.markLine * (simple ? 0.9 : 0.55);
     p.beginPath();
-    for (const crack of CRACKS.slice(0, count)) {
-      crack.forEach(([x, y], index) => {
-        if (index === 0) p.moveTo(x * r, y * r);
-        else p.lineTo(x * r, y * r);
-      });
-    }
+    for (const fault of FAULTS.slice(open)) faultPath(p, r, fault, fault.length - 1);
     p.stroke();
+    p.globalAlpha = alpha;
+    if (open === 0) {
+      p.restore();
+      return;
+    }
+
+    // Open cracks: dark and wide; they reach the centre only when all three are open.
+    const reach = (fault: readonly Point[]) => (full ? fault.length : fault.length - 1);
+    const width = r * (simple ? theme.berserkerCrackSimple : theme.berserkerCrack);
+    p.lineWidth = width;
+    p.beginPath();
+    for (const fault of FAULTS.slice(0, open)) faultPath(p, r, fault, reach(fault));
+    p.stroke();
+    // The glow inside: hotter with every crack, white-hot when full.
+    p.strokeStyle = full ? theme.highlight : theme.berserkerHeat;
+    p.lineWidth = width * (full ? 0.42 : 0.34);
+    p.beginPath();
+    for (const fault of FAULTS.slice(0, open)) faultPath(p, r, fault, reach(fault));
+    p.stroke();
+    if (full) {
+      p.fillStyle = accent;
+      p.beginPath();
+      p.arc(0, 0, width * 0.95, 0, Math.PI * 2);
+      p.fill();
+      p.fillStyle = theme.highlight;
+      p.beginPath();
+      p.arc(0, 0, width * 0.5, 0, Math.PI * 2);
+      p.fill();
+    }
     p.restore();
   },
 };

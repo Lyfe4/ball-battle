@@ -31,12 +31,12 @@ export function stacksOf(ball: BallState): number {
 export const speedster = defineBall<SpeedsterState>({
   id: 'speedster',
   name: 'Speedster',
-  description: 'Wall bounces build speed and damage for its next hit.',
+  description: 'Wall bounces build speed and its next bump’s damage.',
   color: '#facc15',
   ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   howItWorks: [
-    `Each wall bounce adds a stack, up to ${MAX_STACKS}. Each stack makes it ${percentOf(SPEED_PER_STACK)} faster.`,
-    `Its next bump spends them all: ${DAMAGE_PER_STACK} extra damage a stack, up to ${MAX_STACKS * DAMAGE_PER_STACK}.`,
+    `Each wall bounce adds a stack (a corner adds two), up to ${MAX_STACKS}. Each stack makes it ${percentOf(SPEED_PER_STACK)} faster.`,
+    `Its next bump spends them all: ${DAMAGE_PER_STACK} extra damage a stack, up to ${MAX_STACKS * DAMAGE_PER_STACK}, as a hit of its own that spikes never reflect.`,
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 800,

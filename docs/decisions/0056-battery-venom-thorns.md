@@ -2,6 +2,8 @@
 
 > **Scripts:** the measuring harness this cites (`scripts/new-balls/`, including
 
+- Amended by: ADR 0071 (the Battery's look: one smooth fill)
+
 - Amended by: ADR 0058 (the Magnet pulls shooters in (ruleset 18))
 
 > `speed-probe.ts`) lives on `proto/battery-r16` and was never merged to `main`. The numbers here

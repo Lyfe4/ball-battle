@@ -10,25 +10,14 @@ export function chargeFraction(nextTick: number, tick: number, cooldown: number)
   return Math.min(1, Math.max(0, 1 - (nextTick - tick) / cooldown));
 }
 
-/** Speedster streaks: one per stack, never negative or fractional. */
+/** Speedster gauge bars lit: one per whole stack, never negative. */
 export function streakCount(stacks: number): number {
   return Math.max(0, Math.floor(stacks));
 }
 
-/** Speedster streaks at small size: none, one for 1-2 stacks, two for 3 or more. */
-export function simpleStreakCount(stacks: number): number {
-  const count = streakCount(stacks);
-  if (count === 0) return 0;
-  return count <= 2 ? 1 : 2;
-}
-
-/**
- * Berserker cracks for `rage` stored of `maxRage`: one when calm, every one of `max` at full rage,
- * evenly between. Out-of-range rage is clamped.
- */
-export function rageCrackCount(rage: number, maxRage: number, max: number): number {
-  const fill = maxRage <= 0 ? 0 : Math.min(1, Math.max(0, rage / maxRage));
-  return 1 + Math.round(fill * (max - 1));
+/** Berserker cracks open: one per whole hit of rage stored, from none up to `maxRage`. */
+export function rageCrackCount(rage: number, maxRage: number): number {
+  return Math.min(maxRage, Math.max(0, Math.floor(rage)));
 }
 
 /** True when a ball this many CSS pixels in radius should use its simplified design. */
