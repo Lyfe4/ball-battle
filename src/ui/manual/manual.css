@@ -78,7 +78,9 @@
   background: var(--color-surface);
 }
 
+/* Its own corners, so a hover fill follows the box's rounded shape (square only where it opens). */
 .ball-detail-how-summary {
+  border-radius: var(--radius);
   min-height: var(--tap-target);
   padding: var(--space-small) var(--space-gap);
   display: flex;
@@ -99,6 +101,11 @@
   color: var(--color-text-muted);
   font-size: 1.25rem;
   transition: transform 0.15s;
+}
+
+.ball-detail-how[open] > .ball-detail-how-summary {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
 }
 
 .ball-detail-how[open] > .ball-detail-how-summary::after {
@@ -367,15 +374,18 @@
   filter: brightness(1.08);
 }
 
-/* Pointed at or pressed by a finger (press.ts): the same look, the name underlined as a link. */
+/*
+ * Pointed at or pressed by a finger (press.ts): the same look, the name underlined as a link; never
+ * its mark, which isn't text to follow.
+ */
 @media (hover: hover) {
-  .ball-detail-opponent:hover {
+  .ball-detail-opponent:hover .ball-detail-opponent-name {
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
 }
 
-.ball-detail-opponent[data-pressed] {
+.ball-detail-opponent[data-pressed] .ball-detail-opponent-name {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
