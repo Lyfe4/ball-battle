@@ -6,6 +6,7 @@
   cracks and the Titan's visor), ADR 0056 (the Battery's cells)
 - Builds on: ADR 0032 (Sticker Pop), ADR 0039 (the phone arena is the screen), ADR 0063 (smooth
   fights at any frame rate)
+- Amended by: ADR 0072 (round 2: the Necromancer, Bomber and Vampire; the Quake already shows its state)
 
 ## Context
 
@@ -104,4 +105,6 @@ Text only: no ruleset bump (ADR 0022).
 - **Balls worth a later look** (not changed): the Necromancer never shows when its next skeleton
   comes; the Bomber's spark flickers all the time rather than burning down to its next drop; the
   Quake doesn't show whether its next wall hit will shock; the Spider doesn't show how many webs it
-  has out; the Vampire shows a heal but not how hungry it is.
+  has out; the Vampire shows a heal but not how hungry it is. Round 2 (ADR 0072) changed the
+  Necromancer, Bomber and Vampire; the Quake already shows it by its shockwave's warning, and the
+  Vampire heals the same share at any health.

@@ -30,6 +30,8 @@ export interface Tile {
   readonly flash?: number;
   /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
   readonly statuses?: readonly StatusKind[];
+  /** One of its own minions in play, off the tile (a Necromancer whose skull is out). */
+  readonly minionOut?: boolean;
 }
 
 /** Ability state for a cooldown ball `charge` of the way to its next shot or strike. */
@@ -76,10 +78,12 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Vampire: collar and fangs; the collar edge flushes as the heal pulse shows',
+    'Vampire: collar and fangs; the fangs lengthen with its thirst (how much of a full bump it could drink back), dripping once a whole bump would go back in; the collar edge flushes as the heal pulse shows (ADR 0072)',
     [
-      { label: 'idle', id: 'vampire' },
-      { label: 'healing', id: 'vampire', heal: 0.8, healShare: 0.15 },
+      { label: 'sated (full health)', id: 'vampire' },
+      { label: 'thirsty (32 of 39)', id: 'vampire', health: 32 / 39 },
+      { label: 'parched (18 or less)', id: 'vampire', health: 15 / 39 },
+      { label: 'healing', id: 'vampire', heal: 0.8, healShare: 0.15, health: 30 / 39 },
       { label: 'heal fading', id: 'vampire', heal: 0.3, healShare: 0.15 },
       { label: 'mirror B', id: 'vampire', repeat: true },
     ],

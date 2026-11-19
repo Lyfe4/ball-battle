@@ -43,7 +43,7 @@ const CASES: readonly (readonly [string, BallDesign, BallDefinition, Partial<Bal
   ['Vampire', vampireDesign, vampire, { health: 20 }],
 ];
 
-describe('the round-2 state looks', () => {
+describe('ball looks that show their state', () => {
   for (const [name, design, definition, change] of CASES) {
     it(`${name}: the same drawing, scaled, at every size, phone and desktop alike`, () => {
       const first = record(design, view(definition, SIZES[0] ?? 10, true, change));

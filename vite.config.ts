@@ -96,8 +96,6 @@ export default defineConfig({
         main: 'index.html',
         privacy: 'privacy.html',
         terms: 'terms.html',
-        // PROTOTYPE ONLY (proto/ball-looks-2): the ball-looks gallery for review; never merged.
-        ballgallery: 'ballgallery.html',
       },
     },
   },

@@ -1,6 +1,7 @@
 // The style guide's tiles for batch 5 (ADR 0043, 0045), kept apart so each file stays readable.
 // sections.ts lists them in roster order with the rest.
 import { PAUSE_TICKS } from '../sim/balls/bloom.ts';
+import { DROP_TICKS } from '../sim/balls/bomber.ts';
 import type { Tile } from './sections.ts';
 import { TICK } from './tick.ts';
 
@@ -15,9 +16,15 @@ export const BATCH_FIVE: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Bomber: a bomb with a flickering fuse; its bombs lie under the balls (see the phone arena)',
+    'Bomber: a bomb whose stick fuse burns down to its next drop, the spark creeping to the bomb, whole again after each drop; its bombs lie under the balls (see the phone arena) (ADR 0072)',
     [
-      { label: 'idle', id: 'bomber' },
+      { label: 'just dropped', id: 'bomber', abilityState: { nextDropTick: TICK + DROP_TICKS } },
+      {
+        label: 'half burnt',
+        id: 'bomber',
+        abilityState: { nextDropTick: TICK + DROP_TICKS / 2 },
+      },
+      { label: 'about to drop', id: 'bomber', abilityState: { nextDropTick: TICK + 12 } },
       { label: 'hit flash', id: 'bomber', flash: 0.6 },
       { label: 'mirror B', id: 'bomber', repeat: true },
       { label: 'defeated', id: 'bomber', defeated: true },
