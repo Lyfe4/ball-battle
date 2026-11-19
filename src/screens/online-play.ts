@@ -15,7 +15,7 @@ import {
 } from '../app/online-series.ts';
 import { advanceSession, settleCurrent, type SeriesSession } from '../app/series-session.ts';
 import type { SeriesView } from '../api/series.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { replaysHere } from '../sim/ruleset.ts';
 import { nextMatch, type NextMatch } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
@@ -60,7 +60,7 @@ export function createOnlinePlay(
    */
   const ours = () => host.worldsShown() === shownAt && keyOf(session?.current) === shownPlay;
   /** A live series this page can fight (its own ruleset); otherwise it is shown as by turns. */
-  const isLive = () => view?.live != null && view.ruleset === RULESET_VERSION;
+  const isLive = () => view?.live != null && replaysHere(view.ruleset);
   const shown = () => {
     shownAt = host.worldsShown();
     shownPlay = keyOf(session?.current);
@@ -206,11 +206,13 @@ export function createOnlinePlay(
     }
     const first = view?.id !== next.id;
     view = next;
+    // A new series (a rematch, another link): what the arena holds is not one of its rounds.
+    if (first) shownAt = -1;
     // A live match that ended here: its rematch reaches the player anywhere (rematch-watch.ts).
     if (next.live != null && next.status !== 'open') host.ended?.(next);
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
     // here: the server plays it on its own frozen sim, and this page shows its rounds on the track.
-    const replayable = next.ruleset === RULESET_VERSION;
+    const replayable = replaysHere(next.ruleset);
     watched = replayable
       ? Math.min(watchedOf(host.storage, next.id), next.rounds.length)
       : next.rounds.length;
@@ -296,6 +298,7 @@ export function createOnlinePlay(
     phase: () => (visible && status === 'ready' && view !== undefined ? phase : undefined),
     // The series on screen (as offline): the arena shows behind it, and makes way between rounds.
     isPlaying: () => visible && status === 'ready' && view !== undefined,
+    roundOnArena: () => host.worldsShown() === shownAt,
     isLive: () => visible && isLive(),
     endScreen: () => (visible ? extras.rematch.watching() : undefined),
     liveRate: (playedMs) => (visible && isLive() ? live.rate(playedMs) : 1),

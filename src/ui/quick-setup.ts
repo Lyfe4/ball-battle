@@ -3,8 +3,8 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createBallGrid } from './balls/ball-grid.ts';
 import type { BallInfoLink } from './balls/ball-link.ts';
-import { LEAN_WORDS, MARKS } from './balls/marks.ts';
-import { leanOf, matchupTip } from './balls/matchups.ts';
+import { createMatchupLegend } from './balls/matchup-legend.ts';
+import { leanOf, leanWordsOf, levelOf, matchupTip, setMark, symbolOf } from './balls/matchups.ts';
 import { verdictOf } from './balls/verdict.ts';
 import { element, setText } from './dom.ts';
 import { markSymbol } from './symbol-tooltip.ts';
@@ -30,7 +30,6 @@ export interface QuickSetup {
 
 type Slot = 'a' | 'b';
 const SLOT_ICON_PX = 32;
-const LEGEND_ICON_PX = 16;
 const SLOT_NAMES: Readonly<Record<Slot, string>> = { a: 'Ball A', b: 'Ball B' };
 
 /**
@@ -109,21 +108,7 @@ export function createQuickSetup(
   });
 
   // What the tiles' marks are against: the ball in the other slot, as its drawing.
-  const legend = element('p', 'quick-legend');
-  legend.setAttribute('aria-hidden', 'true');
-  const legendIcon = element('canvas', 'quick-legend-icon');
-  const legendMark = (lean: 'favoured' | 'unfavoured') => {
-    const mark = element('span', '', MARKS[lean]);
-    markSymbol(mark, lean);
-    return mark;
-  };
-  legend.append(
-    legendMark('favoured'),
-    ' strong · ',
-    legendMark('unfavoured'),
-    ' weak vs ',
-    legendIcon,
-  );
+  const legend = createMatchupLegend();
 
   const start = element('button', 'hud-button hud-button-primary quick-start', 'Start match');
   start.type = 'button';
@@ -133,7 +118,7 @@ export function createQuickSetup(
   const footer = element('div', 'screen-footer');
   footer.append(start);
 
-  root.append(header.element, slotRow, why, legend, grid.element, footer);
+  root.append(header.element, slotRow, why, legend.element, grid.element, footer);
 
   function render(): void {
     const { headline, reason } = verdictOf(picks.a, picks.b, nameOf);
@@ -141,15 +126,15 @@ export function createQuickSetup(
       const ball = byId.get(picks[slot]);
       if (ball === undefined) continue;
       const other = picks[slot === 'a' ? 'b' : 'a'];
-      const lean = leanOf(ball.id, other);
       setText(name, ball.name);
-      setText(badge, MARKS[lean]);
-      badge.dataset['lean'] = lean;
-      markSymbol(badge, lean, { tip: matchupTip(ball.id, other, nameOf, 'neutral') });
+      setMark(badge, ball.id, other);
+      markSymbol(badge, symbolOf(ball.id, other), {
+        tip: matchupTip(ball.id, other, nameOf, 'neutral'),
+      });
       button.setAttribute('aria-pressed', String(slot === active));
       button.setAttribute(
         'aria-label',
-        `${SLOT_NAMES[slot]}: ${ball.name}, ${LEAN_WORDS[lean]} ${nameOf(other)}`,
+        `${SLOT_NAMES[slot]}: ${ball.name}, ${leanWordsOf(ball.id, other)} ${nameOf(other)}`,
       );
       about.href = actions.ballLink.href(ball.id);
       about.setAttribute('aria-label', `About ${ball.name}`);
@@ -162,13 +147,14 @@ export function createQuickSetup(
       marks: {
         against: nameOf(other),
         leans: new Map(balls.map((ball) => [ball.id, leanOf(ball.id, other)])),
+        levels: new Map(balls.map((ball) => [ball.id, levelOf(ball.id, other)])),
         tips: new Map(
           balls.map((ball) => [ball.id, matchupTip(ball.id, other, nameOf, 'neutral')]),
         ),
       },
     });
     const otherBall = byId.get(other);
-    if (otherBall !== undefined) drawBallIcon(legendIcon, otherBall, LEGEND_ICON_PX);
+    if (otherBall !== undefined) legend.show(otherBall);
     setText(whySummary, headline);
     setText(whyReason, reason);
   }

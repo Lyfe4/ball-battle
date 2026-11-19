@@ -27,6 +27,8 @@ export interface OnlineMount {
   update(world: WorldState, celebrated: boolean): void;
   /** The online series is on screen. */
   playing(): boolean;
+  /** The arena holds one of its rounds (OnlinePlay.roundOnArena). */
+  roundOnArena(): boolean;
   phase(): SeriesPhase | undefined;
   /** The health bars' labels for the online series on screen. */
   sides(): readonly string[] | undefined;
@@ -157,6 +159,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       if (!liveLine.hidden) showLine();
     },
     playing: () => screens.play.isPlaying(),
+    roundOnArena: () => screens.play.roundOnArena(),
     phase: () => screens.play.phase(),
     sides: () => screens.play.sides(),
     setVisible: (screen) => {

@@ -19,25 +19,30 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'speedster',
-    intended: 'even',
-    reason: 'A rush stops the regrowth, but rushes are rare: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Rushes are rare enough that it regrows between them, and its bumps outhit the plain ones.',
   },
   {
     x: 'bloom',
     y: 'frost',
     intended: 'x',
+    level: 'strong',
     reason: 'The slow keeps the cold’s bumps rare, and it regrows in the gaps.',
   },
   {
     x: 'bloom',
     y: 'thorns',
-    intended: 'even',
-    reason: 'Its bumps come back off the spikes, and it regrows between them: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'The slow Thorns lets it regrow between bumps, more than the spikes take back.',
   },
   {
     x: 'bloom',
     y: 'venom',
     intended: 'y',
+    level: 'strong',
     reason: 'Every poison tick is a hit, so its wait never runs out.',
   },
   {
@@ -56,19 +61,22 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'titan',
     intended: 'y',
+    level: 'strong',
     reason: 'Its late bumps grow bigger than anything the Bloom regrows between them.',
   },
   {
     x: 'bloom',
     y: 'inferno',
     intended: 'y',
+    level: 'strong',
     reason: 'Burning patches hurt every half second, so the bud never opens.',
   },
   {
     x: 'bloom',
     y: 'bomber',
-    intended: 'even',
-    reason: 'Regrows in the gaps between bombs, but each blast takes more than it regrows.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A blast takes half its health and shuts the bud, more than it regrows between bombs.',
   },
   {
     x: 'venom',
@@ -92,6 +100,7 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'thorns',
     intended: 'x',
+    level: 'edge',
     reason: 'Poison never touches the spikes and its bumps are light: the spikes barely bite.',
   },
   {

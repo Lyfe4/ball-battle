@@ -8,8 +8,7 @@ import { readyFor, type ReadyMoment } from '../app/ready-moment.ts';
 import type { Tips } from '../app/tips.ts';
 import { counterFor } from '../sim/counter-map.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { MARKS } from './balls/marks.ts';
-import { favouredOf } from './balls/matchups.ts';
+import { favouredOf, levelOf, setMark } from './balls/matchups.ts';
 import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
@@ -91,19 +90,18 @@ export function createReadyCard(
     never.hidden = !withCard;
     if (!withCard) return;
     const favoured = favouredOf(first.id, second.id);
-    const mark = element(
-      'span',
-      'ready-mark',
-      favoured === undefined ? MARKS.even : MARKS.favoured,
-    );
+    const mark = element('span', 'ready-mark');
+    // The favoured ball's mark (▲▲ or ▲), or = for an even pair.
+    const other = favoured === second.id ? first.id : second.id;
+    setMark(mark, favoured ?? first.id, favoured === undefined ? second.id : other);
     mark.setAttribute('aria-hidden', 'true');
-    mark.dataset['lean'] = favoured === undefined ? 'even' : 'favoured';
     const favouredName = favoured === first.id ? first.name : second.name;
+    const how = levelOf(first.id, second.id) === 'strong' ? 'strongly' : 'slightly';
     const words = mirror
       ? 'Mirror match'
       : favoured === undefined
         ? 'Even matchup'
-        : `${favouredName} is favoured`;
+        : `${favouredName} is ${how} favoured`;
     edge.replaceChildren(mark, ` ${words}`);
     reason.textContent = mirror
       ? 'Same ball, same tricks.'

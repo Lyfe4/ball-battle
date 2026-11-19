@@ -234,14 +234,20 @@ Each line is a rule; its ADR has the reasoning.
   every ball 45-55% overall, no matchup worse than 22/78, draws under 5%, median match 12-30 s,
   ±5% health moving win rates at most 15 (warn) / 20 (fail) points, Vampire healing ≥ 25% of max
   health, comebacks 10-20%, every pair inside its counter-map band, every ball's shape.
-- A counter (▲▼) wins 62% or more (target 65-72%); even is 45-55% with no side above 62% (58-62%
-  is the grey zone, warned). Between target and floor is a WARN, within 2 points outside the floor
-  NEAR (passes), further out a MISS. The map is labelled from the full run; a designed counter
-  that measures under 62% is marked even. A full run judges the measured shape, CI's the map's.
-- Shape: every ball 2-4 counters each way, the counts within 1, except the even picks
+- Three levels (ADR 0073), one rule from the full run: 65% or more is a strong counter (▲▲, pass
+  68-75%, fail over 78%), 58% up to 65% an edge (▲, pass 59-64%), under 58% even (pass with no side
+  over 55%). Each favoured map entry names its `level`; a pair outside its band is mislabelled
+  (no grey zone, no NEAR in a full run; CI's 150 seeds keep a NEAR allowance). Inside the band but
+  off its aim is a WARN. A full run judges the measured shape, CI's the map's.
+- Shape: every ball 2-4 strong counters each way, the counts within 1 (a fifth where one visible
+  mechanic gives it, `FIFTH_FROM_ONE_MECHANIC`), edges not counted, except the even picks
   (`EVEN_PICKS`: the Brawler, beating nobody and losing only to Thorns, ADR 0013, 0049; the Magnet
   left it in ruleset 18, ADR 0058) and
-  the known gaps (`SHAPE_EXCEPTIONS`, each allowed exactly its gap today, `docs/vision.md`).
+  the known gaps (`SHAPE_EXCEPTIONS`, each allowed exactly its gap today with its reason,
+  `docs/vision.md`).
+- The bots read the levels (Normal ranks by them, Hard plays 70 / 60 / 50 / 40 / 30%). An older
+  ruleset whose fights are today's (`SAME_FIGHTS_AS`) keeps its bots (`botFor(opponent, ruleset)`)
+  so its series still verify; the first ruleset that changes a fight empties it (ADR 0073).
 - Counters come from mechanics (ADR 0010): a new ball adds an entry with a mechanical reason for
   every pair (`src/sim/counter-map-*.ts`); measure what its mechanic moves before choosing its
   counters. Stats tune how strong a counter is, never whether it

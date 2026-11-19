@@ -1,70 +1,90 @@
-// Checks for the counter map (ADR 0010): the bands each pair's win rate must land in, and the
-// safe-pick rules. The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
+// Checks for the counter map (ADR 0010, 0073): the band each level's win rate must land in, and
+// each ball's shape. The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
 // re-exported here for the balance script and its tests.
-import { counterFor, type CounterEntry } from '../src/sim/counter-map.ts';
+import { counterFor, type CounterEntry, type Level } from '../src/sim/counter-map.ts';
 
 export {
   COUNTER_MAP,
   counterFor,
   type CounterEntry,
   type Intended,
+  type Level,
 } from '../src/sim/counter-map.ts';
 
-/**
- * Bands as win rates over all games (draws count as games, as everywhere in `pnpm balance`), in
- * two levels (ADR 0028 addendum, ADR 0045 group 4): a **target** each pair aims for, and a wider
- * **floor** outside which it fails.
- * - A counter (▲▼, favoured in the map): the target is 65-72%; the floor is 62-78%. A pair that
- *   wins less than 62% is not a counter, however it is designed.
- * - Even: the target is 45-55% for both sides; the floor is no side above 62% (a side that wins
- *   more is a counter) and none under the 22% hard limit, whatever draws do to the other side. A
- *   side between 58% and 62% is the grey zone: shown as even, but too soft to be even and too weak
- *   to be a counter. It is counted and warned about, never failed.
- *
- * One pair at 500 seeds has about ±1.6 points of standard error, so:
- * - inside the target but within `warnWithin` of an edge is flagged (WARN, passes);
- * - between the target and the floor is below target (SHORT, printed as a WARN, passes);
- * - outside the floor by at most `nearWithin` is a near-miss (NEAR, passes): the noise allowance
- *   ADR 0010 accepted, written into the check;
- * - anything further out is a miss (MISS, fails the counter-map target).
- */
-export const COUNTER_BANDS = {
-  counter: [0.65, 0.72],
-  even: [0.45, 0.55],
-  counterFloor: [0.62, 0.78],
-  evenFloor: [0.22, 0.62],
-  /** Above this, a side of an even pair is in the grey zone (up to the counter floor). */
-  greyFrom: 0.58,
-  warnWithin: 0.02,
-  nearWithin: 0.02,
-} as const;
+/** A pair's level as a run measures it: a strong counter, an edge, or even (ADR 0073). */
+export type Measured = Level | 'even';
 
 /**
- * Win rates are ratios of whole counts, so a rate exactly on a 2-point line can land a hair either
- * side of it in floating point. This tolerance keeps such a rate on the lenient side.
+ * Each level's band, as the favoured side's win rate over all games (draws count as games, as
+ * everywhere in `pnpm balance`); for an even pair, the better side's. One rule labels every pair
+ * (`measuredOf`): 65% or more is a strong counter, 58% up to 65% an edge, under 58% even. The
+ * bands meet with no gap and no grey zone, so in a full run a pair outside its label's band is
+ * mislabelled: relabel it (with a reason) or tune it.
+ * - Outside `low`-`high` fails (MISS). A strong counter over 78% is too steep.
+ * - Inside the band but outside `aim` warns (WARN, passes): a strong counter at 65-68% or 75-78%,
+ *   an edge within 1 point of 58% or 65%, an even pair with a side at 55-58%.
+ */
+export const LEVEL_BANDS: Readonly<
+  Record<
+    Measured,
+    {
+      readonly low: number;
+      readonly high: number;
+      /** The band stops short of `high`: the next level starts there. */
+      readonly highOpen: boolean;
+      readonly aim: readonly [number, number];
+    }
+  >
+> = {
+  strong: { low: 0.65, high: 0.78, highOpen: false, aim: [0.68, 0.75] },
+  edge: { low: 0.58, high: 0.65, highOpen: true, aim: [0.59, 0.64] },
+  even: { low: 0, high: 0.58, highOpen: true, aim: [0, 0.55] },
+};
+
+/**
+ * Win rates are ratios of whole counts, so a rate exactly on a line can land a hair either side of
+ * it in floating point. This tolerance puts such a rate on the line, the same way everywhere.
  */
 const EDGE_EPSILON = 1e-9;
+
+/** The level a run measures for a pair, from its better side's win rate. */
+export function measuredOf(top: number): Measured {
+  if (top >= LEVEL_BANDS.strong.low - EDGE_EPSILON) return 'strong';
+  return top >= LEVEL_BANDS.edge.low - EDGE_EPSILON ? 'edge' : 'even';
+}
 
 /** Hard limit on top of the map: no side of any matchup wins less than this (ADR 0045, group 4). */
 export const HARD_WORST_MATCHUP = 0.22;
 
 /**
- * Every ball's shape in the map (ADR 0045, group 4): 2-4 counters it wins and 2-4 it loses, the two
- * counts within 1 of each other, so every pick has a clear edge and a clear weakness.
- */
-export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
-
-/**
  * The even pick, the exception to the shape (docs/vision.md): even against nearly everyone, with
- * exactly these counters. The Brawler, the plain bump, loses to the Thorns (reflection scales with
- * the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049; the phasing Ghost no
- * longer loses to it). The Magnet was the other until ruleset 18, when a hit from range started its
- * pull and gave it three wins (ADR 0058). Adding one is a design decision.
+ * exactly these strong counters. The Brawler, the plain bump, loses to the Thorns (reflection
+ * scales with the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049). The Magnet
+ * was the other until ruleset 18 (ADR 0058). Adding one is a design decision.
  */
 export const EVEN_PICKS: Readonly<
   Record<string, { readonly beats: readonly string[]; readonly losesTo: readonly string[] }>
 > = {
   brawler: { beats: [], losesTo: ['thorns'] },
+};
+
+/**
+ * Every ball's shape (ADR 0045 group 4, ADR 0073), counting strong counters only: 2-4 it beats and
+ * 2-4 it loses to, the two counts within 1, so every pick has a clear strength and a clear
+ * weakness. An edge is a small lean a player can't plan a pick around, so edges aren't counted;
+ * every ball's 45-55% overall keeps them in balance.
+ */
+export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
+
+/**
+ * A fifth strong counter on one side is allowed (ADR 0073, Batch 2) when it comes from the same
+ * visible mechanic as the others there. Each names that mechanic; adding one is a design decision.
+ * - The Bloom: any hit shuts the bud, so every ball that hits it often beats it (ADR 0050).
+ */
+export const FIFTH_FROM_ONE_MECHANIC: Readonly<
+  Record<string, { readonly side: 'wins' | 'losses'; readonly mechanic: string }>
+> = {
+  bloom: { side: 'losses', mechanic: 'any hit shuts the bud' },
 };
 
 /** The fewest and most counters a ball may have on one side (the balls it beats, or loses to). */
@@ -80,63 +100,86 @@ export interface ShapeAllowance {
   readonly within: number;
 }
 
-/** SHAPE as an allowance: what every ball not named in SHAPE_EXCEPTIONS must fit. */
-export const STANDARD_SHAPE: ShapeAllowance = {
-  wins: { fewest: SHAPE.fewest, most: SHAPE.most },
-  losses: { fewest: SHAPE.fewest, most: SHAPE.most },
-  within: SHAPE.within,
-};
+/** The shape a ball must fit unless named in SHAPE_EXCEPTIONS: SHAPE, with its fifth if any. */
+export function standardShapeOf(id: string): ShapeAllowance {
+  const fifth = FIFTH_FROM_ONE_MECHANIC[id]?.side;
+  const range = (side: 'wins' | 'losses'): CounterRange => ({
+    fewest: SHAPE.fewest,
+    most: fifth === side ? SHAPE.most + 1 : SHAPE.most,
+  });
+  return { wins: range('wins'), losses: range('losses'), within: SHAPE.within };
+}
 
-/** STANDARD_SHAPE with only the numbers a ball's gap needs moved. */
-function allow(gap: {
-  readonly wins?: Partial<CounterRange>;
-  readonly losses?: Partial<CounterRange>;
-  readonly within?: number;
-}): ShapeAllowance {
+/** A ball's standard shape with only the numbers its gap needs moved. */
+function allow(
+  id: string,
+  gap: {
+    readonly wins?: Partial<CounterRange>;
+    readonly losses?: Partial<CounterRange>;
+    readonly within?: number;
+  },
+): ShapeAllowance {
+  const standard = standardShapeOf(id);
   return {
-    wins: { ...STANDARD_SHAPE.wins, ...gap.wins },
-    losses: { ...STANDARD_SHAPE.losses, ...gap.losses },
-    within: gap.within ?? STANDARD_SHAPE.within,
+    wins: { ...standard.wins, ...gap.wins },
+    losses: { ...standard.losses, ...gap.losses },
+    within: gap.within ?? standard.within,
   };
 }
 
 /**
- * The known gaps in the roster's shape (ADR 0045 group 4, ADR 0047), each a gap for a future ball to
- * fill (docs/vision.md). Nothing else may stray from SHAPE: `pnpm balance` and the map's test fail on
- * any other ball, and on these beyond their allowance. Each allowance is exactly the ball's gap
- * today (map and measured, ruleset 19) and no wider, so any ball slipping one more step fails; a
- * ball moving back towards the shape still passes, and its allowance can then be tightened.
- * - The Ghost loses to one ball, and the Titan beats one and loses to one: while the Ghost is
- *   phased nothing touches it, so only the Bloom's regrowth beats it (ADR 0049), and only Thorns
- *   holds the grown Titan. (The Storm and Bomber lost this allowance in ruleset 16: the Battery
- *   stores their big strikes and blasts and gives each a second loss, ADR 0056.)
- * - The Berserker beats nearly every ball that hits rarely: 5 wins (its 4 losses keep the gap 1).
- * - The Bloom regrows only after 2 s untouched, so every ball that hits it often wins: 5 losses
- *   (ADR 0050).
- * - Since the Guardian left (ADR 0047): the Quake beats one ball. (The Sniper lost its allowance in
- *   ruleset 17: its quicker lock beats the planted Spartan, ADR 0057; the Vampire lost its own in
- *   ruleset 19: it beats the Slime, a third win against its 4 losses, ADR 0060.)
- * - The Archer loses to five balls (owner's decision, ruleset 19, ADR 0060): the Slime's split
- *   outlasts one arrow at a time, a fifth loss beside the Magnet, Necromancer, Speedster and
- *   Berserker. The gap is for a change that takes one of its losses; its 4 wins keep it within 1.
- * - The Magnet loses to one ball, Thorns, and beats three: a hit from range starts its pull, so it
- *   beats the Archer, Boomerang and Necromancer (ADR 0058). The gap is for a ball that beats it in
- *   a brawl; three wins over one loss is a gap of 2.
+ * The balls off the strong-only shape today (ruleset 20, ADR 0073), each allowed exactly its gap
+ * (strong wins / losses) and no wider: a ball slipping one more step fails, and a ball moving back
+ * towards the shape still passes, so its allowance can then be tightened.
+ *
+ * For ability tweaks or new balls: one-number changes move a ball's whole row (ADR 0010, 0028,
+ * 0045), and the three-levels proposal's search plateaued with these still off.
+ * - Titan 1/1: growing evens its fights out, weak early and strong late; only Thorns holds it.
+ * - Ghost 2/1: phased, nothing touches it, so only the Bloom's regrowth beats it outright.
+ * - Quake 0/0: small, wide shockwaves chip every ball alike, so no pair leans far either way.
+ * - Slime 2/0: its split outlasts one-at-a-time hitters, and no ball hits both halves hard enough.
+ * - Spider 1/0: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
+ * - Spartan 1/2: shield and spear trade evenly with most; only the frail Vampire loses outright.
+ * - Sniper 0/1: a moving ball often slips its line, so it leans on many and beats none outright.
+ * - Inferno 2/1: fire burns every ball alike; only the Berserker, raged by each burn, beats it.
+ * - Frost 1/2: its slow helps against all a little; only the Speedster, needing speed, loses.
+ * - Boomerang 1/4: two light hits a throw beat only the Bloom; four balls punish its light bumps.
+ * (The Vampire fits today; the proposal's Batch 2 would make it the eleventh, at 2/5.)
+ *
+ * For the next run's number changes (the proposal's Batches 1, 1b and 2 bring each to the shape):
+ * - Archer 2/4: four balls reach the frail Archer between arrows; a quicker reload adds wins.
+ * - Thorns 4/0: no ball beats it outright yet; eight lean on it, and a slower Thorns tips some.
+ * - Magnet 3/1: only Thorns beats it outright; buffs to the balls with an edge on it tip one.
+ * - Necromancer 2/1: only the Magnet beats it outright; buffs to its four edges against tip one.
+ * - Bomber 0/2: its blasts lean its way against five balls, none outright; a bigger blast tips two.
+ * - Bloom 3/5: five frequent hitters beat it (a fifth allowed, FIFTH_FROM_ONE_MECHANIC), two more
+ *   than it beats; a harder regrowth bump adds wins.
+ * - Battery 3/1: only Thorns beats it outright; buffs to its four edges against tip one.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  titan: allow({ wins: { fewest: 1 }, losses: { fewest: 1 } }),
-  berserker: allow({ wins: { most: 5 } }),
-  archer: allow({ losses: { most: 5 } }),
-  bloom: allow({ losses: { most: 5 } }),
-  ghost: allow({ losses: { fewest: 1 } }),
-  magnet: allow({ losses: { fewest: 1 }, within: 2 }),
-  quake: allow({ wins: { fewest: 1 } }),
+  titan: allow('titan', { wins: { fewest: 1 }, losses: { fewest: 1 } }),
+  ghost: allow('ghost', { losses: { fewest: 1 } }),
+  quake: allow('quake', { wins: { fewest: 0 }, losses: { fewest: 0 } }),
+  slime: allow('slime', { losses: { fewest: 0 }, within: 2 }),
+  spider: allow('spider', { wins: { fewest: 1 }, losses: { fewest: 0 } }),
+  spartan: allow('spartan', { wins: { fewest: 1 } }),
+  sniper: allow('sniper', { wins: { fewest: 0 }, losses: { fewest: 1 } }),
+  inferno: allow('inferno', { losses: { fewest: 1 } }),
+  frost: allow('frost', { wins: { fewest: 1 } }),
+  boomerang: allow('boomerang', { wins: { fewest: 1 }, within: 3 }),
+  archer: allow('archer', { within: 2 }),
+  thorns: allow('thorns', { losses: { fewest: 0 }, within: 4 }),
+  magnet: allow('magnet', { losses: { fewest: 1 }, within: 2 }),
+  necromancer: allow('necromancer', { losses: { fewest: 1 } }),
+  bomber: allow('bomber', { wins: { fewest: 0 }, within: 2 }),
+  bloom: allow('bloom', { within: 2 }),
+  battery: allow('battery', { losses: { fewest: 1 }, within: 2 }),
 };
 
 /**
- * What is wrong with a ball's shape, given the balls it beats and loses to, or undefined when it
- * fits: an even pick must have exactly its listed counters, every other ball SHAPE or its
- * SHAPE_EXCEPTIONS allowance.
+ * What is wrong with a ball's shape, given the balls it beats and loses to outright (strong
+ * counters), or undefined when it fits: an even pick must have exactly its listed counters, every
+ * other ball its standard shape or its SHAPE_EXCEPTIONS allowance.
  */
 export function shapeProblem(
   id: string,
@@ -151,119 +194,71 @@ export function shapeProblem(
       ? undefined
       : `an even pick beats ${even.beats.join(', ') || 'nobody'} and loses to ${even.losesTo.join(', ')} only`;
   }
-  const { wins, losses, within } = SHAPE_EXCEPTIONS[id] ?? STANDARD_SHAPE;
+  const { wins, losses, within } = SHAPE_EXCEPTIONS[id] ?? standardShapeOf(id);
   for (const [side, count, { fewest, most }] of [
     ['wins', beats.length, wins],
     ['losses', losesTo.length, losses],
   ] as const) {
-    if (count < fewest || count > most) return `needs ${fewest}-${most} ${side}`;
+    if (count < fewest || count > most) return `needs ${fewest}-${most} strong ${side}`;
   }
   return Math.abs(beats.length - losesTo.length) > within
-    ? `wins and losses must be within ${within}`
+    ? `strong wins and losses must be within ${within}`
     : undefined;
 }
 
-/**
- * From best to worst. Only `miss` fails the counter-map target; `short` is a pair inside its floor
- * but outside its target (printed as a WARN).
- */
-export type CounterVerdict = 'ok' | 'warn' | 'short' | 'near' | 'miss';
+/** From best to worst. Only `miss` fails; `near` is the CI check's noise allowance. */
+export type CounterVerdict = 'ok' | 'warn' | 'near' | 'miss';
 
-/** How `pnpm balance` prints each verdict: `short` is a WARN, only MISS fails. */
+/** How `pnpm balance` prints each verdict. */
 export const VERDICT_LABEL: Readonly<Record<CounterVerdict, string>> = {
   ok: 'ok  ',
   warn: 'WARN',
-  short: 'WARN',
   near: 'NEAR',
   miss: 'MISS',
 };
 
-const SEVERITY: readonly CounterVerdict[] = ['ok', 'warn', 'short', 'near', 'miss'];
-
-const inside = (rate: number, [low, high]: readonly [number, number]): boolean =>
-  rate >= low - EDGE_EPSILON && rate <= high + EDGE_EPSILON;
-
-function inBand(
-  rate: number,
-  target: readonly [number, number],
-  floor: readonly [number, number],
-  nearWithin: number,
-): CounterVerdict {
-  if (inside(rate, target)) {
-    const [low, high] = target;
-    const margin = COUNTER_BANDS.warnWithin;
-    return rate < low + margin || rate > high - margin ? 'warn' : 'ok';
+/** A label's verdict for the rate that matters to it. */
+function inBand(rate: number, level: Measured, nearWithin: number): CounterVerdict {
+  const { low, high, highOpen, aim } = LEVEL_BANDS[level];
+  const tooLow = rate < low - EDGE_EPSILON;
+  const tooHigh = highOpen ? rate >= high - EDGE_EPSILON : rate > high + EDGE_EPSILON;
+  if (tooLow || tooHigh) {
+    const outside = tooLow ? low - rate : rate - high;
+    return nearWithin > 0 && outside <= nearWithin + EDGE_EPSILON ? 'near' : 'miss';
   }
-  if (inside(rate, floor)) return 'short';
-  const [low, high] = floor;
-  const outside = rate < low ? low - rate : rate - high;
-  return outside <= nearWithin + EDGE_EPSILON ? 'near' : 'miss';
+  return rate < aim[0] - EDGE_EPSILON || rate > aim[1] + EDGE_EPSILON ? 'warn' : 'ok';
 }
 
-/** The worse of two verdicts. */
-function worse(a: CounterVerdict, b: CounterVerdict): CounterVerdict {
-  return SEVERITY.indexOf(a) >= SEVERITY.indexOf(b) ? a : b;
-}
+/** The level a map entry labels its pair with. */
+export const labelOf = (entry: CounterEntry): Measured =>
+  entry.intended === 'even' ? 'even' : entry.level;
 
 /**
- * Checks one pair's win rates (`xRate` for the entry's x, `yRate` for its y) against its band.
- * For an even pair both sides must be in the even band; the worse verdict counts. `warn`,
- * `short` and `near` pass; only `miss` fails. `nearWithin` is how far outside a band still passes as NEAR:
- * the 2 points ADR 0010 accepted for a full run, or `ciAllowance` for a smaller sample.
+ * Checks one pair's win rates (`xRate` for the entry's x, `yRate` for its y) against its label's
+ * band: a counter by its favoured side's rate, an even pair by its better side's. `nearWithin` is
+ * how far outside still passes as NEAR: none in a full run (the label and the check read the same
+ * fights), `ciAllowance` for CI's smaller sample.
  */
 export function checkCounter(
   entry: CounterEntry,
   xRate: number,
   yRate: number,
-  nearWithin: number = COUNTER_BANDS.nearWithin,
+  nearWithin = 0,
 ): CounterVerdict {
-  const { even, evenFloor } = COUNTER_BANDS;
-  if (entry.intended !== 'even') {
-    const { counter, counterFloor } = COUNTER_BANDS;
-    return inBand(entry.intended === 'x' ? xRate : yRate, counter, counterFloor, nearWithin);
-  }
-  return worse(
-    inBand(xRate, even, evenFloor, nearWithin),
-    inBand(yRate, even, evenFloor, nearWithin),
-  );
-}
-
-/**
- * True when a pair is outside its final floor (ADR 0045, group 4): a counter outside 62-78%, or an
- * even pair with a side above 62% (it is a counter, so label it one) or under 22%. No noise
- * allowance: `pnpm balance` lists these, and a full run must have none.
- */
-export function outsideFinalBand(entry: CounterEntry, xRate: number, yRate: number): boolean {
-  const out = (rate: number, [low, high]: readonly [number, number]) =>
-    rate < low - EDGE_EPSILON || rate > high + EDGE_EPSILON;
-  if (entry.intended === 'even') {
-    return out(xRate, COUNTER_BANDS.evenFloor) || out(yRate, COUNTER_BANDS.evenFloor);
-  }
-  return out(entry.intended === 'x' ? xRate : yRate, COUNTER_BANDS.counterFloor);
-}
-
-/**
- * True when an even pair has a side in the grey zone, above 58% but not over the 62% a counter
- * needs: shown as even, counted and warned about by `pnpm balance` (ADR 0045, group 4).
- */
-export function inGreyZone(entry: CounterEntry, xRate: number, yRate: number): boolean {
-  const top = Math.max(xRate, yRate);
-  return (
-    entry.intended === 'even' &&
-    top > COUNTER_BANDS.greyFrom + EDGE_EPSILON &&
-    top <= COUNTER_BANDS.counterFloor[0] + EDGE_EPSILON
-  );
+  const rate =
+    entry.intended === 'even' ? Math.max(xRate, yRate) : entry.intended === 'x' ? xRate : yRate;
+  return inBand(rate, labelOf(entry), nearWithin);
 }
 
 /**
  * The NEAR allowance for a reduced run (`pnpm balance --ci`): three standard errors of a pair's
- * win rate over `games` games (at most 0.5 / sqrt(games)), and never less than a full run's. A
- * sample that small is noisy, so the CI check fails only on a clear miss; a pair it lets through
- * near an edge is for a full `pnpm balance` to judge. The seeds are fixed, so the result is the
- * same on every run: it can't flake, only miss a borderline pair.
+ * win rate over `games` games (at most 0.5 / sqrt(games)). A sample that small is noisy, so the
+ * CI check fails only on a clear miss of the map's labels; a pair it lets through near a line is
+ * for a full `pnpm balance` to judge. The seeds are fixed, so the result is the same on every
+ * run: it can't flake, only miss a borderline pair.
  */
 export function ciAllowance(games: number): number {
-  return Math.max(COUNTER_BANDS.nearWithin, (3 * 0.5) / Math.sqrt(games));
+  return (3 * 0.5) / Math.sqrt(games);
 }
 
 /** One measured pair: each side's win rate (draws count as games). */
@@ -275,17 +270,17 @@ interface MeasuredPair {
 }
 
 /**
- * Every shape problem among `ids` in a run, as "ball: problem". A full run judges the measured
- * counters (62% or more, the same seeds the map was labelled from); a reduced run (CI's 150 seeds)
- * is too noisy to call a pair near 62%, so it judges the map's counters, each already checked
- * against its band.
+ * Every shape problem among `ids` in a run, as "ball: problem", counting strong counters only. A
+ * full run judges the measured levels (the same seeds the map was labelled from); a reduced run
+ * (CI's 150 seeds) is too noisy to call a pair near 65%, so it judges the map's strong counters,
+ * each already checked against its band.
  */
 export function shapeProblems(
   ids: readonly string[],
   pairs: readonly MeasuredPair[],
   fromMap: boolean,
 ): string[] {
-  const counterAt = COUNTER_BANDS.counterFloor[0] - EDGE_EPSILON;
+  const strong = (rate: number) => measuredOf(rate) === 'strong';
   return ids.flatMap((id) => {
     const beats: string[] = [];
     const losesTo: string[] = [];
@@ -294,14 +289,14 @@ export function shapeProblems(
       const other = x === id ? y : x;
       const [own, theirs] = x === id ? [xRate, yRate] : [yRate, xRate];
       const entry = fromMap ? counterFor(x, y) : undefined;
-      const winner =
-        entry === undefined || entry.intended === 'even'
+      const strongWinner =
+        entry === undefined || entry.intended === 'even' || entry.level !== 'strong'
           ? undefined
           : entry.intended === 'x'
             ? entry.x
             : entry.y;
-      if (fromMap ? winner === id : own >= counterAt) beats.push(other);
-      if (fromMap ? winner === other : theirs >= counterAt) losesTo.push(other);
+      if (fromMap ? strongWinner === id : strong(own)) beats.push(other);
+      if (fromMap ? strongWinner === other : strong(theirs)) losesTo.push(other);
     }
     const problem = shapeProblem(id, beats, losesTo);
     return problem === undefined ? [] : [`${id}: ${problem}`];

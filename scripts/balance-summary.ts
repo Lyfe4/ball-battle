@@ -1,29 +1,44 @@
-// Each ball's shape for `pnpm balance`: its overall win rate, and how many opponents it is strong,
-// even and weak against, by the counter map (what the game says) and by the measured results
-// (what the fights do), with its average win rate in each group. Pure, so it is tested without
-// playing matches; `pnpm balance --write-summary` writes it to docs/balance-summary.md.
-import { isFavoured } from '../src/sim/counter-map.ts';
-import { COUNTER_BANDS, EVEN_PICKS, SHAPE, SHAPE_EXCEPTIONS } from './counter-map.ts';
+// Each ball's shape for `pnpm balance`: its overall win rate, and how many opponents it is a strong
+// counter to, has an edge on, is even with, is edged by and is countered by (ADR 0073), by the
+// counter map (what the game says) and by the measured results (what the fights do), with its
+// average win rate in each group. Pure, so it is tested without playing matches;
+// `pnpm balance --write-summary` writes it to docs/balance-summary.md.
+import { standingOf } from '../src/sim/counter-map.ts';
+import {
+  EVEN_PICKS,
+  FIFTH_FROM_ONE_MECHANIC,
+  LEVEL_BANDS,
+  measuredOf,
+  SHAPE,
+  SHAPE_EXCEPTIONS,
+} from './counter-map.ts';
 
-export type Group = 'strong' | 'even' | 'weak';
-export const GROUPS: readonly Group[] = ['strong', 'even', 'weak'];
+/** A ball's standing against one opponent: strong, an edge, even, edged, or weak (countered). */
+export type Group = 'strong' | 'edge' | 'even' | 'edged' | 'weak';
+export const GROUPS: readonly Group[] = ['strong', 'edge', 'even', 'edged', 'weak'];
+
+/** How each group is headed in the summary. */
+const GROUP_TITLES: Readonly<Record<Group, string>> = {
+  strong: '▲▲ strong',
+  edge: '▲ edge',
+  even: '= even',
+  edged: '▼ edge',
+  weak: '▼▼ strong',
+};
 
 /**
- * A ball is lopsided when its strong and weak counts differ by this many or more: the shape rule
- * wants them within 1 (ADR 0045, group 4). A warning, not a failure; the map's own shape is pinned
- * by scripts/counter-map.test.ts.
+ * A ball is lopsided when its strong wins and losses differ by this many or more: the shape rule
+ * wants them within 1 (ADR 0045, group 4, ADR 0073). A warning, not a failure; the shape itself is
+ * checked by `pnpm balance`.
  */
 export const LOPSIDED_GAP = 2;
 
-/**
- * The measured group of a win rate: a counter's 62% or more is strong, 38% or less weak (the other
- * side near 62%), everything between even (ADR 0045, group 4).
- */
-export function measuredGroup(rate: number): Group {
-  const counterAt = COUNTER_BANDS.counterFloor[0];
-  if (rate >= counterAt) return 'strong';
-  if (rate <= 1 - counterAt) return 'weak';
-  return 'even';
+/** The measured group of a pair, from the ball's own win rate and its opponent's (ADR 0073). */
+export function measuredGroup(rate: number, theirs: number): Group {
+  const level = measuredOf(Math.max(rate, theirs));
+  if (level === 'even') return 'even';
+  if (rate >= theirs) return level === 'strong' ? 'strong' : 'edge';
+  return level === 'strong' ? 'weak' : 'edged';
 }
 
 export interface GroupStats {
@@ -34,7 +49,7 @@ export interface GroupStats {
 
 export interface Shape {
   readonly groups: Readonly<Record<Group, GroupStats>>;
-  /** Strong minus weak: positive leans strong. */
+  /** Strong wins minus strong losses: positive leans strong. */
   readonly gap: number;
   readonly lopsided: boolean;
 }
@@ -43,20 +58,25 @@ export interface BallSummary {
   readonly id: string;
   readonly name: string;
   readonly winRate: number;
-  /** Grouped by the counter map's intended direction. */
+  /** Grouped by the counter map's levels. */
   readonly byMap: Shape;
-  /** Grouped by the measured win rate against each opponent. */
+  /** Grouped by the measured win rates against each opponent. */
   readonly measured: Shape;
-  /** The map's counters for the ball, each with its measured win rate, sharpest first. */
+  /** The map's strong counters for the ball, each with its measured win rate, sharpest first. */
   readonly beats: readonly MatchupRate[];
   readonly losesTo: readonly MatchupRate[];
+  /** The map's edges for and against the ball, the same way. */
+  readonly edges: readonly MatchupRate[];
+  readonly edgedBy: readonly MatchupRate[];
 }
 
 export interface MatchupRate {
   readonly opponent: string;
   /** The ball's win rate against `opponent` (draws count as games). */
   readonly rate: number;
-  /** What the counter map intends for the ball. */
+  /** The opponent's win rate against the ball. */
+  readonly theirs: number;
+  /** What the counter map says of the ball against `opponent`. */
   readonly intended: Group;
 }
 
@@ -71,7 +91,10 @@ function shapeOf(rates: readonly { readonly rate: number; readonly group: Group 
           : members.reduce((sum, { rate }) => sum + rate, 0) / members.length,
     };
   };
-  const groups = { strong: stats('strong'), even: stats('even'), weak: stats('weak') };
+  const groups = Object.fromEntries(GROUPS.map((group) => [group, stats(group)])) as Record<
+    Group,
+    GroupStats
+  >;
   const gap = groups.strong.count - groups.weak.count;
   return { groups, gap, lopsided: Math.abs(gap) >= LOPSIDED_GAP };
 }
@@ -81,22 +104,35 @@ export function summariseBall(
   winRate: number,
   matchups: readonly MatchupRate[],
 ): BallSummary {
+  const sharpest = (group: Group) =>
+    matchups.filter((m) => m.intended === group).sort((p, q) => q.rate - p.rate);
+  const worst = (group: Group) =>
+    matchups.filter((m) => m.intended === group).sort((p, q) => p.rate - q.rate);
   return {
     id: ball.id,
     name: ball.name,
     winRate,
     byMap: shapeOf(matchups.map(({ rate, intended }) => ({ rate, group: intended }))),
-    measured: shapeOf(matchups.map(({ rate }) => ({ rate, group: measuredGroup(rate) }))),
-    beats: matchups.filter((m) => m.intended === 'strong').sort((p, q) => q.rate - p.rate),
-    losesTo: matchups.filter((m) => m.intended === 'weak').sort((p, q) => p.rate - q.rate),
+    measured: shapeOf(
+      matchups.map(({ rate, theirs }) => ({ rate, group: measuredGroup(rate, theirs) })),
+    ),
+    beats: sharpest('strong'),
+    losesTo: worst('weak'),
+    edges: sharpest('edge'),
+    edgedBy: worst('edged'),
   };
 }
 
-/** What the counter map intends for `ball` against `opponent`. */
+/** What the counter map says of `ball` against `opponent`. */
 export function intendedGroup(ball: string, opponent: string): Group {
-  if (isFavoured(ball, opponent)) return 'strong';
-  if (isFavoured(opponent, ball)) return 'weak';
-  return 'even';
+  const groups: Readonly<Record<string, Group>> = {
+    '2': 'strong',
+    '1': 'edge',
+    '0': 'even',
+    '-1': 'edged',
+    '-2': 'weak',
+  };
+  return groups[String(standingOf(ball, opponent))] ?? 'even';
 }
 
 /** One measured pair: each side's win rate (draws count as games). */
@@ -115,8 +151,12 @@ export function summarise(
 ): BallSummary[] {
   return balls.map((ball) => {
     const matchups = pairs.flatMap(({ x, y, xRate, yRate }): MatchupRate[] => {
-      if (x === ball.id) return [{ opponent: y, rate: xRate, intended: intendedGroup(x, y) }];
-      if (y === ball.id) return [{ opponent: x, rate: yRate, intended: intendedGroup(y, x) }];
+      if (x === ball.id) {
+        return [{ opponent: y, rate: xRate, theirs: yRate, intended: intendedGroup(x, y) }];
+      }
+      if (y === ball.id) {
+        return [{ opponent: x, rate: yRate, theirs: xRate, intended: intendedGroup(y, x) }];
+      }
       return [];
     });
     return summariseBall(ball, winRateOf(ball.id), matchups);
@@ -133,14 +173,17 @@ const cell = ({ count, average }: GroupStats): string =>
 const gapText = (shape: Shape): string =>
   `${shape.gap > 0 ? '+' : ''}${String(shape.gap)}${shape.lopsided ? ' WARN' : ''}`;
 
-/** The per-ball shape as console lines for `pnpm balance`. */
+/** The per-ball shape as console lines for `pnpm balance`: counts only, map then measured. */
 export function summaryLines(summaries: readonly BallSummary[]): string[] {
-  const head = `  ${'Ball'.padEnd(12)} ${'Win'.padStart(6)}   ${'Map: strong / even / weak'.padEnd(44)} ${'Measured: strong / even / weak'.padEnd(44)}`;
-  const rows = summaries.map((ball) => {
-    const shape = (s: Shape) =>
-      `${GROUPS.map((group) => cell(s.groups[group])).join(' / ')}  ${gapText(s)}`.padEnd(44);
-    return `  ${ball.name.padEnd(12)} ${percent(ball.winRate).padStart(6)}   ${shape(ball.byMap)} ${shape(ball.measured)}`;
-  });
+  const counts = (s: Shape) =>
+    `${GROUPS.map((group) => String(s.groups[group].count).padStart(2)).join(' ')}  ${gapText(s)}`.padEnd(
+      26,
+    );
+  const head = `  ${'Ball'.padEnd(12)} ${'Win'.padStart(6)}   ${'Map: ▲▲ ▲ = ▼ ▼▼  gap'.padEnd(26)} Measured: ▲▲ ▲ = ▼ ▼▼  gap`;
+  const rows = summaries.map(
+    (ball) =>
+      `  ${ball.name.padEnd(12)} ${percent(ball.winRate).padStart(6)}   ${counts(ball.byMap)} ${counts(ball.measured)}`,
+  );
   return [head, ...rows];
 }
 
@@ -156,36 +199,34 @@ export interface SummaryContext {
   readonly command: string;
 }
 
-/** A pair inside its floor but outside its target band (ADR 0028 addendum): warned, not failed. */
+/** A pair inside its level's band but off its aim (ADR 0073): warned, not failed. */
 export interface BelowTarget {
   /** "Storm vs Thorns". */
   readonly pair: string;
-  /** "Storm favoured", or "even". */
+  /** "Storm strong", "Storm edge", or "even". */
   readonly intended: string;
   /** The favoured side's rate, or both sides' for an even pair, as printed. */
   readonly rates: string;
 }
 
-const band = ([low, high]: readonly [number, number]): string =>
-  `${String(Math.round(low * 100))}-${String(Math.round(high * 100))}%`;
+const whole = (rate: number): string => `${String(Math.round(rate * 100))}%`;
 
-/** The below-target section of docs/balance-summary.md: every such pair, or "None.". */
+/** The off-aim section of docs/balance-summary.md: every such pair, or "None.". */
 export function belowTargetLines(pairs: readonly BelowTarget[]): string[] {
-  const { counter, even, counterFloor, evenFloor } = COUNTER_BANDS;
+  const { strong, edge, even } = LEVEL_BANDS;
   const intro = [
-    '## Below target',
+    '## Off the aim',
     '',
-    `Counter-map pairs inside their floor (counter ${band(counterFloor)}, even ${band(evenFloor)})`,
-    `but outside their target (counter ${band(counter)}, even ${band(even)}): a WARN in`,
-    '`pnpm balance`, a pair to sharpen rather than a failure. An even pair with a side over 58%',
-    'is in the grey zone (ADR 0045, group 4).',
+    `Pairs inside their level's band but off its aim: a strong counter at ${whole(strong.low)}-${whole(strong.aim[0])} or`,
+    `${whole(strong.aim[1])}-${whole(strong.high)}, an edge within 1 point of ${whole(edge.low)} or ${whole(edge.high)}, an even pair with a side`,
+    `over ${whole(even.aim[1])}. A WARN in \`pnpm balance\`, a pair to sharpen rather than a failure (ADR 0073).`,
     '',
   ];
   if (pairs.length === 0) return [...intro, 'None.', ''];
   return [
     ...intro,
-    '| Pair | Intended | Result |',
-    '| ---- | -------- | -----: |',
+    '| Pair | Label | Result |',
+    '| ---- | ----- | -----: |',
     ...pairs.map(({ pair, intended, rates }) => `| ${pair} | ${intended} | ${rates} |`),
     '',
   ];
@@ -197,9 +238,14 @@ export function summaryMarkdown(
   context: SummaryContext,
   belowTarget: readonly BelowTarget[] = [],
 ): string {
+  const cells = (shape: Shape) =>
+    `${GROUPS.map((group) => cell(shape.groups[group])).join(' | ')} | ${gapText(shape)}`;
   const row = (ball: BallSummary) =>
-    `| ${ball.name} | ${percent(ball.winRate)} | ${GROUPS.map((group) => cell(ball.byMap.groups[group])).join(' | ')} | ${gapText(ball.byMap)} | ${GROUPS.map((group) => cell(ball.measured.groups[group])).join(' | ')} | ${gapText(ball.measured)} |`;
+    `| ${ball.name} | ${percent(ball.winRate)} | ${cells(ball.byMap)} | ${cells(ball.measured)} |`;
+  const titles = (source: string) =>
+    [...GROUPS.map((group) => `${source}: ${GROUP_TITLES[group]}`), `${source} gap`].join(' | ');
   const flagged = lopsidedBalls(summaries);
+  const { strong, edge } = LEVEL_BANDS;
   return [
     '# Balance summary',
     '',
@@ -210,14 +256,14 @@ export function summaryMarkdown(
     `\`${context.command}\`.`,
     '',
     'Each group is a count of opponents, with the ball’s average win rate against them in brackets.',
-    '**By map** groups opponents by the counter map (favoured, even, unfavoured; ADR 0010).',
-    `**Measured** groups them by the result: ${percent(COUNTER_BANDS.counterFloor[0])} or more is strong,`,
-    `${percent(1 - COUNTER_BANDS.counterFloor[0])} or less weak. **Gap** is strong minus weak; WARN marks a lopsided`,
-    `shape (a gap of ${String(LOPSIDED_GAP)} or more either way), a prompt to look rather than a`,
-    'failure.',
+    `Three levels (ADR 0073): a strong counter wins ${whole(strong.low)} or more, an edge ${whole(edge.low)} up to ${whole(edge.high)},`,
+    'anything closer is even. **Map** groups opponents by the counter map’s labels, **Measured** by',
+    'the better side’s result in this run. **Gap** is strong wins minus strong losses (the shape counts',
+    `strong counters only); WARN marks a gap of ${String(LOPSIDED_GAP)} or more either way, a prompt to look rather`,
+    'than a failure.',
     '',
-    '| Ball | Win | Map: strong | Map: even | Map: weak | Map gap | Measured: strong | Measured: even | Measured: weak | Measured gap |',
-    '| ---- | --: | --: | --: | --: | --: | --: | --: | --: | --: |',
+    `| Ball | Win | ${titles('Map')} | ${titles('Measured')} |`,
+    `| ---- | --: | ${Array.from({ length: GROUPS.length * 2 + 2 }, () => '--:').join(' | ')} |`,
     ...summaries.map(row),
     '',
     flagged.length === 0
@@ -230,7 +276,7 @@ export function summaryMarkdown(
   ].join('\n');
 }
 
-/** The counters section of docs/balance-summary.md: each ball's ▲ and ▼ by the map, measured. */
+/** The counters section of docs/balance-summary.md: each ball's map levels, measured. */
 export function counterLines(summaries: readonly BallSummary[]): string[] {
   const nameOf = (id: string) => summaries.find((ball) => ball.id === id)?.name ?? id;
   const list = (matchups: readonly MatchupRate[]) =>
@@ -240,18 +286,21 @@ export function counterLines(summaries: readonly BallSummary[]): string[] {
   return [
     '## Counters',
     '',
-    'Each ball’s counters by the map, with its measured win rate against each.',
+    'Each ball’s strong counters and edges by the map, with its measured win rate against each.',
     '',
-    '| Ball | Beats (▲) | Loses to (▼) |',
-    '| ---- | --------- | ------------ |',
-    ...summaries.map((ball) => `| ${ball.name} | ${list(ball.beats)} | ${list(ball.losesTo)} |`),
+    '| Ball | Beats (▲▲) | Edge on (▲) | Edged by (▼) | Loses to (▼▼) |',
+    '| ---- | ---------- | ----------- | ------------ | ------------- |',
+    ...summaries.map(
+      (ball) =>
+        `| ${ball.name} | ${list(ball.beats)} | ${list(ball.edges)} | ${list(ball.edgedBy)} | ${list(ball.losesTo)} |`,
+    ),
     '',
   ];
 }
 
 /**
  * The known gaps section of docs/balance-summary.md: the balls allowed off the roster's shape
- * (scripts/counter-map.ts), each a gap for a future ball to fill (ADR 0045, 0047, docs/vision.md).
+ * (scripts/counter-map.ts), with the reason for each in its comment there.
  */
 export function gapLines(): string[] {
   const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
@@ -259,15 +308,20 @@ export function gapLines(): string[] {
     ([id, { beats, losesTo }]) =>
       `${name(id)} beats ${beats.map(name).join(', ') || 'nobody'} and loses to ${losesTo.map(name).join(', ')}`,
   );
+  const fifths = Object.entries(FIFTH_FROM_ONE_MECHANIC).map(
+    ([id, { side, mechanic }]) => `${name(id)} (${side}: ${mechanic})`,
+  );
   return [
     '## Known gaps',
     '',
-    `Every ball has ${String(SHAPE.fewest)}-${String(SHAPE.most)} counters each way, the two counts within ${String(SHAPE.within)}, except`,
-    'these, which `pnpm balance` allows by name and nothing else: gaps for future balls to fill',
-    `(ADR 0045, 0047, docs/vision.md). The even picks have exactly their counters: ${evenPicks.join('; ')}.`,
+    `Every ball has ${String(SHAPE.fewest)}-${String(SHAPE.most)} strong counters each way, the two counts within ${String(SHAPE.within)}; a fifth on one`,
+    `side is allowed when it comes from the same visible mechanic: ${fifths.join('; ') || 'none'}.`,
+    'The balls below are off that shape today and allowed exactly their gap by name, each with its',
+    'reason in `scripts/counter-map.ts` (ADR 0073). The even picks have exactly their counters:',
+    `${evenPicks.join('; ')}.`,
     '',
-    '| Ball | Wins | Losses | Wins and losses within |',
-    '| ---- | ---: | -----: | ---------------------: |',
+    '| Ball | Strong wins | Strong losses | Wins and losses within |',
+    '| ---- | ----------: | ------------: | ---------------------: |',
     ...Object.entries(SHAPE_EXCEPTIONS).map(
       ([id, { wins, losses, within }]) =>
         `| ${name(id)} | ${String(wins.fewest)}-${String(wins.most)} | ${String(losses.fewest)}-${String(losses.most)} | ${String(within)} |`,

@@ -6,43 +6,37 @@ import { BALLS_HEADER, ballsCsv, bandResult, MATRIX_HEADER, matrixCsv } from './
 import { summarise } from './balance-summary.ts';
 import type { CounterEntry } from './counter-map.ts';
 
-const counter: CounterEntry = { x: 'a', y: 'b', intended: 'x', reason: '' };
+const strong: CounterEntry = { x: 'a', y: 'b', intended: 'x', level: 'strong', reason: '' };
+const edge: CounterEntry = { x: 'a', y: 'b', intended: 'x', level: 'edge', reason: '' };
 const even: CounterEntry = { x: 'a', y: 'b', intended: 'even', reason: '' };
 
 describe('bandResult', () => {
-  it('reads a counter against its target (65-72%) and floor (62-78%)', () => {
-    expect(bandResult(counter, 0.69, 0.3).result).toBe('pass');
-    expect(bandResult(counter, 0.66, 0.33)).toStrictEqual({
-      result: 'warn',
-      note: 'near a target edge',
+  it('reads each label against its band and aim (ADR 0073)', () => {
+    expect(bandResult(strong, 0.7, 0.29).result).toBe('pass');
+    expect(bandResult(strong, 0.66, 0.33)).toStrictEqual({ result: 'warn', note: 'off the aim' });
+    expect(bandResult(strong, 0.63, 0.36)).toStrictEqual({ result: 'miss', note: 'measures edge' });
+    expect(bandResult(strong, 0.8, 0.19)).toStrictEqual({
+      result: 'miss',
+      note: 'outside the band',
     });
-    expect(bandResult(counter, 0.63, 0.36)).toStrictEqual({
-      result: 'warn',
-      note: 'below the target',
-    });
-    expect(bandResult(counter, 0.75, 0.24).note).toBe('above the target');
-    expect(bandResult(counter, 0.61, 0.38).result).toBe('near');
-    expect(bandResult(counter, 0.59, 0.4).result).toBe('miss');
+    expect(bandResult(edge, 0.61, 0.38).result).toBe('pass');
+    expect(bandResult(edge, 0.66, 0.33).note).toBe('measures strong');
   });
 
   it('reads the favoured side when the map favours the second ball', () => {
-    expect(bandResult({ ...counter, intended: 'y' }, 0.3, 0.69).result).toBe('pass');
+    expect(bandResult({ ...strong, intended: 'y' }, 0.29, 0.7).result).toBe('pass');
   });
 
-  it('calls an even pair with a side at 58-62% the grey zone, but a miss a miss', () => {
+  it('has no grey zone: an even pair with a side at 58% measures an edge', () => {
     expect(bandResult(even, 0.5, 0.49).result).toBe('pass');
-    expect(bandResult(even, 0.56, 0.43)).toStrictEqual({
-      result: 'warn',
-      note: 'outside the target',
-    });
-    expect(bandResult(even, 0.6, 0.39).result).toBe('grey zone');
-    expect(bandResult(even, 0.66, 0.33).result).toBe('miss');
+    expect(bandResult(even, 0.56, 0.43)).toStrictEqual({ result: 'warn', note: 'off the aim' });
+    expect(bandResult(even, 0.6, 0.39)).toStrictEqual({ result: 'miss', note: 'measures edge' });
   });
 });
 
 describe('matrixCsv', () => {
   const name = (id: string) => id.toUpperCase();
-  // The map favours Thorns over the Brawler; the Brawler and the Storm are even.
+  // Thorns is a strong counter to the Brawler; the Brawler and the Storm are even.
   const csv = matrixCsv(
     [
       { x: 'brawler', y: 'thorns', xWins: 31, yWins: 68, draws: 1, games: 100 },
@@ -55,7 +49,7 @@ describe('matrixCsv', () => {
   it('writes one row per pair with rates as percentages of all fights', () => {
     expect(csv.split('\n')).toStrictEqual([
       MATRIX_HEADER.join(','),
-      '7,BRAWLER,THORNS,31.0,68.0,1.0,100,B favoured,pass,',
+      '7,BRAWLER,THORNS,31.0,68.0,1.0,100,B strong,pass,',
       '7,BRAWLER,STORM,50.0,50.0,0.0,100,even,pass,',
       '',
     ]);
@@ -69,7 +63,7 @@ describe('matrixCsv', () => {
 });
 
 describe('ballsCsv', () => {
-  it('lists counters with rates and names the weakest win; a ball that beats nobody has none', () => {
+  it('lists strong counters and edges with rates and names the weakest win; none for a ball that beats nobody', () => {
     const balls = [
       { id: 'brawler', name: 'Brawler' },
       { id: 'thorns', name: 'Thorns' },
@@ -85,8 +79,8 @@ describe('ballsCsv', () => {
       7,
     ).split('\n');
     expect(rows[0]).toBe(BALLS_HEADER.join(','));
-    expect(rows[1]).toBe('7,Brawler,50.0,0,,1,Thorns 25.0,,');
-    expect(rows[2]).toBe('7,Thorns,50.0,2,Brawler 74.0; Magnet 70.0,0,,Magnet,70.0');
+    expect(rows[1]).toBe('7,Brawler,50.0,0,,1,Thorns 25.0,0,,0,,,');
+    expect(rows[2]).toBe('7,Thorns,50.0,2,Brawler 74.0; Magnet 70.0,0,,0,,0,,Magnet,70.0');
   });
 });
 

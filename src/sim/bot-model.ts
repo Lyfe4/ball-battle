@@ -1,18 +1,26 @@
 // How the Hard bot (ADR 0035, 0048) values a position in a series of any length: its chance of
-// taking the series from here, with every round's odds read from the counter map (favoured 64%, even 50%, unfavoured 36%)
-// and both sides playing their best from then on. Plain arithmetic only (+ - * / and comparisons),
+// taking the series from here, with every round's odds read from the counter map's levels (ADR
+// 0073: strong 70%, edge 60%, even 50%) and both sides playing their best from then on. Plain arithmetic only (+ - * / and comparisons),
 // which every JS engine computes identically, so a server reaches the same choices (ADR 0001).
-import { isFavoured } from './counter-map.ts';
+import { standingOf } from './counter-map.ts';
 import type { Format } from './series.ts';
 
-/** Round odds the bot assumes, by the counter map: the same bands players read in the manual. */
-export const MODEL_ODDS = { favoured: 0.64, even: 0.5, unfavoured: 0.36 } as const;
+/** The chance a bot assumes `ball` beats `against` in one round. */
+export type Odds = (ball: string, against: string) => number;
 
-/** The chance `ball` beats `opponent` in one round, by the counter map. */
-export function mapOdds(ball: string, opponent: string): number {
-  if (isFavoured(ball, opponent)) return MODEL_ODDS.favoured;
-  return isFavoured(opponent, ball) ? MODEL_ODDS.unfavoured : MODEL_ODDS.even;
-}
+/**
+ * Round odds the bot assumes for the favoured side, by level: the middle of each level's band, the
+ * same levels players read in the manual (ADR 0073). The other side's are what is left.
+ */
+export const LEVEL_ODDS = { strong: 0.7, edge: 0.6, even: 0.5 } as const;
+
+/** The chance `ball` beats `opponent` in one round, by the counter map's level. */
+export const mapOdds: Odds = (ball, opponent) => {
+  const standing = standingOf(ball, opponent);
+  const size = standing < 0 ? -standing : standing;
+  const odds = size === 2 ? LEVEL_ODDS.strong : size === 1 ? LEVEL_ODDS.edge : LEVEL_ODDS.even;
+  return standing < 0 ? 1 - odds : odds;
+};
 
 /** Who chooses first in a round: the bot shows first, or the opponent does. */
 export type Lead = 'bot' | 'opponent';
@@ -26,6 +34,8 @@ export interface Position {
   readonly losses: number;
   /** Round wins that take the series: 2 in a Best of 3, 3 in a Best of 5 (ADR 0048). */
   readonly winsNeeded: number;
+  /** The round odds it plays by: `mapOdds` unless named (a retired bot's own, ADR 0073). */
+  readonly odds?: Odds;
 }
 
 const without = (balls: readonly string[], ball: string) => balls.filter((id) => id !== ball);
@@ -57,7 +67,7 @@ export function afterRound(
   against: string,
   memo: Memo = new Map(),
 ): number {
-  const odds = mapOdds(ball, against);
+  const odds = (position.odds ?? mapOdds)(ball, against);
   const rest = {
     ...position,
     own: without(position.own, ball),
@@ -85,7 +95,7 @@ export function seriesValue(position: Position, lead: Lead, memo: Memo = new Map
   if (position.losses >= position.winsNeeded) return 0;
   const [own, against] = [position.own[0], position.opponent[0]];
   if (position.own.length === 1 && own !== undefined && against !== undefined) {
-    return mapOdds(own, against);
+    return (position.odds ?? mapOdds)(own, against);
   }
   const key = keyOf(position, lead);
   const known = memo.get(key);

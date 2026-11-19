@@ -1,11 +1,12 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupLine, matchupTip } from '../balls/matchups.ts';
-import { LEAN_WORDS, MARKS } from '../balls/marks.ts';
+import { MARKS } from '../balls/marks.ts';
+import { leanOf, leanWordsOf, levelOf, matchupTip, setMark, symbolOf } from '../balls/matchups.ts';
 import { verdictOf } from '../balls/verdict.ts';
 import { element, setText } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
 import { gridMove } from '../grid-nav.ts';
+import { createMatchupOne } from './matchup-one.ts';
 
 export interface MatchupChart {
   readonly element: HTMLElement;
@@ -15,11 +16,15 @@ export interface MatchupChart {
 const HEADER_ICON_PX = 18;
 
 /**
- * The whole counter map at once, as a type chart: each row is a ball, each column an opponent, ▲
- * where the row's ball is favoured and ▼ where it isn't; even pairs are left blank so the counters
- * stand out. Focusing or tapping a cell highlights its row and column and says why, under the
- * chart. Cells are buttons with roving focus (arrow keys, Home, End), so Tab passes the chart in
- * one step. Cells shrink below 26 px when the roster needs it, so the whole chart fits a phone.
+ * The counter map as a chart, in two forms (ADR 0073) that share one selected pair and its "why":
+ * - On a desktop, the whole map as a type chart: each row is a ball, each column an opponent, ▲
+ *   where the row's ball is favoured and ▼ where it isn't, a strong counter's cell filled in its
+ *   side's colour; even pairs are left blank so the counters stand out. Focusing or tapping a cell
+ *   highlights its row and column and says why beside the chart. Cells are buttons with roving
+ *   focus (arrow keys, Home, End), so Tab passes the chart in one step.
+ * - On a phone, where 25 columns would leave cells too small to read, one ball against all the
+ *   others in the quick setup's grid (matchup-one.ts), the "why" above it.
+ * The stylesheet shows one or the other by the desktop query.
  */
 export function createMatchupChart(
   balls: readonly BallDefinition[],
@@ -69,14 +74,20 @@ export function createMatchupChart(
         tr.append(td);
         return;
       }
-      const { lean } = matchupLine(ball.id, opponent.id);
-      const button = element('button', 'matchup-button', lean === 'even' ? '' : MARKS[lean]);
+      const lean = leanOf(ball.id, opponent.id);
+      const button = element('button', 'matchup-button');
+      setMark(button, ball.id, opponent.id);
+      // Even is left blank. A cell is too small for two arrows, so a strong counter is one arrow on
+      // a cell filled in its side's colour (the fill the pick rows' ▲▲ discs use).
+      button.textContent = lean === 'even' ? '' : MARKS[lean];
       button.type = 'button';
-      button.dataset['lean'] = lean;
-      markSymbol(button, lean === 'even' ? undefined : lean, {
+      markSymbol(button, lean === 'even' ? undefined : symbolOf(ball.id, opponent.id), {
         tip: matchupTip(ball.id, opponent.id, nameOf, 'neutral'),
       });
-      button.setAttribute('aria-label', `${ball.name} ${LEAN_WORDS[lean]} ${opponent.name}`);
+      button.setAttribute(
+        'aria-label',
+        `${ball.name} ${leanWordsOf(ball.id, opponent.id)} ${opponent.name}`,
+      );
       button.addEventListener('focus', () => {
         select(row, col);
       });
@@ -104,7 +115,12 @@ export function createMatchupChart(
     onOpen(openId);
   });
   detail.append(headline, reason, open);
-  root.append(scroller, detail);
+  const one = createMatchupOne(balls, (ball, against) => {
+    const row = balls.findIndex(({ id }) => id === ball);
+    const col = balls.findIndex(({ id }) => id === against);
+    if (row >= 0 && col >= 0 && row !== col) select(row, col);
+  });
+  root.append(one.head, detail, one.body, scroller);
 
   /** Highlights a row and column, says why, and keeps the cell as the chart's one tab stop. */
   function select(row: number, col: number): void {
@@ -122,6 +138,7 @@ export function createMatchupChart(
     setText(reason, verdict.reason);
     openId = a.id;
     setText(open, `Open ${a.name}`);
+    one.show(a.id, b.id);
   }
 
   body.addEventListener('keydown', (event) => {
@@ -141,7 +158,10 @@ export function createMatchupChart(
   });
 
   // The first counter in the map starts selected, so the chart opens with an example explained.
-  const first = cells.find(({ button }) => button.dataset['lean'] === 'favoured') ?? cells[0];
+  const first =
+    cells.find(
+      ({ row, col }) => levelOf(balls[row]?.id ?? '', balls[col]?.id ?? '') === 'strong',
+    ) ?? cells[0];
   if (first !== undefined) select(first.row, first.col);
   return { element: root };
 }

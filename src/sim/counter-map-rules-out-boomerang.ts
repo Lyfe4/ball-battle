@@ -14,6 +14,7 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
     x: 'bloom',
     y: 'boomerang',
     intended: 'y',
+    level: 'strong',
     reason: 'Two hits a throw, out and back: it is never left alone for 2 s.',
   },
   {
@@ -25,8 +26,9 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'boomerang',
     y: 'inferno',
-    intended: 'even',
-    reason: 'It throws from range, but the fire burns it wherever it crosses.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Twice a throw from range, it hurts the Inferno more than the fire hurts it.',
   },
   {
     x: 'brawler',
@@ -37,32 +39,36 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Its light hits are far too small to rewind: plain trades decide it.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Its light hits are far too small to rewind, and it hits twice a throw.',
   },
   {
     x: 'frost',
     y: 'boomerang',
-    intended: 'even',
-    reason:
-      'The slowest ball is easy to hit twice a throw, but a slower thrower is easier to catch.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The slow Frost is easy to hit going out and again coming back.',
   },
   {
     x: 'magnet',
     y: 'boomerang',
     intended: 'x',
+    level: 'strong',
     reason: 'Every boomerang that hits it starts a pull, and the thrower is dragged into a brawl.',
   },
   {
     x: 'necromancer',
     y: 'boomerang',
     intended: 'x',
+    level: 'strong',
     reason: 'A skull nearer than its owner draws the throw, and a skull stops a boomerang dead.',
   },
   {
     x: 'speedster',
     y: 'boomerang',
     intended: 'x',
+    level: 'strong',
     reason: 'It outruns the throw and closes in while the boomerang is away.',
   },
   {

@@ -5,15 +5,24 @@
   gap: var(--space-small);
 }
 
-/* The marks' key, one line under the rows (ADR 0035): read without any gesture. */
+/*
+ * The marks' key under the rows (ADR 0035, 0073), read without any gesture: whose edge each arrow
+ * is on one line, what two arrows mean on the next.
+ */
 .pick-key {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.pick-key-line {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0 var(--space-small);
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
 }
 
 .pick-key-mark {
@@ -26,6 +35,15 @@
 
 .pick-key-mark[data-lean='unfavoured'] {
   color: var(--color-unfavoured);
+}
+
+/* A strong counter's mark: two arrows on a pill filled in its side's colour (ADR 0073). */
+.pick-key-mark[data-level='strong'] {
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-favoured);
+  color: var(--color-page);
+  letter-spacing: -0.12em;
 }
 
 /*
@@ -175,6 +193,23 @@
 }
 
 /*
+ * A strong counter (ADR 0073): two arrows on the disc filled in its side's colour; an edge is one
+ * arrow on the plain disc. Fill and arrow count both read without colour.
+ */
+.pick-row-badge[data-level='strong'] {
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.pick-row-badge[data-level='strong'][data-lean='favoured']::before {
+  background: var(--color-favoured);
+}
+
+.pick-row-badge[data-level='strong'][data-lean='unfavoured']::before {
+  background: var(--color-unfavoured);
+}
+
+/*
  * A Best of 5's chart (ADR 0048): up to five of the bot's balls, each still a 44 px mark, on a
  * 375 px phone. The columns close up and the player's ball stacks its name under a smaller icon, so
  * the longest name stays whole on one line instead of breaking mid-word beside the icon.
@@ -234,8 +269,16 @@
   .pick-row-badge:hover {
     color: var(--color-text);
   }
+
+  .pick-row-badge[data-level='strong']:hover {
+    color: var(--color-page);
+  }
 }
 
 .pick-row-badge[data-pressed] {
   color: var(--color-text);
+}
+
+.pick-row-badge[data-level='strong'][data-pressed] {
+  color: var(--color-page);
 }

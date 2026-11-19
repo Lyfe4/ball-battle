@@ -5,7 +5,7 @@
 // the player is; `due` is whose turn the server says it is (Showdown's opener is due from both).
 import { isCommitted } from '../api/fairness.ts';
 import type { SeriesView } from '../api/series.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
+import { replaysHere } from '../sim/ruleset.ts';
 import {
   nextMatch,
   recordOutcome,
@@ -107,7 +107,7 @@ export function timeLeft(deadline: string | null, now: number): string | undefin
 export type FairPlay = 'fair' | 'unfair' | 'unavailable';
 
 export async function fairPlayOf(view: SeriesView, lookup: DefinitionLookup): Promise<FairPlay> {
-  if (view.status !== 'finished' || view.final === null || view.ruleset !== RULESET_VERSION) {
+  if (view.status !== 'finished' || view.final === null || !replaysHere(view.ruleset)) {
     return 'unavailable';
   }
   if (view.revealed.length !== view.commitments.length) return 'unfair';

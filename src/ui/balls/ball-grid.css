@@ -80,3 +80,19 @@
 .ball-tile:not(:disabled)[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* A strong counter (ADR 0073): two arrows on a pill filled in its side's colour. */
+.ball-tile-mark[data-level='strong'] {
+  padding: 1px 3px;
+  border-radius: 999px;
+  color: var(--color-page);
+  letter-spacing: -0.12em;
+}
+
+.ball-tile-mark[data-level='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.ball-tile-mark[data-level='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}

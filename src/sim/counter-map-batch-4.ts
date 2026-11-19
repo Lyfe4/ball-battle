@@ -26,9 +26,9 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'speedster',
-    intended: 'even',
-    reason:
-      'Its rush lands while the Titan is small; once grown, the giant’s bumps win: it evens out.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Its rush lands while the Titan is small; once grown, the giant’s bumps outweigh it.',
   },
   {
     x: 'titan',
@@ -40,6 +40,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'titan',
     intended: 'x',
+    level: 'strong',
     reason:
       'The bigger it grows, the harder it bumps, and the harder each bump comes back off the spikes.',
   },
@@ -65,8 +66,10 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'speedster',
     y: 'inferno',
-    intended: 'even',
-    reason: 'It crosses the fire quickly, but it crosses it often: neither side gains.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'It races through the fire, and its bumps outhit the Inferno’s light ones between burns.',
   },
   {
     x: 'inferno',
@@ -77,9 +80,9 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'thorns',
-    intended: 'even',
-    reason:
-      'Fire never touches the spikes, but small burns can’t outlast its health: neither pulls far ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Fire never touches the spikes, and it burns the slow Thorns all match.',
   },
   {
     x: 'magnet',
@@ -91,14 +94,15 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'inferno',
     y: 'necromancer',
     intended: 'x',
+    level: 'edge',
     reason: 'The fire burns up the skulls, and the Necromancer behind them.',
   },
   // The three with each other.
   {
     x: 'inferno',
     y: 'titan',
-    intended: 'even',
-    reason:
-      'The giant crosses more fire as it grows, but its bumps grow too: neither pulls far ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'A growing giant crosses more fire every second, and burns never miss it.',
   },
 ];

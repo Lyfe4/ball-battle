@@ -19,11 +19,11 @@ import { runJobs, type PairJob } from './balance-jobs.ts';
 import {
   checkCounter,
   ciAllowance,
-  COUNTER_BANDS,
   counterFor,
   HARD_WORST_MATCHUP,
-  inGreyZone,
-  outsideFinalBand,
+  labelOf,
+  LEVEL_BANDS,
+  measuredOf,
   shapeProblems,
   VERDICT_LABEL,
 } from './counter-map.ts';
@@ -72,7 +72,7 @@ if ('error' in options) {
 }
 const { seeds, ballId, serial, ci, writeSummary } = options;
 /** How far outside a counter-map band still passes (NEAR). */
-const nearWithin = ci ? ciAllowance(seeds * 2) : COUNTER_BANDS.nearWithin;
+const nearWithin = ci ? ciAllowance(seeds * 2) : 0;
 const sensitivityFactors = ci ? [] : SENSITIVITY_FACTORS;
 const started = performance.now();
 
@@ -148,16 +148,13 @@ console.log(
 const sensitivityLines: string[] = [];
 const pairRates: PairRates[] = [];
 const counterLines: string[] = [];
-/** Pairs between their floor and their target (ADR 0028 addendum): warned, listed, not failed. */
+/** Pairs inside their level's band but off its aim (ADR 0073): warned, listed, not failed. */
 const belowTarget: BelowTarget[] = [];
 let counterMapOk = true;
-const outsideFinal: string[] = []; // outside their final floor (ADR 0045): a full run has none
-const greyZone: string[] = []; // even pairs with a side 58-62% (ADR 0045): warned, never failed
 
 /**
- * One counter-map line for a pair. Only MISS fails the target: WARN (in the target near an edge,
- * or below the target but inside the floor) and NEAR (just outside, within the noise allowance)
- * pass.
+ * One counter-map line for a pair. Only MISS fails the target: WARN (inside its level's band, off
+ * its aim) and NEAR (just outside, within the CI check's noise allowance) pass.
  */
 function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): string {
   const entry = counterFor(x.id, y.id);
@@ -174,17 +171,15 @@ function counterLine(x: BallDefinition, y: BallDefinition, base: PairResult): st
   const intended =
     entry.intended === 'even'
       ? 'even'
-      : `${name(entry.intended === 'x' ? entry.x : entry.y)} favoured`;
+      : `${name(entry.intended === 'x' ? entry.x : entry.y)} ${entry.level}`;
   const rates =
     entry.intended === 'even'
       ? `${pct(xRate).trim()} / ${pct(yRate).trim()}`
       : pct(entry.intended === 'x' ? xRate : yRate).trim();
   const pair = `${name(entry.x)} vs ${name(entry.y)}`;
-  if (verdict === 'short') belowTarget.push({ pair, intended, rates });
-  const final = outsideFinalBand(entry, xRate, yRate);
-  if (final) outsideFinal.push(pair);
-  const grey = inGreyZone(entry, xRate, yRate) && greyZone.push(pair) > 0;
-  const note = `${verdict === 'short' ? '  below target' : ''}${grey ? '  grey zone' : ''}${final ? '  outside final band' : ''}`;
+  if (verdict === 'warn') belowTarget.push({ pair, intended, rates });
+  const measured = measuredOf(Math.max(xRate, yRate));
+  const note = measured === labelOf(entry) ? '' : `  measures ${measured}`;
   return `  ${VERDICT_LABEL[verdict]} ${pair.padEnd(24)} ${intended.padEnd(20)} ${rates}${note}`;
 }
 
@@ -233,10 +228,11 @@ for (const ball of mirrors) {
   );
 }
 
-const band = ([low, high]: readonly [number, number]) =>
-  `${Math.round(low * 100)}-${Math.round(high * 100)}%`;
+const percent = (rate: number) => `${String(Math.round(rate * 100))}%`;
+const { strong, edge, even } = LEVEL_BANDS;
+const near = ci ? `NEAR: outside by at most ${(nearWithin * 100).toFixed(1)} pts (passes). ` : '';
 console.log(
-  `\n  Counter map: target counter ${band(COUNTER_BANDS.counter)}, even ${band(COUNTER_BANDS.even)}; floor counter ${band(COUNTER_BANDS.counterFloor)}, even ${band(COUNTER_BANDS.evenFloor)} (an even side over ${Math.round(COUNTER_BANDS.greyFrom * 100)}% is the grey zone).\n  WARN: in the target within ${COUNTER_BANDS.warnWithin * 100} pts of an edge, or below target inside the floor (passes).\n  NEAR: outside the floor by at most ${(nearWithin * 100).toFixed(1)} pts (passes). MISS: further out (fails).`,
+  `\n  Counter map (ADR 0073): strong ${percent(strong.low)}-${percent(strong.high)} (aim ${percent(strong.aim[0])}-${percent(strong.aim[1])}), edge ${percent(edge.low)} up to ${percent(edge.high)} (aim ${percent(edge.aim[0])}-${percent(edge.aim[1])}), even under ${percent(even.high)} (aim ${percent(even.aim[1])} or less).\n  WARN: inside its band, off its aim (passes). ${near}MISS: outside its band (fails).`,
 );
 console.log(counterLines.join('\n'));
 
@@ -290,15 +286,9 @@ console.log(`  ${check(ballsInRange)} ${who} 45-55% overall`);
 console.log(
   `  ${check(worstShare >= HARD_WORST_MATCHUP)} no matchup worse than 22/78 (hard limit, ADR 0045; worst side ${pct(worstShare).trim()})`,
 );
-console.log(`  ${check(counterMapOk)} every pair inside its counter-map floor`);
+console.log(`  ${check(counterMapOk)} every pair inside its level's band (strong, edge, even)`);
 console.log(
-  `  ${belowTarget.length === 0 ? 'ok  ' : 'WARN'} every pair in its target band${belowTarget.length === 0 ? '' : `: ${String(belowTarget.length)} below target (marked above)`}`,
-);
-console.log(
-  `  ${outsideFinal.length === 0 ? 'ok  ' : 'WARN'} pairs outside their final floor (counter 62-78%, even under 62%): ${String(outsideFinal.length)}`,
-);
-console.log(
-  `  ${greyZone.length === 0 ? 'ok  ' : 'WARN'} even pairs in the grey zone (a side 58-62%): ${String(greyZone.length)}`,
+  `  ${belowTarget.length === 0 ? 'ok  ' : 'WARN'} every pair on its level's aim${belowTarget.length === 0 ? '' : `: ${String(belowTarget.length)} off it (WARN above)`}`,
 );
 console.log(`  ${check(drawRate < TARGETS.drawRate)} draws under 5%`);
 console.log(
@@ -323,7 +313,7 @@ const shapes = shapeProblems(
   ci,
 );
 console.log(
-  `  ${check(shapes.length === 0)} every ball's shape (counter-map.ts: SHAPE, its named exceptions)${shapes.length === 0 ? '' : `: ${shapes.join('; ')}`}`,
+  `  ${check(shapes.length === 0)} every ball's shape, strong counters only (counter-map.ts: SHAPE, its named exceptions)${shapes.length === 0 ? '' : `: ${shapes.join('; ')}`}`,
 );
 const checksVampire = focus.some((ball) => ball.id === 'vampire');
 if (checksVampire) {

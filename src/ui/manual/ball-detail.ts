@@ -1,8 +1,17 @@
 import type { Matchup } from '../../app/matchup.ts';
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { matchupsOf, speedTrait, statShares, type MatchupLine } from '../balls/matchups.ts';
+import {
+  matchupsOf,
+  matchupTip,
+  setMark,
+  symbolOf,
+  speedTrait,
+  statShares,
+  type MatchupLine,
+} from '../balls/matchups.ts';
 import { element, setText } from '../dom.ts';
+import { markSymbol } from '../symbol-tooltip.ts';
 import { hearBall, soundOn } from '../../sound/sound.ts';
 
 export interface BallDetail {
@@ -119,13 +128,32 @@ export function createBallDetail(
     return button;
   }
 
-  function matchupRows(lines: readonly MatchupLine[]): HTMLElement[] {
+  /**
+   * Strong counters first (ADR 0073), each line led by its mark, then its reason. On a desktop an
+   * edge's line is compact and its reason is the mark's tooltip (manual.css), so ten lines still
+   * fit 1280 x 800; the reason stays the button's description, and a phone shows it on the card.
+   */
+  function matchupRows(own: string, lines: readonly MatchupLine[]): HTMLElement[] {
     if (lines.length === 0) return [element('li', 'ball-detail-none', 'None in particular.')];
-    return lines.map((line) => {
+    const strongFirst = [...lines].sort(
+      (a, b) => Number(b.level === 'strong') - Number(a.level === 'strong'),
+    );
+    return strongFirst.map((line) => {
       const item = element('li', 'ball-detail-row');
+      if (line.level !== undefined) item.dataset['level'] = line.level;
       const button = opponentButton(line.opponent, ROW_ICON_PX, 'ball-detail-opponent');
-      button.append(element('span', 'ball-detail-opponent-name', nameOf(line.opponent)));
-      item.append(button, element('p', 'ball-detail-reason', line.reason));
+      const mark = element('span', 'ball-detail-mark');
+      setMark(mark, own, line.opponent);
+      // The heading and the line's words say it; the mark is for the eyes.
+      mark.setAttribute('aria-hidden', 'true');
+      markSymbol(mark, symbolOf(own, line.opponent), {
+        tip: matchupTip(own, line.opponent, nameOf, 'neutral'),
+      });
+      button.append(mark, element('span', 'ball-detail-opponent-name', nameOf(line.opponent)));
+      const reason = element('p', 'ball-detail-reason', line.reason);
+      reason.id = `ball-detail-reason-${line.opponent}`;
+      button.setAttribute('aria-describedby', reason.id);
+      item.append(button, reason);
       return item;
     });
   }
@@ -165,8 +193,8 @@ export function createBallDetail(
       how.hidden = rules.length === 0;
       how.open = false;
       const lines = matchupsOf(id, roster);
-      strong.replaceChildren(...matchupRows(lines.strong));
-      weak.replaceChildren(...matchupRows(lines.weak));
+      strong.replaceChildren(...matchupRows(id, lines.strong));
+      weak.replaceChildren(...matchupRows(id, lines.weak));
       even.replaceChildren(
         ...lines.even.map((line) => {
           const item = element('li', 'ball-detail-even-ball');

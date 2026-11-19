@@ -54,6 +54,8 @@ export interface SeriesHost {
 export interface SeriesController {
   /** True while a series is on screen being played. */
   isPlaying(): boolean;
+  /** The arena holds this series' match (it shows nothing behind the series until it does). */
+  roundOnArena(): boolean;
   /** True while there is a series to play or carry on with: on screen, or held after a Back. */
   hasSeries(): boolean;
   /**
@@ -195,6 +197,8 @@ export function createSeriesController(
     keep(started);
     onScreen = true;
     phase = 'playing';
+    // A new series: whatever the arena holds is not its match until playCurrent puts one there.
+    shownAt = -1;
     writeAddress(started);
     host.layoutChanged();
     playCurrent();
@@ -204,6 +208,7 @@ export function createSeriesController(
 
   return {
     isPlaying: () => onScreen && session !== undefined,
+    roundOnArena: () => session !== undefined && ours(),
     phase: () => (onScreen && session !== undefined ? phase : undefined),
     hasSeries: () => session !== undefined,
     held: () =>

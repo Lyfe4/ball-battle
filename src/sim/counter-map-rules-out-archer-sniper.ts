@@ -14,6 +14,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'bloom',
     intended: 'x',
+    level: 'strong',
     reason: 'Arrows keep coming, and every one restarts its 2 s wait.',
   },
   {
@@ -31,8 +32,9 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'chrono',
-    intended: 'even',
-    reason: 'Arrows are too small to rewind, but the Chrono’s heavy bumps finish a frail Archer.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Arrows are too small to rewind, and they keep landing between the Chrono’s bumps.',
   },
   {
     x: 'archer',
@@ -50,6 +52,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'thorns',
     intended: 'x',
+    level: 'edge',
     reason: 'Arrows never touch the spikes.',
   },
   {
@@ -61,33 +64,37 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'archer',
-    intended: 'even',
-    reason: 'Arrows land on the slow Frost, but every bump slows and hurts the frail Archer.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The slow Frost is easy to lead, so arrows land more often than its bumps.',
   },
   {
     x: 'magnet',
     y: 'archer',
     intended: 'x',
+    level: 'strong',
     reason: 'Every arrow that lands starts a pull, and the frail Archer is dragged into its bumps.',
   },
   {
     x: 'necromancer',
     y: 'archer',
     intended: 'x',
+    level: 'strong',
     reason: 'A minion nearer than its owner draws the arrows.',
   },
   {
     x: 'speedster',
     y: 'archer',
     intended: 'x',
+    level: 'strong',
     reason: 'Closes the distance faster than arrows can stop it.',
   },
   {
     x: 'titan',
     y: 'archer',
-    intended: 'even',
-    reason:
-      'Arrows land while the Titan is small; once grown, its bumps hit back hard: it evens out.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Arrows chip it while it is small; grown, its bumps flatten the frail Archer.',
   },
   {
     x: 'venom',
@@ -105,13 +112,15 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'sniper',
     intended: 'x',
+    level: 'edge',
     reason: 'A shot is a big hit, and the rewind undoes it.',
   },
   {
     x: 'inferno',
     y: 'sniper',
-    intended: 'even',
-    reason: 'The shot is heavy, but the Sniper lingers in the fire while it locks on.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A heavy shot every 2 s outweighs the small burns it takes while locking on.',
   },
   {
     x: 'magnet',
@@ -155,6 +164,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'sniper',
     y: 'thorns',
     intended: 'x',
+    level: 'edge',
     reason: 'The shot never touches the spikes.',
   },
   {
@@ -167,6 +177,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'speedster',
     y: 'sniper',
     intended: 'x',
+    level: 'edge',
     reason: 'The fastest ball, faster still with stacks, is off the locked line before the shot.',
   },
   {

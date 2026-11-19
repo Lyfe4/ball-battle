@@ -34,8 +34,11 @@ export interface SeriesSession {
   readonly replay: readonly string[] | undefined;
 }
 
-/** The bot a series is played against: the one its setup names, or the default level. */
-export const botOf = (setup: SeriesSetup): LineupBot => botFor(setup.opponent);
+/**
+ * The bot a series is played against: the one its setup names, as it played under the setup's
+ * ruleset (ADR 0073), or the default level.
+ */
+export const botOf = (setup: SeriesSetup): LineupBot => botFor(setup.opponent, setup.ruleset);
 
 /** Starts a series: played live, or `fromLink`, replaying a link's picks. */
 export function beginSession(setup: SeriesSetup, fromLink = false): SeriesSession {

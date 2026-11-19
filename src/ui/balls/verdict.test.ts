@@ -6,26 +6,30 @@ import { verdictOf } from './verdict.ts';
 const nameOf = (id: string) => BALL_LOOKUP.get(id)?.name ?? id;
 
 // Read from the map rather than naming a pair, so the test holds through a rebalance.
-const favouredPair = COUNTER_MAP.find((entry) => entry.intended !== 'even');
 const evenPair = COUNTER_MAP.find((entry) => entry.intended === 'even');
 
 describe('verdictOf', () => {
-  it('names the favoured ball and the reason, whichever slot it is in', () => {
-    if (favouredPair === undefined) throw new Error('expected a favoured pair');
-    const { x, y, intended, reason } = favouredPair;
-    const winner = intended === 'x' ? x : y;
-    const asX = verdictOf(x, y, nameOf);
-    expect(asX).toStrictEqual({
-      headline: `${nameOf(winner)} is favoured`,
-      reason,
-      leanOfA: winner === x ? 'favoured' : 'unfavoured',
-    });
-    const asY = verdictOf(y, x, nameOf);
-    expect(asY.headline).toBe(asX.headline);
-    expect(asY.reason).toBe(reason);
-    expect(asY.leanOfA).toBe(winner === y ? 'favoured' : 'unfavoured');
-    expect(reason).not.toBe('');
-  });
+  it.each(['strong', 'edge'] as const)(
+    'names the favoured ball, its level, its odds and the reason, whichever slot it is in (%s)',
+    (level) => {
+      const pair = COUNTER_MAP.find((entry) => entry.intended !== 'even' && entry.level === level);
+      if (pair === undefined || pair.intended === 'even') throw new Error(`expected a ${level}`);
+      const { x, y, intended, reason } = pair;
+      const winner = intended === 'x' ? x : y;
+      const [how, odds] = level === 'strong' ? ['strongly', '7'] : ['slightly', '6'];
+      const asX = verdictOf(x, y, nameOf);
+      expect(asX).toStrictEqual({
+        headline: `${nameOf(winner)} is ${how} favoured`,
+        reason: `Wins about ${odds} in 10. ${reason}`,
+        leanOfA: winner === x ? 'favoured' : 'unfavoured',
+      });
+      const asY = verdictOf(y, x, nameOf);
+      expect(asY.headline).toBe(asX.headline);
+      expect(asY.reason).toBe(asX.reason);
+      expect(asY.leanOfA).toBe(winner === y ? 'favoured' : 'unfavoured');
+      expect(reason).not.toBe('');
+    },
+  );
 
   it('calls an even pair even, with its reason, and a mirror a mirror', () => {
     if (evenPair === undefined) throw new Error('expected an even pair');

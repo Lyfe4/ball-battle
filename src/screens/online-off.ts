@@ -14,6 +14,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
     settle: () => undefined,
     update: () => undefined,
     playing: () => false,
+    roundOnArena: () => false,
     phase: () => undefined,
     sides: () => undefined,
     setVisible: () => undefined,

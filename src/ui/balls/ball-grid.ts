@@ -1,9 +1,10 @@
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
-import { MARKS } from './marks.ts';
+import { MARKS, STRONG_MARKS } from './marks.ts';
 import { element, setText } from '../dom.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
 import { gridMove } from '../grid-nav.ts';
+import type { Level } from '../../sim/counter-map.ts';
 import type { Lean } from './matchups.ts';
 
 /** Drawing size on a tile, in CSS pixels: big enough that the designs carry the tile. */
@@ -23,6 +24,8 @@ export interface BallGridState {
   readonly marks?: {
     readonly against: string;
     readonly leans: ReadonlyMap<string, Lean>;
+    /** Each tile's level against the other ball, when not even (ADR 0073). */
+    readonly levels?: ReadonlyMap<string, Level | undefined>;
     /** Each mark's tooltip, naming both balls and who has the edge (ADR 0037). */
     readonly tips?: ReadonlyMap<string, readonly string[]>;
   };
@@ -128,14 +131,26 @@ export function createBallGrid(
       const spoken = reason ?? tapNote?.spoken;
       const lean = next.marks?.leans.get(ball.id) ?? 'even';
       // Even is left blank in a grid, so the counters stand out (the legend says so).
-      setText(mark, lean === 'even' ? '' : MARKS[lean]);
+      const strong = lean !== 'even' && next.marks?.levels?.get(ball.id) === 'strong';
+      setText(mark, lean === 'even' ? '' : strong ? STRONG_MARKS[lean] : MARKS[lean]);
       mark.dataset['lean'] = lean;
+      if (strong) mark.dataset['level'] = 'strong';
+      else delete mark.dataset['level'];
       const tip = next.marks?.tips?.get(ball.id);
-      markSymbol(mark, lean === 'even' ? undefined : lean, tip === undefined ? {} : { tip });
+      const symbol =
+        lean === 'even'
+          ? undefined
+          : strong
+            ? lean === 'favoured'
+              ? 'strongFavoured'
+              : 'strongUnfavoured'
+            : lean;
+      markSymbol(mark, symbol, tip === undefined ? {} : { tip });
+      const how = strong ? 'strongly' : 'slightly';
       const against =
         next.marks === undefined || lean === 'even'
           ? ''
-          : `, ${lean} against ${next.marks.against}`;
+          : `, ${next.marks.levels === undefined ? '' : `${how} `}${lean} against ${next.marks.against}`;
       tile.setAttribute(
         'aria-label',
         `${ball.name}${against}${spoken === undefined ? '' : `, ${spoken}`}`,

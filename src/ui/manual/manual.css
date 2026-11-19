@@ -78,7 +78,9 @@
   background: var(--color-surface);
 }
 
+/* Its own corners, so a hover fill follows the box's rounded shape (square only where it opens). */
 .ball-detail-how-summary {
+  border-radius: var(--radius);
   min-height: var(--tap-target);
   padding: var(--space-small) var(--space-gap);
   display: flex;
@@ -99,6 +101,11 @@
   color: var(--color-text-muted);
   font-size: 1.25rem;
   transition: transform 0.15s;
+}
+
+.ball-detail-how[open] > .ball-detail-how-summary {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
 }
 
 .ball-detail-how[open] > .ball-detail-how-summary::after {
@@ -333,7 +340,15 @@
     padding-block: 2px 5px;
   }
 
-  /* A pointer needs no 44 px target: seven rows (the Speedster's Weak vs) still fit 800 high. */
+  /*
+   * An edge's line is compact here (ADR 0073): its name and mark, its reason the mark's tooltip, so
+   * ten lines (the Vampire's Strong vs) still fit 800 high. A phone shows every reason.
+   */
+  .ball-detail-row[data-level='edge'] .ball-detail-reason {
+    display: none;
+  }
+
+  /* A pointer needs no 44 px target: ten rows still fit 800 high. */
   .ball-detail-strong-group .ball-detail-opponent,
   .ball-detail-weak-group .ball-detail-opponent {
     min-height: 32px;
@@ -367,15 +382,50 @@
   filter: brightness(1.08);
 }
 
-/* Pointed at or pressed by a finger (press.ts): the same look, the name underlined as a link. */
+/*
+ * Pointed at or pressed by a finger (press.ts): the same look, the name underlined as a link; never
+ * its mark, which isn't text to follow.
+ */
 @media (hover: hover) {
-  .ball-detail-opponent:hover {
+  .ball-detail-opponent:hover .ball-detail-opponent-name {
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
 }
 
-.ball-detail-opponent[data-pressed] {
+.ball-detail-opponent[data-pressed] .ball-detail-opponent-name {
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+/* Each matchup line led by its mark (ADR 0073): a strong counter's two arrows on a filled pill. */
+.ball-detail-mark {
+  flex: none;
+  min-width: 2.6em;
+  padding-inline: 4px;
+  border-radius: 999px;
+  font-family: var(--font-family-symbol);
+  font-size: var(--font-size-small);
+  letter-spacing: -0.12em;
+  text-align: center;
+}
+
+.ball-detail-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.ball-detail-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.ball-detail-mark[data-level='strong'] {
+  color: var(--color-page);
+}
+
+.ball-detail-mark[data-level='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.ball-detail-mark[data-level='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
 }

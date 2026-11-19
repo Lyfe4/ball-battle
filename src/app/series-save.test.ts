@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { botFor } from '../sim/bot.ts';
-import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { revealFirst, setupWithPicks, type Format, type SeriesSetup } from '../sim/series.ts';
 import { playLikeTheGame, WHOLE_RUN_TIMEOUT_MS } from '../sim/test-support.ts';
 import {
@@ -118,7 +117,8 @@ describe('a saved series that can’t be trusted is dropped', () => {
   if (later === undefined) throw new Error('Expected a recorded position with picks');
 
   it.each([
-    ['from another ruleset', (s: RawSave) => (s.setup.ruleset = RULESET_VERSION - 1)],
+    // Ruleset 19 still replays here (ADR 0073); 18 is another ruleset.
+    ['from another ruleset', (s: RawSave) => (s.setup.ruleset = 18)],
     ['in another save shape', (s: RawSave) => (s.save = 2)],
     ['with a bot pick the bot never makes', (s: RawSave) => s.setup.picks.reverse()],
     ['with another bot lineup', (s: RawSave) => s.setup.b.reverse()],
@@ -182,7 +182,7 @@ describe('the saved setup', () => {
   );
 
   it.each([
-    ['from another ruleset', { ...revealed, ruleset: RULESET_VERSION - 1 }],
+    ['from another ruleset', { ...revealed, ruleset: 18 }],
     ['with picks already made', { ...revealed, picks: [revealed.a[0]] }],
     ['in Blind, which has no round-1 pick', { ...revealed, format: undefined }],
     ['with a lineup the bot never picks', { ...revealed, b: [...revealed.b].reverse() }],

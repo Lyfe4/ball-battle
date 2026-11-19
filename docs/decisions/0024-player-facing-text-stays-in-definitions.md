@@ -2,6 +2,7 @@
 
 - Status: Accepted (closes audit finding L7 as won't-fix)
 - Date: 2026-11-05
+- Amended by: ADR 0073 (a level's odds in words, a band's middle, never a measured rate)
 
 ## Context
 

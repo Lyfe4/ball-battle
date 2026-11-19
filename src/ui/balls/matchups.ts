@@ -1,9 +1,10 @@
 // What the picker and the ball manual say about matchups, read from the counter map (ADR 0010) and
 // the definitions, so the text can never drift from what the balance checks hold the game to.
-// It names the intended direction only ("favoured"), never a measured win rate, which moves with
-// tuning.
-import { counterFor, isFavoured } from '../../sim/counter-map.ts';
+// It names the level ("strongly" or "slightly favoured", ADR 0073) and that level's odds in words,
+// never a measured win rate, which moves with tuning.
+import { counterFor, matchupOf, type Level } from '../../sim/counter-map.ts';
 import type { BallDefinition } from '../../sim/types.ts';
+import { MARKS, STRONG_MARKS } from './marks.ts';
 
 /** How a ball should fare against one opponent. */
 export type Lean = 'favoured' | 'unfavoured' | 'even';
@@ -11,6 +12,8 @@ export type Lean = 'favoured' | 'unfavoured' | 'even';
 export interface MatchupLine {
   readonly opponent: string;
   readonly lean: Lean;
+  /** How far the favoured side is ahead; undefined when even. */
+  readonly level: Level | undefined;
   /** Why, in one line from the counter map; empty for a mirror. */
   readonly reason: string;
 }
@@ -25,15 +28,64 @@ export interface Matchups {
 }
 
 export function leanOf(ball: string, opponent: string): Lean {
-  if (isFavoured(ball, opponent)) return 'favoured';
-  if (isFavoured(opponent, ball)) return 'unfavoured';
-  return 'even';
+  const matchup = matchupOf(ball, opponent);
+  if (matchup === undefined) return 'even';
+  return matchup.favoured === ball ? 'favoured' : 'unfavoured';
+}
+
+/** How far the favoured side of a pair is ahead (ADR 0073), or undefined when even. */
+export function levelOf(ball: string, opponent: string): Level | undefined {
+  return matchupOf(ball, opponent)?.level;
+}
+
+/** A pair's mark as players read it: ▲▲ / ▼▼ strong, ▲ / ▼ an edge, = even. */
+export function markOf(ball: string, opponent: string): string {
+  const lean = leanOf(ball, opponent);
+  if (lean === 'even') return MARKS.even;
+  return levelOf(ball, opponent) === 'strong' ? STRONG_MARKS[lean] : MARKS[lean];
+}
+
+/** The symbol (symbols.ts) a pair's mark stands for. */
+export function symbolOf(
+  ball: string,
+  opponent: string,
+): Lean | 'strongFavoured' | 'strongUnfavoured' {
+  const lean = leanOf(ball, opponent);
+  if (lean === 'even' || levelOf(ball, opponent) !== 'strong') return lean;
+  return lean === 'favoured' ? 'strongFavoured' : 'strongUnfavoured';
+}
+
+/** The words for a mark, before the other ball's name: "strongly favoured against Frost". */
+export function leanWordsOf(ball: string, opponent: string): string {
+  const lean = leanOf(ball, opponent);
+  if (lean === 'even') return 'even with';
+  return `${levelOf(ball, opponent) === 'strong' ? 'strongly' : 'slightly'} ${lean} against`;
+}
+
+/** A level's odds in words, never a measured rate: the middle of the band it is held to. */
+export function oddsWordsOf(ball: string, opponent: string): string {
+  const level = levelOf(ball, opponent);
+  return level === 'strong' ? 'about 7 in 10' : level === 'edge' ? 'about 6 in 10' : 'about 1 in 2';
+}
+
+/** Sets a mark's text, and its lean and level for the stylesheets (`data-lean`, `data-level`). */
+export function setMark(
+  mark: { textContent: string | null; readonly dataset: Record<string, string | undefined> },
+  ball: string,
+  opponent: string,
+): void {
+  mark.textContent = markOf(ball, opponent);
+  mark.dataset['lean'] = leanOf(ball, opponent);
+  const level = levelOf(ball, opponent);
+  if (level === undefined) delete mark.dataset['level'];
+  else mark.dataset['level'] = level;
 }
 
 export function matchupLine(ball: string, opponent: string): MatchupLine {
   return {
     opponent,
     lean: leanOf(ball, opponent),
+    level: levelOf(ball, opponent),
     reason: counterFor(ball, opponent)?.reason ?? '',
   };
 }
@@ -50,9 +102,7 @@ export function matchupsOf(ball: string, roster: readonly string[]): Matchups {
 
 /** The ball the counter map favours in a pair, if either; undefined for an even pair or a mirror. */
 export function favouredOf(a: string, b: string): string | undefined {
-  if (isFavoured(a, b)) return a;
-  if (isFavoured(b, a)) return b;
-  return undefined;
+  return matchupOf(a, b)?.favoured;
 }
 
 export interface StatShares {
@@ -95,9 +145,10 @@ export function statShares(ball: BallDefinition, roster: readonly BallDefinition
 export type TipFraming = 'yours' | 'neutral';
 
 /**
- * A matchup mark's tooltip, naming both balls and saying plainly who has the edge (ADR 0037):
- * "Your Chrono vs the bot's Storm: you're favoured", "Speedster vs Storm: Storm is favoured".
- * The counter map's one-line reason follows as a second line, so a tap shows what to watch.
+ * A matchup mark's tooltip, naming both balls and saying plainly who has the edge and how much
+ * (ADR 0037, 0073): "Your Chrono vs the bot's Storm: you're strongly favoured, about 7 in 10",
+ * "Speedster vs Storm: Storm is slightly favoured, about 6 in 10". The counter map's one-line
+ * reason follows as a second line, so a tap shows what to watch.
  */
 export function matchupTip(
   ball: string,
@@ -111,14 +162,12 @@ export function matchupTip(
   const pair = yours ? `Your ${mine} vs the bot’s ${theirs}` : `${mine} vs ${theirs}`;
   if (ball === opponent) return [`${pair}: a mirror, even`];
   const lean = leanOf(ball, opponent);
+  const how = levelOf(ball, opponent) === 'strong' ? 'strongly' : 'slightly';
+  const who = lean === 'favoured' ? (yours ? 'you’re' : `${mine} is`) : `${theirs} is`;
   const edge =
     lean === 'even'
-      ? 'even'
-      : lean === 'favoured'
-        ? yours
-          ? 'you’re favoured'
-          : `${mine} is favoured`
-        : `${theirs} is favoured`;
+      ? 'even, about 1 in 2 each'
+      : `${who} ${how} favoured, ${oddsWordsOf(ball, opponent)}`;
   const reason = counterFor(ball, opponent)?.reason ?? '';
   return reason === '' ? [`${pair}: ${edge}`] : [`${pair}: ${edge}`, reason];
 }

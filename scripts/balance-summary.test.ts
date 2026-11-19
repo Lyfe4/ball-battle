@@ -10,51 +10,56 @@ import {
 } from './balance-summary.ts';
 
 describe('measuredGroup', () => {
-  it('puts a counter’s rate (62% or more, or 38% or less) in strong or weak', () => {
-    expect(measuredGroup(0.62)).toBe('strong');
-    expect(measuredGroup(0.619)).toBe('even');
-    expect(measuredGroup(0.5)).toBe('even');
-    expect(measuredGroup(0.381)).toBe('even');
-    expect(measuredGroup(0.38)).toBe('weak');
+  it('groups by the better side’s level, from the ball’s side (ADR 0073)', () => {
+    expect(measuredGroup(0.65, 0.34)).toBe('strong');
+    expect(measuredGroup(0.649, 0.35)).toBe('edge');
+    expect(measuredGroup(0.58, 0.41)).toBe('edge');
+    expect(measuredGroup(0.57, 0.42)).toBe('even');
+    expect(measuredGroup(0.41, 0.58)).toBe('edged');
+    expect(measuredGroup(0.3, 0.69)).toBe('weak');
   });
 });
 
 describe('intendedGroup', () => {
-  it('reads the counter map from either side', () => {
+  it('reads the counter map’s level from either side', () => {
     expect(intendedGroup('thorns', 'brawler')).toBe('strong');
     expect(intendedGroup('brawler', 'thorns')).toBe('weak');
+    expect(intendedGroup('archer', 'thorns')).toBe('edge');
+    expect(intendedGroup('thorns', 'archer')).toBe('edged');
     expect(intendedGroup('brawler', 'storm')).toBe('even');
   });
 });
 
 describe('summarise', () => {
-  // Thorns is favoured over the Brawler by the map; the Brawler is even with the Archer.
+  // Thorns is a strong counter to the Brawler; the Archer has an edge on Thorns; the Brawler and
+  // the Archer are even.
   const balls = [
     { id: 'brawler', name: 'Brawler' },
     { id: 'thorns', name: 'Thorns' },
     { id: 'archer', name: 'Archer' },
   ];
   const pairs = [
-    { x: 'brawler', y: 'thorns', xRate: 0.36, yRate: 0.63 },
+    { x: 'brawler', y: 'thorns', xRate: 0.3, yRate: 0.69 },
     { x: 'brawler', y: 'archer', xRate: 0.5, yRate: 0.49 },
-    { x: 'thorns', y: 'archer', xRate: 0.3, yRate: 0.68 },
+    { x: 'thorns', y: 'archer', xRate: 0.38, yRate: 0.61 },
   ];
   const [brawler, thorns] = summarise(balls, () => 0.5, pairs);
 
   it('reads each pair from both sides, grouped by the map and by the result', () => {
-    expect(brawler?.byMap.groups.weak).toStrictEqual({ count: 1, average: 0.36 });
+    expect(brawler?.byMap.groups.weak).toStrictEqual({ count: 1, average: 0.3 });
     expect(brawler?.byMap.groups.even).toStrictEqual({ count: 1, average: 0.5 });
     expect(brawler?.byMap.groups.strong).toStrictEqual({ count: 0, average: undefined });
     expect(brawler?.measured.groups.weak.count).toBe(1);
-    // Thorns: strong vs the Brawler by the map and the result; the Archer is weak for it by the map and the result.
-    expect(thorns?.byMap.groups.strong).toStrictEqual({ count: 1, average: 0.63 });
-    expect(thorns?.byMap.groups.weak.count).toBe(1);
-    expect(thorns?.measured.groups.strong.count).toBe(1);
-    expect(thorns?.measured.groups.weak).toStrictEqual({ count: 1, average: 0.3 });
-    expect(thorns?.measured.gap).toBe(0);
+    expect(thorns?.byMap.groups.strong).toStrictEqual({ count: 1, average: 0.69 });
+    expect(thorns?.byMap.groups.edged).toStrictEqual({ count: 1, average: 0.38 });
+    expect(thorns?.measured.groups.edged.count).toBe(1);
+    // The gap counts strong counters only: Thorns is one up.
+    expect(thorns?.measured.gap).toBe(1);
+    expect(thorns?.beats.map((m) => m.opponent)).toStrictEqual(['brawler']);
+    expect(thorns?.edgedBy.map((m) => m.opponent)).toStrictEqual(['archer']);
   });
 
-  it(`warns when strong and weak differ by ${String(LOPSIDED_GAP)} or more`, () => {
+  it(`warns when strong wins and losses differ by ${String(LOPSIDED_GAP)} or more`, () => {
     const opponents = ['a', 'b', 'c', 'd', 'e'];
     const lopsided = summarise(
       [{ id: 'x', name: 'X' }],
@@ -63,7 +68,7 @@ describe('summarise', () => {
         x: 'x',
         y,
         xRate: [0.65, 0.65, 0.3, 0.5, 0.5][index] ?? 0.5,
-        yRate: 0.3,
+        yRate: [0.3, 0.3, 0.65, 0.5, 0.5][index] ?? 0.5,
       })),
     );
     expect(lopsided[0]?.measured.gap).toBe(1);
@@ -85,21 +90,21 @@ describe('summarise', () => {
       ruleset: 2,
       command: 'pnpm balance:summary',
     });
-    expect(markdown).toContain('| Thorns | 50.0% | 1 (63.0%) | 0 | 1 (30.0%) | 0 |');
+    expect(markdown).toContain('| Thorns | 50.0% | 1 (69.0%) | 0 | 0 | 1 (38.0%) | 0 | +1 |');
     expect(markdown).toContain('`pnpm balance:summary`');
-    expect(markdown).toContain('## Below target\n');
-    expect(markdown).toContain('| Thorns | Brawler 63.0% | Archer 30.0% |');
-    expect(markdown).toContain('| Brawler | - | Thorns 36.0% |');
+    expect(markdown).toContain('## Off the aim\n');
+    expect(markdown).toContain('| Thorns | Brawler 69.0% | - | Archer 38.0% | - |');
+    expect(markdown).toContain('| Brawler | - | - | - | Thorns 30.0% |');
     expect(markdown).toContain('None.');
   });
 
-  it('lists every pair below its target band in the summary file', () => {
+  it('lists every pair off its aim in the summary file', () => {
     const summaries = summarise(balls, () => 0.5, pairs);
     const markdown = summaryMarkdown(summaries, { seeds: 500, ruleset: 3, command: 'x' }, [
-      { pair: 'Storm vs Thorns', intended: 'Storm favoured', rates: '56.7%' },
+      { pair: 'Storm vs Thorns', intended: 'Storm strong', rates: '66.7%' },
       { pair: 'Thorns vs Frost', intended: 'even', rates: '57.1% / 41.6%' },
     ]);
-    expect(markdown).toContain('| Storm vs Thorns | Storm favoured | 56.7% |');
+    expect(markdown).toContain('| Storm vs Thorns | Storm strong | 66.7% |');
     expect(markdown).toContain('| Thorns vs Frost | even | 57.1% / 41.6% |');
     expect(markdown).not.toContain('None.');
   });

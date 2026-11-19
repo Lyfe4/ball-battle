@@ -95,7 +95,7 @@ export function deepFreeze<T>(value: T): T {
  * the game could have written.
  */
 export function playLikeTheGame(setup: SeriesSetup, definitions: DefinitionLookup): SeriesState {
-  const bot = botFor(setup.opponent);
+  const bot = botFor(setup.opponent, setup.ruleset);
   let state = startSeries(setup);
   for (;;) {
     const due = awaitingPick(state);

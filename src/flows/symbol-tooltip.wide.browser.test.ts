@@ -42,17 +42,27 @@ describe('the symbol tooltip', () => {
     );
     expect(lines()).toStrictEqual([]);
 
-    // A mouse over a red ▼: "Frost vs Speedster: Speedster is favoured", then why.
+    // A mouse over a red ▼ (an edge, ADR 0073): "Frost vs Speedster: Speedster is slightly
+    // favoured, about 6 in 10", then why.
     const weak = marked('unfavoured');
     await userEvent.hover(weak);
     await settle();
     expect(lines()).toStrictEqual([...matchupTip(tileBall(weak), 'speedster', nameOf, 'neutral')]);
-    expect(lines()[0]).toBe(`${nameOf(tileBall(weak))} vs Speedster: Speedster is favoured`);
+    expect(lines()[0]).toBe(
+      `${nameOf(tileBall(weak))} vs Speedster: Speedster is slightly favoured, about 6 in 10`,
+    );
     const strong = marked('favoured');
     await userEvent.hover(strong);
     await settle();
     expect(lines()[0]).toBe(
-      `${nameOf(tileBall(strong))} vs Speedster: ${nameOf(tileBall(strong))} is favoured`,
+      `${nameOf(tileBall(strong))} vs Speedster: ${nameOf(tileBall(strong))} is slightly favoured, about 6 in 10`,
+    );
+    // A strong counter's ▼▼: "strongly", about 7 in 10.
+    const countered = marked('strongUnfavoured');
+    await userEvent.hover(countered);
+    await settle();
+    expect(lines()[0]).toBe(
+      `${nameOf(tileBall(countered))} vs Speedster: Speedster is strongly favoured, about 7 in 10`,
     );
     await userEvent.keyboard('{Escape}');
     expect(lines()).toStrictEqual([]);

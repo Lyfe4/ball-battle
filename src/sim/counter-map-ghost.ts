@@ -56,6 +56,7 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'venom',
     intended: 'x',
+    level: 'strong',
     reason: 'Poison ticks that fall while it is phased do nothing.',
   },
   {
@@ -115,8 +116,9 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'bomber',
-    intended: 'even',
-    reason: 'Phased it slips through bombs without setting them off; solid it takes the blast.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A phase lasts 1 s of every 4, so most blasts still catch it solid.',
   },
   {
     x: 'spartan',
@@ -128,6 +130,7 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
     x: 'ghost',
     y: 'bloom',
     intended: 'y',
+    level: 'strong',
     reason: 'Phasing makes the fight stop-start, and every quiet 2 s is regrowth.',
   },
 ];

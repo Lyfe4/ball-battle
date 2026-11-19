@@ -1,7 +1,7 @@
 /*
- * The matchup chart, the manual's second tab: cells are 26 px, or less when the roster needs it,
- * so every column (the header column plus one per ball, set as --chart-columns) fits the phone
- * column without scrolling: 18 columns are about 17 px each at 375 px wide.
+ * The matchup chart, the manual's second tab (ADR 0073). On a phone, one ball against every other
+ * in the quick setup's grid (matchup-one.ts), the "why" above it; the full table is only for a
+ * desktop, where its cells are big enough to read a strong counter from an edge.
  */
 .matchup-chart {
   --chart-cell: min(
@@ -17,7 +17,35 @@
 }
 
 .matchup-chart-scroll {
+  display: none;
   overflow-x: auto;
+}
+
+/* The ball every tile is read against, and the way to change it. */
+.matchup-one-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.matchup-one-icon {
+  flex: none;
+}
+
+.matchup-one-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.matchup-one-change {
+  flex: none;
+  min-height: var(--tap-target);
+}
+
+.matchup-one-body {
+  display: grid;
+  gap: var(--space-small);
 }
 
 .matchup-table {
@@ -85,10 +113,41 @@
   background: var(--color-raised);
 }
 
+/* A strong counter (ADR 0073): its cell filled in its side's colour, the arrow in the page colour. */
+.matchup-button[data-level='strong'] {
+  color: var(--color-page);
+  font-size: calc(var(--chart-cell) * 0.55);
+  line-height: 1;
+}
+
+.matchup-button[data-level='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.matchup-button[data-level='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}
+
 /* The selected cell (the chart's one tab stop): the selected fill, like a chosen tile. */
 .matchup-button[tabindex='0'] {
   background: var(--color-selected);
   color: var(--color-text);
+}
+
+/* A strong cell keeps its fill when selected, ringed instead. */
+.matchup-button[data-level='strong'][tabindex='0'] {
+  outline: 2px solid var(--color-text);
+  outline-offset: -2px;
+}
+
+.matchup-button[data-level='strong'][data-lean='favoured'][tabindex='0'] {
+  background: var(--color-favoured);
+  color: var(--color-page);
+}
+
+.matchup-button[data-level='strong'][data-lean='unfavoured'][tabindex='0'] {
+  background: var(--color-unfavoured);
+  color: var(--color-page);
 }
 
 .matchup-detail {
@@ -125,10 +184,24 @@
     font-size: var(--font-size-small);
   }
 
+  /* The full table here, never the phone's one-ball grid. */
+  .matchup-chart-scroll {
+    display: block;
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .matchup-one-head,
+  .matchup-one-body {
+    display: none;
+  }
+
   /* The reason stays in view beside the chart. */
   .matchup-detail {
     position: sticky;
     top: var(--space-sheet);
+    grid-row: 1;
+    grid-column: 2;
   }
 }
 

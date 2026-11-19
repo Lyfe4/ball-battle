@@ -44,7 +44,7 @@ describe('pick rows on a touch phone', () => {
     await settle();
     const [edge, why] = tooltip();
     expect(edge).toMatch(
-      /^Your Chrono vs the bot’s \S+: (you’re favoured|even|\S+ is favoured|a mirror, even)$/,
+      /^Your Chrono vs the bot’s \S+: ((you’re|\S+ is) (strongly|slightly) favoured, about \d in 10|even, about 1 in 2 each|a mirror, even)$/,
     );
     if (edge?.endsWith('a mirror, even') !== true) expect(why?.length).toBeGreaterThan(0);
     expect(step()).toBe('answer');

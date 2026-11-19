@@ -137,6 +137,15 @@
   }
 }
 
+/*
+ * A series with none of its rounds on the arena yet (a live match before round 1): nothing behind
+ * the panel, at every size, rather than whatever the arena last held (the home demo).
+ */
+.stage[data-no-round] .arena-container,
+.stage[data-no-round][data-round-over] .arena-container {
+  display: none;
+}
+
 /* The dim comes after the Winner sticker's moment (ADR 0033), and eases in rather than snapping. */
 @media (min-aspect-ratio: 5/4) and (prefers-reduced-motion: no-preference) {
   .stage[data-round-over] .arena-container {
