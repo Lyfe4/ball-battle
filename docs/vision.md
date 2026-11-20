@@ -75,7 +75,7 @@ if matchups lean:
 ## Future balance targets for this mode
 
 These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4), with
-three honest levels since ruleset 20 (ADR 0073).
+three honest levels since ruleset 20 (ADR 0073) and sharper counters since ruleset 21 (ADR 0074).
 
 - **Three levels, one rule.** From the full run, a pair whose better side wins 65% or more is a
   **strong counter** (▲▲, about 7 in 10), 58% up to 65% an **edge** (▲, about 6 in 10), anything
@@ -95,13 +95,13 @@ The roster has known gaps in that shape, allowed by name in `scripts/counter-map
 `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
 kind of hit is new. When balls are next added, these are the kinds to look for:
 
-Since ruleset 20 the shape counts strong counters only (ADR 0073), and 17 balls are off it, each
-named with its reason in `SHAPE_EXCEPTIONS`: the Titan, Ghost, Quake, Slime, Spider, Spartan,
-Sniper, Inferno, Frost and Boomerang wait on ability tweaks or new balls (one-number changes move a
-ball's whole row; the Vampire joins them if the planned Batch 2 lands as measured), and the Archer,
-Thorns, Magnet, Necromancer, Bomber, Bloom and Battery on the next run's planned number changes
-(`docs/experiments/three-levels-proposal.md` on `proto/three-levels`, part C). The history below
-counts counters at 62%, as the map did then.
+Since ruleset 20 the shape counts strong counters only (ADR 0073). Ruleset 21's number changes
+(ADR 0074) brought the Archer, Thorns, Magnet, Necromancer, Bomber, Bloom, Battery and Frost to
+it; ten balls are still off it, each named with its reason in `SHAPE_EXCEPTIONS`, and all wait on
+ability tweaks or new balls, since one-number changes move a ball's whole row: the Titan (0/0),
+Ghost (2/1), Quake (2/0), Slime (1/0), Spider, Spartan and Sniper (1/2 each), Inferno (2/1),
+Boomerang (2/4) and Vampire (2/5: it heals only from its bumps, so the five balls that hit without
+a touch beat it). The history below counts counters at 62%, as the map did then.
 
 Known gaps at ruleset 19 (ADR 0049, 0050, 0056, 0057, 0058, 0060):
 
