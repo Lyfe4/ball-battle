@@ -142,6 +142,9 @@ export const theme = {
     spider: '#18181b',
     battery: '#172554',
     slime: '#3a4104',
+    balloon: '#7f1d1d',
+    banshee: '#1e293b',
+    kraken: '#083344',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -161,6 +164,49 @@ export const theme = {
   berserkerHeat: '#fde047',
   /** The Speedster's gauge bars it has not filled. */
   speedsterEmptyAlpha: 0.22,
+  /**
+   * The three of ADR 0075. The Balloon: its gloss, its shadow on the floor (the only ball with one,
+   * fractions of r: offset, half-width, flattening) and the pop of a shot. The Banshee: the glow as
+   * it draws breath (from this many ticks before its wail), the wail's ring (its sweep takes the
+   * first share of its time) and a fainter echo inside it. The Kraken: its suckers and its stubs
+   * while the tentacles are out, the ripples (their drift period and rings), the tentacles (they
+   * rise over the first share of the hold) and the faint line back to it.
+   */
+  balloonGlossAlpha: 0.7,
+  shadow: '#000000',
+  shadowAlpha: 0.38,
+  shadowOffsetX: 0.3,
+  shadowOffsetY: 1.32,
+  shadowWidth: 0.78,
+  shadowSquash: 0.3,
+  popMs: 260,
+  popFlight: 26,
+  popGap: 8,
+  popLength: 22,
+  popWidth: 7,
+  bansheeBreathTicks: 36,
+  bansheeWailTicks: 30,
+  bansheeBreathAlpha: 0.3,
+  bansheeBreathGrowth: 0.55,
+  bansheeWail: '#e2e8f0',
+  bansheeRingWidth: 12,
+  bansheeSweepShare: 0.35,
+  bansheeEchoAlpha: 0.45,
+  bansheeEchoShare: 0.72,
+  krakenSucker: '#cffafe',
+  krakenOutAlpha: 0.35,
+  krakenRipple: '#67e8f9',
+  krakenRippleWidth: 6,
+  krakenRippleAlpha: 0.85,
+  krakenRippleTicks: 24,
+  krakenRippleRings: 3,
+  krakenTentacle: '#0891b2',
+  krakenTentacleEdge: '#082f49',
+  krakenTentacleWidth: 20,
+  krakenTentacleEdgeWidth: 4,
+  krakenRiseShare: 0.15,
+  krakenAnchorAlpha: 0.35,
+  krakenAnchorWidth: 5,
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,

@@ -17,7 +17,7 @@ export interface MatchupOne {
 const HEAD_ICON_PX = 32;
 
 /**
- * The matchup chart on a phone (ADR 0073): 25 columns leave cells too small to read two levels,
+ * The matchup chart on a phone (ADR 0073): 28 columns leave cells too small to read two levels,
  * so it shows one ball against all the others, in the quick setup's grid (the same tiles, marks and
  * key: each tile's mark is how that ball does against the chosen one). A tap on a tile explains the
  * pair; "Change ball" turns the grid into a chooser for the ball they are read against.

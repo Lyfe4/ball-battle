@@ -193,6 +193,7 @@ export function createArena(
       rewinds: rewinds.trails(now),
       splits: moments.splits(now),
       snaps: moments.snaps(now),
+      pops: moments.pops(now),
       smears,
       chips: sourceChips.chips(now),
       reducedMotion: reduced,

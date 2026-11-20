@@ -22,7 +22,7 @@ const HEADER_ICON_PX = 18;
  *   side's colour; even pairs are left blank so the counters stand out. Focusing or tapping a cell
  *   highlights its row and column and says why beside the chart. Cells are buttons with roving
  *   focus (arrow keys, Home, End), so Tab passes the chart in one step.
- * - On a phone, where 25 columns would leave cells too small to read, one ball against all the
+ * - On a phone, where 28 columns would leave cells too small to read, one ball against all the
  *   others in the quick setup's grid (matchup-one.ts), the "why" above it.
  * The stylesheet shows one or the other by the desktop query.
  */
