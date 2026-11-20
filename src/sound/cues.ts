@@ -3,7 +3,7 @@
 // never knows sound exists. Events say most of it (this file); a few moments are only a change in
 // a ball's ability state between the two worlds (state-cues.ts). A ball's own sound takes the place
 // of the bump when its ability is the bump (a Battery's release, a Berserker's rage, a Speedster's
-// boosted hit, a Ghost passing through), and plays beside it otherwise (Thorns' spikes, a
+// boosted hit, a Ghost passing through, the Balloon's squeak), and plays beside it otherwise (Thorns' spikes, a
 // Vampire's sip, Frost and Venom landing).
 import { impactStrength } from '../render/impact.ts';
 import { ARENA_SIZE } from '../sim/constants.ts';
@@ -125,7 +125,9 @@ export function cuesOf(
           break;
         }
         const damage = Math.max(...event.ballIds.map((id) => contact.get(id) ?? 0));
-        add('bump', impactStrength(damage), event.point);
+        // The Balloon's own rubber says every bump it is in.
+        const rubber = event.ballIds.some((id) => kindOf(id) === 'balloon');
+        add(rubber ? 'squeak' : 'bump', impactStrength(damage), event.point);
         break;
       }
       case 'projectileFired': {

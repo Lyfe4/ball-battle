@@ -1,8 +1,8 @@
 // Balls whose ability lives in their own body: the Berserker's growl and smash, the Speedster's
 // whip-crack, the Titan's stretch, the Thorns' spikes biting back, the Ghost slipping out of the
-// world, the Magnet's hum, the Balloon's rubbery squash and pop.
+// world, the Magnet's hum, the Balloon's squeak, squash and pop.
 import { noise, tone } from '../synth.ts';
-import { A4, A5, C4, C5, C6, E5, E6, G4, G5, type Voice } from './scale.ts';
+import { A4, A5, C3, C4, C5, C6, D5, E5, E6, G3, G4, G5, type Voice } from './scale.ts';
 
 export const BODY_VOICES = {
   /** The Berserker takes a hit and gets angrier: a short low growl, rougher with more rage. */
@@ -138,31 +138,76 @@ export const BODY_VOICES = {
     tone(kit, { from: 70, to: 140, at, length: 0.4, gain: level, detune: 40, attack: 0.08 });
     tone(kit, { from: G5, to: C6, at: at + 0.25, length: 0.15, gain: 0.04 * gain });
   },
-  /** An area hit glances off the floating Balloon: a short rubbery squeak, bending down. */
-  squash(kit, at, { gain, detune }) {
-    tone(kit, {
-      type: 'triangle',
-      from: A5,
-      to: E5,
-      glide: 0.1,
-      at,
-      length: 0.14,
-      gain: 0.16 * (0.6 + 0.4 * gain),
-      detune,
-    });
-    tone(kit, { from: E5 * 1.5, to: A4, glide: 0.08, at, length: 0.1, gain: 0.05, detune: 20 });
-    noise(kit, { filter: 'lowpass', from: 1400, to: 500, at, length: 0.08, gain: 0.1 * gain });
+  /**
+   * The Balloon bumps a ball: a rubbery squeak that stretches up and back, two voices rubbing, over
+   * a light hollow thump (it floats, so it never lands heavy like the shared bump).
+   */
+  squeak(kit, at, { gain, detune }) {
+    const level = 0.6 + 0.4 * gain;
+    for (const cents of [0, 38]) {
+      tone(kit, {
+        type: 'triangle',
+        from: C5,
+        to: G5,
+        glide: 0.05,
+        at,
+        length: 0.07,
+        gain: 0.1 * level,
+        detune: detune + cents,
+      });
+      tone(kit, {
+        type: 'triangle',
+        from: G5,
+        to: D5,
+        glide: 0.08,
+        at: at + 0.055,
+        length: 0.09,
+        gain: 0.09 * level,
+        detune: detune + cents,
+      });
+    }
+    tone(kit, { from: G3, to: C3, glide: 0.1, at, length: 0.12, gain: 0.22 * gain, detune });
   },
-  /** A shot hits the Balloon harder: a bright rubber pop, a snap of air and a ringing ping. */
+  /**
+   * An area hit glances off the floating Balloon: it squashes and springs back, a wobbling
+   * "bwoing" (two voices beating as they bend down) on a soft cushion of air.
+   */
+  squash(kit, at, { gain, detune }) {
+    const level = 0.6 + 0.4 * gain;
+    for (const cents of [0, -48]) {
+      tone(kit, {
+        type: 'triangle',
+        from: E5,
+        to: C5,
+        glide: 0.2,
+        at,
+        length: 0.26,
+        gain: 0.11 * level,
+        detune: detune + cents,
+        attack: 0.01,
+      });
+    }
+    tone(kit, { from: C4, to: G3, glide: 0.08, at, length: 0.12, gain: 0.18 * level });
+    noise(kit, { filter: 'lowpass', from: 1200, to: 350, at, length: 0.12, gain: 0.12 * gain });
+  },
+  /**
+   * A shot hits the Balloon harder: a sharp snap, the rubber's deep "thoomp" as it gives, a bright
+   * ping and a rush of air.
+   */
   pop(kit, at, { gain }) {
+    const level = 0.6 + 0.4 * gain;
+    noise(kit, { filter: 'highpass', from: 5000, at, length: 0.03, gain: 0.45 * level });
+    tone(kit, { from: 340, to: 90, glide: 0.07, at, length: 0.1, gain: 0.38 * level });
+    tone(kit, { from: E6, to: A5, glide: 0.03, at, length: 0.05, gain: 0.2 });
     noise(kit, {
-      filter: 'highpass',
-      from: 5000,
-      at,
-      length: 0.03,
-      gain: 0.45 * (0.6 + 0.4 * gain),
+      filter: 'bandpass',
+      from: 3200,
+      to: 900,
+      q: 1.5,
+      at: at + 0.02,
+      length: 0.16,
+      gain: 0.14 * level,
+      attack: 0.01,
     });
-    tone(kit, { from: E6, to: A5, glide: 0.03, at, length: 0.05, gain: 0.3 });
-    tone(kit, { type: 'triangle', from: G5, at: at + 0.03, length: 0.18, gain: 0.08 });
   },
 } satisfies Record<string, Voice>;

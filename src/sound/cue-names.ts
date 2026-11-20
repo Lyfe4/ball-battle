@@ -46,6 +46,7 @@ export const FIGHT_CUES = [
   'phaseIn',
   'ghostPass',
   'pull',
+  'squeak',
   'squash',
   'pop',
   // Health and time.

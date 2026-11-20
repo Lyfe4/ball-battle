@@ -62,6 +62,7 @@ export const FIGHT_RULES: Readonly<Record<FightCue, GateRule>> = {
   phaseIn: MOMENT,
   ghostPass: { gapMs: 120, runMs: 0 },
   pull: { gapMs: 300, runMs: 0 },
+  squeak: { gapMs: 70, runMs: 250 },
   squash: HIT,
   pop: { gapMs: 100, runMs: 0 },
   frost: { gapMs: 120, runMs: 400 },
