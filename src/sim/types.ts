@@ -115,8 +115,8 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
   /**
    * What a hit of `amount` does to this ball on `tick`, from any source (ADR 0045): the Spartan's
    * planted shield takes half of every hit (ADR 0047), the phased Ghost all of it (ADR 0049). A pure
-   * query of its own state, applied on both damage paths before the hit lands and rounded to a whole number between
-   * 0 and `amount`. `via` is what dealt the hit ('contact' for a bump), so a defence can tell a
+   * query of its own state, applied on both damage paths before the hit lands and rounded to a whole number of 0 or
+   * more: it may raise a hit too (the Balloon takes shots harder, ADR 0075). `via` is what dealt the hit ('contact' for a bump), so a defence can tell a
    * strike from a bump (the Battery stores only big strikes and bursts, ADR 0056). Defaults to the
    * whole hit.
    */
@@ -206,7 +206,13 @@ export interface DamageTakenContext<S extends AbilityState = AbilityState> exten
  * that don't use them.
  */
 export type AbilityAction<S extends AbilityState = AbilityState> =
-  | { readonly kind: 'damage'; readonly targetId: string; readonly amount: number }
+  | {
+      readonly kind: 'damage';
+      readonly targetId: string;
+      readonly amount: number;
+      /** No defence takes or adds any of it: it lands whole (the Banshee's wail, ADR 0075). */
+      readonly unblockable?: boolean;
+    }
   | { readonly kind: 'heal'; readonly targetId: string; readonly amount: number }
   /**
    * Own ball only. Its direction lasts; its magnitude only until the end of the tick, when the

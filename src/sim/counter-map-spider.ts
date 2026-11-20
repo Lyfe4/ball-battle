@@ -34,7 +34,7 @@ export const SPIDER_ENTRIES: readonly CounterEntry[] = [
     y: 'archer',
     intended: 'y',
     level: 'strong',
-    reason: 'Its arrows don’t need speed, so a slow costs nothing, and they land from afar, often.',
+    reason: 'Its arrows don’t need speed, so a slow costs nothing, and they land from afar.',
   },
   {
     x: 'spider',

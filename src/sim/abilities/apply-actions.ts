@@ -99,16 +99,13 @@ export function applyActions(
       case 'damage':
         update(action.targetId, (target) => {
           const requested = Math.max(0, action.amount);
-          // The target's defence (a planted shield, phasing) takes its share first (ADR 0045, 0049).
-          // Ability damage always names its source in play; an untagged hit counts as a hook's own.
-          const defended = defendHit(
-            target,
-            ownerId,
-            requested,
-            definitions,
-            tick,
-            via ?? 'onTick',
-          );
+          // The target's defence (a planted shield, phasing) takes its share first (ADR 0045, 0049),
+          // unless nothing can block the hit (ADR 0075). Ability damage always names its source in
+          // play; an untagged hit counts as a hook's own.
+          const defended =
+            action.unblockable === true
+              ? { rest: requested, event: undefined, raised: 0 }
+              : defendHit(target, ownerId, requested, definitions, tick, via ?? 'onTick');
           if (defended.event !== undefined) events.push(defended.event);
           const amount = Math.min(target.health, defended.rest);
           if (amount <= 0) return undefined;
@@ -125,6 +122,7 @@ export function applyActions(
             survivedLethal: false,
             ...(via === undefined ? {} : { via }),
             ...(defended.event === undefined ? {} : { reduced: defended.event.reduced }),
+            ...(defended.raised > 0 ? { raised: defended.raised } : {}),
           });
           return { ...target, health: healthAfter };
         });

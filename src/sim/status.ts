@@ -7,8 +7,9 @@ import type { BallState } from './types.ts';
  * without touching balls that never apply it.
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
+ * - held: wrapped by the Kraken's tentacles, it cruises at a small share of its speed (ADR 0075).
  */
-export type StatusKind = 'slowed' | 'poisoned';
+export type StatusKind = 'slowed' | 'poisoned' | 'held';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -81,6 +82,9 @@ export const SLOW_FACTOR = 0.45;
 export function slowedSpeed(speed: number): number {
   return speed * (1 - SLOW_FACTOR);
 }
+
+/** Share of its cruise speed a held ball keeps (ADR 0075): wrapped, it barely moves. */
+export const HELD_SHARE = 0.15;
 
 /** Ability damage each poison tick deals (ADR 0012). The Venom's lever. */
 export const POISON_DAMAGE = 5;

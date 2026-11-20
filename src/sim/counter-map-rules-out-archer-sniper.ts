@@ -53,8 +53,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'thorns',
     intended: 'x',
-    level: 'strong',
-    reason: 'Arrows never touch the spikes, and the slow Thorns can’t close in fast.',
+    level: 'edge',
+    reason: 'Arrows never touch the spikes, but the frail Archer pays when the Thorns closes in.',
   },
   {
     x: 'brawler',

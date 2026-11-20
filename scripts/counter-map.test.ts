@@ -96,20 +96,9 @@ describe('the counter map', () => {
     }
   });
 
-  it('names exactly the balls off the shape today as exceptions (ADR 0073, 0074)', () => {
+  it('names exactly the balls off the shape today as exceptions (ADR 0073, 0074, 0075)', () => {
     expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      [
-        'titan',
-        'ghost',
-        'quake',
-        'slime',
-        'spider',
-        'spartan',
-        'sniper',
-        'inferno',
-        'boomerang',
-        'vampire',
-      ].sort(),
+      ['titan', 'quake', 'slime', 'spider', 'vampire', 'archer'].sort(),
     );
   });
 
@@ -146,18 +135,14 @@ describe('shapeProblem', () => {
   });
 
   it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's strong-only shape today (ruleset 21, map and measured) fits its allowance...
+    // Each ball's strong-only shape today (ruleset 22, map and measured) fits its allowance...
     const today: Readonly<Record<string, readonly [number, number]>> = {
-      titan: [0, 0],
-      ghost: [2, 1],
-      quake: [2, 0],
+      titan: [1, 1],
+      quake: [2, 1],
       slime: [1, 0],
-      spider: [1, 2],
-      spartan: [1, 2],
-      sniper: [1, 2],
-      inferno: [2, 1],
-      boomerang: [2, 4],
-      vampire: [2, 5],
+      spider: [1, 3],
+      vampire: [2, 7],
+      archer: [5, 3],
     };
     expect(Object.keys(today).sort()).toStrictEqual(Object.keys(SHAPE_EXCEPTIONS).sort());
     for (const [id, [wins, losses]] of Object.entries(today)) {
@@ -180,8 +165,9 @@ describe('shapeProblem', () => {
       if (l.fewest > 0) expect(shapeProblem(id, some(wins), some(l.fewest - 1)), id).toBeDefined();
       expect(shapeProblem(id, some(losses + within + 1), some(losses)), id).toBeDefined();
     }
-    // The Vampire's fifth loss is its gap; a sixth fails.
-    expect(shapeProblem('vampire', some(2), some(6))).toBeDefined();
+    // The Vampire's seventh loss is its gap; an eighth fails. The Archer's fifth win, a sixth.
+    expect(shapeProblem('vampire', some(2), some(8))).toBeDefined();
+    expect(shapeProblem('archer', some(6), some(4))).toBeDefined();
     // A ball that moves back towards the shape still passes.
     expect(shapeProblem('titan', some(2), some(2))).toBeUndefined();
     expect(shapeProblem('vampire', some(3), some(4))).toBeUndefined();

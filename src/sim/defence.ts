@@ -20,9 +20,10 @@ export interface HitReducedEvent {
 }
 
 /**
- * A hit of `amount` on `target` after its definition's `incomingDamageOf`, as a whole number from 0
- * to `amount`, and the event when its defence took anything. A ball without a defence takes the hit
- * whole.
+ * A hit of `amount` on `target` after its definition's `incomingDamageOf`, as a whole number of 0 or
+ * more, and the event when its defence took anything. A defence may also raise a hit (the Balloon's
+ * shots, ADR 0075): `raised` is what it added, and no event marks it. A ball without a defence
+ * takes the hit whole.
  */
 export function defendHit(
   target: BallState,
@@ -32,17 +33,24 @@ export function defendHit(
   tick: number,
   /** What dealt the hit ('contact' for a bump), for a defence that tells them apart. */
   via: DamageVia | 'contact',
-): { readonly rest: number; readonly event: HitReducedEvent | undefined } {
+): {
+  readonly rest: number;
+  readonly event: HitReducedEvent | undefined;
+  readonly raised: number;
+} {
   const { incomingDamageOf } = getDefinition(definitions, target.definitionId);
-  if (incomingDamageOf === undefined || amount <= 0) return { rest: amount, event: undefined };
+  if (incomingDamageOf === undefined || amount <= 0) {
+    return { rest: amount, event: undefined, raised: 0 };
+  }
   const defended = incomingDamageOf(target, amount, tick, via);
   if (!Number.isFinite(defended)) {
     throw new Error(`Ball "${target.id}" defended a hit to a non-finite value`);
   }
-  const rest = Math.min(amount, Math.max(0, Math.round(defended)));
-  if (rest === amount) return { rest, event: undefined };
+  const rest = Math.max(0, Math.round(defended));
+  if (rest >= amount) return { rest, event: undefined, raised: rest - amount };
   return {
     rest,
     event: { type: 'hitReduced', tick, ballId: target.id, sourceId, reduced: amount - rest, rest },
+    raised: 0,
   };
 }
