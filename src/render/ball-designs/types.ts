@@ -54,6 +54,8 @@ export interface DesignView {
   readonly shotsOut: number;
   /** How many of the ball's own minions are in play (the Necromancer's skull). */
   readonly minionsOut: number;
+  /** How a floating ball drifts, world units a second (drift.ts); still when absent. */
+  readonly drift?: Vec2;
 }
 
 /**

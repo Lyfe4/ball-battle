@@ -22,7 +22,7 @@ const kraken = (share: number): AbilityState => ({
 
 export const BATCH_SEVEN: readonly (readonly [string, readonly Tile[]])[] = [
   [
-    'Balloon: a glossy coral balloon with its knot, and the only shadow on the floor (see the phone arena); area hits glance off it and shots pop into it',
+    'Balloon: a glossy coral balloon with its knot, and the only shadow on the floor, trailing the way it drifts as its knot swings back (see the phone arena and a fight); area hits glance off it and shots pop into it',
     [
       { label: 'idle', id: 'balloon' },
       { label: 'hit flash', id: 'balloon', flash: 0.6 },
@@ -31,7 +31,7 @@ export const BATCH_SEVEN: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Banshee: a pale face whose mouth follows its wail: a slit while it waits, opening as it draws breath, gaping on the wail; the breath glows round it and the wail rings out on the floor (see the phone arena)',
+    'Banshee: long hair framing a pale face and streaming in locks below it, hollow eyes, a mouth that follows its wail: a slit while it waits, opening as it draws breath, gaping on the wail as the locks lift; the breath glows round it and the wail rings out on the floor (see the phone arena)',
     [
       { label: 'waiting', id: 'banshee', abilityState: wail(100) },
       { label: 'drawing breath', id: 'banshee', abilityState: wail(12) },
@@ -42,7 +42,7 @@ export const BATCH_SEVEN: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Kraken: two eyes and a tentacle up each side, rising as its next call nears and gone from the ball while they are out: ripples on the floor, then tentacles wrapped round the ball it holds (see the phone arena)',
+    'Kraken: a dark mantle, glowing narrowed eyes, a beak among its arms and a tentacle up each side, rising as its next call nears and gone from the ball while they are out: ripples on the floor, then tentacles coiled round the ball it holds (see the phone arena)',
     [
       { label: 'just back', id: 'kraken', abilityState: kraken(0.05) },
       { label: 'rising', id: 'kraken', abilityState: kraken(0.5) },

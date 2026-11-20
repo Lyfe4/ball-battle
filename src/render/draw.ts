@@ -30,6 +30,7 @@ import { drawCurses } from './curse.ts';
 import { drawWebs } from './webs.ts';
 import { drawPops, drawSnaps, drawSplits } from './draw-moments.ts';
 import type { PopMoment, SnapMoment, SplitMoment } from './moments.ts';
+import { STILL } from './drift.ts';
 import { drawShadows } from './shadows.ts';
 import { drawRipples, drawTentacles } from './tentacles.ts';
 import { drawWails } from './wails.ts';
@@ -73,6 +74,8 @@ export interface FrameEffects {
   readonly splits: readonly SplitMoment[];
   readonly snaps: readonly SnapMoment[];
   readonly pops: readonly PopMoment[];
+  /** How each floating ball drifts (drift.ts): its shadow trails it, its knot swings. */
+  readonly drift: (ballId: string) => Vec2;
   /** Slow frames only: each ball's path since the last frame (motion-smear.ts). */
   readonly smears: readonly Smear[];
   /** Holds animated details (a heal's swelling ring, a glance's shards, the chip's pop) still. */
@@ -99,6 +102,7 @@ export const NO_EFFECTS: FrameEffects = {
   splits: [],
   snaps: [],
   pops: [],
+  drift: () => STILL,
   smears: [],
   reducedMotion: false,
 };
@@ -134,7 +138,7 @@ export function drawWorld(
   drawSnaps(ctx, world, effects.snaps, effects.reducedMotion);
   drawRipples(ctx, world, effects.reducedMotion);
   drawWails(ctx, world, effects.reducedMotion);
-  drawShadows(ctx, world);
+  drawShadows(ctx, world, effects.drift);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(
@@ -181,6 +185,7 @@ export function drawWorld(
         design,
         cssPixelsPerUnit,
         phased,
+        drift: effects.drift(ball.id),
       });
     });
     if (ball.health > 0) {
@@ -254,6 +259,8 @@ export interface BallLook {
   readonly detail?: 'full' | 'simple';
   /** Phased (ADR 0026, 0049): drawn see-through with a broken outline. */
   readonly phased?: boolean;
+  /** How a floating ball drifts (drift.ts): its knot swings with it. */
+  readonly drift?: Vec2;
 }
 
 /**

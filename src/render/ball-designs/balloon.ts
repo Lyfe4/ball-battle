@@ -1,6 +1,7 @@
 // The Balloon's look (ADR 0075): a glossy party balloon with its knot, floating over the court. Its
-// shadow on the floor (shadows.ts) is what says it floats; it stores nothing, so its look never
-// changes. One set of proportions in fractions of r at every size.
+// shadow on the floor (shadows.ts) is what says it floats; it stores nothing. As it drifts its knot
+// swings back behind it (drift.ts; still with reduced motion), while its gloss stays towards the
+// light. One set of proportions in fractions of r at every size.
 import { theme } from '../theme.ts';
 import type { BallDesign } from './types.ts';
 
@@ -36,7 +37,10 @@ export const balloonDesign: BallDesign = {
     p.fill();
     p.globalAlpha = alpha;
   },
-  over(p, { radius: r, base, accent }) {
+  over(p, { radius: r, base, accent, drift }) {
+    // The knot swings back from the way it drifts, round the balloon's centre.
+    const lean = Math.max(-1, Math.min(1, (drift?.x ?? 0) / theme.balloonSwaySpeed));
+    p.rotate(lean * theme.balloonSway);
     p.fillStyle = base;
     p.strokeStyle = accent;
     p.lineWidth = theme.markLine * 0.6 * r;
