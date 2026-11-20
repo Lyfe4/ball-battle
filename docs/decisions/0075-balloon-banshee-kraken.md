@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-20
 - Amends: ADR 0074 and 0073 (the shape exceptions), ADR 0045 (a defence may also raise a hit; a
-  hit may be unblockable), ADR 0009 (a third status, `held`), ADR 0064 (seven new sounds)
+  hit may be unblockable), ADR 0009 (a third status, `held`), ADR 0064 (eight new sounds)
 - Builds on: ADR 0071 and 0072 (a look shows its ability and where it's up to), ADR 0036 (teaching
   in the arena), ADR 0010 and 0015 (counters from mechanics)
 - Proposal: `docs/experiments/new-balls-proposal-8.md` on `proto/new-balls-8` (never merged), its
@@ -24,7 +24,7 @@ off the shape became six, and every hard rule passed.
 | Ball    | Colour                  | Health | Bump | Speed | Ability                                                                                                                                                                                                                                                                                                                                                                           |
 | ------- | ----------------------- | -----: | ---: | ----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Balloon | coral `#ff6b6b`         |     76 |   24 |   760 | Floats: area hits (a zone's strike or a lasting zone's pulse: fire, bombs, shockwaves, lightning) land at 55%; every shot lands 1.4 times as hard. It still sets bombs off.                                                                                                                                                                                                       |
-| Banshee | slate `#94a3b8`         |     56 |    4 |   770 | Every 170 ticks (from 2 s in) it wails: 33 to every enemy ball within 320 of its centre, and nothing blocks it: no shield, phasing or floating takes any of it.                                                                                                                                                                                                                   |
+| Banshee | mauve `#a0729f`         |     56 |    4 |   770 | Every 170 ticks (from 2 s in) it wails: 33 to every enemy ball within 320 of its centre, and nothing blocks it: no shield, phasing or floating takes any of it.                                                                                                                                                                                                                   |
 | Kraken  | deep sea cyan `#0891b2` |     62 |   16 |   760 | From 1.5 s in, once it holds nothing, it marks a spot where each enemy will be in 0.5 s; then tentacles rise and hold every enemy within 90 of a spot (never a phased one) for 1.5 s, and crush once for 6 a tentacle: 2 for a standard ball or a Slime half, 4 for a grown Titan (by width). It anchors at 30% speed while it holds. Its next call is 200 ticks after the burst. |
 
 One-liners: "Floats: area hits do half; shots hit it harder." (the owner's), "Every few seconds it
@@ -109,29 +109,40 @@ at a size), drawn by the same design in a fight and on its manual and picker ico
 only as the sim's clock does:
 
 - **Balloon:** a glossy coral balloon with a white gloss and a tied knot standing just proud of its
-  edge, and the only shadow on the floor (`BallDesign.floats`, `shadows.ts`). An area hit glances
-  (the gold ring of a cut); a shot pops into it (short white bursts where it struck,
-  `poppedShots`, `drawPops`). It stores nothing, so its look never changes.
-- **Banshee:** a pale face whose mouth follows its wail: a slit while it waits, opening as it draws
-  breath (0.6 s before), gaping on the wail. The breath glows round it; the wail's ring sweeps out
-  to its reach (320, so any ball the ring touches is hit) and fades (`wails.ts`).
-- **Kraken:** two eyes and a tentacle curling up each side, rising as its next call nears, stubs
-  while they are out (like the Boomerang, only what it holds). Ripples spread on the floor at each
-  spot out to the grab's reach; then 2-4 thick tentacles rise round each ball held, wrap it and
-  tighten to the crush, a faint line back to the anchored Kraken (`tentacles.ts`).
+  edge, and the only shadow on the floor (`BallDesign.floats`, `shadows.ts`). The light comes from
+  one fixed side: the shadow trails a touch behind the way it drifts and stretches a little with
+  speed, and the knot swings back behind it (`drift.ts`: its velocity followed over 140 ms of
+  effect time, so a bounce swings it round rather than snapping it). An area hit glances (the gold
+  ring of a cut); a shot pops into it (short white bursts where it struck, `poppedShots`,
+  `drawPops`).
+- **Banshee:** a wailing spirit, never a second Ghost: long mauve hair framing a pale face and
+  streaming below it in locks that break the ball's edge (its own outline), hollow eyes slanting
+  in sorrow. Her mouth follows the wail: a slit while she waits, opening as she draws breath (0.6
+  s before), gaping on the wail, when her locks lift. The breath glows round her; the wail's ring
+  sweeps out to its reach (320, so any ball the ring touches is hit) and fades (`wails.ts`).
+- **Kraken:** a deep-sea predator: a dark mantle over its head, narrowed eyes glowing under heavy
+  brows with slit pupils, a hooked beak among the roots of its arms, and a tentacle curling up
+  each side, rising as its next call nears, stubs while they are out (like the Boomerang, only
+  what it holds). Ripples spread on the floor at each spot out to the grab's reach; then 2-4 thick
+  tentacles break through the floor out of dark holes round each ball held, coil over it, suckers
+  inward, and tighten and swell to the crush, a line from the anchored Kraken's edge to the held
+  ball's (`tentacles.ts`).
 
-With reduced motion the ring appears at its reach and fades there, the ripples stand still and a
-pop fades where it starts. The arena's one-time hints read "Float!" (a cut), "Wail!" (its damage)
+With reduced motion the ring appears at its reach and fades there, the ripples stand still, a pop
+fades where it starts and the Balloon has no drift: its shadow sits still beside it and its knot
+hangs straight. The arena's one-time hints read "Float!" (a cut), "Wail!" (its damage)
 and "Tentacles!" (the `held` status). Colours (OKLab distance to the nearest ball; contrast on the
-floor): the Balloon 0.079 from the Berserker, 6.1:1; the Banshee 0.116 from the Storm, 6.6:1; the
-Kraken 0.132 from the Banshee, 4.6:1. The roster's closest pair stays the Magnet and Spartan
-(0.039).
+floor): the Balloon 0.079 from the Berserker, 6.1:1; the Banshee 0.105 from the Quake (0.205 from
+the Ghost), 4.4:1; the Kraken 0.134 from the Quake, 4.6:1. The roster's closest pair stays the
+Magnet and Spartan (0.039).
 
 ### 7. Sounds (ADR 0064)
 
-Seven new sounds in its style (sines and soft triangles on C major pentatonic, a saw only through a
-low-pass, all under a second): the Balloon's rubbery squash when an area hit glances and its bright
-pop when a shot lands harder; the Banshee's airy breath and its wail (two beating voices sliding up
+Eight new sounds in its style (sines and soft triangles on C major pentatonic, a saw only through a
+low-pass, all under a second): the Balloon's rubbery squeak in place of the bump (two voices
+stretching up and back over a light hollow thump: it floats, so it never lands heavy), its
+wobbling "bwoing" when an area hit glances and its pop when a shot lands harder (a snap, a deep
+thoomp as the rubber gives, a ping and a rush of air); the Banshee's airy breath and its wail (two beating voices sliding up
 and away); the Kraken's deep bubbles as it calls, a wet slap as the tentacles wrap and three quick
 crunches as they crush. Each has a gate rule; `ball-sounds.slow.test.ts` hears every one in real
 fights and no third ball's, and `voices-distinct.browser.test.ts` keeps them apart (the first crush
@@ -144,9 +155,11 @@ was 0.901 from the Battery's release, over the 0.9 limit; reworked).
 - 28 balls: the bots, Reveal, Showdown and online play read the roster and the map, as before; the
   matchup chart and the ball pages fit at 375 px and on a desktop.
 - **Draw cost (ADR 0063).** Each drawn whole in Chromium with the CPU slowed 6×, a phone-sized
-  canvas, raster included, the least of nine rounds: the Balloon about 395 µs, the Banshee 320 and
-  the Kraken 600, inside round 1's range (the Thorns 626, the Titan 1,097). The wail's ring (650)
-  and the ripples (745) cost about a Storm warning zone (638); four tentacles on a grown Titan
-  (1,090) about the Titan itself; the shadow 47.
+  canvas, raster included, the least of nine rounds: the Balloon about 410 µs, the Banshee 860 and
+  the Kraken 800, inside round 1's range (the Battery 318, the Titan 1,117). The wail's ring (655)
+  and the ripples (750) cost about a Storm warning zone (633); four tentacles coiled round a grown
+  Titan about 1,930 (two round a standard ball about half), each drawn as two fills (a dark edge
+  under the body) rather than a stroked outline, which alone cost 2,000; the shadow 49. The
+  Kraken's mantle is a lens path, not a clip.
 - The two new engine rules are general: a future defence can raise a hit, and a future hit can be
   unblockable, with no interaction rule (ADR 0045).
