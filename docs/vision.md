@@ -75,7 +75,8 @@ if matchups lean:
 ## Future balance targets for this mode
 
 These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4), with
-three honest levels since ruleset 20 (ADR 0073) and sharper counters since ruleset 21 (ADR 0074).
+three honest levels since ruleset 20 (ADR 0073), sharper counters since ruleset 21 (ADR 0074) and
+28 balls since ruleset 22 (ADR 0075).
 
 - **Three levels, one rule.** From the full run, a pair whose better side wins 65% or more is a
   **strong counter** (▲▲, about 7 in 10), 58% up to 65% an **edge** (▲, about 6 in 10), anything
@@ -97,11 +98,25 @@ kind of hit is new. When balls are next added, these are the kinds to look for:
 
 Since ruleset 20 the shape counts strong counters only (ADR 0073). Ruleset 21's number changes
 (ADR 0074) brought the Archer, Thorns, Magnet, Necromancer, Bomber, Bloom, Battery and Frost to
-it; ten balls are still off it, each named with its reason in `SHAPE_EXCEPTIONS`, and all wait on
-ability tweaks or new balls, since one-number changes move a ball's whole row: the Titan (0/0),
-Ghost (2/1), Quake (2/0), Slime (1/0), Spider, Spartan and Sniper (1/2 each), Inferno (2/1),
-Boomerang (2/4) and Vampire (2/5: it heals only from its bumps, so the five balls that hit without
-a touch beat it). The history below counts counters at 62%, as the map did then.
+it, and ruleset 22's three new balls (ADR 0075) the Sniper, Ghost, Inferno, Boomerang and
+Spartan. Six balls are still off it, each named with its reason in `SHAPE_EXCEPTIONS`, and all
+wait on ability tweaks or new balls, since one-number changes move a ball's whole row:
+
+- **Titan (1/1):** growing evens its fights out. One more ball it beats by mass would close it
+  (round 8's Cowboy throws by lightness, 82-87%, but its other prey had no room).
+- **Quake (2/1):** small, wide shockwaves chip every ball alike; only the floating Balloon shrugs
+  them off. A second ball that shrugs off small hits, or keeps it off the walls, would close it.
+- **Spider (1/3):** its webs slow every wall-bouncer a little; only the Speedster loses. Prey whose
+  power runs on its own speed would close it (a speed-lance), with a predator for the Frost in the
+  same batch, since its slow is the same status.
+- **Slime (1/0):** nothing beats it. To beat a split you must hit both halves at once and survive
+  their double bumps: a sturdy area hitter.
+- **Vampire (2/7):** it heals only from its bumps, so every ball that hits without a touch beats
+  it, the Banshee and Kraken among them. An ability tweak, not a number.
+- **Archer (5/3):** arrows outrange every frail or slow ball, and the Balloon and Banshee add two.
+  A change that takes one of those wins closes it.
+
+The history below counts counters at 62%, as the map did then.
 
 Known gaps at ruleset 19 (ADR 0049, 0050, 0056, 0057, 0058, 0060):
 
@@ -304,6 +319,13 @@ blind picks. See Decisions below.
   finishes one half; the Spider and Vampire over it: webs catch both halves, lifesteal feeds on
   two). A **Spider**'s web that catches a ball is used up, so a ball that keeps bouncing back to
   one wall (the Chrono) is even with it; the Spartan now beats it.
+- **The Balloon, the Banshee and the Kraken** (2026-11-20, ADR 0075): the **Balloon** floats, so
+  area hits land at half and shots hit it harder (vs Inferno, Bomber, Storm, Quake; the Boomerang,
+  Archer and Sniper over it). The **Banshee** wails every few seconds and nothing blocks it (vs
+  Ghost, Vampire; the Chrono, Archer and Titan over it). The **Kraken**'s tentacles rise where its
+  enemy is heading, hold it and crush it, more for a bigger ball, while it anchors (vs Titan,
+  Spider, Vampire; the Storm, Sniper, Ghost and Spartan over it). The Archer goes to 47 health.
+  Ten balls off the shape become six.
 - Replaces the first version of this decision (a second triangle, Brawler > Speedster > Storm >
   Brawler), which stat tuning could not reach: the Brawler has no ability, so nothing in its
   mechanics favours it against one ball more than another.

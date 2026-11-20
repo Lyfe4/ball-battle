@@ -3,7 +3,7 @@
 // never knows sound exists. Events say most of it (this file); a few moments are only a change in
 // a ball's ability state between the two worlds (state-cues.ts). A ball's own sound takes the place
 // of the bump when its ability is the bump (a Battery's release, a Berserker's rage, a Speedster's
-// boosted hit, a Ghost passing through), and plays beside it otherwise (Thorns' spikes, a
+// boosted hit, a Ghost passing through, the Balloon's squeak), and plays beside it otherwise (Thorns' spikes, a
 // Vampire's sip, Frost and Venom landing).
 import { impactStrength } from '../render/impact.ts';
 import { ARENA_SIZE } from '../sim/constants.ts';
@@ -57,6 +57,7 @@ const ABILITY_DAMAGE: Readonly<Record<string, FightCue>> = {
   'venom/poison': 'poisonTick',
   'inferno/zonePulse': 'burn',
   'thorns/onDamageTaken': 'thorns',
+  'kraken/onTick': 'crush',
 };
 
 /** Damage that size, as a share of a hard hit, for ability damage measured in its own units. */
@@ -124,7 +125,9 @@ export function cuesOf(
           break;
         }
         const damage = Math.max(...event.ballIds.map((id) => contact.get(id) ?? 0));
-        add('bump', impactStrength(damage), event.point);
+        // The Balloon's own rubber says every bump it is in.
+        const rubber = event.ballIds.some((id) => kindOf(id) === 'balloon');
+        add(rubber ? 'squeak' : 'bump', impactStrength(damage), event.point);
         break;
       }
       case 'projectileFired': {
@@ -159,6 +162,10 @@ export function cuesOf(
         if (kind !== undefined) {
           add(kind, share(event.amount, 12), after.get(event.targetId)?.position);
         }
+        // A shot its defence made hit harder: the Balloon pops beside the shot's own hit.
+        if (event.via === 'projectile' && (event.raised ?? 0) > 0) {
+          add('pop', share(event.amount, 12), after.get(event.targetId)?.position);
+        }
         break;
       }
       case 'healed':
@@ -171,6 +178,7 @@ export function cuesOf(
         const at = after.get(event.ballId)?.position;
         if (kind === 'battery') add('store', event.reduced / CAPACITY, at);
         if (kind === 'spartan') add('glance', event.reduced / (event.reduced + event.rest), at);
+        if (kind === 'balloon') add('squash', share(event.reduced, 12), at);
         break;
       }
       case 'statusApplied': {
@@ -178,6 +186,7 @@ export function cuesOf(
         const source = kindOf(event.sourceId);
         if (event.status === 'slowed' && source === 'frost') add('frost', 0.6, at);
         if (event.status === 'poisoned' && source === 'venom') add('poison', 0.6, at);
+        if (event.status === 'held' && source === 'kraken') add('grab', 0.6, at);
         break;
       }
       case 'rewound':

@@ -54,6 +54,8 @@ export interface DesignView {
   readonly shotsOut: number;
   /** How many of the ball's own minions are in play (the Necromancer's skull). */
   readonly minionsOut: number;
+  /** How a floating ball drifts, world units a second (drift.ts); still when absent. */
+  readonly drift?: Vec2;
 }
 
 /**
@@ -73,6 +75,8 @@ export interface BallDesign {
    * break its edge a little (the Spartan's crest), never more than an icon's padding (12% of r).
    */
   readonly over?: (painter: Painter, view: DesignView) => void;
+  /** Floats over the court: it casts a shadow on the floor (the Balloon, ADR 0075; shadows.ts). */
+  readonly floats?: boolean;
   /** Where `heading` comes from: none, the ball's velocity, or its aim at the nearest enemy. */
   readonly facing: 'none' | 'velocity' | 'aim';
   /**

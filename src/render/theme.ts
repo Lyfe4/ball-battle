@@ -2,6 +2,8 @@
  * Visual tokens for the canvas renderer. Sizes are in world units, so they scale with the arena.
  * Page-level colours live as CSS custom properties in src/styles/tokens.css.
  */
+import { BALLOON_BANSHEE_KRAKEN } from './theme-balloon-banshee-kraken.ts';
+
 export const theme = {
   /**
    * The court (ADR 0032): a deep indigo floor inside a chunky rounded rim. Flat fills only, so a
@@ -142,6 +144,9 @@ export const theme = {
     spider: '#18181b',
     battery: '#172554',
     slime: '#3a4104',
+    balloon: '#7f1d1d',
+    banshee: '#3b1238',
+    kraken: '#083344',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -161,6 +166,7 @@ export const theme = {
   berserkerHeat: '#fde047',
   /** The Speedster's gauge bars it has not filled. */
   speedsterEmptyAlpha: 0.22,
+  ...BALLOON_BANSHEE_KRAKEN,
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,

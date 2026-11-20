@@ -1,6 +1,7 @@
 # 0074: Sharper counters by numbers (ruleset 21)
 
 - Status: Accepted
+- Amended by: ADR 0075 (the shape exceptions; the Archer at 47 health)
 - Date: 2026-11-20
 - Amends: ADR 0073 (its shape exceptions, and ruleset 19's kept bots), ADR 0045 group 4 (the
   numbers of 16 balls)

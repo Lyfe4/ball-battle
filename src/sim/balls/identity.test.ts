@@ -25,6 +25,9 @@ import { BIG_HIT, chrono, MOMENT_EVERY_TICKS, RECHARGE_TICKS, REWIND_MOMENTS } f
 import { BURN_DAMAGE, inferno, PATCH_RADIUS, PATCH_TICKS } from './inferno.ts';
 import { GROWN_HIT, MAX_RADIUS, titan, titanRadius } from './titan.ts';
 import { HALF_RADIUS, slime } from './slime.ts';
+import { SHOT_TIMES } from './balloon.ts';
+import { banshee, WAIL_DAMAGE } from './banshee.ts';
+import { CRUSH_PER_TENTACLE, tentaclesFor } from './kraken.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -95,7 +98,9 @@ describe('the ball roster: identity rules', () => {
   it('Inferno’s fire is small and short-lived, and its own hits are the second lightest', () => {
     expect(PATCH_RADIUS).toBeLessThan(STORM_ZONE_RADIUS);
     expect(PATCH_TICKS).toBeLessThanOrEqual(150);
-    for (const ball of others(inferno.id).filter((other) => other.id !== archer.id)) {
+    // Of the balls that hit by bumping: the Banshee's bump is weaker, its hit is the wail (ADR 0075).
+    const lighter = [archer.id, banshee.id];
+    for (const ball of others(inferno.id).filter((other) => !lighter.includes(other.id))) {
       expect(inferno.contactDamage).toBeLessThan(ball.contactDamage);
     }
   });
@@ -150,8 +155,10 @@ describe('the ball roster: identity rules', () => {
     expect(vampire.hooks.onDamageDealt).toBeDefined();
   });
 
-  it('Archer has the lowest contact damage', () => {
-    for (const ball of others(archer.id)) {
+  it('Archer has the lowest contact damage of the balls that hit by bumping', () => {
+    // The Banshee's bump is weaker still: its hit is the wail, which nothing blocks (ADR 0075).
+    expect(banshee.contactDamage).toBeLessThan(archer.contactDamage);
+    for (const ball of others(archer.id).filter((other) => other.id !== banshee.id)) {
       expect(archer.contactDamage).toBeLessThan(ball.contactDamage);
     }
   });
@@ -203,7 +210,16 @@ describe('the ball roster: identity rules', () => {
       battery: 0,
       // Splitting deals nothing; its halves hit by contact.
       slime: 0,
+      // Floating only changes what lands on it.
+      balloon: 0,
+      banshee: WAIL_DAMAGE,
+      // The crush on a fully grown Titan, the widest ball.
+      kraken: CRUSH_PER_TENTACLE * tentaclesFor(MAX_RADIUS),
     };
+    // A shot that hits the Balloon harder (ADR 0075) stays under the strike too: the spear the most.
+    expect(Math.round(Math.max(SPEAR_DAMAGE, SHOT_DAMAGE, ARROW_DAMAGE) * SHOT_TIMES)).toBeLessThan(
+      ZONE_DAMAGE,
+    );
     expect(Object.keys(biggestHit).sort()).toStrictEqual(BALLS.map((ball) => ball.id).sort());
     for (const ball of others(storm.id)) {
       expect(ZONE_DAMAGE).toBeGreaterThan(biggestHit[ball.id] ?? Infinity);

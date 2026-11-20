@@ -8,6 +8,7 @@ import type { AbilityState, BallState, Vec2 } from '../sim/types.ts';
 import { BATCH_THREE_AND_FOUR } from './sections-late.ts';
 import { BATCH_FIVE } from './sections-batch-5.ts';
 import { BATCH_SIX } from './sections-batch-6.ts';
+import { BATCH_SEVEN } from './sections-batch-7.ts';
 import { TICK } from './tick.ts';
 
 export { TICK };
@@ -188,6 +189,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
   ...BATCH_THREE_AND_FOUR,
   ...BATCH_FIVE,
   ...BATCH_SIX,
+  ...BATCH_SEVEN,
   [
     'Heals (ADR 0028): a green wash and a swelling ring, sized by the heal; any ball',
     [

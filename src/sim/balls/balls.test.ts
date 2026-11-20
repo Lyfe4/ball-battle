@@ -31,6 +31,9 @@ import { hex } from './hex.ts';
 import { spider } from './spider.ts';
 import { battery } from './battery.ts';
 import { HALF_RADIUS, HALF_SPEED, slime } from './slime.ts';
+import { balloon } from './balloon.ts';
+import { banshee } from './banshee.ts';
+import { kraken } from './kraken.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -87,6 +90,10 @@ describe('the ball roster', () => {
       battery: battery.speed,
       // Its halves are quicker than it, and smaller (ADR 0060); two halves never touch.
       slime: slime.speed * HALF_SPEED,
+      balloon: balloon.speed,
+      banshee: banshee.speed,
+      // Anchoring and its grip only slow balls down (ADR 0075).
+      kraken: kraken.speed,
     };
     // The smallest a ball gets: only the Slime's halves are smaller than it starts.
     const smallest = (ball: BallDefinition) => (ball.id === slime.id ? HALF_RADIUS : ball.radius);

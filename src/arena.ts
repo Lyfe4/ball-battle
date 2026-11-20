@@ -14,6 +14,7 @@ import { MAX_FRAME_MS } from './app/fixed-step.ts';
 import { scaleFrame } from './app/speed.ts';
 import type { Tips } from './app/tips.ts';
 import { fitCanvasToContainer } from './render/canvas.ts';
+import { createDrift } from './render/drift.ts';
 import { drawWorld } from './render/draw.ts';
 import { createEffects } from './render/effects.ts';
 import { feelOf, wallBounces } from './render/impact.ts';
@@ -115,6 +116,7 @@ export function createArena(
   const effects = createEffects();
   const rewinds = createRewinds();
   const moments = createMoments();
+  const drift = createDrift();
   const sourceChips = createSourceChips();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let playback: Playback = startPlayback(initial, theme.introMs);
@@ -176,6 +178,7 @@ export function createArena(
     const drawn = interpolateWorld(playback.previous, world, interpolationAlpha(playback));
     const smears = smearsOf(drawnBefore, drawn, drawingFrameMs, reduced);
     drawnBefore = [...drawnBefore, drawn].slice(-theme.smearFrames);
+    drift.update(drawn, now, reduced);
     drawWorld(ctx, drawn, lookup, canvasView, {
       flash: (ballId) => effects.flash(ballId, now),
       heal: (ballId) => effects.heal(ballId, now),
@@ -193,6 +196,8 @@ export function createArena(
       rewinds: rewinds.trails(now),
       splits: moments.splits(now),
       snaps: moments.snaps(now),
+      pops: moments.pops(now),
+      drift: (ballId) => drift.of(ballId),
       smears,
       chips: sourceChips.chips(now),
       reducedMotion: reduced,

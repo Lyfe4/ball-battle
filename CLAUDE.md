@@ -215,9 +215,11 @@ Each line is a rule; its ADR has the reasoning.
   (nothing touches it, but it is still aimed at and pulled, ADR 0049); summoned objects are minions
   (`src/sim/minions/`); aimed attacks pick with `nearestTarget`, which includes enemy minions.
 - Taking less of a hit is `incomingDamageOf(self, amount, tick)`, applied on both damage paths and
-  shown by `hitReduced` (ADR 0045, 0047, 0049). Hitting harder is `contactDamageOf(self, stats)`,
-  never a `damage` action on hit (ADR 0015). A returning projectile uses `returnAfterTicks`; a zone
-  an enemy can set off declares a swept `trigger` (ADR 0043).
+  shown by `hitReduced` (ADR 0045, 0047, 0049); it may also take more (the Balloon's shots, a
+  damage event's `raised`), and an `unblockable` damage action skips it (the Banshee's wail, ADR
+  0075). A held ball (the Kraken's `held` status) cruises at `HELD_SHARE`. Hitting harder is
+  `contactDamageOf(self, stats)`, never a `damage` action on hit (ADR 0015). A returning projectile
+  uses `returnAfterTicks`; a zone an enemy can set off declares a swept `trigger` (ADR 0043).
 - Every ball uses `STANDARD_BALL_RADIUS`; the listed exceptions go through `radiusOf`: the Titan
   grows, the Slime's halves are smaller (ADR 0008, 0034, 0060).
 - A side can be more than one ball (a Slime's halves, ADR 0059): enemy checks read `sideOf`

@@ -51,6 +51,8 @@ export interface DamageEvent {
   readonly via?: DamageVia;
   /** What the target's own defence took off the hit before it landed (ADR 0045); absent if none. */
   readonly reduced?: number;
+  /** What the target's own defence added to the hit (the Balloon's shots, ADR 0075); absent if none. */
+  readonly raised?: number;
 }
 
 export interface HealedEvent {

@@ -1,7 +1,7 @@
 // Draws the moments tracked in moments.ts (ADR 0060). With reduced motion nothing flies: the split's
 // bridge and the snapped web just fade where they are.
 import type { WorldState } from '../sim/types.ts';
-import type { SnapMoment, SplitMoment } from './moments.ts';
+import type { PopMoment, SnapMoment, SplitMoment } from './moments.ts';
 import { theme } from './theme.ts';
 import { webFrame, webPath } from './webs.ts';
 
@@ -94,6 +94,46 @@ export function drawSnaps(
       ctx.stroke();
       ctx.restore();
     }
+    ctx.restore();
+  }
+}
+
+/**
+ * A shot popping into a Balloon (ADR 0075): short white bursts flying off where it struck, outward
+ * from the ball, over everything. With reduced motion they fade where they start.
+ */
+export function drawPops(
+  ctx: CanvasRenderingContext2D,
+  world: WorldState,
+  pops: readonly PopMoment[],
+  reducedMotion: boolean,
+): void {
+  for (const { ballId, point, progress: t } of pops) {
+    const ball = world.balls.find((other) => other.id === ballId);
+    if (ball === undefined) continue;
+    const dx = point.x - ball.position.x;
+    const dy = point.y - ball.position.y;
+    const length = Math.sqrt(dx * dx + dy * dy) || 1;
+    const out = Math.atan2(dy, dx);
+    const at = {
+      x: ball.position.x + (dx / length) * ball.radius,
+      y: ball.position.y + (dy / length) * ball.radius,
+    };
+    const fly = reducedMotion ? 0 : easeOut(t) * theme.popFlight;
+    ctx.save();
+    ctx.globalAlpha = 1 - t;
+    ctx.strokeStyle = theme.highlight;
+    ctx.lineWidth = theme.popWidth;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (const turn of [-0.7, 0, 0.7]) {
+      const ux = Math.cos(out + turn);
+      const uy = Math.sin(out + turn);
+      const from = theme.popGap + fly;
+      ctx.moveTo(at.x + ux * from, at.y + uy * from);
+      ctx.lineTo(at.x + ux * (from + theme.popLength), at.y + uy * (from + theme.popLength));
+    }
+    ctx.stroke();
     ctx.restore();
   }
 }

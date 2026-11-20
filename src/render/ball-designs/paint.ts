@@ -1,7 +1,7 @@
 // Painting a ball's design in its own frame: what the design is told (DesignView) and where it is
 // drawn (centred on the ball, turned to its heading). Used for the markings inside the ball and for
 // the few parts a design draws over the outline (`BallDesign.over`).
-import type { BallState, WorldState } from '../../sim/types.ts';
+import type { BallState, Vec2, WorldState } from '../../sim/types.ts';
 import { theme } from '../theme.ts';
 import { aimHeading, useSimpleDesign, velocityHeading } from './state.ts';
 import type { BallDesign, DesignView, Painter } from './types.ts';
@@ -12,6 +12,8 @@ export interface ViewLook {
   readonly heal: number;
   readonly cssPixelsPerUnit: number;
   readonly detail?: 'full' | 'simple';
+  /** How a floating ball drifts (drift.ts). */
+  readonly drift?: Vec2;
 }
 
 /** Which way a design faces, in the world it is drawn in. */
@@ -41,6 +43,7 @@ export function designView(
         : look.detail === 'simple',
     shotsOut: world.projectiles.filter((shot) => shot.ownerId === ball.id).length,
     minionsOut: world.minions.filter((minion) => minion.ownerId === ball.id).length,
+    ...(look.drift === undefined ? {} : { drift: look.drift }),
   };
 }
 

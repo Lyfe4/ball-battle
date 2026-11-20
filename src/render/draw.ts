@@ -28,8 +28,12 @@ import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 import { drawCurses } from './curse.ts';
 import { drawWebs } from './webs.ts';
-import { drawSnaps, drawSplits } from './draw-moments.ts';
-import type { SnapMoment, SplitMoment } from './moments.ts';
+import { drawPops, drawSnaps, drawSplits } from './draw-moments.ts';
+import type { PopMoment, SnapMoment, SplitMoment } from './moments.ts';
+import { STILL } from './drift.ts';
+import { drawShadows } from './shadows.ts';
+import { drawRipples, drawTentacles } from './tentacles.ts';
+import { drawWails } from './wails.ts';
 
 /** How big the canvas is: its backing store, and how large it appears on screen. */
 export interface CanvasView {
@@ -66,9 +70,12 @@ export interface FrameEffects {
   readonly rewinds: readonly RewindTrail[];
   /** Unseen damage just landed: who dealt it, beside the hit ball's bar (ADR 0036). */
   readonly chips: readonly SourceChip[];
-  /** Slimes splitting and webs snapping (ADR 0060). */
+  /** Slimes splitting and webs snapping (ADR 0060), shots popping into a Balloon (ADR 0075). */
   readonly splits: readonly SplitMoment[];
   readonly snaps: readonly SnapMoment[];
+  readonly pops: readonly PopMoment[];
+  /** How each floating ball drifts (drift.ts): its shadow trails it, its knot swings. */
+  readonly drift: (ballId: string) => Vec2;
   /** Slow frames only: each ball's path since the last frame (motion-smear.ts). */
   readonly smears: readonly Smear[];
   /** Holds animated details (a heal's swelling ring, a glance's shards, the chip's pop) still. */
@@ -94,6 +101,8 @@ export const NO_EFFECTS: FrameEffects = {
   chips: [],
   splits: [],
   snaps: [],
+  pops: [],
+  drift: () => STILL,
   smears: [],
   reducedMotion: false,
 };
@@ -127,6 +136,9 @@ export function drawWorld(
   drawZones(ctx, world, definitions);
   drawWebs(ctx, world);
   drawSnaps(ctx, world, effects.snaps, effects.reducedMotion);
+  drawRipples(ctx, world, effects.reducedMotion);
+  drawWails(ctx, world, effects.reducedMotion);
+  drawShadows(ctx, world, effects.drift);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(
@@ -173,6 +185,7 @@ export function drawWorld(
         design,
         cssPixelsPerUnit,
         phased,
+        drift: effects.drift(ball.id),
       });
     });
     if (ball.health > 0) {
@@ -183,6 +196,7 @@ export function drawWorld(
       drawGlance(ctx, ball, effects.glance(ball.id), effects.reducedMotion);
     }
   });
+  drawTentacles(ctx, world);
   drawCurses(ctx, world, effects.reducedMotion);
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);
@@ -191,6 +205,7 @@ export function drawWorld(
   drawSparks(ctx, effects.sparks);
   drawStrikes(ctx, world, effects.strikes);
   drawParticles(ctx, effects.particles);
+  drawPops(ctx, world, effects.pops, effects.reducedMotion);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
@@ -244,6 +259,8 @@ export interface BallLook {
   readonly detail?: 'full' | 'simple';
   /** Phased (ADR 0026, 0049): drawn see-through with a broken outline. */
   readonly phased?: boolean;
+  /** How a floating ball drifts (drift.ts): its knot swings with it. */
+  readonly drift?: Vec2;
 }
 
 /**

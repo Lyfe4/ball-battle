@@ -16,6 +16,7 @@ import { getDefinition } from '../sim/definitions.ts';
 import type { BallState, Vec2, WorldState } from '../sim/types.ts';
 import { createWorld } from '../sim/world.ts';
 import { batchFiveExtras, batchFourExtras, batchSixState } from './arena-extras.ts';
+import { batchSevenState } from './sections-batch-7.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { HALF_RADIUS } from '../sim/balls/slime.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
@@ -148,7 +149,8 @@ function phoneArena(): HTMLElement {
           ? Math.round(getDefinition(BALL_LOOKUP, 'berserker').maxHealth * 0.3)
           : ball.health,
     }))
-    .map((ball, _index, all) => batchSixState(ball, all));
+    .map((ball, _index, all) => batchSixState(ball, all))
+    .map((ball, _index, all) => batchSevenState(ball, all));
   // A Slime split in two (ADR 0060): the half beside it, smaller, on its side.
   const slime = balls.find((ball) => ball.definitionId === 'slime');
   if (slime !== undefined) {

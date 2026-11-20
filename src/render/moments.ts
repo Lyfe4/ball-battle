@@ -1,5 +1,5 @@
-// Two short moments on effect time (ADR 0007, 0060): a Slime splitting (from the sim's `split`
-// event) and a Spider's web snapping when it catches a ball (read from consecutive worlds, as wall
+// Short moments on effect time (ADR 0007, 0060, 0075): a Slime splitting (from the sim's `split`
+// event), a shot popping into a Balloon (a projectile hit its defence raised) and a Spider's web snapping when it catches a ball (read from consecutive worlds, as wall
 // bounces are, since a web's end is ability state, not an event). Render-only: it reads the sim and
 // never touches it.
 import { WEB_HALF_LENGTH, websOf, type Web } from '../sim/balls/spider.ts';
@@ -22,10 +22,32 @@ export interface SnapMoment {
   readonly progress: number;
 }
 
+/** A shot that hit harder for the ball's defence (the Balloon's pop): where it struck, 0 to 1. */
+export interface PopMoment {
+  readonly ballId: string;
+  /** Where the shot's centre touched the ball. */
+  readonly point: Vec2;
+  readonly progress: number;
+}
+
+/** The shots this tick that a defence made hit harder, at the point each struck. */
+export function poppedShots(events: readonly SimEvent[]): { ballId: string; point: Vec2 }[] {
+  const pops: { ballId: string; point: Vec2 }[] = [];
+  for (const event of events) {
+    if (event.type !== 'damage' || event.via !== 'projectile' || (event.raised ?? 0) <= 0) continue;
+    const hit = events.find(
+      (other) => other.type === 'projectileHit' && other.targetId === event.targetId,
+    );
+    if (hit?.type === 'projectileHit') pops.push({ ballId: event.targetId, point: hit.point });
+  }
+  return pops;
+}
+
 export interface Moments {
   apply(events: readonly SimEvent[], previous: WorldState, next: WorldState, nowMs: number): void;
   splits(nowMs: number): readonly SplitMoment[];
   snaps(nowMs: number): readonly SnapMoment[];
+  pops(nowMs: number): readonly PopMoment[];
   isActive(nowMs: number): boolean;
   reset(): void;
 }
@@ -67,6 +89,7 @@ export function snappedWebs(
 export function createMoments(): Moments {
   let splits: (Omit<SplitMoment, 'progress'> & { readonly startMs: number })[] = [];
   let snaps: (Omit<SnapMoment, 'progress'> & { readonly startMs: number })[] = [];
+  let pops: (Omit<PopMoment, 'progress'> & { readonly startMs: number })[] = [];
   const progressOf = (startMs: number, nowMs: number, durationMs: number): number =>
     Math.max(0, (nowMs - startMs) / durationMs);
   return {
@@ -77,6 +100,7 @@ export function createMoments(): Moments {
         splits.push({ ballId, newBallId, from: [position, newPosition], startMs: nowMs });
       }
       for (const snap of snappedWebs(previous, next)) snaps.push({ ...snap, startMs: nowMs });
+      for (const pop of poppedShots(events)) pops.push({ ...pop, startMs: nowMs });
     },
     splits(nowMs) {
       splits = splits.filter(({ startMs }) => progressOf(startMs, nowMs, theme.splitMs) < 1);
@@ -92,15 +116,24 @@ export function createMoments(): Moments {
         progress: progressOf(startMs, nowMs, theme.webSnapMs),
       }));
     },
+    pops(nowMs) {
+      pops = pops.filter(({ startMs }) => progressOf(startMs, nowMs, theme.popMs) < 1);
+      return pops.map(({ startMs, ...pop }) => ({
+        ...pop,
+        progress: progressOf(startMs, nowMs, theme.popMs),
+      }));
+    },
     isActive(nowMs) {
       return (
         splits.some(({ startMs }) => progressOf(startMs, nowMs, theme.splitMs) < 1) ||
-        snaps.some(({ startMs }) => progressOf(startMs, nowMs, theme.webSnapMs) < 1)
+        snaps.some(({ startMs }) => progressOf(startMs, nowMs, theme.webSnapMs) < 1) ||
+        pops.some(({ startMs }) => progressOf(startMs, nowMs, theme.popMs) < 1)
       );
     },
     reset() {
       splits = [];
       snaps = [];
+      pops = [];
     },
   };
 }

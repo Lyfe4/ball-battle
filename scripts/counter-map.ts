@@ -128,34 +128,26 @@ function allow(
 }
 
 /**
- * The balls off the strong-only shape today (ruleset 21, ADR 0073, 0074), each allowed exactly its
- * gap (strong wins / losses) and no wider: a ball slipping one more step fails, and a ball moving
- * back towards the shape still passes, so its allowance can then be tightened.
+ * The balls off the strong-only shape today (ruleset 22, ADR 0073, 0074, 0075), each allowed
+ * exactly its gap (strong wins / losses) and no wider: a ball slipping one more step fails, and a
+ * ball moving back towards the shape still passes, so its allowance can then be tightened.
  *
- * All ten wait for ability tweaks or new balls: one-number changes move a ball's whole row (ADR
- * 0010, 0028, 0045), and the three-levels proposal's search plateaued with these still off.
- * - Titan 0/0: growing evens its fights out, weak early and strong late, so no pair leans far.
- * - Ghost 2/1: phased, nothing touches it, so only the Bloom's regrowth beats it outright.
- * - Quake 2/0: small, wide shockwaves chip every ball alike, so no ball beats it outright.
+ * All six wait for ability tweaks or new balls: one-number changes move a ball's whole row (ADR
+ * 0010, 0028, 0045), and round 8 of new balls (ADR 0075) closed the other five.
+ * - Titan 1/1: growing evens its fights out; only the Kraken's tentacles and the wail lean far.
+ * - Quake 2/1: small, wide shockwaves chip every ball alike; only the floating Balloon shrugs them.
+ * - Spider 1/3: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
  * - Slime 1/0: its split outlasts one-at-a-time hitters; it beats only the Sniper, and none beat it.
- * - Spider 1/2: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
- * - Spartan 1/2: shield and spear trade evenly with most; only the frail Vampire loses outright.
- * - Sniper 1/2: a moving ball often slips its line; only the slow Thorns loses outright.
- * - Inferno 2/1: fire burns every ball alike; only the Berserker, raged by each burn, beats it.
- * - Boomerang 2/4: two light hits a throw beat the Vampire and Bloom; four punish its light bumps.
- * - Vampire 2/5: it heals only from its bumps, so five balls that hit without a touch beat it.
+ * - Vampire 2/7: it heals only from its bumps, so seven balls that hit without a touch beat it.
+ * - Archer 5/3: arrows outrange every frail or slow ball; the Balloon and Banshee add two.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  titan: allow('titan', { wins: { fewest: 0 }, losses: { fewest: 0 } }),
-  ghost: allow('ghost', { losses: { fewest: 1 } }),
-  quake: allow('quake', { losses: { fewest: 0 }, within: 2 }),
+  titan: allow('titan', { wins: { fewest: 1 }, losses: { fewest: 1 } }),
+  quake: allow('quake', { losses: { fewest: 1 } }),
+  spider: allow('spider', { wins: { fewest: 1 }, within: 2 }),
   slime: allow('slime', { wins: { fewest: 1 }, losses: { fewest: 0 } }),
-  spider: allow('spider', { wins: { fewest: 1 } }),
-  spartan: allow('spartan', { wins: { fewest: 1 } }),
-  sniper: allow('sniper', { wins: { fewest: 1 } }),
-  inferno: allow('inferno', { losses: { fewest: 1 } }),
-  boomerang: allow('boomerang', { within: 2 }),
-  vampire: allow('vampire', { losses: { most: 5 }, within: 3 }),
+  vampire: allow('vampire', { losses: { most: 7 }, within: 5 }),
+  archer: allow('archer', { wins: { most: 5 }, within: 2 }),
 };
 
 /**

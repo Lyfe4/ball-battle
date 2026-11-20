@@ -327,12 +327,13 @@
   }
 
   /*
-   * Slightly tighter cards in the Strong vs and Weak vs columns, so a ball with six counters (the
-   * Speedster) still fits a 1280 x 800 screen (ADR 0034). The phone keeps its spacing.
+   * Slightly tighter cards in the Strong vs and Weak vs columns, so a ball with seven strong
+   * counters (the Vampire's Weak vs) still fits a 1280 x 800 screen (ADR 0034, 0075). The phone
+   * keeps its spacing.
    */
   .ball-detail-strong-group .ball-detail-matchups,
   .ball-detail-weak-group .ball-detail-matchups {
-    gap: 5px;
+    gap: 4px;
   }
 
   .ball-detail-strong-group .ball-detail-row,
@@ -341,11 +342,21 @@
   }
 
   /*
-   * An edge's line is compact here (ADR 0073): its name and mark, its reason the mark's tooltip, so
-   * ten lines (the Vampire's Strong vs) still fit 800 high. A phone shows every reason.
+   * An edge's line is compact here (ADR 0073): its name and mark, its reason the mark's tooltip,
+   * on a line of its own just tall enough for its icon, so the longest columns at 28 balls (the
+   * Archer's Strong vs: five strong counters and six edges; the Necromancer's Weak vs: two and
+   * eleven) still fit 800 high (ADR 0075). A phone shows every reason.
    */
   .ball-detail-row[data-level='edge'] .ball-detail-reason {
     display: none;
+  }
+
+  .ball-detail-matchups > .ball-detail-row[data-level='edge'] {
+    padding-block: 0;
+  }
+
+  .ball-detail-matchups > .ball-detail-row[data-level='edge'] .ball-detail-opponent {
+    min-height: 28px;
   }
 
   /* A pointer needs no 44 px target: ten rows still fit 800 high. */

@@ -1,7 +1,7 @@
 // Home's Resume series (ADR 0046), through the real page in a frame it can reload (ADR 0042): with a
 // series held, home's main button resumes it in one tap and says its format and score; a reload
 // keeps it; "New series" beside it forgets it and opens Reveal's lineup, after which home plays
-// again, reload or not. The series is pinned (fixed-seed.ts): seed 1365 at Normal draws round 1, so
+// again, reload or not. The series is pinned (fixed-seed.ts): seed 409 at Normal draws round 1, so
 // the flow also proves a drawn round is replayed before home offers to resume.
 import { expect } from 'vitest';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
@@ -99,8 +99,8 @@ async function holdAfterRound1(framed: Framed): Promise<string> {
   return score;
 }
 
-/** Seed 1365 at Normal (ruleset 21): round 1 (Storm against the bot’s Spider) is a draw, then replayed. */
-const DRAWN_ROUND_1 = 1365;
+/** Seed 409 at Normal (ruleset 22): round 1 (Storm against the bot’s Balloon) is a draw, then replayed. */
+const DRAWN_ROUND_1 = 409;
 
 export async function runHomeResumeFlow(): Promise<void> {
   window.localStorage.setItem(SPEED_STORAGE_KEY, '2');
