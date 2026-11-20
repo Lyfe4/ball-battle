@@ -1,6 +1,7 @@
 # 0009: Status effects
 
 - Status: Accepted
+- Amended by: ADR 0075 (a third status, held: the Kraken's grip)
 - Date: 2026-11-04
 - Amended by: ADR 0045 (the `shocked` status and its heal cut are removed; slowed, poisoned and
   shielded remain)

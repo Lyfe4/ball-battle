@@ -1,6 +1,7 @@
 # 0045: The roster redesign
 
 - Status: Accepted (all four groups shipped; group 4 with named gaps, see below)
+- Amended by: ADR 0075 (a defence may raise a hit; a hit may be unblockable; the shape exceptions)
 - Date: 2026-11-08
 - Amends: ADR 0009 (no shock), ADR 0010 and 0028 (one counter band, group 4), ADR 0016 (no numbed rage,
   no stagger), ADR 0028 and 0041 (no interaction rules, no spark)

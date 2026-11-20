@@ -4,7 +4,7 @@
   (draft PR #92, closed unmerged; `docs/sound-proposal/README.md` there), then built on `main` in
   PR #95.
 - Date: 2026-11-18
-- Amended by: ADR 0070 (every control sounds: a soft press, Back steps down; key moments keep their tap)
+- Amended by: ADR 0070 (every control sounds: a soft press, Back steps down; key moments keep their tap); ADR 0075 (seven sounds for the Balloon, Banshee and Kraken)
 - Amends: ADR 0040 (settings: a Sound row beside Speed)
 - Builds on: ADR 0007 (presentation time: sound reads the arena's ticks the way effects do), ADR
   0053 and 0054 (live fights and their server-timed countdown), ADR 0061 (the coin toss), ADR 0063
