@@ -3,7 +3,7 @@ import { defineBall } from '../define-ball.ts';
 import { secondsOf } from './how-it-works.ts';
 
 /** How much the Titan's radius grows each tick, in world units. */
-export const GROWTH_PER_TICK = 0.06;
+export const GROWTH_PER_TICK = 0.07;
 /** The largest it grows. */
 export const MAX_RADIUS = 90;
 /** How many times its base contact damage it hits for at MAX_RADIUS, rising in step with its size. */

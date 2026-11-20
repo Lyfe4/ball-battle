@@ -10,7 +10,7 @@ export type ArcherState = Readonly<{ nextShotTick: number }>;
 /** The first shot comes on this tick, so a match doesn't open with an instant hit. */
 export const FIRST_SHOT_DELAY_TICKS = 30;
 /** Ticks between shots. */
-export const COOLDOWN_TICKS = 120;
+export const COOLDOWN_TICKS = 110;
 /** World units per second. */
 export const ARROW_SPEED = 1650;
 export const ARROW_RADIUS = 6;
@@ -74,7 +74,7 @@ export function leadTarget(
 export const archer = defineBall<ArcherState>({
   id: 'archer',
   name: 'Archer',
-  description: 'Leads an arrow every 2 s; frail up close.',
+  description: 'Leads an arrow every 1.8 s; frail up close.',
   color: '#22d3ee',
   ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' } },
   howItWorks: [

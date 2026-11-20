@@ -24,24 +24,24 @@ describe('intendedGroup', () => {
   it('reads the counter map’s level from either side', () => {
     expect(intendedGroup('thorns', 'brawler')).toBe('strong');
     expect(intendedGroup('brawler', 'thorns')).toBe('weak');
-    expect(intendedGroup('archer', 'thorns')).toBe('edge');
-    expect(intendedGroup('thorns', 'archer')).toBe('edged');
+    expect(intendedGroup('storm', 'thorns')).toBe('edge');
+    expect(intendedGroup('thorns', 'storm')).toBe('edged');
     expect(intendedGroup('brawler', 'storm')).toBe('even');
   });
 });
 
 describe('summarise', () => {
-  // Thorns is a strong counter to the Brawler; the Archer has an edge on Thorns; the Brawler and
-  // the Archer are even.
+  // Thorns is a strong counter to the Brawler; the Storm has an edge on Thorns; the Brawler and
+  // the Storm are even.
   const balls = [
     { id: 'brawler', name: 'Brawler' },
     { id: 'thorns', name: 'Thorns' },
-    { id: 'archer', name: 'Archer' },
+    { id: 'storm', name: 'Storm' },
   ];
   const pairs = [
     { x: 'brawler', y: 'thorns', xRate: 0.3, yRate: 0.69 },
-    { x: 'brawler', y: 'archer', xRate: 0.5, yRate: 0.49 },
-    { x: 'thorns', y: 'archer', xRate: 0.38, yRate: 0.61 },
+    { x: 'brawler', y: 'storm', xRate: 0.5, yRate: 0.49 },
+    { x: 'thorns', y: 'storm', xRate: 0.38, yRate: 0.61 },
   ];
   const [brawler, thorns] = summarise(balls, () => 0.5, pairs);
 
@@ -56,7 +56,7 @@ describe('summarise', () => {
     // The gap counts strong counters only: Thorns is one up.
     expect(thorns?.measured.gap).toBe(1);
     expect(thorns?.beats.map((m) => m.opponent)).toStrictEqual(['brawler']);
-    expect(thorns?.edgedBy.map((m) => m.opponent)).toStrictEqual(['archer']);
+    expect(thorns?.edgedBy.map((m) => m.opponent)).toStrictEqual(['storm']);
   });
 
   it(`warns when strong wins and losses differ by ${String(LOPSIDED_GAP)} or more`, () => {
@@ -93,7 +93,7 @@ describe('summarise', () => {
     expect(markdown).toContain('| Thorns | 50.0% | 1 (69.0%) | 0 | 0 | 1 (38.0%) | 0 | +1 |');
     expect(markdown).toContain('`pnpm balance:summary`');
     expect(markdown).toContain('## Off the aim\n');
-    expect(markdown).toContain('| Thorns | Brawler 69.0% | - | Archer 38.0% | - |');
+    expect(markdown).toContain('| Thorns | Brawler 69.0% | - | Storm 38.0% | - |');
     expect(markdown).toContain('| Brawler | - | - | - | Thorns 30.0% |');
     expect(markdown).toContain('None.');
   });

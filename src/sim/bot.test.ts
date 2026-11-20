@@ -207,8 +207,8 @@ describe('the bot model', () => {
     expect(seriesValue({ ...base, wins: 1, losses: 1 }, 'bot')).toBe(0.7);
     const swapped = { ...base, own: ['brawler'], opponent: ['thorns'], wins: 1, losses: 1 };
     expect(seriesValue(swapped, 'bot')).toBeCloseTo(0.3, 12);
-    // The Archer has an edge on Thorns: 60%.
-    const edge = { ...base, own: ['archer'], opponent: ['thorns'], wins: 1, losses: 1 };
+    // The Storm has an edge on Thorns: 60%.
+    const edge = { ...base, own: ['storm'], opponent: ['thorns'], wins: 1, losses: 1 };
     expect(seriesValue(edge, 'bot')).toBe(0.6);
   });
 });

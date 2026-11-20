@@ -36,8 +36,10 @@ describe('moments (ADR 0060)', () => {
           event.sourceId === 'ball-0' &&
           event.status === 'slowed',
       );
-      // A web snaps on a catch (the slow is the catch), and only then.
-      if (snapped.length > 0) expect(slowed).toBe(true);
+      // A web snaps on a catch (the slow is the catch), and only then. A catch whose nip knocks
+      // the ball out slows nothing: the match ends on that tick.
+      const knockedOut = events.some((event) => event.type === 'matchEnded');
+      if (snapped.length > 0) expect(slowed || knockedOut).toBe(true);
       if (slowed) expect(snapped.length).toBeGreaterThan(0);
       const [owner] = next.balls;
       const now = owner === undefined ? [] : (websOf(owner) ?? []);

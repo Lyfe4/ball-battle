@@ -30,8 +30,10 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'brawler',
     y: 'frost',
-    intended: 'even',
-    reason: 'No tricks either way: plain hits decide it.',
+    intended: 'y',
+    level: 'edge',
+    reason:
+      'Plain bumps both ways, and the Frost’s bigger health outlasts the Brawler’s harder ones.',
   },
   {
     x: 'thorns',

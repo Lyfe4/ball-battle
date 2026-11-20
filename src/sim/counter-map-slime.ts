@@ -18,8 +18,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'speedster',
-    intended: 'even',
-    reason: 'Quick halves keep up with its speed, but only just: even.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Quick halves keep up with its speed, and two bodies take two rushes to finish.',
   },
   {
     x: 'slime',
@@ -32,7 +33,7 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
     x: 'slime',
     y: 'archer',
     intended: 'x',
-    level: 'strong',
+    level: 'edge',
     reason: 'An arrow finishes one half at most; the other is already on it.',
   },
   {
@@ -96,8 +97,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'Skulls chase one half while the other bumps: even.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Skulls chase one half while the other bumps the Necromancer hard.',
   },
   {
     x: 'slime',
@@ -132,8 +134,9 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'spartan',
-    intended: 'even',
-    reason: 'The spear finishes one half; the shield holds off the other: even.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'The spear finishes one half, while the other bumps the frail Spartan.',
   },
   {
     x: 'slime',

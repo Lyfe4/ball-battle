@@ -46,9 +46,8 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'frost',
     y: 'boomerang',
-    intended: 'y',
-    level: 'edge',
-    reason: 'The slow Frost is easy to hit going out and again coming back.',
+    intended: 'even',
+    reason: 'The slow Frost is easy to hit going out and back, but its big health holds out: even.',
   },
   {
     x: 'magnet',
@@ -80,8 +79,10 @@ export const RULES_OUT_BOOMERANG_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'boomerang',
-    intended: 'even',
-    reason: 'Its throws land while the Titan is small; once grown, its bumps win: it evens out.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Its throws land while the Titan is small, but it grows big fast and its bumps then win.',
   },
   {
     x: 'venom',

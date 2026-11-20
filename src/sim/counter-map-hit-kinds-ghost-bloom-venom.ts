@@ -19,10 +19,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'speedster',
-    intended: 'x',
-    level: 'edge',
-    reason:
-      'Rushes are rare enough that it regrows between them, and its bumps outhit the plain ones.',
+    intended: 'even',
+    reason: 'Rushes shut the bud often, but its hard bumps win back what they cost: even.',
   },
   {
     x: 'bloom',
@@ -54,14 +52,16 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'The skeleton’s bites restart the wait, but they are small: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'The skeleton’s bites restart the wait, but they are small, and its own bumps are hard.',
   },
   {
     x: 'bloom',
     y: 'titan',
     intended: 'y',
-    level: 'strong',
+    level: 'edge',
     reason: 'Its late bumps grow bigger than anything the Bloom regrows between them.',
   },
   {
@@ -76,7 +76,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     y: 'bomber',
     intended: 'y',
     level: 'edge',
-    reason: 'A blast takes half its health and shuts the bud, more than it regrows between bombs.',
+    reason:
+      'A blast takes over half its health and shuts the bud, more than it regrows between bombs.',
   },
   {
     x: 'venom',
@@ -87,8 +88,9 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'speedster',
-    intended: 'even',
-    reason: 'Every rush poisons the Speedster, and the rush hits harder.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Every rush poisons the Speedster, and the ticks add up to more than the rush took.',
   },
   {
     x: 'venom',
@@ -100,8 +102,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
     x: 'venom',
     y: 'thorns',
     intended: 'x',
-    level: 'edge',
-    reason: 'Poison never touches the spikes and its bumps are light: the spikes barely bite.',
+    level: 'strong',
+    reason: 'Poison never touches the spikes, and its light bumps barely feel them.',
   },
   {
     x: 'venom',
@@ -112,8 +114,9 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'venom',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'Skeletons bite while the poison works: plain trades decide it.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Poison ticks on the Necromancer while its skeleton bites only now and then.',
   },
   {
     x: 'venom',

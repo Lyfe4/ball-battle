@@ -20,10 +20,8 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'speedster',
-    intended: 'x',
-    level: 'edge',
-    reason:
-      'Its bumps outweigh the Speedster’s plain ones, and a rush adds too little to swing it.',
+    intended: 'even',
+    reason: 'Its bumps outweigh the Speedster’s plain ones, but a stacked rush hits harder: even.',
   },
   {
     x: 'chrono',
@@ -80,7 +78,7 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'bloom',
     intended: 'y',
-    level: 'edge',
-    reason: 'Bumps only, and slow: the Bloom gets its 2 s alone again and again.',
+    level: 'strong',
+    reason: 'Bumps only, and slow: the Bloom gets its 2 s alone again and again, and regrows.',
   },
 ];

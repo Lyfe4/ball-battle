@@ -14,7 +14,7 @@ export const HALF_RADIUS = 30;
 /** Each half cruises at this multiple of the Slime's speed... */
 export const HALF_SPEED = 1.2;
 /** ... and bumps for this share of its bump. */
-export const HALF_BUMP = 0.8;
+export const HALF_BUMP = 0.85;
 /** How far apart the halves' centres start. */
 export const HALF_SPREAD = 30;
 

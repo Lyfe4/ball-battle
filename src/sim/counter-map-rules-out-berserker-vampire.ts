@@ -174,15 +174,15 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'vampire',
     y: 'bomber',
     intended: 'y',
-    level: 'edge',
-    reason: 'A blast takes two thirds of its small health, and a blast heals it nothing.',
+    level: 'strong',
+    reason: 'A blast takes three quarters of its small health, and a blast heals it nothing.',
   },
   {
     x: 'vampire',
     y: 'boomerang',
     intended: 'y',
-    level: 'edge',
-    reason: 'The boomerang never touches it, so it has nothing to drink, and its health is small.',
+    level: 'strong',
+    reason: 'The boomerang never touches it, so it drinks nothing, and its small health goes fast.',
   },
   {
     x: 'vampire',
@@ -200,10 +200,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'speedster',
-    intended: 'x',
-    level: 'edge',
-    reason:
-      'Its hard bumps drink back most of each rush, and the plain bumps between barely dent it.',
+    intended: 'even',
+    reason: 'Its bumps drink back much of each rush, but the stacked rushes still land hard: even.',
   },
   {
     x: 'vampire',

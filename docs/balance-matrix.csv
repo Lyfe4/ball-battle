@@ -1,301 +1,301 @@
 ruleset,ball_a,ball_b,a_win_pct,b_win_pct,draw_pct,fights,counter_map,band,band_note
-20,Brawler,Speedster,53.8,46.1,0.1,1000,even,pass,
-20,Brawler,Vampire,49.1,50.6,0.3,1000,even,pass,
-20,Brawler,Archer,45.8,54.1,0.1,1000,even,pass,
-20,Brawler,Storm,48.5,51.4,0.1,1000,even,pass,
-20,Brawler,Frost,45.2,53.7,1.1,1000,even,pass,
-20,Brawler,Thorns,24.7,75.2,0.1,1000,B strong,warn,off the aim
-20,Brawler,Venom,46.8,52.8,0.4,1000,even,pass,
-20,Brawler,Berserker,54.9,44.1,1.0,1000,even,pass,
-20,Brawler,Sniper,42.8,56.5,0.7,1000,even,warn,off the aim
-20,Brawler,Quake,50.0,49.1,0.9,1000,even,pass,
-20,Brawler,Magnet,54.5,43.4,2.1,1000,even,pass,
-20,Brawler,Ghost,48.8,50.7,0.5,1000,even,pass,
-20,Brawler,Necromancer,50.8,49.0,0.2,1000,even,pass,
-20,Brawler,Chrono,50.8,47.4,1.8,1000,even,pass,
-20,Brawler,Titan,46.8,51.6,1.6,1000,even,pass,
-20,Brawler,Inferno,45.9,53.5,0.6,1000,even,pass,
-20,Brawler,Boomerang,44.2,55.7,0.1,1000,even,warn,off the aim
-20,Brawler,Bomber,44.2,55.8,0.0,1000,even,warn,off the aim
-20,Brawler,Spartan,47.2,52.0,0.8,1000,even,pass,
-20,Brawler,Bloom,43.9,55.8,0.3,1000,even,warn,off the aim
-20,Brawler,Hex,44.6,55.2,0.2,1000,even,warn,off the aim
-20,Brawler,Spider,43.7,55.7,0.6,1000,even,warn,off the aim
-20,Brawler,Battery,54.8,44.1,1.1,1000,even,pass,
-20,Brawler,Slime,51.2,48.3,0.5,1000,even,pass,
-20,Speedster,Vampire,40.9,59.0,0.1,1000,B edge,pass,
-20,Speedster,Archer,71.0,28.8,0.2,1000,A strong,pass,
-20,Speedster,Storm,56.9,42.8,0.3,1000,even,warn,off the aim
-20,Speedster,Frost,29.3,70.2,0.5,1000,B strong,pass,
-20,Speedster,Thorns,43.1,56.2,0.7,1000,even,warn,off the aim
-20,Speedster,Venom,42.2,57.2,0.6,1000,even,warn,off the aim
-20,Speedster,Berserker,42.9,56.7,0.4,1000,even,warn,off the aim
-20,Speedster,Sniper,64.0,35.8,0.2,1000,A edge,pass,
-20,Speedster,Quake,42.2,56.3,1.5,1000,even,warn,off the aim
-20,Speedster,Magnet,41.2,58.8,0.0,1000,B edge,warn,off the aim
-20,Speedster,Ghost,43.7,56.2,0.1,1000,even,warn,off the aim
-20,Speedster,Necromancer,46.8,52.0,1.2,1000,even,pass,
-20,Speedster,Chrono,38.1,61.2,0.7,1000,B edge,pass,
-20,Speedster,Titan,39.4,60.4,0.2,1000,B edge,pass,
-20,Speedster,Inferno,58.0,41.9,0.1,1000,A edge,warn,off the aim
-20,Speedster,Boomerang,67.0,32.7,0.3,1000,A strong,warn,off the aim
-20,Speedster,Bomber,36.7,63.1,0.2,1000,B edge,pass,
-20,Speedster,Spartan,56.1,43.4,0.5,1000,even,warn,off the aim
-20,Speedster,Bloom,41.0,58.6,0.4,1000,B edge,warn,off the aim
-20,Speedster,Hex,33.4,65.1,1.5,1000,B strong,warn,off the aim
-20,Speedster,Spider,24.4,74.9,0.7,1000,B strong,pass,
-20,Speedster,Battery,47.7,52.2,0.1,1000,even,pass,
-20,Speedster,Slime,42.4,57.1,0.5,1000,even,warn,off the aim
-20,Vampire,Archer,33.2,66.4,0.4,1000,B strong,warn,off the aim
-20,Vampire,Storm,26.1,73.7,0.2,1000,B strong,pass,
-20,Vampire,Frost,59.9,39.4,0.7,1000,A edge,pass,
-20,Vampire,Thorns,60.4,38.5,1.1,1000,A edge,pass,
-20,Vampire,Venom,52.8,46.9,0.3,1000,even,pass,
-20,Vampire,Berserker,75.0,24.4,0.6,1000,A strong,pass,
-20,Vampire,Sniper,43.8,56.0,0.2,1000,even,warn,off the aim
-20,Vampire,Quake,56.3,43.5,0.2,1000,even,warn,off the aim
-20,Vampire,Magnet,56.6,42.8,0.6,1000,even,warn,off the aim
-20,Vampire,Ghost,47.5,52.0,0.5,1000,even,pass,
-20,Vampire,Necromancer,52.1,47.6,0.3,1000,even,pass,
-20,Vampire,Chrono,61.6,37.1,1.3,1000,A edge,pass,
-20,Vampire,Titan,59.0,40.4,0.6,1000,A edge,pass,
-20,Vampire,Inferno,46.9,53.0,0.1,1000,even,pass,
-20,Vampire,Boomerang,36.7,63.2,0.1,1000,B edge,pass,
-20,Vampire,Bomber,38.4,61.5,0.1,1000,B edge,pass,
-20,Vampire,Spartan,27.1,72.7,0.2,1000,B strong,pass,
-20,Vampire,Bloom,60.2,39.0,0.8,1000,A edge,pass,
-20,Vampire,Hex,75.5,24.4,0.1,1000,A strong,warn,off the aim
-20,Vampire,Spider,50.5,49.1,0.4,1000,even,pass,
-20,Vampire,Battery,59.6,38.1,2.3,1000,A edge,pass,
-20,Vampire,Slime,63.7,35.4,0.9,1000,A edge,pass,
-20,Archer,Storm,48.1,51.8,0.1,1000,even,pass,
-20,Archer,Frost,59.0,40.6,0.4,1000,A edge,pass,
-20,Archer,Thorns,62.2,37.6,0.2,1000,A edge,pass,
-20,Archer,Venom,43.9,55.8,0.3,1000,even,warn,off the aim
-20,Archer,Berserker,35.5,64.5,0.0,1000,B edge,warn,off the aim
-20,Archer,Sniper,51.8,48.1,0.1,1000,even,pass,
-20,Archer,Quake,48.7,51.2,0.1,1000,even,pass,
-20,Archer,Magnet,24.4,75.5,0.1,1000,B strong,warn,off the aim
-20,Archer,Ghost,47.8,52.0,0.2,1000,even,pass,
-20,Archer,Necromancer,26.5,73.3,0.2,1000,B strong,pass,
-20,Archer,Chrono,58.8,40.6,0.6,1000,A edge,warn,off the aim
-20,Archer,Titan,38.9,61.0,0.1,1000,B edge,pass,
-20,Archer,Inferno,52.5,46.9,0.6,1000,even,pass,
-20,Archer,Boomerang,47.3,52.4,0.3,1000,even,pass,
-20,Archer,Bomber,46.9,53.0,0.1,1000,even,pass,
-20,Archer,Spartan,52.6,47.4,0.0,1000,even,pass,
-20,Archer,Bloom,73.8,25.9,0.3,1000,A strong,pass,
-20,Archer,Hex,59.7,40.1,0.2,1000,A edge,pass,
-20,Archer,Spider,62.9,36.7,0.4,1000,A edge,pass,
-20,Archer,Battery,48.1,51.8,0.1,1000,even,pass,
-20,Archer,Slime,31.2,68.2,0.6,1000,B strong,pass,
-20,Storm,Frost,52.9,46.8,0.3,1000,even,pass,
-20,Storm,Thorns,54.8,44.9,0.3,1000,even,pass,
-20,Storm,Venom,49.4,49.7,0.9,1000,even,pass,
-20,Storm,Berserker,43.3,56.6,0.1,1000,even,warn,off the aim
-20,Storm,Sniper,47.4,52.2,0.4,1000,even,pass,
-20,Storm,Quake,50.8,49.1,0.1,1000,even,pass,
-20,Storm,Magnet,45.3,54.6,0.1,1000,even,pass,
-20,Storm,Ghost,49.4,50.5,0.1,1000,even,pass,
-20,Storm,Necromancer,55.9,43.7,0.4,1000,even,warn,off the aim
-20,Storm,Chrono,24.9,75.1,0.0,1000,B strong,warn,off the aim
-20,Storm,Titan,46.5,53.2,0.3,1000,even,pass,
-20,Storm,Inferno,52.4,47.6,0.0,1000,even,pass,
-20,Storm,Boomerang,52.1,47.3,0.6,1000,even,pass,
-20,Storm,Bomber,50.7,48.2,1.1,1000,even,pass,
-20,Storm,Spartan,65.9,34.0,0.1,1000,A strong,warn,off the aim
-20,Storm,Bloom,52.3,47.6,0.1,1000,even,pass,
-20,Storm,Hex,41.7,58.1,0.2,1000,B edge,warn,off the aim
-20,Storm,Spider,51.7,48.1,0.2,1000,even,pass,
-20,Storm,Battery,24.9,74.8,0.3,1000,B strong,pass,
-20,Storm,Slime,45.0,54.9,0.1,1000,even,pass,
-20,Frost,Thorns,42.3,57.2,0.5,1000,even,warn,off the aim
-20,Frost,Venom,48.3,51.6,0.1,1000,even,pass,
-20,Frost,Berserker,62.2,36.7,1.1,1000,A edge,pass,
-20,Frost,Sniper,45.8,53.6,0.6,1000,even,pass,
-20,Frost,Quake,61.4,37.9,0.7,1000,A edge,pass,
-20,Frost,Magnet,61.2,37.4,1.4,1000,A edge,pass,
-20,Frost,Ghost,48.2,48.4,3.4,1000,even,pass,
-20,Frost,Necromancer,56.4,43.3,0.3,1000,even,warn,off the aim
-20,Frost,Chrono,49.4,46.7,3.9,1000,even,pass,
-20,Frost,Titan,53.6,45.7,0.7,1000,even,pass,
-20,Frost,Inferno,49.8,49.8,0.4,1000,even,pass,
-20,Frost,Boomerang,41.3,58.5,0.2,1000,B edge,warn,off the aim
-20,Frost,Bomber,44.6,55.2,0.2,1000,even,warn,off the aim
-20,Frost,Spartan,40.2,59.3,0.5,1000,B edge,pass,
-20,Frost,Bloom,28.9,70.6,0.5,1000,B strong,pass,
-20,Frost,Hex,30.7,69.0,0.3,1000,B strong,pass,
-20,Frost,Spider,46.6,51.8,1.6,1000,even,pass,
-20,Frost,Battery,62.4,35.6,2.0,1000,A edge,pass,
-20,Frost,Slime,61.0,37.7,1.3,1000,A edge,pass,
-20,Thorns,Venom,34.5,64.9,0.6,1000,B edge,warn,off the aim
-20,Thorns,Berserker,60.5,38.9,0.6,1000,A edge,pass,
-20,Thorns,Sniper,34.6,64.9,0.5,1000,B edge,warn,off the aim
-20,Thorns,Quake,51.4,47.4,1.2,1000,even,pass,
-20,Thorns,Magnet,74.8,24.9,0.3,1000,A strong,pass,
-20,Thorns,Ghost,57.3,41.7,1.0,1000,even,warn,off the aim
-20,Thorns,Necromancer,57.3,42.3,0.4,1000,even,warn,off the aim
-20,Thorns,Chrono,55.7,42.6,1.7,1000,even,warn,off the aim
-20,Thorns,Titan,65.8,33.9,0.3,1000,A strong,warn,off the aim
-20,Thorns,Inferno,38.3,61.6,0.1,1000,B edge,pass,
-20,Thorns,Boomerang,42.4,57.4,0.2,1000,even,warn,off the aim
-20,Thorns,Bomber,44.7,55.3,0.0,1000,even,warn,off the aim
-20,Thorns,Spartan,40.5,59.1,0.4,1000,B edge,pass,
-20,Thorns,Bloom,40.3,59.5,0.2,1000,B edge,pass,
-20,Thorns,Hex,38.4,61.0,0.6,1000,B edge,pass,
-20,Thorns,Spider,55.5,42.2,2.3,1000,even,warn,off the aim
-20,Thorns,Battery,72.9,26.6,0.5,1000,A strong,pass,
-20,Thorns,Slime,54.3,43.4,2.3,1000,even,pass,
-20,Venom,Berserker,25.4,74.2,0.4,1000,B strong,pass,
-20,Venom,Sniper,50.1,48.9,1.0,1000,even,pass,
-20,Venom,Quake,50.0,49.4,0.6,1000,even,pass,
-20,Venom,Magnet,48.7,50.7,0.6,1000,even,pass,
-20,Venom,Ghost,30.6,69.0,0.4,1000,B strong,pass,
-20,Venom,Necromancer,57.1,42.2,0.7,1000,even,warn,off the aim
-20,Venom,Chrono,66.0,33.5,0.5,1000,A strong,warn,off the aim
-20,Venom,Titan,48.6,51.0,0.4,1000,even,pass,
-20,Venom,Inferno,55.0,44.8,0.2,1000,even,pass,
-20,Venom,Boomerang,50.4,48.9,0.7,1000,even,pass,
-20,Venom,Bomber,48.7,51.2,0.1,1000,even,pass,
-20,Venom,Spartan,43.6,56.3,0.1,1000,even,warn,off the aim
-20,Venom,Bloom,69.0,30.6,0.4,1000,A strong,pass,
-20,Venom,Hex,47.5,51.8,0.7,1000,even,pass,
-20,Venom,Spider,51.8,47.7,0.5,1000,even,pass,
-20,Venom,Battery,56.2,43.5,0.3,1000,even,warn,off the aim
-20,Venom,Slime,60.8,38.8,0.4,1000,A edge,pass,
-20,Berserker,Sniper,52.8,47.1,0.1,1000,even,pass,
-20,Berserker,Quake,64.1,35.5,0.4,1000,A edge,warn,off the aim
-20,Berserker,Magnet,47.9,51.4,0.7,1000,even,pass,
-20,Berserker,Ghost,49.7,49.0,1.3,1000,even,pass,
-20,Berserker,Necromancer,61.5,38.0,0.5,1000,A edge,pass,
-20,Berserker,Chrono,42.3,56.0,1.7,1000,even,warn,off the aim
-20,Berserker,Titan,42.3,57.2,0.5,1000,even,warn,off the aim
-20,Berserker,Inferno,66.6,33.2,0.2,1000,A strong,warn,off the aim
-20,Berserker,Boomerang,67.1,32.8,0.1,1000,A strong,warn,off the aim
-20,Berserker,Bomber,49.8,50.0,0.2,1000,even,pass,
-20,Berserker,Spartan,51.8,47.9,0.3,1000,even,pass,
-20,Berserker,Bloom,26.7,72.0,1.3,1000,B strong,pass,
-20,Berserker,Hex,35.6,64.3,0.1,1000,B edge,warn,off the aim
-20,Berserker,Spider,55.8,43.5,0.7,1000,even,warn,off the aim
-20,Berserker,Battery,47.3,51.4,1.3,1000,even,pass,
-20,Berserker,Slime,51.8,46.3,1.9,1000,even,pass,
-20,Sniper,Quake,53.0,47.0,0.0,1000,even,pass,
-20,Sniper,Magnet,44.7,54.8,0.5,1000,even,pass,
-20,Sniper,Ghost,52.3,47.4,0.3,1000,even,pass,
-20,Sniper,Necromancer,42.6,57.1,0.3,1000,even,warn,off the aim
-20,Sniper,Chrono,36.2,63.5,0.3,1000,B edge,pass,
-20,Sniper,Titan,56.3,43.1,0.6,1000,even,warn,off the aim
-20,Sniper,Inferno,58.1,41.7,0.2,1000,A edge,warn,off the aim
-20,Sniper,Boomerang,53.9,45.8,0.3,1000,even,pass,
-20,Sniper,Bomber,50.1,49.7,0.2,1000,even,pass,
-20,Sniper,Spartan,64.4,35.4,0.2,1000,A edge,warn,off the aim
-20,Sniper,Bloom,49.5,50.4,0.1,1000,even,pass,
-20,Sniper,Hex,39.3,60.3,0.4,1000,B edge,pass,
-20,Sniper,Spider,50.5,49.2,0.3,1000,even,pass,
-20,Sniper,Battery,47.3,52.4,0.3,1000,even,pass,
-20,Sniper,Slime,32.6,67.1,0.3,1000,B strong,warn,off the aim
-20,Quake,Magnet,44.6,54.9,0.5,1000,even,pass,
-20,Quake,Ghost,49.1,50.3,0.6,1000,even,pass,
-20,Quake,Necromancer,64.9,34.0,1.1,1000,A edge,warn,off the aim
-20,Quake,Chrono,60.9,38.4,0.7,1000,A edge,pass,
-20,Quake,Titan,47.7,52.0,0.3,1000,even,pass,
-20,Quake,Inferno,53.2,46.7,0.1,1000,even,pass,
-20,Quake,Boomerang,49.4,50.2,0.4,1000,even,pass,
-20,Quake,Bomber,48.3,51.5,0.2,1000,even,pass,
-20,Quake,Spartan,47.6,51.9,0.5,1000,even,pass,
-20,Quake,Bloom,52.0,47.9,0.1,1000,even,pass,
-20,Quake,Hex,40.8,57.6,1.6,1000,even,warn,off the aim
-20,Quake,Spider,34.8,64.1,1.1,1000,B edge,warn,off the aim
-20,Quake,Battery,50.5,49.0,0.5,1000,even,pass,
-20,Quake,Slime,53.0,46.4,0.6,1000,even,pass,
-20,Magnet,Ghost,45.4,53.3,1.3,1000,even,pass,
-20,Magnet,Necromancer,65.2,34.6,0.2,1000,A strong,warn,off the aim
-20,Magnet,Chrono,47.7,50.6,1.7,1000,even,pass,
-20,Magnet,Titan,46.3,51.8,1.9,1000,even,pass,
-20,Magnet,Inferno,55.4,44.3,0.3,1000,even,warn,off the aim
-20,Magnet,Boomerang,66.1,33.7,0.2,1000,A strong,warn,off the aim
-20,Magnet,Bomber,49.7,50.1,0.2,1000,even,pass,
-20,Magnet,Spartan,55.8,43.1,1.1,1000,even,warn,off the aim
-20,Magnet,Bloom,54.9,44.8,0.3,1000,even,pass,
-20,Magnet,Hex,47.0,52.6,0.4,1000,even,pass,
-20,Magnet,Spider,48.6,50.6,0.8,1000,even,pass,
-20,Magnet,Battery,52.8,45.9,1.3,1000,even,pass,
-20,Magnet,Slime,48.8,50.7,0.5,1000,even,pass,
-20,Ghost,Necromancer,52.3,47.5,0.2,1000,even,pass,
-20,Ghost,Chrono,54.6,42.6,2.8,1000,even,pass,
-20,Ghost,Titan,46.3,53.0,0.7,1000,even,pass,
-20,Ghost,Inferno,47.3,52.5,0.2,1000,even,pass,
-20,Ghost,Boomerang,48.8,51.2,0.0,1000,even,pass,
-20,Ghost,Bomber,39.9,59.9,0.2,1000,B edge,pass,
-20,Ghost,Spartan,50.9,48.9,0.2,1000,even,pass,
-20,Ghost,Bloom,30.4,68.5,1.1,1000,B strong,pass,
-20,Ghost,Hex,66.0,33.7,0.3,1000,A strong,warn,off the aim
-20,Ghost,Spider,50.5,49.1,0.4,1000,even,pass,
-20,Ghost,Battery,52.1,46.2,1.7,1000,even,pass,
-20,Ghost,Slime,58.7,40.6,0.7,1000,A edge,warn,off the aim
-20,Necromancer,Chrono,51.7,47.9,0.4,1000,even,pass,
-20,Necromancer,Titan,46.4,53.0,0.6,1000,even,pass,
-20,Necromancer,Inferno,37.6,62.2,0.2,1000,B edge,pass,
-20,Necromancer,Boomerang,65.2,34.5,0.3,1000,A strong,warn,off the aim
-20,Necromancer,Bomber,42.7,56.4,0.9,1000,even,warn,off the aim
-20,Necromancer,Spartan,49.9,49.1,1.0,1000,even,pass,
-20,Necromancer,Bloom,42.5,56.9,0.6,1000,even,warn,off the aim
-20,Necromancer,Hex,39.2,60.0,0.8,1000,B edge,pass,
-20,Necromancer,Spider,51.1,48.5,0.4,1000,even,pass,
-20,Necromancer,Battery,51.2,48.2,0.6,1000,even,pass,
-20,Necromancer,Slime,43.0,56.7,0.3,1000,even,warn,off the aim
-20,Chrono,Titan,49.5,49.3,1.2,1000,even,pass,
-20,Chrono,Inferno,33.2,66.6,0.2,1000,B strong,warn,off the aim
-20,Chrono,Boomerang,40.0,59.8,0.2,1000,B edge,pass,
-20,Chrono,Bomber,68.0,32.0,0.0,1000,A strong,pass,
-20,Chrono,Spartan,70.2,29.2,0.6,1000,A strong,pass,
-20,Chrono,Bloom,34.2,64.8,1.0,1000,B edge,warn,off the aim
-20,Chrono,Hex,49.1,50.3,0.6,1000,even,pass,
-20,Chrono,Spider,39.6,60.0,0.4,1000,B edge,pass,
-20,Chrono,Battery,47.8,48.8,3.4,1000,even,pass,
-20,Chrono,Slime,57.4,41.1,1.5,1000,even,warn,off the aim
-20,Titan,Inferno,40.3,59.0,0.7,1000,B edge,pass,
-20,Titan,Boomerang,54.6,45.2,0.2,1000,even,pass,
-20,Titan,Bomber,47.2,52.6,0.2,1000,even,pass,
-20,Titan,Spartan,38.2,61.3,0.5,1000,B edge,pass,
-20,Titan,Bloom,65.9,33.2,0.9,1000,A strong,warn,off the aim
-20,Titan,Hex,41.9,58.1,0.0,1000,B edge,warn,off the aim
-20,Titan,Spider,53.6,45.6,0.8,1000,even,pass,
-20,Titan,Battery,53.9,45.4,0.7,1000,even,pass,
-20,Titan,Slime,57.5,42.2,0.3,1000,even,warn,off the aim
-20,Inferno,Boomerang,41.4,58.5,0.1,1000,B edge,warn,off the aim
-20,Inferno,Bomber,45.5,54.5,0.0,1000,even,pass,
-20,Inferno,Spartan,38.2,61.6,0.2,1000,B edge,pass,
-20,Inferno,Bloom,72.6,27.3,0.1,1000,A strong,pass,
-20,Inferno,Hex,37.7,62.2,0.1,1000,B edge,pass,
-20,Inferno,Spider,50.3,49.7,0.0,1000,even,pass,
-20,Inferno,Battery,52.3,47.6,0.1,1000,even,pass,
-20,Inferno,Slime,49.8,49.9,0.3,1000,even,pass,
-20,Boomerang,Bomber,50.2,49.1,0.7,1000,even,pass,
-20,Boomerang,Spartan,54.3,45.3,0.4,1000,even,pass,
-20,Boomerang,Bloom,71.4,28.5,0.1,1000,A strong,pass,
-20,Boomerang,Hex,58.7,41.0,0.3,1000,A edge,warn,off the aim
-20,Boomerang,Spider,63.0,36.9,0.1,1000,A edge,pass,
-20,Boomerang,Battery,48.9,51.0,0.1,1000,even,pass,
-20,Boomerang,Slime,46.2,53.5,0.3,1000,even,pass,
-20,Bomber,Spartan,44.5,55.1,0.4,1000,even,warn,off the aim
-20,Bomber,Bloom,61.0,38.8,0.2,1000,A edge,pass,
-20,Bomber,Hex,51.1,48.8,0.1,1000,even,pass,
-20,Bomber,Spider,64.4,35.2,0.4,1000,A edge,warn,off the aim
-20,Bomber,Battery,27.2,72.8,0.0,1000,B strong,pass,
-20,Bomber,Slime,45.7,54.0,0.3,1000,even,pass,
-20,Spartan,Bloom,48.7,51.2,0.1,1000,even,pass,
-20,Spartan,Hex,63.5,35.7,0.8,1000,A edge,pass,
-20,Spartan,Spider,62.1,37.6,0.3,1000,A edge,pass,
-20,Spartan,Battery,53.3,45.9,0.8,1000,even,pass,
-20,Spartan,Slime,42.3,57.5,0.2,1000,even,warn,off the aim
-20,Bloom,Hex,54.7,45.2,0.1,1000,even,pass,
-20,Bloom,Spider,47.6,52.0,0.4,1000,even,pass,
-20,Bloom,Battery,61.5,37.6,0.9,1000,A edge,pass,
-20,Bloom,Slime,60.3,39.5,0.2,1000,A edge,pass,
-20,Hex,Spider,60.1,39.2,0.7,1000,A edge,pass,
-20,Hex,Battery,31.0,68.9,0.1,1000,B strong,pass,
-20,Hex,Slime,40.4,59.4,0.2,1000,B edge,pass,
-20,Spider,Battery,62.5,36.7,0.8,1000,A edge,pass,
-20,Spider,Slime,63.7,34.9,1.4,1000,A edge,pass,
-20,Battery,Slime,50.5,48.4,1.1,1000,even,pass,
+21,Brawler,Speedster,51.5,48.2,0.3,1000,even,pass,
+21,Brawler,Vampire,49.0,50.8,0.2,1000,even,pass,
+21,Brawler,Archer,42.3,57.7,0.0,1000,even,warn,off the aim
+21,Brawler,Storm,46.1,53.8,0.1,1000,even,pass,
+21,Brawler,Frost,39.1,59.6,1.3,1000,B edge,pass,
+21,Brawler,Thorns,26.1,73.8,0.1,1000,B strong,pass,
+21,Brawler,Venom,42.3,57.3,0.4,1000,even,warn,off the aim
+21,Brawler,Berserker,51.4,47.6,1.0,1000,even,pass,
+21,Brawler,Sniper,42.8,56.5,0.7,1000,even,warn,off the aim
+21,Brawler,Quake,42.0,57.1,0.9,1000,even,warn,off the aim
+21,Brawler,Magnet,54.5,43.4,2.1,1000,even,pass,
+21,Brawler,Ghost,44.1,55.6,0.3,1000,even,warn,off the aim
+21,Brawler,Necromancer,50.8,49.0,0.2,1000,even,pass,
+21,Brawler,Chrono,50.8,47.4,1.8,1000,even,pass,
+21,Brawler,Titan,47.7,50.7,1.6,1000,even,pass,
+21,Brawler,Inferno,45.9,53.5,0.6,1000,even,pass,
+21,Brawler,Boomerang,44.2,55.7,0.1,1000,even,warn,off the aim
+21,Brawler,Bomber,42.0,57.9,0.1,1000,even,warn,off the aim
+21,Brawler,Spartan,47.2,52.0,0.8,1000,even,pass,
+21,Brawler,Bloom,42.5,57.1,0.4,1000,even,warn,off the aim
+21,Brawler,Hex,40.8,59.0,0.2,1000,B edge,pass,
+21,Brawler,Spider,43.7,55.7,0.6,1000,even,warn,off the aim
+21,Brawler,Battery,54.8,44.1,1.1,1000,even,pass,
+21,Brawler,Slime,47.4,51.3,1.3,1000,even,pass,
+21,Speedster,Vampire,43.0,56.8,0.2,1000,even,warn,off the aim
+21,Speedster,Archer,70.0,29.4,0.6,1000,A strong,pass,
+21,Speedster,Storm,59.0,40.5,0.5,1000,A edge,pass,
+21,Speedster,Frost,26.1,72.9,1.0,1000,B strong,pass,
+21,Speedster,Thorns,44.3,54.7,1.0,1000,even,pass,
+21,Speedster,Venom,37.2,62.6,0.2,1000,B edge,pass,
+21,Speedster,Berserker,43.2,56.4,0.4,1000,even,warn,off the aim
+21,Speedster,Sniper,67.4,32.1,0.5,1000,A strong,warn,off the aim
+21,Speedster,Quake,38.7,59.6,1.7,1000,B edge,pass,
+21,Speedster,Magnet,44.2,55.3,0.5,1000,even,warn,off the aim
+21,Speedster,Ghost,42.7,57.0,0.3,1000,even,warn,off the aim
+21,Speedster,Necromancer,47.8,51.3,0.9,1000,even,pass,
+21,Speedster,Chrono,41.7,57.8,0.5,1000,even,warn,off the aim
+21,Speedster,Titan,41.1,58.5,0.4,1000,B edge,warn,off the aim
+21,Speedster,Inferno,61.2,38.5,0.3,1000,A edge,pass,
+21,Speedster,Boomerang,72.4,26.7,0.9,1000,A strong,pass,
+21,Speedster,Bomber,33.3,66.6,0.1,1000,B strong,warn,off the aim
+21,Speedster,Spartan,53.3,46.2,0.5,1000,even,pass,
+21,Speedster,Bloom,43.9,56.0,0.1,1000,even,warn,off the aim
+21,Speedster,Hex,32.0,67.4,0.6,1000,B strong,warn,off the aim
+21,Speedster,Spider,24.2,75.1,0.7,1000,B strong,warn,off the aim
+21,Speedster,Battery,47.3,51.7,1.0,1000,even,pass,
+21,Speedster,Slime,37.6,61.9,0.5,1000,B edge,pass,
+21,Vampire,Archer,27.7,72.0,0.3,1000,B strong,pass,
+21,Vampire,Storm,26.1,73.7,0.2,1000,B strong,pass,
+21,Vampire,Frost,58.2,41.3,0.5,1000,A edge,warn,off the aim
+21,Vampire,Thorns,60.7,38.7,0.6,1000,A edge,pass,
+21,Vampire,Venom,50.2,49.6,0.2,1000,even,pass,
+21,Vampire,Berserker,75.7,23.9,0.4,1000,A strong,warn,off the aim
+21,Vampire,Sniper,43.7,56.1,0.2,1000,even,warn,off the aim
+21,Vampire,Quake,47.4,52.3,0.3,1000,even,pass,
+21,Vampire,Magnet,56.5,42.9,0.6,1000,even,warn,off the aim
+21,Vampire,Ghost,42.2,57.1,0.7,1000,even,warn,off the aim
+21,Vampire,Necromancer,50.6,49.1,0.3,1000,even,pass,
+21,Vampire,Chrono,61.2,37.3,1.5,1000,A edge,pass,
+21,Vampire,Titan,58.7,40.7,0.6,1000,A edge,warn,off the aim
+21,Vampire,Inferno,45.9,54.1,0.0,1000,even,pass,
+21,Vampire,Boomerang,34.3,65.6,0.1,1000,B strong,warn,off the aim
+21,Vampire,Bomber,26.3,73.7,0.0,1000,B strong,pass,
+21,Vampire,Spartan,25.5,74.2,0.3,1000,B strong,pass,
+21,Vampire,Bloom,60.4,38.7,0.9,1000,A edge,pass,
+21,Vampire,Hex,75.4,24.5,0.1,1000,A strong,warn,off the aim
+21,Vampire,Spider,50.7,48.9,0.4,1000,even,pass,
+21,Vampire,Battery,60.5,37.2,2.3,1000,A edge,pass,
+21,Vampire,Slime,61.1,38.2,0.7,1000,A edge,pass,
+21,Archer,Storm,52.6,47.4,0.0,1000,even,pass,
+21,Archer,Frost,62.7,37.2,0.1,1000,A edge,pass,
+21,Archer,Thorns,66.4,33.4,0.2,1000,A strong,warn,off the aim
+21,Archer,Venom,48.3,51.6,0.1,1000,even,pass,
+21,Archer,Berserker,39.5,60.1,0.4,1000,B edge,pass,
+21,Archer,Sniper,53.5,46.4,0.1,1000,even,pass,
+21,Archer,Quake,50.9,48.7,0.4,1000,even,pass,
+21,Archer,Magnet,26.0,73.6,0.4,1000,B strong,pass,
+21,Archer,Ghost,54.9,44.5,0.6,1000,even,pass,
+21,Archer,Necromancer,32.8,66.7,0.5,1000,B strong,warn,off the aim
+21,Archer,Chrono,64.5,35.1,0.4,1000,A edge,warn,off the aim
+21,Archer,Titan,45.0,54.9,0.1,1000,even,pass,
+21,Archer,Inferno,61.2,38.6,0.2,1000,A edge,pass,
+21,Archer,Boomerang,52.7,46.4,0.9,1000,even,pass,
+21,Archer,Bomber,48.2,51.8,0.0,1000,even,pass,
+21,Archer,Spartan,55.9,43.5,0.6,1000,even,warn,off the aim
+21,Archer,Bloom,77.7,22.3,0.0,1000,A strong,warn,off the aim
+21,Archer,Hex,63.0,36.9,0.1,1000,A edge,pass,
+21,Archer,Spider,68.7,31.0,0.3,1000,A strong,pass,
+21,Archer,Battery,54.0,45.8,0.2,1000,even,pass,
+21,Archer,Slime,37.7,62.1,0.2,1000,B edge,pass,
+21,Storm,Frost,52.2,47.5,0.3,1000,even,pass,
+21,Storm,Thorns,58.7,40.9,0.4,1000,A edge,warn,off the aim
+21,Storm,Venom,49.4,49.7,0.9,1000,even,pass,
+21,Storm,Berserker,43.3,56.6,0.1,1000,even,warn,off the aim
+21,Storm,Sniper,49.3,50.4,0.3,1000,even,pass,
+21,Storm,Quake,48.8,51.2,0.0,1000,even,pass,
+21,Storm,Magnet,48.0,51.9,0.1,1000,even,pass,
+21,Storm,Ghost,49.3,50.7,0.0,1000,even,pass,
+21,Storm,Necromancer,58.1,41.7,0.2,1000,A edge,warn,off the aim
+21,Storm,Chrono,26.0,74.0,0.0,1000,B strong,pass,
+21,Storm,Titan,50.2,49.6,0.2,1000,even,pass,
+21,Storm,Inferno,54.2,45.7,0.1,1000,even,pass,
+21,Storm,Boomerang,54.7,44.9,0.4,1000,even,pass,
+21,Storm,Bomber,47.8,51.5,0.7,1000,even,pass,
+21,Storm,Spartan,67.4,32.4,0.2,1000,A strong,warn,off the aim
+21,Storm,Bloom,56.3,43.6,0.1,1000,even,warn,off the aim
+21,Storm,Hex,43.1,56.8,0.1,1000,even,warn,off the aim
+21,Storm,Spider,54.0,45.7,0.3,1000,even,pass,
+21,Storm,Battery,27.9,71.8,0.3,1000,B strong,pass,
+21,Storm,Slime,43.8,56.1,0.1,1000,even,warn,off the aim
+21,Frost,Thorns,50.6,48.3,1.1,1000,even,pass,
+21,Frost,Venom,47.7,51.8,0.5,1000,even,pass,
+21,Frost,Berserker,64.6,33.9,1.5,1000,A edge,warn,off the aim
+21,Frost,Sniper,47.9,51.7,0.4,1000,even,pass,
+21,Frost,Quake,57.7,41.6,0.7,1000,even,warn,off the aim
+21,Frost,Magnet,66.1,32.6,1.3,1000,A strong,warn,off the aim
+21,Frost,Ghost,46.5,50.9,2.6,1000,even,pass,
+21,Frost,Necromancer,59.7,39.9,0.4,1000,A edge,pass,
+21,Frost,Chrono,54.7,41.6,3.7,1000,even,pass,
+21,Frost,Titan,56.5,42.8,0.7,1000,even,warn,off the aim
+21,Frost,Inferno,52.8,46.8,0.4,1000,even,pass,
+21,Frost,Boomerang,43.4,56.4,0.2,1000,even,warn,off the aim
+21,Frost,Bomber,43.3,56.5,0.2,1000,even,warn,off the aim
+21,Frost,Spartan,43.9,55.4,0.7,1000,even,warn,off the aim
+21,Frost,Bloom,29.4,70.0,0.6,1000,B strong,pass,
+21,Frost,Hex,29.6,70.1,0.3,1000,B strong,pass,
+21,Frost,Spider,52.0,46.6,1.4,1000,even,pass,
+21,Frost,Battery,66.2,32.1,1.7,1000,A strong,warn,off the aim
+21,Frost,Slime,60.7,37.9,1.4,1000,A edge,pass,
+21,Thorns,Venom,30.1,69.5,0.4,1000,B strong,pass,
+21,Thorns,Berserker,58.7,40.1,1.2,1000,A edge,warn,off the aim
+21,Thorns,Sniper,34.0,65.8,0.2,1000,B strong,warn,off the aim
+21,Thorns,Quake,43.4,55.5,1.1,1000,even,warn,off the aim
+21,Thorns,Magnet,75.2,24.6,0.2,1000,A strong,warn,off the aim
+21,Thorns,Ghost,52.1,47.3,0.6,1000,even,pass,
+21,Thorns,Necromancer,54.1,45.2,0.7,1000,even,pass,
+21,Thorns,Chrono,52.6,46.0,1.4,1000,even,pass,
+21,Thorns,Titan,62.1,37.4,0.5,1000,A edge,pass,
+21,Thorns,Inferno,38.8,60.7,0.5,1000,B edge,pass,
+21,Thorns,Boomerang,43.9,55.8,0.3,1000,even,warn,off the aim
+21,Thorns,Bomber,40.1,59.7,0.2,1000,B edge,pass,
+21,Thorns,Spartan,39.1,60.5,0.4,1000,B edge,pass,
+21,Thorns,Bloom,41.4,58.2,0.4,1000,B edge,warn,off the aim
+21,Thorns,Hex,28.9,70.4,0.7,1000,B strong,pass,
+21,Thorns,Spider,55.4,42.2,2.4,1000,even,warn,off the aim
+21,Thorns,Battery,71.7,27.8,0.5,1000,A strong,pass,
+21,Thorns,Slime,50.1,48.4,1.5,1000,even,pass,
+21,Venom,Berserker,25.2,74.4,0.4,1000,B strong,pass,
+21,Venom,Sniper,53.4,45.6,1.0,1000,even,pass,
+21,Venom,Quake,44.7,54.7,0.6,1000,even,pass,
+21,Venom,Magnet,53.1,46.4,0.5,1000,even,pass,
+21,Venom,Ghost,25.6,74.3,0.1,1000,B strong,pass,
+21,Venom,Necromancer,59.8,39.7,0.5,1000,A edge,pass,
+21,Venom,Chrono,69.9,29.7,0.4,1000,A strong,pass,
+21,Venom,Titan,52.3,47.6,0.1,1000,even,pass,
+21,Venom,Inferno,57.8,41.9,0.3,1000,even,warn,off the aim
+21,Venom,Boomerang,53.4,45.6,1.0,1000,even,pass,
+21,Venom,Bomber,47.3,52.6,0.1,1000,even,pass,
+21,Venom,Spartan,47.3,52.5,0.2,1000,even,pass,
+21,Venom,Bloom,70.4,29.3,0.3,1000,A strong,pass,
+21,Venom,Hex,44.2,55.5,0.3,1000,even,warn,off the aim
+21,Venom,Spider,57.7,41.8,0.5,1000,even,warn,off the aim
+21,Venom,Battery,61.1,38.7,0.2,1000,A edge,pass,
+21,Venom,Slime,61.1,38.6,0.3,1000,A edge,pass,
+21,Berserker,Sniper,55.5,44.4,0.1,1000,even,warn,off the aim
+21,Berserker,Quake,58.7,41.0,0.3,1000,A edge,warn,off the aim
+21,Berserker,Magnet,50.7,48.7,0.6,1000,even,pass,
+21,Berserker,Ghost,48.4,49.6,2.0,1000,even,pass,
+21,Berserker,Necromancer,64.1,35.4,0.5,1000,A edge,warn,off the aim
+21,Berserker,Chrono,45.1,53.0,1.9,1000,even,pass,
+21,Berserker,Titan,45.5,53.8,0.7,1000,even,pass,
+21,Berserker,Inferno,69.0,30.8,0.2,1000,A strong,pass,
+21,Berserker,Boomerang,69.2,30.7,0.1,1000,A strong,pass,
+21,Berserker,Bomber,47.8,52.0,0.2,1000,even,pass,
+21,Berserker,Spartan,54.3,45.4,0.3,1000,even,pass,
+21,Berserker,Bloom,26.6,71.8,1.6,1000,B strong,pass,
+21,Berserker,Hex,32.6,67.3,0.1,1000,B strong,warn,off the aim
+21,Berserker,Spider,58.2,41.3,0.5,1000,A edge,warn,off the aim
+21,Berserker,Battery,50.8,47.8,1.4,1000,even,pass,
+21,Berserker,Slime,50.2,48.5,1.3,1000,even,pass,
+21,Sniper,Quake,47.4,52.5,0.1,1000,even,pass,
+21,Sniper,Magnet,44.7,54.8,0.5,1000,even,pass,
+21,Sniper,Ghost,49.1,50.7,0.2,1000,even,pass,
+21,Sniper,Necromancer,42.6,57.1,0.3,1000,even,warn,off the aim
+21,Sniper,Chrono,36.2,63.5,0.3,1000,B edge,pass,
+21,Sniper,Titan,56.9,42.6,0.5,1000,even,warn,off the aim
+21,Sniper,Inferno,58.1,41.7,0.2,1000,A edge,warn,off the aim
+21,Sniper,Boomerang,53.9,45.8,0.3,1000,even,pass,
+21,Sniper,Bomber,46.7,53.0,0.3,1000,even,pass,
+21,Sniper,Spartan,64.4,35.4,0.2,1000,A edge,warn,off the aim
+21,Sniper,Bloom,48.7,51.1,0.2,1000,even,pass,
+21,Sniper,Hex,37.9,61.8,0.3,1000,B edge,pass,
+21,Sniper,Spider,50.5,49.2,0.3,1000,even,pass,
+21,Sniper,Battery,47.3,52.4,0.3,1000,even,pass,
+21,Sniper,Slime,30.2,69.5,0.3,1000,B strong,pass,
+21,Quake,Magnet,51.4,47.8,0.8,1000,even,pass,
+21,Quake,Ghost,49.9,49.4,0.7,1000,even,pass,
+21,Quake,Necromancer,70.0,29.0,1.0,1000,A strong,pass,
+21,Quake,Chrono,66.4,32.8,0.8,1000,A strong,warn,off the aim
+21,Quake,Titan,53.0,46.6,0.4,1000,even,pass,
+21,Quake,Inferno,60.1,39.6,0.3,1000,A edge,pass,
+21,Quake,Boomerang,55.5,44.2,0.3,1000,even,warn,off the aim
+21,Quake,Bomber,48.9,51.0,0.1,1000,even,pass,
+21,Quake,Spartan,51.3,48.2,0.5,1000,even,pass,
+21,Quake,Bloom,59.0,40.6,0.4,1000,A edge,pass,
+21,Quake,Hex,45.8,52.4,1.8,1000,even,pass,
+21,Quake,Spider,41.6,57.3,1.1,1000,even,warn,off the aim
+21,Quake,Battery,57.7,42.0,0.3,1000,even,warn,off the aim
+21,Quake,Slime,55.8,43.8,0.4,1000,even,warn,off the aim
+21,Magnet,Ghost,41.1,57.8,1.1,1000,even,warn,off the aim
+21,Magnet,Necromancer,65.2,34.6,0.2,1000,A strong,warn,off the aim
+21,Magnet,Chrono,47.7,50.6,1.7,1000,even,pass,
+21,Magnet,Titan,44.5,54.0,1.5,1000,even,pass,
+21,Magnet,Inferno,55.4,44.3,0.3,1000,even,warn,off the aim
+21,Magnet,Boomerang,66.1,33.7,0.2,1000,A strong,warn,off the aim
+21,Magnet,Bomber,47.1,52.7,0.2,1000,even,pass,
+21,Magnet,Spartan,55.8,43.1,1.1,1000,even,warn,off the aim
+21,Magnet,Bloom,53.7,45.6,0.7,1000,even,pass,
+21,Magnet,Hex,43.8,55.8,0.4,1000,even,warn,off the aim
+21,Magnet,Spider,48.6,50.6,0.8,1000,even,pass,
+21,Magnet,Battery,52.8,45.9,1.3,1000,even,pass,
+21,Magnet,Slime,45.4,53.0,1.6,1000,even,pass,
+21,Ghost,Necromancer,58.2,41.7,0.1,1000,A edge,warn,off the aim
+21,Ghost,Chrono,60.3,37.7,2.0,1000,A edge,pass,
+21,Ghost,Titan,48.9,50.3,0.8,1000,even,pass,
+21,Ghost,Inferno,52.0,47.7,0.3,1000,even,pass,
+21,Ghost,Boomerang,53.1,46.8,0.1,1000,even,pass,
+21,Ghost,Bomber,41.0,58.8,0.2,1000,B edge,warn,off the aim
+21,Ghost,Spartan,55.3,44.7,0.0,1000,even,warn,off the aim
+21,Ghost,Bloom,29.5,69.4,1.1,1000,B strong,pass,
+21,Ghost,Hex,66.4,33.5,0.1,1000,A strong,warn,off the aim
+21,Ghost,Spider,55.3,44.3,0.4,1000,even,warn,off the aim
+21,Ghost,Battery,59.6,39.0,1.4,1000,A edge,pass,
+21,Ghost,Slime,60.4,38.4,1.2,1000,A edge,pass,
+21,Necromancer,Chrono,51.7,47.9,0.4,1000,even,pass,
+21,Necromancer,Titan,45.8,53.9,0.3,1000,even,pass,
+21,Necromancer,Inferno,37.6,62.2,0.2,1000,B edge,pass,
+21,Necromancer,Boomerang,65.2,34.5,0.3,1000,A strong,warn,off the aim
+21,Necromancer,Bomber,40.1,59.3,0.6,1000,B edge,pass,
+21,Necromancer,Spartan,49.9,49.1,1.0,1000,even,pass,
+21,Necromancer,Bloom,41.4,58.2,0.4,1000,B edge,warn,off the aim
+21,Necromancer,Hex,35.6,63.2,1.2,1000,B edge,pass,
+21,Necromancer,Spider,51.1,48.5,0.4,1000,even,pass,
+21,Necromancer,Battery,51.2,48.2,0.6,1000,even,pass,
+21,Necromancer,Slime,40.6,59.2,0.2,1000,B edge,pass,
+21,Chrono,Titan,48.1,51.2,0.7,1000,even,pass,
+21,Chrono,Inferno,33.2,66.6,0.2,1000,B strong,warn,off the aim
+21,Chrono,Boomerang,40.0,59.8,0.2,1000,B edge,pass,
+21,Chrono,Bomber,66.8,33.2,0.0,1000,A strong,warn,off the aim
+21,Chrono,Spartan,70.2,29.2,0.6,1000,A strong,pass,
+21,Chrono,Bloom,33.2,65.8,1.0,1000,B strong,warn,off the aim
+21,Chrono,Hex,45.8,53.9,0.3,1000,even,pass,
+21,Chrono,Spider,39.6,60.0,0.4,1000,B edge,pass,
+21,Chrono,Battery,47.8,48.8,3.4,1000,even,pass,
+21,Chrono,Slime,52.5,46.1,1.4,1000,even,pass,
+21,Titan,Inferno,41.7,57.6,0.7,1000,even,warn,off the aim
+21,Titan,Boomerang,58.1,41.8,0.1,1000,A edge,warn,off the aim
+21,Titan,Bomber,44.0,55.8,0.2,1000,even,warn,off the aim
+21,Titan,Spartan,37.4,61.8,0.8,1000,B edge,pass,
+21,Titan,Bloom,63.0,36.3,0.7,1000,A edge,pass,
+21,Titan,Hex,42.4,57.4,0.2,1000,even,warn,off the aim
+21,Titan,Spider,56.0,43.7,0.3,1000,even,warn,off the aim
+21,Titan,Battery,59.4,39.7,0.9,1000,A edge,pass,
+21,Titan,Slime,54.4,44.8,0.8,1000,even,pass,
+21,Inferno,Boomerang,41.4,58.5,0.1,1000,B edge,warn,off the aim
+21,Inferno,Bomber,41.8,58.1,0.1,1000,B edge,warn,off the aim
+21,Inferno,Spartan,38.2,61.6,0.2,1000,B edge,pass,
+21,Inferno,Bloom,71.8,28.2,0.0,1000,A strong,pass,
+21,Inferno,Hex,35.2,64.8,0.0,1000,B edge,warn,off the aim
+21,Inferno,Spider,50.3,49.7,0.0,1000,even,pass,
+21,Inferno,Battery,52.3,47.6,0.1,1000,even,pass,
+21,Inferno,Slime,47.0,52.9,0.1,1000,even,pass,
+21,Boomerang,Bomber,48.0,51.2,0.8,1000,even,pass,
+21,Boomerang,Spartan,54.3,45.3,0.4,1000,even,pass,
+21,Boomerang,Bloom,69.8,30.1,0.1,1000,A strong,pass,
+21,Boomerang,Hex,56.6,43.3,0.1,1000,even,warn,off the aim
+21,Boomerang,Spider,63.0,36.9,0.1,1000,A edge,pass,
+21,Boomerang,Battery,48.9,51.0,0.1,1000,even,pass,
+21,Boomerang,Slime,43.9,55.8,0.3,1000,even,warn,off the aim
+21,Bomber,Spartan,47.4,52.4,0.2,1000,even,pass,
+21,Bomber,Bloom,63.0,36.8,0.2,1000,A edge,pass,
+21,Bomber,Hex,52.1,47.7,0.2,1000,even,pass,
+21,Bomber,Spider,69.2,30.7,0.1,1000,A strong,pass,
+21,Bomber,Battery,28.5,71.5,0.0,1000,B strong,pass,
+21,Bomber,Slime,46.7,53.2,0.1,1000,even,pass,
+21,Spartan,Bloom,47.8,52.1,0.1,1000,even,pass,
+21,Spartan,Hex,59.6,39.5,0.9,1000,A edge,pass,
+21,Spartan,Spider,62.1,37.6,0.3,1000,A edge,pass,
+21,Spartan,Battery,53.3,45.9,0.8,1000,even,pass,
+21,Spartan,Slime,40.1,59.8,0.1,1000,B edge,pass,
+21,Bloom,Hex,51.8,48.1,0.1,1000,even,pass,
+21,Bloom,Spider,48.7,50.7,0.6,1000,even,pass,
+21,Bloom,Battery,62.4,36.7,0.9,1000,A edge,pass,
+21,Bloom,Slime,58.9,40.8,0.3,1000,A edge,warn,off the aim
+21,Hex,Spider,64.0,35.4,0.6,1000,A edge,pass,
+21,Hex,Battery,28.6,71.3,0.1,1000,B strong,pass,
+21,Hex,Slime,39.2,60.6,0.2,1000,B edge,pass,
+21,Spider,Battery,62.5,36.7,0.8,1000,A edge,pass,
+21,Spider,Slime,60.0,38.7,1.3,1000,A edge,pass,
+21,Battery,Slime,47.7,51.5,0.8,1000,even,pass,

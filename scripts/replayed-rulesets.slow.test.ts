@@ -48,6 +48,12 @@ function playWith(sim: typeof Sim, base: SeriesSetup): SeriesState {
   }
 }
 
+// Empty after a ruleset that changes fights (ruleset 21, ADR 0074): then only today's replays.
+it('lists only older rulesets, each once', () => {
+  expect(new Set(SAME_FIGHTS_AS).size).toBe(SAME_FIGHTS_AS.length);
+  for (const version of SAME_FIGHTS_AS) expect(version).toBeLessThan(RULESET_VERSION);
+});
+
 describe.each(SAME_FIGHTS_AS)('ruleset %i, replayed by this build', (version) => {
   it('is an older ruleset than today’s', () => {
     expect(version).toBeLessThan(RULESET_VERSION);

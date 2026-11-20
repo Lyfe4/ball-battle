@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { BALLS } from '../../sim/balls/index.ts';
 import { COUNTER_MAP } from '../../sim/counter-map.ts';
-import { favouredOf, leanOf, matchupsOf, speedTrait, statShares } from './matchups.ts';
+import {
+  favouredOf,
+  leanOf,
+  matchupsOf,
+  speedTrait,
+  statShares,
+  type MatchupLine,
+} from './matchups.ts';
 
 const ids = BALLS.map((ball) => ball.id);
 
@@ -42,8 +49,10 @@ describe('matchups', () => {
 
   it('follows the map: the Brawler beats nobody and loses only to Thorns', () => {
     const brawler = matchupsOf('brawler', ids);
-    expect(brawler.strong.map((line) => line.opponent)).toStrictEqual([]);
-    expect(brawler.weak.map((line) => line.opponent)).toStrictEqual(['thorns']);
+    const strongly = (lines: readonly MatchupLine[]) =>
+      lines.filter((line) => line.level === 'strong').map((line) => line.opponent);
+    expect(strongly(brawler.strong)).toStrictEqual([]);
+    expect(strongly(brawler.weak)).toStrictEqual(['thorns']);
     // Every pair as the map has it, whichever order it is asked in.
     for (const { x, y, intended } of COUNTER_MAP) {
       const favoured = intended === 'even' ? undefined : intended === 'x' ? x : y;

@@ -42,7 +42,7 @@ export const bloom = defineBall<BloomState>({
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
   maxHealth: 52,
-  contactDamage: 21,
+  contactDamage: 21.5,
   initialAbilityState: { nextHealTick: FIRST_HEAL_TICK, pausedUntil: 0 },
   hooks: {
     onTick: ({ world, self }) => {

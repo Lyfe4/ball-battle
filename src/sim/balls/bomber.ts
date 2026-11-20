@@ -17,7 +17,7 @@ export const BOMB_RADIUS = 44;
 /** World units: everything inside goes up with it. */
 export const BLAST_RADIUS = 100;
 /** Ability damage to each enemy ball in the blast. Below the Storm's strike (identity rule). */
-export const BLAST_DAMAGE = 26;
+export const BLAST_DAMAGE = 28;
 
 /**
  * Drops one big bomb every few seconds (ADR 0043, 0045 group 4): a zone (ADR 0006) with a visible

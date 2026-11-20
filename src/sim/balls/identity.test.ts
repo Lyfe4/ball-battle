@@ -235,10 +235,11 @@ describe('the ball roster: identity rules', () => {
     }
   });
 
-  it('Ghost phases a quarter of the time, and its spectral hit is lighter than its bump', () => {
-    // One rhythm, the same against any ball (ADR 0049): a second phased in every four.
-    expect(PHASE_TICKS / PHASE_CYCLE_TICKS).toBe(0.25);
-    expect(PHASE_TICKS).toBe(TICK_RATE);
+  it('Ghost phases just over a quarter of the time, and its spectral hit is lighter than its bump', () => {
+    // One rhythm, the same against any ball (ADR 0049): just over a second in every four (ADR 0074).
+    expect(PHASE_CYCLE_TICKS).toBe(4 * TICK_RATE);
+    expect(PHASE_TICKS).toBe(70);
+    expect(PHASE_TICKS / PHASE_CYCLE_TICKS).toBeLessThan(1 / 3);
     expect(ghost.phasedOf).toBeDefined();
     expect(SPECTRAL_HIT).toBeLessThan(ghost.contactDamage);
     expect(Object.keys(ghost.hooks).sort()).toStrictEqual(['onHitBall', 'onTick']);
@@ -246,7 +247,7 @@ describe('the ball roster: identity rules', () => {
 
   it('Hex’s curse is a share of full health, never a Chrono-sized big hit on the Chrono', () => {
     // The burst scales with the ball it lands on and nothing else (ADR 0049).
-    expect(CURSE_SHARE).toBe(0.25);
+    expect(CURSE_SHARE).toBe(0.27);
     expect(CURSE_FUSE_TICKS).toBe(3 * TICK_RATE);
     expect(curseBurstFor(chrono.maxHealth)).toBeLessThan(BIG_HIT);
     expect(Object.keys(hex.hooks).sort()).toStrictEqual(['onHitBall', 'onTick']);

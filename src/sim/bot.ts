@@ -1,5 +1,5 @@
 // Opponents for a series (ADR 0017, 0019, 0021, 0035, 0048): three levels, Easy, Normal and
-// Hard, plus the original bot kept for old links (and ruleset 19's Normal and Hard, bots-r19.ts). Each level is a weighting of its balls for every
+// Hard, plus the original bot kept for old links (and any older ruleset's bots, KEPT_BOTS). Each level is a weighting of its balls for every
 // kind of choice, drawn on a seeded stream, so a choice is a pure function of the series and a
 // verifier makes the same one (ADR 0022). The measurement scripts read the same weights, so what
 // they measure is what plays. Pure and seeded, like the rest of the sim.
@@ -7,7 +7,6 @@ import { afterRound, mapOdds, type Memo, type Odds, type Position } from './bot-
 import { maximinMix } from './maximin.ts';
 import { standingOf } from './counter-map.ts';
 import { bestBy, blend, draw, LEVEL_SALTS, pickLineup, ROLE_SALTS, uniform } from './bot-draw.ts';
-import { R19_READING } from './bot-r19.ts';
 import { createStream, deriveSeed } from './rng.ts';
 import { RULESET_VERSION } from './ruleset.ts';
 import { botSeedOf } from './series-seeds.ts';
@@ -231,21 +230,15 @@ export const BOTS: ReadonlyMap<string, LineupBot> = new Map(
 );
 
 /**
- * Ruleset 19's bots (ADR 0073), by id: Easy never read the map, so it is today's; Normal, Hard and
- * the first bot read ruleset 19's two levels. Same ids, so the same streams.
+ * The bots of each older ruleset that still replays here (`SAME_FIGHTS_AS`, ADR 0073), by ruleset
+ * and id: a bot-only change keeps the old bots here, reading the map as they did, so their series
+ * still verify. Empty since ruleset 21 changed fights (ADR 0074); ruleset 19's went with it.
  */
-const R19_BOTS: ReadonlyMap<string, LineupBot> = new Map(
-  [
-    easyBot,
-    level('normal', normalWeights(R19_READING)),
-    level('hard', hardWeights(R19_READING)),
-    firstBot(R19_READING),
-  ].map((bot) => [bot.id, bot]),
-);
+const KEPT_BOTS: ReadonlyMap<number, ReadonlyMap<string, LineupBot>> = new Map();
 
 /** The bot named `id` as it played under `ruleset`, if any. */
 export function botNamed(id: string, ruleset: number = RULESET_VERSION): LineupBot | undefined {
-  return (ruleset === 19 ? R19_BOTS : BOTS).get(id);
+  return (KEPT_BOTS.get(ruleset) ?? BOTS).get(id);
 }
 
 /** The bot an opponent names under a ruleset, or the default level for a player or unknown id. */

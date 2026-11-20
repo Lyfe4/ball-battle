@@ -3,7 +3,7 @@
 import type { CounterEntry } from './counter-map.ts';
 
 /**
- * The Hex's bump curses, and 3 s later the mark bursts for a quarter of the cursed ball's full
+ * The Hex's bump curses, and 3 s later the mark bursts for over a quarter of the cursed ball's full
  * health. A big ball takes a big burst, so it beats the sturdy balls (and the Inferno, whose light
  * bumps barely hurt back), and loses to the frail ones that take a small burst and heal or halve
  * it, and to the Ghost, which can't be cursed while phased.
@@ -12,8 +12,9 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'brawler',
-    intended: 'even',
-    reason: 'A burst is worth about one of its hard bumps: plain trades decide it.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'A burst on top of each bump adds up to more than the Brawler’s harder bumps alone.',
   },
   {
     x: 'hex',
@@ -21,7 +22,7 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     intended: 'x',
     level: 'strong',
     reason:
-      'Every bump that builds its speed hit curses it, and a burst is a quarter of its health.',
+      'Every bump that builds its speed hit curses it, and a burst is over a quarter of its health.',
   },
   {
     x: 'hex',
@@ -40,9 +41,8 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'storm',
-    intended: 'x',
-    level: 'edge',
-    reason: 'A strike can be dodged, but the curse always bursts, for a quarter of its health.',
+    intended: 'even',
+    reason: 'A strike can be dodged and the curse always bursts, but strikes land hard: even.',
   },
   {
     x: 'hex',
@@ -55,7 +55,7 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     x: 'hex',
     y: 'thorns',
     intended: 'x',
-    level: 'edge',
+    level: 'strong',
     reason: 'A burst is no bump, so the spikes never answer it, and big health makes it big.',
   },
   {
@@ -68,7 +68,7 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     x: 'hex',
     y: 'berserker',
     intended: 'x',
-    level: 'edge',
+    level: 'strong',
     reason:
       'The most health makes the biggest burst, and one burst gives it one rage, not several.',
   },
@@ -103,7 +103,8 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     y: 'necromancer',
     intended: 'x',
     level: 'edge',
-    reason: 'Its burst takes a quarter of the Necromancer’s health, more than a skull bite takes.',
+    reason:
+      'Its burst takes over a quarter of the Necromancer’s health, more than a skull bite takes.',
   },
   {
     x: 'hex',
@@ -114,9 +115,9 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'titan',
-    intended: 'x',
-    level: 'edge',
-    reason: 'Its big health makes a big burst, before the Titan grows big enough to hit back hard.',
+    intended: 'even',
+    reason:
+      'Its big health makes a big burst, but the Titan grows big soon and hits back hard: even.',
   },
   {
     x: 'hex',
@@ -128,9 +129,8 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'boomerang',
-    intended: 'y',
-    level: 'edge',
-    reason: 'It hits from afar twice a throw, and its small health makes a small burst.',
+    intended: 'even',
+    reason: 'It hits from afar twice a throw, but the Hex curses with each bump it lands: even.',
   },
   {
     x: 'hex',
@@ -156,6 +156,6 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     y: 'spider',
     intended: 'x',
     level: 'edge',
-    reason: 'Its burst takes a quarter of the Spider’s health, more than the webs nip back.',
+    reason: 'Its burst takes over a quarter of the Spider’s health, more than the webs nip back.',
   },
 ];

@@ -128,52 +128,34 @@ function allow(
 }
 
 /**
- * The balls off the strong-only shape today (ruleset 20, ADR 0073), each allowed exactly its gap
- * (strong wins / losses) and no wider: a ball slipping one more step fails, and a ball moving back
- * towards the shape still passes, so its allowance can then be tightened.
+ * The balls off the strong-only shape today (ruleset 21, ADR 0073, 0074), each allowed exactly its
+ * gap (strong wins / losses) and no wider: a ball slipping one more step fails, and a ball moving
+ * back towards the shape still passes, so its allowance can then be tightened.
  *
- * For ability tweaks or new balls: one-number changes move a ball's whole row (ADR 0010, 0028,
- * 0045), and the three-levels proposal's search plateaued with these still off.
- * - Titan 1/1: growing evens its fights out, weak early and strong late; only Thorns holds it.
+ * All ten wait for ability tweaks or new balls: one-number changes move a ball's whole row (ADR
+ * 0010, 0028, 0045), and the three-levels proposal's search plateaued with these still off.
+ * - Titan 0/0: growing evens its fights out, weak early and strong late, so no pair leans far.
  * - Ghost 2/1: phased, nothing touches it, so only the Bloom's regrowth beats it outright.
- * - Quake 0/0: small, wide shockwaves chip every ball alike, so no pair leans far either way.
- * - Slime 2/0: its split outlasts one-at-a-time hitters, and no ball hits both halves hard enough.
- * - Spider 1/0: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
+ * - Quake 2/0: small, wide shockwaves chip every ball alike, so no ball beats it outright.
+ * - Slime 1/0: its split outlasts one-at-a-time hitters; it beats only the Sniper, and none beat it.
+ * - Spider 1/2: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
  * - Spartan 1/2: shield and spear trade evenly with most; only the frail Vampire loses outright.
- * - Sniper 0/1: a moving ball often slips its line, so it leans on many and beats none outright.
+ * - Sniper 1/2: a moving ball often slips its line; only the slow Thorns loses outright.
  * - Inferno 2/1: fire burns every ball alike; only the Berserker, raged by each burn, beats it.
- * - Frost 1/2: its slow helps against all a little; only the Speedster, needing speed, loses.
- * - Boomerang 1/4: two light hits a throw beat only the Bloom; four balls punish its light bumps.
- * (The Vampire fits today; the proposal's Batch 2 would make it the eleventh, at 2/5.)
- *
- * For the next run's number changes (the proposal's Batches 1, 1b and 2 bring each to the shape):
- * - Archer 2/4: four balls reach the frail Archer between arrows; a quicker reload adds wins.
- * - Thorns 4/0: no ball beats it outright yet; eight lean on it, and a slower Thorns tips some.
- * - Magnet 3/1: only Thorns beats it outright; buffs to the balls with an edge on it tip one.
- * - Necromancer 2/1: only the Magnet beats it outright; buffs to its four edges against tip one.
- * - Bomber 0/2: its blasts lean its way against five balls, none outright; a bigger blast tips two.
- * - Bloom 3/5: five frequent hitters beat it (a fifth allowed, FIFTH_FROM_ONE_MECHANIC), two more
- *   than it beats; a harder regrowth bump adds wins.
- * - Battery 3/1: only Thorns beats it outright; buffs to its four edges against tip one.
+ * - Boomerang 2/4: two light hits a throw beat the Vampire and Bloom; four punish its light bumps.
+ * - Vampire 2/5: it heals only from its bumps, so five balls that hit without a touch beat it.
  */
 export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  titan: allow('titan', { wins: { fewest: 1 }, losses: { fewest: 1 } }),
+  titan: allow('titan', { wins: { fewest: 0 }, losses: { fewest: 0 } }),
   ghost: allow('ghost', { losses: { fewest: 1 } }),
-  quake: allow('quake', { wins: { fewest: 0 }, losses: { fewest: 0 } }),
-  slime: allow('slime', { losses: { fewest: 0 }, within: 2 }),
-  spider: allow('spider', { wins: { fewest: 1 }, losses: { fewest: 0 } }),
+  quake: allow('quake', { losses: { fewest: 0 }, within: 2 }),
+  slime: allow('slime', { wins: { fewest: 1 }, losses: { fewest: 0 } }),
+  spider: allow('spider', { wins: { fewest: 1 } }),
   spartan: allow('spartan', { wins: { fewest: 1 } }),
-  sniper: allow('sniper', { wins: { fewest: 0 }, losses: { fewest: 1 } }),
+  sniper: allow('sniper', { wins: { fewest: 1 } }),
   inferno: allow('inferno', { losses: { fewest: 1 } }),
-  frost: allow('frost', { wins: { fewest: 1 } }),
-  boomerang: allow('boomerang', { wins: { fewest: 1 }, within: 3 }),
-  archer: allow('archer', { within: 2 }),
-  thorns: allow('thorns', { losses: { fewest: 0 }, within: 4 }),
-  magnet: allow('magnet', { losses: { fewest: 1 }, within: 2 }),
-  necromancer: allow('necromancer', { losses: { fewest: 1 } }),
-  bomber: allow('bomber', { wins: { fewest: 0 }, within: 2 }),
-  bloom: allow('bloom', { within: 2 }),
-  battery: allow('battery', { losses: { fewest: 1 }, within: 2 }),
+  boomerang: allow('boomerang', { within: 2 }),
+  vampire: allow('vampire', { losses: { most: 5 }, within: 3 }),
 };
 
 /**

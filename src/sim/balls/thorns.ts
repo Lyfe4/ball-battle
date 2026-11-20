@@ -28,7 +28,7 @@ export const thorns = defineBall({
     'Only bumps meet its spikes: shots, strikes and poison don’t.',
   ],
   radius: STANDARD_BALL_RADIUS,
-  speed: 730,
+  speed: 727,
   maxHealth: 80,
   contactDamage: 18,
   initialAbilityState: {},

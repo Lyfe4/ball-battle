@@ -3,9 +3,9 @@
 import type { CounterEntry } from './counter-map.ts';
 
 /**
- * The reworked Ghost phases for one second in every four, and then nothing touches it: balls,
+ * The reworked Ghost phases for just over a second in every four, and then nothing touches it: balls,
  * shots, skulls and bombs pass through, and no hit lands. Passing through a ball deals its spectral
- * hit. A quarter of every kind of hit misses alike, so it beats only the balls whose damage comes as
+ * hit. Over a quarter of every kind of hit misses alike, so it beats only the balls whose damage comes as
  * a steady drip after the touch (Venom's poison, the Hex's curse), and loses to the Bloom, which
  * regrows between its spread-out hits.
  */
@@ -86,20 +86,24 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'necromancer',
-    intended: 'even',
-    reason: 'Skeletons pass through it while phased and bite while solid: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Skeletons pass through it while phased, and each pass through the Necromancer hits it.',
   },
   {
     x: 'chrono',
     y: 'ghost',
-    intended: 'even',
-    reason: 'No big hit to rewind: plain trades and spectral hits decide it.',
+    intended: 'y',
+    level: 'edge',
+    reason:
+      'No big hit to rewind, and its spectral hits land while the Chrono’s bumps pass through.',
   },
   {
     x: 'ghost',
     y: 'titan',
     intended: 'even',
-    reason: 'A giant’s bumps miss it a quarter of the time and land whole the rest.',
+    reason: 'A giant’s bumps miss it over a quarter of the time and land whole the rest.',
   },
   {
     x: 'ghost',
@@ -118,7 +122,7 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
     y: 'bomber',
     intended: 'y',
     level: 'edge',
-    reason: 'A phase lasts 1 s of every 4, so most blasts still catch it solid.',
+    reason: 'A phase lasts just over 1 s of every 4, so most blasts still catch it solid.',
   },
   {
     x: 'spartan',
