@@ -17,7 +17,7 @@ export const COOLDOWN_TICKS = 105;
 export const WARNING_TICKS = 52;
 export const ZONE_RADIUS = 140;
 /** Per hit. Identity rule: the biggest single ability hit in the roster (ADR 0045: 31 before). */
-export const ZONE_DAMAGE = 40;
+export const ZONE_DAMAGE = 42;
 /** The zone lands up to this far from the target's position when it was called. */
 export const MAX_OFFSET = 60;
 

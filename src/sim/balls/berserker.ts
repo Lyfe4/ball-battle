@@ -34,7 +34,7 @@ export const berserker = defineBall<BerserkerState>({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 780,
-  maxHealth: 86,
+  maxHealth: 88,
   contactDamage: 18.2,
   initialAbilityState: { rage: 0 },
   contactDamageOf: (self, stats) => stats.contactDamage + RAGE_PER_HIT * self.abilityState.rage,

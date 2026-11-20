@@ -46,14 +46,16 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'storm',
-    intended: 'even',
-    reason: 'A strike clears a skull, but the Necromancer raises another.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A strike clears the skull and hits the Necromancer harder than a skull bites back.',
   },
   {
     x: 'speedster',
     y: 'storm',
-    intended: 'even',
-    reason: 'Fast enough to leave some warning circles, not all of them: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Fast enough to leave most warning circles, and its rushes land hard between strikes.',
   },
   {
     x: 'storm',
@@ -100,8 +102,9 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'storm',
     y: 'thorns',
-    intended: 'even',
-    reason: 'Lightning never touches the spikes, but Thorns wins the bumps between strikes.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Lightning never touches the spikes, and a strike outweighs the bumps between them.',
   },
   {
     x: 'storm',
@@ -138,21 +141,23 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'chrono',
     y: 'quake',
     intended: 'y',
-    level: 'edge',
-    reason: 'Shockwaves are far too small to rewind, and they keep chipping it off every wall.',
+    level: 'strong',
+    reason:
+      'Shockwaves are far too small to rewind, and they chip it off every wall, again and again.',
   },
   {
     x: 'frost',
     y: 'quake',
-    intended: 'x',
-    level: 'edge',
-    reason: 'Slowed, it reaches the walls less often, so fewer shockwaves go out.',
+    intended: 'even',
+    reason:
+      'Slowed, it reaches the walls less often, but each shockwave still chips the Frost: even.',
   },
   {
     x: 'inferno',
     y: 'quake',
-    intended: 'even',
-    reason: 'Shockwaves and fire both hurt from afar, and neither needs a touch.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Both hurt without a touch, but the Quake’s bumps hit twice as hard as the Inferno’s.',
   },
   {
     x: 'magnet',
@@ -170,8 +175,10 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'bloom',
-    intended: 'even',
-    reason: 'Each shockwave restarts the wait, but they are small: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'Each shockwave restarts its wait, and they go out from every wall, so the bud rarely opens.',
   },
   {
     x: 'quake',
@@ -189,8 +196,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
     x: 'quake',
     y: 'necromancer',
     intended: 'x',
-    level: 'edge',
-    reason: 'Wide shockwaves keep popping the skull before it reaches the Quake.',
+    level: 'strong',
+    reason: 'Wide shockwaves pop the skull before it arrives, and chip the Necromancer too.',
   },
   {
     x: 'quake',
@@ -201,8 +208,9 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'quake',
     y: 'speedster',
-    intended: 'even',
-    reason: 'The fastest ball runs into the most shockwaves, but rushes in hard between them.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'The fastest ball runs into the most shockwaves, more than its rushes win back.',
   },
   {
     x: 'quake',

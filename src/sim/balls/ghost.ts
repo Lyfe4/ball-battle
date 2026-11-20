@@ -1,5 +1,6 @@
-import { STANDARD_BALL_RADIUS, TICK_RATE } from '../constants.ts';
+import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { secondsOf } from './how-it-works.ts';
 
 export type GhostState = Readonly<{
   /** Where in its rhythm this match started it (seeded on its first tick); -1 before that. */
@@ -8,9 +9,9 @@ export type GhostState = Readonly<{
   phased: boolean;
 }>;
 
-/** Its rhythm: phased for PHASE_TICKS out of every PHASE_CYCLE_TICKS (1 s of every 4 s). */
+/** Its rhythm: phased for PHASE_TICKS out of every PHASE_CYCLE_TICKS (just over 1 s of every 4 s). */
 export const PHASE_CYCLE_TICKS = 240;
-export const PHASE_TICKS = 60;
+export const PHASE_TICKS = 70;
 /** Passing through a ball while phased hits it for this much, once per pass. */
 export const SPECTRAL_HIT = 12;
 
@@ -33,7 +34,7 @@ export const ghost = defineBall<GhostState>({
   color: '#c4b5fd',
   ability: { name: 'Phase', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
   howItWorks: [
-    `It is phased for ${PHASE_TICKS / TICK_RATE} s of every ${PHASE_CYCLE_TICKS / TICK_RATE} s. Then nothing touches it: balls, shots, skulls and bombs pass through, and no hit lands.`,
+    `It is phased for ${secondsOf(PHASE_TICKS)} s of every ${secondsOf(PHASE_CYCLE_TICKS)} s. Then nothing touches it: balls, shots, skulls and bombs pass through, and no hit lands.`,
     `Passing through a ball while phased hits it for ${SPECTRAL_HIT}, once per pass.`,
   ],
   radius: STANDARD_BALL_RADIUS,

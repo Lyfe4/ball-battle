@@ -11,7 +11,7 @@ export const COOLDOWN_TICKS = 12;
 export const WARNING_TICKS = 12;
 export const ZONE_RADIUS = 250;
 /** Per hit; below the Storm's strike, which stays the biggest single ability hit. */
-export const ZONE_DAMAGE = 6;
+export const ZONE_DAMAGE = 7;
 
 /** The tick the Quake's next shockwave is ready on, read from any ball state (undefined for others). */
 export function readyTickOf(ball: BallState): number | undefined {

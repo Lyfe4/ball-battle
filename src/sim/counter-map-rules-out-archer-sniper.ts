@@ -39,8 +39,9 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'archer',
     y: 'inferno',
-    intended: 'even',
-    reason: 'Arrows hit from range, but the fire burns the frail Archer wherever it crosses.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Arrows hit from range, more than the fire burns back when the Archer crosses it.',
   },
   {
     x: 'archer',
@@ -52,8 +53,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'thorns',
     intended: 'x',
-    level: 'edge',
-    reason: 'Arrows never touch the spikes.',
+    level: 'strong',
+    reason: 'Arrows never touch the spikes, and the slow Thorns can’t close in fast.',
   },
   {
     x: 'brawler',
@@ -92,9 +93,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'titan',
     y: 'archer',
-    intended: 'x',
-    level: 'edge',
-    reason: 'Arrows chip it while it is small; grown, its bumps flatten the frail Archer.',
+    intended: 'even',
+    reason: 'Arrows chip it while it is small; grown, its bumps flatten the frail Archer: even.',
   },
   {
     x: 'venom',
@@ -164,8 +164,8 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'sniper',
     y: 'thorns',
     intended: 'x',
-    level: 'edge',
-    reason: 'The shot never touches the spikes.',
+    level: 'strong',
+    reason: 'The shot never touches the spikes, and the slow Thorns can’t slip its line.',
   },
   {
     x: 'sniper',
@@ -177,7 +177,7 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
     x: 'speedster',
     y: 'sniper',
     intended: 'x',
-    level: 'edge',
+    level: 'strong',
     reason: 'The fastest ball, faster still with stacks, is off the locked line before the shot.',
   },
   {

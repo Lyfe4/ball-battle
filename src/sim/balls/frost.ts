@@ -26,7 +26,7 @@ export const frost = defineBall({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 720,
-  maxHealth: 80,
+  maxHealth: 83,
   contactDamage: 22,
   initialAbilityState: {},
   hooks: {

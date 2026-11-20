@@ -25,8 +25,9 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     x: 'bomber',
     y: 'speedster',
     intended: 'x',
-    level: 'edge',
-    reason: 'The fastest ball covers the most ground, so it runs into the most bombs.',
+    level: 'strong',
+    reason:
+      'The fastest ball covers the most ground, so it runs into the most bombs, each a big blast.',
   },
   {
     x: 'frost',
@@ -37,8 +38,9 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'thorns',
     y: 'bomber',
-    intended: 'even',
-    reason: 'A blast never touches the spikes, but the Bomber’s own hits are light.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Blasts never touch the spikes, and the slow Thorns can’t keep clear of the bombs.',
   },
   {
     x: 'magnet',
@@ -49,8 +51,9 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'bomber',
-    intended: 'even',
-    reason: 'A blast clears a skull, but a new one rises soon after: neither side gains.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A blast hits harder than a skull bites, and it clears the skull for a while too.',
   },
   {
     x: 'titan',
@@ -61,7 +64,9 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'bomber',
-    intended: 'even',
-    reason: 'Fire and bombs both lie in wait behind them, and each crosses the other’s.',
+    intended: 'y',
+    level: 'edge',
+    reason:
+      'Both lie in wait, but one blast hits harder than the burns it takes crossing the fire.',
   },
 ];

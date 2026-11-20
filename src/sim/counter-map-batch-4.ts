@@ -40,9 +40,8 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
     x: 'thorns',
     y: 'titan',
     intended: 'x',
-    level: 'strong',
-    reason:
-      'The bigger it grows, the harder it bumps, and the harder each bump comes back off the spikes.',
+    level: 'edge',
+    reason: 'The bigger it grows, the harder each bump comes back off the spikes.',
   },
   {
     x: 'titan',
@@ -101,8 +100,7 @@ export const BATCH_FOUR_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'inferno',
     y: 'titan',
-    intended: 'x',
-    level: 'edge',
-    reason: 'A growing giant crosses more fire every second, and burns never miss it.',
+    intended: 'even',
+    reason: 'A growing giant crosses more fire, but it grows big soon and bumps back hard: even.',
   },
 ];

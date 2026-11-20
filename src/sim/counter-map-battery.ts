@@ -45,7 +45,7 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
     x: 'battery',
     y: 'frost',
     intended: 'y',
-    level: 'edge',
+    level: 'strong',
     reason: 'Its speed is its strength, and every frosty hit slows it right down.',
   },
   {
@@ -58,8 +58,10 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'battery',
     y: 'venom',
-    intended: 'even',
-    reason: 'Poison ticks are small and never stored: plain trades decide it.',
+    intended: 'y',
+    level: 'edge',
+    reason:
+      'Poison ticks are small and never stored, and they wear the Battery down between bumps.',
   },
   {
     x: 'battery',
@@ -82,8 +84,9 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'battery',
     y: 'ghost',
-    intended: 'even',
-    reason: 'Its stored bumps pass through a phased Ghost like any other.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Its stored bumps pass through a phased Ghost, wasted, while spectral hits land on it.',
   },
   {
     x: 'battery',
@@ -100,8 +103,9 @@ export const BATTERY_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'battery',
     y: 'titan',
-    intended: 'even',
-    reason: 'The Titan grows into big bumps, which it never stores.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Grown, the Titan bumps harder than the Battery and barely turns when it is hit.',
   },
   {
     x: 'battery',

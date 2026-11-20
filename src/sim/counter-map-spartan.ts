@@ -44,9 +44,9 @@ export const SPARTAN_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'spartan',
     y: 'frost',
-    intended: 'x',
-    level: 'edge',
-    reason: 'The shield halves its bumps, and the slow Frost is an easy spear target.',
+    intended: 'even',
+    reason:
+      'The shield halves its bumps and the slow Frost is an easy target, but it outlasts: even.',
   },
   {
     x: 'spartan',

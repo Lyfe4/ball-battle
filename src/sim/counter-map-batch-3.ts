@@ -27,17 +27,16 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'magnet',
     y: 'speedster',
-    intended: 'x',
-    level: 'edge',
-    reason:
-      'The pull turns it off the walls before its speed builds, into the Magnet’s heavy bumps.',
+    intended: 'even',
+    reason: 'The pull turns it off the walls, but the stacks it does build rush in hard: even.',
   },
   {
     x: 'magnet',
     y: 'frost',
     intended: 'y',
-    level: 'edge',
-    reason: 'The pull only brings it into a brawl with the sturdier Frost, slowed by every bump.',
+    level: 'strong',
+    reason:
+      'The pull drags it into a brawl with the sturdy Frost, slowed by every bump and outlasted.',
   },
   {
     x: 'thorns',
@@ -63,8 +62,9 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'frost',
-    intended: 'even',
-    reason: 'Minions chip the sturdy Frost, which wins the contacts in between.',
+    intended: 'y',
+    level: 'edge',
+    reason: 'Skeletons chip the sturdy Frost, but its big health wins the contacts in between.',
   },
   {
     x: 'necromancer',

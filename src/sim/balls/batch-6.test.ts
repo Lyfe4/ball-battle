@@ -46,7 +46,7 @@ describe('Hex', () => {
       { position: { x: 700, y: 500 }, velocity: { x: -target.speed, y: 0 }, health },
     ]);
 
-  it('curses with its bump; the mark bursts CURSE_FUSE_TICKS later for a quarter of full health', () => {
+  it('curses with its bump; the mark bursts CURSE_FUSE_TICKS later for 27% of full health', () => {
     const { events } = play(meeting(red), CURSE_FUSE_TICKS + 60);
     const [bump] = ofType(events, 'collision');
     const bursts = damageTo(events, 'ball-1').filter((event) => event.via === 'onTick');
@@ -54,7 +54,7 @@ describe('Hex', () => {
     expect(bursts).toHaveLength(1);
     expect(bursts[0]?.tick).toBe((bump?.tick ?? 0) + CURSE_FUSE_TICKS);
     expect(bursts[0]?.amount).toBe(curseBurstFor(red.maxHealth));
-    expect(curseBurstFor(red.maxHealth)).toBe(Math.round(red.maxHealth / 4));
+    expect(curseBurstFor(red.maxHealth)).toBe(Math.round(red.maxHealth * 0.27));
   });
 
   it('bursts for a share of the cursed ball’s own full health, not what it has left', () => {

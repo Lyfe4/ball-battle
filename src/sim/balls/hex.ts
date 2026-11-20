@@ -1,5 +1,6 @@
 import { STANDARD_BALL_RADIUS, TICK_RATE } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
+import { percentOf } from './how-it-works.ts';
 import type { BallState } from '../types.ts';
 
 export type HexState = Readonly<{
@@ -14,7 +15,7 @@ export type HexState = Readonly<{
 /** A curse bursts this long after the bump that laid it (3 s). */
 export const CURSE_FUSE_TICKS = 180;
 /** The burst takes this share of the cursed ball's full health. */
-export const CURSE_SHARE = 0.25;
+export const CURSE_SHARE = 0.27;
 
 /** The burst on a ball of `maxHealth`: CURSE_SHARE of it, rounded, at least 1. */
 export function curseBurstFor(maxHealth: number): number {
@@ -48,11 +49,11 @@ const NO_CURSE: HexState = { cursedId: '', cursedTick: 0, burstTick: 0 };
 export const hex = defineBall<HexState>({
   id: 'hex',
   name: 'Hex',
-  description: 'Its bump curses: 3 s later it takes a quarter of its health.',
+  description: 'Its bump curses: 3 s later it takes 27% of its health.',
   color: '#d946ef',
   ability: { name: 'Curse', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
   howItWorks: [
-    `Its bump marks the other ball. ${CURSE_FUSE_TICKS / TICK_RATE} s later the mark bursts for ${CURSE_SHARE * 100}% of that ball’s full health.`,
+    `Its bump marks the other ball. ${CURSE_FUSE_TICKS / TICK_RATE} s later the mark bursts for ${percentOf(CURSE_SHARE)} of that ball’s full health.`,
     'A bump on a ball already marked does nothing: the countdown keeps running.',
     `So big balls take big bursts: ${curseBurstFor(80)} on an 80-health ball, ${curseBurstFor(40)} on a 40-health one.`,
   ],
