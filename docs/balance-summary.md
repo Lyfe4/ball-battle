@@ -44,8 +44,6 @@ than a failure.
 | Banshee     | 49.0% |      2 (68.9%) |   1 (64.0%) |  16 (52.1%) |   5 (38.0%) |      3 (32.4%) |      -1 |           2 (68.9%) |        1 (64.0%) |       16 (52.1%) |        5 (38.0%) |           3 (32.4%) |           -1 |
 | Kraken      | 52.1% |      3 (70.7%) |   7 (62.0%) |  10 (52.8%) |   3 (39.4%) |      4 (28.4%) |      -1 |           3 (70.7%) |        7 (62.0%) |       10 (52.8%) |        3 (39.4%) |           4 (28.4%) |           -1 |
 
-Lopsided: Vampire, Archer, Spider.
-
 ## Counters
 
 Each ball’s strong counters and edges by the map, with its measured win rate against each.
@@ -81,22 +79,26 @@ Each ball’s strong counters and edges by the map, with its measured win rate a
 | Banshee     | Ghost 69.0%, Vampire 68.8%                                             | Spider 64.0%                                                                                                 | Slime 35.2%, Berserker 37.3%, Boomerang 37.3%, Sniper 39.3%, Balloon 41.1%                                                                          | Chrono 29.0%, Archer 33.3%, Titan 35.0%                                                              |
 | Kraken      | Titan 71.2%, Spider 70.8%, Vampire 70.1%                               | Thorns 64.2%, Chrono 63.3%, Frost 62.2%, Brawler 61.6%, Inferno 61.6%, Necromancer 60.9%, Balloon 60.2%      | Boomerang 37.3%, Speedster 39.9%, Archer 41.1%                                                                                                      | Storm 22.8%, Sniper 26.8%, Ghost 30.8%, Spartan 33.3%                                                |
 
-## Known gaps
+## The shape
 
-Every ball has 2-4 strong counters each way, the two counts within 1; a fifth on one
-side is allowed when it comes from the same visible mechanic: Bloom (losses: any hit shuts the bud).
-The balls below are off that shape today and allowed exactly their gap by name, each with its
-reason in `scripts/counter-map.ts` (ADR 0073). The even picks have exactly their counters:
-Brawler beats nobody and loses to Thorns.
+Hard limits (ADR 0076): no ball has more than 6 strong wins or 6 strong losses, and every
+ball added after ruleset 22 has at least 2 of each. Allowed its count until it is back under:
+Vampire (7 losses).
 
-| Ball    | Strong wins | Strong losses | Wins and losses within |
-| ------- | ----------: | ------------: | ---------------------: |
-| Titan   |         1-4 |           1-4 |                      1 |
-| Quake   |         2-4 |           1-4 |                      1 |
-| Spider  |         1-4 |           2-4 |                      2 |
-| Slime   |         1-4 |           0-4 |                      1 |
-| Vampire |         2-4 |           2-7 |                      5 |
-| Archer  |         2-5 |           2-4 |                      2 |
+The shape is a warning: 2-4 strong counters each way, the two counts within 1; a fifth on one
+side where one visible mechanic gives it: Bloom (losses: any hit shuts the bud). The even pick has exactly its
+counters: Brawler beats nobody and loses to Thorns.
+
+Off the shape in this run:
+
+| Ball    | Strong wins | Strong losses |
+| ------- | ----------: | ------------: |
+| Vampire |           2 |             7 |
+| Archer  |           5 |             3 |
+| Quake   |           2 |             1 |
+| Titan   |           1 |             1 |
+| Spider  |           1 |             3 |
+| Slime   |           1 |             0 |
 
 ## Off the aim
 
