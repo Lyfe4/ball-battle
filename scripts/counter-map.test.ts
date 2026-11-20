@@ -4,15 +4,20 @@ import { BALLS } from '../src/sim/balls/index.ts';
 import {
   checkCounter,
   ciAllowance,
+  BEFORE_THE_FLOOR,
   COUNTER_MAP,
   counterFor,
+  counterProblem,
   EVEN_PICKS,
   FIFTH_FROM_ONE_MECHANIC,
+  findingsIn,
   labelOf,
   measuredOf,
+  OVER_THE_LIMIT,
   SHAPE,
-  SHAPE_EXCEPTIONS,
-  shapeProblem,
+  shapeWarning,
+  STRONG_LIMITS,
+  strongCountersIn,
   type CounterEntry,
 } from './counter-map.ts';
 
@@ -89,17 +94,23 @@ describe('the counter map', () => {
     }
   });
 
-  it('gives every ball its shape, strong counters only, but for the named exceptions', () => {
+  it('keeps every ball inside the hard limits on its strong counters (ADR 0076)', () => {
     for (const { id } of BALLS) {
       const { beats, losesTo } = strongCountersOf(id);
-      expect(shapeProblem(id, beats, losesTo), id).toBeUndefined();
+      expect(counterProblem(id, beats, losesTo), id).toBeUndefined();
     }
   });
 
-  it('names exactly the balls off the shape today as exceptions (ADR 0073, 0074, 0075)', () => {
-    expect(Object.keys(SHAPE_EXCEPTIONS).sort()).toStrictEqual(
-      ['titan', 'quake', 'slime', 'spider', 'vampire', 'archer'].sort(),
-    );
+  it('allows a ball over the limit exactly its count today, and drops it once back under', () => {
+    for (const [id, { wins, losses }] of Object.entries(OVER_THE_LIMIT)) {
+      const own = strongCountersOf(id);
+      if (wins !== undefined) expect(own.beats.length, id).toBe(wins);
+      if (losses !== undefined) expect(own.losesTo.length, id).toBe(losses);
+    }
+  });
+
+  it('names exactly the ruleset 22 roster as added before the floor', () => {
+    expect(BEFORE_THE_FLOOR).toStrictEqual(BALLS.slice(0, 28).map((ball) => ball.id));
   });
 
   it('keeps each even pick even against everyone but its listed counters (docs/vision.md)', () => {
@@ -113,70 +124,94 @@ describe('the counter map', () => {
   });
 });
 
-describe('shapeProblem', () => {
+describe('counterProblem', () => {
   const some = (count: number) => Array.from({ length: count }, (_, i) => `ball-${String(i)}`);
 
-  it('holds every other ball to SHAPE', () => {
+  it('fails a seventh strong win or loss on any ball', () => {
+    expect(STRONG_LIMITS).toStrictEqual({ most: 6, newFewest: 2 });
+    expect(counterProblem('titan', some(6), some(6))).toBeUndefined();
+    expect(counterProblem('titan', some(7), some(2))).toBe('7 strong wins, at most 6');
+    expect(counterProblem('titan', some(2), some(7))).toBe('7 strong losses, at most 6');
+    expect(counterProblem('cowboy', some(7), some(3))).toBeDefined();
+  });
+
+  it('allows the Vampire its seven losses and no eighth', () => {
+    expect(OVER_THE_LIMIT).toStrictEqual({ vampire: { losses: 7 } });
+    expect(counterProblem('vampire', some(2), some(7))).toBeUndefined();
+    expect(counterProblem('vampire', some(2), some(8))).toBeDefined();
+    expect(counterProblem('vampire', some(7), some(3))).toBeDefined();
+  });
+
+  it('needs 2 strong wins and 2 strong losses of a ball added after ruleset 22', () => {
+    expect(counterProblem('cowboy', some(2), some(2))).toBeUndefined();
+    expect(counterProblem('cowboy', some(6), some(2))).toBeUndefined();
+    expect(counterProblem('cowboy', some(1), some(3))).toBe(
+      'a new ball needs 2+ strong wins and losses, has 1/3',
+    );
+    expect(counterProblem('cowboy', some(3), some(1))).toBeDefined();
+    // The balls before the floor keep what they have: the Slime beats one and loses to none.
+    expect(counterProblem('slime', some(1), some(0))).toBeUndefined();
+    expect(counterProblem('brawler', some(0), some(1))).toBeUndefined();
+  });
+});
+
+describe('shapeWarning', () => {
+  const some = (count: number) => Array.from({ length: count }, (_, i) => `ball-${String(i)}`);
+
+  it('warns on any ball off SHAPE, with its counts', () => {
     expect(SHAPE).toStrictEqual({ fewest: 2, most: 4, within: 1 });
-    expect(shapeProblem('venom', some(2), some(3))).toBeUndefined();
-    expect(shapeProblem('venom', some(4), some(4))).toBeUndefined();
-    expect(shapeProblem('venom', some(1), some(2))).toBeDefined();
-    expect(shapeProblem('venom', some(5), some(4))).toBeDefined();
-    expect(shapeProblem('venom', some(2), some(4))).toBeDefined();
+    expect(shapeWarning('venom', some(2), some(3))).toBeUndefined();
+    expect(shapeWarning('venom', some(4), some(4))).toBeUndefined();
+    expect(shapeWarning('venom', some(1), some(2))).toBe('1/2, the shape wants 2-4 strong wins');
+    expect(shapeWarning('venom', some(5), some(4))).toBeDefined();
+    expect(shapeWarning('venom', some(2), some(4))).toBe(
+      '2/4, the shape wants wins and losses within 1',
+    );
+    // Today's balls off the shape warn; none is excused by name.
+    expect(shapeWarning('vampire', some(2), some(7))).toBeDefined();
+    expect(shapeWarning('slime', some(1), some(0))).toBeDefined();
   });
 
   it('allows a fifth on one side only where one visible mechanic gives it', () => {
     expect(Object.keys(FIFTH_FROM_ONE_MECHANIC)).toStrictEqual(['bloom']);
     // The Bloom may lose to five (any hit shuts the bud), still within 1 of its wins.
-    expect(shapeProblem('bloom', some(4), some(5))).toBeUndefined();
-    expect(shapeProblem('bloom', some(4), some(6))).toBeDefined();
-    expect(shapeProblem('bloom', some(3), some(5))).toBeDefined();
-    expect(shapeProblem('bloom', some(5), some(5))).toBeDefined();
-  });
-
-  it('allows each named exception exactly its own gap, and no more', () => {
-    // Each ball's strong-only shape today (ruleset 22, map and measured) fits its allowance...
-    const today: Readonly<Record<string, readonly [number, number]>> = {
-      titan: [1, 1],
-      quake: [2, 1],
-      slime: [1, 0],
-      spider: [1, 3],
-      vampire: [2, 7],
-      archer: [5, 3],
-    };
-    expect(Object.keys(today).sort()).toStrictEqual(Object.keys(SHAPE_EXCEPTIONS).sort());
-    for (const [id, [wins, losses]] of Object.entries(today)) {
-      expect({ id, problem: shapeProblem(id, some(wins), some(losses)) }).toStrictEqual({
-        id,
-        problem: undefined,
-      });
-      // ...and one more step off the shape fails: one fewer than its fewest on a side, or the
-      // two sides one further apart than allowed.
-      const allowance = SHAPE_EXCEPTIONS[id];
-      if (allowance === undefined) throw new Error(id);
-      const { wins: w, losses: l, within } = allowance;
-      expect([w.fewest, l.fewest, within], id).toStrictEqual([
-        Math.min(wins, 2),
-        Math.min(losses, 2),
-        Math.max(Math.abs(wins - losses), 1),
-      ]);
-      if (w.fewest > 0)
-        expect(shapeProblem(id, some(w.fewest - 1), some(losses)), id).toBeDefined();
-      if (l.fewest > 0) expect(shapeProblem(id, some(wins), some(l.fewest - 1)), id).toBeDefined();
-      expect(shapeProblem(id, some(losses + within + 1), some(losses)), id).toBeDefined();
-    }
-    // The Vampire's seventh loss is its gap; an eighth fails. The Archer's fifth win, a sixth.
-    expect(shapeProblem('vampire', some(2), some(8))).toBeDefined();
-    expect(shapeProblem('archer', some(6), some(4))).toBeDefined();
-    // A ball that moves back towards the shape still passes.
-    expect(shapeProblem('titan', some(2), some(2))).toBeUndefined();
-    expect(shapeProblem('vampire', some(3), some(4))).toBeUndefined();
-    expect(shapeProblem('quake', some(2), some(2))).toBeUndefined();
+    expect(shapeWarning('bloom', some(4), some(5))).toBeUndefined();
+    expect(shapeWarning('bloom', some(4), some(6))).toBeDefined();
+    expect(shapeWarning('bloom', some(3), some(5))).toBeDefined();
+    expect(shapeWarning('bloom', some(5), some(5))).toBeDefined();
   });
 
   it('holds an even pick to exactly its listed counters', () => {
-    expect(shapeProblem('brawler', [], ['thorns'])).toBeUndefined();
-    expect(shapeProblem('brawler', ['ghost'], ['thorns'])).toBeDefined();
+    expect(shapeWarning('brawler', [], ['thorns'])).toBeUndefined();
+    expect(shapeWarning('brawler', ['ghost'], ['thorns'])).toBeDefined();
+  });
+});
+
+describe('strongCountersIn', () => {
+  const pairs = [
+    { x: 'thorns', y: 'brawler', xRate: 0.7, yRate: 0.29 },
+    { x: 'storm', y: 'thorns', xRate: 0.6, yRate: 0.39 },
+    { x: 'storm', y: 'brawler', xRate: 0.3, yRate: 0.66 },
+  ];
+
+  it('counts measured strong counters only in a full run, and the map’s in the CI check', () => {
+    const measured = strongCountersIn(['thorns', 'brawler'], pairs, false);
+    expect(measured).toStrictEqual([
+      { id: 'thorns', beats: ['brawler'], losesTo: [] },
+      { id: 'brawler', beats: ['storm'], losesTo: ['thorns'] },
+    ]);
+    // The map calls the Brawler and the Storm even, so the CI check doesn't count that pair.
+    const fromMap = strongCountersIn(['brawler'], pairs, true);
+    expect(fromMap).toStrictEqual([{ id: 'brawler', beats: [], losesTo: ['thorns'] }]);
+  });
+
+  it('turns each finding into "ball: finding"', () => {
+    const counters = strongCountersIn(['thorns', 'brawler'], pairs, false);
+    expect(findingsIn(counters, shapeWarning)).toStrictEqual([
+      'thorns: 1/0, the shape wants 2-4 strong wins',
+      'brawler: an even pick beats nobody and loses to thorns only',
+    ]);
+    expect(findingsIn(counters, counterProblem)).toStrictEqual([]);
   });
 });
 
