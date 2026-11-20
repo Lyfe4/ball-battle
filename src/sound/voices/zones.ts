@@ -1,8 +1,8 @@
 // Balls that hit through the court: a warning you can hear coming, then the strike. The Bomber's
-// fuse and boom, the Storm's crackle and thunder, the Quake's rumble, the Inferno's sizzle and the
-// Spider's sticky webs.
+// fuse and boom, the Storm's crackle and thunder, the Quake's rumble, the Inferno's sizzle, the
+// Spider's sticky webs, the Banshee's breath and wail, and the Kraken's tentacles rising and crushing.
 import { noise, tone } from '../synth.ts';
-import { C5, D5, G5, type Voice } from './scale.ts';
+import { A4, A5, C4, C5, D5, E4, E5, G4, G5, type Voice } from './scale.ts';
 
 export const ZONE_VOICES = {
   /** The Bomber drops a bomb: a heavy "plonk" and a short fuse hiss. */
@@ -134,5 +134,77 @@ export const ZONE_VOICES = {
     });
     tone(kit, { from: D5 * 1.5, to: D5 * 1.17, glide: 0.18, at, length: 0.2, gain: 0.06 });
     noise(kit, { filter: 'bandpass', from: 2000, q: 6, at: at + 0.02, length: 0.02, gain: 0.15 });
+  },
+  /** The Banshee draws breath: a soft airy inhale, rising into the wail. */
+  breath(kit, at) {
+    noise(kit, {
+      filter: 'bandpass',
+      from: 700,
+      to: 2200,
+      q: 2.5,
+      at,
+      length: 0.5,
+      gain: 0.1,
+      attack: 0.42,
+    });
+  },
+  /** It wails: a high, hollow cry sliding up and falling away, two voices beating in it. */
+  wail(kit, at, { gain }) {
+    for (const cents of [0, 32]) {
+      tone(kit, {
+        from: E5,
+        to: A5,
+        glide: 0.16,
+        at,
+        length: 0.75,
+        gain: 0.12 * (0.7 + 0.3 * gain),
+        attack: 0.05,
+        detune: cents,
+      });
+    }
+    tone(kit, { type: 'triangle', from: A4, to: E4, glide: 0.7, at, length: 0.7, gain: 0.08 });
+    noise(kit, { filter: 'bandpass', from: 1800, to: 900, q: 6, at, length: 0.6, gain: 0.07 });
+  },
+  /** The Kraken calls its tentacles: deep bubbles rising under the court. */
+  ripple(kit, at) {
+    [C4, E4, G4].forEach((pitch, index) => {
+      tone(kit, {
+        from: pitch / 2,
+        to: pitch,
+        glide: 0.05,
+        at: at + index * 0.08,
+        length: 0.07,
+        gain: 0.14,
+      });
+    });
+    noise(kit, { filter: 'lowpass', from: 500, at, length: 0.3, gain: 0.07, attack: 0.1 });
+  },
+  /** They burst up and wrap a ball: a wet slap, then a squelch rising as they tighten. */
+  grab(kit, at) {
+    noise(kit, { filter: 'bandpass', from: 1500, to: 500, q: 1.4, at, length: 0.1, gain: 0.35 });
+    tone(kit, {
+      type: 'triangle',
+      from: G4 / 2,
+      to: G4,
+      glide: 0.22,
+      at: at + 0.05,
+      length: 0.26,
+      gain: 0.16,
+      attack: 0.05,
+    });
+  },
+  /** They crush it: three quick crunches like a shell giving way, harder for a bigger ball. */
+  crush(kit, at, { gain }) {
+    [0, 0.045, 0.1].forEach((when, index) => {
+      noise(kit, {
+        filter: 'bandpass',
+        from: 2200 - index * 500,
+        q: 2,
+        at: at + when,
+        length: 0.05,
+        gain: 0.42 * (0.6 + 0.4 * gain),
+      });
+    });
+    tone(kit, { type: 'triangle', from: C4, to: G4 / 2, glide: 0.12, at, length: 0.16, gain: 0.2 });
   },
 } satisfies Record<string, Voice>;

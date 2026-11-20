@@ -57,6 +57,7 @@ const ABILITY_DAMAGE: Readonly<Record<string, FightCue>> = {
   'venom/poison': 'poisonTick',
   'inferno/zonePulse': 'burn',
   'thorns/onDamageTaken': 'thorns',
+  'kraken/onTick': 'crush',
 };
 
 /** Damage that size, as a share of a hard hit, for ability damage measured in its own units. */
@@ -159,6 +160,10 @@ export function cuesOf(
         if (kind !== undefined) {
           add(kind, share(event.amount, 12), after.get(event.targetId)?.position);
         }
+        // A shot its defence made hit harder: the Balloon pops beside the shot's own hit.
+        if (event.via === 'projectile' && (event.raised ?? 0) > 0) {
+          add('pop', share(event.amount, 12), after.get(event.targetId)?.position);
+        }
         break;
       }
       case 'healed':
@@ -171,6 +176,7 @@ export function cuesOf(
         const at = after.get(event.ballId)?.position;
         if (kind === 'battery') add('store', event.reduced / CAPACITY, at);
         if (kind === 'spartan') add('glance', event.reduced / (event.reduced + event.rest), at);
+        if (kind === 'balloon') add('squash', share(event.reduced, 12), at);
         break;
       }
       case 'statusApplied': {
@@ -178,6 +184,7 @@ export function cuesOf(
         const source = kindOf(event.sourceId);
         if (event.status === 'slowed' && source === 'frost') add('frost', 0.6, at);
         if (event.status === 'poisoned' && source === 'venom') add('poison', 0.6, at);
+        if (event.status === 'held' && source === 'kraken') add('grab', 0.6, at);
         break;
       }
       case 'rewound':

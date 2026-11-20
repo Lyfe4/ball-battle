@@ -1,8 +1,12 @@
 // The moments no event marks: a change in a ball's ability state between the world before a tick
 // and after it (ADR 0064). The Hex's curse landing, the Ghost phasing out, the Magnet's pull, the
 // Sniper locking on, the Spartan planting its shield, the Spider spinning a web, the Titan growing
-// a step, the Berserker's rage building, the Bloom opening or shutting. Pure, like cues.ts.
+// a step, the Berserker's rage building, the Bloom opening or shutting, the Banshee drawing breath
+// and wailing, the Kraken calling its tentacles. Pure, like cues.ts.
+import { nextWailTickOf } from '../sim/balls/banshee.ts';
 import { rageOf } from '../sim/balls/berserker.ts';
+import { krakenStateOf } from '../sim/balls/kraken.ts';
+import { theme } from '../render/theme.ts';
 import { pausedUntilOf } from '../sim/balls/bloom.ts';
 import { hexCurseOf } from '../sim/balls/hex.ts';
 import { chargeOf } from '../sim/balls/sniper.ts';
@@ -89,6 +93,26 @@ export function stateCues(
         // A corner spins two at once: one sound.
         const spun = (websOf(ball) ?? []).find((web) => web.since === world.tick);
         if (spun !== undefined) add('webLay', 0.5, webPoint(spun, world.arena.size));
+        break;
+      }
+      case 'banshee': {
+        // The breath starts as the arena's glow does; the wail is its next wail moving on.
+        const next = nextWailTickOf(ball);
+        const wasNext = nextWailTickOf(was);
+        if (next === undefined || wasNext === undefined) break;
+        const breathAt = next - theme.bansheeBreathTicks;
+        if (next !== wasNext) add('wail', 1, at);
+        else if (previous.tick < breathAt && world.tick >= breathAt) add('breath', 0.6, at);
+        break;
+      }
+      case 'kraken': {
+        // Its call: the ripples appear where the tentacles will rise.
+        const state = krakenStateOf(ball);
+        const wasState = krakenStateOf(was);
+        const spot = state?.spots[0];
+        if (spot !== undefined && state !== undefined && wasState !== undefined) {
+          if (state.burstTick >= 0 && wasState.burstTick < 0) add('ripple', 0.6, spot);
+        }
         break;
       }
       case 'titan':

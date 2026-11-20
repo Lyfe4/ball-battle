@@ -32,6 +32,11 @@ export const FIGHT_CUES = [
   'burn',
   'webLay',
   'webCatch',
+  'breath',
+  'wail',
+  'ripple',
+  'grab',
+  'crush',
   // In the body.
   'rage',
   'rageHit',
@@ -41,6 +46,8 @@ export const FIGHT_CUES = [
   'phaseIn',
   'ghostPass',
   'pull',
+  'squash',
+  'pop',
   // Health and time.
   'frost',
   'poison',

@@ -1,6 +1,6 @@
 // Balls whose ability lives in their own body: the Berserker's growl and smash, the Speedster's
 // whip-crack, the Titan's stretch, the Thorns' spikes biting back, the Ghost slipping out of the
-// world, the Magnet's hum.
+// world, the Magnet's hum, the Balloon's rubbery squash and pop.
 import { noise, tone } from '../synth.ts';
 import { A4, A5, C4, C5, C6, E5, E6, G4, G5, type Voice } from './scale.ts';
 
@@ -137,5 +137,32 @@ export const BODY_VOICES = {
     });
     tone(kit, { from: 70, to: 140, at, length: 0.4, gain: level, detune: 40, attack: 0.08 });
     tone(kit, { from: G5, to: C6, at: at + 0.25, length: 0.15, gain: 0.04 * gain });
+  },
+  /** An area hit glances off the floating Balloon: a short rubbery squeak, bending down. */
+  squash(kit, at, { gain, detune }) {
+    tone(kit, {
+      type: 'triangle',
+      from: A5,
+      to: E5,
+      glide: 0.1,
+      at,
+      length: 0.14,
+      gain: 0.16 * (0.6 + 0.4 * gain),
+      detune,
+    });
+    tone(kit, { from: E5 * 1.5, to: A4, glide: 0.08, at, length: 0.1, gain: 0.05, detune: 20 });
+    noise(kit, { filter: 'lowpass', from: 1400, to: 500, at, length: 0.08, gain: 0.1 * gain });
+  },
+  /** A shot hits the Balloon harder: a bright rubber pop, a snap of air and a ringing ping. */
+  pop(kit, at, { gain }) {
+    noise(kit, {
+      filter: 'highpass',
+      from: 5000,
+      at,
+      length: 0.03,
+      gain: 0.45 * (0.6 + 0.4 * gain),
+    });
+    tone(kit, { from: E6, to: A5, glide: 0.03, at, length: 0.05, gain: 0.3 });
+    tone(kit, { type: 'triangle', from: G5, at: at + 0.03, length: 0.18, gain: 0.08 });
   },
 } satisfies Record<string, Voice>;

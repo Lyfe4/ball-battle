@@ -5,6 +5,8 @@ import type { FightCue } from './cue-names.ts';
 
 export const BALL_SOUNDS: Readonly<Record<string, readonly FightCue[]>> = {
   archer: ['arrowFire', 'arrowHit'],
+  balloon: ['squash', 'pop'],
+  banshee: ['breath', 'wail'],
   battery: ['store', 'release'],
   berserker: ['rage', 'rageHit'],
   bloom: ['bloomOpen', 'bloomShut'],
@@ -16,6 +18,7 @@ export const BALL_SOUNDS: Readonly<Record<string, readonly FightCue[]>> = {
   ghost: ['phaseIn', 'ghostPass'],
   hex: ['curse', 'curseBurst'],
   inferno: ['burn'],
+  kraken: ['ripple', 'grab', 'crush'],
   magnet: ['pull'],
   necromancer: ['raise', 'bite', 'boneBreak'],
   quake: ['quake', 'quakeHit'],
