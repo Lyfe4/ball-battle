@@ -49,6 +49,11 @@ export const FIGHT_CUES = [
   'squeak',
   'squash',
   'pop',
+  'shimmer',
+  'copyPop',
+  'charge',
+  'splinter',
+  'spark',
   // Health and time.
   'frost',
   'poison',

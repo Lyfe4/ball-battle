@@ -2,10 +2,13 @@
 // and after it (ADR 0064). The Hex's curse landing, the Ghost phasing out, the Magnet's pull, the
 // Sniper locking on, the Spartan planting its shield, the Spider spinning a web, the Titan growing
 // a step, the Berserker's rage building, the Bloom opening or shutting, the Banshee drawing breath
-// and wailing, the Kraken calling its tentacles. Pure, like cues.ts.
+// and wailing, the Kraken calling its tentacles, the Mirage's copy appearing and popping, the
+// Jouster setting off on a charge. Pure, like cues.ts.
 import { nextWailTickOf } from '../sim/balls/banshee.ts';
 import { rageOf } from '../sim/balls/berserker.ts';
+import { jousterStateOf } from '../sim/balls/jouster.ts';
 import { krakenStateOf } from '../sim/balls/kraken.ts';
+import { copyPosition, mirageStateOf } from '../sim/balls/mirage.ts';
 import { theme } from '../render/theme.ts';
 import { pausedUntilOf } from '../sim/balls/bloom.ts';
 import { hexCurseOf } from '../sim/balls/hex.ts';
@@ -113,6 +116,22 @@ export function stateCues(
         if (spot !== undefined && state !== undefined && wasState !== undefined) {
           if (state.burstTick >= 0 && wasState.burstTick < 0) add('ripple', 0.6, spot);
         }
+        break;
+      }
+      case 'mirage': {
+        // Heard where the copy hangs: shimmering in, and popping where it burst.
+        const state = mirageStateOf(ball);
+        const wasOn = mirageStateOf(was)?.copyOn;
+        if (state === undefined || wasOn === undefined || state.copyOn === wasOn) break;
+        const copy = copyPosition(at, state, world.arena.size);
+        add(state.copyOn ? 'shimmer' : 'copyPop', state.copyOn ? 0.5 : 1, copy);
+        break;
+      }
+      case 'jouster': {
+        // A charge starting moves its next charge on.
+        const next = jousterStateOf(ball)?.nextCharge;
+        const wasNext = jousterStateOf(was)?.nextCharge;
+        if (next !== undefined && wasNext !== undefined && next !== wasNext) add('charge', 0.6, at);
         break;
       }
       case 'titan':
