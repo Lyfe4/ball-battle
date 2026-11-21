@@ -76,7 +76,8 @@ if matchups lean:
 
 These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4), with
 three honest levels since ruleset 20 (ADR 0073), sharper counters since ruleset 21 (ADR 0074),
-28 balls since ruleset 22 (ADR 0075) and the shape as a warning since 2026-11-21 (ADR 0076).
+28 balls since ruleset 22 (ADR 0075), the shape as a warning since 2026-11-21 (ADR 0076) and 30
+balls since ruleset 23 (ADR 0077).
 
 - **Three levels, one rule.** From the full run, a pair whose better side wins 65% or more is a
   **strong counter** (▲▲, about 7 in 10), 58% up to 65% an **edge** (▲, about 6 in 10), anything
@@ -84,7 +85,8 @@ three honest levels since ruleset 20 (ADR 0073), sharper counters since ruleset 
   70 / 60 / 50 / 40 / 30%).
 - **No ball has more than six strong wins or six strong losses**, and every ball added after
   ruleset 22 has **at least two of each**, so it has something to fear and something to hunt.
-  (The Vampire's seven losses are allowed by name until it is fixed, ADR 0076.)
+  (The Vampire's seven losses were allowed by name until its Thirst brought it to four in ruleset
+  23, ADR 0077; no ball is allowed over since.)
 - The **shape** is a warning, not a gate (ADR 0076): ideally two to four strong counters each way,
   the two counts within one (a fifth where one visible mechanic gives it). Players don't feel a
   fifth counter; "no room" in the shape was blocking good new balls. Edges aren't counted: a small
@@ -102,22 +104,29 @@ ball whose kind of hit is new. When balls are next added, these are the kinds to
 Since ruleset 20 the shape counts strong counters only (ADR 0073). Ruleset 21's number changes
 (ADR 0074) brought the Archer, Thorns, Magnet, Necromancer, Bomber, Bloom, Battery and Frost to
 it, and ruleset 22's three new balls (ADR 0075) the Sniper, Ghost, Inferno, Boomerang and
-Spartan. Six balls are still off it, now a warning rather than a failure (ADR 0076), and all
-wait on ability tweaks or new balls, since one-number changes move a ball's whole row:
+Spartan. Ruleset 23 (ADR 0077) fixed the Vampire (2/7 to 3/4, its Thirst) and the Archer (5/3 to
+4/4), and its two new balls are on it, but their counters took others off: eleven balls are off
+it, a warning rather than a failure (ADR 0076). Each waits on an ability tweak or a new ball,
+since one-number changes move a ball's whole row:
 
 - **Titan (1/1):** growing evens its fights out. One more ball it beats by mass would close it
   (round 8's Cowboy throws by lightness, 82-87%, but its other prey had no room).
-- **Quake (2/1):** small, wide shockwaves chip every ball alike; only the floating Balloon shrugs
-  them off. A second ball that shrugs off small hits, or keeps it off the walls, would close it.
+- **Quake (3/1):** small, wide shockwaves chip every ball alike; only the floating Balloon shrugs
+  them off. Its third win is the Jouster, whose charges glance off a wall-bouncer. A second ball
+  that shrugs off small hits, or keeps it off the walls, would close it.
 - **Spider (1/3):** its webs slow every wall-bouncer a little; only the Speedster loses. Prey whose
-  power runs on its own speed would close it (a speed-lance), with a predator for the Frost in the
-  same batch, since its slow is the same status.
-- **Slime (1/0):** nothing beats it. To beat a split you must hit both halves at once and survive
-  their double bumps: a sturdy area hitter.
-- **Vampire (2/7):** it heals only from its bumps, so every ball that hits without a touch beats
-  it, the Banshee and Kraken among them. An ability tweak, not a number.
-- **Archer (5/3):** arrows outrange every frail or slow ball, and the Balloon and Banshee add two.
-  A change that takes one of those wins closes it.
+  power runs on its own speed would close it, with a predator for the Frost in the same batch,
+  since its slow is the same status.
+- **Slime (2/0):** nothing beats it. To beat a split you must hit both halves at once and survive
+  their double bumps: a sturdy area hitter. Its second win is the Jouster (small halves make a
+  lance glance).
+- **Thorns (5/3) and Hex (5/3):** the Mirage and the Jouster bump hard, which spikes throw back,
+  and the Mirage's big health feeds the curse. A fifth win from one mechanic each, not yet named.
+- **Speedster (3/5), Boomerang (2/5), Kraken (2/5):** a fifth loss each, from the thirsty Vampire
+  (its rushes' extra hit makes it thirsty), the Mirage (throws at its copy) and the Jouster
+  (dead on into the anchored Kraken).
+- **Necromancer (2/1) and Banshee (1/3):** the Vampire's Thirst and the Necromancer's extra
+  health turned the Magnet's win over it and the Banshee's over the Vampire into edges.
 
 The history below counts counters at 62%, as the map did then.
 

@@ -5,6 +5,7 @@
 - Amends: ADR 0073 (the shape and its named exceptions), ADR 0045 group 4 (the shape as a target)
 - Builds on: the owner's decision of 2026-11-21, after round 9 of new-ball prototypes
   (`docs/experiments/new-balls-proposal-9.md` on `proto/new-balls-9`, never merged)
+- Amended by: ADR 0077 (the Vampire's allowance over the limit is gone)
 
 ## Context
 

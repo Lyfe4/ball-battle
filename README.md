@@ -13,10 +13,11 @@ arena until one wins, and every decision is made before the fight starts.
 
 ## Features
 
-- **28 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
+- **30 balls, each with one mechanic you can watch:** lightning, poison, lifesteal, a sniper's
   laser, a magnet's pull, a ghost that phases, a necromancer's skull minions, a boomerang, bombs,
   a shield and spear, a curse, webs on the walls, a battery that stores big hits, a slime that
-  splits in two, a floating balloon, a wail nothing blocks, a kraken's tentacles, and more.
+  splits in two, a floating balloon, a wail nothing blocks, a kraken's tentacles, a mirage's
+  decoy copy, a jouster's lance, and more.
 - **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option in the vs

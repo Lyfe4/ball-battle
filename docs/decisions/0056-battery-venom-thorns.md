@@ -2,7 +2,7 @@
 
 > **Scripts:** the measuring harness this cites (`scripts/new-balls/`, including
 
-- Amended by: ADR 0071 (the Battery's look: one smooth fill)
+- Amended by: ADR 0071 (the Battery's look: one smooth fill); ADR 0077 (the Speedster passes every cruise with one stack and every burst with five)
 
 - Amended by: ADR 0058 (the Magnet pulls shooters in (ruleset 18))
 
