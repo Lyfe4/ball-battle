@@ -62,6 +62,11 @@ describe('the game schema', () => {
     expect(own[0]?.n).toBe(0);
   });
 
+  it('ends any query of the API role after 8 seconds, through the pooler', async () => {
+    const [setting] = await deps.sql<{ statement_timeout: string }[]>`show statement_timeout`;
+    expect(setting?.statement_timeout).toBe('8s');
+  });
+
   it('lets the API role use the game tables but not read auth', async () => {
     await expect(deps.sql`select count(*) from game.series`).resolves.toHaveLength(1);
     await expect(deps.sql`select count(*) from auth.users`).rejects.toThrow(/permission denied/);
