@@ -7,7 +7,7 @@ code quality matters as much as features.
 Where it's heading (PvP best of 3 with blind lineups, soft counters, then a backend):
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
-online (previews and staging only), live friend matches in Reveal and Showdown (ADR 0052, 0053).
+online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053).
 Home is by opponent (ADR 0055, `src/app/modes.ts`): Play opens the last series set up against the
 bot in one tap (first visit: Best of 3 · Reveal · vs Normal bot), and a card per opponent opens
 its setup screen (vs Bot; vs Friend in online builds). The series rules and bots are pure sim code
@@ -70,7 +70,7 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   `test:slow` replays every frozen ruleset's results against its own bundle.
 
 CI runs format, lint, typecheck, unit tests and build in one job, `test:slow`, `balance:ci` and
-`test:db` (against a local Supabase) in their own, and the browser suite in two jobs per engine (phones, the rest). All must pass.
+`test:db` (against a local Supabase) and `test:online` (against `netlify dev`) in their own, and the browser suite in two jobs per engine (phones, the rest): 11 jobs. All must pass.
 
 ## Architecture rules
 

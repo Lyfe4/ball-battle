@@ -82,7 +82,7 @@
 }
 
 .matchup-icon {
-  /* Never wider than a cell: with 17 balls a phone's cells are under the icon's 18 px. */
+  /* Never wider than a cell: from 17 balls up a phone's cells are under the icon's 18 px. */
   max-width: var(--chart-cell);
   max-height: var(--chart-cell);
   margin: auto;

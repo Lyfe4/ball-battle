@@ -22,7 +22,8 @@ arena until one wins, and every decision is made before the fight starts.
   (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
   Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option in the vs
   Bot setup ([ADR 0048](docs/decisions/0048-best-of-5.md)).
-- **Live friend matches** (deploy previews and staging for now,
+- **Live friend matches** (deploy previews, staging, and the live site while vs Friend is switched
+  on, [ADR 0068](docs/decisions/0068-hosted-projects.md);
   [ADR 0053](docs/decisions/0053-live-friend-matches.md)): send a link, wait in the lobby, and play
   Reveal or Showdown together. 30 s a pick, fights that start at the same moment on both phones at
   the server's time, and a fair-play check at the end against seeds committed at the start.
@@ -96,7 +97,8 @@ URL, so Back works and any screen can be linked
 ([ADR 0020](docs/decisions/0020-screens.md)). Screens show little by default: symbols explained
 once in a legend, details one tap away, and Back that undoes exactly one move
 ([ADR 0025](docs/decisions/0025-show-less-and-back.md)). A gear beside every `?` opens
-**Settings**: speed, and whether ability hints and what-to-watch cards show
+**Settings**: speed, sound (on or off, and its volume), and whether ability hints and
+what-to-watch cards show
 ([ADR 0040](docs/decisions/0040-settings.md)). It keeps off the court, and where a phone is too
 short for that the match waits while it is open
 ([ADR 0044](docs/decisions/0044-one-story-look-and-settings-off-the-court.md)). On a phone the court takes the whole width
@@ -109,41 +111,48 @@ definitions and the counter map, so they never go stale.
 In a match, two balls collide elastically and deal damage scaled by how directly
 they hit; the match ends by knockout or at a 60-second time limit.
 
-| Ball        | Ability                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------ |
-| Brawler     | None. The hardest plain bump. The plain default: beats nobody, loses only to Thorns.             |
-| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                  |
-| Vampire     | Heals most of what its bumps deal, on little health; nothing from a ball it never touches.       |
-| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 2 s.                 |
-| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                     |
-| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                            |
-| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.               |
-| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                     |
-| Berserker   | The most health. Every hit it takes builds rage (up to 3); its next bump lets it all out.        |
-| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                      |
-| Quake       | Every wall it hits sends out a small, wide shockwave, as often as five times a second.           |
-| Magnet      | Pulls its enemy in every 2 s, and at once when hit from range, forcing a brawl. Hits hard.       |
-| Ghost       | Phases 1 s in every 4: nothing touches it then, and it hits what it passes through.              |
-| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after.   |
-| Chrono      | Rewinds a big hit (a shot, a strike, a blast or a knockout), then recharges for 10 s.            |
-| Titan       | Grows bigger as the match goes on, and its bumps grow with it. The one ball that changes size.   |
-| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls.   |
-| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.                |
-| Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out. |
-| Spartan     | Plants its shield (half speed, every hit does half) for 2 s, then throws its spear.              |
-| Bloom       | Left alone for 2 s, it regrows five health a second; any hit closes it into a bud to wait again. |
-| Hex         | Its bump curses; 3 s later the curse bursts for a quarter of that ball's full health.            |
-| Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.              |
-| Battery     | Stores a third of every big strike or blast it takes; its next bump lets it all out.             |
-| Slime       | At half health it splits in two smaller, faster halves; the enemy must finish both.              |
+| Ball        | Ability                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| Brawler     | None. The hardest plain bump. The plain default: beats nobody, loses only to Thorns.                   |
+| Speedster   | Fastest ball. Each wall bounce adds speed and bonus damage; a hit cashes it in.                        |
+| Vampire     | Heals most of what its bumps deal, on little health; a hit from afar makes it thirsty: faster for 1 s. |
+| Archer      | Lowest contact damage, but shoots an arrow where its enemy is heading every 1.8 s.                     |
+| Storm       | Calls a big lightning strike on its enemy every 1.75 s, landing 0.9 s later.                           |
+| Frost       | Slowest and sturdy. Every hit slows its enemy right down for a while.                                  |
+| Thorns      | Spiked: every bump it takes hurts the attacker back, the harder the bump the more.                     |
+| Venom       | Light bumps that poison its enemy: a few small poison hits follow each bump.                           |
+| Berserker   | The most health. Every hit it takes builds rage (up to 3); its next bump lets it all out.              |
+| Sniper      | Locks onto its enemy with a laser, then fires one heavy shot down the line.                            |
+| Quake       | Every wall it hits sends out a small, wide shockwave, as often as five times a second.                 |
+| Magnet      | Pulls its enemy in every 2 s, and at once when hit from range, forcing a brawl. Hits hard.             |
+| Ghost       | Phases 1 s in every 4: nothing touches it then, and it hits what it passes through.                    |
+| Necromancer | Keeps a skeleton out that bites its enemy and draws aimed attacks; a new one rises soon after.         |
+| Chrono      | Rewinds a big hit (a shot, a strike, a blast or a knockout), then recharges for 10 s.                  |
+| Titan       | Grows bigger as the match goes on, and its bumps grow with it. The one ball that changes size.         |
+| Inferno     | Leaves a trail of fire that burns whoever crosses it, one burn at a time, and burns up skulls.         |
+| Boomerang   | Throws a boomerang that hits on the way out and on the way back, then catches it.                      |
+| Bomber      | Drops one big bomb every few seconds; it blows when an enemy runs into it, or its fuse runs out.       |
+| Spartan     | Plants its shield (half speed, every hit does half) for 2 s, then throws its spear.                    |
+| Bloom       | Left alone for 2 s, it regrows five health a second; any hit closes it into a bud to wait again.       |
+| Hex         | Its bump curses; 3 s later the curse bursts for 27% of that ball's full health.                        |
+| Spider      | Webs every wall it bounces off; a ball that bounces off a web is slowed and nipped.                    |
+| Battery     | Stores a third of every big strike or blast it takes; its next bump lets it all out.                   |
+| Slime       | At half health it splits in two smaller, faster halves; the enemy must finish both.                    |
+| Balloon     | Floats: area hits (strikes, blasts, shockwaves) do half, but shots hit it harder.                      |
+| Banshee     | Every few seconds it wails all around it; nothing blocks or reduces the wail.                          |
+| Kraken      | Tentacles rise under its enemy, hold it and crush it; bigger balls take more.                          |
+| Mirage      | Shows a shimmering copy beside it, and aimed shots and strikes go for the copy.                        |
+| Jouster     | Its lance hits triple when it bumps head-on, but a glancing bump only scratches.                       |
 
 Every ball but the Titan (which grows) and the Slime's halves (smaller) is the same size and keeps its own speed through collisions; a hit's damage depends
 on how directly it lands, not how fast.
 
 ### Counters
 
-Picks matter: many pairs lean one way. A counter (▲ ▼) is _favoured_, never decided: it wins at
-least 62% of the time and aims for 65-72%, and each one comes from something you can watch happen
+Picks matter: many pairs lean one way. A counter is _favoured_, never decided, at one of three
+levels ([ADR 0073](docs/decisions/0073-three-honest-levels.md)): a **strong counter** (▲▲) wins 65%
+or more (aiming for 68-75%, never over 78%), an **edge** (▲) 58% up to 65%, and anything closer is
+**even**. Each one comes from something you can watch happen
 ([ADR 0045](docs/decisions/0045-roster-redesign.md),
 [ADR 0047](docs/decisions/0047-spartan-and-bloom-pause.md),
 [ADR 0049](docs/decisions/0049-hex-spider-phasing-ghost.md),
@@ -156,12 +165,15 @@ Chrono beats the Storm because it rewinds the big strike. Every pair's counter a
 in the counter map (`src/sim/counter-map-*.ts`), checked by `pnpm balance`
 ([ADR 0010](docs/decisions/0010-counter-map.md), [ADR 0045](docs/decisions/0045-roster-redesign.md));
 the game's Ball manual shows them, and [docs/balance-summary.md](docs/balance-summary.md) (generated)
-lists each ball's counters with their measured win rates. Every other pair is even; an even pair
-with a side between 58% and 62% sits in a grey zone, shown as even and counted by `pnpm balance`.
+lists each ball's counters with their measured win rates. The levels meet, so every pair is
+exactly one of them.
 
-Every ball has two to four counters each way, the two counts within one, except the known gaps for
-future balls to fill (each allowed exactly as it is today, listed in the balance summary) and the
-even pick, the **Brawler**, which beats nobody and loses only to Thorns.
+No ball has more than six strong wins or six strong losses, and every ball added after ruleset 22
+has at least two of each. Beyond that, each ball aims for two to four strong counters each way, the
+two counts within one: a warning rather than a gate, with the balls off it listed in the balance
+summary as gaps for future balls ([ADR 0076](docs/decisions/0076-shape-as-a-warning.md),
+[ADR 0077](docs/decisions/0077-mirage-jouster-thirst.md)). The even pick, the **Brawler**, beats
+nobody and loses only to Thorns.
 
 ## Best of 3
 
@@ -223,7 +235,8 @@ link from another version says so and offers to play under today's rules rather 
 replaying a different fight
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
-Online play (ADR 0052, live friend matches ADR 0053) runs only in deploy previews and staging. Locally: Docker, then
+Online play (ADR 0052, live friend matches ADR 0053) runs in deploy previews and staging, and on
+the live site while the vs Friend switch is on (ADR 0068). Locally: Docker, then
 `pnpm exec supabase start`, `node scripts/local-env.ts > .env`, `pnpm build:online` and
 `netlify dev` (http://localhost:8888), which serves the game and the API on one origin.
 
@@ -243,6 +256,7 @@ displays.
 | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `pnpm dev`             | Vite dev server                                                                                             |
 | `pnpm build`           | Typecheck and build to `dist/`                                                                              |
+| `pnpm build:online`    | The same with online play, for `netlify dev`                                                                |
 | `pnpm preview`         | Serve `dist/` with the production security headers, to check the CSP                                        |
 | `pnpm test`            | Run the fast tests once (`pnpm test:watch` to watch)                                                        |
 | `pnpm test:slow`       | Roster-wide tests that play every matchup (a separate CI job)                                               |
@@ -250,12 +264,14 @@ displays.
 | `pnpm test:db`         | The API against a local Supabase (`pnpm exec supabase start` first; needs Docker)                           |
 | `pnpm test:online`     | Two phones through live friend matches in Chromium, against `netlify dev`                                   |
 | `pnpm golden`          | Record the known match results again after a ruleset bump                                                   |
+| `pnpm ruleset:freeze`  | Freeze the new ruleset's sim and results as `rulesets/r<N>/`, after `pnpm golden`                           |
 | `pnpm lint`            | ESLint                                                                                                      |
 | `pnpm typecheck`       | `tsc -b` across all tsconfig projects                                                                       |
 | `pnpm format`          | Prettier (`pnpm format:check` to only check)                                                                |
 | `pnpm balance`         | Matchup matrix, ability impact and sensitivity, on all cores (`--ball <id>`)                                |
 | `pnpm balance:summary` | A full balance run that also writes each ball's shape to [docs/balance-summary.md](docs/balance-summary.md) |
 | `pnpm balance:ci`      | The reduced balance check CI runs: 150 seeds, fails only on a clear miss                                    |
+| `pnpm balance:matrix`  | Write the matchup sheet: every pair and every ball's counters as CSV in `docs/`                             |
 
 ## Architecture
 
@@ -270,6 +286,10 @@ src/
   sim/series-verify.ts   whether a series setup is valid: the browser and a server use it
   sim/ruleset.ts    the ruleset version every link records (bumped with any balance change)
   golden/   known match results, checked in Node and in Chromium, Firefox and WebKit
+  sound/    every sound, made in code and read from the arena's ticks (ADR 0064)
+  api/      what the browser and the server agree on: requests, views, live timers, fairness checks
+  server/   the game server (ADR 0052): sessions, series, live matches, rate limits, its SQL
+  flows/    flows through the real page, run in three browser engines (ADR 0025)
   ui/       plain-DOM screens: home, ball grid and detail, setup steps, manual, scoreboard, HUD
   styles/   design tokens (a palette, then roles) and base styles; components' CSS sits beside them
   app/      browser-side helpers: clocks, playback speed, seed, routes, matchup and series links,
@@ -277,6 +297,9 @@ src/
   arena.ts  the match on screen and the requestAnimationFrame loop
   screens/  each screen's wiring: home, quick (Free play), series setup and play, manual, online
   main.ts   wires the screens together
+netlify/functions/   one function per API route, each a thin wrapper of src/server
+supabase/migrations/ the database, expand only (ADR 0068)
+rulesets/            each ruleset's sim, frozen, that verifies its series (ADR 0052)
 ```
 
 The rules, in brief:
@@ -304,9 +327,8 @@ Why: every decision has a short record in [docs/decisions](docs/decisions/README
 with its status and what superseded it; ADR 0001 to 0003 cover the rules above.
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle (November 2026, ruleset 19): 288.37 kB JS (92.60 kB gzipped), of which sound is
-23.87 kB (7.49 kB gzipped); 64.21 kB CSS (11.77 kB gzipped); and the self-hosted font's Latin
-subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
+Production bundle (November 2026, ruleset 23, 30 balls): 357.60 kB JS (112.23 kB gzipped);
+73.64 kB CSS (12.96 kB gzipped); and the self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License
 

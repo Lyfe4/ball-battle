@@ -139,7 +139,7 @@ function preview(): HTMLCanvasElement {
   });
 
   const icon = 40;
-  // The roster in three rows, clear of the address below: eight to a row for twenty-four balls.
+  // The roster in three rows, clear of the address below: ten to a row for thirty balls.
   const perRow = Math.ceil(BALLS.length / 3);
   BALLS.forEach((ball, i) => {
     const node = document.createElement('canvas');
