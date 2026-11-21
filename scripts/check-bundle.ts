@@ -14,15 +14,20 @@ export const SECRET_MARKS: readonly RegExp[] = [
   /postgres(?:ql)?:\/\/[^\s"'`]*:[^\s"'`@]+@/,
 ];
 
-/** What only online play's code contains. */
-export const ONLINE_MARK = '/api/v1/';
+/**
+ * What only online play's code contains: the API's path, anywhere but Forget me's own URL, which
+ * every build holds so deleting a guest never waits on the vs Friend switch (ADR 0078). The quote
+ * after it means exactly that URL: `/api/v1/me/match`, or callApi's `/api/v1/${path}`, is online
+ * code.
+ */
+export const ONLINE_MARK = /\/api\/v1\/(?!me["'`])/;
 
 /** What is wrong with one bundled file: `online` says whether this build may call the API. */
 export function problemsIn(name: string, text: string, online: boolean): string[] {
   const problems = SECRET_MARKS.filter((mark) => mark.test(text)).map(
     (mark) => `${name} holds something shaped like a secret (${mark.source.slice(0, 20)}…)`,
   );
-  if (!online && text.includes(ONLINE_MARK)) {
+  if (!online && ONLINE_MARK.test(text)) {
     problems.push(`${name} holds online play's code in a build without it (VITE_ONLINE unset)`);
   }
   return problems;

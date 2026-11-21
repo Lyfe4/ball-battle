@@ -50,9 +50,26 @@ const TIMEOUT_MS = 15_000;
  * `method path` with an optional JSON body. A 304 (the copy in hand is current) is `ok` with no
  * body. No answer within TIMEOUT_MS, headers and body, is `timeout`.
  */
-export async function callApi<T>(
+export function callApi<T>(
   method: 'GET' | 'POST' | 'DELETE',
   path: string,
+  body?: unknown,
+  headers: Readonly<Record<string, string>> = {},
+  send: Fetch = (input, init) => fetch(input, init),
+): Promise<ApiResult<T | undefined>> {
+  return requestApi<T>(method, `/api/v1/${path}`, body, headers, send);
+}
+
+/**
+ * Forget me's request, the one a build without online play may hold (ADR 0078,
+ * `scripts/check-bundle.ts`): deleting a guest never waits on the vs Friend switch.
+ */
+export const FORGET_ME_URL = '/api/v1/me';
+
+/** `callApi` to a whole same-origin URL. */
+export async function requestApi<T>(
+  method: 'GET' | 'POST' | 'DELETE',
+  url: string,
   body?: unknown,
   headers: Readonly<Record<string, string>> = {},
   send: Fetch = (input, init) => fetch(input, init),
@@ -71,7 +88,7 @@ export async function callApi<T>(
   const sentAt = Date.now();
   let receivedAt: number;
   try {
-    response = await send(`/api/v1/${path}`, {
+    response = await send(url, {
       method,
       credentials: 'same-origin',
       // Never the browser's cache: the page keeps its own ETags (a 304 it asked for comes back as

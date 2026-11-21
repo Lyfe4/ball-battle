@@ -9,11 +9,15 @@ export interface SeedKeyEntry {
 }
 
 /**
- * The online server's settings. There are none when online play is off for a deploy (production
- * until launch, ADR 0052 section 6): `configOf` is undefined and every route answers 404
- * `online_off`.
+ * The server's settings. A deploy without them (a production deploy that never had its secrets)
+ * has none: `configOf` is undefined and every route answers 404 `online_off`.
  */
 export interface Config {
+  /**
+   * Whether online play is switched on (`BALLBATTLE_ONLINE`, the vs Friend switch, ADR 0068).
+   * Off, only deleting players still runs: Forget me and the sweep's 90-day cleanup (ADR 0078).
+   */
+  readonly online: boolean;
   /** Postgres as the `game_api` role, through Supabase's pooler in transaction mode. */
   readonly databaseUrl: string;
   /** The Supabase project's URL, for Auth (guest sign-in, refresh, JWKS). */
@@ -78,15 +82,26 @@ export function parseSeedKeys(json: string): {
 }
 
 /**
- * The configuration in `env`. With online play off nothing else is read, so a production deploy
- * needs no secrets at all; with it on, a missing or malformed setting throws a ConfigError naming
- * it (never its value).
+ * The configuration in `env`. With online play on, a missing or malformed setting throws a
+ * ConfigError naming it (never its value). With it off, the settings are read if they are all
+ * there, so deleting players never waits on the switch (ADR 0078); a deploy without them (one that
+ * never had its secrets) has no configuration, and answers `online_off` as before.
  */
 export function configOf(env: Readonly<Record<string, string | undefined>>): Config | undefined {
-  if (env['BALLBATTLE_ONLINE'] !== '1') return undefined;
+  if (env['BALLBATTLE_ONLINE'] === '1') return settingsOf(env, true);
+  try {
+    return settingsOf(env, false);
+  } catch (error) {
+    if (error instanceof ConfigError) return undefined;
+    throw error;
+  }
+}
+
+function settingsOf(env: Readonly<Record<string, string | undefined>>, online: boolean): Config {
   const { keys, current } = parseSeedKeys(required(env, 'SEED_KEYS'));
   const dsn = env['SENTRY_DSN']?.trim();
   return {
+    online,
     databaseUrl: required(env, 'DATABASE_URL'),
     supabaseUrl: required(env, 'SUPABASE_URL').replace(/\/+$/, ''),
     supabasePublishableKey: required(env, 'SUPABASE_PUBLISHABLE_KEY'),

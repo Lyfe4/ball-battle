@@ -33,7 +33,21 @@ export interface RouteContext {
   readonly noteFailure: (error: unknown, stage: Stage) => void;
 }
 
-export type RouteHandler = (request: Request, context: RouteContext) => Promise<Response>;
+export type RouteHandler = ((request: Request, context: RouteContext) => Promise<Response>) & {
+  /**
+   * The requests this route still answers with online play switched off: deleting players only
+   * (Forget me, the sweep), so that never waits on the vs Friend switch (ADR 0078).
+   */
+  readonly whileOff?: (request: Request) => boolean;
+};
+
+/** `handler`, answering `when` it asks even with online play switched off (ADR 0078). */
+export function alsoWhileOff(
+  handler: (request: Request, context: RouteContext) => Promise<Response>,
+  when: (request: Request) => boolean = () => true,
+): RouteHandler {
+  return Object.assign(handler, { whileOff: when });
+}
 
 export { ApiError } from './http-error.ts';
 
@@ -93,7 +107,7 @@ export function endpoint(
     let response: Response;
     try {
       const deps = depsOf();
-      if (deps === undefined) {
+      if (deps === undefined || (!deps.config.online && handler.whileOff?.(request) !== true)) {
         throw new ApiError(404, 'online_off', 'Online play is not switched on here');
       }
       response = await handler(request, {

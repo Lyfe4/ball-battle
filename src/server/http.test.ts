@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { errorOf } from '../api/errors.ts';
-import { ApiError, endpoint, json, type Deps } from './http.ts';
+import { alsoWhileOff, ApiError, endpoint, json, type Deps } from './http.ts';
 
-const deps = { config: {}, sql: {} } as unknown as Deps;
+const deps = { config: { online: true }, sql: {} } as unknown as Deps;
+/** A deploy that has its settings but vs Friend switched off (ADR 0078). */
+const off = { config: { online: false }, sql: {} } as unknown as Deps;
 
 describe('a route’s frame', () => {
   it('answers online_off when this deploy has no online configuration', async () => {
@@ -19,6 +21,25 @@ describe('a route’s frame', () => {
     expect(response.status).toBe(404);
     expect(errorOf(await response.json())?.code).toBe('online_off');
     expect(lines).toHaveLength(1);
+  });
+
+  it('answers online_off with vs Friend off, except what deletes a player (ADR 0078)', async () => {
+    const ok = () => Promise.resolve(json(200, {}));
+    const plain = endpoint('health', ok, () => off);
+    expect((await plain(new Request('https://x.test/api/v1/health'))).status).toBe(404);
+
+    const forget = endpoint(
+      'me',
+      alsoWhileOff(ok, (request) => request.method === 'DELETE'),
+      () => off,
+    );
+    const deleting = await forget(new Request('https://x.test/api/v1/me', { method: 'DELETE' }));
+    expect(deleting.status).toBe(200);
+    const reading = await forget(new Request('https://x.test/api/v1/me'));
+    expect(errorOf(await reading.json())?.code).toBe('online_off');
+
+    const sweep = endpoint('sweep', alsoWhileOff(ok), () => off);
+    expect((await sweep(new Request('https://x.test/'))).status).toBe(200);
   });
 
   it('sends an ApiError as its code and status, and logs the code and the user', async () => {

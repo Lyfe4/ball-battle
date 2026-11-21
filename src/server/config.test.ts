@@ -13,10 +13,17 @@ const ONLINE = {
 };
 
 describe('the server configuration', () => {
-  it('is absent unless online play is switched on, and then needs no secrets', () => {
+  it('is absent with online play off and no settings, and needs no secrets then', () => {
     expect(configOf({})).toBeUndefined();
     expect(configOf({ BALLBATTLE_ONLINE: 'true' })).toBeUndefined();
-    expect(configOf({ ...ONLINE, BALLBATTLE_ONLINE: '0' })).toBeUndefined();
+    expect(configOf({ ...ONLINE, BALLBATTLE_ONLINE: '0', SEED_KEYS: ' ' })).toBeUndefined();
+    expect(configOf({ ...ONLINE, BALLBATTLE_ONLINE: undefined, DATABASE_URL: '' })).toBeUndefined();
+  });
+
+  it('is read with online play off when every setting is there, so deleting never waits on it', () => {
+    expect(configOf({ ...ONLINE, BALLBATTLE_ONLINE: undefined })?.online).toBe(false);
+    expect(configOf({ ...ONLINE, BALLBATTLE_ONLINE: '0' })?.online).toBe(false);
+    expect(configOf(ONLINE)?.online).toBe(true);
   });
 
   it('reads every setting when online, trimming the Supabase URL', () => {
