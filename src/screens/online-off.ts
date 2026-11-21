@@ -1,5 +1,9 @@
-// Online play's stand-in in a build without it (production until launch, ADR 0052): no online
-// screen exists, and an online URL opens home in its place. Imports nothing of online play.
+// Online play's stand-in in a build without it (production with vs Friend off, ADR 0052, 0068): no
+// online screen exists, and an online URL opens home in its place. It imports nothing of online
+// play but Forget me, which settings still offer on a device that has a guest (ADR 0078).
+import { browserStorage } from '../app/storage.ts';
+import { createForgetMe } from '../ui/online/forget-me.ts';
+import { forgetMeHost } from './forget-me-host.ts';
 import type { OnlineMount } from './online-mount.ts';
 
 export function offlineMount(goHome: () => void): OnlineMount {
@@ -10,7 +14,13 @@ export function offlineMount(goHome: () => void): OnlineMount {
   };
   return {
     handlers: { online: toHome, challenge: toHome, send: toHome },
-    settings: {},
+    settings: {
+      online: createForgetMe(
+        forgetMeHost(browserStorage, () => {
+          window.location.assign('/');
+        }),
+      ),
+    },
     settle: () => undefined,
     update: () => undefined,
     playing: () => false,

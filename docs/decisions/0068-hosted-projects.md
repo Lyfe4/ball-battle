@@ -5,6 +5,7 @@
 - Builds on: ADR 0052 ("Environments", "Before its public launch", section 11's forwarding)
 - Amends: ADR 0052 "Environments" (production is migrated by Publish, not the Netlify build;
   staging by a workflow, not a CI job per pull request)
+- Amended by: ADR 0078 (with the switch off, Forget me and the sweep still run)
 
 ## Context
 

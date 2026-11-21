@@ -75,7 +75,10 @@
         </div>
         <div>
           <dt>The day you last played online</dt>
-          <dd>To delete guests nobody uses any more.</dd>
+          <dd>
+            To delete guests nobody uses any more. While vs Friend is on, just opening the game on
+            your device counts.
+          </dd>
           <dd class="legal-keep">As above.</dd>
         </div>
         <div>
@@ -90,6 +93,11 @@
             abuse. It's a keyed hash: the address itself isn't stored.
           </dd>
           <dd class="legal-keep">Deleted when that hour or day ends.</dd>
+        </div>
+        <div>
+          <dt>How many requests your guest has made lately, and your guest ID</dt>
+          <dd>To stop one guest from overloading the game.</dd>
+          <dd class="legal-keep">Deleted within about an hour.</dd>
         </div>
         <div>
           <dt>Your matches</dt>
@@ -139,17 +147,21 @@
       </ul>
       <p>
         Both act only on our instructions. Their systems also keep short-lived technical logs, which
-        can include your IP address. We use no other service for online play; if we add one, this
-        page will say so first.
+        can include your IP address. Our own server logs each online request with your guest ID
+        (never your IP address or what you sent): which part of the game, when, and whether it
+        worked. Netlify keeps these logs; they expire on its own schedule, and Forget me doesn't
+        remove them, though the ID then belongs to no one. We use no other service for online play;
+        if we add one, this page will say so first.
       </p>
 
       <h2>Deleting your data</h2>
       <p>
-        Use <strong>Forget me</strong> in the game's settings. It deletes your guest straight away:
-        your guest ID, player name, age confirmation, sign-in session with the IP address recorded
-        on it, and your challenge links. A match still being played is forfeited to your opponent.
-        Finished matches stay in your opponent's history as “Deleted player”, no longer linked to
-        you. It also clears the game's data from that browser.
+        Use <strong>Forget me</strong> in the game's settings, there on any device that has a guest,
+        even while online play is switched off. It deletes your guest straight away: your guest ID,
+        player name, age confirmation, sign-in session with the IP address recorded on it, and your
+        challenge links. A match still being played is forfeited to your opponent. Finished matches
+        stay in your opponent's history as “Deleted player”, no longer linked to you. It also clears
+        the game's data from that browser.
       </p>
       <p>
         A guest nobody has used for 90 days is deleted the same way. If you clear your browser's

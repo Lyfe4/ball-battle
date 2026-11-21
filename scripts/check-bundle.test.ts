@@ -24,4 +24,14 @@ describe('the bundle check', () => {
     expect(problemsIn('a.js', 'fetch("/api/v1/health")', false)).toHaveLength(1);
     expect(problemsIn('a.js', 'fetch("/assets/x")', false)).toStrictEqual([]);
   });
+
+  it('lets a build without online play hold Forget me, and nothing else of the API', () => {
+    for (const quote of ['"', "'", '`']) {
+      expect(problemsIn('a.js', `const u=${quote}/api/v1/me${quote}`, false)).toStrictEqual([]);
+    }
+    expect(problemsIn('a.js', 'f("/api/v1/me/match")', false)).toHaveLength(1);
+    expect(problemsIn('a.js', 'f(`/api/v1/${e}`)', false)).toHaveLength(1);
+    expect(problemsIn('a.js', 'f("/api/v1/"+e)', false)).toHaveLength(1);
+    expect(problemsIn('a.js', 'f("/api/v1/me");g("/api/v1/series")', false)).toHaveLength(1);
+  });
 });

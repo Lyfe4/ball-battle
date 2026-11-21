@@ -2,9 +2,8 @@
 // sending one, home's "Back to your match" and settings' "Forget me". main.ts creates this only in a build
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
-import { callApi, failureKindOf } from '../app/api.ts';
 import type { Navigation } from '../app/navigation.ts';
-import { forgetDevice, hasGuest, type DeviceStorage } from '../app/online-device.ts';
+import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element } from '../ui/dom.ts';
@@ -14,9 +13,9 @@ import type { CurrentMatch } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
+import { forgetMeHost } from './forget-me-host.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
 import { createPrimer } from './online-prime.ts';
-import { failureLine } from './online-failure-text.ts';
 
 export interface OnlineHost {
   readonly navigation: Navigation;
@@ -152,23 +151,11 @@ export function createOnlineScreens(
     if (document.visibilityState === 'visible') challenges.resumed();
   });
 
-  const forgetMe = createForgetMe({
-    hasGuest: () => hasGuest(host.storage),
-    forget: async () => {
-      const answer = await callApi('DELETE', 'me');
-      // Deleted, or already gone (401): this device forgets it too, and starts afresh. Anything
-      // else left the guest on the server, so the device keeps it and says why.
-      if (!answer.ok && !(answer.kind === 'error' && answer.status === 401)) {
-        return failureLine(
-          failureKindOf(answer),
-          answer.kind === 'error' ? answer.message : undefined,
-        );
-      }
-      forgetDevice(host.storage);
+  const forgetMe = createForgetMe(
+    forgetMeHost(host.storage, () => {
       window.location.assign('/');
-      return undefined;
-    },
-  });
+    }),
+  );
 
   return {
     online: {

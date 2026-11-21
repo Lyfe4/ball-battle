@@ -10,7 +10,10 @@ import { ApiError, endpoint, type Deps } from './http.ts';
 const SECRET = 'hunter2-sb_secret_abc123';
 
 /** Runs a route whose handler throws `error`, and returns its log line. */
-async function lineFor(error: unknown, depsOf: () => Deps | undefined = () => ({}) as Deps) {
+async function lineFor(
+  error: unknown,
+  depsOf: () => Deps | undefined = () => ({ config: { online: true } }) as Deps,
+) {
   const lines: string[] = [];
   const handler = endpoint(
     'test',

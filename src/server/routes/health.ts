@@ -7,16 +7,33 @@
 // only (stage and kind, failure.ts).
 import type { HealthCheck, HealthResponse } from '../../api/health.ts';
 import { createAuthHealth } from '../auth-health.ts';
-import { ApiError, json, type RouteHandler } from '../http.ts';
+import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
+import { ipSubject, LIMITS, spend } from '../rate-limit.ts';
 import { CURRENT_RULESET, rulesetSim } from '../rulesets.ts';
 
 /** Auth's checks, one call per request (auth-health.ts). */
 const authChecks = createAuthHealth();
 
-export const health: RouteHandler = async (request, { deps, noteFailure }) => {
+/**
+ * Counts the check against its network (LIMITS.health): it needs no session, and each one calls
+ * Auth with the secret key. A database that can't count it doesn't refuse it: the check itself
+ * then reports the database down.
+ */
+async function spendHealth({ deps, ip }: RouteContext): Promise<void> {
+  if (ip === undefined) return;
+  try {
+    await spend(deps.sql, await ipSubject(deps.config, ip), LIMITS.health);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+  }
+}
+
+export const health: RouteHandler = async (request, context) => {
   if (request.method !== 'GET') {
     throw new ApiError(405, 'method_not_allowed', 'Use GET', { Allow: 'GET' });
   }
+  await spendHealth(context);
+  const { deps, noteFailure } = context;
   const [database, ruleset, auth] = await Promise.all([
     deps.sql<{ readonly ok: number }[]>`select 1 as ok`.then(
       ([row]) => row?.ok === 1,

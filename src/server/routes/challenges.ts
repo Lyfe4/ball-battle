@@ -42,6 +42,7 @@ export const challengeOne: RouteHandler = async (request, context) => {
   guard(request, ['POST']);
   const player = await sessionOf(request, context);
   if (match[2] === '/cancel') {
+    await spend(context.deps.sql, player.userId, LIMITS.moves);
     return json(200, await cancelChallenge(context.deps, token, player.userId));
   }
   const body = decodeAcceptChallenge(await jsonBody(request));

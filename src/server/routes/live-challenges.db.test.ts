@@ -15,7 +15,9 @@ import {
 } from '../test/live-support.ts';
 import { newPlayer, read } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
-import { challenges } from './challenges.ts';
+import { LIMITS } from '../rate-limit.ts';
+import { challengeOne, challenges } from './challenges.ts';
+import { seriesList } from './series.ts';
 
 const deps = testDeps();
 /** A second function instance, with its own connection. */
@@ -40,6 +42,24 @@ const lobbyQuiet = (token: string, ms: number) =>
     where token_hash = sha256(convert_to(${token}, 'UTF8'))`;
 
 describe('a live link', () => {
+  it('counts every series list and cancel against the player’s limits', async () => {
+    const sender = await newPlayer(deps);
+    const counted = async (bucket: string) => {
+      const [row] = await admin<{ n: number }[]>`
+        select coalesce(sum(count), 0)::int as n from game.rate_limits
+        where subject = ${sender.userId} and bucket = ${bucket}`;
+      return row?.n ?? 0;
+    };
+    const reads = await counted(LIMITS.reads.bucket);
+    await sender.browser.call(seriesList, 'GET', '/api/v1/series');
+    expect(await counted(LIMITS.reads.bucket)).toBe(reads + 1);
+
+    const token = tokenOf(await sendLive(sender));
+    const moves = await counted(LIMITS.moves.bucket);
+    await sender.browser.call(challengeOne, 'POST', `/api/v1/challenges/${token}/cancel`, {});
+    expect(await counted(LIMITS.moves.bucket)).toBe(moves + 1);
+  });
+
   it('is Reveal or Showdown only', async () => {
     const sender = await newPlayer(deps);
     const blind = await sendLive(sender, 'blind');

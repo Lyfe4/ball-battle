@@ -12,9 +12,13 @@ permissions:
 # Actions are pinned to commit SHAs (the version in the comment), so a moved tag can't change what
 # runs; Dependabot (.github/dependabot.yml) proposes updates monthly.
 
+# A pull request's new push replaces its run in progress. A push to main never cancels or replaces
+# another: Publish only publishes a commit whose own CI passed, so every merge commit runs to the
+# end in a group of its own (GitHub keeps only one pending run per group, so a shared group would
+# drop the middle one of three quick merges even without cancel-in-progress).
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:

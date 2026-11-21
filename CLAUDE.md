@@ -151,6 +151,9 @@ Each line is a rule; its ADR has the reasoning.
   its ruleset's frozen bundle (`rulesetSim`, `rulesets/r<N>/sim.mjs`). A missing bundle is
   `ruleset_missing`, never a fallback. `src/server/current-ruleset.ts` is bumped with
   `RULESET_VERSION` (a test checks).
+- Deleting players never waits on the vs Friend switch (ADR 0078): with it off, only Forget me
+  (`DELETE /me`) and the sweep answer (`alsoWhileOff`); every build offers Forget me, its one
+  request the only API path a build without online play may hold (`check-bundle.ts`).
 - Every route authenticates through `sessionOf` and starts with `guard` (method and CSRF). Routes
   are thin; rules live in services, SQL in `src/server/db/`. Times in rules are the database's
   `now()`. What a player may see of a series is decided by `viewOf` alone.
