@@ -11,18 +11,10 @@
 // BALLBATTLE_ONLINE > Edit > Production `1` (on) or empty (off) > Save; then Deploys > Trigger
 // deploy > Deploy project.
 import { execFileSync } from 'node:child_process';
+import { netlify, switchCalls } from './netlify-cli.ts';
 
-const SITE_ID = 'd2fa333e-9a60-4b58-a3d2-c8a673b2ae9f';
 const LIVE = 'https://battle-ball.netlify.app';
 const WAIT_MS = 10 * 60 * 1000;
-
-function netlify(args: readonly string[]): string {
-  return execFileSync('netlify', args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    shell: process.platform === 'win32',
-  });
-}
 
 /** The live API's answer: on (200), off (404 online_off), or anything else as its status. */
 async function liveState(): Promise<string> {
@@ -49,11 +41,10 @@ if (wanted === 'status') {
     console.error('release predates the switch: publish first (gh workflow run publish.yml).');
     process.exit(1);
   }
-  if (wanted === 'on') netlify(['env:set', 'BALLBATTLE_ONLINE', '1', '--context', 'production']);
-  else netlify(['env:unset', 'BALLBATTLE_ONLINE', '--context', 'production']);
+  const [setVariable, triggerBuild] = switchCalls(wanted);
+  netlify(setVariable);
   console.log(`BALLBATTLE_ONLINE is ${wanted === 'on' ? '1' : 'unset'} for production.`);
-  // Netlify's "Trigger deploy": a fresh production build of the production branch.
-  netlify(['api', 'createSiteBuild', '--data', JSON.stringify({ site_id: SITE_ID })]);
+  netlify(triggerBuild);
   console.log('Production deploy started; waiting for the live API (usually 3-5 minutes)…');
   const deadline = Date.now() + WAIT_MS;
   let state = await liveState();
