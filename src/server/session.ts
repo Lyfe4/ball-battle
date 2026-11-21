@@ -34,8 +34,14 @@ export async function optionalSession(
       context.setCookie(sessionCookie(current));
     } catch (error) {
       // Refused (revoked, or reused past its window): the guest has to start again. Auth being
-      // down is our fault, not the player's: a 500 that keeps their cookie.
-      if (error instanceof AuthError && error.status >= 400 && error.status < 500) {
+      // down or busy (a 429 counts our functions' shared address, not this player) is our fault,
+      // not the player's: a 500 that keeps their cookie.
+      if (
+        error instanceof AuthError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.status !== 429
+      ) {
         throw unauthenticated(context, 'Your session has ended');
       }
       throw error;

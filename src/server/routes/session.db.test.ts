@@ -209,6 +209,25 @@ describe('a session', () => {
     expect(answers.map((answer) => answer.status)).toStrictEqual([200, 200]);
   });
 
+  it('keeps the player when Auth is too busy to refresh: a 500, the cookie untouched', async () => {
+    const browser = await guest();
+    const before = browser.cookie;
+    const realFetch = globalThis.fetch;
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) =>
+      String(input instanceof Request ? input.url : input).includes('grant_type=refresh_token')
+        ? Promise.resolve(Response.json({ error_code: 'over_request_rate_limit' }, { status: 429 }))
+        : realFetch(input, init),
+    );
+    const later = new TestBrowser({
+      ...deps,
+      tokenClock: () => new Date(Date.now() + 2 * 3600_000),
+    });
+    later.cookie = before;
+    const answer = await later.call(me, 'GET', '/api/v1/me');
+    expect(answer.status).toBe(500);
+    expect(later.cookie).toBe(before);
+  });
+
   it('ends at logout: the refresh token stops working and the cookie is cleared', async () => {
     const browser = await guest();
     const kept = browser.cookie;
