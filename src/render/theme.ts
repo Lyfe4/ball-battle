@@ -3,6 +3,7 @@
  * Page-level colours live as CSS custom properties in src/styles/tokens.css.
  */
 import { BALLOON_BANSHEE_KRAKEN } from './theme-balloon-banshee-kraken.ts';
+import { MIRAGE_JOUSTER } from './theme-mirage-jouster.ts';
 
 export const theme = {
   /**
@@ -147,6 +148,8 @@ export const theme = {
     balloon: '#7f1d1d',
     banshee: '#3b1238',
     kraken: '#083344',
+    mirage: '#881337',
+    jouster: '#422006',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -167,6 +170,7 @@ export const theme = {
   /** The Speedster's gauge bars it has not filled. */
   speedsterEmptyAlpha: 0.22,
   ...BALLOON_BANSHEE_KRAKEN,
+  ...MIRAGE_JOUSTER,
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,

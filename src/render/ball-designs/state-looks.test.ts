@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { bomber, DROP_TICKS, FIRST_DROP_TICK } from '../../sim/balls/bomber.ts';
 import { necromancer, SUMMON_TICKS } from '../../sim/balls/necromancer.ts';
+import { jouster } from '../../sim/balls/jouster.ts';
+import { COPY_OFFSET, mirage } from '../../sim/balls/mirage.ts';
 import { lifestealFor, vampire } from '../../sim/balls/vampire.ts';
 import type { BallDefinition, BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { bomberDesign, fuseLeft } from './bomber.ts';
+import { jousterDesign } from './jouster.ts';
+import { mirageDesign } from './mirage.ts';
 import { necromancerDesign } from './necromancer.ts';
 import { record } from './test-support.ts';
 import type { BallDesign, DesignView } from './types.ts';
@@ -41,6 +45,32 @@ const CASES: readonly (readonly [string, BallDesign, BallDefinition, Partial<Bal
   ['Bomber', bomberDesign, bomber, {}],
   ['Necromancer', necromancerDesign, necromancer, {}],
   ['Vampire', vampireDesign, vampire, { health: 20 }],
+  // ADR 0077: each in the states its look shows (tick 30).
+  ['Vampire, thirsty', vampireDesign, vampire, { abilityState: { thirstyUntil: 36 } }],
+  [
+    'Mirage, its copy out',
+    mirageDesign,
+    mirage,
+    { abilityState: { copyOn: true, copyDx: 0, copyDy: -COPY_OFFSET, backAt: 0 } },
+  ],
+  [
+    'Mirage, its copy coming back',
+    mirageDesign,
+    mirage,
+    { abilityState: { copyOn: false, copyDx: 0, copyDy: 0, backAt: 150 } },
+  ],
+  [
+    'Jouster, lowering its lance',
+    jousterDesign,
+    jouster,
+    { abilityState: { nextCharge: 60, chargeEnds: 0, charging: false } },
+  ],
+  [
+    'Jouster, charging',
+    jousterDesign,
+    jouster,
+    { abilityState: { nextCharge: 180, chargeEnds: 90, charging: true } },
+  ],
 ];
 
 describe('ball looks that show their state', () => {

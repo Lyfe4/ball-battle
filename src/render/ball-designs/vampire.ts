@@ -1,4 +1,4 @@
-import { lifestealFor, vampire } from '../../sim/balls/vampire.ts';
+import { lifestealFor, thirstyUntilOf, vampire } from '../../sim/balls/vampire.ts';
 import { theme } from '../theme.ts';
 import type { BallDesign, Painter } from './types.ts';
 
@@ -38,6 +38,12 @@ const FANG = {
 } as const;
 /** The drop of blood forming on each fang's tip at full thirst, as a fraction of r. */
 const DROP = 0.11;
+
+/** How strongly its Thirst shows on `tick` (ADR 0077): 1 while thirsty, easing out at the end. */
+export function thirstShown(until: number, tick: number): number {
+  if (until <= 0) return 0;
+  return Math.min(1, Math.max(0, (until - tick) / theme.thirstSettleTicks));
+}
 
 /** What one full, head-on bump heals it: its lifesteal share of its own contact damage. */
 const FULL_BUMP_HEAL = lifestealFor(vampire.contactDamage);
@@ -82,22 +88,41 @@ function drawFangs(p: Painter, r: number, thirst: number): void {
  * rising up each side. The fangs show its thirst: short and clean at full health, where a bump
  * heals it nothing; longer as it loses health, reaching down over the collar with a drop of blood
  * on each tip once a full bump's heal would all go back in. When it heals, the collar's edge flushes
- * crimson and the fangs draw back as its health returns.
+ * crimson and the fangs draw back as its health returns. Thirsty after a hit from afar, its cape
+ * flares: the lapels rise high, lined red (the red streak behind it is in trails.ts).
  */
 export const vampireDesign: BallDesign = {
   facing: 'none',
-  draw(p, { ball, radius: r, accent, heal }) {
+  draw(p, { ball, radius: r, accent, heal, tick }) {
+    // Thirst (ADR 0077): hit from afar, its cape flares, the lapels rising high with a red lining.
+    const flare = thirstShown(thirstyUntilOf(ball) ?? 0, tick);
+    const tipAngle = TIP_ANGLE + theme.thirstFlare * flare;
     const collar = COLLAR_RADIUS * r;
-    const tipX = Math.cos(TIP_ANGLE) * collar;
-    const tipY = -Math.sin(TIP_ANGLE) * collar;
+    const tipX = Math.cos(tipAngle) * collar;
+    const tipY = -Math.sin(tipAngle) * collar;
 
     p.fillStyle = accent;
     p.beginPath();
     p.moveTo(tipX, tipY);
-    p.arc(0, 0, collar, -TIP_ANGLE, Math.PI + TIP_ANGLE);
+    p.arc(0, 0, collar, -tipAngle, Math.PI + tipAngle);
     for (const [x, y] of EDGE) p.lineTo(x * r, y * r);
     p.closePath();
     p.fill();
+
+    if (flare > 0) {
+      p.save();
+      p.globalAlpha *= flare;
+      p.strokeStyle = theme.thirstLining;
+      p.lineWidth = r * theme.markLine;
+      p.lineJoin = 'round';
+      p.lineCap = 'round';
+      p.beginPath();
+      p.moveTo(-tipX, tipY);
+      for (const [x, y] of EDGE) p.lineTo(x * r, y * r);
+      p.lineTo(tipX, tipY);
+      p.stroke();
+      p.restore();
+    }
 
     if (heal > 0) {
       p.save();

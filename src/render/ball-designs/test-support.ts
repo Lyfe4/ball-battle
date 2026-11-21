@@ -1,7 +1,7 @@
 // Shared by the design tests: a painter that records every call a design makes.
 import type { BallDesign, DesignView, Painter } from './types.ts';
 
-/** Every call a design makes, numbers divided by r so drawings at two sizes can be compared. */
+/** Every call a design makes (its markings, outline and parts over it), numbers divided by r so drawings at two sizes can be compared. */
 export function record(design: BallDesign, view: DesignView): string[] {
   const r = view.radius;
   const calls: string[] = [];
@@ -41,5 +41,9 @@ export function record(design: BallDesign, view: DesignView): string[] {
     setLineDash: () => calls.push('setLineDash'),
   };
   design.draw(painter, view);
+  // The body's own outline and the parts over it, after the markings (so a test reading the
+  // markings by index is unchanged).
+  design.outline?.(painter, view);
+  design.over?.(painter, view);
   return calls;
 }
