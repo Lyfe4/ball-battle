@@ -64,7 +64,7 @@ export const necromancer = defineBall<NecromancerState>({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 70,
+  maxHealth: 71,
   contactDamage: 14,
   initialAbilityState: { nextSummonTick: FIRST_SUMMON_TICK },
   hooks: {

@@ -103,18 +103,6 @@ export const BEFORE_THE_FLOOR: readonly string[] = [
 ];
 
 /**
- * Over `STRONG_LIMITS.most` when the limit came in (ruleset 22), each allowed exactly its count:
- * one more fails. Drop the entry once the ball is back under the limit (ADR 0076).
- * - Vampire, 7 losses: it heals only from its bumps, so seven balls that hit without a touch beat
- *   it. An ability tweak, not a number (docs/vision.md).
- */
-export const OVER_THE_LIMIT: Readonly<
-  Record<string, { readonly wins?: number; readonly losses?: number }>
-> = {
-  vampire: { losses: 7 },
-};
-
-/**
  * Which hard limit a ball's strong counters (the balls it beats and loses to outright) break, or
  * undefined when they break none.
  */
@@ -123,11 +111,11 @@ export function counterProblem(
   beats: readonly string[],
   losesTo: readonly string[],
 ): string | undefined {
-  const over = OVER_THE_LIMIT[id];
-  for (const [side, count, most] of [
-    ['wins', beats.length, over?.wins ?? STRONG_LIMITS.most],
-    ['losses', losesTo.length, over?.losses ?? STRONG_LIMITS.most],
+  for (const [side, count] of [
+    ['wins', beats.length],
+    ['losses', losesTo.length],
   ] as const) {
+    const most = STRONG_LIMITS.most;
     if (count > most) return `${String(count)} strong ${side}, at most ${String(most)}`;
   }
   const fewest = STRONG_LIMITS.newFewest;

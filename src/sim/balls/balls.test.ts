@@ -21,7 +21,7 @@ import { BALLS } from './index.ts';
 import { MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm } from './storm.ts';
 import { thorns } from './thorns.ts';
-import { vampire } from './vampire.ts';
+import { THIRST_SPEED, vampire } from './vampire.ts';
 import { venom } from './venom.ts';
 import { BOMB_RADIUS, bomber } from './bomber.ts';
 import { bloom } from './bloom.ts';
@@ -34,6 +34,8 @@ import { HALF_RADIUS, HALF_SPEED, slime } from './slime.ts';
 import { balloon } from './balloon.ts';
 import { banshee } from './banshee.ts';
 import { kraken } from './kraken.ts';
+import { mirage } from './mirage.ts';
+import { CHARGE_SPEED, jouster } from './jouster.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -57,7 +59,8 @@ describe('the ball roster', () => {
     const topCruiseSpeed: Readonly<Record<string, number>> = {
       brawler: brawler.speed,
       speedster: speedForStacks(speedster.speed, MAX_STACKS),
-      vampire: vampire.speed,
+      // Thirst makes it faster for a moment (ADR 0077).
+      vampire: vampire.speed * THIRST_SPEED,
       archer: archer.speed,
       storm: storm.speed,
       // Slowed only ever lowers a ball's speed.
@@ -94,6 +97,10 @@ describe('the ball roster', () => {
       banshee: banshee.speed,
       // Anchoring and its grip only slow balls down (ADR 0075).
       kraken: kraken.speed,
+      // Its copy has no body; nothing touches it (ADR 0077).
+      mirage: mirage.speed,
+      // A charge is the roster's fastest burst short of the Speedster's stacks (ADR 0077).
+      jouster: jouster.speed * CHARGE_SPEED,
     };
     // The smallest a ball gets: only the Slime's halves are smaller than it starts.
     const smallest = (ball: BallDefinition) => (ball.id === slime.id ? HALF_RADIUS : ball.radius);

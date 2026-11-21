@@ -12,9 +12,8 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hex',
     y: 'brawler',
-    intended: 'x',
-    level: 'edge',
-    reason: 'A burst on top of each bump adds up to more than the Brawler’s harder bumps alone.',
+    intended: 'even',
+    reason: 'A burst on top of each bump against the Brawler’s harder bumps: even.',
   },
   {
     x: 'hex',

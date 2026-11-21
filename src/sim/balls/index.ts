@@ -28,6 +28,8 @@ import { slime } from './slime.ts';
 import { balloon } from './balloon.ts';
 import { banshee } from './banshee.ts';
 import { kraken } from './kraken.ts';
+import { mirage } from './mirage.ts';
+import { jouster } from './jouster.ts';
 
 /** Every playable ball, in picker order. Add a new ball's file here. */
 export const BALLS: readonly BallDefinition[] = [
@@ -59,6 +61,8 @@ export const BALLS: readonly BallDefinition[] = [
   balloon,
   banshee,
   kraken,
+  mirage,
+  jouster,
 ];
 
 export const BALL_LOOKUP = indexDefinitions(BALLS);

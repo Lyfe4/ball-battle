@@ -72,7 +72,7 @@ export const spartan = defineBall<SpartanState>({
   incomingDamageOf: (self, amount, tick) =>
     shieldRaisedAt(tick, self.abilityState.phase) ? shieldedHit(amount) : amount,
   hooks: {
-    onTick: ({ world, self, random }) => {
+    onTick: ({ world, self, random, aimPointOf }) => {
       const phase =
         self.abilityState.phase >= 0 ? self.abilityState.phase : Math.floor(random() * CYCLE_TICKS);
       const raised = shieldRaisedAt(world.tick, phase);
@@ -81,7 +81,7 @@ export const spartan = defineBall<SpartanState>({
           ? []
           : [{ kind: 'setAbilityState' as const, state: { phase, raised } }];
       if (rhythmAt(world.tick, phase) !== SHIELD_TICKS) return mark;
-      const target = nearestTarget(self, world.balls, world.minions);
+      const target = nearestTarget(self, world.balls, world.minions, aimPointOf);
       if (target === undefined) return mark;
       const dx = target.position.x - self.position.x;
       const dy = target.position.y - self.position.y;

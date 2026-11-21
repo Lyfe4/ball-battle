@@ -4,8 +4,9 @@ import type { CounterEntry } from './counter-map.ts';
 
 /**
  * Its wail hits all around it and nothing blocks it. So it beats the balls whose defence is not
- * being touched (the phased Ghost) and the frail Vampire, which heals only from bumps; and loses to
- * the Chrono, which rewinds one big hit, to shooters outside its ring and to the grown Titan.
+ * being touched (the phased Ghost); it edges the frail Vampire, which heals only from bumps (since
+ * ruleset 23 each wail sends it in fast, ADR 0077); and loses to the Chrono, which rewinds one big
+ * hit, to shooters outside its ring and to the grown Titan.
  */
 export const BANSHEE_ENTRIES: readonly CounterEntry[] = [
   {
@@ -24,8 +25,8 @@ export const BANSHEE_ENTRIES: readonly CounterEntry[] = [
     x: 'banshee',
     y: 'vampire',
     intended: 'x',
-    level: 'strong',
-    reason: 'The wail hits without a touch, so the frail Vampire has nothing to drink.',
+    level: 'edge',
+    reason: 'The wail needs no touch, though each one sends the thirsty Vampire in fast.',
   },
   {
     x: 'banshee',

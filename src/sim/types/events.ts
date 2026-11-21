@@ -47,6 +47,11 @@ export interface DamageEvent {
    * describe what actually happened.
    */
   readonly survivedLethal: boolean;
+  /**
+   * Bumps only: what the source's angle multiplied its bump by (the Jouster's lance: 3 head-on, 0.4
+   * at a glance, ADR 0077); absent when 1. Output only.
+   */
+  readonly times?: number;
   /** Ability damage only: what delivered it (ADR 0036). */
   readonly via?: DamageVia;
   /** What the target's own defence took off the hit before it landed (ADR 0045); absent if none. */

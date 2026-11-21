@@ -1,5 +1,7 @@
 // Pure helpers that turn ability state into design state. No canvas, so they are unit tested.
 import { nearestTarget } from '../../sim/balls/targeting.ts';
+import { copyPosition, mirageStateOf } from '../../sim/balls/mirage.ts';
+import { ARENA_SIZE } from '../../sim/constants.ts';
 import type { MinionState } from '../../sim/minions/types.ts';
 import type { BallState, Vec2 } from '../../sim/types.ts';
 import { theme } from '../theme.ts';
@@ -44,14 +46,19 @@ export function velocityHeading(velocity: Vec2): Vec2 | undefined {
 
 /**
  * Unit vector towards what the ball's aimed attack would pick (the nearest enemy ball or minion,
- * ADR 0026), or undefined if there is none (or it overlaps).
+ * ADR 0026; a Mirage's copy while it shows), or undefined if there is none (or it overlaps).
  */
 export function aimHeading(
   self: BallState,
   balls: readonly BallState[],
   minions: readonly MinionState[] = [],
+  size = ARENA_SIZE,
 ): Vec2 | undefined {
-  const target = nearestTarget(self, balls, minions);
+  const target = nearestTarget(self, balls, minions, (ball) => {
+    // Aimed at a Mirage, it turns to the copy, as its shot will (ADR 0077).
+    const mirage = mirageStateOf(ball);
+    return mirage?.copyOn === true ? copyPosition(ball.position, mirage, size) : ball.position;
+  });
   if (target === undefined) return undefined;
   return velocityHeading({
     x: target.position.x - self.position.x,

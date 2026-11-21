@@ -22,6 +22,8 @@ import { SLIME_ENTRIES } from './counter-map-slime.ts';
 import { BALLOON_ENTRIES } from './counter-map-balloon.ts';
 import { BANSHEE_ENTRIES } from './counter-map-banshee.ts';
 import { KRAKEN_ENTRIES } from './counter-map-kraken.ts';
+import { MIRAGE_ENTRIES } from './counter-map-mirage.ts';
+import { JOUSTER_ENTRIES } from './counter-map-jouster.ts';
 
 /** Which side of a pair should win more: the first ball, the second, or neither. */
 export type Intended = 'x' | 'y' | 'even';
@@ -63,6 +65,8 @@ export const COUNTER_MAP: readonly CounterEntry[] = [
   ...BALLOON_ENTRIES,
   ...BANSHEE_ENTRIES,
   ...KRAKEN_ENTRIES,
+  ...MIRAGE_ENTRIES,
+  ...JOUSTER_ENTRIES,
 ];
 
 /** The map entry for a pair, whichever order the pair comes in. */

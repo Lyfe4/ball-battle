@@ -28,6 +28,7 @@ import { HALF_RADIUS, slime } from './slime.ts';
 import { SHOT_TIMES } from './balloon.ts';
 import { banshee, WAIL_DAMAGE } from './banshee.ts';
 import { CRUSH_PER_TENTACLE, tentaclesFor } from './kraken.ts';
+import { jouster } from './jouster.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -132,18 +133,21 @@ describe('the ball roster: identity rules', () => {
     expect((HEAL_AMOUNT * TICK_RATE) / HEAL_EVERY_TICKS).toBeLessThan(bloom.maxHealth / 10);
   });
 
-  it('Speedster is the fastest ball: one wall bounce takes it past every other ball (ADR 0056)', () => {
+  it('Speedster is the fastest ball: one wall bounce passes every cruise, its stacks every burst (ADR 0056, 0077)', () => {
     // Its base speed is not the roster's highest since the Battery (870); what players see is the
-    // speed it fights at, and a single stack already beats every other ball's best.
+    // speed it fights at. A single stack beats every other ball's cruising speed, and its stacks beat
+    // the bursts that last a moment (the Jouster's charge, the thirsty Vampire), so the manual still
+    // names it fastest.
     const oneStack = speedForStacks(speedster.speed, 1);
     for (const ball of others(speedster.id)) {
-      expect(oneStack).toBeGreaterThan(ball.topSpeed ?? ball.speed);
+      expect(oneStack).toBeGreaterThan(ball.speed);
+      expect(speedster.topSpeed ?? 0).toBeGreaterThan(ball.topSpeed ?? ball.speed);
     }
     expect(speedster.topSpeed).toBe(speedForStacks(speedster.speed, MAX_STACKS));
     // Only a ball whose ability speeds it up declares a top speed.
     expect(
       BALLS.filter((ball) => ball.topSpeed !== undefined).map((ball) => ball.id),
-    ).toStrictEqual([speedster.id]);
+    ).toStrictEqual([speedster.id, vampire.id, jouster.id]);
   });
 
   it('Speedster’s bonus at max stacks is at least half its contact damage', () => {
@@ -215,6 +219,9 @@ describe('the ball roster: identity rules', () => {
       banshee: WAIL_DAMAGE,
       // The crush on a fully grown Titan, the widest ball.
       kraken: CRUSH_PER_TENTACLE * tentaclesFor(MAX_RADIUS),
+      // Its copy deals nothing; the lance is a bump (ADR 0077).
+      mirage: 0,
+      jouster: 0,
     };
     // A shot that hits the Balloon harder (ADR 0075) stays under the strike too: the spear the most.
     expect(Math.round(Math.max(SPEAR_DAMAGE, SHOT_DAMAGE, ARROW_DAMAGE) * SHOT_TIMES)).toBeLessThan(

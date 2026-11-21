@@ -10,6 +10,7 @@ import type {
   HookContext,
   HookName,
   SimEvent,
+  Vec2,
   WorldState,
 } from '../types.ts';
 import { applyActions, type Scene } from './apply-actions.ts';
@@ -64,6 +65,9 @@ export function runPhase(
     phasedOf(ball, getDefinition(definitions, ball.definitionId));
   const maxHealthOf = (ball: BallState): number =>
     getDefinition(definitions, ball.definitionId).maxHealth;
+  const aimPointOf = (ball: BallState): Vec2 =>
+    getDefinition(definitions, ball.definitionId).decoyOf?.(ball, world.arena.size) ??
+    ball.position;
 
   for (const invocation of invocations) {
     const ballIndex = snapshot.findIndex((ball) => ball.id === invocation.ballId);
@@ -76,7 +80,15 @@ export function runPhase(
     const random = createStream(
       deriveSeed([world.rngState, world.tick, ballIndex, HOOK_CODES[invocation.hook], call]),
     );
-    const base: HookContext = { world, self, stats: definition, random, isPhased, maxHealthOf };
+    const base: HookContext = {
+      world,
+      self,
+      stats: definition,
+      random,
+      isPhased,
+      maxHealthOf,
+      aimPointOf,
+    };
     const actions = invocation.call(definition, base, snapshot);
     if (actions !== undefined && actions.length > 0) {
       collected.push({ ballId: invocation.ballId, hook: invocation.hook, actions });

@@ -4,7 +4,8 @@ import type { CounterEntry } from './counter-map.ts';
 
 /**
  * Its tentacles rise where its enemy is heading, hold it almost still and crush it, more for a
- * bigger ball. A held ball loses its ability: the Vampire can't bump to heal, the Spider's anchored
+ * bigger ball. A held ball loses its ability: the Vampire can't bump to heal (an edge since its
+ * Thirst, ADR 0077), the Spider's anchored
  * enemy never bounces into a web, and the grown Titan takes four tentacles. Standing still to
  * squeeze makes it a target for heavy aimed hits (the Storm, Sniper and Spartan), and the phased
  * Ghost slips the grab.
@@ -28,8 +29,8 @@ export const KRAKEN_ENTRIES: readonly CounterEntry[] = [
     x: 'kraken',
     y: 'vampire',
     intended: 'x',
-    level: 'strong',
-    reason: 'A held Vampire can’t bump, so it can’t heal, and the crush finishes it.',
+    level: 'edge',
+    reason: 'A held Vampire can’t bump to heal, though the crush makes it thirsty after.',
   },
   {
     x: 'kraken',

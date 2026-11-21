@@ -52,10 +52,8 @@ export const HIT_KIND_GHOST_BLOOM_VENOM_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'bloom',
     y: 'necromancer',
-    intended: 'x',
-    level: 'edge',
-    reason:
-      'The skeleton’s bites restart the wait, but they are small, and its own bumps are hard.',
+    intended: 'even',
+    reason: 'The skeleton’s bites restart the wait, but its own bumps are hard: even.',
   },
   {
     x: 'bloom',

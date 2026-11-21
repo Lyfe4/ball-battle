@@ -9,7 +9,6 @@ import {
   FIFTH_FROM_ONE_MECHANIC,
   LEVEL_BANDS,
   measuredOf,
-  OVER_THE_LIMIT,
   SHAPE,
   shapeWarning,
   STRONG_LIMITS,
@@ -308,10 +307,6 @@ export function shapeLines(
   const fifths = Object.entries(FIFTH_FROM_ONE_MECHANIC).map(
     ([id, { side, mechanic }]) => `${nameOf(id)} (${side}: ${mechanic})`,
   );
-  const over = Object.entries(OVER_THE_LIMIT).map(
-    ([id, { wins, losses }]) =>
-      `${nameOf(id)} (${[wins === undefined ? '' : `${String(wins)} wins`, losses === undefined ? '' : `${String(losses)} losses`].filter(Boolean).join(', ')})`,
-  );
   const off = strongCounters.flatMap(({ id, beats, losesTo }) =>
     shapeWarning(id, beats, losesTo) === undefined
       ? []
@@ -321,8 +316,7 @@ export function shapeLines(
     '## The shape',
     '',
     `Hard limits (ADR 0076): no ball has more than ${String(STRONG_LIMITS.most)} strong wins or ${String(STRONG_LIMITS.most)} strong losses, and every`,
-    `ball added after ruleset 22 has at least ${String(STRONG_LIMITS.newFewest)} of each. Allowed its count until it is back under:`,
-    `${over.join('; ') || 'none'}.`,
+    `ball added after ruleset 22 has at least ${String(STRONG_LIMITS.newFewest)} of each.`,
     '',
     `The shape is a warning: ${String(SHAPE.fewest)}-${String(SHAPE.most)} strong counters each way, the two counts within ${String(SHAPE.within)}; a fifth on one`,
     `side where one visible mechanic gives it: ${fifths.join('; ') || 'none'}. The even pick has exactly its`,
