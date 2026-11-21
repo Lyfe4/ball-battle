@@ -1,8 +1,8 @@
-// The Mirage's look (ADR 0077): a mirage over hot sand, no face. A glassy ball with a gloss, dunes
-// sitting on a horizon across its middle and heat waves rising and wavering over them; below the
-// horizon its lower half is half see-through, like sand shimmering, and holds the dunes' faint
-// upside-down reflection. The reflection shows where its copy is up to: whole while the copy shows,
-// gone the moment it pops and fading back in until it returns. The copy, drawn on the court by the
+// The Mirage's look (ADR 0077): a mirage, no face. A light, glassy ball: a warm hazy sky, low
+// golden dunes on the horizon with thin heat shimmers rising off them, and below the horizon the
+// fake oasis, a cool shimmering pool with ripples and the dunes' faint reflection, on warm sand. The
+// pool shows where its copy is up to: clear while the copy shows, gone the moment it pops (dry sand)
+// and fading back in until it returns. The copy, drawn on the court by the
 // same design (mirage-copy.ts), is the same shimmering ball. One set of proportions in fractions of
 // r at every size; its heat wavers with the sim's clock and holds still with reduced motion.
 import {
@@ -50,27 +50,37 @@ export function copyReadiness(state: MirageState, tick: number): number {
   return Math.min(1, Math.max(0, 1 - (state.backAt - tick) / wait));
 }
 
-/** The horizon's height, as a fraction of r (y down): a little below the middle. */
-const HORIZON = 0.12;
-/** The dunes on the horizon: two humps, each from one x to another over a peak. */
+/**
+ * The scene, as heights in fractions of r (y down): the horizon the dunes sit on, the pool below it
+ * and the sand in front. The dunes are low and gentle: [from, peak, to] x and the peak's height.
+ */
+const HORIZON = -0.02;
+const POOL_BOTTOM = 0.56;
 const DUNES = [
-  { from: -0.92, peak: [-0.42, -0.34], to: 0.04 },
-  { from: -0.08, peak: [0.42, -0.2], to: 0.92 },
+  { from: -0.98, peak: [-0.5, -0.17], to: 0.05 },
+  { from: -0.1, peak: [0.45, -0.12], to: 0.98 },
 ] as const;
-/** Heat waves over the dunes: heights, half-widths, waves across and how far they waver. */
-const HEAT = { ys: [-0.66, -0.46, -0.26], half: [0.42, 0.56, 0.62], waves: 2, amp: 0.05 } as const;
-/** The gloss: a crescent at the top left, as an arc's centre, radius and sweep. */
-const GLOSS = { x: -0.04, y: 0.05, radius: 0.8, from: Math.PI * 1.08, to: Math.PI * 1.42 } as const;
+/** Ripple lines across the pool: heights and half-widths. */
+const RIPPLES = [
+  [0.2, 0.46],
+  [0.38, 0.34],
+] as const;
+/** The heat: thin shimmers rising from the dunes to here and fading, two at a time. */
+const HEAT = { from: -0.2, to: -0.72, half: 0.36, waves: 1.5, amp: 0.035, count: 2 } as const;
+/** The gloss: a thin crescent at the top left, as an arc's centre, radius and sweep. */
+const GLOSS = { x: 0, y: 0, radius: 0.8, from: Math.PI * 1.12, to: Math.PI * 1.38 } as const;
 
-/** The lower half of the ball below the horizon chord. */
-function lowerHalf(p: Painter, r: number): void {
-  const a = Math.asin(HORIZON);
+/** The band of the ball between two heights (fractions of r, top above bottom). */
+function band(p: Painter, r: number, top: number, bottom: number): void {
+  const t = Math.asin(Math.max(-1, Math.min(1, top)));
+  const b = Math.asin(Math.max(-1, Math.min(1, bottom)));
   p.beginPath();
-  p.arc(0, 0, r, a, Math.PI - a);
+  p.arc(0, 0, r, t, b);
+  p.arc(0, 0, r, Math.PI - b, Math.PI - t);
   p.closePath();
 }
 
-/** The dunes, mirrored about the horizon when `flip` (their reflection). */
+/** The low dunes on the horizon, or their reflection hanging below it when `flip`. */
 function dunes(p: Painter, r: number, flip: boolean): void {
   const y = (value: number) => (flip ? 2 * HORIZON - value : value) * r;
   p.beginPath();
@@ -81,50 +91,67 @@ function dunes(p: Painter, r: number, flip: boolean): void {
   }
 }
 
-/** Heat waves rising over the dunes, wavering with the sim's clock unless held still. */
-function heat(p: Painter, r: number, tick: number, still: boolean): void {
-  const phase = still ? 0 : ((tick / theme.mirageHeatTicks) % 1) * Math.PI * 2;
-  const steps = 10;
-  p.beginPath();
-  HEAT.ys.forEach((y, line) => {
-    const half = HEAT.half[line] ?? 0.5;
-    for (let index = 0; index <= steps; index++) {
-      const t = index / steps;
-      const x = (-half + 2 * half * t) * r;
-      const wy = (y + HEAT.amp * Math.sin(t * Math.PI * 2 * HEAT.waves + phase + line)) * r;
-      if (index === 0) p.moveTo(x, wy);
+/**
+ * The heat: thin wavering lines rising off the dunes and fading as they go, each a share of the
+ * way up on the sim's clock; held at fixed heights with reduced motion.
+ */
+function heat(p: Painter, r: number, tick: number, still: boolean, alpha: number): void {
+  const rise = still ? 0.35 : (tick / theme.mirageHeatTicks) % 1;
+  for (let index = 0; index < HEAT.count; index++) {
+    const share = (rise + index / HEAT.count) % 1;
+    const y = HEAT.from + (HEAT.to - HEAT.from) * share;
+    p.globalAlpha = alpha * theme.mirageHeatAlpha * Math.sin(share * Math.PI);
+    p.beginPath();
+    const steps = 8;
+    for (let step = 0; step <= steps; step++) {
+      const t = step / steps;
+      const x = (-HEAT.half + 2 * HEAT.half * t) * r;
+      const wy = (y + HEAT.amp * Math.sin(t * Math.PI * 2 * HEAT.waves + share * 6)) * r;
+      if (step === 0) p.moveTo(x, wy);
       else p.lineTo(x, wy);
     }
-  });
-  p.stroke();
+    p.stroke();
+  }
 }
 
 /** The Mirage's markings, for the ball and for its copy on the court. */
 export function drawMirage(p: Painter, view: DesignView): void {
-  const { ball, radius: r, accent, tick } = view;
+  const { ball, radius: r, tick } = view;
   const state = mirageStateOf(ball);
   const ready = state === undefined ? 1 : copyReadiness(state, tick);
   const alpha = p.globalAlpha;
-  // The glassy lower half: the floor shows through, like sand shimmering.
-  p.fillStyle = theme.arenaFill;
-  p.globalAlpha = alpha * theme.mirageGlass;
-  lowerHalf(p, r);
+  // Warm sand below the horizon: the dunes and the ground in front.
+  p.fillStyle = theme.mirageSand;
+  band(p, r, HORIZON, 1);
   p.fill();
-  // The dunes' upside-down reflection, as strong as its copy is ready.
-  p.fillStyle = accent;
-  if (ready > 0) {
-    p.globalAlpha = alpha * theme.mirageReflection * ready;
-    dunes(p, r, true);
-    p.fill();
-  }
-  p.globalAlpha = alpha;
   dunes(p, r, false);
   p.fill();
+  // The fake oasis: a cool shimmering pool on the sand, as clear as its copy is ready.
+  if (ready > 0) {
+    p.globalAlpha = alpha * ready;
+    p.fillStyle = theme.miragePool;
+    band(p, r, HORIZON, POOL_BOTTOM);
+    p.fill();
+    p.fillStyle = theme.mirageSand;
+    p.globalAlpha = alpha * ready * theme.mirageReflection;
+    dunes(p, r, true);
+    p.fill();
+    p.globalAlpha = alpha * ready;
+    p.strokeStyle = theme.mirageHaze;
+    p.lineCap = 'round';
+    p.lineWidth = theme.mirageRippleWidth * r;
+    p.beginPath();
+    for (const [y, half] of RIPPLES) {
+      p.moveTo(-half * r, y * r);
+      p.lineTo(half * r, y * r);
+    }
+    p.stroke();
+  }
   p.strokeStyle = theme.mirageHaze;
   p.lineCap = 'round';
   p.lineJoin = 'round';
   p.lineWidth = theme.mirageHeatWidth * r;
-  heat(p, r, tick, view.still === true);
+  heat(p, r, tick, view.still === true, alpha);
   p.globalAlpha = alpha * theme.mirageGlossAlpha;
   p.lineWidth = theme.mirageGlossWidth * r;
   p.beginPath();

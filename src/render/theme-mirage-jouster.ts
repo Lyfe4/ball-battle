@@ -1,8 +1,8 @@
 // The renderer's tokens for the balls of ADR 0077, spread into its theme (theme.ts) and read from
 // there.
 //
-// The Mirage: its heat waves (white, wavering once every mirageHeatTicks), how much of the floor
-// shows through its glassy lower half, its reflection at full strength, its gloss, and its copy on
+// The Mirage: its warm sand, its cool pool and the pool's white ripples, the dunes' reflection in
+// it, its heat shimmers (each rising off the dunes over mirageHeatTicks), its gloss, and its copy on
 // the court, the same design: drawn at copyAlpha,
 // its outline wobbling by copyWobble r with waves turning every copyWobbleTicks, shimmering in over
 // copyShimmerTicks. A popped copy bursts into rings of haze (world units) over copyPopMs.
@@ -15,14 +15,17 @@
 // The Vampire's Thirst: its cape flares and a short red streak trails it while it is thirsty,
 // settling over thirstSettleTicks at the end.
 export const MIRAGE_JOUSTER = {
-  mirageHaze: '#fff1f2',
-  mirageGlass: 0.4,
-  mirageReflection: 0.4,
-  mirageHeatTicks: 50,
-  mirageHeatWidth: 0.075,
-  mirageGlossAlpha: 0.55,
-  mirageGlossWidth: 0.1,
-  copyAlpha: 0.5,
+  mirageHaze: '#ffffff',
+  mirageSand: '#f8cf8f',
+  miragePool: '#c7ecfa',
+  mirageReflection: 0.45,
+  mirageRippleWidth: 0.07,
+  mirageHeatTicks: 90,
+  mirageHeatWidth: 0.06,
+  mirageHeatAlpha: 0.75,
+  mirageGlossAlpha: 0.6,
+  mirageGlossWidth: 0.08,
+  copyAlpha: 0.62,
   copyEdge: '#fff1f2',
   copyEdgeWidth: 0.1,
   copyWobble: 0.045,

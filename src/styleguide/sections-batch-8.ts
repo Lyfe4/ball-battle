@@ -32,7 +32,7 @@ const thirsty: AbilityState = { thirstyUntil: TICK + THIRST_TICKS - 10 };
 
 export const BATCH_EIGHT: readonly (readonly [string, readonly Tile[]])[] = [
   [
-    'Mirage: a mirage on hot sand, no face: a glassy ball with dunes on a horizon, heat waves wavering over them and a see-through lower half holding the dunes’ upside-down reflection, whole while its copy shows, gone when it pops and fading back as it returns. The copy (the same shimmering ball at half opacity with a wobbling outline, no bar) and its pop show in the phone arena',
+    'Mirage: a mirage, no face: a light glassy ball, a warm hazy sky with thin heat shimmers rising off low golden dunes, and the fake oasis below the horizon, a cool shimmering pool with ripples and the dunes’ faint reflection, on warm sand. The pool is clear while its copy shows, gone when it pops (dry sand) and fades back as it returns. The copy (the same ball, see-through, with a wobbling outline and no bar) and its pop show in the phone arena',
     [
       { label: 'copy out', id: 'mirage', abilityState: copyOut },
       { label: 'just popped', id: 'mirage', abilityState: coming(0.05) },
