@@ -108,9 +108,21 @@ export async function ipSubject(config: Config, ip: string): Promise<string> {
   return `ip:${Buffer.from(mac.subarray(0, 16)).toString('hex')}`;
 }
 
-/** Drops windows that have ended (the scheduled sweep). */
+/**
+ * Drops windows that have ended (the scheduled sweep, every 15 minutes), each by its own length:
+ * an hour's count of a network goes within 15 minutes of that hour, as the privacy policy says. A
+ * bucket no longer in LIMITS goes after a day.
+ */
 export async function purgeRateLimits(sql: Sql): Promise<number> {
+  const limits = Object.values(LIMITS);
   const rows = await sql`
-    delete from game.rate_limits where window_start < now() - interval '1 day' returning 1`;
+    delete from game.rate_limits r
+    where r.window_start + coalesce(
+      (select make_interval(secs => l.seconds)
+        from unnest(${limits.map((limit) => limit.bucket)}::text[],
+          ${limits.map((limit) => limit.windowSeconds)}::int[]) as l(bucket, seconds)
+        where l.bucket = r.bucket),
+      interval '1 day') <= now()
+    returning 1`;
   return rows.length;
 }

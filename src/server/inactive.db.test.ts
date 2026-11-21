@@ -1,6 +1,6 @@
 // Guests not seen for 90 days are deleted by the sweep (ADR 0052, "Guests"; ADR 0068), the way
 // "Forget me" deletes one, and nobody seen more recently is touched.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { INACTIVE_DAYS } from './inactive.ts';
 import { sweep } from './sweep.ts';
 import { adminSql, testDeps } from './test/support.ts';
@@ -12,6 +12,9 @@ beforeAll(async () => {
   await admin`delete from game.rate_limits`;
   // Earlier runs' players are recent; nothing else here is older than these tests make it.
   await admin`update game.profiles set last_seen_at = now() where last_seen_at < now()`;
+});
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 afterAll(async () => {
   await deps.sql.end();
@@ -59,6 +62,25 @@ describe('guests not seen for 90 days', () => {
     expect(seen.status).toBe('forfeit');
     expect(seen.winner).toBe('a');
     expect(seen.names.b).toBeNull();
+  });
+
+  it('are deleted past one that Auth refuses, which the run still reports', async () => {
+    const stuck = await newPlayer(deps);
+    const gone = await newPlayer(deps);
+    await lastSeen(stuck, INACTIVE_DAYS + 60);
+    await lastSeen(gone, INACTIVE_DAYS + 50);
+    const realFetch = globalThis.fetch;
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) =>
+      String(input instanceof Request ? input.url : input).endsWith(`/admin/users/${stuck.userId}`)
+        ? Promise.resolve(Response.json({ error_code: 'unexpected_failure' }, { status: 500 }))
+        : realFetch(input, init),
+    );
+    await expect(sweep(deps)).rejects.toThrow();
+    expect((await exists(gone)).auth).toBe(false);
+    expect((await exists(stuck)).auth).toBe(true);
+    vi.restoreAllMocks();
+    await sweep(deps);
+    expect((await exists(stuck)).auth).toBe(false);
   });
 
   it('are deleted once: a second sweep finds nobody to delete', async () => {
