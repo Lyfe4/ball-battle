@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   intendedGroup,
   LOPSIDED_GAP,
-  lopsidedBalls,
   measuredGroup,
   summarise,
   summaryLines,
@@ -79,7 +78,6 @@ describe('summarise', () => {
       opponents.map((y) => ({ x: 'x', y, xRate: 0.65, yRate: 0.3 })),
     );
     expect(more[0]?.measured.lopsided).toBe(true);
-    expect(lopsidedBalls(more).map((ball) => ball.id)).toStrictEqual(['x']);
   });
 
   it('prints a row per ball, and the same rows as a Markdown table', () => {
@@ -96,6 +94,27 @@ describe('summarise', () => {
     expect(markdown).toContain('| Thorns | Brawler 69.0% | - | Storm 38.0% | - |');
     expect(markdown).toContain('| Brawler | - | - | - | Thorns 30.0% |');
     expect(markdown).toContain('None.');
+    expect(markdown).toContain('## The shape\n');
+    expect(markdown).toContain('Every ball fits the shape.');
+  });
+
+  it('lists every ball off the shape as a warning, with its strong counters', () => {
+    const summaries = summarise(balls, () => 0.5, pairs);
+    const markdown = summaryMarkdown(
+      summaries,
+      { seeds: 500, ruleset: 3, command: 'x' },
+      [],
+      [
+        { id: 'brawler', beats: [], losesTo: ['thorns'] },
+        { id: 'thorns', beats: ['brawler'], losesTo: [] },
+      ],
+    );
+    expect(markdown).toContain('Off the shape in this run:');
+    expect(markdown).toContain('| Thorns | 1 | 0 |');
+    // The even pick fits with exactly its counters.
+    expect(markdown).not.toContain('| Brawler | 0 | 1 |');
+    expect(markdown).toContain('no ball has more than 6 strong wins or 6 strong losses');
+    expect(markdown).toContain('Brawler beats nobody and loses to Thorns');
   });
 
   it('lists every pair off its aim in the summary file', () => {

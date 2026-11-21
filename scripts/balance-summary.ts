@@ -9,8 +9,11 @@ import {
   FIFTH_FROM_ONE_MECHANIC,
   LEVEL_BANDS,
   measuredOf,
+  OVER_THE_LIMIT,
   SHAPE,
-  SHAPE_EXCEPTIONS,
+  shapeWarning,
+  STRONG_LIMITS,
+  type StrongCounters,
 } from './counter-map.ts';
 
 /** A ball's standing against one opponent: strong, an edge, even, edged, or weak (countered). */
@@ -27,9 +30,9 @@ const GROUP_TITLES: Readonly<Record<Group, string>> = {
 };
 
 /**
- * A ball is lopsided when its strong wins and losses differ by this many or more: the shape rule
- * wants them within 1 (ADR 0045, group 4, ADR 0073). A warning, not a failure; the shape itself is
- * checked by `pnpm balance`.
+ * A ball is lopsided when its strong wins and losses differ by this many or more: the shape wants
+ * them within 1 (ADR 0045, group 4, ADR 0073). Marked in the gap column; like the whole shape, a
+ * warning, not a failure (ADR 0076).
  */
 export const LOPSIDED_GAP = 2;
 
@@ -187,11 +190,6 @@ export function summaryLines(summaries: readonly BallSummary[]): string[] {
   return [head, ...rows];
 }
 
-/** Balls whose shape is lopsided by the map or the measured results, for the warnings. */
-export function lopsidedBalls(summaries: readonly BallSummary[]): BallSummary[] {
-  return summaries.filter((ball) => ball.byMap.lopsided || ball.measured.lopsided);
-}
-
 export interface SummaryContext {
   readonly seeds: number;
   readonly ruleset: number;
@@ -237,6 +235,7 @@ export function summaryMarkdown(
   summaries: readonly BallSummary[],
   context: SummaryContext,
   belowTarget: readonly BelowTarget[] = [],
+  strongCounters: readonly StrongCounters[] = [],
 ): string {
   const cells = (shape: Shape) =>
     `${GROUPS.map((group) => cell(shape.groups[group])).join(' | ')} | ${gapText(shape)}`;
@@ -244,7 +243,6 @@ export function summaryMarkdown(
     `| ${ball.name} | ${percent(ball.winRate)} | ${cells(ball.byMap)} | ${cells(ball.measured)} |`;
   const titles = (source: string) =>
     [...GROUPS.map((group) => `${source}: ${GROUP_TITLES[group]}`), `${source} gap`].join(' | ');
-  const flagged = lopsidedBalls(summaries);
   const { strong, edge } = LEVEL_BANDS;
   return [
     '# Balance summary',
@@ -266,12 +264,8 @@ export function summaryMarkdown(
     `| ---- | --: | ${Array.from({ length: GROUPS.length * 2 + 2 }, () => '--:').join(' | ')} |`,
     ...summaries.map(row),
     '',
-    flagged.length === 0
-      ? 'No ball is lopsided.'
-      : `Lopsided: ${flagged.map((ball) => ball.name).join(', ')}.`,
-    '',
     ...counterLines(summaries),
-    ...gapLines(),
+    ...shapeLines(summaries, strongCounters),
     ...belowTargetLines(belowTarget),
   ].join('\n');
 }
@@ -299,33 +293,50 @@ export function counterLines(summaries: readonly BallSummary[]): string[] {
 }
 
 /**
- * The known gaps section of docs/balance-summary.md: the balls allowed off the roster's shape
- * (scripts/counter-map.ts), with the reason for each in its comment there.
+ * The shape section of docs/balance-summary.md: the hard limits, then every ball off the shape
+ * (a warning since ADR 0076) with its measured strong counters.
  */
-export function gapLines(): string[] {
-  const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+export function shapeLines(
+  summaries: readonly BallSummary[],
+  strongCounters: readonly StrongCounters[],
+): string[] {
+  const nameOf = (id: string) => summaries.find((ball) => ball.id === id)?.name ?? id;
   const evenPicks = Object.entries(EVEN_PICKS).map(
     ([id, { beats, losesTo }]) =>
-      `${name(id)} beats ${beats.map(name).join(', ') || 'nobody'} and loses to ${losesTo.map(name).join(', ')}`,
+      `${nameOf(id)} beats ${beats.map(nameOf).join(', ') || 'nobody'} and loses to ${losesTo.map(nameOf).join(', ')}`,
   );
   const fifths = Object.entries(FIFTH_FROM_ONE_MECHANIC).map(
-    ([id, { side, mechanic }]) => `${name(id)} (${side}: ${mechanic})`,
+    ([id, { side, mechanic }]) => `${nameOf(id)} (${side}: ${mechanic})`,
+  );
+  const over = Object.entries(OVER_THE_LIMIT).map(
+    ([id, { wins, losses }]) =>
+      `${nameOf(id)} (${[wins === undefined ? '' : `${String(wins)} wins`, losses === undefined ? '' : `${String(losses)} losses`].filter(Boolean).join(', ')})`,
+  );
+  const off = strongCounters.flatMap(({ id, beats, losesTo }) =>
+    shapeWarning(id, beats, losesTo) === undefined
+      ? []
+      : [`| ${nameOf(id)} | ${String(beats.length)} | ${String(losesTo.length)} |`],
   );
   return [
-    '## Known gaps',
+    '## The shape',
     '',
-    `Every ball has ${String(SHAPE.fewest)}-${String(SHAPE.most)} strong counters each way, the two counts within ${String(SHAPE.within)}; a fifth on one`,
-    `side is allowed when it comes from the same visible mechanic: ${fifths.join('; ') || 'none'}.`,
-    'The balls below are off that shape today and allowed exactly their gap by name, each with its',
-    'reason in `scripts/counter-map.ts` (ADR 0073). The even picks have exactly their counters:',
-    `${evenPicks.join('; ')}.`,
+    `Hard limits (ADR 0076): no ball has more than ${String(STRONG_LIMITS.most)} strong wins or ${String(STRONG_LIMITS.most)} strong losses, and every`,
+    `ball added after ruleset 22 has at least ${String(STRONG_LIMITS.newFewest)} of each. Allowed its count until it is back under:`,
+    `${over.join('; ') || 'none'}.`,
     '',
-    '| Ball | Strong wins | Strong losses | Wins and losses within |',
-    '| ---- | ----------: | ------------: | ---------------------: |',
-    ...Object.entries(SHAPE_EXCEPTIONS).map(
-      ([id, { wins, losses, within }]) =>
-        `| ${name(id)} | ${String(wins.fewest)}-${String(wins.most)} | ${String(losses.fewest)}-${String(losses.most)} | ${String(within)} |`,
-    ),
+    `The shape is a warning: ${String(SHAPE.fewest)}-${String(SHAPE.most)} strong counters each way, the two counts within ${String(SHAPE.within)}; a fifth on one`,
+    `side where one visible mechanic gives it: ${fifths.join('; ') || 'none'}. The even pick has exactly its`,
+    `counters: ${evenPicks.join('; ')}.`,
+    '',
+    ...(off.length === 0
+      ? ['Every ball fits the shape.']
+      : [
+          'Off the shape in this run:',
+          '',
+          '| Ball | Strong wins | Strong losses |',
+          '| ---- | ----------: | ------------: |',
+          ...off,
+        ]),
     '',
   ];
 }

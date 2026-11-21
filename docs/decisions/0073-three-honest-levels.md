@@ -1,7 +1,8 @@
 # 0073: Three honest levels, and bots that read them
 
 - Status: Accepted
-- Amended by: ADR 0075 (the shape exceptions, ruleset 22)
+- Amended by: ADR 0075 (the shape exceptions, ruleset 22), ADR 0076 (the shape is a warning;
+  hard limits on strong counters)
 - Date: 2026-11-20
 - Amends: ADR 0010 (the map labels a level, not only a side), ADR 0022 (an older ruleset whose
   fights are today's still replays), ADR 0024 (a level's odds in words), ADR 0028 addendum and ADR

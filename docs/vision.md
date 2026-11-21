@@ -75,31 +75,34 @@ if matchups lean:
 ## Future balance targets for this mode
 
 These are the targets `pnpm balance` checks since the roster redesign (ADR 0045, group 4), with
-three honest levels since ruleset 20 (ADR 0073), sharper counters since ruleset 21 (ADR 0074) and
-28 balls since ruleset 22 (ADR 0075).
+three honest levels since ruleset 20 (ADR 0073), sharper counters since ruleset 21 (ADR 0074),
+28 balls since ruleset 22 (ADR 0075) and the shape as a warning since 2026-11-21 (ADR 0076).
 
 - **Three levels, one rule.** From the full run, a pair whose better side wins 65% or more is a
   **strong counter** (▲▲, about 7 in 10), 58% up to 65% an **edge** (▲, about 6 in 10), anything
   closer **even** (=). Players see all three; the bots read them (Normal ranks by level, Hard plays
   70 / 60 / 50 / 40 / 30%).
-- Every ball has **two to four strong counters it wins and two to four it loses**, the two counts
-  within one (a fifth allowed where one visible mechanic gives it), so each has something to fear
-  and something to hunt. Edges aren't counted: a small lean a player can't plan around. **The even
-  pick is the exception:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049) never loses the guess badly and never wins it big. (The Magnet was the other until ruleset
+- **No ball has more than six strong wins or six strong losses**, and every ball added after
+  ruleset 22 has **at least two of each**, so it has something to fear and something to hunt.
+  (The Vampire's seven losses are allowed by name until it is fixed, ADR 0076.)
+- The **shape** is a warning, not a gate (ADR 0076): ideally two to four strong counters each way,
+  the two counts within one (a fifth where one visible mechanic gives it). Players don't feel a
+  fifth counter; "no room" in the shape was blocking good new balls. Edges aren't counted: a small
+  lean a player can't plan around. **The even pick has its own shape:** the Brawler (beats nobody, loses only to Thorns: the plain default, ADR 0049) never loses the guess badly and never wins it big. (The Magnet was the other until ruleset
   18, ADR 0058.)
 - **No matchup worse than 22/78.**
 - **Every ball wins 45-55% overall.**
 
 ### Gaps for future balls
 
-The roster has known gaps in that shape, allowed by name in `scripts/counter-map.ts` and listed in
-`docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a ball whose
-kind of hit is new. When balls are next added, these are the kinds to look for:
+The roster has known gaps in that shape, warned about by `pnpm balance` and listed under "The
+shape" in `docs/balance-summary.md`. Numbers can't close them (ADR 0045, group 4): each needs a
+ball whose kind of hit is new. When balls are next added, these are the kinds to look for:
 
 Since ruleset 20 the shape counts strong counters only (ADR 0073). Ruleset 21's number changes
 (ADR 0074) brought the Archer, Thorns, Magnet, Necromancer, Bomber, Bloom, Battery and Frost to
 it, and ruleset 22's three new balls (ADR 0075) the Sniper, Ghost, Inferno, Boomerang and
-Spartan. Six balls are still off it, each named with its reason in `SHAPE_EXCEPTIONS`, and all
+Spartan. Six balls are still off it, now a warning rather than a failure (ADR 0076), and all
 wait on ability tweaks or new balls, since one-number changes move a ball's whole row:
 
 - **Titan (1/1):** growing evens its fights out. One more ball it beats by mass would close it

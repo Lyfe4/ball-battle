@@ -23,8 +23,11 @@ import {
   HARD_WORST_MATCHUP,
   labelOf,
   LEVEL_BANDS,
+  counterProblem,
+  findingsIn,
   measuredOf,
-  shapeProblems,
+  shapeWarning,
+  strongCountersIn,
   VERDICT_LABEL,
 } from './counter-map.ts';
 import { median, withMaxHealth, type BallTotals, type PairResult } from './balance-stats.ts';
@@ -256,6 +259,12 @@ for (const ball of focus) {
   );
 }
 
+// Each ball's strong counters, for the hard limits and the shape (counter-map.ts, ADR 0076).
+const strongCounters = strongCountersIn(
+  focus.map(({ id }) => id),
+  pairRates,
+  ci,
+);
 // Each ball's shape: strong, even and weak matchups by the map and measured (balance-summary.ts).
 const summaries = summarise(
   focus,
@@ -269,7 +278,10 @@ console.log('\n  Per ball shape: opponents (average win rate); gap = strong - we
 console.log(summaryLines(summaries).join('\n'));
 if (writeSummary) {
   const context = { seeds, ruleset: RULESET_VERSION, command: 'pnpm balance:summary' };
-  writeFileSync('docs/balance-summary.md', summaryMarkdown(summaries, context, belowTarget));
+  writeFileSync(
+    'docs/balance-summary.md',
+    summaryMarkdown(summaries, context, belowTarget, strongCounters),
+  );
   console.log('\n  Wrote docs/balance-summary.md');
 }
 
@@ -307,13 +319,13 @@ console.log(
     ? '  --   win rates for ±5% health: not measured in the CI check'
     : `  ${sensitivityGrade} win rates move at most 15 pts (warn) / 20 pts (fail) for ±5% health (worst ${worstSensitivity.toFixed(1)} pts)`,
 );
-const shapes = shapeProblems(
-  focus.map(({ id }) => id),
-  pairRates,
-  ci,
+const overLimits = findingsIn(strongCounters, counterProblem);
+const offShape = findingsIn(strongCounters, shapeWarning);
+console.log(
+  `  ${check(overLimits.length === 0)} no ball over 6 strong wins or losses, every new ball 2+ each way (counter-map.ts: STRONG_LIMITS)${overLimits.length === 0 ? '' : `: ${overLimits.join('; ')}`}`,
 );
 console.log(
-  `  ${check(shapes.length === 0)} every ball's shape, strong counters only (counter-map.ts: SHAPE, its named exceptions)${shapes.length === 0 ? '' : `: ${shapes.join('; ')}`}`,
+  `  ${offShape.length === 0 ? 'ok  ' : 'WARN'} every ball's shape, 2-4 strong each way within 1 (a warning, ADR 0076)${offShape.length === 0 ? '' : `: ${offShape.join('; ')}`}`,
 );
 const checksVampire = focus.some((ball) => ball.id === 'vampire');
 if (checksVampire) {
@@ -328,7 +340,7 @@ const missed = [
   !counterMapOk,
   drawRate >= TARGETS.drawRate,
   !comebacksOk,
-  shapes.length > 0,
+  overLimits.length > 0,
   medianLength < TARGETS.medianSeconds[0] || medianLength > TARGETS.medianSeconds[1],
   !ci && sensitivityGrade === 'MISS',
   checksVampire && !healingOk,

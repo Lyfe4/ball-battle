@@ -1,5 +1,5 @@
-// Checks for the counter map (ADR 0010, 0073): the band each level's win rate must land in, and
-// each ball's shape. The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
+// Checks for the counter map (ADR 0010, 0073, 0076): the band each level's win rate must land in,
+// the hard limits on each ball's strong counters, and the shape (a warning). The map itself is data in src/sim/counter-map.ts (a bot reads it); it is
 // re-exported here for the balance script and its tests.
 import { counterFor, type CounterEntry, type Level } from '../src/sim/counter-map.ts';
 
@@ -57,10 +57,91 @@ export function measuredOf(top: number): Measured {
 export const HARD_WORST_MATCHUP = 0.22;
 
 /**
- * The even pick, the exception to the shape (docs/vision.md): even against nearly everyone, with
- * exactly these strong counters. The Brawler, the plain bump, loses to the Thorns (reflection
- * scales with the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049). The Magnet
- * was the other until ruleset 18 (ADR 0058). Adding one is a design decision.
+ * Hard limits on a ball's strong counters (owner's decision 2026-11-21, ADR 0076). The shape below
+ * is a warning; these fail `pnpm balance`:
+ * - `most`: no ball beats or loses to more than 6 balls outright, so no pick is a near-certain win
+ *   or loss against a fifth of the roster.
+ * - `newFewest`: every ball added after ruleset 22 beats at least 2 balls outright and loses to at
+ *   least 2, so it has real "pick this against that" matchups and isn't flat.
+ */
+export const STRONG_LIMITS = { most: 6, newFewest: 2 } as const;
+
+/**
+ * The 28 balls of ruleset 22, added before `STRONG_LIMITS.newFewest` (ADR 0076). Five have fewer
+ * than 2 on a side: the Brawler (the even pick), the Titan, the Quake, the Spider and the Slime.
+ * Never add a ball to this list.
+ */
+export const BEFORE_THE_FLOOR: readonly string[] = [
+  'brawler',
+  'speedster',
+  'vampire',
+  'archer',
+  'storm',
+  'frost',
+  'thorns',
+  'venom',
+  'berserker',
+  'sniper',
+  'quake',
+  'magnet',
+  'ghost',
+  'necromancer',
+  'chrono',
+  'titan',
+  'inferno',
+  'boomerang',
+  'bomber',
+  'spartan',
+  'bloom',
+  'hex',
+  'spider',
+  'battery',
+  'slime',
+  'balloon',
+  'banshee',
+  'kraken',
+];
+
+/**
+ * Over `STRONG_LIMITS.most` when the limit came in (ruleset 22), each allowed exactly its count:
+ * one more fails. Drop the entry once the ball is back under the limit (ADR 0076).
+ * - Vampire, 7 losses: it heals only from its bumps, so seven balls that hit without a touch beat
+ *   it. An ability tweak, not a number (docs/vision.md).
+ */
+export const OVER_THE_LIMIT: Readonly<
+  Record<string, { readonly wins?: number; readonly losses?: number }>
+> = {
+  vampire: { losses: 7 },
+};
+
+/**
+ * Which hard limit a ball's strong counters (the balls it beats and loses to outright) break, or
+ * undefined when they break none.
+ */
+export function counterProblem(
+  id: string,
+  beats: readonly string[],
+  losesTo: readonly string[],
+): string | undefined {
+  const over = OVER_THE_LIMIT[id];
+  for (const [side, count, most] of [
+    ['wins', beats.length, over?.wins ?? STRONG_LIMITS.most],
+    ['losses', losesTo.length, over?.losses ?? STRONG_LIMITS.most],
+  ] as const) {
+    if (count > most) return `${String(count)} strong ${side}, at most ${String(most)}`;
+  }
+  const fewest = STRONG_LIMITS.newFewest;
+  if (BEFORE_THE_FLOOR.includes(id) || (beats.length >= fewest && losesTo.length >= fewest)) {
+    return undefined;
+  }
+  return `a new ball needs ${String(fewest)}+ strong wins and losses, has ${String(beats.length)}/${String(losesTo.length)}`;
+}
+
+/**
+ * The even pick (docs/vision.md): even against nearly everyone, with exactly these strong
+ * counters, so the shape doesn't warn on it. The Brawler, the plain bump, loses to the Thorns
+ * (reflection scales with the hit, ADR 0013) and beats nobody: it is the plain default (ADR 0049).
+ * The Magnet was the other until ruleset 18 (ADR 0058). Adding one is a design decision.
  */
 export const EVEN_PICKS: Readonly<
   Record<string, { readonly beats: readonly string[]; readonly losesTo: readonly string[] }>
@@ -69,16 +150,17 @@ export const EVEN_PICKS: Readonly<
 };
 
 /**
- * Every ball's shape (ADR 0045 group 4, ADR 0073), counting strong counters only: 2-4 it beats and
- * 2-4 it loses to, the two counts within 1, so every pick has a clear strength and a clear
- * weakness. An edge is a small lean a player can't plan a pick around, so edges aren't counted;
- * every ball's 45-55% overall keeps them in balance.
+ * The shape every ball aims for (ADR 0045 group 4, ADR 0073), counting strong counters only: 2-4
+ * it beats and 2-4 it loses to, the two counts within 1, so every pick has a clear strength and a
+ * clear weakness. A warning since ADR 0076, not a failure: players wouldn't feel the difference,
+ * and "no room" was blocking good new balls. The hard limits are `STRONG_LIMITS`. Edges aren't
+ * counted: a small lean a player can't plan a pick around.
  */
 export const SHAPE = { fewest: 2, most: 4, within: 1 } as const;
 
 /**
- * A fifth strong counter on one side is allowed (ADR 0073, Batch 2) when it comes from the same
- * visible mechanic as the others there. Each names that mechanic; adding one is a design decision.
+ * A fifth strong counter on one side doesn't warn when it comes from the same visible mechanic as
+ * the others there. Each names that mechanic.
  * - The Bloom: any hit shuts the bud, so every ball that hits it often beats it (ADR 0050).
  */
 export const FIFTH_FROM_ONE_MECHANIC: Readonly<
@@ -87,75 +169,12 @@ export const FIFTH_FROM_ONE_MECHANIC: Readonly<
   bloom: { side: 'losses', mechanic: 'any hit shuts the bud' },
 };
 
-/** The fewest and most counters a ball may have on one side (the balls it beats, or loses to). */
-export interface CounterRange {
-  readonly fewest: number;
-  readonly most: number;
-}
-
-/** How far a ball may stray from SHAPE: its own range of wins, of losses, and their gap. */
-export interface ShapeAllowance {
-  readonly wins: CounterRange;
-  readonly losses: CounterRange;
-  readonly within: number;
-}
-
-/** The shape a ball must fit unless named in SHAPE_EXCEPTIONS: SHAPE, with its fifth if any. */
-export function standardShapeOf(id: string): ShapeAllowance {
-  const fifth = FIFTH_FROM_ONE_MECHANIC[id]?.side;
-  const range = (side: 'wins' | 'losses'): CounterRange => ({
-    fewest: SHAPE.fewest,
-    most: fifth === side ? SHAPE.most + 1 : SHAPE.most,
-  });
-  return { wins: range('wins'), losses: range('losses'), within: SHAPE.within };
-}
-
-/** A ball's standard shape with only the numbers its gap needs moved. */
-function allow(
-  id: string,
-  gap: {
-    readonly wins?: Partial<CounterRange>;
-    readonly losses?: Partial<CounterRange>;
-    readonly within?: number;
-  },
-): ShapeAllowance {
-  const standard = standardShapeOf(id);
-  return {
-    wins: { ...standard.wins, ...gap.wins },
-    losses: { ...standard.losses, ...gap.losses },
-    within: gap.within ?? standard.within,
-  };
-}
-
 /**
- * The balls off the strong-only shape today (ruleset 22, ADR 0073, 0074, 0075), each allowed
- * exactly its gap (strong wins / losses) and no wider: a ball slipping one more step fails, and a
- * ball moving back towards the shape still passes, so its allowance can then be tightened.
- *
- * All six wait for ability tweaks or new balls: one-number changes move a ball's whole row (ADR
- * 0010, 0028, 0045), and round 8 of new balls (ADR 0075) closed the other five.
- * - Titan 1/1: growing evens its fights out; only the Kraken's tentacles and the wail lean far.
- * - Quake 2/1: small, wide shockwaves chip every ball alike; only the floating Balloon shrugs them.
- * - Spider 1/3: webs slow every wall-bouncer a little; only the Speedster, living on walls, loses.
- * - Slime 1/0: its split outlasts one-at-a-time hitters; it beats only the Sniper, and none beat it.
- * - Vampire 2/7: it heals only from its bumps, so seven balls that hit without a touch beat it.
- * - Archer 5/3: arrows outrange every frail or slow ball; the Balloon and Banshee add two.
+ * How a ball is off the shape, given the balls it beats and loses to outright, or undefined when
+ * it fits: an even pick must have exactly its listed counters, every other ball SHAPE (with its
+ * fifth, if any). A warning (ADR 0076).
  */
-export const SHAPE_EXCEPTIONS: Readonly<Record<string, ShapeAllowance>> = {
-  titan: allow('titan', { wins: { fewest: 1 }, losses: { fewest: 1 } }),
-  quake: allow('quake', { losses: { fewest: 1 } }),
-  spider: allow('spider', { wins: { fewest: 1 }, within: 2 }),
-  slime: allow('slime', { wins: { fewest: 1 }, losses: { fewest: 0 } }),
-  vampire: allow('vampire', { losses: { most: 7 }, within: 5 }),
-  archer: allow('archer', { wins: { most: 5 }, within: 2 }),
-};
-
-/**
- * What is wrong with a ball's shape, given the balls it beats and loses to outright (strong
- * counters), or undefined when it fits: an even pick must have exactly its listed counters, every
- * other ball its standard shape or its SHAPE_EXCEPTIONS allowance.
- */
-export function shapeProblem(
+export function shapeWarning(
   id: string,
   beats: readonly string[],
   losesTo: readonly string[],
@@ -168,15 +187,19 @@ export function shapeProblem(
       ? undefined
       : `an even pick beats ${even.beats.join(', ') || 'nobody'} and loses to ${even.losesTo.join(', ')} only`;
   }
-  const { wins, losses, within } = SHAPE_EXCEPTIONS[id] ?? standardShapeOf(id);
-  for (const [side, count, { fewest, most }] of [
-    ['wins', beats.length, wins],
-    ['losses', losesTo.length, losses],
+  const counts = `${String(beats.length)}/${String(losesTo.length)}`;
+  const fifth = FIFTH_FROM_ONE_MECHANIC[id]?.side;
+  for (const [side, count] of [
+    ['wins', beats.length],
+    ['losses', losesTo.length],
   ] as const) {
-    if (count < fewest || count > most) return `needs ${fewest}-${most} strong ${side}`;
+    const most = fifth === side ? SHAPE.most + 1 : SHAPE.most;
+    if (count < SHAPE.fewest || count > most) {
+      return `${counts}, the shape wants ${String(SHAPE.fewest)}-${String(most)} strong ${side}`;
+    }
   }
-  return Math.abs(beats.length - losesTo.length) > within
-    ? `strong wins and losses must be within ${within}`
+  return Math.abs(beats.length - losesTo.length) > SHAPE.within
+    ? `${counts}, the shape wants wins and losses within ${String(SHAPE.within)}`
     : undefined;
 }
 
@@ -243,19 +266,25 @@ interface MeasuredPair {
   readonly yRate: number;
 }
 
+/** A ball's strong counters in a run: the balls it beats and loses to outright. */
+export interface StrongCounters {
+  readonly id: string;
+  readonly beats: readonly string[];
+  readonly losesTo: readonly string[];
+}
+
 /**
- * Every shape problem among `ids` in a run, as "ball: problem", counting strong counters only. A
- * full run judges the measured levels (the same seeds the map was labelled from); a reduced run
- * (CI's 150 seeds) is too noisy to call a pair near 65%, so it judges the map's strong counters,
- * each already checked against its band.
+ * Each of `ids`' strong counters in a run. A full run reads the measured levels (the same seeds
+ * the map was labelled from); a reduced run (CI's 150 seeds) is too noisy to call a pair near 65%,
+ * so it reads the map's strong counters, each already checked against its band.
  */
-export function shapeProblems(
+export function strongCountersIn(
   ids: readonly string[],
   pairs: readonly MeasuredPair[],
   fromMap: boolean,
-): string[] {
+): StrongCounters[] {
   const strong = (rate: number) => measuredOf(rate) === 'strong';
-  return ids.flatMap((id) => {
+  return ids.map((id) => {
     const beats: string[] = [];
     const losesTo: string[] = [];
     for (const { x, y, xRate, yRate } of pairs) {
@@ -272,7 +301,17 @@ export function shapeProblems(
       if (fromMap ? strongWinner === id : strong(own)) beats.push(other);
       if (fromMap ? strongWinner === other : strong(theirs)) losesTo.push(other);
     }
-    const problem = shapeProblem(id, beats, losesTo);
-    return problem === undefined ? [] : [`${id}: ${problem}`];
+    return { id, beats, losesTo };
+  });
+}
+
+/** Every "ball: finding" that `judge` (`counterProblem` or `shapeWarning`) makes of `counters`. */
+export function findingsIn(
+  counters: readonly StrongCounters[],
+  judge: (id: string, beats: readonly string[], losesTo: readonly string[]) => string | undefined,
+): string[] {
+  return counters.flatMap(({ id, beats, losesTo }) => {
+    const finding = judge(id, beats, losesTo);
+    return finding === undefined ? [] : [`${id}: ${finding}`];
   });
 }

@@ -235,18 +235,18 @@ Each line is a rule; its ADR has the reasoning.
 - The targets are in `scripts/balance.ts` (`TARGETS`) and `scripts/counter-map.ts`, checked by `pnpm balance` (ADR 0045 group 4):
   every ball 45-55% overall, no matchup worse than 22/78, draws under 5%, median match 12-30 s,
   ±5% health moving win rates at most 15 (warn) / 20 (fail) points, Vampire healing ≥ 25% of max
-  health, comebacks 10-20%, every pair inside its counter-map band, every ball's shape.
+  health, comebacks 10-20%, every pair inside its counter-map band, at most 6 strong wins and 6
+  strong losses per ball, and 2+ of each for every ball added after ruleset 22 (`STRONG_LIMITS`,
+  ADR 0076; the Vampire's 7 losses allowed by name in `OVER_THE_LIMIT`).
 - Three levels (ADR 0073), one rule from the full run: 65% or more is a strong counter (▲▲, pass
   68-75%, fail over 78%), 58% up to 65% an edge (▲, pass 59-64%), under 58% even (pass with no side
   over 55%). Each favoured map entry names its `level`; a pair outside its band is mislabelled
   (no grey zone, no NEAR in a full run; CI's 150 seeds keep a NEAR allowance). Inside the band but
-  off its aim is a WARN. A full run judges the measured shape, CI's the map's.
-- Shape: every ball 2-4 strong counters each way, the counts within 1 (a fifth where one visible
-  mechanic gives it, `FIFTH_FROM_ONE_MECHANIC`), edges not counted, except the even picks
-  (`EVEN_PICKS`: the Brawler, beating nobody and losing only to Thorns, ADR 0013, 0049; the Magnet
-  left it in ruleset 18, ADR 0058) and
-  the known gaps (`SHAPE_EXCEPTIONS`, each allowed exactly its gap today with its reason,
-  `docs/vision.md`).
+  off its aim is a WARN. A full run counts the measured strong counters, CI's the map's.
+- Shape, a warning (ADR 0076): every ball aims for 2-4 strong counters each way, the counts within
+  1 (a fifth where one visible mechanic gives it, `FIFTH_FROM_ONE_MECHANIC`), edges not counted,
+  except the even pick (`EVEN_PICKS`: the Brawler, beating nobody and losing only to Thorns, ADR
+  0013, 0049). Balls off it are listed by the run, never excused by name (`docs/vision.md` has why).
 - The bots read the levels (Normal ranks by them, Hard plays 70 / 60 / 50 / 40 / 30%). An older
   ruleset whose fights are today's (`SAME_FIGHTS_AS`) keeps its bots (`botFor(opponent, ruleset)`)
   so its series still verify; the first ruleset that changes a fight empties it (ADR 0073).
