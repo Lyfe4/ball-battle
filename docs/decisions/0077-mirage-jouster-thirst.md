@@ -164,11 +164,13 @@ pentatonic, a saw only through a low-pass, all under a second): the Mirage's shi
 appears (C6, E6 and G6 climbing, each a pair of sines beating, over a rising air swell) and its
 glassy pop where the copy bursts (a tick, a sine plip and a D6 bell ping that rings off at once);
 the Jouster's charge (three hoofbeats closing up under a short low-passed call), its splinter on a
-head-on lance, in place of the bump (a heavy punch, four quick cracks and a hollow knock), and its
+head-on lance, in place of the bump (a short punch, four quick cracks and a hollow knock), and its
 spark on a glance (a thin metallic scrape and two tiny pings, quieter than a bump). Each has a gate
 rule; `ball-sounds.slow.test.ts` hears every one in real fights and no third ball's, and
-`voices-distinct.browser.test.ts` keeps them apart (closest: the splinter 0.819 from the Spartan's
-spear hit, under the 0.9 limit).
+`voices-distinct.browser.test.ts` keeps them apart in Chromium and Firefox. The first splinter's
+heavy low punch was 0.902 from the Berserker's growl in Firefox (under the limit in Chromium), so
+its punch is shorter and lighter and the cracks carry it: closest now 0.878, the Balloon's pop, in
+Firefox.
 
 ## Consequences
 

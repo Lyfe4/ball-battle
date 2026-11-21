@@ -79,20 +79,21 @@ export const TRICK_VOICES = {
     });
   },
   /**
-   * The lance lands head-on: wood splintering, a quick run of dry cracks over a heavy punch and the
+   * The lance lands head-on: wood splintering, a quick run of dry cracks over a short punch and the
    * shaft's hollow knock.
    */
   splinter(kit, at, { gain, detune }) {
     const level = 0.6 + 0.4 * gain;
-    tone(kit, { from: 220, to: 55, glide: 0.1, at, length: 0.16, gain: 0.5 * level, detune });
+    // A short punch, kept light and above the Berserker's growl, so the cracks carry it.
+    tone(kit, { from: 260, to: 130, glide: 0.05, at, length: 0.07, gain: 0.3 * level, detune });
     [2800, 1900, 3600, 2300].forEach((hz, index) => {
       noise(kit, {
         filter: 'bandpass',
         from: hz,
         q: 4,
         at: at + index * 0.022,
-        length: 0.04,
-        gain: (0.4 - index * 0.07) * level,
+        length: 0.045,
+        gain: (0.5 - index * 0.08) * level,
       });
     });
     tone(kit, {
