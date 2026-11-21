@@ -52,6 +52,8 @@ function headersOf({ view, now }: Served): Record<string, string> {
 export const seriesList: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
+  // Counted: every list settles every expired series, not only this player's.
+  await spend(context.deps.sql, player.userId, LIMITS.reads);
   await settleExpired(context.deps.sql);
   return json(200, { series: await listFor(context.deps.sql, player.userId) });
 };

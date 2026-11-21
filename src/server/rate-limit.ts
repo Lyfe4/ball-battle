@@ -1,6 +1,6 @@
 // Rate limits (ADR 0052, "Abuse"): fixed windows counted in Postgres, by database time, so every
-// function instance on every host shares one count. Limits are per account; only guest creation,
-// which has no account yet, is per network (an IPv4 address, an IPv6 /64: network.ts), and the IP
+// function instance on every host shares one count. Limits are per account; only guest creation
+// and the health check, which have no account, are per network (an IPv4 address, an IPv6 /64: network.ts), and the IP
 // is never stored: its subject is an HMAC of the network under a server key, purged with its
 // window. Netlify's own per-IP rule is only a flood guard.
 import type { Config } from './config.ts';
@@ -53,6 +53,11 @@ export const LIMITS = {
    * once. Three a second on average over 5 minutes leaves room for a few tabs, not for a loop.
    */
   reads: { bucket: 'read', max: 900, windowSeconds: 300 },
+  /**
+   * Health checks from one network in an hour, which needs no session: an uptime monitor every
+   * 10 minutes asks 6 times, the friend switch's wait for a deploy about 40.
+   */
+  health: { bucket: 'health', max: 120, windowSeconds: 3600 },
 } as const satisfies Record<string, Limit>;
 
 /**
