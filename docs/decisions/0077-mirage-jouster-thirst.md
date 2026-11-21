@@ -116,16 +116,19 @@ switches at a size, `state-looks.test.ts`, whose recorder now also records a des
 parts over it), drawn by the same design in a fight and on its manual and picker icons, and moving
 only as the sim's clock does:
 
-- **Mirage: a mirage on hot sand, no face** (the owner's review: a face and haze bands read as a
-  confused face). A glassy ball with a white gloss; two dunes sit on a horizon just below its
-  middle and three heat waves rise and waver over them; below the horizon the floor shows through
-  (40%), like sand shimmering, and holds the dunes' faint upside-down reflection. The reflection is
-  where its copy is up to: whole while the copy shows, gone the moment it pops and fading back in
-  until it returns. Its copy, on the court under the balls (`mirage-copy.ts`), is drawn by the same
-  design, so it is plainly the same shimmering ball, at half opacity with a pale wobbling outline
-  and no bar; it shimmers in over 0.3 s. A popped copy bursts into three rings of haze sweeping out
-  one after another (`moments.ts`, read from consecutive worlds). Designs are told of reduced motion
-  (`DesignView.still`): the heat then holds still.
+- **Mirage: a mirage, no face** (after two reviews by the owner: a face and haze bands read as a
+  confused face, then dark dunes over a pink sky read as a heavy landscape badge). A light, glassy
+  ball with a thin white gloss: its rose is a warm hazy sky, low golden dunes sit on the horizon and
+  two thin heat shimmers rise off them and fade; below the horizon is the fake oasis, a cool
+  shimmering pool (pale blue) with two ripple lines and the dunes' faint reflection, on warm sand.
+  The pool is where its copy is up to: clear while the copy shows, gone the moment it pops (dry
+  sand) and fading back in until it returns. Its copy, on the court under the balls
+  (`mirage-copy.ts`), is drawn by the same design, so it is plainly the same ball, see-through (62%)
+  with a pale wobbling outline and no bar; it shimmers in over 0.3 s. A popped copy bursts into
+  three rings of haze sweeping out one after another (`moments.ts`, read from consecutive worlds).
+  Designs are told of reduced motion (`DesignView.still`): the heat then holds still. Its colour
+  stays rose `#fda4af` (pale sand and cream bases measured too close to the Spider, Frost and
+  Inferno); the sand and pool are inside it.
 - **Jouster: a tournament knight** (the owner's review: a gold disc with a white wedge read as
   nothing). Its body is a shield quartered in its gold and a heraldic blue; on it stands a closed
   steel great helm, face on, with a narrow eye slit and a breathing cross, and a red feather plume
@@ -173,8 +176,8 @@ spear hit, under the 0.9 limit).
 - **Draw cost (ADR 0063).** Each drawn whole in Chromium with the CPU slowed 6×, a phone-sized
   canvas, raster included, the least of nine rounds, beside today's balls in the same run (this
   machine varies a lot run to run, so each is read against the others of its run): the thirsty
-  Vampire about 710 µs and the Mirage about 1,000-1,100 (the Kraken 630-1,140, the Balloon 570-660),
-  the Jouster about 940-1,290 and the Mirage's copy about 1,700 (the Titan grown 1,900-2,450), the
+  Vampire about 710 µs and the Mirage about 880 (the Balloon 600, the Kraken 630-1,140),
+  the Jouster about 940-1,290 and the Mirage's copy about 1,300 (the Titan grown 1,900-2,450), the
   charge streak under 250 and a ×3 hit about 500. The copy builds its wobbling outline once (the
   fill, its edge, then the design over it).
 - Two new engine rules are general: any future ball can have a decoy or a bump that depends on its
