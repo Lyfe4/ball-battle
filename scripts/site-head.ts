@@ -1,7 +1,7 @@
 // Checks the page's <head>: every tag a browser, a home screen or a link-preview crawler needs is
 // there, and every file it points to exists (in public/ for the source, in dist/ after a build),
 // with icons and the preview image at the sizes they declare.
-//   pnpm tsx scripts/site-head.ts dist     checks a build
+//   node scripts/site-head.ts dist     checks a build
 // site-head.test.ts runs the same check on index.html and public/.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

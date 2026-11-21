@@ -21,13 +21,6 @@ export type NameOf = (id: string) => string;
 
 export const SIDE_NAMES: Readonly<Record<Side, string>> = { a: 'You', b: 'Bot' };
 
-/** Draft formats (ADR 0019), as the format choice and the scoreboard name them. */
-export const FORMAT_NAMES: Readonly<Record<Format, string>> = {
-  blind: 'Blind order',
-  reveal: 'Reveal, then take turns',
-  showdown: 'Showdown',
-};
-
 /** The bot's levels (ADR 0035), by bot id, as the rules step and the series header name them. */
 export const LEVEL_NAMES: Readonly<Record<string, string>> = {
   easy: 'Easy',

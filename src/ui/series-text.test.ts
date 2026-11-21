@@ -5,7 +5,6 @@ import {
   betweenLine,
   finalLine,
   FORMAT_LINES,
-  FORMAT_NAMES,
   openLine,
   bannerText,
   pickLine,
@@ -77,9 +76,8 @@ describe('series text', () => {
 describe('draft format text', () => {
   const names = (id: string) => id.toUpperCase();
 
-  it('names every format and explains it in a few words (ADR 0025)', () => {
+  it('explains every format in a few words (ADR 0025)', () => {
     for (const format of FORMATS) {
-      expect(FORMAT_NAMES[format].length).toBeGreaterThan(0);
       expect(FORMAT_LINES[format].split(' ').length).toBeLessThanOrEqual(7);
     }
   });

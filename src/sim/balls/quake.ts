@@ -1,7 +1,6 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
 import { secondsOf } from './how-it-works.ts';
-import type { BallState } from '../types.ts';
 
 export type QuakeState = Readonly<{ readyTick: number }>;
 
@@ -12,12 +11,6 @@ export const WARNING_TICKS = 12;
 export const ZONE_RADIUS = 250;
 /** Per hit; below the Storm's strike, which stays the biggest single ability hit. */
 export const ZONE_DAMAGE = 7;
-
-/** The tick the Quake's next shockwave is ready on, read from any ball state (undefined for others). */
-export function readyTickOf(ball: BallState): number | undefined {
-  const ready = ball.abilityState['readyTick'];
-  return typeof ready === 'number' ? ready : undefined;
-}
 
 /**
  * Every wall bounce sets off a shockwave where it hit: a zone at the impact point that strikes
