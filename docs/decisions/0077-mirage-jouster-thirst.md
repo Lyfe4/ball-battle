@@ -122,7 +122,8 @@ only as the sim's clock does:
   two thin heat shimmers rise off them and fade; below the horizon is the fake oasis, a cool
   shimmering pool (pale blue) with two ripple lines and the dunes' faint reflection, on warm sand.
   The pool is where its copy is up to: clear while the copy shows, gone the moment it pops (dry
-  sand) and fading back in until it returns. Its copy, on the court under the balls
+  sand) and fading back in until it returns; nothing has popped it before its first copy, so a fight
+  and its manual and chart icons open on a clear pool. Its copy, on the court under the balls
   (`mirage-copy.ts`), is drawn by the same design, so it is plainly the same ball, see-through (62%)
   with a pale wobbling outline and no bar; it shimmers in over 0.3 s. A popped copy bursts into
   three rings of haze sweeping out one after another (`moments.ts`, read from consecutive worlds).

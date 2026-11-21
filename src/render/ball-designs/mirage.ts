@@ -43,11 +43,13 @@ export function wavyCircle(
   p.closePath();
 }
 
-/** How ready its copy is on `tick`, 0 (just popped) to 1 (showing). */
+/**
+ * How ready its copy is on `tick`, 0 (just popped) to 1: whole while it shows and before its first
+ * copy (nothing has popped it yet, so a fight and its icon open on a clear pool).
+ */
 export function copyReadiness(state: MirageState, tick: number): number {
-  if (state.copyOn) return 1;
-  const wait = state.backAt <= FIRST_COPY_TICK ? FIRST_COPY_TICK : COPY_BACK_TICKS;
-  return Math.min(1, Math.max(0, 1 - (state.backAt - tick) / wait));
+  if (state.copyOn || state.backAt <= FIRST_COPY_TICK) return 1;
+  return Math.min(1, Math.max(0, 1 - (state.backAt - tick) / COPY_BACK_TICKS));
 }
 
 /**

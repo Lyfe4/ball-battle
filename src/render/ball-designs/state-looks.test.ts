@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { bomber, DROP_TICKS, FIRST_DROP_TICK } from '../../sim/balls/bomber.ts';
 import { necromancer, SUMMON_TICKS } from '../../sim/balls/necromancer.ts';
 import { jouster } from '../../sim/balls/jouster.ts';
-import { COPY_OFFSET, mirage } from '../../sim/balls/mirage.ts';
+import { COPY_BACK_TICKS, COPY_OFFSET, mirage, type MirageState } from '../../sim/balls/mirage.ts';
 import { lifestealFor, vampire } from '../../sim/balls/vampire.ts';
 import type { BallDefinition, BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { bomberDesign, fuseLeft } from './bomber.ts';
 import { jousterDesign } from './jouster.ts';
-import { mirageDesign } from './mirage.ts';
+import { copyReadiness, mirageDesign } from './mirage.ts';
 import { necromancerDesign } from './necromancer.ts';
 import { record } from './test-support.ts';
 import type { BallDesign, DesignView } from './types.ts';
@@ -84,6 +84,14 @@ describe('ball looks that show their state', () => {
       }
     });
   }
+
+  it('Mirage: a fight, and so its icon, opens on a clear pool; a pop empties it', () => {
+    const opening = mirage.initialAbilityState as MirageState;
+    expect(copyReadiness(opening, 0)).toBe(1);
+    const popped = { copyOn: false, copyDx: 0, copyDy: 0, backAt: 400 };
+    expect(copyReadiness(popped, 400 - COPY_BACK_TICKS)).toBe(0);
+    expect(copyReadiness(popped, 400 - COPY_BACK_TICKS / 2)).toBeCloseTo(0.5, 12);
+  });
 
   it('Mirage: its heat wavers with the sim clock, and holds still with reduced motion', () => {
     const at = (tick: number, still: boolean) =>
