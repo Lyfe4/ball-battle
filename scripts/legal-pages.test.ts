@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
 import { INACTIVE_DAYS } from '../src/server/inactive.ts';
+import { LIMITS } from '../src/server/rate-limit.ts';
 
 const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
 const privacy = read('privacy.html');
@@ -47,6 +48,12 @@ describe('the privacy policy and terms', () => {
   it('give the retention the server keeps to', () => {
     expect(privacy).toContain(`until ${String(INACTIVE_DAYS)} days after you last played online`);
     expect(privacy).toContain(`A guest nobody has used for ${String(INACTIVE_DAYS)} days`);
+  });
+
+  it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {
+    const perGuest = [LIMITS.challenges, LIMITS.moves, LIMITS.reads];
+    expect(Math.max(...perGuest.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(3600);
+    expect(privacy).toContain('Deleted within about an hour.');
   });
 
   it('give the live match timings the server uses', () => {
