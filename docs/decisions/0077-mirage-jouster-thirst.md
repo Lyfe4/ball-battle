@@ -116,25 +116,35 @@ switches at a size, `state-looks.test.ts`, whose recorder now also records a des
 parts over it), drawn by the same design in a fight and on its manual and picker icons, and moving
 only as the sim's clock does:
 
-- **Mirage:** a rose ball with a soft wavy rim (14 shallow waves), calm eyes that glance towards
-  its copy while it shows, and two bands of haze across its lower half: full while the copy shows,
-  emptied by a pop and filling again until it shimmers back (a faint track shows the rest). Its
-  copy, on the court under the balls (`mirage-copy.ts`), is the same ball at half opacity with a
-  pale wobbling outline, no face and no bar; it shimmers in over 0.3 s. A popped copy bursts into
-  three rings of haze sweeping out one after another (`moments.ts`, read from consecutive worlds).
-- **Jouster:** tournament gold turned where it heads, a pale pennant stripe across its back, and a
-  white lance wedge with a dark guard, drawn over the outline. Carried raised (short, turned aside),
-  it is lowered over the second before a charge until it points dead ahead just past the edge,
-  stays down through the charge and is raised when the charge ends. A gold streak trails a charge
-  (`trails.ts`). A head-on hit (a damage event's `times` over 1) throws seven splinters round the
-  point and pops a big ×3 over it, in the arena's one family, and holds the fight for a 90 ms beat
-  (`impact.ts`, however little it dealt); a glancing hit only skids four small gold sparks off
-  sideways (`lance-hits.ts`).
+- **Mirage: a mirage on hot sand, no face** (the owner's review: a face and haze bands read as a
+  confused face). A glassy ball with a white gloss; two dunes sit on a horizon just below its
+  middle and three heat waves rise and waver over them; below the horizon the floor shows through
+  (40%), like sand shimmering, and holds the dunes' faint upside-down reflection. The reflection is
+  where its copy is up to: whole while the copy shows, gone the moment it pops and fading back in
+  until it returns. Its copy, on the court under the balls (`mirage-copy.ts`), is drawn by the same
+  design, so it is plainly the same shimmering ball, at half opacity with a pale wobbling outline
+  and no bar; it shimmers in over 0.3 s. A popped copy bursts into three rings of haze sweeping out
+  one after another (`moments.ts`, read from consecutive worlds). Designs are told of reduced motion
+  (`DesignView.still`): the heat then holds still.
+- **Jouster: a tournament knight** (the owner's review: a gold disc with a white wedge read as
+  nothing). Its body is a shield quartered in its gold and a heraldic blue; on it stands a closed
+  steel great helm, face on, with a narrow eye slit and a breathing cross, and a red feather plume
+  curls up from its crown. None of the Spartan's parts: no crest, no profile, no bronze. Its
+  tournament lance, white with red spiral stripes and a steel cone hand-guard, is drawn over the
+  outline. Raised, it stands upright at the knight's right whichever way it heads; over the second
+  before a charge it swings down until it is couched at its right side pointing dead ahead just
+  past the edge, stays down through the charge and is raised when the charge ends. Only the lance
+  turns with its heading; the knight stays upright. A gold streak trails a charge (`trails.ts`). A
+  head-on hit (a damage event's `times` over 1) throws seven splinters round the point and pops a
+  big ×3 over it, in the arena's one family, and holds the fight for a 90 ms beat (`impact.ts`,
+  however little it dealt); a glancing hit only skids four small gold sparks off sideways
+  (`lance-hits.ts`).
 - **Vampire's Thirst:** while thirsty its cape flares (the lapels rise high, lined red) and a short
   red streak trails it, easing out over its last 0.2 s. (The fangs' "thirst" of ADR 0072, how much
   of a bump's heal it could keep, is unchanged.)
 
-With reduced motion the copy's outline holds still, the pop's rings stand still and fade, the
+With reduced motion the Mirage's heat and its copy's outline hold still, the pop's rings stand
+still and fade, the
 splinters, sparks and ×3 fade where they start, and the streaks (a state, not a movement) draw the
 same. The arena's one-time hints read "Copy!" (the first copy) and "Lance!" (the first charge).
 Colours (OKLab distance to the nearest ball; contrast on the floor): the Mirage 0.106 from the
@@ -162,10 +172,10 @@ spear hit, under the 0.9 limit).
   matchup chart and the ball pages fit at 375 px and on a desktop.
 - **Draw cost (ADR 0063).** Each drawn whole in Chromium with the CPU slowed 6×, a phone-sized
   canvas, raster included, the least of nine rounds, beside today's balls in the same run (this
-  machine varies by about a fifth run to run): the Jouster about 480 µs and the thirsty Vampire
-  about 560 (the Battery 400, the Balloon 470), the Mirage about 1,370 (the Kraken 890, the Titan
-  grown 2,000), its copy about 450, the charge streak 180 and a ×3 hit 370. The Mirage's rim is
-  drawn as curves through two samples a wave (84 straight segments cost a third more), and both
-  haze bands are one path.
+  machine varies a lot run to run, so each is read against the others of its run): the thirsty
+  Vampire about 710 µs and the Mirage about 1,000-1,100 (the Kraken 630-1,140, the Balloon 570-660),
+  the Jouster about 940-1,290 and the Mirage's copy about 1,700 (the Titan grown 1,900-2,450), the
+  charge streak under 250 and a ×3 hit about 500. The copy builds its wobbling outline once (the
+  fill, its edge, then the design over it).
 - Two new engine rules are general: any future ball can have a decoy or a bump that depends on its
   angle, with no interaction rule (ADR 0045).
