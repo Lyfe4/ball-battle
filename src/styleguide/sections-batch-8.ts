@@ -32,7 +32,7 @@ const thirsty: AbilityState = { thirstyUntil: TICK + THIRST_TICKS - 10 };
 
 export const BATCH_EIGHT: readonly (readonly [string, readonly Tile[]])[] = [
   [
-    'Mirage: a rose ball with a soft wavy rim and calm eyes that glance at its copy; two bands of haze fill as its copy comes back, full while it shows. The copy (half opacity, a wobbling outline, no face, no bar) and its pop show in the phone arena',
+    'Mirage: a mirage on hot sand, no face: a glassy ball with dunes on a horizon, heat waves wavering over them and a see-through lower half holding the dunes’ upside-down reflection, whole while its copy shows, gone when it pops and fading back as it returns. The copy (the same shimmering ball at half opacity with a wobbling outline, no bar) and its pop show in the phone arena',
     [
       { label: 'copy out', id: 'mirage', abilityState: copyOut },
       { label: 'just popped', id: 'mirage', abilityState: coming(0.05) },
@@ -43,7 +43,7 @@ export const BATCH_EIGHT: readonly (readonly [string, readonly Tile[]])[] = [
     ],
   ],
   [
-    'Jouster: tournament gold with a pale pennant stripe and a white lance wedge pointing where it heads, carried raised and turned aside, lowered over the second before a charge until it points dead ahead past its edge; a gold streak behind a charge (see the phone arena)',
+    'Jouster: a tournament knight: a shield quartered in gold and blue, a closed steel great helm with an eye slit and a breathing cross, a red feather plume, and a spiral-striped lance with a cone guard, upright at its right while raised, swung down over the second before a charge until it points dead ahead past its edge; a gold streak behind a charge (see the phone arena)',
     [
       { label: 'raised', id: 'jouster', abilityState: beforeCharge(120) },
       { label: 'lowering', id: 'jouster', abilityState: beforeCharge(30) },

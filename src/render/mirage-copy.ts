@@ -1,10 +1,10 @@
-// The Mirage's copy on the court (ADR 0077): the same ball at half opacity with a wobbling pale
-// outline, no face and no health bar, so it never reads as a minion. It shimmers in where it
+// The Mirage's copy on the court (ADR 0077): the same shimmering ball, drawn by its own design, at
+// half opacity with a wobbling pale outline and no health bar, so it never reads as a minion. It shimmers in where it
 // appears and, popped, bursts into a ripple of haze (over the balls); the copy itself is under
 // them, like a zone. Reads sim state only, so it moves only as the sim's clock does; with reduced motion its outline holds still and it simply fades in.
 import { copyPosition, mirageStateOf } from '../sim/balls/mirage.ts';
 import type { WorldState } from '../sim/types.ts';
-import { wavyCircle } from './ball-designs/mirage.ts';
+import { drawMirage, wavyCircle } from './ball-designs/mirage.ts';
 import type { CopyPopMoment } from './moments.ts';
 import { theme } from './theme.ts';
 
@@ -32,11 +32,27 @@ export function drawCopies(
     ctx.beginPath();
     wavyCircle(ctx, r, theme.copyWobbleWaves, theme.copyWobble, phase, theme.copyWobbleSamples);
     ctx.fill();
+    ctx.save();
     ctx.globalAlpha = shimmer;
     ctx.strokeStyle = theme.copyEdge;
     ctx.lineWidth = theme.copyEdgeWidth * r;
     ctx.lineJoin = 'round';
     ctx.stroke();
+    ctx.restore();
+    // The same shimmering ball: its own dunes, heat and reflection, at the copy's opacity.
+    drawMirage(ctx, {
+      ball,
+      radius: r,
+      base: colorOf(ball.id),
+      accent: theme.ballAccents['mirage'] ?? theme.defaultAccent,
+      tick: world.tick,
+      heading: undefined,
+      heal: 0,
+      simple: false,
+      shotsOut: 0,
+      minionsOut: 0,
+      still: reducedMotion,
+    });
     ctx.restore();
   }
 }

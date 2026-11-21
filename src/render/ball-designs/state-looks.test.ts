@@ -85,6 +85,13 @@ describe('ball looks that show their state', () => {
     });
   }
 
+  it('Mirage: its heat wavers with the sim clock, and holds still with reduced motion', () => {
+    const at = (tick: number, still: boolean) =>
+      record(mirageDesign, view(mirage, 50, false, {}, { tick, still }));
+    expect(at(40, true)).toStrictEqual(at(55, true));
+    expect(at(40, false)).not.toStrictEqual(at(55, false));
+  });
+
   it('Bomber: the fuse is whole just after a drop and burns down to none at the next', () => {
     const dropped = FIRST_DROP_TICK;
     expect(fuseLeft(dropped + DROP_TICKS, dropped)).toBe(1);

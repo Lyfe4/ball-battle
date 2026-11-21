@@ -1,25 +1,23 @@
-// The Mirage's look (ADR 0077): a smooth rose ball with a soft wavy rim, like heat over sand, and
-// calm eyes that glance at its copy while it shows. Two bands of haze across it show where its copy
-// is up to: full while the copy shows, emptied by a pop and filling again until it shimmers back.
-// The copy itself is drawn on the court (mirage-copy.ts). One set of proportions in fractions of r
-// at every size; it moves only as the sim's clock does.
+// The Mirage's look (ADR 0077): a mirage over hot sand, no face. A glassy ball with a gloss, dunes
+// sitting on a horizon across its middle and heat waves rising and wavering over them; below the
+// horizon its lower half is half see-through, like sand shimmering, and holds the dunes' faint
+// upside-down reflection. The reflection shows where its copy is up to: whole while the copy shows,
+// gone the moment it pops and fading back in until it returns. The copy, drawn on the court by the
+// same design (mirage-copy.ts), is the same shimmering ball. One set of proportions in fractions of
+// r at every size; its heat wavers with the sim's clock and holds still with reduced motion.
 import {
   COPY_BACK_TICKS,
-  COPY_OFFSET,
   FIRST_COPY_TICK,
   mirageStateOf,
   type MirageState,
 } from '../../sim/balls/mirage.ts';
 import { theme } from '../theme.ts';
-import type { BallDesign, Painter } from './types.ts';
-
-/** Samples per wave round the Mirage's shallow rim: joined by curves, smooth at any size. */
-const RIM_SAMPLES = 2;
+import type { BallDesign, DesignView, Painter } from './types.ts';
 
 /**
  * A closed circle of radius `r` whose edge rises and falls `waves` times round by `reach` r,
- * turned by `phase` radians of wave: curves through the midpoints of `samples` points a wave (a
- * deep wave needs more to stay round).
+ * turned by `phase` radians of wave: curves through the midpoints of `samples` points a wave (the
+ * copy's wobbling outline).
  */
 export function wavyCircle(
   p: Painter,
@@ -52,71 +50,87 @@ export function copyReadiness(state: MirageState, tick: number): number {
   return Math.min(1, Math.max(0, 1 - (state.backAt - tick) / wait));
 }
 
-/** The haze bands, as fractions of r: their heights, half-width and the height of their waves. */
-const HAZE = { ys: [0.38, 0.58], half: 0.46, wave: 0.045, waves: 1.5, width: 0.075 } as const;
-/** Its eyes: centres, size and how far the pupils look towards the copy. */
-const EYE = { x: 0.24, y: -0.12, rx: 0.13, ry: 0.09, pupil: 0.055, look: 0.05 } as const;
+/** The horizon's height, as a fraction of r (y down): a little below the middle. */
+const HORIZON = 0.12;
+/** The dunes on the horizon: two humps, each from one x to another over a peak. */
+const DUNES = [
+  { from: -0.92, peak: [-0.42, -0.34], to: 0.04 },
+  { from: -0.08, peak: [0.42, -0.2], to: 0.92 },
+] as const;
+/** Heat waves over the dunes: heights, half-widths, waves across and how far they waver. */
+const HEAT = { ys: [-0.66, -0.46, -0.26], half: [0.42, 0.56, 0.62], waves: 2, amp: 0.05 } as const;
+/** The gloss: a crescent at the top left, as an arc's centre, radius and sweep. */
+const GLOSS = { x: -0.04, y: 0.05, radius: 0.8, from: Math.PI * 1.08, to: Math.PI * 1.42 } as const;
 
-/** Both bands of haze, each from its left end to `share` of its length: gentle waves across it. */
-function hazeBands(p: Painter, r: number, share: number): void {
-  if (share <= 0) return;
-  const steps = 12;
+/** The lower half of the ball below the horizon chord. */
+function lowerHalf(p: Painter, r: number): void {
+  const a = Math.asin(HORIZON);
   p.beginPath();
-  for (const y of HAZE.ys) {
-    const point = (t: number): [number, number] => [
-      (-HAZE.half + 2 * HAZE.half * t) * r,
-      (y + HAZE.wave * Math.sin(t * Math.PI * 2 * HAZE.waves)) * r,
-    ];
-    p.moveTo(...point(0));
-    // Whole steps, then the part-step it has reached, so the band grows smoothly.
-    for (let index = 1; index <= Math.floor(steps * share); index++) {
-      p.lineTo(...point(index / steps));
-    }
-    p.lineTo(...point(share));
+  p.arc(0, 0, r, a, Math.PI - a);
+  p.closePath();
+}
+
+/** The dunes, mirrored about the horizon when `flip` (their reflection). */
+function dunes(p: Painter, r: number, flip: boolean): void {
+  const y = (value: number) => (flip ? 2 * HORIZON - value : value) * r;
+  p.beginPath();
+  for (const dune of DUNES) {
+    p.moveTo(dune.from * r, y(HORIZON));
+    p.quadraticCurveTo(dune.peak[0] * r, y(2 * dune.peak[1] - HORIZON), dune.to * r, y(HORIZON));
+    p.closePath();
   }
+}
+
+/** Heat waves rising over the dunes, wavering with the sim's clock unless held still. */
+function heat(p: Painter, r: number, tick: number, still: boolean): void {
+  const phase = still ? 0 : ((tick / theme.mirageHeatTicks) % 1) * Math.PI * 2;
+  const steps = 10;
+  p.beginPath();
+  HEAT.ys.forEach((y, line) => {
+    const half = HEAT.half[line] ?? 0.5;
+    for (let index = 0; index <= steps; index++) {
+      const t = index / steps;
+      const x = (-half + 2 * half * t) * r;
+      const wy = (y + HEAT.amp * Math.sin(t * Math.PI * 2 * HEAT.waves + phase + line)) * r;
+      if (index === 0) p.moveTo(x, wy);
+      else p.lineTo(x, wy);
+    }
+  });
   p.stroke();
 }
 
-function drawEyes(p: Painter, r: number, state: MirageState | undefined, pupil: string): void {
-  // While its copy shows, the pupils glance towards it.
-  const look =
-    state?.copyOn === true
-      ? { x: (state.copyDx / COPY_OFFSET) * EYE.look, y: (state.copyDy / COPY_OFFSET) * EYE.look }
-      : { x: 0, y: 0 };
-  for (const side of [-1, 1]) {
-    p.fillStyle = theme.mirageHaze;
-    p.save();
-    p.translate(side * EYE.x * r, EYE.y * r);
-    p.scale(EYE.rx / EYE.ry, 1);
-    p.beginPath();
-    p.arc(0, 0, EYE.ry * r, 0, Math.PI * 2);
-    p.fill();
-    p.restore();
-    p.beginPath();
-    p.arc((side * EYE.x + look.x) * r, (EYE.y + look.y) * r, EYE.pupil * r, 0, Math.PI * 2);
-    p.fillStyle = pupil;
+/** The Mirage's markings, for the ball and for its copy on the court. */
+export function drawMirage(p: Painter, view: DesignView): void {
+  const { ball, radius: r, accent, tick } = view;
+  const state = mirageStateOf(ball);
+  const ready = state === undefined ? 1 : copyReadiness(state, tick);
+  const alpha = p.globalAlpha;
+  // The glassy lower half: the floor shows through, like sand shimmering.
+  p.fillStyle = theme.arenaFill;
+  p.globalAlpha = alpha * theme.mirageGlass;
+  lowerHalf(p, r);
+  p.fill();
+  // The dunes' upside-down reflection, as strong as its copy is ready.
+  p.fillStyle = accent;
+  if (ready > 0) {
+    p.globalAlpha = alpha * theme.mirageReflection * ready;
+    dunes(p, r, true);
     p.fill();
   }
+  p.globalAlpha = alpha;
+  dunes(p, r, false);
+  p.fill();
+  p.strokeStyle = theme.mirageHaze;
+  p.lineCap = 'round';
+  p.lineJoin = 'round';
+  p.lineWidth = theme.mirageHeatWidth * r;
+  heat(p, r, tick, view.still === true);
+  p.globalAlpha = alpha * theme.mirageGlossAlpha;
+  p.lineWidth = theme.mirageGlossWidth * r;
+  p.beginPath();
+  p.arc(GLOSS.x * r, GLOSS.y * r, GLOSS.radius * r, GLOSS.from, GLOSS.to);
+  p.stroke();
+  p.globalAlpha = alpha;
 }
 
-export const mirageDesign: BallDesign = {
-  facing: 'none',
-  outline(p, { radius: r }) {
-    wavyCircle(p, r, theme.mirageRimWaves, theme.mirageRimReach, 0, RIM_SAMPLES);
-  },
-  draw(p, { ball, radius: r, accent, tick }) {
-    const state = mirageStateOf(ball);
-    const ready = state === undefined ? 1 : copyReadiness(state, tick);
-    const alpha = p.globalAlpha;
-    p.strokeStyle = theme.mirageHaze;
-    p.lineCap = 'round';
-    p.lineWidth = HAZE.width * r;
-    // The empty track, faint, so a band part-filled reads as "on its way back".
-    p.lineJoin = 'round';
-    p.globalAlpha = alpha * theme.mirageHazeEmptyAlpha;
-    hazeBands(p, r, 1);
-    p.globalAlpha = alpha;
-    hazeBands(p, r, ready);
-    drawEyes(p, r, state, accent);
-  },
-};
+export const mirageDesign: BallDesign = { facing: 'none', draw: drawMirage };

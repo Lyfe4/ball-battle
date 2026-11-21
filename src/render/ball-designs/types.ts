@@ -56,6 +56,8 @@ export interface DesignView {
   readonly minionsOut: number;
   /** How a floating ball drifts, world units a second (drift.ts); still when absent. */
   readonly drift?: Vec2;
+  /** Reduced motion: a design's own wavering (the Mirage's heat) holds still. */
+  readonly still?: boolean;
 }
 
 /**

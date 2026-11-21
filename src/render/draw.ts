@@ -201,6 +201,7 @@ export function drawWorld(
         cssPixelsPerUnit,
         phased,
         drift: effects.drift(ball.id),
+        still: effects.reducedMotion,
       });
     });
     if (ball.health > 0) {
@@ -278,6 +279,8 @@ export interface BallLook {
   readonly phased?: boolean;
   /** How a floating ball drifts (drift.ts): its knot swings with it. */
   readonly drift?: Vec2;
+  /** Reduced motion: a design's own wavering holds still. */
+  readonly still?: boolean;
 }
 
 /**

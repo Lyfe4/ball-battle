@@ -14,6 +14,8 @@ export interface ViewLook {
   readonly detail?: 'full' | 'simple';
   /** How a floating ball drifts (drift.ts). */
   readonly drift?: Vec2;
+  /** Reduced motion: a design's own wavering holds still. */
+  readonly still?: boolean;
 }
 
 /** Which way a design faces, in the world it is drawn in. */
@@ -45,6 +47,7 @@ export function designView(
     shotsOut: world.projectiles.filter((shot) => shot.ownerId === ball.id).length,
     minionsOut: world.minions.filter((minion) => minion.ownerId === ball.id).length,
     ...(look.drift === undefined ? {} : { drift: look.drift }),
+    ...(look.still === true ? { still: true } : {}),
   };
 }
 
