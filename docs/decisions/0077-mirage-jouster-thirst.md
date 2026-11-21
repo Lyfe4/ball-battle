@@ -116,20 +116,22 @@ switches at a size, `state-looks.test.ts`, whose recorder now also records a des
 parts over it), drawn by the same design in a fight and on its manual and picker icons, and moving
 only as the sim's clock does:
 
-- **Mirage: a mirage, no face** (after two reviews by the owner: a face and haze bands read as a
-  confused face, then dark dunes over a pink sky read as a heavy landscape badge). A light, glassy
-  ball with a thin white gloss: its rose is a warm hazy sky, low golden dunes sit on the horizon and
-  two thin heat shimmers rise off them and fade; below the horizon is the fake oasis, a cool
-  shimmering pool (pale blue) with two ripple lines and the dunes' faint reflection, on warm sand.
-  The pool is where its copy is up to: clear while the copy shows, gone the moment it pops (dry
-  sand) and fading back in until it returns; nothing has popped it before its first copy, so a fight
-  and its manual and chart icons open on a clear pool. Its copy, on the court under the balls
-  (`mirage-copy.ts`), is drawn by the same design, so it is plainly the same ball, see-through (62%)
-  with a pale wobbling outline and no bar; it shimmers in over 0.3 s. A popped copy bursts into
-  three rings of haze sweeping out one after another (`moments.ts`, read from consecutive worlds).
-  Designs are told of reduced motion (`DesignView.still`): the heat then holds still. Its colour
-  stays rose `#fda4af` (pale sand and cream bases measured too close to the Spider, Frost and
-  Inferno); the sand and pool are inside it.
+- **Mirage: a desert mirage, no face** (after three reviews by the owner: a face and haze bands
+  read as a confused face, dark dunes over a pink sky as a heavy landscape badge, and stacked bands
+  of sky, sand, sea and sand as a beach). A light, glassy ball with a thin white gloss: its rose is
+  a warm hazy sky, and pale sand fills most of it under a dune line that wavers as if seen through
+  heat, with two thin shimmers rising off it and a small cactus on the right-hand dune. On the sand
+  lies the fake oasis: a small pool, see-through (the sand shows through it) with a wavering edge
+  inside a soft halo and two ripples swaying against each other. The pool is where its copy is up
+  to: clear while the copy shows, gone the moment it pops (dry sand) and fading back in until it
+  returns; nothing has popped it before its first copy, so a fight and its manual and chart icons
+  open on a clear pool. Its copy, on the court under the balls (`mirage-copy.ts`), is drawn by the
+  same design, so it is plainly the same ball, see-through (62%) with a pale wobbling outline and no
+  bar; it shimmers in over 0.3 s. A popped copy bursts into three rings of haze sweeping out one
+  after another (`moments.ts`, read from consecutive worlds). Designs are told of reduced motion
+  (`DesignView.still`): the heat, the dune line and the pool then hold still. Its colour stays rose
+  `#fda4af` (pale sand and cream bases measured too close to the Spider, Frost and Inferno); the
+  sand is paler and yellower than the Inferno's orange, and the sand, pool and cactus are inside it.
 - **Jouster: a tournament knight** (the owner's review: a gold disc with a white wedge read as
   nothing). Its body is a shield quartered in its gold and a heraldic blue; on it stands a closed
   steel great helm, face on, with a narrow eye slit and a breathing cross, and a red feather plume
@@ -177,7 +179,7 @@ spear hit, under the 0.9 limit).
 - **Draw cost (ADR 0063).** Each drawn whole in Chromium with the CPU slowed 6×, a phone-sized
   canvas, raster included, the least of nine rounds, beside today's balls in the same run (this
   machine varies a lot run to run, so each is read against the others of its run): the thirsty
-  Vampire about 710 µs and the Mirage about 880 (the Balloon 600, the Kraken 630-1,140),
+  Vampire about 710 µs and the Mirage about 1,100 (the Balloon 290-600, the Kraken 630-1,140),
   the Jouster about 940-1,290 and the Mirage's copy about 1,300 (the Titan grown 1,900-2,450), the
   charge streak under 250 and a ×3 hit about 500. The copy builds its wobbling outline once (the
   fill, its edge, then the design over it).

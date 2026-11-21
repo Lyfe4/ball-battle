@@ -1,11 +1,12 @@
 // The renderer's tokens for the balls of ADR 0077, spread into its theme (theme.ts) and read from
 // there.
 //
-// The Mirage: its warm sand, its cool pool and the pool's white ripples, the dunes' reflection in
-// it, its heat shimmers (each rising off the dunes over mirageHeatTicks), its gloss, and its copy on
-// the court, the same design: drawn at copyAlpha,
-// its outline wobbling by copyWobble r with waves turning every copyWobbleTicks, shimmering in over
-// copyShimmerTicks. A popped copy bursts into rings of haze (world units) over copyPopMs.
+// The Mirage: its warm sand and small cactus, its see-through pool (a soft halo round it and white
+// ripples), the heat (the dune line and pool wavering once round every mirageHeatTicks, shimmers
+// rising over mirageRiseTicks), its gloss, and its copy on the court, the same design: drawn at
+// copyAlpha, its outline wobbling by copyWobble r with waves turning every copyWobbleTicks,
+// shimmering in over copyShimmerTicks. A popped copy bursts into rings of haze (world units) over
+// copyPopMs.
 //
 // The Jouster: a knight. Its lance (white, red spiral stripes, a steel cone guard) is lowered over
 // lanceLowerTicks before a charge; its great helm is steel, its plume red and its shield quartered
@@ -16,11 +17,15 @@
 // settling over thirstSettleTicks at the end.
 export const MIRAGE_JOUSTER = {
   mirageHaze: '#ffffff',
-  mirageSand: '#f8cf8f',
-  miragePool: '#c7ecfa',
-  mirageReflection: 0.45,
+  mirageSand: '#fde4ae',
+  miragePool: '#bae6fd',
+  miragePoolAlpha: 0.8,
+  miragePoolHalo: 0.3,
+  mirageRippleAlpha: 0.85,
   mirageRippleWidth: 0.07,
-  mirageHeatTicks: 90,
+  mirageCactus: '#4d7c0f',
+  mirageHeatTicks: 70,
+  mirageRiseTicks: 90,
   mirageHeatWidth: 0.06,
   mirageHeatAlpha: 0.75,
   mirageGlossAlpha: 0.6,
