@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { bomber, DROP_TICKS, FIRST_DROP_TICK } from '../../sim/balls/bomber.ts';
 import { necromancer, SUMMON_TICKS } from '../../sim/balls/necromancer.ts';
+import { jouster } from '../../sim/balls/jouster.ts';
+import { COPY_BACK_TICKS, COPY_OFFSET, mirage, type MirageState } from '../../sim/balls/mirage.ts';
 import { lifestealFor, vampire } from '../../sim/balls/vampire.ts';
 import type { BallDefinition, BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { bomberDesign, fuseLeft } from './bomber.ts';
+import { jousterDesign } from './jouster.ts';
+import { copyReadiness, mirageDesign } from './mirage.ts';
 import { necromancerDesign } from './necromancer.ts';
 import { record } from './test-support.ts';
 import type { BallDesign, DesignView } from './types.ts';
@@ -41,6 +45,32 @@ const CASES: readonly (readonly [string, BallDesign, BallDefinition, Partial<Bal
   ['Bomber', bomberDesign, bomber, {}],
   ['Necromancer', necromancerDesign, necromancer, {}],
   ['Vampire', vampireDesign, vampire, { health: 20 }],
+  // ADR 0077: each in the states its look shows (tick 30).
+  ['Vampire, thirsty', vampireDesign, vampire, { abilityState: { thirstyUntil: 36 } }],
+  [
+    'Mirage, its copy out',
+    mirageDesign,
+    mirage,
+    { abilityState: { copyOn: true, copyDx: 0, copyDy: -COPY_OFFSET, backAt: 0 } },
+  ],
+  [
+    'Mirage, its copy coming back',
+    mirageDesign,
+    mirage,
+    { abilityState: { copyOn: false, copyDx: 0, copyDy: 0, backAt: 150 } },
+  ],
+  [
+    'Jouster, lowering its lance',
+    jousterDesign,
+    jouster,
+    { abilityState: { nextCharge: 60, chargeEnds: 0, charging: false } },
+  ],
+  [
+    'Jouster, charging',
+    jousterDesign,
+    jouster,
+    { abilityState: { nextCharge: 180, chargeEnds: 90, charging: true } },
+  ],
 ];
 
 describe('ball looks that show their state', () => {
@@ -54,6 +84,21 @@ describe('ball looks that show their state', () => {
       }
     });
   }
+
+  it('Mirage: a fight, and so its icon, opens on a clear pool; a pop empties it', () => {
+    const opening = mirage.initialAbilityState as MirageState;
+    expect(copyReadiness(opening, 0)).toBe(1);
+    const popped = { copyOn: false, copyDx: 0, copyDy: 0, backAt: 400 };
+    expect(copyReadiness(popped, 400 - COPY_BACK_TICKS)).toBe(0);
+    expect(copyReadiness(popped, 400 - COPY_BACK_TICKS / 2)).toBeCloseTo(0.5, 12);
+  });
+
+  it('Mirage: its heat wavers with the sim clock, and holds still with reduced motion', () => {
+    const at = (tick: number, still: boolean) =>
+      record(mirageDesign, view(mirage, 50, false, {}, { tick, still }));
+    expect(at(40, true)).toStrictEqual(at(55, true));
+    expect(at(40, false)).not.toStrictEqual(at(55, false));
+  });
 
   it('Bomber: the fuse is whole just after a drop and burns down to none at the next', () => {
     const dropped = FIRST_DROP_TICK;

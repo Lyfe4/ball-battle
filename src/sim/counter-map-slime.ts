@@ -97,9 +97,8 @@ export const SLIME_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'slime',
     y: 'necromancer',
-    intended: 'x',
-    level: 'edge',
-    reason: 'Skulls chase one half while the other bumps the Necromancer hard.',
+    intended: 'even',
+    reason: 'Skulls chase one half while the other bumps the Necromancer: even.',
   },
   {
     x: 'slime',

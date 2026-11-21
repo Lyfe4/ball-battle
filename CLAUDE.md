@@ -213,12 +213,15 @@ Each line is a rule; its ADR has the reasoning.
   that changes speed declares `cruiseSpeed(state, stats)`, never sets velocity in hooks (ADR 0008).
 - Turning another ball is the `steer` action (ADR 0026); passing through is `phasedOf(self)`
   (nothing touches it, but it is still aimed at and pulled, ADR 0049); summoned objects are minions
-  (`src/sim/minions/`); aimed attacks pick with `nearestTarget`, which includes enemy minions.
+  (`src/sim/minions/`); aimed attacks pick with `nearestTarget`, which includes enemy minions and
+  aims at a ball's `decoyOf` point (the Mirage's copy) through the hook context's `aimPointOf`
+  (ADR 0077).
 - Taking less of a hit is `incomingDamageOf(self, amount, tick)`, applied on both damage paths and
   shown by `hitReduced` (ADR 0045, 0047, 0049); it may also take more (the Balloon's shots, a
   damage event's `raised`), and an `unblockable` damage action skips it (the Banshee's wail, ADR
   0075). A held ball (the Kraken's `held` status) cruises at `HELD_SHARE`. Hitting harder is
-  `contactDamageOf(self, stats)`, never a `damage` action on hit (ADR 0015). A returning projectile
+  `contactDamageOf(self, stats)`, never a `damage` action on hit (ADR 0015); by how head-on it hit
+  is `bumpTimesOf(directness)` (the Jouster's lance, a damage event's `times`, ADR 0077). A returning projectile
   uses `returnAfterTicks`; a zone an enemy can set off declares a swept `trigger` (ADR 0043).
 - Every ball uses `STANDARD_BALL_RADIUS`; the listed exceptions go through `radiusOf`: the Titan
   grows, the Slime's halves are smaller (ADR 0008, 0034, 0060).
@@ -237,7 +240,7 @@ Each line is a rule; its ADR has the reasoning.
   ±5% health moving win rates at most 15 (warn) / 20 (fail) points, Vampire healing ≥ 25% of max
   health, comebacks 10-20%, every pair inside its counter-map band, at most 6 strong wins and 6
   strong losses per ball, and 2+ of each for every ball added after ruleset 22 (`STRONG_LIMITS`,
-  ADR 0076; the Vampire's 7 losses allowed by name in `OVER_THE_LIMIT`).
+  ADR 0076; no ball is allowed over by name since ruleset 23, ADR 0077).
 - Three levels (ADR 0073), one rule from the full run: 65% or more is a strong counter (▲▲, pass
   68-75%, fail over 78%), 58% up to 65% an edge (▲, pass 59-64%), under 58% even (pass with no side
   over 55%). Each favoured map entry names its `level`; a pair outside its band is mislabelled

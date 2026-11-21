@@ -76,7 +76,7 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'magnet',
     y: 'necromancer',
     intended: 'x',
-    level: 'strong',
+    level: 'edge',
     reason: 'Every skull bite starts a pull that drags the Necromancer into its bumps.',
   },
 ];

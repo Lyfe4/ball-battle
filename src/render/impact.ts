@@ -72,7 +72,8 @@ const knockout = (events: readonly SimEvent[]): boolean =>
   events.some((event) => event.type === 'ballDefeated');
 
 /**
- * Hit-stop for a heavy hit (longer for a harder one), a longer one for a knockout, and slow-mo
+ * Hit-stop for a heavy hit (longer for a harder one) or a head-on lance, a longer one for a
+ * knockout, and slow-mo
  * when the match ends by knockout. Reduced motion keeps the brief hit-stops (a pause is not
  * movement) but drops the slow-mo.
  */
@@ -92,6 +93,10 @@ export function feelOf(events: readonly SimEvent[], reducedMotion: boolean): Fee
         (heaviest - theme.heavyHitDamage) / (theme.fullImpactDamage - theme.heavyHitDamage);
       hitStopMs = theme.hitStopMinMs + (theme.hitStopMaxMs - theme.hitStopMinMs) * clamp01(over);
     }
+  }
+  // A Jouster's head-on lance (ADR 0077) always gets its beat, however little it dealt.
+  if (events.some((event) => event.type === 'damage' && (event.times ?? 1) > 1)) {
+    hitStopMs = Math.max(hitStopMs, theme.lanceHitStopMs);
   }
   return slowMo === undefined ? { hitStopMs } : { hitStopMs, slowMo };
 }

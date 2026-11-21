@@ -95,6 +95,8 @@ interface PendingHit {
   readonly source: BallState;
   readonly raw: number;
   readonly multiplier: number;
+  /** What the source's `bumpTimesOf` multiplied its bump by (1 for most balls). */
+  readonly times: number;
   /** What the target's defence took off the hit (0 before `defend`). */
   readonly reduced: number;
 }
@@ -118,11 +120,14 @@ export function applyContactDamage(
   const pendingHit = (target: BallState, source: BallState, directness: number): PendingHit => {
     const definition = getDefinition(definitions, source.definitionId);
     const multiplier = directnessMultiplier(directness);
+    // How directly it hit may also change how hard its bump lands (the Jouster's lance, ADR 0077).
+    const times = definition.bumpTimesOf?.(directness) ?? 1;
     return {
       target,
       source,
-      raw: impactDamage(contactDamageOf(source, definition), multiplier),
+      raw: impactDamage(contactDamageOf(source, definition) * times, multiplier),
       multiplier,
+      times,
       reduced: 0,
     };
   };
@@ -144,6 +149,7 @@ export function applyContactDamage(
       healthAfter,
       multiplier,
       survivedLethal: survives,
+      ...(hit.times !== 1 ? { times: hit.times } : {}),
       ...(hit.reduced > 0 ? { reduced: hit.reduced } : {}),
     });
     return { ...target, health: healthAfter };

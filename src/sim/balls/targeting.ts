@@ -40,16 +40,21 @@ export interface Target {
  * whichever is closer. One rule for every ball that aims (the Archer, Storm and Sniper), so a
  * minion nearer than its owner draws the arrow, the lightning or the shot. A phased ball is aimed at
  * like any other; the shot passes through it (ADR 0049). Ties go to the ball, then to the earlier
- * one in its array, so the choice is deterministic.
+ * one in its array, so the choice is deterministic. A ball is aimed at where `aimPointOf` says (the
+ * hook context's: the Mirage's copy while it shows, ADR 0077), but which is nearest is measured to
+ * the ball itself.
  */
 export function nearestTarget(
   self: Readonly<{ id: string; side?: string; position: Vec2 }>,
   balls: readonly BallState[],
-  minions: readonly MinionState[] = [],
+  minions: readonly MinionState[],
+  aimPointOf: (ball: BallState) => Vec2,
 ): Target | undefined {
   const ball = nearestEnemy(self, balls);
   let nearest: Target | undefined =
-    ball === undefined ? undefined : { kind: 'ball', ...pick(ball) };
+    ball === undefined
+      ? undefined
+      : { kind: 'ball', ...pick({ ...ball, position: aimPointOf(ball) }) };
   let nearestDistance =
     ball === undefined ? Infinity : distanceSquared(self.position, ball.position);
   for (const minion of minions) {

@@ -25,8 +25,9 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'vampire',
-    intended: 'even',
-    reason: 'Passing through, the Vampire drinks nothing, but solid bumps trade as usual.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Its passes hit without a touch; Thirst speeds the Vampire up, but it drinks nothing.',
   },
   {
     x: 'archer',
@@ -86,10 +87,9 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'necromancer',
-    intended: 'x',
-    level: 'edge',
+    intended: 'even',
     reason:
-      'Skeletons pass through it while phased, and each pass through the Necromancer hits it.',
+      'Skeletons pass through it while phased, but the Necromancer outlasts its passes: even.',
   },
   {
     x: 'chrono',

@@ -12,15 +12,15 @@
 // colours) need no bump. After a bump, run `pnpm golden` to record the new known match results
 // (`src/golden/golden-matches.json`, ADR 0023).
 
-export const RULESET_VERSION = 22;
+export const RULESET_VERSION = 23;
 
 /**
  * Older rulesets whose series this build still verifies and replays exactly (ADR 0073): their
  * fights, roster, series rules, seeds and salts are today's, and only their bots differ, which
  * are kept (`botFor`). `golden.test.ts` checks each one's frozen known results are today's. A
- * bump that changes anything but a bot empties this list (and its retired bots go): ruleset 22
- * changed fights (three new balls and the Archer's health, ADR 0075), so ruleset 21 links show the
- * older-link notice.
+ * bump that changes anything but a bot empties this list (and its retired bots go): ruleset 23
+ * changed fights (the Mirage, the Jouster, the Vampire's Thirst and two health numbers, ADR 0077),
+ * so ruleset 22 links show the older-link notice.
  */
 export const SAME_FIGHTS_AS: readonly number[] = [];
 

@@ -93,6 +93,18 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
    */
   readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
   /**
+   * How much harder its bump lands by how directly it hit (the cosine of its approach angle), on
+   * top of the directness scaling (ADR 0077: the Jouster's lance, triple head-on). A pure query.
+   * Defaults to 1.
+   */
+  readonly bumpTimesOf?: (directness: number) => number;
+  /**
+   * Where an aimed attack at this ball aims instead of its centre, on a court of `size` (ADR 0077:
+   * the Mirage's copy), or undefined to aim at the ball itself. Who is nearest is still measured to
+   * the ball. A pure query of its own state. Defaults to the ball itself.
+   */
+  readonly decoyOf?: (self: BallView<S>, size: number) => Vec2 | undefined;
+  /**
    * True while the ball is phased (ADR 0026, 0049): nothing touches it. It passes through other
    * balls, shots, skulls and bombs, and contact damage is dealt neither to it nor by it. Its own
    * `onHitBall` still runs when it starts overlapping a ball. A pure query of its own state, like
@@ -169,6 +181,11 @@ export interface HookContext<S extends AbilityState = AbilityState> {
    * it), so a hook never needs the definitions itself.
    */
   readonly maxHealthOf: (ball: BallState) => number;
+  /**
+   * Where an aimed attack at `ball` aims: its definition's `decoyOf` (the Mirage's copy), else its
+   * centre (ADR 0077). Pass it to `nearestTarget`.
+   */
+  readonly aimPointOf: (ball: BallState) => Vec2;
 }
 
 export interface WallHitContext<S extends AbilityState = AbilityState> extends HookContext<S> {

@@ -6,6 +6,7 @@
   balls worth a later look)
 - Builds on: ADR 0032 (Sticker Pop), ADR 0039 (the phone arena is the screen), ADR 0063 (smooth
   fights at any frame rate), ADR 0071 (the rule and round 1)
+- Amended by: ADR 0077 (the Vampire's cape flares while it is thirsty)
 
 ## Context
 

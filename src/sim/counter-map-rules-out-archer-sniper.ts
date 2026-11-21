@@ -132,9 +132,9 @@ export const RULES_OUT_ARCHER_SNIPER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'sniper',
-    intended: 'even',
-    reason:
-      'The skull draws some shots, but the heavy shot wins when it lands: neither pulls ahead.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'The skull draws shots, and the sturdy Necromancer outlasts the ones that land.',
   },
   {
     x: 'sniper',

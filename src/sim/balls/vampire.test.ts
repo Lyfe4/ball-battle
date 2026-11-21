@@ -2,9 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { indexDefinitions } from '../definitions.ts';
 import { step } from '../step.ts';
 import { blue, withBalls } from '../test-support.ts';
-import type { SimEvent, WorldState } from '../types.ts';
+import type { BallState, SimEvent, WorldState } from '../types.ts';
 import { createWorld } from '../world.ts';
-import { LIFESTEAL, lifestealFor, vampire } from './vampire.ts';
+import { defineBall } from '../define-ball.ts';
+import {
+  LIFESTEAL,
+  lifestealFor,
+  THIRST_SPEED,
+  THIRST_TICKS,
+  thirstyUntilOf,
+  vampire,
+} from './vampire.ts';
+
+/** The `index`th ball of `world`, which a test expects to be there. */
+function ballAt(world: WorldState, index: number): BallState {
+  const ball = world.balls[index];
+  if (ball === undefined) throw new Error(`expected ball ${String(index)}`);
+  return ball;
+}
 
 const lookup = indexDefinitions([vampire, blue]);
 
@@ -100,5 +115,55 @@ describe('Vampire', () => {
     ]);
     const { events } = play(apart, 30);
     expect(events).toStrictEqual([]);
+  });
+});
+
+describe('Vampire Thirst (ADR 0077)', () => {
+  /** Hits its enemy for 5 from afar on tick 10, and nothing else. */
+  const sniperish = defineBall({
+    ...blue,
+    id: 'from-afar',
+    initialAbilityState: {},
+    hooks: {
+      onTick: ({ world, self }) => {
+        const enemy = world.balls.find((ball) => ball.id !== self.id);
+        return world.tick === 10 && enemy !== undefined
+          ? [{ kind: 'damage', targetId: enemy.id, amount: 5 }]
+          : [];
+      },
+    },
+  });
+  const thirstLookup = indexDefinitions([vampire, sniperish, blue]);
+  const apart = (other: typeof blue) =>
+    withBalls(createWorld(4, [vampire, other]), [
+      { position: { x: 150, y: 500 }, velocity: { x: 0, y: vampire.speed } },
+      { position: { x: 850, y: 500 }, velocity: { x: 0, y: other.speed } },
+    ]);
+  const speedOf = (world: WorldState) => {
+    const { x, y } = ballAt(world, 0).velocity;
+    return Math.sqrt(x * x + y * y);
+  };
+  const advance = (world: WorldState, ticks: number) => {
+    let current = world;
+    for (let i = 0; i < ticks; i++) current = step(current, thirstLookup).world;
+    return current;
+  };
+
+  it('a hit that isn’t a bump makes it THIRST_SPEED as fast for THIRST_TICKS', () => {
+    const hit = advance(apart(sniperish), 11);
+    expect(hit.balls[0]?.health).toBe(vampire.maxHealth - 5);
+    expect(thirstyUntilOf(ballAt(hit, 0))).toBe(10 + THIRST_TICKS);
+    expect(speedOf(hit)).toBeCloseTo(vampire.speed * THIRST_SPEED, 6);
+    const over = advance(hit, THIRST_TICKS);
+    expect(thirstyUntilOf(ballAt(over, 0))).toBe(0);
+    expect(speedOf(over)).toBeCloseTo(vampire.speed, 6);
+  });
+
+  it('a bump never makes it thirsty', () => {
+    const { events, world } = play(headOn(vampire.maxHealth), 30);
+    expect(events.some((event) => event.type === 'damage' && event.targetId === 'ball-0')).toBe(
+      true,
+    );
+    expect(thirstyUntilOf(ballAt(world, 0))).toBe(0);
   });
 });

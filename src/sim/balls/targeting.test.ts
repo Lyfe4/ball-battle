@@ -9,6 +9,8 @@ import { createWorld } from '../world.ts';
 import { archer, FIRST_SHOT_DELAY_TICKS } from './archer.ts';
 import { nearestTarget } from './targeting.ts';
 
+const centre = (ball: { position: { x: number; y: number } }) => ball.position;
+
 const minion = (id: string, ownerId: string, x: number, y: number): MinionState => ({
   id,
   ownerId,
@@ -29,7 +31,7 @@ describe('nearestTarget (ADR 0026)', () => {
 
   it('is the enemy ball when no minion is nearer', () => {
     expect(
-      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 900, 900)]),
+      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 900, 900)], centre),
     ).toMatchObject({
       kind: 'ball',
       id: 'ball-1',
@@ -38,7 +40,7 @@ describe('nearestTarget (ADR 0026)', () => {
 
   it('is an enemy minion nearer than any enemy ball', () => {
     expect(
-      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 300, 500)]),
+      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 300, 500)], centre),
     ).toMatchObject({
       kind: 'minion',
       id: 'minion-0',
@@ -48,7 +50,7 @@ describe('nearestTarget (ADR 0026)', () => {
 
   it('never picks its own minions', () => {
     expect(
-      nearestTarget(self, world.balls, [minion('minion-0', 'ball-0', 300, 500)]),
+      nearestTarget(self, world.balls, [minion('minion-0', 'ball-0', 300, 500)], centre),
     ).toMatchObject({
       kind: 'ball',
       id: 'ball-1',
@@ -57,7 +59,7 @@ describe('nearestTarget (ADR 0026)', () => {
 
   it('gives a tie to the ball', () => {
     expect(
-      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 800, 500)]),
+      nearestTarget(self, world.balls, [minion('minion-0', 'ball-1', 800, 500)], centre),
     ).toMatchObject({
       kind: 'ball',
     });

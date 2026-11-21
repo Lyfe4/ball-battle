@@ -122,8 +122,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'archer',
     y: 'vampire',
     intended: 'x',
-    level: 'strong',
-    reason: 'Arrows never touch it, so it has nothing to drink, and its health is small.',
+    level: 'edge',
+    reason: 'Arrows never touch it, though each one makes it thirsty and quick to close in.',
   },
   {
     x: 'brawler',
@@ -180,9 +180,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'boomerang',
-    intended: 'y',
-    level: 'strong',
-    reason: 'The boomerang never touches it, so it drinks nothing, and its small health goes fast.',
+    intended: 'even',
+    reason: 'The boomerang never touches it, but each hit sends it in fast to drink: even.',
   },
   {
     x: 'vampire',
@@ -194,14 +193,16 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'inferno',
-    intended: 'even',
-    reason: 'It heals back the burns off its own hits, as fast as the fire takes them.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Burns make it thirsty, so it closes in fast and drinks back the fire.',
   },
   {
     x: 'vampire',
     y: 'speedster',
-    intended: 'even',
-    reason: 'Its bumps drink back much of each rush, but the stacked rushes still land hard: even.',
+    intended: 'x',
+    level: 'strong',
+    reason: 'Its bumps drink back each rush, and the rush’s extra hit makes it thirsty.',
   },
   {
     x: 'vampire',
@@ -213,7 +214,8 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'vampire',
     y: 'venom',
-    intended: 'even',
-    reason: 'Lifesteal heals back some of the poison, but the poison keeps ticking.',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Poison makes it thirsty, so it closes in and drinks back what drips.',
   },
 ];

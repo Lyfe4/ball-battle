@@ -197,6 +197,8 @@ export function createArena(
       splits: moments.splits(now),
       snaps: moments.snaps(now),
       pops: moments.pops(now),
+      copyPops: moments.copyPops(now),
+      lances: moments.lances(now),
       drift: (ballId) => drift.of(ballId),
       smears,
       chips: sourceChips.chips(now),

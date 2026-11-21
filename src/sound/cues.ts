@@ -3,8 +3,9 @@
 // never knows sound exists. Events say most of it (this file); a few moments are only a change in
 // a ball's ability state between the two worlds (state-cues.ts). A ball's own sound takes the place
 // of the bump when its ability is the bump (a Battery's release, a Berserker's rage, a Speedster's
-// boosted hit, a Ghost passing through, the Balloon's squeak), and plays beside it otherwise (Thorns' spikes, a
-// Vampire's sip, Frost and Venom landing).
+// boosted hit, a Ghost passing through, the Balloon's squeak, the Jouster's lance splintering or
+// glancing), and plays beside it otherwise (Thorns' spikes, a Vampire's sip, Frost and Venom
+// landing).
 import { impactStrength } from '../render/impact.ts';
 import { ARENA_SIZE } from '../sim/constants.ts';
 import { CAPACITY } from '../sim/balls/battery.ts';
@@ -80,11 +81,14 @@ export function cuesOf(
   // Contact damage per ball this tick: how hard a bump sounds.
   const contact = new Map<string, number>();
   // Balls whose bump this tick is their ability: a Berserker letting its rage out, a Speedster's
-  // boosted hit, a Ghost's hit from inside.
+  // boosted hit, a Jouster's lance landing head-on or glancing off.
   const ownBump = new Map<string, FightCue>();
   for (const event of events) {
     if (event.type === 'damage' && event.cause === 'contact') {
       contact.set(event.targetId, (contact.get(event.targetId) ?? 0) + event.amount);
+      if (event.times !== undefined && kindOf(event.sourceId) === 'jouster') {
+        ownBump.set(event.sourceId, event.times > 1 ? 'splinter' : 'spark');
+      }
     }
     if (event.type === 'abilityTriggered' && event.hook === 'onHitBall') {
       if (kindOf(event.ballId) === 'berserker') ownBump.set(event.ballId, 'rageHit');
@@ -111,20 +115,13 @@ export function cuesOf(
           add('release', stored(before.get(battery)) / CAPACITY, event.point);
           break;
         }
+        const damage = Math.max(...event.ballIds.map((id) => contact.get(id) ?? 0));
         const own = event.ballIds.find((id) => ownBump.has(id));
         if (own !== undefined) {
-          const ball = before.get(own);
           const kind = ownBump.get(own) ?? 'bump';
-          const strength =
-            kind === 'rageHit'
-              ? rageOf(ball?.abilityState ?? {}) / 3
-              : ball === undefined
-                ? 0.5
-                : stacksOf(ball) / 5;
-          add(kind, strength, event.point);
+          add(kind, ownBumpStrength(kind, before.get(own), damage), event.point);
           break;
         }
-        const damage = Math.max(...event.ballIds.map((id) => contact.get(id) ?? 0));
         // The Balloon's own rubber says every bump it is in.
         const rubber = event.ballIds.some((id) => kindOf(id) === 'balloon');
         add(rubber ? 'squeak' : 'bump', impactStrength(damage), event.point);
@@ -214,6 +211,13 @@ export function cuesOf(
   }
   stateCues(events, previous, world, add);
   return cues;
+}
+
+/** How hard a ball's own bump sounds: by its rage, its speed built, or (the lance) the hit itself. */
+function ownBumpStrength(kind: FightCue, ball: BallState | undefined, damage: number): number {
+  if (kind === 'rageHit') return rageOf(ball?.abilityState ?? {}) / 3;
+  if (kind === 'speedHit') return ball === undefined ? 0.5 : stacksOf(ball) / 5;
+  return impactStrength(damage);
 }
 
 /**

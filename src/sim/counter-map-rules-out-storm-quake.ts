@@ -46,9 +46,8 @@ export const RULES_OUT_STORM_QUAKE_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'necromancer',
     y: 'storm',
-    intended: 'y',
-    level: 'edge',
-    reason: 'A strike clears the skull and hits the Necromancer harder than a skull bites back.',
+    intended: 'even',
+    reason: 'A strike clears the skull, but the Necromancer has the health to take it: even.',
   },
   {
     x: 'speedster',

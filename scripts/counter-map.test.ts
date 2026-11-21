@@ -13,7 +13,6 @@ import {
   findingsIn,
   labelOf,
   measuredOf,
-  OVER_THE_LIMIT,
   SHAPE,
   shapeWarning,
   STRONG_LIMITS,
@@ -101,14 +100,6 @@ describe('the counter map', () => {
     }
   });
 
-  it('allows a ball over the limit exactly its count today, and drops it once back under', () => {
-    for (const [id, { wins, losses }] of Object.entries(OVER_THE_LIMIT)) {
-      const own = strongCountersOf(id);
-      if (wins !== undefined) expect(own.beats.length, id).toBe(wins);
-      if (losses !== undefined) expect(own.losesTo.length, id).toBe(losses);
-    }
-  });
-
   it('names exactly the ruleset 22 roster as added before the floor', () => {
     expect(BEFORE_THE_FLOOR).toStrictEqual(BALLS.slice(0, 28).map((ball) => ball.id));
   });
@@ -135,11 +126,9 @@ describe('counterProblem', () => {
     expect(counterProblem('cowboy', some(7), some(3))).toBeDefined();
   });
 
-  it('allows the Vampire its seven losses and no eighth', () => {
-    expect(OVER_THE_LIMIT).toStrictEqual({ vampire: { losses: 7 } });
-    expect(counterProblem('vampire', some(2), some(7))).toBeUndefined();
-    expect(counterProblem('vampire', some(2), some(8))).toBeDefined();
-    expect(counterProblem('vampire', some(7), some(3))).toBeDefined();
+  it('holds the Vampire to the same limit as every ball (its allowance went in ruleset 23)', () => {
+    expect(counterProblem('vampire', some(3), some(6))).toBeUndefined();
+    expect(counterProblem('vampire', some(3), some(7))).toBe('7 strong losses, at most 6');
   });
 
   it('needs 2 strong wins and 2 strong losses of a ball added after ruleset 22', () => {
@@ -168,7 +157,7 @@ describe('shapeWarning', () => {
       '2/4, the shape wants wins and losses within 1',
     );
     // Today's balls off the shape warn; none is excused by name.
-    expect(shapeWarning('vampire', some(2), some(7))).toBeDefined();
+    expect(shapeWarning('speedster', some(3), some(5))).toBeDefined();
     expect(shapeWarning('slime', some(1), some(0))).toBeDefined();
   });
 

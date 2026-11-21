@@ -13,7 +13,7 @@ export const brawler = defineBall({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: 770,
-  maxHealth: 66,
+  maxHealth: 67,
   contactDamage: 26,
   initialAbilityState: {},
   hooks: {},

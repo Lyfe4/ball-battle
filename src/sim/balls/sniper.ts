@@ -59,7 +59,7 @@ export const sniper = defineBall<SniperState>({
   contactDamage: 9,
   initialAbilityState: { nextChargeTick: FIRST_CHARGE_TICK, charge: null },
   hooks: {
-    onTick: ({ world, self }) => {
+    onTick: ({ world, self, aimPointOf }) => {
       const { charge, nextChargeTick } = self.abilityState;
       if (charge !== null) {
         if (world.tick < charge.fireTick) return [];
@@ -78,7 +78,7 @@ export const sniper = defineBall<SniperState>({
         ];
       }
       if (world.tick < nextChargeTick) return [];
-      const target = nearestTarget(self, world.balls, world.minions);
+      const target = nearestTarget(self, world.balls, world.minions, aimPointOf);
       if (target === undefined) return [];
       const dx = target.position.x - self.position.x;
       const dy = target.position.y - self.position.y;

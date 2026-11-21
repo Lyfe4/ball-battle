@@ -29,7 +29,10 @@ import { drawStrikes, drawZones } from './zones.ts';
 import { drawCurses } from './curse.ts';
 import { drawWebs } from './webs.ts';
 import { drawPops, drawSnaps, drawSplits } from './draw-moments.ts';
-import type { PopMoment, SnapMoment, SplitMoment } from './moments.ts';
+import type { CopyPopMoment, LanceMoment, PopMoment, SnapMoment, SplitMoment } from './moments.ts';
+import { drawCopies, drawCopyPops } from './mirage-copy.ts';
+import { drawLanceHits } from './lance-hits.ts';
+import { drawTrails } from './trails.ts';
 import { STILL } from './drift.ts';
 import { drawShadows } from './shadows.ts';
 import { drawRipples, drawTentacles } from './tentacles.ts';
@@ -74,6 +77,9 @@ export interface FrameEffects {
   readonly splits: readonly SplitMoment[];
   readonly snaps: readonly SnapMoment[];
   readonly pops: readonly PopMoment[];
+  /** Mirages' copies popping and Jousters' lances landing (ADR 0077). */
+  readonly copyPops: readonly CopyPopMoment[];
+  readonly lances: readonly LanceMoment[];
   /** How each floating ball drifts (drift.ts): its shadow trails it, its knot swings. */
   readonly drift: (ballId: string) => Vec2;
   /** Slow frames only: each ball's path since the last frame (motion-smear.ts). */
@@ -102,6 +108,8 @@ export const NO_EFFECTS: FrameEffects = {
   splits: [],
   snaps: [],
   pops: [],
+  copyPops: [],
+  lances: [],
   drift: () => STILL,
   smears: [],
   reducedMotion: false,
@@ -139,6 +147,13 @@ export function drawWorld(
   drawRipples(ctx, world, effects.reducedMotion);
   drawWails(ctx, world, effects.reducedMotion);
   drawShadows(ctx, world, effects.drift);
+  drawTrails(ctx, world);
+  drawCopies(
+    ctx,
+    world,
+    (ballId) => ownerColor(world.balls, definitions, ballId),
+    effects.reducedMotion,
+  );
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(
@@ -186,6 +201,7 @@ export function drawWorld(
         cssPixelsPerUnit,
         phased,
         drift: effects.drift(ball.id),
+        still: effects.reducedMotion,
       });
     });
     if (ball.health > 0) {
@@ -206,6 +222,8 @@ export function drawWorld(
   drawStrikes(ctx, world, effects.strikes);
   drawParticles(ctx, effects.particles);
   drawPops(ctx, world, effects.pops, effects.reducedMotion);
+  drawCopyPops(ctx, effects.copyPops, effects.reducedMotion);
+  drawLanceHits(ctx, effects.lances, effects.reducedMotion);
   // Bars go on top of every ball so a neighbour never hides them.
   for (const ball of world.balls) {
     const maxHealth = definitions.get(ball.definitionId)?.maxHealth;
@@ -261,6 +279,8 @@ export interface BallLook {
   readonly phased?: boolean;
   /** How a floating ball drifts (drift.ts): its knot swings with it. */
   readonly drift?: Vec2;
+  /** Reduced motion: a design's own wavering holds still. */
+  readonly still?: boolean;
 }
 
 /**
