@@ -70,6 +70,16 @@ function keysOf(config: Config): KeySet {
   return keys;
 }
 
+/** What jose says about the token itself, as opposed to the key set it was checked against. */
+const TOKEN_REFUSALS = [
+  errors.JWTClaimValidationFailed,
+  errors.JWTInvalid,
+  errors.JWSInvalid,
+  errors.JWSSignatureVerificationFailed,
+  errors.JOSEAlgNotAllowed,
+  errors.JOSENotSupported,
+];
+
 export type Verified = { readonly userId: string } | 'expired' | 'invalid';
 
 /** Whose access token this is, or why it can't be used. */
@@ -86,9 +96,13 @@ export async function verifyAccess(config: Config, token: string, now?: Date): P
     return typeof id === 'string' && id !== '' ? { userId: id } : 'invalid';
   } catch (error) {
     if (error instanceof errors.JWTExpired) return 'expired';
-    // Auth's keys not reachable is an outage, never a reason to drop the player's session.
-    if (error instanceof errors.JWKSTimeout) throw error;
-    if (error instanceof errors.JOSEError) return 'invalid';
+    // Signed by a key no longer published (Auth's keys were rotated): checked before its expiry,
+    // so let the refresh decide. A real session goes on; a forged token is refused there.
+    if (error instanceof errors.JWKSNoMatchingKey) return 'expired';
+    if (TOKEN_REFUSALS.some((refusal) => error instanceof refusal)) return 'invalid';
+    // Anything else is Auth's keys out of reach: a timeout, an error page instead of the key set
+    // (jose throws a plain JOSEError for a non-200), a malformed set. An outage, never a reason to
+    // drop the player's session.
     throw error;
   }
 }

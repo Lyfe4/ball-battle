@@ -33,7 +33,7 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   const question = element(
     'p',
     'settings-online-line',
-    'Delete your guest and its games? Open series are lost.',
+    'Delete your guest? A match in play is lost; finished ones stay, as “Deleted player”.',
   );
   const yes = element('button', 'hud-button', 'Delete');
   yes.type = 'button';

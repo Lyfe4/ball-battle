@@ -14,8 +14,27 @@ export const INACTIVE_DAYS = 90;
  */
 export const INACTIVE_PER_SWEEP = 25;
 
+/**
+ * Failures a sweep goes on past. One guest Auth won't delete must not hold up everyone after it
+ * (the oldest come first, so it would head every run); Auth being down stops the run after this
+ * many calls rather than waiting out a timeout for each guest.
+ */
+const FAILURES_PER_SWEEP = 2;
+
+/** Deletes up to INACTIVE_PER_SWEEP guests; throws the first failure once the rest are tried. */
 export async function deleteInactiveGuests(deps: Deps): Promise<number> {
   const ids = await inactivePlayers(deps.sql, INACTIVE_DAYS, INACTIVE_PER_SWEEP);
-  for (const id of ids) await deleteUser(deps.config, id);
-  return ids.length;
+  let deleted = 0;
+  const failures: unknown[] = [];
+  for (const id of ids) {
+    if (failures.length >= FAILURES_PER_SWEEP) break;
+    try {
+      await deleteUser(deps.config, id);
+      deleted += 1;
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  if (failures.length > 0) throw failures[0];
+  return deleted;
 }

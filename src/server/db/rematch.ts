@@ -12,7 +12,10 @@ export interface RematchRow {
   readonly status: string;
   readonly format: Format;
   readonly bestOf: BestOf;
-  /** When the series ended (ms since the epoch); null while open. */
+  /**
+   * When both players saw the series end (ms since the epoch): its last fight's end, or the moment
+   * it was decided when that came later (a forfeit). Null while open.
+   */
   readonly finished: number | null;
   readonly askedBy: Side | null;
   readonly asked: number | null;
@@ -54,7 +57,9 @@ export async function rematchRow(
     }[]
   >`
     select s.player_a, s.player_b, s.live, s.status, s.format, s.best_of,
-      (extract(epoch from s.finished_at) * 1000)::float8 as finished,
+      (extract(epoch from greatest(s.finished_at,
+        (select max(f.ends_at) from game.rounds f where f.series_id = s.id))) * 1000)::float8
+        as finished,
       r.asked_by, (extract(epoch from r.asked_at) * 1000)::float8 as asked,
       (extract(epoch from r.agreed_at) * 1000)::float8 as agreed,
       r.declined_by, r.lineup_a, r.lineup_b, r.new_series_id,

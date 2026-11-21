@@ -1,4 +1,6 @@
-# Netlify deploys main. Build settings live here rather than in the dashboard.
+# Netlify deploys `release` to production (published by the Publish workflow), `main` as a branch
+# deploy (staging) and every pull request as a preview. Build settings live here rather than in the
+# dashboard.
 # pnpm comes from package.json "packageManager" (Netlify uses Corepack, which needs the exact
 # version pinned there).
 
@@ -38,8 +40,9 @@
 
 # The game server (ADR 0052): one function per route in netlify/functions, under /api/v1/*. A
 # series is played by the frozen sim of the ruleset it names (src/server/rulesets.ts), so the
-# frozen bundles ship beside the functions. The functions' region (Sydney, beside the database)
-# and their secrets are set in Netlify's dashboard, not here.
+# frozen bundles ship beside the functions. Their secrets are set in Netlify's dashboard, not here.
+# On the Free plan the functions run in Ohio (us-east-2), far from the database in Sydney: a region
+# can be chosen on Pro only (ADR 0052, the privacy policy).
 [functions]
   # One self-contained file per function: pnpm's linked node_modules are not traced reliably.
   node_bundler = "esbuild"

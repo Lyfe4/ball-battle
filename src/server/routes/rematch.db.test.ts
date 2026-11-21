@@ -77,6 +77,28 @@ describe('a rematch', () => {
     }
   });
 
+  it('is offered for 2 minutes from the end both players watch, not from the deciding pick', async () => {
+    // The deciding pick writes finished_at; the last fight still plays until its ends_at, up to
+    // about 70 s later (and longer after a drawn attempt).
+    const { id, players } = await ended();
+    const lastFightEndsIn = async (seconds: number) => {
+      await admin`delete from game.rounds where series_id = ${id}`;
+      await admin`
+        insert into game.rounds
+          (series_id, round, a, b, seeds, outcomes, winner, sudden_death, fight_at, ends_at)
+        values (${id}, 0, 'storm', 'titan', '{1}', '{a}', 'a', false,
+          now() + make_interval(secs => ${seconds - 70}), now() + make_interval(secs => ${seconds}))`;
+    };
+    await admin`update game.series set finished_at = now() - interval '130 seconds' where id = ${id}`;
+
+    await lastFightEndsIn(20);
+    expect((await view(players.a, id)).offered).toBe(false);
+    await lastFightEndsIn(-30);
+    expect((await view(players.a, id)).offered).toBe(true);
+    await lastFightEndsIn(-125);
+    expect((await view(players.a, id)).offered).toBe(false);
+  });
+
   it('is never offered for a series by turns, nor to anyone outside the match', async () => {
     const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
     const id = await newSeries(deps, players, 'reveal');

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ApiError } from './http.ts';
-import { ipSubject, LIMITS, spend, waitWords } from './rate-limit.ts';
+import { ipSubject, LIMITS, purgeRateLimits, spend, waitWords } from './rate-limit.ts';
 import { adminSql, testDeps } from './test/support.ts';
 
 const deps = testDeps();
@@ -63,6 +63,31 @@ describe('a rate limit', () => {
     expect(Number(day.headers['Retry-After'])).toBeLessThanOrEqual(86_400);
     expect(LIMITS.guestsDaily.max).toBeLessThan(LIMITS.guests.max * 24);
     expect(LIMITS.guestsDaily.bucket).not.toBe(LIMITS.guests.bucket);
+  });
+
+  it('drops each window once it has ended, by its own length', async () => {
+    await admin`delete from game.rate_limits`;
+    const windowAgo = (bucket: string, seconds: number) => admin`
+      insert into game.rate_limits (subject, bucket, window_start, count)
+      values ('purge-test', ${bucket}, now() - make_interval(secs => ${seconds}), 1)`;
+    // An hour's count of a network, ended a minute ago; one still running.
+    await windowAgo(LIMITS.guests.bucket, 3_660);
+    await windowAgo(LIMITS.guests.bucket, 1_800);
+    // A day's count still running; a 5-minute read window ended.
+    await windowAgo(LIMITS.guestsDaily.bucket, 3_660);
+    await windowAgo(LIMITS.reads.bucket, 360);
+    // A bucket no longer counted, kept a day.
+    await windowAgo('retired', 3_660);
+    await windowAgo('retired', 86_460);
+
+    expect(await purgeRateLimits(deps.sql)).toBe(3);
+    const left = await admin<{ bucket: string }[]>`
+      select bucket from game.rate_limits where subject = 'purge-test' order by bucket`;
+    expect(left.map((row) => row.bucket)).toStrictEqual([
+      LIMITS.guests.bucket,
+      LIMITS.guestsDaily.bucket,
+      'retired',
+    ]);
   });
 
   it('says how long to wait in words a player reads', () => {

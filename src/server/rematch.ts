@@ -44,7 +44,10 @@ export function rematchStateOf(row: RematchRow): {
   return { state: row.now < deadline ? 'agreed' : 'expired', deadline };
 }
 
-/** A rematch may be asked: a live match that ended with a result (not void) in the last 2 min. */
+/**
+ * A rematch may be asked: a live match that ended with a result (not void) in the last 2 min, from
+ * the end both players watched (never while its last fight still plays).
+ */
 function offerable(row: RematchRow): boolean {
   return (
     row.live &&
@@ -52,6 +55,7 @@ function offerable(row: RematchRow): boolean {
     row.players.a !== null &&
     row.players.b !== null &&
     row.finished !== null &&
+    row.now >= row.finished &&
     row.now - row.finished < REMATCH_OFFER_MS
   );
 }

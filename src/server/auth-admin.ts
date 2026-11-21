@@ -1,5 +1,5 @@
-// The one place the secret (service role) key is used (ADR 0052, "Secrets and least privilege"):
-// deleting a player. Deleting the auth user deletes their profile, which forfeits their open series
+// Deleting a player, with the secret (service role) key (ADR 0052, "Secrets and least privilege");
+// its only other use is making a guest (`signUpGuest`, which needs it to forward the player's IP). Deleting the auth user deletes their profile, which forfeits their open series
 // and keeps finished ones for the opponent's history (the migration's foreign keys and trigger).
 import { fetchAuth, refusalOf } from './auth.ts';
 import type { Config } from './config.ts';
