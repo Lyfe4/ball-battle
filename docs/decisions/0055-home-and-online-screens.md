@@ -6,7 +6,7 @@
 - Amends: ADR 0046 (home and Other modes), ADR 0048 (where the length is chosen), ADR 0053 (the
   lobby, the pick timer, the end of a live match)
 - Builds on: ADR 0054 (the chosen look, the whole countdown, no loading pages)
-- Amended by: ADR 0070 (a rematch reaches the other player anywhere in the game)
+- Amended by: ADR 0070 (a rematch reaches the other player anywhere in the game), ADR 0080 (lineups picked together after accepting)
 
 Mockups: `docs/images/ux/` (phone 390 × 664, desktop 1280 × 800), drawn with the game's own tokens
 and font from `docs/images/ux/src/` (`node docs/images/ux/src/render.mjs`). Screens as they are

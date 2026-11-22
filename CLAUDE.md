@@ -7,7 +7,7 @@ code quality matters as much as features.
 Where it's heading (PvP best of 3 with blind lineups, soft counters, then a backend):
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
-online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053).
+online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080).
 Home is by opponent (ADR 0055, `src/app/modes.ts`): Play opens the last series set up against the
 bot in one tap (first visit: Best of 3 · Reveal · vs Normal bot), and a card per opponent opens
 its setup screen (vs Bot; vs Friend in online builds). The series rules and bots are pure sim code
@@ -232,9 +232,15 @@ Each line is a rule; its ADR has the reasoning.
 - A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): a floating card on
   any screen but over a fight, Accept straight to the lineup, the asker told of a no.
 - A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2
-  minutes of a live match's end, answered within 30 s, both lineups within 60 s, then a new live
-  series (new seeds). Its timers are read against `now()`, never written; every move locks the old
-  series' row in a statement of its own before reading.
+  minutes of a live match's end, answered within 30 s, then the lineups picked together (below).
+  Its timers are read against `now()`, never written; every move locks the old series' row in a
+  statement of its own before reading.
+- Every live start is a start (ADR 0080, `game.starts`, `src/server/start.ts`): a live challenge is
+  sent without a lineup; Accept (or a rematch's yes) opens one lineup screen (`?start=`) where both
+  pick at once in secret, 60 s (75 s Best of 5), each told only "choosing" or "ready". The series
+  and its seeds are made only when both lock in or the clock runs out: a draft is then finished at
+  random, and only a player who never opened the lineup loses (`start_missed`). A start is the
+  players' one live match from the Accept, settled on read, on the one-match check and by the sweep.
 
 **The sim**
 
