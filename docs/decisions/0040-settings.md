@@ -83,3 +83,21 @@ motion override (the system setting is respected).
   card's opt-out can be undone where it can be seen.
 - Positive: the legend is only about symbols again.
 - Negative: one more control at the top of every screen.
+
+## Addendum (2026-11-22): headings that read as headings
+
+Since the two groups (ADR 0079 addendum), "Fights" and "Tips" had the same quiet grey as "Speed"
+and "Sound", while "Ability hints" was white and bold: on a real iPhone the headings read as row
+labels. Now a group heading has the setup screens' section look ("Length", "Format": quiet, small,
+bold) with a hairline (`--color-sunken`) between the groups, and every row's words share the
+switches' look (text colour, 600). No new rows; the compact form still hides the headings.
+`small-landscape.landscape-small.browser.test.ts` checks the rows share one look and the
+headings differ from it.
+
+The compact form (ADR 0044) now also shows when the full menu would have to scroll inside the
+screen's height, not only when it would cover the court: at 667 x 320 (a phone turned sideways in
+Safari) the full menu fit beside the court but cut "What to watch cards" in half at the bottom.
+
+| Before                                                          | After                                                         |
+| --------------------------------------------------------------- | ------------------------------------------------------------- |
+| ![Headings like labels](../images/settings/headings-before.png) | ![Headings, then rows](../images/settings/headings-after.png) |

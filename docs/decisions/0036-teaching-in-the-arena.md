@@ -167,3 +167,27 @@ and the panel didn't move.
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | ![Bombs! sticker, phone](../images/tips/caption-before-phone.png)  | ![Caption under speed, phone](../images/tips/caption-after-phone.png)      |
 | ![Bombs! sticker, desktop](../images/tips/caption-before-wide.png) | ![Caption under the panel, desktop](../images/tips/caption-after-wide.png) |
+
+## Addendum (2026-11-22): the ring and the caption, together
+
+On a real iPhone the owner didn't notice the ring at all: a thin sticker-cream ring pulsing three
+times, in a different place from the caption, with nothing tying the two together.
+
+- **The ring in the ball's colour**: a 4 px stroke in the caption title's shade of the ball's
+  colour (`readableTextOn` the caption's box, which also lifts a dark ball, the Necromancer, off
+  the dark floor), a 1 px page-coloured edge each side and a soft halo of the same colour.
+- **One link from ball to words.** Ring and caption appear on the same frame; the caption's title
+  is in that shade, beside a 20 px drawing of the ball (the mirror's second ball lighter, as on
+  the court).
+- **Calm motion, once.** The ring settles from 1.3x over 360 ms, holds still, then fades over its
+  last 360 ms (2.4 s in all); the caption fades up 6 px over 320 ms. No pulse, bounce or flash.
+  With reduced motion both only fade.
+
+Tests: `small-landscape.landscape-small.browser.test.ts` checks the ring shows with the caption,
+its colour is the title's and not the text colour, and the ball's drawing is beside the title;
+`arena-tips.wide.browser.test.ts` is unchanged.
+
+| Before                                                             | After                                                                         |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| ![A faint ring, sideways](../images/tips/ring-before-sideways.png) | ![Ring and title in the Storm's blue](../images/tips/ring-after-sideways.png) |
+| ![A faint ring, phone](../images/tips/ring-before-phone.png)       | ![Ring and title in the ball's colour](../images/tips/ring-after-phone.png)   |
