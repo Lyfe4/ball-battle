@@ -6,11 +6,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   buildLineup,
   closePhones,
-  finished,
   openPhones,
   panelOf,
+  liveMatchBudgetMs,
   phone,
-  pickIfDue,
+  playOut,
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
@@ -27,16 +27,14 @@ afterAll(async () => {
 describe('a rematch', () => {
   it(
     'is asked by one player, agreed by the other, and starts a new match for both',
-    { timeout: 300_000 },
+    // Starting, the longest match there is, then the rematch's start.
+    { timeout: 120_000 + liveMatchBudgetMs(3) },
     async () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
       const first = await startLiveMatch(BASE, sender, friend);
-      for (let step = 0; !((await finished(sender)) && (await finished(friend))); step += 1) {
-        expect(step, 'the match never ended').toBeLessThan(600);
-        for (const page of [sender, friend]) await pickIfDue(page);
-        await sender.waitForTimeout(250);
-      }
+      // Played to its end, however long its fights run (a step count ran out on a long match).
+      await playOut([{ page: sender }, { page: friend }]);
 
       // The end: Rematch is the main way on, Home beside it.
       const ask = panelOf(sender).getByRole('button', { name: 'Rematch' });

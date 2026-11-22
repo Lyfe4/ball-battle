@@ -4,6 +4,8 @@
 // flow plays whatever the screen offers rather than pinning a seed.
 import { chromium, webkit, type Browser, type BrowserContext, type Page } from 'playwright';
 import { expect } from 'vitest';
+import { attemptWatchMs, LEAD_MS, TOSS_LEAD_MS } from '../api/live.ts';
+import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
 
 /** iPhone Safari's visible size (ADR 0039). */
 export const PHONE = { width: 390, height: 664 };
@@ -227,3 +229,44 @@ export async function pickIfDue(page: Page, prefer?: string): Promise<boolean> {
 
 /** True once the series' result shows. */
 export const finished = (page: Page) => panelOf(page).locator('.series-result').isVisible();
+
+/**
+ * The longest a live Best of `bestOf` can take once it starts, picks tapped at once: the toss, then
+ * each round's lead into Fight! and the longest fight there is (to the time limit) as the page
+ * watches it, with 10 s a round for picks and reads. Not a draw fought again (under 5% of fights).
+ * A step count stood in for this (600 steps of 250 ms) and ran out on a long match (3 fights near
+ * the limit take about 240 s), failing "the match never ended" on a match that was ending.
+ */
+export const liveMatchBudgetMs = (bestOf: number): number =>
+  TOSS_LEAD_MS + bestOf * (LEAD_MS + attemptWatchMs(MATCH_TIME_LIMIT_TICKS) + 10_000);
+
+/** Where a live series stands on `page`'s screen ("Round 2 · You 1–0 P4821"), for a failure. */
+async function standing(page: Page): Promise<string> {
+  const line = panelOf(page).locator('.series-bar-score-text, .series-track-score').first();
+  return (await line.textContent({ timeout: 1_000 }).catch(() => null)) ?? 'not on screen';
+}
+
+/**
+ * Plays a live match out on two phones, each picking its own ball (`prefer`, else the first) as
+ * soon as it can, until both show the result. Fails, saying where the match stood, only once it
+ * has taken longer than the longest a match can take.
+ */
+export async function playOut(
+  sides: readonly { readonly page: Page; readonly prefer?: string }[],
+  bestOf = 3,
+): Promise<void> {
+  const budget = liveMatchBudgetMs(bestOf);
+  const until = Date.now() + budget;
+  const ended = async () =>
+    (await Promise.all(sides.map((side) => finished(side.page)))).every(Boolean);
+  while (!(await ended())) {
+    if (Date.now() > until) {
+      const where = await Promise.all(sides.map((side) => standing(side.page)));
+      throw new Error(
+        `the match didn't end within ${String(budget / 1000)} s: ${where.join(' / ')}`,
+      );
+    }
+    for (const side of sides) await pickIfDue(side.page, side.prefer);
+    await new Promise((done) => setTimeout(done, 250));
+  }
+}
