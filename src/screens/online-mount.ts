@@ -15,6 +15,12 @@ import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
 import { createRematchWatch } from './rematch-watch.ts';
+import type { PlayerResponse } from '../api/session.ts';
+import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
+import { callApi } from '../app/api.ts';
+import { writeSignInParams } from '../app/online-url.ts';
+import { whoAmI } from '../app/who-am-i.ts';
+import { createAccountButton } from '../ui/online/account-button.ts';
 
 /** How often home asks again while it shows a way back to a live match. */
 const HOME_ASK_MS = 10_000;
@@ -126,6 +132,29 @@ export function mountOnline(context: MountContext): OnlineMount {
     storage: browserStorage,
   });
   const homeRoot = getElement('home', HTMLElement);
+  // The account entry on home, beside the gear (ADR 0079 addendum of 2026-11-22): what `/me` says,
+  // read when home shows after a page load or the account screen, never polled.
+  const account = ACCOUNTS_BUILD
+    ? createAccountButton(() => {
+        context.go(writeSignInParams);
+      })
+    : undefined;
+  if (account !== undefined) {
+    homeRoot.querySelector('.home-head .settings-toggle')?.before(account.element);
+  }
+  /** Read again on the next home: a sign-in, a log out or a new username may have changed it. */
+  let whoStale = true;
+  const askWho = async (): Promise<void> => {
+    if (account === undefined || !whoStale) return;
+    whoStale = false;
+    account.show({ kind: 'unknown' });
+    const who = await whoAmI(browserStorage, document.cookie, () =>
+      callApi<PlayerResponse>('GET', 'me'),
+    );
+    // Not known (offline, failing): the face stays, and the next home asks again.
+    if (who.kind === 'unknown') whoStale = true;
+    account.show(who);
+  };
   const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
   // "Back to your match" takes Play's place while a live match or lobby is on (ADR 0053), and is
   // asked about again every few seconds on home so it goes when the match ends.
@@ -155,7 +184,9 @@ export function mountOnline(context: MountContext): OnlineMount {
       send: screens.send,
       signin: screens.signin,
     },
-    settings: { online: screens.forgetMe },
+    // With accounts, everything about the player is on the account screen; settings are this
+    // device's alone. Without, Forget me stays in settings (ADR 0078).
+    settings: ACCOUNTS_BUILD ? {} : { online: screens.forgetMe },
     settle: (world) => {
       screens.play.settle(world);
     },
@@ -168,10 +199,12 @@ export function mountOnline(context: MountContext): OnlineMount {
     phase: () => screens.play.phase(),
     sides: () => screens.play.sides(),
     setVisible: (screen) => {
+      if (screen === 'signin') whoStale = true;
       screens.setVisible(screen);
     },
     homeShown: () => {
       void askHome();
+      void askWho();
     },
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),

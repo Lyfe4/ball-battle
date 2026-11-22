@@ -185,6 +185,11 @@ Each line is a rule; its ADR has the reasoning.
   `/api/v1/auth/*` answers `accounts_off`; guests are unchanged.
 - Rules read `profiles.account_at` (`Session.account`), never a token's `is_anonymous`. A guest
   links to the same user id; an existing account is "Switch to it?", which deletes the guest.
+- Signed in or out is what `/me` says (`who-am-i.ts`), asked only where the `__Host-bb_player`
+  hint cookie or a remembered player says there may be one; the device's keys are a cache. Home's
+  account button opens the account screen, the one place for the player (Log out, Delete account,
+  a guest's Forget me); settings hold only per-device choices, except Forget me in a build without
+  accounts (ADR 0078). Unknown (offline, failing), the button claims nothing.
 - No sign-in starts or finishes during a live match or lobby (`whileNotLive`, `in_a_match`).
 - Sign-in steps live in sealed `__Host-` cookies (`sealed-cookie.ts`, 10 minutes); Google's state
   is also marked used in the database. Google runs only where its client is set (exact redirect

@@ -1,5 +1,5 @@
 // /api/v1/me (ADR 0052, section 2).
-// - GET: the player as they see themselves.
+// - GET: the player as they see themselves, setting the page's player hint (cookie.ts).
 // - DELETE: "Forget me", also with vs Friend switched off (ADR 0078). Deletes the player at once: their auth user and profile, their open
 //   challenges, and their open series (forfeited to the opponent). Finished series stay in the
 //   opponent's history with this player shown as "Deleted player". The cookie is cleared; the
@@ -12,7 +12,7 @@ import type { PlayerResponse } from '../../api/session.ts';
 import { deleteUser } from '../auth-admin.ts';
 import type { Config } from '../config.ts';
 import type { Profile } from '../db/profiles.ts';
-import { clearedSessionCookie } from '../cookie.ts';
+import { clearedSessionCookie, playerHintCookie } from '../cookie.ts';
 import type { CurrentMatchResponse } from '../../api/live.ts';
 import { currentMatch } from '../current-match.ts';
 import { guard } from '../guard.ts';
@@ -33,7 +33,11 @@ export const me: RouteHandler = alsoWhileOff(
   async (request, context) => {
     guard(request, ['GET', 'DELETE']);
     const player = await sessionOf(request, context);
-    if (request.method === 'GET') return json(200, playerResponse(context.deps.config, player));
+    if (request.method === 'GET') {
+      // A device signed in before the hint existed gets it on its first read (cookie.ts).
+      context.setCookie(playerHintCookie());
+      return json(200, playerResponse(context.deps.config, player));
+    }
     await deleteUser(context.deps.config, player.userId);
     context.setCookie(clearedSessionCookie());
     return json(204, null);

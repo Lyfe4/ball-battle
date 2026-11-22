@@ -1,6 +1,11 @@
 // The session cookie (ADR 0052, section 6 item 2): `__Host-bb_session`, HttpOnly, Secure,
 // SameSite=Lax, Path=/ and no Domain (the `__Host-` prefix requires the last three). It holds the
 // Supabase access and refresh tokens, so no token is ever readable by the page's JavaScript.
+// Beside it, `__Host-bb_player=1` (ADR 0079 addendum of 2026-11-22): readable by the page and
+// holding nothing but "this device has a player", so home asks `/me` only on a device that has
+// one. It is set and cleared with the session cookie, and set again by every `/me` read. Set by
+// the server, so Safari's 7-day cap on script storage doesn't reach it.
+import { PLAYER_HINT_COOKIE } from '../api/session.ts';
 
 export const SESSION_COOKIE = '__Host-bb_session';
 /** How long a browser keeps a guest: the most Chrome allows (400 days), renewed on each refresh. */
@@ -50,3 +55,25 @@ export function sessionCookie(tokens: SessionTokens): string {
 
 /** The `Set-Cookie` value that removes the session. */
 export const clearedSessionCookie = (): string => `${SESSION_COOKIE}=; ${ATTRIBUTES}; Max-Age=0`;
+
+const HINT_ATTRIBUTES = 'Path=/; Secure; SameSite=Lax';
+
+/** The `Set-Cookie` value that tells the page this device has a player. */
+export const playerHintCookie = (): string =>
+  `${PLAYER_HINT_COOKIE}=1; ${HINT_ATTRIBUTES}; Max-Age=${String(MAX_AGE_SECONDS)}`;
+
+/** The `Set-Cookie` value that removes the hint. */
+export const clearedPlayerHintCookie = (): string =>
+  `${PLAYER_HINT_COOKIE}=; ${HINT_ATTRIBUTES}; Max-Age=0`;
+
+/**
+ * A response's cookies with the hint following the session: set with it, cleared with it (the
+ * last session cookie decides). Answers that leave the session alone leave the hint alone.
+ */
+export function withPlayerHint(cookies: readonly string[]): string[] {
+  const session = cookies.findLast((cookie) => cookie.startsWith(`${SESSION_COOKIE}=`));
+  const rest = cookies.filter((cookie) => !cookie.startsWith(`${PLAYER_HINT_COOKIE}=`));
+  if (session === undefined) return [...cookies];
+  const cleared = session.endsWith('Max-Age=0');
+  return [...rest, cleared ? clearedPlayerHintCookie() : playerHintCookie()];
+}

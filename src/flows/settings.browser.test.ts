@@ -1,7 +1,7 @@
 // Settings (ADR 0040) through the real page: the tip switches and the speed are saved on the device
 // and read back on the next visit, the in-fight speed and the menu show the same choice, the
 // Fight! card's "Don't show these again" is the menu's cards switch, and "Show all tips again"
-// turns both switches back on. It opens on a Free play match and never moves to another screen:
+// turns both switches back on. The menu is two groups, Fights and Tips, with Close alone at the end. It opens on a Free play match and never moves to another screen:
 // a history entry left behind upsets later files' Back in WebKit (CLAUDE.md, browsers project).
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
@@ -47,6 +47,30 @@ describe('settings', () => {
     // Both switches start on; turned off, they are saved for the next visit.
     visible('#match-actions .settings-toggle')[0]?.click();
     expect(both()).toStrictEqual(['true', 'true']);
+    // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play, and
+    // tips; Close alone at the end.
+    const groups = [
+      ...(panel()?.querySelectorAll<HTMLElement>('.settings-group[role="group"]') ?? []),
+    ].map((group) => ({
+      name: document.getElementById(group.getAttribute('aria-labelledby') ?? '')?.textContent,
+      speed: group.querySelector('.settings-speed') !== null,
+      controls: [
+        ...group.querySelectorAll('.settings-group > [role="switch"], .settings-again'),
+      ].map((node) => node.textContent.trim()),
+    }));
+    expect(groups.slice(0, 2)).toStrictEqual([
+      { name: 'Fights', speed: true, controls: [] },
+      {
+        name: 'Tips',
+        speed: false,
+        controls: ['Ability hints', 'What to watch cards', 'Show all tips again'],
+      },
+    ]);
+    expect(
+      [...(panel()?.querySelectorAll('.settings-foot button') ?? [])].map(
+        (node) => node.textContent,
+      ),
+    ).toStrictEqual(['Close']);
     switchNamed('Ability hints')?.click();
     switchNamed('What to watch cards')?.click();
     expect(both()).toStrictEqual(['false', 'false']);

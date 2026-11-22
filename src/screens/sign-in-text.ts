@@ -53,6 +53,8 @@ export interface ChooseCard {
   readonly cancel: () => void;
   /** Why the last try didn't work (a Google sign-in), above the choices. */
   readonly problem?: string;
+  /** A guest's Forget me, quietly at the end (ADR 0079 addendum of 2026-11-22). */
+  readonly forgetMe?: () => void;
 }
 
 /** The ways in: an email code, and Google where it works. */
@@ -64,12 +66,15 @@ export function chooseCard(card: ChooseCard): NoticeContent {
     ...(card.problem === undefined ? [] : [card.problem]),
     'Keep your games, and play as you on any device.',
   ];
+  const more =
+    card.forgetMe === undefined ? {} : { more: [{ text: 'Forget me', onClick: card.forgetMe }] };
   if (!card.emailCodes) {
     return {
       title: 'Sign in',
       body: [...body, 'Email codes are off for now.'],
       buttons: [...google, { text: 'Not now', onClick: card.cancel }],
       ...(note === undefined ? {} : { note }),
+      ...more,
     };
   }
   return {
@@ -79,6 +84,7 @@ export function chooseCard(card: ChooseCard): NoticeContent {
     buttons: [{ text: 'Email me a code', onClick: card.sendCode }, ...google],
     ...(note === undefined ? {} : { note }),
     quiet: { text: 'Not now', onClick: card.cancel },
+    ...more,
   };
 }
 

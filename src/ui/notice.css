@@ -223,6 +223,20 @@
   font-size: 1rem;
 }
 
+/*
+ * More quiet actions on a row of their own at the card's end (ADR 0079 addendum of 2026-11-22):
+ * the account's Log out and Delete account, a guest's Forget me. A rule above them sets them apart
+ * from the card's own business.
+ */
+.notice-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-columns);
+  justify-self: stretch;
+  padding-top: var(--space-small);
+  border-top: 1px solid var(--color-raised);
+}
+
 .notice[data-sticker] .notice-after {
   justify-items: center;
 }

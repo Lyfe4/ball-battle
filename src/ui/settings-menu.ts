@@ -119,9 +119,16 @@ function buildMenu(): Menu {
   const tipsGroup = element('div', 'settings-group');
   tipsGroup.setAttribute('role', 'group');
   tipsGroup.setAttribute('aria-labelledby', `${PANEL_ID}-tips`);
-  const tipsHeading = element('p', 'settings-heading', 'Tips in the arena');
+  const tipsHeading = element('p', 'settings-heading', 'Tips');
   tipsHeading.id = `${PANEL_ID}-tips`;
-  tipsGroup.append(tipsHeading, hints, cards);
+  tipsGroup.append(tipsHeading, hints, cards, again);
+  // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play, and tips.
+  const playGroup = element('div', 'settings-group settings-play');
+  playGroup.setAttribute('role', 'group');
+  playGroup.setAttribute('aria-labelledby', `${PANEL_ID}-play`);
+  const playHeading = element('p', 'settings-heading', 'Fights');
+  playHeading.id = `${PANEL_ID}-play`;
+  playGroup.append(playHeading, speedRow);
 
   const paused = element('p', 'settings-paused', 'The match waits while this is open.');
   paused.hidden = true;
@@ -133,8 +140,8 @@ function buildMenu(): Menu {
     closeMenu(true);
   });
   const foot = element('div', 'settings-foot');
-  foot.append(again, close);
-  panel.append(title, paused, speedRow, tipsGroup, foot);
+  foot.append(close);
+  panel.append(title, paused, playGroup, tipsGroup, foot);
   if (host?.sound !== undefined) speedRow.after(host.sound.element);
   if (host?.online !== undefined) foot.before(host.online.element);
 
