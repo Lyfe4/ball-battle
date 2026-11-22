@@ -7,6 +7,7 @@ import { screenKeyOf } from './history-rules.ts';
 import { createNavigation } from './navigation.ts';
 import {
   parseOnlineRoute,
+  writeSignInParams,
   writeChallengeParams,
   writeOnlineSeriesParams,
   writeSendParams,
@@ -152,5 +153,32 @@ describe('Back through a friend challenge', () => {
       '?view=send&fmt=reveal',
     ].map((search) => keyOf(new URL(`https://ballbattle.test/${search}`)));
     expect(keys).toStrictEqual(['online', 'challenge', 'challenge-lineup', 'send']);
+  });
+});
+
+describe('the sign-in screen (ADR 0079)', () => {
+  const parse = (search: string, accounts = true) =>
+    parseOnlineRoute(new URLSearchParams(search), accounts);
+
+  it('is a screen only in builds with accounts', () => {
+    expect(parse('view=signin')).toStrictEqual({ screen: 'signin', google: undefined });
+    expect(parse('view=signin', false)).toBeUndefined();
+  });
+
+  it('reads a Google result it knows, and ignores anything else', () => {
+    expect(parse('view=signin&google=switch')).toStrictEqual({
+      screen: 'signin',
+      google: 'switch',
+    });
+    expect(parse('view=signin&google=hacked')).toStrictEqual({
+      screen: 'signin',
+      google: undefined,
+    });
+  });
+
+  it('is written without a result, so Back and a reload show it afresh', () => {
+    const params = new URLSearchParams('view=signin&google=signed_in&x=1');
+    writeSignInParams(params);
+    expect(params.toString()).toBe('view=signin');
   });
 });

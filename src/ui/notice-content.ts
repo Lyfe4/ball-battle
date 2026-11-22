@@ -12,6 +12,20 @@ export interface NoticeButton {
   readonly relabel?: boolean;
 }
 
+/**
+ * One thing to type (ADR 0079: an email, a sign-in code), between the body and the buttons. Its
+ * input is kept while the notice shows the same kind of field, so a new message never loses what
+ * was typed; Enter presses the first button.
+ */
+export interface NoticeField {
+  readonly kind: 'email' | 'code';
+  readonly label: string;
+  /** Each change, as typed. */
+  readonly onInput: (value: string) => void;
+  /** What went wrong with it, under it (read out at once). */
+  readonly error?: string;
+}
+
 export interface NoticeContent {
   readonly title: string;
   /** One paragraph per entry. */
@@ -24,6 +38,8 @@ export interface NoticeContent {
   readonly chips?: readonly string[];
   /** A waiting card with a bouncing ball (the lobby): its heading and one quiet line. */
   readonly waiting?: { readonly title: string; readonly line: string };
+  /** A field to type in (an email, a code). */
+  readonly field?: NoticeField;
   /** A short numbered list in a box: "How it goes". */
   readonly steps?: { readonly title: string; readonly items: readonly string[] };
   /** A link in a quiet box under the buttons, with Copy where there is a clipboard. */

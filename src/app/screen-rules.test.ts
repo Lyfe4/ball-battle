@@ -96,6 +96,7 @@ describe('router', () => {
       online: handler('online'),
       challenge: handler('challenge'),
       send: handler('send'),
+      signin: handler('signin'),
     };
     return { log, handlers };
   }

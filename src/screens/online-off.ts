@@ -13,7 +13,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
     },
   };
   return {
-    handlers: { online: toHome, challenge: toHome, send: toHome },
+    handlers: { online: toHome, challenge: toHome, send: toHome, signin: toHome },
     settings: {
       online: createForgetMe(
         forgetMeHost(browserStorage, () => {

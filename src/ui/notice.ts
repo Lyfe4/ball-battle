@@ -6,10 +6,10 @@
 import { busyOnClick } from './busy-button.ts';
 import { element } from './dom.ts';
 import { createScreenHeader } from './screen-header.ts';
-import type { NoticeContent } from './notice-content.ts';
+import type { NoticeContent, NoticeField } from './notice-content.ts';
 import { createSticker } from './sticker.ts';
 
-export type { NoticeButton, NoticeContent } from './notice-content.ts';
+export type { NoticeButton, NoticeContent, NoticeField } from './notice-content.ts';
 
 export interface Notice {
   readonly element: HTMLElement;
@@ -36,6 +36,60 @@ function linkBox(link: NonNullable<NoticeContent['link']>): HTMLElement {
   return box;
 }
 
+const FIELD_INPUT: Readonly<
+  Record<
+    NoticeField['kind'],
+    Partial<Pick<HTMLInputElement, 'type' | 'autocomplete' | 'inputMode'>>
+  >
+> = {
+  email: { type: 'email', autocomplete: 'email', inputMode: 'email' },
+  code: { type: 'text', autocomplete: 'one-time-code', inputMode: 'numeric' },
+};
+
+/** A field's label, input and error line; the input stays while its kind does. */
+function createField() {
+  const box = element('div', 'notice-field');
+  const label = element('label', 'notice-field-label');
+  const error = element('p', 'notice-field-error');
+  error.setAttribute('role', 'alert');
+  let input: HTMLInputElement | undefined;
+  let kind: NoticeField['kind'] | undefined;
+  let onInput: (value: string) => void = () => undefined;
+  let submit: () => void = () => undefined;
+  return {
+    element: box,
+    focus: () => input?.focus(),
+    show(field: NoticeField, onSubmit: () => void): void {
+      onInput = field.onInput;
+      submit = onSubmit;
+      if (input === undefined || kind !== field.kind) {
+        input = element('input', 'notice-field-input');
+        Object.assign(input, FIELD_INPUT[field.kind]);
+        input.id = `notice-field-${field.kind}`;
+        input.spellcheck = false;
+        input.autocapitalize = 'off';
+        if (field.kind === 'code') input.maxLength = 7;
+        input.addEventListener('input', () => {
+          onInput(input?.value ?? '');
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            submit();
+          }
+        });
+        kind = field.kind;
+        label.htmlFor = input.id;
+        box.replaceChildren(label, input, error);
+      }
+      label.textContent = field.label;
+      error.textContent = field.error ?? '';
+      error.hidden = field.error === undefined;
+      input.setAttribute('aria-invalid', String(field.error !== undefined));
+    },
+  };
+}
+
 /** A notice drawing into `root`; `onBack` is its header's Back. */
 export function createNotice(root: HTMLElement, onBack: () => void): Notice {
   const header = createScreenHeader('', 'Back', onBack);
@@ -43,6 +97,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
   const body = element('div', 'notice-body');
   const footer = element('div', 'screen-footer');
   const after = element('div', 'notice-after');
+  const field = createField();
   root.classList.add('notice');
   root.replaceChildren(header.element, body, footer, after);
   return {
@@ -92,6 +147,12 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         steps.append(element('h2', 'notice-steps-title', content.steps.title), list);
         parts.push(steps);
       }
+      if (content.field !== undefined) {
+        field.show(content.field, () => {
+          footer.querySelector<HTMLButtonElement>('.hud-button')?.click();
+        });
+        parts.push(field.element);
+      }
       body.replaceChildren(...parts);
       footer.replaceChildren(
         ...content.buttons.map((spec, index) => {
@@ -128,7 +189,8 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       }
       after.replaceChildren(...rest);
       after.hidden = rest.length === 0;
-      if (focus) header.focus();
+      if (focus && content.field !== undefined) field.focus();
+      else if (focus) header.focus();
     },
   };
 }

@@ -6,6 +6,8 @@
 
 const PREFIX = 'ballbattle.';
 const GUEST = 'ballbattle.online.guest';
+/** The device is signed in to an account (ADR 0079), not a guest: what settings offer. */
+const ACCOUNT = 'ballbattle.online.account';
 const WATCHED = 'ballbattle.online.watched';
 /** Series remembered for watching; older entries are dropped first. */
 const MOST_WATCHED = 30;
@@ -30,7 +32,24 @@ export const hasGuest = (storage: DeviceStorage): boolean =>
 export function rememberGuest(storage: DeviceStorage, has: boolean): void {
   safely(() => {
     if (has) storage().setItem(GUEST, '1');
-    else storage().removeItem(GUEST);
+    else {
+      // No session any more: no account on this device either.
+      storage().removeItem(GUEST);
+      storage().removeItem(ACCOUNT);
+    }
+  }, undefined);
+}
+
+export const hasAccount = (storage: DeviceStorage): boolean =>
+  safely(() => storage().getItem(ACCOUNT) === '1', false);
+
+/** Signed in (an account, so also a player online), or not. */
+export function rememberAccount(storage: DeviceStorage, has: boolean): void {
+  safely(() => {
+    if (has) {
+      storage().setItem(ACCOUNT, '1');
+      storage().setItem(GUEST, '1');
+    } else storage().removeItem(ACCOUNT);
   }, undefined);
 }
 
