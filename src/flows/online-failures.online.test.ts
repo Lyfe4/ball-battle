@@ -79,6 +79,9 @@ async function phone(): Promise<Page> {
     localStorage.setItem('ballbattle.online.guest', '1');
   });
   const page = await context.newPage();
+  // The guest is known to the server too: the page asks `/me` on load, whatever the screen, and a
+  // 401 there forgets the guest, so Try again would ask the 16+ question instead of accepting.
+  await page.route('**/api/v1/me', (route) => json(route, 200, { name: 'Player 4321' }));
   await page.route(`**/api/v1/challenges/${TOKEN}`, (route) =>
     json(route, 200, {
       format: 'reveal',
