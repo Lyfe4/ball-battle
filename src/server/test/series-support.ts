@@ -28,7 +28,7 @@ export async function newPlayer(deps: Deps): Promise<Player> {
 }
 
 /** The user id in a session cookie's access token (the test reads its own cookie). */
-function userIdOf(cookie: string): string {
+export function userIdOf(cookie: string): string {
   const { a } = JSON.parse(Buffer.from(cookie, 'base64url').toString('utf8')) as { a: string };
   const payload = JSON.parse(Buffer.from(a.split('.')[1] ?? '', 'base64url').toString('utf8')) as {
     sub: string;

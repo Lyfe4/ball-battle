@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { endpoint } from '../http.ts';
-import { LIMITS } from '../rate-limit.ts';
+import { EVERYONE, LIMITS } from '../rate-limit.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { RULESET_VERSION } from '../current-ruleset.ts';
-import { health } from './health.ts';
+import { health, NEAR_DAILY, NEAR_MONTHLY } from './health.ts';
 
 const deps = testDeps();
 const admin = adminSql();
@@ -31,7 +31,39 @@ describe('GET /api/v1/health', () => {
       auth: 'ok',
       ruleset: RULESET_VERSION,
       failed: [],
+      emailCodes: 'ok',
     });
+  });
+
+  it('says everyone’s email codes are near their cap at 70 today, and stays 200 (ADR 0079)', async () => {
+    const handler = endpoint(
+      'health',
+      health,
+      () => deps,
+      () => undefined,
+    );
+    const codes = async () => {
+      const response = await handler(new Request('http://localhost/api/v1/health'));
+      return [response.status, ((await response.json()) as { emailCodes: string }).emailCodes];
+    };
+    const today = (count: number) => admin`
+      insert into game.rate_limits (subject, bucket, window_start, count)
+      values (${EVERYONE}, ${LIMITS.codesDaily.bucket},
+        date_bin(interval '1 day', now(), timestamptz '2000-01-01'), ${count})
+      on conflict (subject, bucket, window_start) do update set count = excluded.count`;
+    await today(NEAR_DAILY - 1);
+    expect(await codes()).toStrictEqual([200, 'ok']);
+    await today(NEAR_DAILY);
+    expect(await codes()).toStrictEqual([200, 'near']);
+    await today(LIMITS.codesDaily.max);
+    expect(await codes()).toStrictEqual([200, 'full']);
+    await admin`delete from game.rate_limits where subject = ${EVERYONE}`;
+    await admin`
+      insert into game.rate_limits (subject, bucket, window_start, count)
+      values (${EVERYONE}, ${LIMITS.codesMonthly.bucket}, date_trunc('month', now(), 'UTC'),
+        ${NEAR_MONTHLY})`;
+    expect(await codes()).toStrictEqual([200, 'near']);
+    await admin`delete from game.rate_limits where subject = ${EVERYONE}`;
   });
 
   it('answers an uptime monitor every few minutes, and refuses a flood from one network', async () => {

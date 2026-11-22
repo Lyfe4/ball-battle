@@ -15,6 +15,8 @@ export interface Answer {
 export class TestBrowser {
   /** The session cookie's value, as the browser holds it. */
   cookie: string | undefined;
+  /** Every other cookie it holds (a sign-in's own, ADR 0079), by name. */
+  readonly jar = new Map<string, string>();
   readonly ip: string;
   readonly deps: Deps;
 
@@ -30,6 +32,7 @@ export class TestBrowser {
   elsewhere(deps: Deps): TestBrowser {
     const twin = new TestBrowser(deps, this.ip);
     twin.cookie = this.cookie;
+    for (const [name, value] of this.jar) twin.jar.set(name, value);
     return twin;
   }
 
@@ -45,7 +48,11 @@ export class TestBrowser {
     if (body !== undefined && !sent.has('Content-Type')) {
       sent.set('Content-Type', 'application/json');
     }
-    if (this.cookie !== undefined) sent.set('Cookie', `${SESSION_COOKIE}=${this.cookie}`);
+    const cookies = [
+      ...(this.cookie === undefined ? [] : [`${SESSION_COOKIE}=${this.cookie}`]),
+      ...[...this.jar].map(([name, value]) => `${name}=${value}`),
+    ];
+    if (cookies.length > 0) sent.set('Cookie', cookies.join('; '));
     const request = new Request(`${ORIGIN}${path}`, {
       method,
       headers: sent,
@@ -67,12 +74,17 @@ export class TestBrowser {
     };
   }
 
-  /** Stores or clears the session cookie as a browser would. */
+  /** Stores or clears each cookie as a browser would. */
   private keep(setCookies: readonly string[]): void {
     for (const line of setCookies) {
-      const value = cookieValue(line.split(';')[0] ?? '', SESSION_COOKIE);
+      const pair = line.split(';')[0] ?? '';
+      const name = pair.slice(0, pair.indexOf('=')).trim();
+      const value = cookieValue(pair, name);
       if (value === undefined) continue;
-      this.cookie = /Max-Age=0\b/.test(line) || value === '' ? undefined : value;
+      const gone = /Max-Age=0\b/.test(line) || value === '';
+      if (name === SESSION_COOKIE) this.cookie = gone ? undefined : value;
+      else if (gone) this.jar.delete(name);
+      else this.jar.set(name, value);
     }
   }
 }

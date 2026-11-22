@@ -11,6 +11,8 @@ export interface CreateGuestRequest {
 export interface PlayerResponse {
   /** "Player 4821". */
   readonly name: string;
+  /** Signed in to an account (ADR 0079), rather than a guest. Absent where accounts are off. */
+  readonly account?: boolean;
 }
 
 /** The body of POST /api/v1/session, if it is one. */

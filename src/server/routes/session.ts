@@ -5,7 +5,7 @@
 // - DELETE logs out: ends the session in Auth and clears the cookie. The client clears every
 //   `ballbattle.*` key itself. A guest who logs out can't come back, so the game offers "Forget
 //   me" instead; logout is here for accounts (slice 2) and for completeness.
-import { decodeCreateGuest, type PlayerResponse } from '../../api/session.ts';
+import { decodeCreateGuest } from '../../api/session.ts';
 import { AuthError, signOut, signUpGuest } from '../auth.ts';
 import { deleteUser } from '../auth-admin.ts';
 import { clearedSessionCookie, readSession, sessionCookie } from '../cookie.ts';
@@ -15,6 +15,7 @@ import { ApiError, json, type RouteHandler } from '../http.ts';
 import { report } from '../monitor.ts';
 import { ipSubject, LIMITS, spend } from '../rate-limit.ts';
 import { optionalSession } from '../session.ts';
+import { playerResponse } from './me.ts';
 
 async function createGuest(...[request, context]: Parameters<RouteHandler>): Promise<Response> {
   if (decodeCreateGuest(await jsonBody(request)) === undefined) {
@@ -25,10 +26,8 @@ async function createGuest(...[request, context]: Parameters<RouteHandler>): Pro
     if (error instanceof ApiError && error.code === 'unauthenticated') return undefined;
     throw error;
   });
-  if (existing !== undefined) {
-    return json(200, { name: existing.name } satisfies PlayerResponse);
-  }
   const { config, sql } = context.deps;
+  if (existing !== undefined) return json(200, playerResponse(config, existing));
   if (context.ip !== undefined) {
     // One statement at a time on the connection (ADR 0052): the hour's count, then the day's.
     const subject = await ipSubject(config, context.ip);
@@ -50,7 +49,7 @@ async function createGuest(...[request, context]: Parameters<RouteHandler>): Pro
     const profile = await createProfile(sql, guest.userId);
     context.setUser(profile.userId);
     context.setCookie(sessionCookie(guest.tokens));
-    return json(201, { name: profile.name } satisfies PlayerResponse);
+    return json(201, playerResponse(config, profile));
   } catch (error) {
     // No half-made guest: an auth user without a profile could never play.
     await deleteUser(config, guest.userId).catch(() => undefined);

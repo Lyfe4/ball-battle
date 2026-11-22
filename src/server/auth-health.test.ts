@@ -21,6 +21,9 @@ interface Project {
   readonly secret?: string;
   readonly anonymous?: boolean;
   readonly keys?: readonly object[];
+  /** Auth's "Confirm email" off: email changes apply at once. */
+  readonly autoconfirm?: boolean;
+  readonly google?: boolean;
 }
 
 const refused = () => new Response(JSON.stringify({ message: 'Invalid API key' }), { status: 401 });
@@ -28,6 +31,7 @@ const refused = () => new Response(JSON.stringify({ message: 'Invalid API key' }
 /** A fake Auth for `project`: each endpoint checks its key as Supabase's gateway does. */
 function auth(project: Project) {
   const { publishable = PUBLISHABLE, secret = SECRET, anonymous = true, keys = [ecKey] } = project;
+  const { autoconfirm = false, google = false } = project;
   return (input: string | URL, init?: RequestInit): Promise<Response> => {
     const url = new URL(String(input));
     const key = new Headers(init?.headers).get('apikey');
@@ -36,7 +40,10 @@ function auth(project: Project) {
     if (url.pathname === '/auth/v1/settings') {
       return Promise.resolve(
         key === publishable
-          ? Response.json({ external: { anonymous_users: anonymous } })
+          ? Response.json({
+              external: { anonymous_users: anonymous, google },
+              mailer_autoconfirm: autoconfirm,
+            })
           : refused(),
       );
     }
@@ -47,10 +54,10 @@ function auth(project: Project) {
   };
 }
 
-async function checked(project: Project) {
+async function checked(project: Project, settings: Config = config) {
   vi.stubGlobal('fetch', auth(project));
   const notes: string[] = [];
-  const failed = await authChecks(config, (error, stage) => notes.push(failureOf(error, stage)));
+  const failed = await authChecks(settings, (error, stage) => notes.push(failureOf(error, stage)));
   return { failed, notes };
 }
 
@@ -67,6 +74,21 @@ describe('health’s Auth checks', () => {
     const { failed, notes } = await checked({ anonymous: false });
     expect(failed).toStrictEqual(['auth_anonymous_sign_ins']);
     expect(notes).toStrictEqual(['auth: anonymous sign-ins are off']);
+  });
+
+  it('with accounts on, name email confirmations being off: a guest could take any address (ADR 0079)', async () => {
+    const accounts = { ...config, accounts: true } as Config;
+    expect((await checked({ autoconfirm: true })).failed).toStrictEqual([]);
+    const { failed, notes } = await checked({ autoconfirm: true }, accounts);
+    expect(failed).toStrictEqual(['auth_email_confirmations']);
+    expect(notes).toStrictEqual(['auth: email confirmations are off']);
+    expect((await checked({}, accounts)).failed).toStrictEqual([]);
+  });
+
+  it('with Google set up, name Auth’s Google provider being off', async () => {
+    const google = { ...config, accounts: true, google: { clientId: 'x', clientSecret: 'y' } };
+    expect((await checked({}, google as Config)).failed).toStrictEqual(['auth_google']);
+    expect((await checked({ google: true }, google as Config)).failed).toStrictEqual([]);
   });
 
   it('name each key Auth refuses, never its value', async () => {
