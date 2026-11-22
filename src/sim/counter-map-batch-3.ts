@@ -22,28 +22,27 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'magnet',
     intended: 'even',
-    reason: 'No tricks either way: plain hits decide it.',
+    reason: 'The Magnet pulls the Brawler in, and both bump about as hard.',
   },
   {
     x: 'magnet',
     y: 'speedster',
     intended: 'even',
-    reason: 'The pull turns it off the walls, but the stacks it does build rush in hard: even.',
+    reason: 'The Magnet’s pull turns the Speedster off the walls that build its rush.',
   },
   {
     x: 'magnet',
     y: 'frost',
     intended: 'y',
     level: 'strong',
-    reason:
-      'The pull drags it into a brawl with the sturdy Frost, slowed by every bump and outlasted.',
+    reason: 'The Magnet pulls the Frost into bumps, and every Frost bump slows the Magnet.',
   },
   {
     x: 'thorns',
     y: 'magnet',
     intended: 'x',
     level: 'strong',
-    reason: 'The Magnet drags the spikes into itself, and every hard hit comes back.',
+    reason: 'The Magnet pulls itself onto the Thorns’ spikes, and its hard bumps come back at it.',
   },
   // The Ghost.
   // The Necromancer.
@@ -51,32 +50,33 @@ export const BATCH_THREE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'necromancer',
     intended: 'even',
-    reason: 'No tricks either way: plain hits decide it.',
+    reason: 'The Necromancer’s skulls bite the Brawler, and the Brawler bumps far harder.',
   },
   {
     x: 'necromancer',
     y: 'speedster',
     intended: 'even',
-    reason: 'Minions pop on the fastest ball, but it reaches the Necromancer quickly.',
+    reason: 'Skull bites chip the Speedster, but its rush reaches the Necromancer quickly.',
   },
   {
     x: 'necromancer',
     y: 'frost',
     intended: 'y',
     level: 'edge',
-    reason: 'Skeletons chip the sturdy Frost, but its big health wins the contacts in between.',
+    reason:
+      'The Necromancer’s skulls chip the Frost’s big health, and its bumps slow the Necromancer.',
   },
   {
     x: 'necromancer',
     y: 'thorns',
     intended: 'even',
-    reason: 'Minion pops never touch the spikes, but Thorns wins the contacts.',
+    reason: 'The Necromancer’s skulls bite past the spikes, but the Thorns bump harder.',
   },
   {
     x: 'magnet',
     y: 'necromancer',
     intended: 'x',
     level: 'edge',
-    reason: 'Every skull bite starts a pull that drags the Necromancer into its bumps.',
+    reason: 'Every skull bite on the Magnet pulls the Necromancer into its heavy bumps.',
   },
 ];

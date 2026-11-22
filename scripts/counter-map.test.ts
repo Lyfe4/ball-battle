@@ -81,15 +81,21 @@ describe('the counter map', () => {
     expect(wrong).toStrictEqual([]);
   });
 
-  it('gives every edge a reason of its own, short enough for a phone card', () => {
+  it('gives every pair a reason of its own, short enough for a phone card', () => {
+    const nameOf = new Map(BALLS.map((ball) => [ball.id, ball.name]));
     for (const entry of COUNTER_MAP) {
       const pair = `${entry.x} vs ${entry.y}`;
       expect(entry.reason, pair).not.toMatch(/still to be written/i);
       // A favoured pair's reason says why one side leans, never that neither does.
       if (entry.intended !== 'even') {
-        expect(entry.reason, pair).not.toMatch(/neither|evens out|: even\.?$/i);
+        expect(entry.reason, pair).not.toMatch(/neither|evens out/i);
       }
-      expect(entry.reason.length, pair).toBeLessThanOrEqual(97);
+      // docs/what-to-watch.md: name both balls, no verdict (the mark says who is favoured), and
+      // about 90 characters, so the ready card holds it in two lines at 375 px.
+      expect(entry.reason, pair).toContain(nameOf.get(entry.x));
+      expect(entry.reason, pair).toContain(nameOf.get(entry.y));
+      expect(entry.reason, pair).not.toMatch(/: even\.?$|\bwins?\b/i);
+      expect(entry.reason.length, pair).toBeLessThanOrEqual(90);
     }
   });
 

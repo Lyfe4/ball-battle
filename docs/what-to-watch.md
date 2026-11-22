@@ -2,9 +2,9 @@
 
 The ready card's "What to watch:" line (ADR 0037) is the counter map's `reason` for the pair
 (`src/sim/counter-map-*.ts`, ADR 0010, 0024). It is read while both balls stand still, often by a
-player who has never seen either ball, so it says what they are about to see. These rules are for
-new and changed reasons; the existing 435 are rewritten to them later, not all at once (UX pass,
-2026-11-22).
+player who has never seen either ball, so it says what they are about to see. Every reason follows
+these rules (all 435 rewritten to them on 2026-11-22); `scripts/counter-map.test.ts` checks the
+names, the verdict and the length.
 
 1. **Name both balls.** "It" only for a ball named earlier in the same clause. A part only one of
    them has ("the spear", "the shield", "the wail") needs no owner.
