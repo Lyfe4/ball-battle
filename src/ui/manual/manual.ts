@@ -4,7 +4,7 @@ import { createBallGrid } from '../balls/ball-grid.ts';
 import { element, setText } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
 import { createSegmented } from '../segmented.ts';
-import { createMatchupChart } from './matchup-chart.ts';
+import { createMatchupSpectrum } from './matchup-spectrum.ts';
 import { createBallDetail } from './ball-detail.ts';
 
 export interface ManualActions {
@@ -58,7 +58,7 @@ export function createManual(
       actions.onTab(chart);
     },
   );
-  const chart = createMatchupChart(balls, (id) => {
+  const chart = createMatchupSpectrum(balls, (id) => {
     actions.onOpen(id);
   });
   index.append(tabRoot, grid.element, chart.element);

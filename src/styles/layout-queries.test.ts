@@ -7,7 +7,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { BESIDE_LAYOUT } from '../app/layout-query.ts';
+import { BESIDE_LAYOUT, DESKTOP_LAYOUT } from '../app/layout-query.ts';
 
 const SRC = fileURLToPath(new URL('..', import.meta.url));
 
@@ -44,6 +44,7 @@ describe('layout media queries', () => {
 
   it('match the script copy of the beside query', () => {
     expect(BESIDE_LAYOUT).toBe(BESIDE);
+    expect(DESKTOP_LAYOUT).toBe(DESKTOP);
   });
 
   it('are found', () => {

@@ -4,3 +4,9 @@
  * there (where focus scrolls to); layout-queries.test.ts holds it to the CSS.
  */
 export const BESIDE_LAYOUT = '(min-aspect-ratio: 5/4)';
+
+/**
+ * The desktop media query (ADR 0031): the one script copy, for the matchup chart's reason, which
+ * comes before its columns there (layout-queries.test.ts holds it to the CSS).
+ */
+export const DESKTOP_LAYOUT = '(min-width: 64rem) and (min-aspect-ratio: 5/4)';

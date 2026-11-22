@@ -29,6 +29,14 @@
   --palette-green-700: #15803d;
   --palette-red-700: #b91c1c;
   --palette-lilac-700: #5b4f7a;
+  /*
+   * The matchup chart's band tints (ADR 0073 addendum of 2026-11-23): green-400 and red-400 mixed into
+   * plum-800 at 24% (strong) and 10% (an edge), precomputed so every browser draws the same colour.
+   */
+  --palette-green-tint-24: #314c50;
+  --palette-green-tint-10: #293046;
+  --palette-red-tint-10: #392545;
+  --palette-red-tint-24: #58334d;
 
   /* Roles */
   --color-page: var(--palette-plum-900);
@@ -68,6 +76,12 @@
   /* A matchup the counter map favours or doesn't, always shown with a symbol or word as well. */
   --color-favoured: var(--palette-green-400);
   --color-unfavoured: var(--palette-red-400);
+  /* The matchup chart's five bands, a calm spectrum from a strong counter to being countered. */
+  --color-band-beats: var(--palette-green-tint-24);
+  --color-band-edge: var(--palette-green-tint-10);
+  --color-band-even: var(--palette-plum-800);
+  --color-band-edged: var(--palette-red-tint-10);
+  --color-band-beaten: var(--palette-red-tint-24);
   /* A round's winner is ringed and its loser dimmed: the series track and the result. */
   --color-won: var(--palette-sun-400);
   --ring-won: 0 0 0 2px var(--color-page), 0 0 0 4px var(--color-won);

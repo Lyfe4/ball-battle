@@ -205,6 +205,12 @@
   .stage[data-screen='manual'] .hud {
     width: min(40rem, 100%);
   }
+
+  /* The matchup chart sets its panel beside the bands (matchup-spectrum.css): it takes the width. */
+  .stage[data-screen='manual']
+    .hud:has(.manual-index:not([hidden]) > .matchup-spectrum:not([hidden])) {
+    width: 100%;
+  }
 }
 
 .manual-steps > * {
@@ -247,7 +253,7 @@
 /*
  * Desktop (ADR 0031). The index is the grid seven across. An entry is three columns, the ball beside
  * its Strong vs and Weak vs, so a whole entry fits a laptop screen; the steps to its neighbours sit
- * under the profile. The chart's own desktop layout is in matchup-chart.css.
+ * under the profile. The matchup chart's own layouts are in matchup-spectrum.css.
  */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .stage[data-screen='manual'] .hud {
