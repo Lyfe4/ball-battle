@@ -5,7 +5,6 @@ import {
   chooseCard,
   codeCard,
   googleNote,
-  signedInCard,
   signInOffCard,
   switchCard,
 } from './sign-in-text.ts';
@@ -42,7 +41,6 @@ describe('the sign-in screen’s cards (ADR 0079)', () => {
       choose(true, false),
       codeSent(undefined),
       switchCard('email', nothing, nothing),
-      signedInCard(none),
       signInOffCard(none),
     ];
     for (const card of cards) expect(card.buttons.length, card.title).toBeGreaterThan(0);

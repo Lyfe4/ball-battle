@@ -1,7 +1,8 @@
 // "Forget me" in settings (ADR 0052 sections 2 and 6): shown only on a device that has a guest. It
 // deletes the guest on the server at once (its open series are forfeited, finished ones stay in
 // the opponent's history as "Deleted player") and clears every `ballbattle.*` key here. Asked once,
-// in place, like Leave series.
+// in place, like Leave series. For an account (ADR 0079) the same is Delete account, beside Your
+// account (its username) and Log out, which asks nothing: signing back in undoes it.
 import { busyOnClick } from '../busy-button.ts';
 import { element, setText } from '../dom.ts';
 
@@ -19,6 +20,8 @@ export interface ForgetMeHost {
    */
   readonly hasAccount?: () => boolean;
   readonly signIn?: () => void;
+  /** Logs this device's account out; resolves like `forget`. */
+  readonly logOut?: () => Promise<string | undefined>;
   /**
    * Deletes the guest and this device's keys; resolves undefined when done, else the line that says
    * why not (offline, the server too slow or failing).
@@ -56,7 +59,18 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   no.type = 'button';
   confirm.append(question, no, yes);
   confirm.hidden = true;
-  group.append(heading, line, signIn, start, confirm);
+  const logOut = element('button', 'text-link settings-log-out', 'Log out');
+  logOut.type = 'button';
+  logOut.hidden = true;
+  const offerLogOut = host.logOut;
+  if (offerLogOut !== undefined) {
+    busyOnClick(logOut, () =>
+      offerLogOut().then((failed) => {
+        if (failed !== undefined) setText(line, failed);
+      }),
+    );
+  }
+  group.append(heading, line, signIn, logOut, start, confirm);
 
   start.addEventListener('click', () => {
     start.hidden = true;
@@ -82,8 +96,11 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
       const account = host.hasAccount?.() ?? false;
       const offers = host.signIn !== undefined;
       group.hidden = !guest && !offers;
-      signIn.hidden = !offers || account;
+      signIn.hidden = !offers;
+      setText(signIn, account ? 'Your account' : 'Sign in');
+      logOut.hidden = !account || host.logOut === undefined;
       start.hidden = !guest || !confirm.hidden;
+      setText(start, account ? 'Delete account' : 'Forget me');
       setText(
         line,
         account
@@ -95,7 +112,8 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
       setText(
         question,
         account
-          ? 'Delete your account? A match in play is lost; finished ones stay, as “Deleted player”.'
+          ? 'Delete your account? Its username and games go with it. A match in play is lost; ' +
+              'finished ones stay in opponents’ history, as “Deleted player”.'
           : 'Delete your guest? A match in play is lost; finished ones stay, as “Deleted player”.',
       );
     },
