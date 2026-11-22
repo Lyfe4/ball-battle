@@ -127,6 +127,52 @@
   line-height: 1.4;
 }
 
+/* A field to type in (ADR 0079): an email, a sign-in code. Full width, big enough to tap. */
+.notice-field {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.notice-field-label {
+  font-weight: 700;
+}
+
+.notice-field-input {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-gap);
+  border: 2px solid var(--color-raised);
+  border-radius: var(--radius);
+  background: var(--color-sunken);
+  color: var(--color-text);
+  /* 16px or more, so a phone doesn't zoom the page into it. */
+  font: inherit;
+  font-size: max(1rem, 16px);
+}
+
+.notice-field-input[autocomplete='one-time-code'] {
+  font-size: var(--font-size-lead);
+  letter-spacing: 0.3em;
+}
+
+.notice-field-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.notice-field-input[aria-invalid='true'] {
+  border-color: var(--color-unfavoured);
+}
+
+.notice-field-error {
+  margin: 0;
+  color: var(--color-unfavoured);
+  font-weight: 700;
+}
+
+.notice-field-error[hidden] {
+  display: none;
+}
+
 .notice-after {
   display: grid;
   justify-items: start;

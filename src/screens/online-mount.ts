@@ -20,7 +20,7 @@ import { createRematchWatch } from './rematch-watch.ts';
 const HOME_ASK_MS = 10_000;
 
 export interface OnlineMount {
-  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send'>;
+  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'signin'>;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
   settle(world: WorldState): void;
@@ -149,7 +149,12 @@ export function mountOnline(context: MountContext): OnlineMount {
     if (liveLine.textContent !== text) liveLine.textContent = text;
   };
   return {
-    handlers: { online: screens.online, challenge: screens.challenge, send: screens.send },
+    handlers: {
+      online: screens.online,
+      challenge: screens.challenge,
+      send: screens.send,
+      signin: screens.signin,
+    },
     settings: { online: screens.forgetMe },
     settle: (world) => {
       screens.play.settle(world);

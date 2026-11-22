@@ -14,6 +14,12 @@ export interface ForgetMe {
 export interface ForgetMeHost {
   hasGuest(): boolean;
   /**
+   * Builds with accounts (ADR 0079): whether this device is signed in, and the way to the sign-in
+   * screen, which the group then offers to every device that isn't.
+   */
+  readonly hasAccount?: () => boolean;
+  readonly signIn?: () => void;
+  /**
    * Deletes the guest and this device's keys; resolves undefined when done, else the line that says
    * why not (offline, the server too slow or failing).
    */
@@ -29,6 +35,15 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   const line = element('p', 'settings-online-line', 'This device plays online as a guest.');
   const start = element('button', 'text-link settings-forget', 'Forget me');
   start.type = 'button';
+  const signIn = element('button', 'text-link settings-sign-in', 'Sign in');
+  signIn.type = 'button';
+  signIn.hidden = true;
+  const offerSignIn = host.signIn;
+  if (offerSignIn !== undefined) {
+    signIn.addEventListener('click', () => {
+      offerSignIn();
+    });
+  }
   const confirm = element('div', 'settings-forget-confirm');
   const question = element(
     'p',
@@ -41,7 +56,7 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   no.type = 'button';
   confirm.append(question, no, yes);
   confirm.hidden = true;
-  group.append(heading, line, start, confirm);
+  group.append(heading, line, signIn, start, confirm);
 
   start.addEventListener('click', () => {
     start.hidden = true;
@@ -63,7 +78,26 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   return {
     element: group,
     refresh() {
-      group.hidden = !host.hasGuest();
+      const guest = host.hasGuest();
+      const account = host.hasAccount?.() ?? false;
+      const offers = host.signIn !== undefined;
+      group.hidden = !guest && !offers;
+      signIn.hidden = !offers || account;
+      start.hidden = !guest || !confirm.hidden;
+      setText(
+        line,
+        account
+          ? 'This device is signed in to your account.'
+          : guest
+            ? 'This device plays online as a guest.'
+            : 'Sign in to keep your games on any device.',
+      );
+      setText(
+        question,
+        account
+          ? 'Delete your account? A match in play is lost; finished ones stay, as “Deleted player”.'
+          : 'Delete your guest? A match in play is lost; finished ones stay, as “Deleted player”.',
+      );
     },
   };
 }

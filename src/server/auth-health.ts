@@ -16,11 +16,19 @@ export type AuthCheck =
   | 'auth_publishable_key'
   | 'auth_secret_key'
   | 'auth_anonymous_sign_ins'
-  | 'auth_signing_keys';
+  | 'auth_signing_keys'
+  | 'auth_email_confirmations'
+  | 'auth_google';
 
 /** A setting of Auth's that is wrong, in our own words (safe to log). */
 export class AuthSettingError extends Error {
   override readonly name = 'AuthSettingError';
+  /** The check it fails. */
+  readonly check: AuthCheck;
+  constructor(message: string, check: AuthCheck) {
+    super(message);
+    this.check = check;
+  }
 }
 
 const TIMEOUT_MS = 8000;
@@ -44,14 +52,25 @@ const field = (value: unknown, name: string): unknown =>
     ? (value as Record<string, unknown>)[name]
     : undefined;
 
-/** The publishable key is accepted, and anonymous sign-ins (how guests are made) are on. */
+/**
+ * The publishable key is accepted, and anonymous sign-ins (how guests are made) are on. With
+ * accounts on (ADR 0079), Auth also needs email confirmations ("Confirm email"): off, it applies a
+ * guest's email change without a code, so anyone could take an address. Google needs its provider.
+ */
 async function publicSide(config: Config): Promise<void> {
   const settings = await get(
     `${config.supabaseUrl}/auth/v1/settings`,
     config.supabasePublishableKey,
   );
-  if (field(field(settings, 'external'), 'anonymous_users') !== true) {
-    throw new AuthSettingError('anonymous sign-ins are off');
+  const external = field(settings, 'external');
+  if (field(external, 'anonymous_users') !== true) {
+    throw new AuthSettingError('anonymous sign-ins are off', 'auth_anonymous_sign_ins');
+  }
+  if (config.accounts && field(settings, 'mailer_autoconfirm') !== false) {
+    throw new AuthSettingError('email confirmations are off', 'auth_email_confirmations');
+  }
+  if (config.accounts && config.google !== undefined && field(external, 'google') !== true) {
+    throw new AuthSettingError('the Google provider is off', 'auth_google');
   }
 }
 
@@ -71,7 +90,10 @@ async function signingKeys(config: Config): Promise<void> {
     candidates.map((key) => importJWK(key).then(Boolean, () => false)),
   );
   if (usable.includes(true)) return;
-  throw new AuthSettingError('no asymmetric signing key (still on the legacy JWT secret?)');
+  throw new AuthSettingError(
+    'no asymmetric signing key (still on the legacy JWT secret?)',
+    'auth_signing_keys',
+  );
 }
 
 type NoteFailure = (error: unknown, stage: Stage) => void;
@@ -95,9 +117,7 @@ const liveCheck = (config: Config, noteFailure: NoteFailure) =>
   run(
     () => publicSide(config),
     (error) =>
-      error instanceof AuthSettingError
-        ? 'auth_anonymous_sign_ins'
-        : keyCheck(error, 'auth_publishable_key'),
+      error instanceof AuthSettingError ? error.check : keyCheck(error, 'auth_publishable_key'),
     noteFailure,
   );
 
@@ -110,7 +130,7 @@ const settingChecks = (config: Config, noteFailure: NoteFailure) => [
   ),
   run(
     () => signingKeys(config),
-    (error) => (error instanceof AuthSettingError ? 'auth_signing_keys' : 'auth'),
+    (error) => (error instanceof AuthSettingError ? error.check : 'auth'),
     noteFailure,
   ),
 ];

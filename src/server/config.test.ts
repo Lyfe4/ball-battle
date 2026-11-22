@@ -44,6 +44,32 @@ describe('the server configuration', () => {
   });
 });
 
+describe('the accounts settings (ADR 0079)', () => {
+  it('are off unless switched on, and never without online play', () => {
+    expect(configOf(ONLINE)?.accounts).toBe(false);
+    expect(configOf({ ...ONLINE, BALLBATTLE_ACCOUNTS: 'true' })?.accounts).toBe(false);
+    expect(configOf({ ...ONLINE, BALLBATTLE_ACCOUNTS: '1' })?.accounts).toBe(true);
+    const offline = { ...ONLINE, BALLBATTLE_ONLINE: undefined, BALLBATTLE_ACCOUNTS: '1' };
+    expect(configOf(offline)?.accounts).toBe(false);
+  });
+
+  it('send email codes unless switched off', () => {
+    expect(configOf(ONLINE)?.emailCodes).toBe(true);
+    expect(configOf({ ...ONLINE, BALLBATTLE_EMAIL_CODES: 'OFF' })?.emailCodes).toBe(false);
+  });
+
+  it('offer Google only with both its client id and secret', () => {
+    expect(configOf(ONLINE)?.google).toBeUndefined();
+    const google = { GOOGLE_CLIENT_ID: 'id.apps', GOOGLE_CLIENT_SECRET: 'secret' };
+    expect(configOf({ ...ONLINE, ...google })?.google).toStrictEqual({
+      clientId: 'id.apps',
+      clientSecret: 'secret',
+    });
+    expect(() => configOf({ ...ONLINE, GOOGLE_CLIENT_ID: 'id.apps' })).toThrow(ConfigError);
+    expect(() => configOf({ ...ONLINE, GOOGLE_CLIENT_ID: 'id.apps' })).not.toThrow(/id\.apps/);
+  });
+});
+
 describe('the seed key map', () => {
   it('uses the newest id for new series and keeps the old keys', () => {
     const { keys, current } = parseSeedKeys(

@@ -10,7 +10,7 @@ import type { SessionTokens } from './cookie.ts';
 
 /** Hosts' clocks differ a little; never trust a token much past its expiry. */
 const CLOCK_TOLERANCE_SECONDS = 30;
-const AUTH_TIMEOUT_MS = 8000;
+export const AUTH_TIMEOUT_MS = 8000;
 
 /** Auth's own error codes (`anonymous_provider_disabled`): plain words, never a value. */
 const AUTH_CODE = /^[a-z][a-z0-9_]{1,59}$/;
@@ -113,7 +113,8 @@ export interface AuthSession {
   readonly tokens: SessionTokens;
 }
 
-async function tokenCall(
+/** A call to Auth that answers with a session. */
+export async function tokenCall(
   config: Config,
   path: string,
   body: unknown,

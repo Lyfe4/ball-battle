@@ -18,6 +18,15 @@ export interface Config {
    * Off, only deleting players still runs: Forget me and the sweep's 90-day cleanup (ADR 0078).
    */
   readonly online: boolean;
+  /**
+   * Whether accounts are switched on (`BALLBATTLE_ACCOUNTS`, ADR 0079): sign-in with Google or an
+   * email code. Only with online play on; off, every `/api/v1/auth/*` route answers `accounts_off`.
+   */
+  readonly accounts: boolean;
+  /** Whether email codes are sent (`BALLBATTLE_EMAIL_CODES=off` stops them; Google goes on). */
+  readonly emailCodes: boolean;
+  /** Google's OAuth client, where Google sign-in is offered (its redirect URIs are exact). */
+  readonly google: GoogleClient | undefined;
   /** Postgres as the `game_api` role, through Supabase's pooler in transaction mode. */
   readonly databaseUrl: string;
   /** The Supabase project's URL, for Auth (guest sign-in, refresh, JWKS). */
@@ -31,6 +40,12 @@ export interface Config {
   readonly currentSeedKey: SeedKeyEntry;
   /** Sentry's DSN, when errors are reported (PII off). */
   readonly sentryDsn: string | undefined;
+}
+
+/** A Google OAuth client (ADR 0079): never sent to a page but its id, in the redirect. */
+export interface GoogleClient {
+  readonly clientId: string;
+  readonly clientSecret: string;
 }
 
 export class ConfigError extends Error {
@@ -100,8 +115,18 @@ export function configOf(env: Readonly<Record<string, string | undefined>>): Con
 function settingsOf(env: Readonly<Record<string, string | undefined>>, online: boolean): Config {
   const { keys, current } = parseSeedKeys(required(env, 'SEED_KEYS'));
   const dsn = env['SENTRY_DSN']?.trim();
+  const googleId = env['GOOGLE_CLIENT_ID']?.trim() ?? '';
+  const googleSecret = env['GOOGLE_CLIENT_SECRET']?.trim() ?? '';
+  if ((googleId === '') !== (googleSecret === '')) {
+    throw new ConfigError(
+      'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set together or not at all',
+    );
+  }
   return {
     online,
+    accounts: online && env['BALLBATTLE_ACCOUNTS'] === '1',
+    emailCodes: env['BALLBATTLE_EMAIL_CODES']?.trim().toLowerCase() !== 'off',
+    google: googleId === '' ? undefined : { clientId: googleId, clientSecret: googleSecret },
     databaseUrl: required(env, 'DATABASE_URL'),
     supabaseUrl: required(env, 'SUPABASE_URL').replace(/\/+$/, ''),
     supabasePublishableKey: required(env, 'SUPABASE_PUBLISHABLE_KEY'),

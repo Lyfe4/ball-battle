@@ -26,7 +26,8 @@ export type ScreenKey =
   | 'challenge'
   | 'challenge-lineup'
   | 'send-setup'
-  | 'send';
+  | 'send'
+  | 'signin';
 
 export type Move = 'push' | 'replace' | 'return';
 

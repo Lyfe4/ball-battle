@@ -8,6 +8,8 @@
 //   heartbeat: a player on home is away from their match.
 import type { PlayerResponse } from '../../api/session.ts';
 import { deleteUser } from '../auth-admin.ts';
+import type { Config } from '../config.ts';
+import type { Profile } from '../db/profiles.ts';
 import { clearedSessionCookie } from '../cookie.ts';
 import type { CurrentMatchResponse } from '../../api/live.ts';
 import { currentMatch } from '../current-match.ts';
@@ -16,11 +18,16 @@ import { alsoWhileOff, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
 import { sessionOf } from '../session.ts';
 
+/** The player as they see themselves; an account says so only where accounts are on (ADR 0079). */
+export function playerResponse(config: Config, player: Profile): PlayerResponse {
+  return config.accounts ? { name: player.name, account: player.account } : { name: player.name };
+}
+
 export const me: RouteHandler = alsoWhileOff(
   async (request, context) => {
     guard(request, ['GET', 'DELETE']);
     const player = await sessionOf(request, context);
-    if (request.method === 'GET') return json(200, { name: player.name } satisfies PlayerResponse);
+    if (request.method === 'GET') return json(200, playerResponse(context.deps.config, player));
     await deleteUser(context.deps.config, player.userId);
     context.setCookie(clearedSessionCookie());
     return json(204, null);

@@ -17,6 +17,11 @@ describe('the Netlify CLI calls of the vs Friend switch', () => {
     expect(triggerBuild).toEqual(['deploy', '--trigger', '--site', SITE_ID]);
   });
 
+  it('switches accounts by their own variable (ADR 0079)', () => {
+    const [setVariable] = switchCalls('on', 'BALLBATTLE_ACCOUNTS');
+    expect(setVariable).toEqual(['env:set', 'BALLBATTLE_ACCOUNTS', '1', '--context', 'production']);
+  });
+
   it('calls anything a shell could change not plain', () => {
     for (const arg of [
       JSON.stringify({ site_id: SITE_ID }),

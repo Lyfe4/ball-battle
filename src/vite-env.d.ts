@@ -6,4 +6,5 @@ interface ImportMetaEnv {
    * in production until launch (ADR 0052 section 6, `src/app/online-build.ts`).
    */
   readonly VITE_ONLINE?: string;
+  readonly VITE_ACCOUNTS?: string;
 }

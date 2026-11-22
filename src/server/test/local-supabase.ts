@@ -9,6 +9,8 @@ interface Status {
   readonly API_URL: string;
   readonly PUBLISHABLE_KEY: string;
   readonly SECRET_KEY: string;
+  /** The mail catcher (Mailpit), where Auth's emails land locally. */
+  readonly MAILPIT_URL?: string;
 }
 
 export default function setup(): void {
@@ -28,4 +30,5 @@ export default function setup(): void {
   process.env['TEST_SUPABASE_URL'] = status.API_URL;
   process.env['TEST_SUPABASE_PUBLISHABLE_KEY'] = status.PUBLISHABLE_KEY;
   process.env['TEST_SUPABASE_SECRET_KEY'] = status.SECRET_KEY;
+  if (status.MAILPIT_URL !== undefined) process.env['TEST_MAILPIT_URL'] = status.MAILPIT_URL;
 }

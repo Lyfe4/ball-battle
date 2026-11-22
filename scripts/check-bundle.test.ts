@@ -34,4 +34,17 @@ describe('the bundle check', () => {
     expect(problemsIn('a.js', 'f("/api/v1/"+e)', false)).toHaveLength(1);
     expect(problemsIn('a.js', 'f("/api/v1/me");g("/api/v1/series")', false)).toHaveLength(1);
   });
+
+  it('refuses sign-in code in an online build without accounts (ADR 0079)', () => {
+    for (const text of [
+      'f("auth/email")',
+      'f(`auth/email/verify`)',
+      'location.assign("/api/v1/auth/google")',
+      'f("auth/switch")',
+    ]) {
+      expect(problemsIn('a.js', text, true, false), text).toHaveLength(1);
+      expect(problemsIn('a.js', text, true, true), text).toStrictEqual([]);
+    }
+    expect(problemsIn('a.js', 'const author="x"; oauth/emails', true, false)).toStrictEqual([]);
+  });
 });

@@ -178,6 +178,21 @@ Each line is a rule; its ADR has the reasoning.
   device is offline or no response came; a timeout, a server error and a refusal each say so
   with Try again (`online-failure-text.ts`).
 
+**Accounts (ADR 0079)**
+
+- Behind `BALLBATTLE_ACCOUNTS` (functions) and `VITE_ACCOUNTS` (`ACCOUNTS_BUILD`): on in previews
+  and staging, off in production until friends ship (`friend-switch.ts --accounts`). Off, every
+  `/api/v1/auth/*` answers `accounts_off`; guests are unchanged.
+- Rules read `profiles.account_at` (`Session.account`), never a token's `is_anonymous`. A guest
+  links to the same user id; an existing account is "Switch to it?", which deletes the guest.
+- No sign-in starts or finishes during a live match or lobby (`whileNotLive`, `in_a_match`).
+- Sign-in steps live in sealed `__Host-` cookies (`sealed-cookie.ts`, 10 minutes); Google's state
+  is also marked used in the database. Google runs only where its client is set (exact redirect
+  URIs: local and staging, never previews).
+- Email codes are counted before Auth is called (`LIMITS.codes*`, `spendAll`): the player's own
+  limits first, then everyone's caps (90 a day, 2,700 a month), which answer `email_busy` alike.
+  An email answer never says whether an address has an account.
+
 **Live friend matches (ADR 0053)**
 
 - A live series is a series by turns with a clock: timers in `src/api/live.ts` (30 s a pick, 6 s to

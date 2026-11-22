@@ -32,6 +32,18 @@ export const ERROR_CODES = [
   'too_many_series',
   /** A rematch that can't be asked or answered now: declined, out of time, or never offered. */
   'rematch_closed',
+  /** This deploy has accounts switched off (ADR 0079): sign-in isn't offered. */
+  'accounts_off',
+  /** The player is signed in to an account already: sign-in is for guests and new devices. */
+  'already_signed_in',
+  /** Email codes are switched off for now, or today's or this month's are used up (ADR 0079). */
+  'email_busy',
+  /** An address Auth won't send to. */
+  'bad_email',
+  /** A code that is wrong, expired, or tried too often. */
+  'wrong_code',
+  /** A sign-in step with nothing started on this device (its 10 minutes ran out). */
+  'sign_in_expired',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
   'ruleset_missing',
   'internal',

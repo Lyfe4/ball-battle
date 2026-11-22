@@ -17,6 +17,9 @@ const status = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1))
 
 const lines = [
   'BALLBATTLE_ONLINE=1',
+  // Accounts (ADR 0079), as on previews; Google needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+  // added by hand (a local test client), and email codes land in the mail catcher.
+  'BALLBATTLE_ACCOUNTS=1',
   `DATABASE_URL=${apiDatabaseUrl(status['DB_URL'] ?? '')}`,
   `SUPABASE_URL=${status['API_URL'] ?? ''}`,
   `SUPABASE_PUBLISHABLE_KEY=${status['PUBLISHABLE_KEY'] ?? ''}`,

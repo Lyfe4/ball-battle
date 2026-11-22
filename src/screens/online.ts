@@ -3,7 +3,9 @@
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
 import type { Navigation } from '../app/navigation.ts';
-import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
+import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
+import { hasAccount, hasGuest, type DeviceStorage } from '../app/online-device.ts';
+import { writeSignInParams } from '../app/online-url.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element } from '../ui/dom.ts';
@@ -15,6 +17,8 @@ import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
+import { createSignIn } from './sign-in.ts';
+import { closeSettings } from '../ui/settings-menu.ts';
 import { createPrimer } from './online-prime.ts';
 
 export interface OnlineHost {
@@ -43,6 +47,7 @@ export interface OnlineScreens {
   readonly online: ScreenHandler<'online'>;
   readonly challenge: ScreenHandler<'challenge'>;
   readonly send: ScreenHandler<'send'>;
+  readonly signin: ScreenHandler<'signin'>;
   readonly play: OnlinePlay;
   /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
   readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
@@ -71,6 +76,8 @@ export function createOnlineScreens(
   const seriesNotice = section('online-series-notice', 'Online series');
   const seriesLoading = section('online-series-loading', 'Online series');
   const panel = section('online-series', 'Online series');
+  const signInNotice = section('online-signin', 'Sign in');
+  const signInLoading = section('online-signin-loading', 'Sign in');
   const exit = element('div', 'series-exit');
   exit.hidden = true;
   // Beside the offline screens: before the health bars, and the way out under them.
@@ -82,6 +89,8 @@ export function createOnlineScreens(
     seriesNotice,
     seriesLoading,
     panel,
+    signInNotice,
+    signInLoading,
   ]) {
     hud.insertBefore(node, status);
   }
@@ -151,11 +160,39 @@ export function createOnlineScreens(
     if (document.visibilityState === 'visible') challenges.resumed();
   });
 
-  const forgetMe = createForgetMe(
-    forgetMeHost(host.storage, () => {
+  const signIn = createSignIn(
+    { notice: signInNotice, loading: signInLoading },
+    {
+      storage: host.storage,
+      back: () => {
+        host.navigation.back(home);
+      },
+      home,
+      rewrite: (write) => {
+        host.navigation.replace(write);
+      },
+      toMatch,
+      leaveFor: (url) => {
+        window.location.assign(url);
+      },
+      userAgent: navigator.userAgent,
+    },
+  );
+
+  const forgetMe = createForgetMe({
+    ...forgetMeHost(host.storage, () => {
       window.location.assign('/');
     }),
-  );
+    ...(ACCOUNTS_BUILD
+      ? {
+          hasAccount: () => hasAccount(host.storage),
+          signIn: () => {
+            closeSettings();
+            host.go(writeSignInParams);
+          },
+        }
+      : {}),
+  });
 
   return {
     online: {
@@ -176,10 +213,16 @@ export function createOnlineScreens(
         challenges.showSend(route.format, route.bestOf, route.step, route.rematch);
       },
     },
+    signin: {
+      show: (route) => {
+        signIn.show(route.google);
+      },
+    },
     play,
     backToMatch,
     forgetMe,
     setVisible(screen) {
+      signIn.setVisible(screen === 'signin');
       challenges.setVisible(screen === 'challenge' || screen === 'send');
       play.setVisible(screen === 'online');
     },

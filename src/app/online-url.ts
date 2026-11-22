@@ -6,14 +6,20 @@
 // - `?view=send&fmt=<format>&mode=bo3|bo5`: building the lineup for a challenge to send, and
 //   `&step=setup` for the vs Friend setup before it (its length and format, ADR 0055), or
 //   `&rematch=<series id>` for a rematch's new lineup (ADR 0055).
+// - `?view=signin` (ADR 0079, in builds with accounts): signing in, and `&google=<result>` where
+//   Google's callback sends the page back.
 // Nothing secret is in any of them: the series id needs a session that plays in it, and the token
 // is the link itself, meant to be shared.
+import { isGoogleResult, type GoogleResult } from '../api/accounts.ts';
 import { isChallengeToken } from '../api/challenges.ts';
+import { ACCOUNTS_BUILD } from './accounts-build.ts';
 import { FORMATS, type BestOf, type Format } from '../sim/series.ts';
 import { readMode } from './series-url.ts';
 
 export type OnlineRoute =
   | { readonly screen: 'online'; readonly series: string }
+  /** Signing in (ADR 0079); `google` is how a Google sign-in just went. */
+  | { readonly screen: 'signin'; readonly google: GoogleResult | undefined }
   | { readonly screen: 'challenge'; readonly token: string; readonly step: 'card' | 'lineup' }
   | {
       readonly screen: 'send';
@@ -63,8 +69,20 @@ export function writeSendParams(
   if (rematch !== undefined) params.set('rematch', rematch);
 }
 
-/** The online screen a URL names, if any; anything malformed names none (and falls to home). */
-export function parseOnlineRoute(params: URLSearchParams): OnlineRoute | undefined {
+/** The sign-in screen, as a link or Back reaches it: no Google result. */
+export function writeSignInParams(params: URLSearchParams): void {
+  clear(params);
+  params.set('view', 'signin');
+}
+
+/**
+ * The online screen a URL names, if any; anything malformed names none (and falls to home).
+ * `accounts` is whether this build has accounts: without them the sign-in screen is home.
+ */
+export function parseOnlineRoute(
+  params: URLSearchParams,
+  accounts = ACCOUNTS_BUILD,
+): OnlineRoute | undefined {
   const series = params.get('online')?.trim().toLowerCase();
   if (series !== undefined) return UUID.test(series) ? { screen: 'online', series } : undefined;
   const token = params.get('challenge')?.trim();
@@ -73,7 +91,12 @@ export function parseOnlineRoute(params: URLSearchParams): OnlineRoute | undefin
     const step = params.get('step') === 'lineup' ? 'lineup' : 'card';
     return { screen: 'challenge', token, step };
   }
-  if (params.get('view')?.trim().toLowerCase() !== 'send') return undefined;
+  const view = params.get('view')?.trim().toLowerCase();
+  if (view === 'signin' && accounts) {
+    const google = params.get('google');
+    return { screen: 'signin', google: isGoogleResult(google) ? google : undefined };
+  }
+  if (view !== 'send') return undefined;
   const format =
     FORMATS.find((name) => name === params.get('fmt')?.trim().toLowerCase()) ?? 'reveal';
   const step = params.get('step') === 'setup' ? 'setup' : 'lineup';

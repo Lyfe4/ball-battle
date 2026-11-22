@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
-import { INACTIVE_DAYS } from '../src/server/inactive.ts';
+import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
+import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
 
 const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
@@ -48,6 +49,28 @@ describe('the privacy policy and terms', () => {
   it('give the retention the server keeps to', () => {
     expect(privacy).toContain(`until ${String(INACTIVE_DAYS)} days after you last played online`);
     expect(privacy).toContain(`A guest nobody has used for ${String(INACTIVE_DAYS)} days`);
+  });
+
+  it('give an account’s retention, and the sign-in steps’ (ADR 0079)', () => {
+    expect(INACTIVE_ACCOUNT_DAYS).toBe(730);
+    expect(privacy).toContain('until 24 months after you last played online');
+    expect(privacy).toContain('An account nobody has used for 24 months is deleted');
+    expect(SIGN_IN_SECONDS).toBe(600);
+    expect(privacy).toContain('Up to 10 minutes, on your device.');
+    expect(privacy).toContain('Each works for 10 minutes');
+    const emailCounts = [
+      LIMITS.codesToAddress,
+      LIMITS.codesToAddressDaily,
+      LIMITS.codesFromNetwork,
+      LIMITS.codesFromNetworkDaily,
+      LIMITS.triesAtCode,
+      LIMITS.triesAtAddress,
+      LIMITS.triesFromNetwork,
+    ];
+    expect(Math.max(...emailCounts.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(
+      86_400,
+    );
+    expect(privacy).toContain('<strong>Resend</strong>');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {

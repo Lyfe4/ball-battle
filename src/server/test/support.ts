@@ -13,9 +13,15 @@ const need = (name: string): string => {
 /** A fixed test seed key: the same key always derives the same seeds. */
 export const TEST_SEED_KEYS = JSON.stringify({ test: Buffer.alloc(32, 7).toString('base64') });
 
+/** Google's test client: never a real one (its calls are mocked, `google-support.ts`). */
+export const TEST_GOOGLE = { clientId: 'test-client.apps.googleusercontent.com', secret: 'shh' };
+
 export function testDeps(): Deps {
   const config = configOf({
     BALLBATTLE_ONLINE: '1',
+    BALLBATTLE_ACCOUNTS: '1',
+    GOOGLE_CLIENT_ID: TEST_GOOGLE.clientId,
+    GOOGLE_CLIENT_SECRET: TEST_GOOGLE.secret,
     DATABASE_URL: need('TEST_DATABASE_URL'),
     SUPABASE_URL: need('TEST_SUPABASE_URL'),
     SUPABASE_PUBLISHABLE_KEY: need('TEST_SUPABASE_PUBLISHABLE_KEY'),

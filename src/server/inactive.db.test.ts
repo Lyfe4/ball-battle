@@ -1,7 +1,7 @@
 // Guests not seen for 90 days are deleted by the sweep (ADR 0052, "Guests"; ADR 0068), the way
 // "Forget me" deletes one, and nobody seen more recently is touched.
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { INACTIVE_DAYS } from './inactive.ts';
+import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from './inactive.ts';
 import { sweep } from './sweep.ts';
 import { adminSql, testDeps } from './test/support.ts';
 import { newPlayer, newSeries, read, type Player } from './test/series-support.ts';
@@ -88,5 +88,21 @@ describe('guests not seen for 90 days', () => {
     await lastSeen(gone, INACTIVE_DAYS + 30);
     await sweep(deps);
     expect((await sweep(deps)).inactive).toBe(0);
+  });
+});
+
+describe('accounts (ADR 0079)', () => {
+  it('are kept past a guest’s 90 days, and deleted after 24 months unseen', async () => {
+    const account = await newPlayer(deps);
+    const guest = await newPlayer(deps);
+    await admin`update game.profiles set account_at = now() where user_id = ${account.userId}`;
+    await lastSeen(account, INACTIVE_DAYS + 30);
+    await lastSeen(guest, INACTIVE_DAYS + 30);
+    await sweep(deps);
+    expect((await exists(account)).profile).toBe(true);
+    expect((await exists(guest)).profile).toBe(false);
+    await lastSeen(account, INACTIVE_ACCOUNT_DAYS + 1);
+    await sweep(deps);
+    expect(await exists(account)).toStrictEqual({ auth: false, profile: false, sessions: 0 });
   });
 });
