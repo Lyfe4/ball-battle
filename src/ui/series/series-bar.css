@@ -100,6 +100,16 @@
   }
 }
 
+/*
+ * Round 1's pick names its round in its header ("Round 1"), so beside its score line doesn't say it
+ * again ("You 0–0 Bot ▾", 2026-11-23 walk).
+ */
+@media (min-aspect-ratio: 5/4) {
+  .answer-step .series-bar-score-round {
+    display: none;
+  }
+}
+
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between']) .series-bar-about {
     display: block;
