@@ -91,9 +91,19 @@ export const forgetLoading = (page: Page): Promise<void> =>
     (globalThis as unknown as { __loading: string[] }).__loading = [];
   });
 
-/** A fresh phone, collecting console errors and the loading states it shows. */
-export async function phone(phones: Phones): Promise<Page> {
-  const context = await phones.browser.newContext({ viewport: PHONE });
+/** iPhones turned sideways in Safari (ADR 0067): the smallest common one, and a larger one. */
+export const SIDEWAYS = { width: 667, height: 320 };
+export const SIDEWAYS_LARGE = { width: 812, height: 375 };
+
+/**
+ * A fresh phone, collecting console errors and the loading states it shows; upright at `PHONE`
+ * unless given another size, fixed for its life.
+ */
+export async function phone(
+  phones: Phones,
+  viewport: { readonly width: number; readonly height: number } = PHONE,
+): Promise<Page> {
+  const context = await phones.browser.newContext({ viewport });
   phones.contexts.push(context);
   const page = await context.newPage();
   await page.addInitScript(LOADING_PROBE);
