@@ -1,5 +1,5 @@
-/* Online play's parts outside the series screens (ADR 0052, 0053): home's "Back to your match"
-   and the settings' "Forget me". */
+/* Online play's parts outside the series screens (ADR 0052, 0053, 0079): home's "Back to your
+   match" and account entry, and the settings' "Forget me". */
 .settings-online-line {
   margin: 0;
   font-size: var(--font-size-small);
@@ -42,4 +42,69 @@
 
 .live-line[hidden] {
   display: none;
+}
+
+/*
+ * The account entry on home (account-button.ts, ADR 0079 addendum of 2026-11-22), beside the gear,
+ * which stays the last control on the title's row: the gear's round button with the account's
+ * initial in sun yellow once signed in, a pill that says Sign in for a guest or nobody, and a plain
+ * face while `/me` can't say.
+ */
+.account-toggle {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: var(--tap-target);
+  height: var(--tap-target);
+  margin-bottom: var(--press-depth);
+  margin-inline-start: auto;
+  padding: 0 var(--space-gap);
+  border: 0;
+  border-radius: var(--tap-target);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-toggle:not([data-look='sign-in']) {
+  width: var(--tap-target);
+  padding: 0;
+}
+
+.account-toggle[data-look='initial'] {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+}
+
+.account-toggle-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentcolor;
+  color: var(--color-text-muted);
+}
+
+.account-toggle:not([data-look='face']) .account-toggle-icon,
+.account-toggle[data-look='face'] .account-toggle-face {
+  display: none;
+}
+
+.account-toggle:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .account-toggle:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.account-toggle[data-pressed] {
+  filter: brightness(1.08);
 }
