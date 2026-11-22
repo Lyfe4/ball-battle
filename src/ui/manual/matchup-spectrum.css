@@ -1,0 +1,357 @@
+/*
+ * The matchup chart (matchup-spectrum.ts, ADR 0073 addendum of 2026-11-23). A phone: the hero, then
+ * five stacked bands, each a calm tint of its marks' colour (tokens.css), the reason opening under
+ * the tapped chip's row. Beside: the reason in a sticky panel next to the bands. A desktop: the
+ * bands as five columns read left to right, the reason a strip above them. The tints only echo
+ * what the headings and marks say.
+ */
+.matchup-spectrum {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.matchup-spectrum[hidden] {
+  display: none;
+}
+
+/* The hero: the ball read against, large, its one line, and Change ball on its own row. */
+.spectrum-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-small) var(--space-gap);
+  padding: var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-raised);
+}
+
+.spectrum-hero-icon {
+  display: block;
+}
+
+.spectrum-hero-words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.spectrum-hero-eyebrow,
+.spectrum-hero-line {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.spectrum-hero-eyebrow {
+  font-weight: 700;
+}
+
+.spectrum-hero-name {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+  line-height: 1.05;
+}
+
+.spectrum-change {
+  grid-column: 1 / -1;
+}
+
+.spectrum-chooser[hidden],
+.spectrum-body[hidden] {
+  display: none;
+}
+
+.spectrum-body,
+.spectrum-bands {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.spectrum-body {
+  gap: var(--space-gap);
+}
+
+/* A band: its tint, its heading (the mark, the words, the count), then its chips. */
+.spectrum-band {
+  display: grid;
+  align-content: start;
+  gap: var(--space-small);
+  padding: 10px var(--space-gap) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-band-even);
+}
+
+.spectrum-band[data-band='beats'] {
+  background: var(--color-band-beats);
+}
+
+.spectrum-band[data-band='edge'] {
+  background: var(--color-band-edge);
+}
+
+.spectrum-band[data-band='edged'] {
+  background: var(--color-band-edged);
+}
+
+.spectrum-band[data-band='beaten'] {
+  background: var(--color-band-beaten);
+}
+
+.spectrum-band-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: var(--font-weight-display);
+  line-height: 1.2;
+}
+
+.spectrum-band-title {
+  flex: 1;
+  text-wrap: balance;
+}
+
+/* The mark on its disc, as on the pick rows: filled for a strong counter, plain for an edge. */
+.spectrum-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--color-sunken);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-symbol);
+  font-size: var(--font-size-small);
+  letter-spacing: -0.12em;
+}
+
+.spectrum-mark[data-lean='favoured'] {
+  color: var(--color-favoured);
+}
+
+.spectrum-mark[data-lean='unfavoured'] {
+  color: var(--color-unfavoured);
+}
+
+.spectrum-mark[data-level='strong'] {
+  color: var(--color-page);
+}
+
+.spectrum-mark[data-level='strong'][data-lean='favoured'] {
+  background: var(--color-favoured);
+}
+
+.spectrum-mark[data-level='strong'][data-lean='unfavoured'] {
+  background: var(--color-unfavoured);
+}
+
+.spectrum-band-count {
+  flex: none;
+  min-width: 2rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-sunken);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.spectrum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}
+
+.spectrum-none {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* A chip: the ball small and its name, a full 44 px tap target. */
+.spectrum-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-target);
+  padding: 4px 14px 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  /* Darker than the arena floor, so every ball keeps its 3:1 here too (spectrum-contrast.test.ts). */
+  background: var(--color-sunken);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.spectrum-chip:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.spectrum-chip-icon {
+  display: block;
+  flex: none;
+}
+
+/* The pair's card: the pairing, the verdict and Open <ball>, on the surface. */
+.spectrum-detail {
+  display: grid;
+  gap: var(--space-small);
+  padding: var(--space-small) var(--space-gap) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.spectrum-chips > .spectrum-detail {
+  flex-basis: 100%;
+}
+
+.spectrum-detail-headline {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.spectrum-detail-reason {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.spectrum-open {
+  justify-self: start;
+}
+
+/* Until a pair is chosen, the panel says what a tap does (a phone has no panel). */
+.spectrum-hint {
+  display: none;
+  margin: 0;
+  padding: var(--space-gap);
+  border: 2px dashed var(--color-raised);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .spectrum-chip:hover {
+    filter: brightness(1.1);
+  }
+}
+
+.spectrum-chip[data-pressed] {
+  filter: brightness(1.1);
+}
+
+/* Beside: the hero on one row, the reason a sticky panel next to the bands, level with the first. */
+@media (min-aspect-ratio: 5/4) {
+  .spectrum-hero {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: var(--space-small) var(--space-gap);
+  }
+
+  .spectrum-change {
+    grid-column: auto;
+  }
+
+  .spectrum-hero-name {
+    font-size: 1.5rem;
+  }
+
+  .spectrum-body {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+    align-items: start;
+  }
+
+  .spectrum-aside {
+    position: sticky;
+    top: var(--space-gutter);
+  }
+
+  .spectrum-hint {
+    display: block;
+  }
+}
+
+/*
+ * A desktop: the spectrum as five columns read left to right across the sheet, the reason a strip
+ * above them, sticky. A column's heading is the mark and count on one row and the words under them,
+ * two lines at most.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .spectrum-hero-name {
+    font-size: var(--font-size-display);
+  }
+
+  .spectrum-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .spectrum-aside {
+    z-index: 2;
+    top: var(--space-sheet);
+    box-shadow: 0 0 0 var(--space-small) var(--color-page);
+  }
+
+  .spectrum-aside > .spectrum-detail {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-gap);
+    padding: var(--space-small) var(--space-gap);
+  }
+
+  .spectrum-detail > .pairing {
+    grid-row: 1 / span 2;
+  }
+
+  .spectrum-aside .spectrum-open {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .spectrum-bands {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .spectrum-band-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .spectrum-band-count {
+    grid-column: 3;
+  }
+
+  /* Two lines' height in every column, so the five columns' chips start level. */
+  .spectrum-band-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 2.4em;
+  }
+
+  .spectrum-chips {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .spectrum-chip {
+    min-width: 0;
+  }
+
+  .spectrum-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

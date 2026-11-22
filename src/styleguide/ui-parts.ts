@@ -7,7 +7,7 @@ import { createBallGrid } from '../ui/balls/ball-grid.ts';
 import { holdBusy } from '../ui/busy-button.ts';
 import { leanOf } from '../ui/balls/matchups.ts';
 import { createBallDetail } from '../ui/manual/ball-detail.ts';
-import { createMatchupChart } from '../ui/manual/matchup-chart.ts';
+import { createMatchupSpectrum } from '../ui/manual/matchup-spectrum.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { recordOutcome, recordPick, startSeries } from '../sim/series.ts';
 import { createPickRows } from '../ui/series/pick-rows.ts';
@@ -58,7 +58,7 @@ export function uiPartsSection(): HTMLElement {
 
   const detail = createBallDetail(BALLS, { onOpen: () => undefined, onTry: () => undefined });
   detail.show('storm');
-  const chart = createMatchupChart(BALLS, () => undefined);
+  const chart = createMatchupSpectrum(BALLS, () => undefined);
 
   // A Reveal series after round 1, the player due to show first in round 2.
   const reveal = ['thorns', 'archer', 'a'].reduce(
@@ -108,7 +108,7 @@ export function uiPartsSection(): HTMLElement {
     example('Ball grid, marked against Storm (quick match)', marked.element),
     example('Ball grid in a lineup: balls already in a slot', lineup.element),
     example('Ball manual entry', detail.element),
-    example('Matchup chart, first counter selected', chart.element),
+    example('Matchup chart: every ball against the Brawler', chart.element),
   );
   section.append(heading, row);
   return section;

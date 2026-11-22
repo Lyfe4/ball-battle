@@ -13,9 +13,9 @@ export interface MatchupLegend {
 const ICON_PX = 16;
 
 /**
- * The key over a grid of marked tiles (the quick setup, the phone's matchup chart, ADR 0073): "▲▲ ▲
- * strong · ▼ ▼▼ weak vs" and the drawing of the ball each tile is read against. One component, so
- * both screens say it the same way.
+ * The key over a grid of marked tiles (the quick setup, ADR 0073): "▲▲ ▲ strong · ▼ ▼▼ weak vs" and
+ * the drawing of the ball each tile is read against. The matchup chart needs none: its bands'
+ * headings say it (ADR 0073 addendum of 2026-11-23).
  */
 export function createMatchupLegend(): MatchupLegend {
   const root = element('p', 'quick-legend');
