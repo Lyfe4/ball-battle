@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Amended by: ADR 0075 (the shape exceptions, ruleset 22), ADR 0076 (the shape is a warning;
-  hard limits on strong counters)
+  hard limits on strong counters), its addendum of 2026-11-23 (the matchup chart as a spectrum)
 - Date: 2026-11-20
 - Amends: ADR 0010 (the map labels a level, not only a side), ADR 0022 (an older ruleset whose
   fights are today's still replays), ADR 0024 (a level's odds in words), ADR 0028 addendum and ADR
@@ -118,7 +118,7 @@ against Normal or Hard fail, and every series saved for reload be dropped. Inste
   fits 1280 x 800 (`desktop-layout.wide.browser.test.ts`). A phone shows every reason on its card.
   Hovering a ball underlines its name only, never the mark; "How it works" has its own rounded
   corners, so its hover fill follows the box (square only where it opens).
-- **Matchup chart, a fork.** On a desktop, the full grid as in the prototype. On a phone, 25
+- **Matchup chart, a fork** (replaced by the addendum of 2026-11-23). On a desktop, the full grid as in the prototype. On a phone, 25
   columns leave 13 px cells, too small to read a level, so the chart shows one ball against all the
   others in the quick setup's grid and key (one component, `matchup-legend.ts`): "Every ball vs
   Thorns", each tile's mark how that ball does against it, a tap explains the pair above the grid,
@@ -145,3 +145,47 @@ step, so it never showed there.
 - What picking well is worth barely moves (the proposal's part D): the three-level Hard bot is 1-2
   points harder at best play; the visible gain is honest labels.
 - Every new ball adds a level and a reason per pair, and its strong counters must fit the shape.
+
+## Addendum (2026-11-23): the matchup chart as a spectrum
+
+Replaces section 6's "matchup chart, a fork". The fork answered "how does one pair go?" and little
+else: the desktop's grid of 31 by 31 cells was hard to read, and the phone's grid of tiles in roster
+order made a player hunt for what beats a ball. Of three proposals (a spectrum, a cheat sheet of
+strong counters, a check against a lineup), the owner chose the spectrum, polished, with columns on
+a desktop.
+
+- **One ball against every other, sorted by outcome**, in five bands: Beats Thorns, Edge on Thorns,
+  Even, Thorns has the edge, Thorns beats. Each heading says it from one point of view (the balls in
+  the band), carries the band's mark (▲▲ ▲ = ▼ ▼▼, as the pick rows draw them) and a count; the band
+  is a calm tint of its marks' colour (`--color-band-*`, precomputed in `tokens.css`, so a browser
+  without `color-mix` draws the same). The tint only echoes the words and the mark.
+- **The hero** names the ball read against, large, with its one line; **Change ball** opens Free
+  play's ball grid in its place (no scrolling strip: an inner scroll box, and one ball in 31 is
+  found faster in the grid). It opens on the first ball in the roster with strong counters both
+  ways, so every band shows something.
+- **Chips**, not tiles: the ball small and its name, a 44 px target, no mark of its own (the band
+  says it). The accessible name says the level and who wins those odds ("Archer: slightly favoured
+  against Thorns, wins about 6 in 10"; "Brawler: strongly unfavoured against Thorns, Thorns wins
+  about 7 in 10").
+- **The reason** (the pairing, the verdict, Open <ball>): on a phone under the tapped chip's row, in
+  the chip's band; beside, in a sticky panel next to the bands; on a desktop, a strip above the
+  columns (and first in the tab order there, as it shows). Said once through a status line; Escape
+  closes it (focus back on the chip), or closes the chooser (focus back on Change ball).
+- **Layouts**: a phone stacks the bands; beside stacks them with the panel; only the desktop query
+  sets the five columns, each heading the mark and count on a row and its words under them, two
+  lines at most, so the columns' chips start level.
+- Removed: `matchup-chart.ts` (the grid), `matchup-one.ts` (the phone form) and
+  `matchup-chart.css`. Free play keeps its legend (`matchup-legend.ts`), its marks and its grid as
+  they were.
+
+Tests: `matchup-spectrum-text.test.ts` (every pair in the band of its lean and level, the headings,
+the accessible names); `matchup-spectrum.touch` (bands stacked, the reason under the tapped chip's
+row and before the next, said once, Escape back to the chip, every chip's name), `.landscape` (both
+sideways sizes: stacked, the reason in the panel beside the first band), `.wide` and `.full` (five
+columns, the reason's strip above them, no heading past two lines against any ball, and the keyboard
+flow). Each failed on the old chart. `beside-walk.landscape` now reads the new chart in place of the
+old grid's columns.
+
+| Phone (390 x 664)                                  | Sideways (812 x 375)                                | Desktop (1280 x 800)                                   |
+| -------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| ![The chart on a phone](../images/chart/phone.png) | ![The chart sideways](../images/chart/sideways.png) | ![The chart on a desktop](../images/chart/desktop.png) |
