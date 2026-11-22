@@ -201,6 +201,10 @@ Each line is a rule; its ADR has the reasoning.
   row per pair, named to the page by its own `id` (never a user id). A lookup is one exact username
   or code, counted first per account and network; a decline is kept 30 days and still reads as sent
   to its sender. The Friends section is part of the account screen.
+- The inbox (`/me/inbox`, ADR 0079 PR (d)) is read on `inbox-poll.ts`'s time only (30 s while
+  visible, with friends; never while hidden); keep the read complete so a Realtime poke can
+  replace the timer. Status comes from one statement joined on accepted friendships; a friend's
+  challenge reuses the rematch's floating card, never over a fight.
 - Email codes are counted before Auth is called (`LIMITS.codes*`, `spendAll`): the player's own
   limits first, then everyone's caps (90 a day, 2,700 a month), which answer `email_busy` alike.
   An email answer never says whether an address has an account.
