@@ -53,7 +53,10 @@ minutes) until the player chooses.
 never `is_anonymous` from a token: a copy of the guest's old token stays valid for up to an hour.
 
 **Never during a live match or lobby.** Every start and finish of a sign-in refuses `409
-in_a_match` under the player's advisory lock (`checkNotLive`), before any cookie changes.
+in_a_match` under the player's advisory lock (`checkNotLive`), before any cookie changes. The
+player's own live match is settled first (ADR 0053's settle on read, `whileNotLive`): one both
+players left, and nobody has read since, is forfeited by its clock there, not counted as still
+going (staging found an abandoned match blocking sign-in and Log out).
 
 **Email codes and Resend Free's caps.** Counted in `game.rate_limits` before Auth is called, each
 subject an HMAC (as `ipSubject`):
@@ -91,11 +94,21 @@ names, the list, `/me`.
 - One change per 30 days by the database's `now()` (`username_set_at`); the same name again is no
   change. A name given up is free at once. Two claims of one name at once: the index decides,
   the other gets `username_taken`.
-- Our own blocklist (`username-words.ts`, `username-rules.ts`), no dependency: words found anywhere
+- A blocklist with no dependency (`username-words.ts`, `username-rules.ts`): words found anywhere
   in a name, and short ones only as a whole part (split at `_` and before a capital), read after
-  folding case, digits as letters (1 as i and as l), `_` between letters and a letter held down.
-  So "glass", "therapist" and "Kirk" pass and "sh1t", "a55" and "BigAss" don't. The owner clears a
-  name in SQL. Guest-like names ("Player1234", "deleted_player") and the game's own are refused.
+  folding case, digits as letters (1 as i and as l), `_` between letters and a letter held down
+  (three in a row: "boot" is not "bot"). So "glass", "therapist" and "Kirk" pass and "sh1t",
+  "a55" and "BigAss" don't. The owner clears a name in SQL.
+- **Changed after testing on staging (2026-11-22):** our own list was too thin ("bumhole" passed). It now adds
+  an open list as data, LDNOOBW's English list (`username-words-ldnoobw.ts`, Creative Commons
+  Attribution 4.0, credited in the file, entries unchanged): words of 5 letters or more anywhere,
+  shorter ones as a whole part, and a few that hide in ordinary words ("therapist", "basement",
+  "Montenegro") as a whole part only. Ours adds anatomy compounds and the slurs it lacks. Names
+  that could pass for a guest or the game are refused: anything starting "player", and bot,
+  admin, mod, ballbattle, support and system (as a part of a name, in any case).
+- **A report button is likely needed later.** No list catches every name: once players can find
+  each other (friends, PR (d)), a "Report this name" that queues it for the owner beats a longer
+  list.
 - Checked on the server only: the page sends what was typed and shows the answer under the field.
 - **No "is it free?" check while typing** (changed from the proposal's `GET ?check=`): saving is
   the check, and every try counts first, 20 an hour per account and 100 per network, so "taken"

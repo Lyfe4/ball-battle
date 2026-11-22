@@ -44,6 +44,30 @@ describe('the blocklist', () => {
     ['posing as a guest', 'Player1234'],
     ['posing as a deleted player', 'deleted_player'],
     ['a moderator in digits', 'm0derator'],
+    // Anatomy and slurs, as Calvin found "bumhole" accepted on staging.
+    ['anatomy in one word', 'bumhole'],
+    ['anatomy in capitals', 'BumHole'],
+    ['anatomy split', 'bum_hole'],
+    ['anatomy in digits', 'bumh0le'],
+    ['a short word as a part', 'Big_Bum'],
+    ['the open list', 'butthole'],
+    ['the open list, folded', 'Ball_Sack'],
+    ['a compound', 'nutsack99'],
+    ['a compound of a short word', 'DickHead'],
+    ['a slur from the open list', 'wetback'],
+    ['a slur as a part', 'paki_7'],
+    ['a slur held down', 'raggghead'],
+    // Names that pass for a guest or the game.
+    ['anything starting player', 'PlayerOne'],
+    ['player in digits', 'P1ayer_7'],
+    ['a bot', 'Bot'],
+    ['a bot as a part', 'NormalBot'],
+    ['a bot in digits', 'b0t_99'],
+    ['admin', 'Admin'],
+    ['mod', 'MOD'],
+    ['support', 'support'],
+    ['system', 'System_1'],
+    ['the game', 'BALLBATTLE'],
   ])('refuses %s (%s)', (_why, name) => {
     expect(usernameProblem(name)).toBe('blocked');
   });
@@ -68,6 +92,19 @@ describe('the blocklist', () => {
     'sam_99',
     'nightowl',
     'Kirk',
+    // Hold a word from the open list inside another.
+    'basement',
+    'specialist',
+    'Montenegro',
+    'bumblebee',
+    'Twinkle',
+    'domestic',
+    'basket',
+    'considerate',
+    'boot_camp',
+    'moody',
+    'robot_wars',
+    'replay_fan',
   ])('takes %s, which only holds a short word inside another', (name) => {
     expect(usernameProblem(name)).toBeUndefined();
   });
