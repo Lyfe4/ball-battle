@@ -42,6 +42,11 @@ export interface Placement {
   readonly covers: boolean;
   /** Set when even that place would be over its gear: the menu is capped and scrolls inside. */
   readonly maxHeight?: number;
+  /**
+   * Beside a court with no room by its gear (a phone turned sideways): the menu takes the panel's
+   * whole room, this wide and tall, so nothing of the panel peeks out around it.
+   */
+  readonly fill?: Size;
 }
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -124,6 +129,14 @@ export function placeMenu(
     .find((candidate) => !overlaps({ left, top: candidate, ...size }, gear));
   if (offGear !== undefined) {
     return { left, top: offGear, covers: overlaps({ left, top: offGear, ...size }, court) };
+  }
+  // In the panel beside a court (a phone turned sideways, 2026-11-23 walk): over its gear anyway,
+  // it would leave the panel's ? and Leave series peeking out around it, so it takes the panel's
+  // room whole, still off the court.
+  const besideWidth = screen.width - EDGE - insets.right - (courtRight + GAP);
+  if (gear.left >= courtRight && besideWidth >= size.width) {
+    const fill = { width: besideWidth, height: menuMaxHeight(screen, insets) };
+    return { left: courtRight + GAP, top: minTop, covers: false, fill };
   }
   const room = gear.top - GAP - minTop;
   if (room >= MIN_SCROLL_HEIGHT) {
