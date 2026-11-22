@@ -74,6 +74,8 @@ function watch(node: HTMLElement, property: string) {
 }
 
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
+/** One frame at 60 Hz, in ms. */
+const FRAME_MS = 1000 / 60;
 
 describe('a tap on a touch phone', () => {
   it('lights a button as its hover does, long enough to see, then lets it go', async () => {
@@ -87,7 +89,12 @@ describe('a tap on a touch phone', () => {
     // The whole look shows while lit: the transition into it ends before the light goes.
     expect(seen.settleMs).toBeGreaterThan(0);
     expect(seen.settleMs).toBeLessThan(PRESS_SHOWN_MS);
-    expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 20);
+    // Long enough to see, counted in what a player sees: frames. Both ends are read from observer
+    // callbacks on a clock Firefox coarsens, and its timers are not promised to the millisecond,
+    // so a light kept for 200 ms by press.ts's own clock once measured 179 ms here (Firefox, CI).
+    // Ten frames at 60 Hz (two frames short of the 200 ms) is still a light anyone sees, and a
+    // light cut short by a real bug (a stray pointerdown, the timer dropped) measures far less.
+    expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 2 * FRAME_MS);
     expect(send.hasAttribute('data-pressed'), 'never stuck lit').toBe(false);
     expect(lookOf(send, 'filter').look).toBe('none');
   });
