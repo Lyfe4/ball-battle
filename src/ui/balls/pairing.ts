@@ -29,6 +29,10 @@ export function createPairing(): Pairing {
     const icon = element('canvas', 'pairing-icon');
     icon.setAttribute('aria-hidden', 'true');
     drawBallIcon(icon, ball, ICON_PX, repeat);
+    // Its size on screen is pairing.css's (smaller beside a phone's court turned sideways); the
+    // drawing keeps ICON_PX of pixels, so it stays sharp shown smaller.
+    icon.style.removeProperty('width');
+    icon.style.removeProperty('height');
     holder.append(icon, element('span', 'pairing-name', ball.name));
     return holder;
   }

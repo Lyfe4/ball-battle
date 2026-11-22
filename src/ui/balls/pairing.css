@@ -18,11 +18,15 @@
   text-align: center;
 }
 
+.pairing-icon,
+.pairing-unknown {
+  width: 48px;
+  height: 48px;
+}
+
 .pairing-unknown {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
   border-radius: 50%;
   background: var(--color-raised);
   color: var(--color-text-muted);
@@ -39,4 +43,33 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   font-weight: 700;
+}
+
+/*
+ * Beside a phone's court turned sideways (ADR 0067 addendum of 2026-11-22): smaller drawings, so the
+ * ready card fits a court 288 px tall with room for its reason. The same size between rounds.
+ */
+@media (min-aspect-ratio: 5/4) {
+  .pairing-icon,
+  .pairing-unknown {
+    width: 36px;
+    height: 36px;
+  }
+
+  .pairing-unknown {
+    font-size: 1.125rem;
+  }
+}
+
+/* A desktop has the room: the full size again. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .pairing-icon,
+  .pairing-unknown {
+    width: 48px;
+    height: 48px;
+  }
+
+  .pairing-unknown {
+    font-size: 1.5rem;
+  }
 }

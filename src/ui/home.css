@@ -194,9 +194,13 @@
   min-height: var(--tap-target);
 }
 
+/*
+ * Beside the court: up to the setup width, but never more than the room beside it
+ * (`--beside-room`, layout.css), so a 667 x 320 phone's demo court keeps full height.
+ */
 @media (min-aspect-ratio: 5/4) {
   .stage[data-home] .hud {
-    width: var(--setup-width);
+    width: clamp(var(--hud-width), var(--beside-room), var(--setup-width));
   }
 }
 
