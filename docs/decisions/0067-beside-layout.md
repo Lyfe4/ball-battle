@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-18
 - Amends: ADR 0031 (the desktop query is the one desktop query; the beside query is named too)
-- Amended by: its addendum of 2026-11-22 (a calm fight on a phone turned sideways)
+- Amended by: its addenda of 2026-11-22 (a calm fight on a phone turned sideways; the smallest phone sideways in Safari)
 
 ## Context
 
@@ -76,3 +76,60 @@ Seen failing on the old stylesheets. The desktop flows (`consistency`, `desktop-
 
 Not checked headless: a real phone's browser bar (the resize can't be reproduced there; the fix
 removes its cause, page scrolling).
+
+## Addendum (2026-11-22): the smallest phone sideways in Safari
+
+On a real iPhone 13 in Safari (owner's test on staging), the beside layout was cramped and cut
+off: the ready card's longest lines ran off its right edge ("Necromancer is strongly" clipped) and
+the card spilled past the court, and Free play's picker scrolled inside a box beside an empty,
+dimmed court that cut tiles in half at its top and bottom. Our 812 x 375 project is a phone with
+no browser bar and no notch.
+
+**The size.** In landscape Safari keeps its bar at the top, and a notched iPhone's safe areas take
+47 px a side and 21 px at the bottom. From the owner's iPhone 13 screenshots (2000 x 924 px of an
+844 x 390 pt screen), Safari's bar ends 63 pt down: the page sees about 844 x 327, the stage about
+750 x 290, so the court is about 290 square. An iPhone SE (667 x 375, no notch) is narrower; the
+Pro Max is larger on both counts. The new `browsers-landscape-small` project is **667 x 320**, an
+SE's width and a 13's usable height (a 288 px court), with touch. Playwright can't make safe areas,
+so the size takes them off instead. It runs the two sideways flows above and its own flow.
+
+- **The ready card fits the court.** Beside, its layer's padding is 8 px and the card takes the
+  court's width; the pairing's drawings are 36 px (pairing.css; CSS now owns their size, the canvas
+  keeps 48 px of pixels); a desktop restores both.
+- **Setup screens and the round screen have no court beside them** (as on a phone and, for setup,
+  a desktop, ADR 0020): the page scrolls a column `min(40rem, 100%)` wide, the manual's. With
+  nothing fighting, the browser's bar moving resizes nothing, so the page scrolling is safe here;
+  the inner scroll box beside an empty court was what cut tiles. A desktop keeps the dimmed round
+  beside its round screen.
+- **Every beside screen opens at its top.** The round screen's first action takes focus without
+  scrolling the page beside the court (`BESIDE_LAYOUT`, `src/app/layout-query.ts`, held to the
+  CSS by `layout-queries.test.ts`): scrolling to it sliced the header, its gear and ? and the
+  track off at the top edge. A phone still scrolls to it.
+- **Free play's picker is two columns beside the court**, as on a desktop (the same areas,
+  quick-setup.css): the slots, why and Start match in a 16rem column, the legend and the grid
+  beside it, the page as wide as the screen. At 667 x 320 two whole rows of tiles show at the top,
+  and Start match, sticky in its own column, never covers a tile.
+- **The panel beside a fight is exactly as wide as the room**: `--beside-room` (layout.css), the
+  width less the stage's padding, the gap and the court, safe areas included (it was `100vw -
+100dvh - 3rem`, 32 px short at 667 x 320, where the score line wrapped). Home's panel is at most
+  that wide too, so the demo court keeps its full height.
+- **Mid-fight rows are 8 px apart** beside (12 on a desktop), so the ability caption, the panel's
+  last row, shows whole under speed: the longest (two lines, 77 px) leaves the Free play panel at
+  279 of 288 px.
+
+Tests: `beside-tops.landscape.browser.test.ts` (both landscape projects) visits home, the picker,
+the vs Bot setup, the lineup, a round and its round screen: at scroll 0 nothing cut off above the
+screen, everything reachable, no sideways scroll; and the picker's first row whole above Start
+match, which covers no tile at the top, middle or end of the page (seen failing without each
+fix: no tile above Start; the round screen scrolled 29 and 216 px). `small-landscape.landscape-small.browser.test.ts` opens the iPhone's pairing (Archer vs
+Necromancer, the longest edge line) at 667 x 320: the card inside the court and no part of it
+wider than its box, the caption and ring together in the ball's colour and the caption whole
+inside the panel, settings inside the screen, and Free play's picker with no inner scroll box, no
+court and every name on one line. `landscape.landscape` runs here too (home's court at full
+height). Both were seen failing on the old stylesheets. Not checked headless: Safari's own bar
+(the size stands in for it).
+
+| Before (667 x 320)                                                          | After                                                                                 |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| ![The iPhone's card, clipped](../images/landscape/small-card-before.png)    | ![The card inside the court](../images/landscape/small-card-after.png)                |
+| ![Free play's picker in a box](../images/landscape/small-picker-before.png) | ![Free play's picker, the page scrolling](../images/landscape/small-picker-after.png) |

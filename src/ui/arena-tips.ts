@@ -1,22 +1,41 @@
-// Teaching in the arena, at the moment things happen (ADR 0036 and its 2026-11-22 addendum): the
+// Teaching in the arena, at the moment things happen (ADR 0036 and its 2026-11-22 addenda): the
 // first time this device sees a ball's ability, its name and the ball's one-line description in a
 // fixed place by the match (`#arena-caption`: under the speed row on a phone, the panel's last
-// row beside the court), for 4 s, and a soft ring on the thing it is about (the bomb on the
-// floor, else the ball).
+// row beside the court), for 4 s, and a ring in the ball's colour on the thing it is about (the
+// bomb on the floor, else the ball). Both appear on the same frame, and the caption's title wears
+// that colour beside a small drawing of the ball, so the eye goes from the ball to the words.
 // Read from sim events and the definitions, so it can't disagree with the fight. Nothing slows:
-// a live fight stays in step. The ring only fades with reduced motion. Hints can be turned off in
-// settings (ADR 0040). The pairing's "what to watch" is the ready card's (ready-card.ts).
+// a live fight stays in step. Each enters once, then holds still (arena-tips.css); with reduced
+// motion they only fade. Hints can be turned off in settings (ADR 0040). The pairing's "what to
+// watch" is the ready card's (ready-card.ts).
 import type { Tips } from '../app/tips.ts';
 import { showsAbility } from '../render/ability-sign.ts';
+import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
+import { drawBallIcon } from '../render/ball-icon.ts';
+import { readableTextOn } from '../render/contrast.ts';
 import { theme } from '../render/theme.ts';
 import { sideOf } from '../sim/side.ts';
-import type { BallState, DefinitionLookup, SimEvent, Vec2, WorldState } from '../sim/types.ts';
+import type {
+  BallDefinition,
+  BallState,
+  DefinitionLookup,
+  SimEvent,
+  Vec2,
+  WorldState,
+} from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
 
 /** How long a caption shows, in effect-time milliseconds: long enough to read one sentence. */
 export const HINT_MS = 4000;
-/** How long its ring pulses, from the caption's start. */
+/** How long its ring shows, from the caption's start: in, still, then out (arena-tips.css). */
 export const RING_MS = 2400;
+/** The caption's drawing of its ball, in CSS pixels: a mark beside the title, not a picture. */
+const MARK_PX = 20;
+
+/** The caption's box colour (tokens.css --color-surface), read from the page's styles. */
+function surfaceColor(): string {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim();
+}
 
 export interface ArenaTips {
   /** A new match: whether hints show in it (never in the home demo). */
@@ -32,8 +51,12 @@ interface Hint {
   readonly ballId: string;
   /** Its ball's definition id: the key it was taken under. */
   readonly key: string;
+  readonly definition: BallDefinition;
   readonly title: string;
   readonly sentence: string;
+  /** Its ball's colour as the court draws it (a mirror's second ball lighter): ring and title. */
+  readonly color: string;
+  readonly isRepeat: boolean;
   /** Where the thing it is about stays put (a zone): the ring sits there; else on the ball. */
   readonly at: { readonly position: Vec2; readonly radius: number } | undefined;
 }
@@ -76,9 +99,13 @@ export function createArenaTips(
   ring.hidden = true;
   layer.append(ring);
   container.append(layer);
+  const mark = element('canvas', 'arena-caption-mark');
+  mark.setAttribute('aria-hidden', 'true');
   const title = element('strong', 'arena-caption-title');
+  const head = element('span', 'arena-caption-head');
+  head.append(mark, title);
   const sentence = element('span', 'arena-caption-text');
-  caption.replaceChildren(title, sentence);
+  caption.replaceChildren(head, sentence);
   caption.hidden = true;
 
   /** Hints due, in order: one shows at a time. */
@@ -107,11 +134,20 @@ export function createArenaTips(
     }
     setText(title, next.title);
     setText(sentence, next.sentence);
+    // Title and ring in one shade of the ball's colour: lightened only as far as text needs on the
+    // caption's box, which also lifts a dark ball's ring (the Necromancer's) off the dark floor.
+    const shade = readableTextOn(next.color, surfaceColor());
+    title.style.color = shade;
+    ring.style.setProperty('--tip-color', shade);
+    drawBallIcon(mark, next.definition, MARK_PX, next.isRepeat);
+    // Each enters once, from the same frame (the ring is placed and shown by the next update,
+    // drawn with this tick): restarted for a new caption with one layout read, once per tip.
+    caption.classList.remove('arena-caption-enter');
+    ring.classList.remove('tip-ring-enter');
+    caption.getBoundingClientRect();
+    caption.classList.add('arena-caption-enter');
+    ring.classList.add('tip-ring-enter');
     setHidden(caption, false);
-    // Restart the pulse for a new caption (one layout read, once per tip).
-    ring.classList.remove('tip-ring-pulse');
-    ring.getBoundingClientRect();
-    ring.classList.add('tip-ring-pulse');
   };
 
   return {
@@ -126,15 +162,19 @@ export function createArenaTips(
     apply(events, world, nowMs) {
       if (!teachingNow || !tips.enabled()) return;
       for (const event of events) {
-        for (const ball of world.balls) {
+        for (const [index, ball] of world.balls.entries()) {
           const definition = lookup.get(ball.definitionId);
           const ability = definition?.ability;
           if (definition === undefined || ability === undefined) continue;
           if (!showsAbility(event, ball.id, ability.shownBy)) continue;
           if (tips.takeHint(ball.definitionId)) {
+            const isRepeat = isRepeatOfEarlierBall(world.balls, index);
             queue.push({
               ballId: ball.id,
               key: ball.definitionId,
+              definition,
+              color: ballColor(definition.color, isRepeat),
+              isRepeat,
               title: `${definition.name}: ${ability.name}`,
               sentence: definition.description,
               at: spotOf(event),

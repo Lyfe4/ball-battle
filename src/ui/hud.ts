@@ -1,5 +1,5 @@
 import { ballColor, isRepeatOfEarlierBall } from '../render/ball-colors.ts';
-import { readableOn } from '../render/contrast.ts';
+import { readableTextOn } from '../render/contrast.ts';
 import { isFirstOfSide, sideHealth } from '../sim/side.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
@@ -38,12 +38,6 @@ interface BallRow {
 /** The page colour the HUD sits on (tokens.css --color-page), read from the page's styles. */
 function pageColor(): string {
   return getComputedStyle(document.documentElement).getPropertyValue('--color-page').trim();
-}
-
-/** A ball's colour made readable as text on `background`; unchanged if either isn't #rrggbb. */
-function textColorOn(color: string, background: string): string {
-  const hex = /^#[0-9a-f]{6}$/i;
-  return hex.test(color) && hex.test(background) ? readableOn(color, background) : color;
 }
 
 /** Slot labels, so mirror matches (two identical balls) are still told apart. */
@@ -115,7 +109,7 @@ export function createHud(
         item.style.setProperty('--ball-color', color);
         // The name is text, so it takes a shade of the ball's colour readable on the page; the
         // bar keeps the ball's own colour.
-        item.style.setProperty('--ball-text', textColorOn(color, pageColor()));
+        item.style.setProperty('--ball-text', readableTextOn(color, pageColor()));
 
         const name = element('span', 'hud-ball-name');
         name.append(

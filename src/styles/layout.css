@@ -59,10 +59,22 @@
  * screen's full height and the panel beside it; the phone column would squeeze the court to nothing
  * there. One of three layouts, each with one query used verbatim (layout-queries.test.ts): the phone
  * column (no query), beside `(min-aspect-ratio: 5/4)`, and desktop below, which refines beside.
- * Checked at 812 x 375 by the browsers-landscape project.
+ * Checked at 812 x 375 and 667 x 320 by the browsers-landscape projects.
  */
 @media (min-aspect-ratio: 5/4) {
   .stage {
+    /*
+     * The room beside the court (ADR 0067 addendum of 2026-11-22): the width less the stage's side
+     * padding, the gap and the court (the height less the stage's top and bottom padding), the safe
+     * areas included. A panel beside the court is at most this wide, so the court keeps full height.
+     */
+    --beside-room: calc(
+      100vw - 100dvh - var(--space-gap) - 1px + max(var(--space-gutter), env(safe-area-inset-top)) +
+        max(var(--space-gutter), env(safe-area-inset-bottom)) -
+        max(var(--space-gutter), env(safe-area-inset-left)) -
+        max(var(--space-gutter), env(safe-area-inset-right))
+    );
+
     flex-direction: row;
     justify-content: center;
   }
@@ -80,7 +92,7 @@
    */
   .hud {
     /* As wide as the room beside the court allows, up to 22rem, so its lines don't wrap. */
-    width: clamp(var(--hud-width), 100vw - 100dvh - 3rem, 22rem);
+    width: clamp(var(--hud-width), var(--beside-room), 22rem);
     margin-block: auto;
     /*
      * A phone turned sideways (ADR 0067 addendum): the panel scrolls inside itself, so the
@@ -91,12 +103,25 @@
     overflow-y: auto;
     overscroll-behavior: contain;
   }
+
+  /*
+   * Mid-fight, tighter rows, so the ability caption, the panel's last row here, shows whole under
+   * speed on a court 288 px tall (667 x 320) rather than below the panel's fold. A desktop spaces
+   * them again.
+   */
+  .stage:is([data-screen='match'], [data-screen='series'], [data-screen='online']):not(
+      [data-setup],
+      [data-round-over]
+    )
+    .hud {
+    gap: var(--space-small);
+  }
 }
 
 /*
  * Setup screens (data-screen on .stage): the arena only shows when something is fighting. On a
- * phone a setup screen takes the whole screen and the page scrolls; beside the arena on a wide
- * screen, the paused match stays, dimmed, and the panel widens for the ball grid.
+ * phone, a phone turned sideways and a desktop alike, a setup screen takes the whole screen and the
+ * page scrolls.
  */
 .stage[data-setup] {
   height: auto;
@@ -108,26 +133,29 @@
   display: none;
 }
 
+/*
+ * Beside, a setup screen has no court either (ADR 0067 addendum of 2026-11-22): a phone turned
+ * sideways has too little height for a panel boxed beside an empty, dimmed court, which cut tiles
+ * in half at its edges. The page scrolls a column as wide as the manual's; with nothing fighting,
+ * the browser's bar moving resizes nothing. It starts at the top, so its header sits in the same
+ * place on every screen; only the panel beside a match centres (ADR 0038).
+ */
 @media (min-aspect-ratio: 5/4) {
   .stage[data-setup] {
-    height: 100dvh;
     align-items: flex-start;
   }
 
-  .stage[data-setup] .arena-container {
-    display: grid;
-    opacity: 0.3;
+  .stage[data-setup] .hud {
+    width: min(40rem, 100%);
+    max-width: none;
+    max-height: none;
+    margin-block: 0;
+    overflow-y: visible;
   }
 
-  /*
-   * A setup screen starts at the top, so its header sits in the same place on every screen; only
-   * the panel beside a match centres (the auto margins above, ADR 0038).
-   */
-  .stage[data-setup] .hud {
-    width: var(--setup-width);
-    max-height: 100%;
-    margin-block: 0;
-    overflow-y: auto;
+  /* Free play's picker is two columns here (quick-setup.css): it takes the whole width. */
+  .stage[data-screen='pick'] .hud {
+    width: 100%;
   }
 }
 
@@ -139,10 +167,24 @@
   display: none;
 }
 
+/*
+ * Beside, as on a phone (ADR 0067 addendum of 2026-11-22): a phone turned sideways has no height
+ * for the round screen boxed beside the dimmed round, which cut its first lines off at the top.
+ * The page scrolls the setup screens' column; a desktop keeps the dimmed round (below).
+ */
 @media (min-aspect-ratio: 5/4) {
-  .stage[data-round-over] .arena-container {
-    display: grid;
-    opacity: 0.3;
+  .stage[data-round-over] {
+    height: auto;
+    min-height: 100dvh;
+    align-items: flex-start;
+  }
+
+  .stage[data-round-over] .hud {
+    width: min(40rem, 100%);
+    max-width: none;
+    max-height: none;
+    margin-block: 0;
+    overflow-y: visible;
   }
 }
 
@@ -196,8 +238,27 @@
     overflow-y: visible;
   }
 
+  .stage:is([data-screen='match'], [data-screen='series'], [data-screen='online']):not(
+      [data-setup],
+      [data-round-over]
+    )
+    .hud {
+    gap: var(--space-gap);
+  }
+
   /* Between rounds and at the result the panel beside the dimmed round holds the screen's job. */
+  .stage[data-round-over] {
+    height: 100dvh;
+    align-items: center;
+  }
+
+  .stage[data-round-over] .arena-container {
+    display: grid;
+    opacity: 0.3;
+  }
+
   .stage[data-round-over] .hud {
     width: var(--panel-width-wide);
+    margin-block: auto;
   }
 }

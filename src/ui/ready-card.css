@@ -105,8 +105,33 @@
   font-size: var(--font-size-tiny);
 }
 
-@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+/*
+ * Beside a phone's court turned sideways (ADR 0067 addendum of 2026-11-22): the court can be 288 px
+ * square, so the card takes its whole width and spends less on space, and its longest reason stays
+ * inside it. The pairing's drawings are smaller here too (pairing.css).
+ */
+@media (min-aspect-ratio: 5/4) {
+  .ready-layer {
+    padding: var(--space-small);
+  }
+
   .ready-card {
+    width: min(100%, 21rem);
+    gap: 2px;
+  }
+
+  .ready-reason {
+    line-height: 1.25;
+  }
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .ready-layer {
+    padding: var(--space-gap);
+  }
+
+  .ready-card {
+    gap: 4px;
     width: min(100%, 26rem);
     padding: var(--space-gutter) var(--space-gutter) var(--space-small);
   }

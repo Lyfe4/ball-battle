@@ -53,6 +53,13 @@ describe('the ball roster', () => {
     }
   });
 
+  it('names every ability apart from its ball, so a tip never reads "Boomerang: Boomerang"', () => {
+    const echoes = BALLS.filter(
+      (ball) => ball.ability?.name.toLowerCase() === ball.name.toLowerCase(),
+    );
+    expect(echoes.map((ball) => ball.name)).toStrictEqual([]);
+  });
+
   it('keeps the fastest possible closing speed under the pass-through margin, by construction', () => {
     // ADR 0008: every ball cruises at a fixed speed, so two balls can close at most as fast as the
     // sum of their highest cruise speeds. Listed per ball, so a speed buff fails here at once.
