@@ -184,6 +184,8 @@ function place(): void {
   if (menu?.opener === undefined) return;
   const view = window.visualViewport;
   const { panel, probe, opener, paused } = menu;
+  // Measuring lifts the cap for a moment, which scrolls the menu to its top: kept where it was.
+  const scrolled = panel.scrollTop;
   const gear = opener.getBoundingClientRect();
   const insets = safeInsets(probe);
   const court = host?.court();
@@ -234,6 +236,16 @@ function place(): void {
   paused.hidden = !spot.covers;
   panel.style.left = `${String(spot.left)}px`;
   panel.style.top = `${String(spot.top)}px`;
+  panel.scrollTop = scrolled;
+}
+
+/**
+ * The page, or a box holding the gear, scrolled: the menu follows its gear. Its own scroll is left
+ * alone: re-placing lifts its cap for a moment, which put a scrolled menu back at the top.
+ */
+function onScroll(event: Event): void {
+  if (event.target instanceof Node && menu?.panel.contains(event.target) === true) return;
+  place();
 }
 
 function onKey(event: KeyboardEvent): void {
@@ -281,7 +293,7 @@ function closeMenu(refocus: boolean): void {
   document.removeEventListener('keydown', onKey);
   document.removeEventListener('pointerdown', onPointer, true);
   window.removeEventListener('resize', place);
-  window.removeEventListener('scroll', place, true);
+  window.removeEventListener('scroll', onScroll, true);
   window.visualViewport?.removeEventListener('resize', place);
   if (refocus) opener.focus();
 }
@@ -299,7 +311,7 @@ function openMenu(gear: HTMLButtonElement): void {
   document.addEventListener('keydown', onKey);
   document.addEventListener('pointerdown', onPointer, true);
   window.addEventListener('resize', place);
-  window.addEventListener('scroll', place, true);
+  window.addEventListener('scroll', onScroll, true);
   window.visualViewport?.addEventListener('resize', place);
 }
 
