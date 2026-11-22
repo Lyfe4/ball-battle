@@ -162,7 +162,8 @@ export function signUpGuest(config: Config, clientIp: string | undefined): Promi
 
 /**
  * New tokens for a refresh token. Auth rotates refresh tokens but accepts a used one again within
- * its reuse interval (10 s), so two tabs refreshing at once both succeed.
+ * its reuse interval (an hour, ADR 0079), answering with the session's current one: two tabs
+ * refreshing at once both succeed, and a refresh whose answer never reached the phone recovers.
  */
 export function refreshSession(config: Config, refresh: string): Promise<AuthSession> {
   return tokenCall(config, 'token?grant_type=refresh_token', { refresh_token: refresh });
