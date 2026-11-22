@@ -54,6 +54,12 @@ export const ERROR_CODES = [
   'username_taken',
   /** A username changed less than 30 days ago. */
   'username_too_soon',
+  /** No account has that username or friend code (ADR 0079): guests are never found. */
+  'friend_not_found',
+  /** A friend request to the player's own username or code. */
+  'friend_self',
+  /** Too many friends or waiting requests, on either side. */
+  'friend_limit',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
   'ruleset_missing',
   'internal',

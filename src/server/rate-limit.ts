@@ -128,6 +128,22 @@ export const LIMITS = {
   usernames: { bucket: 'username', max: 20, windowSeconds: 3600 },
   /** And from one network: a class choosing names at once fits. */
   usernamesFromNetwork: { bucket: 'username.network', max: 100, windowSeconds: 3600 },
+  /**
+   * Friends looked up by one account (ADR 0079, PR (c)): an exact username or friend code each, so
+   * a few typos fit and listing who plays doesn't.
+   */
+  friendLookups: { bucket: 'friend.lookup', max: 30, windowSeconds: 3600 },
+  /** And from one network: a class adding each other at once fits. */
+  friendLookupsFromNetwork: { bucket: 'friend.lookup.network', max: 300, windowSeconds: 3600 },
+  /** New friend requests by one account in a day (UTC): answering one never counts. */
+  friendRequests: {
+    bucket: 'friend.request',
+    max: 20,
+    windowSeconds: DAY,
+    refusal: (retry) => `That’s today’s friend requests: try again in ${waitWords(retry)}`,
+  },
+  /** Accepting, declining, cancelling and removing by one account. */
+  friendChanges: { bucket: 'friend.change', max: 120, windowSeconds: 3600 },
   /** A Google sign-in's state, used once (ADR 0079): a copied cookie can't finish it again. */
   googleState: { bucket: 'google.state', max: 1, windowSeconds: 600 },
 } as const satisfies Record<string, Limit>;

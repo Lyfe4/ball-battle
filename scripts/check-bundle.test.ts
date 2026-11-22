@@ -42,10 +42,14 @@ describe('the bundle check', () => {
       'location.assign("/api/v1/auth/google")',
       'f("auth/switch")',
       'f("PUT","me/username")',
+      'f("GET","friends")',
+      'f("POST",`friends/${id}/accept`)',
     ]) {
       expect(problemsIn('a.js', text, true, false), text).toHaveLength(1);
       expect(problemsIn('a.js', text, true, true), text).toStrictEqual([]);
     }
     expect(problemsIn('a.js', 'const author="x"; oauth/emails', true, false)).toStrictEqual([]);
+    // Words about friends in the page's text are not the friends routes.
+    expect(problemsIn('a.js', 't("Play your friends")', true, false)).toStrictEqual([]);
   });
 });

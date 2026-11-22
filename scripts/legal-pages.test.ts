@@ -7,6 +7,7 @@ import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
 import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
+import { DECLINE_DAYS } from '../src/server/db/friends.ts';
 import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
 
@@ -83,6 +84,24 @@ describe('the privacy policy and terms', () => {
     expect(privacy).toContain('how many usernames are tried');
     expect(privacy).toContain('<strong>Delete account</strong>');
     expect(privacy).toContain('<strong>Log out</strong>');
+  });
+
+  it('name the friend code, friendships, a decline’s 30 days and the counts (ADR 0079)', () => {
+    expect(privacy).toContain('Your friend code');
+    expect(privacy).toContain(
+      'Your friends and friend requests, and when each was sent and answered',
+    );
+    expect(privacy.replace(/\s+/g, ' ')).toContain(
+      `A request you decline is kept for ${String(DECLINE_DAYS)} days`,
+    );
+    const counts = [
+      LIMITS.friendLookups,
+      LIMITS.friendLookupsFromNetwork,
+      LIMITS.friendRequests,
+      LIMITS.friendChanges,
+    ];
+    expect(Math.max(...counts.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(86_400);
+    expect(privacy.replace(/\s+/g, ' ')).toContain('how many friends are looked up and asked');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {
