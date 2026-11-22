@@ -109,6 +109,17 @@ export const rematchOpen = (rematch: RematchView): boolean =>
   rematch.state === 'agreed';
 
 /**
+ * Whether "none, not offered" means not yet (2026-11-23): before `opensAt` (server time), the end of
+ * the last fight of a match played out, a rematch cannot be asked yet but will be. A little past
+ * it too, for the server marking the end. Never once something has happened.
+ */
+export const rematchNotYet = (rematch: RematchView, opensAt: number): boolean =>
+  rematch.state === 'none' && !rematch.offered && rematch.now < opensAt + OPENS_MARGIN_MS;
+
+/** How long past the last fight's end "not offered" still means not yet. */
+const OPENS_MARGIN_MS = 5_000;
+
+/**
  * Home's way back to a rematch that waits on this player (2026-11-23): the end screen while the one
  * who asked waits for the answer (`answer`), or the lineup once both said yes (`lineup`).
  */

@@ -3,6 +3,7 @@
 // ends without one (out of time), which both players are told, with Home.
 import { callApi, type ApiFailure } from '../app/api.ts';
 import { decodeRematchView, type RematchView } from '../api/rematch.ts';
+import { secondsUntil } from '../app/live-play.ts';
 import type { Lineup } from '../sim/series.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
 
@@ -32,7 +33,11 @@ function noticeOf(view: RematchView | undefined, home: () => void): NoticeConten
       title: 'Rematch',
       waiting: {
         title: 'Waiting for your friend’s lineup',
-        line: 'The match starts when it’s in.',
+        // The wait has an end both phones are told of: the seconds left for the lineups.
+        line:
+          view.deadline === null
+            ? 'The match starts when it’s in.'
+            : `The match starts when it’s in · ${String(secondsUntil(view.deadline, view.now))} s left`,
       },
       body: [],
       buttons: [],
