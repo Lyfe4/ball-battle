@@ -29,8 +29,12 @@ export const otherSide = (side: Side): Side => (side === 'a' ? 'b' : 'a');
 /** The side across from the player. */
 export const theirSide = (seats: Seats): Side => otherSide(seats.you);
 
-/** A sentence's first word with a capital: "The bot plays…", "Player 4821 plays…". */
-export const capital = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
+/**
+ * The other side at the start of a sentence: "The bot plays…"; a player's name is kept as they
+ * chose it, "sam_99 plays…" (ADR 0079).
+ */
+export const capital = (text: string): string =>
+  text.startsWith('the ') ? `T${text.slice(1)}` : text;
 
 /** "You" or the other side's label, for a side. */
 export const labelOf = (seats: Seats, side: Side): string =>

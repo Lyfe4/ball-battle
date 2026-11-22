@@ -81,6 +81,10 @@ describe('the toss in words', () => {
     expect(tossWords('landed', 'b', BOT_SEATS)).toBe('The bot shows first');
   });
 
+  it('keeps a username as its player chose it (ADR 0079)', () => {
+    expect(tossWords('landed', 'a', playerSeats('b', 'sam_99'))).toBe('sam_99 shows first');
+  });
+
   it('puts a short label on each face, so no name escapes the coin', () => {
     expect(coinFace(BOT_SEATS, 'a')).toBe('You');
     expect(coinFace(BOT_SEATS, 'b')).toBe('Bot');
