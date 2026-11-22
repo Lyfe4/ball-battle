@@ -32,12 +32,16 @@ export const played = (you: 'a' | 'b', endsAt: number) =>
     live: { startedAt: T - 90_000, fights: [{ round: 3, fightAt: endsAt - 40_000, endsAt }] },
   }) as unknown as SeriesView;
 
+/** The lineups picked together once both said yes (ADR 0080). */
+export const START = '22222222-3333-4444-8555-666666666666';
+
 export const view = (over: Partial<RematchView>): RematchView => ({
   state: 'none',
   askedBy: null,
   declinedBy: null,
   deadline: null,
   now: T,
+  startId: over.state === 'agreed' || over.state === 'started' ? START : null,
   lineupIn: false,
   seriesId: null,
   offered: true,

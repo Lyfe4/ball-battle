@@ -1,25 +1,30 @@
-// Friend challenges on the page (ADR 0052, 0055): sending one (the vs Friend setup, a lineup, then
-// the link to share) and answering one (the card that says who sent it, then a lineup without
-// seeing theirs). The guest is made here after the 16+ confirmation, asked once per device at the
-// start of either flow (opening the vs Friend setup, or Build your lineup on a friend's card), so
-// a lineup is never built only to be stopped; never on load. Every state has a way on (ADR 0027).
+// Friend challenges on the page (ADR 0052, 0055, 0080): sending one (the vs Friend setup's Send
+// challenge, then the lobby with the link to share) and answering one (the card that says who sent
+// it, with Accept). Once accepted, both players pick their lineups together on one screen
+// (`?start=`, start-lineup.ts), the same screen a rematch uses. The guest is made here after the 16+
+// confirmation, asked once per device at the start of either flow (opening the vs Friend setup, or
+// Accept on a friend's card); never on load. Every state has a way on (ADR 0027).
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { rememberGuest } from '../app/online-device.ts';
-import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
+import {
+  writeChallengeParams,
+  writeOnlineSeriesParams,
+  writeStartParams,
+} from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
-import type { BestOf, Format, Lineup } from '../sim/series.ts';
+import type { BestOf, Format } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
-import type { Draft } from '../ui/lineup-draft.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
+import type { SetupChoices } from '../ui/series/rules-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createFriendSetup } from './friend-setup.ts';
-import { createRematchLineup } from './rematch-lineup.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 import { challengeUrl, copyLink, shareLink } from './online-share.ts';
+import { createStartLineup } from './start-lineup.ts';
 
 export type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 
@@ -37,22 +42,20 @@ export function createChallengeScreens(
   host: ChallengeHost,
 ): ChallengeScreens {
   let visible = false;
-  let draft: Draft = [];
   let info: ChallengeInfo | undefined;
   let token: string | undefined;
   /** One id per challenge being sent, so a retry after a lost answer gets the same link. */
   let requestId = crypto.randomUUID();
-  let sending:
-    { readonly format: Format; readonly bestOf: BestOf; readonly rematch?: string } | undefined;
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
   /** The friend the challenge being sent is for (ADR 0079 PR (d)), if any. */
   let inviting: { readonly id: string; readonly name: string } | undefined;
 
+  const home = () => {
+    host.home();
+  };
   const back = () => {
-    host.back(() => {
-      host.home();
-    });
+    host.back(home);
   };
   const notice = createNotice(roots.notice, back);
   createSkeleton(roots.loading, 'card', back);
@@ -61,44 +64,33 @@ export function createChallengeScreens(
     rewrite: (write) => {
       host.rewrite(write);
     },
-    go: (write) => {
-      host.go(write);
-    },
+    send: (chosen) => send(chosen),
   });
   const lineup = createLineupStep(balls, {
-    onBack: () => {
-      host.back(() => {
-        if (sending !== undefined || token === undefined) host.friend();
-        else
-          host.replaceWith((url) => {
-            writeChallengeParams(url, token ?? '');
-          });
-      });
-    },
+    // Back holds the lineups: the clock runs on, and home leads back to them (ADR 0080).
+    onBack: back,
     onLevel: () => undefined,
     onChange: (tray) => {
-      draft = tray;
+      start.changed(tray);
     },
-    // Send challenge and Accept challenge are requests: the button shows it is working.
-    onDone: (own) =>
-      sending === undefined
-        ? accept(own)
-        : sending.rematch === undefined
-          ? send(own)
-          : rematch.submit(sending.rematch, own),
+    // Lock in is a request: the button shows it is working.
+    onDone: (own) => start.lock(own),
   });
   roots.lineup.classList.add('series-setup');
   roots.lineup.replaceChildren(setup.element, lineup.element);
 
-  // A rematch's new lineup, then the wait for the friend's (ADR 0055).
-  const rematch = createRematchLineup({
+  const start = createStartLineup(lineup, {
+    showLineup: () => {
+      show('lineup');
+    },
     show: (content, focus) => {
       show('notice', content, focus);
     },
-    intoSeries: (id) => intoSeries(id),
-    home: () => {
-      host.home();
+    loading: () => {
+      show('loading');
     },
+    intoSeries: (id) => intoSeries(id),
+    home,
     failed: (answer, retry) => {
       failed(answer, retry);
     },
@@ -132,9 +124,15 @@ export function createChallengeScreens(
     });
   }
 
-  const home = () => {
-    host.home();
-  };
+  /** Into the lineups picked together once read: in place of the card, or moved to (`go`). */
+  async function intoStart(id: string, how: 'replace' | 'go' = 'replace'): Promise<void> {
+    await start.prime(id);
+    const write = (url: URLSearchParams) => {
+      writeStartParams(url, id);
+    };
+    if (how === 'go') host.go(write);
+    else host.replaceWith(write);
+  }
 
   // The 16+ question and failures, as notices in this screen's place.
   const { failed, askFirst } = createGuestGate({
@@ -142,27 +140,25 @@ export function createChallengeScreens(
     show: (content) => {
       show('notice', content);
     },
-    back: () => {
-      host.back(home);
-    },
+    back,
     home,
     toMatch: (match) => host.toMatch(match),
   });
 
-  async function send(own: Lineup): Promise<void> {
-    if (sending === undefined || askFirst(() => send(own))) return;
+  /** Sends the challenge from the vs Friend setup: no lineup (ADR 0080), straight to the lobby. */
+  async function send(chosen: SetupChoices): Promise<void> {
+    if (askFirst(() => send(chosen))) return;
     // Live (ADR 0053): both players in the match until it ends.
     const body = {
-      format: sending.format,
-      bestOf: sending.bestOf,
-      lineup: own,
+      format: chosen.format,
+      bestOf: chosen.bestOf,
       requestId,
       live: true,
       ...(inviting === undefined ? {} : { friend: inviting.id }),
     };
     const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
     if (!answer.ok) {
-      failed(answer, () => send(own));
+      failed(answer, () => send(chosen));
       return;
     }
     const link = answer.body;
@@ -170,31 +166,37 @@ export function createChallengeScreens(
     requestId = crypto.randomUUID();
     inviting = undefined;
     // The sender's own card (the lobby) shares the link. It is read first, so the button stays
-    // busy until the lobby can show; this lineup entry becomes it.
+    // busy until the lobby can show, which takes this setup's place.
     token = link.token;
     const card = await callApi<ChallengeInfo>('GET', `challenges/${link.token}`);
     info = card.ok ? card.body : undefined;
-    host.replaceWith((url) => {
+    host.go((url) => {
       writeChallengeParams(url, link.token);
     });
   }
 
-  async function accept(own: Lineup): Promise<void> {
-    if (token === undefined || askFirst(() => accept(own))) return;
-    const answer = await callApi<Accepted>('POST', `challenges/${token}/accept`, { lineup: own });
+  /** Accepts the link on screen: into the lineups picked together (`how`: from the inbox, go). */
+  async function accept(how: 'replace' | 'go' = 'replace'): Promise<void> {
+    const current = token;
+    if (current === undefined || askFirst(() => accept(how))) return;
+    const answer = await callApi<Accepted>('POST', `challenges/${current}/accept`, {});
     if (!answer.ok) {
       if (answer.kind === 'error' && answer.code !== undefined && CARD_SAYS.has(answer.code)) {
         // Taken, expired, the sender's own or gone: the card says so with a way on.
-        await loadCard();
+        if (how === 'go') {
+          host.go((url) => {
+            writeChallengeParams(url, current);
+          });
+        } else await loadCard();
         return;
       }
-      failed(answer, () => accept(own));
+      failed(answer, () => accept(how));
       return;
     }
-    const seriesId = answer.body?.seriesId;
-    if (seriesId === undefined) return;
     rememberGuest(host.storage, true);
-    await intoSeries(seriesId);
+    const accepted = answer.body;
+    if (accepted?.startId != null) await intoStart(accepted.startId, how);
+    else if (accepted?.seriesId != null) await intoSeries(accepted.seriesId);
   }
 
   /** Asks for the card; `focus` false when it already shows (the lobby asking again). */
@@ -208,11 +210,16 @@ export function createChallengeScreens(
       return;
     }
     info = answer.body;
-    // The sender's live link was accepted: straight into the match, in place of the lobby.
-    const started = info.seriesId;
-    if (info.live && info.own && started !== null) {
-      await intoSeries(started);
-      return;
+    // The sender's live link was accepted: straight to the lineups (or the match), in its place.
+    if (info.live && info.own && info.status === 'yours') {
+      if (info.seriesId !== null) {
+        await intoSeries(info.seriesId);
+        return;
+      }
+      if (info.startId !== null) {
+        await intoStart(info.startId);
+        return;
+      }
     }
     showCard(info, focus);
   }
@@ -226,13 +233,14 @@ export function createChallengeScreens(
     }
   }
 
-  /** The sender stops waiting: the link stops, and they go home (or into the match, if taken). */
+  /** The sender stops waiting: the link stops, and they go home (or on, if it was accepted). */
   async function cancel(): Promise<void> {
     if (token === undefined) return;
     stopLobby();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
-    const started = answer.ok ? answer.body?.seriesId : undefined;
-    if (started != null) await intoSeries(started);
+    const card = answer.ok ? answer.body : undefined;
+    if (card?.seriesId != null) await intoSeries(card.seriesId);
+    else if (card?.startId != null) await intoStart(card.startId);
     else host.home();
   }
 
@@ -241,15 +249,9 @@ export function createChallengeScreens(
     return {
       token: current,
       home,
-      // The 16+ question comes before the lineup, on a device that hasn't answered it.
-      lineup: () => {
-        const toLineup = () => {
-          host.go((url) => {
-            writeChallengeParams(url, current, 'lineup');
-          });
-        };
-        if (!askFirst(toLineup)) toLineup();
-      },
+      // The 16+ question comes first, on a device that hasn't answered it (askFirst).
+      accept: () => accept(),
+      lineups: (id: string) => intoStart(id, 'go'),
       series: (id: string) => {
         host.go((url) => {
           writeOnlineSeriesParams(url, id);
@@ -273,7 +275,7 @@ export function createChallengeScreens(
       visible = next;
       if (!next) {
         show('notice');
-        rematch.stop();
+        start.stop();
       }
     },
     resumed() {
@@ -283,22 +285,10 @@ export function createChallengeScreens(
         void loadCard(false);
       }
     },
-    showChallenge(next, step) {
-      sending = undefined;
+    showChallenge(next) {
+      start.stop();
       if (token !== next) info = undefined;
       token = next;
-      if (step === 'lineup' && info?.status === 'open') {
-        show('lineup');
-        lineup.open(info.format, draft, undefined, info.bestOf, 'Accept challenge');
-        return;
-      }
-      if (step === 'lineup') {
-        // Opened straight from a URL: the card first, which knows the format.
-        host.replaceWith((url) => {
-          writeChallengeParams(url, next);
-        });
-        return;
-      }
       // Read just before (the lobby after Send challenge): shown at once, and asked again as the
       // lobby does. Else the card's layout until it comes (ADR 0054).
       if (info === undefined) {
@@ -310,33 +300,22 @@ export function createChallengeScreens(
         if (lobby === undefined) void loadCard(false);
       }
     },
+    showStart(id) {
+      start.open(id);
+    },
+    rematchShown: () => start.rematchOf(),
     async openInvite(next) {
-      const card = await callApi<ChallengeInfo>('GET', `challenges/${next}`);
       token = next;
-      info = card.ok ? card.body : undefined;
-      host.go((url) => {
-        writeChallengeParams(url, next, info?.status === 'open' ? 'lineup' : 'card');
-      });
+      info = undefined;
+      await accept('go');
     },
     challengeFriend(friend) {
       inviting = friend;
       host.friend();
     },
-    showSend(format, bestOf, step, again) {
-      sending = again === undefined ? { format, bestOf } : { format, bestOf, rematch: again };
+    showSend(format: Format, bestOf: BestOf) {
       token = undefined;
-      rematch.stop();
-      if (step === 'lineup') {
-        show('lineup');
-        lineup.open(
-          format,
-          draft,
-          undefined,
-          bestOf,
-          again === undefined ? 'Send challenge' : 'Start rematch',
-        );
-        return;
-      }
+      start.stop();
       // The start of the vs Friend flow: the 16+ question first, on a device that hasn't answered.
       const open = () => {
         show('setup');

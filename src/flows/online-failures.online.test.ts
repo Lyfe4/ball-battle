@@ -11,6 +11,7 @@ const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const PHONE = { width: 390, height: 664 };
 const TOKEN = 'AAAAAAAAAAAAAAAAAAAAAA';
 const SERIES = '00000000-0000-4000-8000-000000000000';
+const START = '00000000-0000-4000-8000-000000000001';
 /** callApi's limit (src/app/api.ts). */
 const TIMEOUT_MS = 15_000;
 
@@ -89,24 +90,43 @@ async function phone(): Promise<Page> {
       from: 'Player 1234',
       status: 'open',
       seriesId: null,
+      startId: null,
+    }),
+  );
+  // Accepted: the lineups picked together (ADR 0080), read before the screen moves there.
+  await page.route(`**/api/v1/starts/${START}`, (route) =>
+    json(route, 200, {
+      id: START,
+      you: 'b',
+      format: 'reveal',
+      bestOf: 3,
+      they: 'Player 1234',
+      deadline: Date.now() + 60_000,
+      now: Date.now(),
+      draft: [],
+      seq: 0,
+      locked: false,
+      theirsLocked: false,
+      seriesId: null,
+      filled: [],
+      missed: [],
+      rematchOf: null,
     }),
   );
   return page;
 }
 
-/** The friend's lineup, built, up to the Accept challenge button. */
+/** The friend's card, up to its Accept button. */
 async function lineupReady(page: Page): Promise<void> {
   await page.goto(`${BASE}/?challenge=${TOKEN}`);
-  await page.getByRole('button', { name: 'Build your lineup' }).click();
-  const grid = page.locator('#online-lineup .ball-grid button');
-  for (let index = 0; index < 3; index += 1) await grid.nth(index).click();
+  await page.getByRole('button', { name: 'Accept' }).waitFor();
 }
 
 /** Answers every accept with `fail` until `recover()`, then accepts. */
 async function routeAccept(page: Page, fail: Failure): Promise<{ readonly recover: () => void }> {
   let failing = true;
   await page.route(`**/api/v1/challenges/${TOKEN}/accept`, (route) =>
-    failing ? fail(route) : json(route, 200, { seriesId: SERIES }),
+    failing ? fail(route) : json(route, 200, { seriesId: null, startId: START }),
   );
   return {
     recover: () => {
@@ -126,11 +146,12 @@ async function noticeSays(page: Page, title: string, text?: string): Promise<voi
   }
 }
 
-/** Try again, now that the server answers: the accepted series opens. */
+/** Try again, now that the server answers: the lineups picked together open. */
 async function retried(page: Page, recover: () => void): Promise<void> {
   recover();
   await page.getByRole('button', { name: 'Try again' }).click();
-  await page.waitForURL(new RegExp(`[?&]online=${SERIES}`));
+  await page.waitForURL(new RegExp(`[?&]start=${START}`));
+  await page.getByText('Player 1234 is choosing').waitFor();
 }
 
 describe('accepting a challenge on a phone', () => {
@@ -139,7 +160,7 @@ describe('accepting a challenge on a phone', () => {
       const page = await phone();
       await lineupReady(page);
       const accept = await routeAccept(page, fail);
-      await page.getByRole('button', { name: 'Accept challenge' }).click();
+      await page.getByRole('button', { name: 'Accept' }).click();
       await noticeSays(page, title, text);
       await retried(page, accept.recover);
     });
@@ -154,7 +175,7 @@ describe('accepting a challenge on a phone', () => {
       return route.abort('internetdisconnected');
     });
     await context?.setOffline(true);
-    await page.getByRole('button', { name: 'Accept challenge' }).click();
+    await page.getByRole('button', { name: 'Accept' }).click();
     await noticeSays(page, 'You’re offline');
     expect(sent).toBe(0);
     await context?.setOffline(false);
@@ -167,7 +188,7 @@ describe('accepting a challenge on a phone', () => {
     await lineupReady(page);
     const accept = await routeAccept(page, () => undefined);
     const sent = page.waitForRequest(`**/api/v1/challenges/${TOKEN}/accept`);
-    await page.getByRole('button', { name: 'Accept challenge' }).click();
+    await page.getByRole('button', { name: 'Accept' }).click();
     await sent;
     await page.clock.runFor(TIMEOUT_MS);
     await noticeSays(page, 'No answer yet');

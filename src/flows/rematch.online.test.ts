@@ -53,8 +53,8 @@ describe('a rematch', () => {
 
       // Both build a new lineup, then both are in the same new match.
       for (const page of [sender, friend]) {
-        await page.waitForURL(/[?&]rematch=/, { timeout: 15_000 });
-        await buildLineup(page, 'Start rematch');
+        await page.waitForURL(/[?&]start=/, { timeout: 15_000 });
+        await buildLineup(page, 'Lock in');
       }
       for (const page of [sender, friend]) {
         await page.waitForURL(

@@ -42,7 +42,7 @@ export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }
 };
 
 /** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
-export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; the match starts when they accept.`;
+export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; once they accept, you both pick your lineups.`;
 
 /** Home's quiet links under the cards. */
 export const FREE_PLAY = 'Free play';

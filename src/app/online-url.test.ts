@@ -11,28 +11,39 @@ import {
   writeChallengeParams,
   writeOnlineSeriesParams,
   writeSendParams,
+  writeStartParams,
 } from './online-url.ts';
 import { parseRoute } from './route.ts';
 
+const START = '11111111-2222-4333-8444-555555555555';
+const NEXT = '33333333-2222-4333-8444-555555555555';
 const SERIES = '0e5c8d7a-1b2c-4d3e-8f90-123456789abc';
 const TOKEN = 'WAxqQRi-cu8gT10UyGTlCQ';
 const params = (search: string) => new URLSearchParams(search);
 const online = (search: string) => parseRoute(params(search), BALL_LOOKUP, false, true);
 
 describe('online URLs', () => {
-  it('open a series, a challenge’s card or lineup, and sending one', () => {
+  it('open a series, a challenge’s card, sending one and the lineups picked together', () => {
     expect(online(`?online=${SERIES}`)).toStrictEqual({ screen: 'online', series: SERIES });
-    expect(online(`?challenge=${TOKEN}`)).toStrictEqual({
-      screen: 'challenge',
-      token: TOKEN,
-      step: 'card',
-    });
-    expect(online(`?challenge=${TOKEN}&step=lineup`)).toMatchObject({ step: 'lineup' });
+    expect(online(`?challenge=${TOKEN}`)).toStrictEqual({ screen: 'challenge', token: TOKEN });
     expect(online('?view=send&fmt=showdown&mode=bo5')).toStrictEqual({
       screen: 'send',
-      step: 'lineup',
       format: 'showdown',
       bestOf: 5,
+    });
+    expect(online(`?start=${START}`)).toStrictEqual({ screen: 'start', id: START });
+    expect(online('?start=nope')).toMatchObject({ screen: 'home' });
+  });
+
+  it('open the card or the setup from the last release’s lineup URLs (ADR 0080)', () => {
+    expect(online(`?challenge=${TOKEN}&step=lineup`)).toStrictEqual({
+      screen: 'challenge',
+      token: TOKEN,
+    });
+    expect(online(`?view=send&fmt=reveal&mode=bo3&rematch=${SERIES}`)).toStrictEqual({
+      screen: 'send',
+      format: 'reveal',
+      bestOf: 3,
     });
   });
 
@@ -42,10 +53,13 @@ describe('online URLs', () => {
         writeOnlineSeriesParams(p, SERIES);
       },
       (p) => {
-        writeChallengeParams(p, TOKEN, 'lineup');
+        writeChallengeParams(p, TOKEN);
       },
       (p) => {
         writeSendParams(p, 'blind', 3);
+      },
+      (p) => {
+        writeStartParams(p, START);
       },
     ];
     for (const write of cases) {
@@ -84,75 +98,90 @@ describe('Back through a friend challenge', () => {
     };
   }
 
-  it('sender: the vs Friend setup, the lineup, then its link in the lineup’s place; Back is the setup', () => {
-    const sender = app('?view=send&fmt=reveal&mode=bo3&step=setup');
+  it('sender: the vs Friend setup sends, then the lobby; its lineups take the lobby’s place', () => {
+    const sender = app('?view=send&fmt=reveal&mode=bo3');
     sender.navigation.go((p) => {
-      writeSendParams(p, 'reveal', 3);
-    });
-    sender.navigation.replace((p) => {
       writeChallengeParams(p, TOKEN);
     });
+    sender.navigation.replace((p) => {
+      writeStartParams(p, START);
+    });
     sender.back();
-    expect(sender.at()).toBe('?view=send&fmt=reveal&mode=bo3&step=setup');
+    expect(sender.at()).toBe('?view=send&fmt=reveal&mode=bo3');
   });
 
-  it('reads the vs Friend setup and its lineup from one view, the lineup by default (old links)', () => {
+  it('reads the vs Friend setup from one view, an old link’s step ignored', () => {
     expect(online('?view=send&fmt=showdown&mode=bo5&step=setup')).toStrictEqual({
       screen: 'send',
       format: 'showdown',
       bestOf: 5,
-      step: 'setup',
     });
     expect(online('?view=send&fmt=reveal')).toStrictEqual({
       screen: 'send',
       format: 'reveal',
       bestOf: 3,
-      step: 'lineup',
     });
     const written = new URLSearchParams();
-    writeSendParams(written, 'reveal', 5, 'setup');
-    expect(written.toString()).toBe('view=send&fmt=reveal&mode=bo5&step=setup');
+    writeSendParams(written, 'reveal', 5);
+    expect(written.toString()).toBe('view=send&fmt=reveal&mode=bo5');
   });
 
   it('walks the vs Friend setup as vs Bot’s: choices rewrite it, Back keeps them (ADR 0055)', () => {
     const { navigation, back, at } = app('');
     navigation.go((url) => {
-      writeSendParams(url, 'reveal', 3, 'setup');
-    });
-    navigation.go((url) => {
-      writeSendParams(url, 'showdown', 5, 'setup');
+      writeSendParams(url, 'reveal', 3);
     });
     navigation.go((url) => {
       writeSendParams(url, 'showdown', 5);
     });
-    expect(at()).toBe('?view=send&fmt=showdown&mode=bo5');
+    navigation.go((url) => {
+      writeChallengeParams(url, TOKEN);
+    });
+    expect(at()).toBe(`?challenge=${TOKEN}`);
     back();
-    expect(at()).toBe('?view=send&fmt=showdown&mode=bo5&step=setup');
+    expect(at()).toBe('?view=send&fmt=showdown&mode=bo5');
     back();
     expect(at()).toBe('');
   });
 
-  it('friend: the card, the lineup, then the series in the lineup’s place; Back is the card', () => {
-    const friend = app(`?challenge=${TOKEN}`);
+  it('friend: the card, the lineups in its place, then the series in theirs; Back leaves', () => {
+    const friend = app('');
     friend.navigation.go((p) => {
-      writeChallengeParams(p, TOKEN, 'lineup');
+      writeChallengeParams(p, TOKEN);
     });
+    friend.navigation.replace((p) => {
+      writeStartParams(p, START);
+    });
+    expect(friend.at()).toBe(`?start=${START}`);
     friend.navigation.replace((p) => {
       writeOnlineSeriesParams(p, SERIES);
     });
     expect(friend.at()).toBe(`?online=${SERIES}`);
     friend.back();
-    expect(friend.at()).toBe(`?challenge=${TOKEN}`);
+    expect(friend.at()).toBe('');
+  });
+
+  it('rematch: the end screen, the lineups one step in, the new match in their place', () => {
+    const both = app(`?online=${SERIES}`);
+    both.navigation.go((p) => {
+      writeStartParams(p, START);
+    });
+    expect(both.at()).toBe(`?start=${START}`);
+    both.navigation.replace((p) => {
+      writeOnlineSeriesParams(p, NEXT);
+    });
+    both.back();
+    expect(both.at()).toBe(`?online=${SERIES}`);
   });
 
   it('gives each online screen its own key', () => {
     const keys = [
       `?online=${SERIES}`,
       `?challenge=${TOKEN}`,
-      `?challenge=${TOKEN}&step=lineup`,
       '?view=send&fmt=reveal',
+      `?start=${START}`,
     ].map((search) => keyOf(new URL(`https://ballbattle.test/${search}`)));
-    expect(keys).toStrictEqual(['online', 'challenge', 'challenge-lineup', 'send']);
+    expect(keys).toStrictEqual(['online', 'challenge', 'send', 'start']);
   });
 });
 

@@ -3,7 +3,11 @@
 // this only turns its answer into where to go.
 import type { CurrentMatch, CurrentMatchResponse } from '../api/live.ts';
 import { callApi } from '../app/api.ts';
-import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
+import {
+  writeChallengeParams,
+  writeOnlineSeriesParams,
+  writeStartParams,
+} from '../app/online-url.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
 
 /** The player's live match or waiting lobby, if any; undefined when it can't be known now. */
@@ -12,9 +16,10 @@ export async function currentMatch(): Promise<CurrentMatch | null | undefined> {
   return answer.ok ? (answer.body?.match ?? null) : undefined;
 }
 
-/** The URL of a current match: its series, or the sender's lobby (their link's own card). */
+/** The URL of a current match: its series, its lineups, or the sender's lobby (their link's card). */
 export function writeMatchParams(params: URLSearchParams, match: CurrentMatch): void {
   if (match.kind === 'series') writeOnlineSeriesParams(params, match.id);
+  else if (match.kind === 'start') writeStartParams(params, match.id);
   else writeChallengeParams(params, match.token);
 }
 

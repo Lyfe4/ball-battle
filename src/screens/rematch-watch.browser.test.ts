@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../style.css';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createRematchWatch } from './rematch-watch.ts';
-import { ended, host, ID, played, server, T, view } from './rematch-watch-support.ts';
+import { ended, host, ID, played, server, START, T, view } from './rematch-watch-support.ts';
 
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
 let root: HTMLElement;
@@ -43,8 +43,9 @@ describe('a rematch asked of a player away from the end screen', () => {
       const url = new URLSearchParams();
       write(url);
       page.moves.push(url.toString());
-      // The lineup for this rematch shows now: it asks for itself.
-      own = url.get('rematch') ?? undefined;
+      // The lineups for this rematch show now (they name the series they follow): they ask for
+      // themselves.
+      own = url.has('start') ? ID : undefined;
     };
     const watch = createRematchWatch(root, BALL_LOOKUP, page.made);
     watch.ended(ended('b'));
@@ -61,7 +62,7 @@ describe('a rematch asked of a player away from the end screen', () => {
     expect(fake.sent.filter((one) => one.method === 'POST')).toStrictEqual([
       { method: 'POST', body: { answer: 'yes' } },
     ]);
-    expect(page.moves).toStrictEqual([`view=send&fmt=reveal&mode=bo3&rematch=${ID}`]);
+    expect(page.moves).toStrictEqual([`start=${START}`]);
     expect(card().shown).toBe(false);
     // Kept, quiet on the lineup: left without handing one in, the rematch still finds them.
     expect(page.memory.size).toBe(1);
@@ -147,7 +148,7 @@ describe('a rematch asked of a player away from the end screen', () => {
     expect(page.backs.at(-1), 'home leads to the lineup').toBe('lineup');
     button('Choose lineup')?.click();
     await wait(50);
-    expect(page.moves).toStrictEqual([`view=send&fmt=reveal&mode=bo3&rematch=${ID}`]);
+    expect(page.moves).toStrictEqual([`start=${START}`]);
     expect(
       fake.sent.filter((one) => one.method === 'POST'),
       'nothing to answer',

@@ -145,16 +145,39 @@ export async function buildLineup(
   await page.getByRole('button', { name: done }).click();
 }
 
+/**
+ * Both phones pick their lineups together (ADR 0080): each on the shared lineup screen, its own
+ * balls first, locked in; then both go into the match. Returns the series id.
+ */
+export async function pickTogether(
+  sides: readonly { readonly page: Page; readonly balls?: readonly string[] }[],
+): Promise<string> {
+  for (const { page } of sides) await page.waitForURL(/[?&]start=/, { timeout: 20_000 });
+  for (const { page, balls } of sides) await buildLineup(page, 'Lock in', balls);
+  for (const { page } of sides) await page.waitForURL(/[?&]online=/, { timeout: 20_000 });
+  return new URL(sides[0]?.page.url() ?? '').searchParams.get('online') ?? '';
+}
+
+/** The vs Friend setup's Send challenge (ADR 0080: no lineup), then the lobby. */
+export async function sendChallenge(
+  page: Page,
+  waiting = 'Waiting for your friend',
+): Promise<void> {
+  await page.getByRole('button', { name: 'Send challenge' }).click();
+  await page.getByRole('heading', { name: waiting }).waitFor();
+}
+
 /** The 16+ card: the first online action on this device. */
-async function confirmAge(page: Page): Promise<void> {
+export async function confirmAge(page: Page): Promise<void> {
   await page.getByRole('heading', { name: 'Play online' }).waitFor();
   await page.getByRole('button', { name: 'I’m 16 or older' }).click();
 }
 
 /**
- * The sender sends a live Best of 3 from home's vs Friend and waits in the lobby; the friend opens the link, sees the
- * line about staying, and accepts, each with `lineups`' balls first in their lineup. Both end up in the series: the sender's lobby goes there by
- * itself. Returns the series id.
+ * The sender sends a live Best of 3 from home's vs Friend and waits in the lobby; the friend opens
+ * the link, sees the line about staying, and accepts. Both pick their lineups together (ADR 0080),
+ * `lineups`' balls first: the sender's lobby goes to the lineups by itself. Both end up in the
+ * series. Returns the series id.
  */
 export async function startLiveMatch(
   base: string,
@@ -174,9 +197,7 @@ export async function startLiveMatch(
   if (format !== 'reveal') {
     await sender.locator('#online-lineup .rules-card', { hasText: /^Showdown/ }).click();
   }
-  await sender.getByRole('button', { name: 'Choose lineup' }).click();
-  await buildLineup(sender, 'Send challenge', lineups.sender);
-  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
+  await sendChallenge(sender);
   // Send challenge stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
@@ -187,16 +208,17 @@ export async function startLiveMatch(
   expect(await loadingSeen(friend)).not.toContain('Loading…');
   await forgetLoading(friend);
   await friend.getByText('Leaving for 30 s loses the match').waitFor();
-  await friend.getByRole('button', { name: 'Build your lineup' }).click();
-  // The 16+ question comes before the lineup, never after it is built (ADR 0055).
+  await friend.getByRole('button', { name: 'Accept' }).click();
+  // The 16+ question comes before accepting (ADR 0055).
   await confirmAge(friend);
-  await buildLineup(friend, 'Accept challenge', lineups.friend);
-  await friend.waitForURL(/[?&]online=/);
-  await sender.waitForURL(/[?&]online=/, { timeout: 20_000 });
-  // Accept and the lobby each waited for the series: it showed complete on arrival.
+  const id = await pickTogether([
+    { page: friend, balls: lineups.friend },
+    { page: sender, balls: lineups.sender },
+  ]);
+  // Accept, the lobby and Lock in each waited for the next screen: it showed complete on arrival.
   expect(await loadingSeen(friend)).toStrictEqual([]);
   expect(await loadingSeen(sender)).toStrictEqual([]);
-  return new URL(friend.url()).searchParams.get('online') ?? '';
+  return id;
 }
 
 export const panelOf = (page: Page) => page.locator('#online-series');

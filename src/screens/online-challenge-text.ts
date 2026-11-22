@@ -17,8 +17,10 @@ export interface CardActions {
   /** The link to the clipboard; resolves to what happened, for the button. */
   readonly copy: () => Promise<string>;
   readonly home: () => void;
-  /** Build a lineup to accept it. */
-  readonly lineup: () => void;
+  /** Accept it: into the lineups picked together (ADR 0080). A request. */
+  readonly accept: () => Promise<unknown>;
+  /** Back to the lineups being picked for it (the friend who accepted). */
+  readonly lineups: (id: string) => Promise<unknown>;
   /** Open the series it started. */
   readonly series: (id: string) => void;
   /** Send a challenge of one's own instead. */
@@ -43,7 +45,7 @@ const STAY_STEP = `Stay until the end: leaving for ${String(GRACE_MS / 1000)} s 
 /** How a live match goes, in three short steps on the friend's card (ADR 0055). */
 export function howItGoes(info: Pick<ChallengeInfo, 'format' | 'bestOf'>): readonly string[] {
   return [
-    `Build your lineup of ${String(info.bestOf)} without seeing theirs.`,
+    `Accept, then you both pick ${String(info.bestOf)} at once, without seeing theirs.`,
     info.format === 'showdown'
       ? 'Open together; then the winner shows and the loser answers.'
       : 'Take turns showing a ball; the other answers.',
@@ -88,7 +90,7 @@ export function cardFor(
           chips: challengeChips(info),
           body: inApp === undefined ? [] : [inAppLine(inApp)],
           steps: { title: 'How it goes', items: howItGoes(info) },
-          buttons: [{ text: 'Build your lineup', onClick: actions.lineup }],
+          buttons: [{ text: 'Accept', onClick: actions.accept }],
           quiet: { text: 'Not now', onClick: actions.home },
         };
       }
@@ -98,7 +100,7 @@ export function cardFor(
           what,
           'Build your lineup without seeing theirs. Then you take turns, up to a day each.',
         ],
-        buttons: [{ text: 'Build your lineup', onClick: actions.lineup }, home],
+        buttons: [{ text: 'Accept', onClick: actions.accept }, home],
       };
     case 'stopped':
       return info.own
@@ -154,7 +156,7 @@ export function cardFor(
           body: [],
           buttons: [shareButton(actions)],
           link: share ? { url: actions.url, copy: actions.copy } : { url: actions.url },
-          note: `${told}The match starts the moment they accept. ${STAY_STEP}`,
+          note: `${told}Once they accept, you both pick your lineups. ${STAY_STEP}`,
           quiet: { text: 'Cancel challenge', onClick: actions.cancel },
         };
       }
@@ -166,6 +168,20 @@ export function cardFor(
     }
     case 'accepted': {
       const series = info.seriesId ?? '';
+      const lineups = info.startId;
+      if (info.seriesId === null && lineups !== null) {
+        return {
+          title: 'You accepted this challenge',
+          body: [what],
+          buttons: [
+            {
+              text: 'Choose your lineup',
+              onClick: () => actions.lineups(lineups),
+            },
+            home,
+          ],
+        };
+      }
       return {
         title: 'You accepted this challenge',
         body: [what],

@@ -19,6 +19,13 @@ export function backWords(match: CurrentMatch): BackWords {
       spoken: `Back to your lobby: waiting for your friend, ${what}`,
     };
   }
+  if (match.kind === 'start') {
+    return {
+      label: 'Back to your lineup',
+      meta: `Choose your lineup · ${what}`,
+      spoken: `Back to your lineup: choose it now, ${what}`,
+    };
+  }
   const opponent = match.opponent ?? 'a deleted player';
   return {
     label: 'Back to your match',

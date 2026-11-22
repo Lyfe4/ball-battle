@@ -61,21 +61,21 @@ describe('a rematch asked, then the asker goes home', () => {
 
       const asked = cardOf(friend);
       await asked.getByRole('button', { name: 'Accept' }).click({ timeout: 10_000 });
-      await friend.waitForURL(/[?&]rematch=/, { timeout: 15_000 });
-      await buildLineup(friend, 'Start rematch');
-      await friend.getByText('Waiting for your friend’s lineup').waitFor({ timeout: 10_000 });
+      await friend.waitForURL(/[?&]start=/, { timeout: 15_000 });
+      await buildLineup(friend, 'Lock in');
+      await friend.getByText(/^Waiting for .+’s lineup$/).waitFor({ timeout: 10_000 });
 
       // The asker, home all along: the card says the friend accepted, with the seconds to choose.
       const told = cardOf(asker);
       await told
         .locator('.pick-clock', { hasText: /^Player \d+ accepted\s*\d+ s/ })
         .waitFor({ timeout: 10_000 });
-      expect(new URL(asker.url()).searchParams.has('rematch')).toBe(false);
+      expect(new URL(asker.url()).searchParams.has('start')).toBe(false);
       // Home's way back now leads to the lineup too.
       await asker.getByRole('button', { name: /^Back to your rematch/ }).waitFor();
       await told.getByRole('button', { name: 'Choose lineup' }).click();
-      await asker.waitForURL(/[?&]rematch=/, { timeout: 15_000 });
-      await buildLineup(asker, 'Start rematch');
+      await asker.waitForURL(/[?&]start=/, { timeout: 15_000 });
+      await buildLineup(asker, 'Lock in');
 
       for (const page of [asker, friend]) {
         await page.waitForURL(

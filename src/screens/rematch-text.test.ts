@@ -19,6 +19,7 @@ const rematch = (over: Partial<RematchView> = {}): RematchView => ({
   lineupIn: false,
   seriesId: null,
   offered: true,
+  startId: null,
   ...over,
 });
 const asked = (by: 'a' | 'b') => rematch({ state: 'asked', askedBy: by, deadline: T + 21_000 });

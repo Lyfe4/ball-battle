@@ -4,7 +4,7 @@ import { BEST_OF, type BestOf, type Format, type Lineup } from '../../sim/series
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { busyOnClick } from '../busy-button.ts';
-import { element, setText } from '../dom.ts';
+import { element, setHidden, setText } from '../dom.ts';
 import {
   completeLineup,
   draftCount,
@@ -34,6 +34,11 @@ export interface LineupStep {
   ): void;
   /** The lineup in the tray, complete or not. */
   draft(): Draft;
+  /**
+   * The line under what the lineup is for, against a player picking theirs at the same time ("Jo
+   * is choosing · 42 s", ADR 0080); undefined hides it. Written only when it changes.
+   */
+  status(text: string | undefined): void;
 }
 
 export interface LineupActions {
@@ -74,7 +79,10 @@ export function createLineupStep(
   const mode = element('div', 'lineup-mode');
   const modeName = element('p', 'lineup-mode-name');
   const level = createLevelChoice(actions.onLevel);
-  mode.append(modeName, level.element);
+  const statusLine = element('p', 'lineup-status');
+  statusLine.setAttribute('role', 'status');
+  statusLine.hidden = true;
+  mode.append(modeName, level.element, statusLine);
 
   const tray = element('ol', 'lineup-tray');
   tray.setAttribute('aria-label', 'Your lineup');
@@ -176,7 +184,7 @@ export function createLineupStep(
       format = nextFormat;
       size = bestOf;
       doneText = done;
-      // Send challenge, Accept challenge and Start rematch tap (sound.ts); a lineup against the
+      // Lock in (lineups picked together, ADR 0080) taps (sound.ts); a lineup against the
       // bot goes on quietly.
       if (done === undefined) delete doneButton.dataset['sound'];
       else doneButton.dataset['sound'] = 'tap';
@@ -190,8 +198,13 @@ export function createLineupStep(
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
       tray.classList.toggle('lineup-tray-unordered', unordered());
       update(draftOf(nextDraft, (id) => byId.has(id), size));
+      setHidden(statusLine, true);
       header.focus();
     },
     draft: () => draft,
+    status(text) {
+      setHidden(statusLine, text === undefined);
+      if (text !== undefined) setText(statusLine, text);
+    },
   };
 }

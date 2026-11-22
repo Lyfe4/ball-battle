@@ -29,7 +29,7 @@ import { createAccountButton } from '../ui/online/account-button.ts';
 const HOME_ASK_MS = 10_000;
 
 export interface OnlineMount {
-  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'signin'>;
+  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'start' | 'signin'>;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
   settle(world: WorldState): void;
@@ -81,8 +81,6 @@ export function mountOnline(context: MountContext): OnlineMount {
   let fighting = false;
   const rematchRoot = document.createElement('div');
   document.body.append(rematchRoot);
-  /** The ended series whose rematch lineup shows now (`?view=send&rematch=`), if any. */
-  let lineupOf: string | undefined;
   /** Home's way back to a rematch waiting on this player, as the watch last said. */
   let rematchWaiting: RematchHomeBack | undefined;
   const rematchWatch = createRematchWatch(rematchRoot, BALL_LOOKUP, {
@@ -91,7 +89,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       context.go(write);
     },
     fighting: () => fighting,
-    ownScreen: () => screens.play.endScreen() ?? lineupOf,
+    ownScreen: () => screens.play.endScreen() ?? screens.rematchShown(),
     seriesShown: () => screens.play.seriesShown(),
     backChanged: (back) => {
       rematchWaiting = back;
@@ -139,7 +137,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     friend: () => {
       context.go((url) => {
-        writeSendParams(url, 'reveal', 3, 'setup');
+        writeSendParams(url, 'reveal', 3);
       });
     },
     showWorld: (world, seed) => {
@@ -233,12 +231,8 @@ export function mountOnline(context: MountContext): OnlineMount {
     handlers: {
       online: screens.online,
       challenge: screens.challenge,
-      send: {
-        show: (route, from) => {
-          lineupOf = route.rematch;
-          screens.send.show(route, from);
-        },
-      },
+      send: screens.send,
+      start: screens.start,
       signin: screens.signin,
     },
     // With accounts, everything about the player is on the account screen; settings are this
@@ -256,7 +250,6 @@ export function mountOnline(context: MountContext): OnlineMount {
     phase: () => screens.play.phase(),
     sides: () => screens.play.sides(),
     setVisible: (screen) => {
-      if (screen !== 'send') lineupOf = undefined;
       if (screen === 'signin') whoStale = true;
       screens.setVisible(screen);
     },

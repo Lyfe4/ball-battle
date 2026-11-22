@@ -8,7 +8,7 @@ import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { INBOX_MS } from '../app/inbox-poll.ts';
 import { signedInPhone } from './account-support.ts';
-import { buildLineup } from './live-support.ts';
+import { pickTogether, sendChallenge } from './live-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 
@@ -67,9 +67,7 @@ describe('challenging a friend', () => {
       await row.locator('.friends-status[data-status="online"]').waitFor();
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
       await one.getByRole('heading', { name: 'vs Friend' }).waitFor();
-      await one.getByRole('button', { name: 'Choose lineup' }).click();
-      await buildLineup(one, 'Send challenge');
-      await one.getByRole('heading', { name: `Waiting for ${jo}` }).waitFor();
+      await sendChallenge(one, `Waiting for ${jo}`);
 
       // The friend's card comes with the next read (every 30 s while visible), never a reload.
       const card = two.getByRole('region', { name: 'Challenge' });
@@ -77,9 +75,7 @@ describe('challenging a friend', () => {
         .getByText(`${sam} challenges you · Best of 3 · Reveal · live`)
         .waitFor({ timeout: INBOX_MS + 10_000 });
       await card.getByRole('button', { name: 'Accept' }).click();
-      await buildLineup(two, 'Accept challenge');
-      await two.waitForURL(/[?&]online=/);
-      await one.waitForURL(/[?&]online=/, { timeout: 20_000 });
+      await pickTogether([{ page: two }, { page: one }]);
       await expect.poll(() => card.isHidden()).toBe(true);
       expect(errors).toStrictEqual([]);
     },
@@ -105,9 +101,7 @@ describe('challenging a friend', () => {
       await one.goto(`${BASE}/?view=signin`);
       const row = friendsOf(one).locator('.friends-row', { hasText: jo });
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
-      await one.getByRole('button', { name: 'Choose lineup' }).click();
-      await buildLineup(one, 'Send challenge');
-      await one.getByRole('heading', { name: `Waiting for ${jo}` }).waitFor();
+      await sendChallenge(one, `Waiting for ${jo}`);
 
       const card = two.getByRole('region', { name: 'Challenge' });
       await card
@@ -115,9 +109,7 @@ describe('challenging a friend', () => {
         .waitFor({ timeout: INBOX_MS + 10_000 });
       expect(new URL(two.url()).searchParams.get('view')).toBe('manual');
       await card.getByRole('button', { name: 'Accept' }).click();
-      await buildLineup(two, 'Accept challenge');
-      await two.waitForURL(/[?&]online=/);
-      await one.waitForURL(/[?&]online=/, { timeout: 20_000 });
+      await pickTogether([{ page: two }, { page: one }]);
       expect(errors).toStrictEqual([]);
     },
   );

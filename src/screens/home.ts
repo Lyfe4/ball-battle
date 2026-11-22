@@ -74,7 +74,7 @@ export function createHomeController(
       const { format, bestOf } = loadPlaySetup(storage);
       host.go((url) => {
         if (opponent === 'bot') writeBotSetupParams(url, format, bestOf);
-        else writeSendParams(url, 'reveal', 3, 'setup');
+        else writeSendParams(url, 'reveal', 3);
       });
     },
     // Free play opens on the pair the demo is showing (ADR 0020).
