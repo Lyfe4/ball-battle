@@ -53,6 +53,23 @@ afterEach(() => {
 });
 
 describe('settings in a live match', () => {
+  it('cover the court whole when they must: every row shows without a scroll inside', () => {
+    // The menu as it is, too tall for the room above its gear at its own size: it once kept that
+    // size, capped and scrolling, which cut Show all tips again and Close off at the bottom.
+    const { panel, covers } = open(true);
+    expect(covers).toBe(true);
+    const menu = document.getElementById('settings-panel');
+    const again = [...(menu?.querySelectorAll('button') ?? [])].find((control) =>
+      control.textContent.trim().startsWith('Show all tips again'),
+    );
+    const shown = again?.getBoundingClientRect();
+    expect({
+      scrolls: menu === null ? 'none' : menu.scrollHeight > menu.clientHeight + 1,
+      againInside: shown !== undefined && shown.bottom <= panel.bottom + 0.5,
+      overGear: panel.bottom > 386,
+    }).toStrictEqual({ scrolls: false, againInside: true, overGear: false });
+  });
+
   it('cover the court and hold an offline match when nothing else fits', () => {
     document.head.append(tall);
     const { panel, covers } = open(true);
