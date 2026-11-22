@@ -23,6 +23,10 @@ export interface ChallengeRow {
   /** A live link nobody accepted whose sender cancelled it or left the lobby. */
   readonly stopped: boolean;
   readonly requestId: string;
+  /** The friend it was sent to (ADR 0079 PR (d)), by name, and whether they said No thanks. */
+  readonly invitee: string | null;
+  readonly inviteeName: string | null;
+  readonly declined: boolean;
 }
 
 interface Raw {
@@ -39,6 +43,9 @@ interface Raw {
   readonly live: boolean;
   readonly stopped: boolean;
   readonly request_id: string;
+  readonly invitee: string | null;
+  readonly invitee_name: string | null;
+  readonly declined: boolean;
 }
 
 export async function challengeByHash(
@@ -50,11 +57,13 @@ export async function challengeByHash(
   const [raw] = await db<Raw[]>`
     select c.id, c.creator, coalesce(p.username, p.display_name) as creator_name, c.format, c.best_of, c.lineup,
       c.expires_at, c.expires_at < now() as expired, c.series_id, s.player_b as acceptor,
-      c.live, c.request_id,
+      c.live, c.request_id, c.invitee, coalesce(i.username, i.display_name) as invitee_name,
+      c.invitee_declined_at is not null as declined,
       (c.live and c.series_id is null and (c.cancelled_at is not null
         or c.creator_seen_at <= now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))) as stopped
     from game.challenges c
     left join game.profiles p on p.user_id = c.creator
+    left join game.profiles i on i.user_id = c.invitee
     left join game.series s on s.id = c.series_id
     where c.token_hash = ${hash}
     ${forUpdate}`;
@@ -74,6 +83,9 @@ export async function challengeByHash(
         live: raw.live,
         stopped: raw.stopped,
         requestId: raw.request_id,
+        invitee: raw.invitee,
+        inviteeName: raw.invitee_name,
+        declined: raw.declined,
       };
 }
 
@@ -86,16 +98,18 @@ export interface NewChallenge {
   readonly lineup: readonly string[];
   readonly requestId: string;
   readonly live: boolean;
+  /** The friend it is for, if any (ADR 0079 PR (d)). */
+  readonly invitee?: string;
 }
 
 export async function insertChallenge(db: Db, challenge: NewChallenge): Promise<void> {
   await db`
     insert into game.challenges (token_hash, creator, ruleset, format, best_of, lineup,
-      request_id, expires_at, live, creator_seen_at)
+      request_id, expires_at, live, creator_seen_at, invitee)
     values (${challenge.tokenHash}, ${challenge.creator}, ${challenge.ruleset}, ${challenge.format},
       ${challenge.bestOf}, ${[...challenge.lineup]}, ${challenge.requestId},
       now() + interval '7 days', ${challenge.live},
-      case when ${challenge.live} then now() end)
+      case when ${challenge.live} then now() end, ${challenge.invitee ?? null})
     on conflict (creator, request_id) do nothing`;
 }
 

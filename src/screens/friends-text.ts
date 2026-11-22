@@ -1,5 +1,6 @@
 // The Friends section's words (ADR 0079, PR (c)): pure, so every state is tested without a DOM.
-import type { AddFriendResponse, FriendsResponse } from '../api/friends.ts';
+import type { AddFriendResponse, FriendStatus, FriendsResponse, Invite } from '../api/friends.ts';
+import { challengeLine } from './online-text.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
 export interface FriendGroup {
@@ -31,3 +32,15 @@ export function hasAnyone(list: FriendsResponse): boolean {
 
 /** Remove, asked in place: the row's question. */
 export const removeQuestion = (name: string) => `Remove ${name}?`;
+
+/** A friend's status in words, beside its dot (PR (d)). */
+export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
+  online: 'Online',
+  in_a_match: 'In a match',
+  offline: 'Offline',
+};
+
+/** A friend's live challenge on the floating card: who, and what is played. */
+export function inviteLine(invite: Invite): string {
+  return `${invite.from} challenges you · ${challengeLine(invite)} · live`;
+}

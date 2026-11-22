@@ -6,6 +6,7 @@
 //   client clears every `ballbattle.*` key.
 // - PUT /api/v1/me/username {username}: an account chooses its username (ADR 0079, username.ts),
 //   only while accounts are on.
+// - GET /api/v1/me/inbox: an account's friends' status, requests and challenges (ADR 0079 PR (d)).
 // - GET /api/v1/me/match: the live match or lobby to go back to, or null (ADR 0053). Never a
 //   heartbeat: a player on home is away from their match.
 import type { PlayerResponse } from '../../api/session.ts';
@@ -16,7 +17,8 @@ import { clearedSessionCookie, playerHintCookie } from '../cookie.ts';
 import type { CurrentMatchResponse } from '../../api/live.ts';
 import { currentMatch } from '../current-match.ts';
 import { guard } from '../guard.ts';
-import { alsoWhileOff, json, type RouteHandler } from '../http.ts';
+import { alsoWhileOff, ApiError, json, type RouteHandler } from '../http.ts';
+import { inboxOf } from '../inbox.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
 import { sessionOf } from '../session.ts';
 import { requireAccounts } from '../sign-in.ts';
@@ -53,6 +55,21 @@ export const meMatch: RouteHandler = async (request, context) => {
   const match = await currentMatch(context.deps, player.userId);
   const body: CurrentMatchResponse = { match };
   return json(200, body, { 'Cache-Control': 'private, no-store' });
+};
+
+/**
+ * GET /api/v1/me/inbox (ADR 0079, PR (d)): friends' status, requests waiting and friends'
+ * challenges, read every 30 s while an account's page is visible. Counted as a read.
+ */
+export const meInbox: RouteHandler = async (request, context) => {
+  requireAccounts(context);
+  guard(request, ['GET']);
+  const player = await sessionOf(request, context);
+  if (!player.account) throw new ApiError(403, 'not_an_account', 'Sign in to see your friends');
+  await spend(context.deps.sql, player.userId, LIMITS.reads);
+  return json(200, await inboxOf(context.deps, player.userId), {
+    'Cache-Control': 'private, no-store',
+  });
 };
 
 export const meUsername: RouteHandler = async (request, context) => {

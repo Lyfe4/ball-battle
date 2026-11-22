@@ -94,7 +94,6 @@
 
 .friends-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-small);
@@ -102,6 +101,12 @@
   padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
   background: var(--color-raised);
+}
+
+.friends-who {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .friends-name {
@@ -133,4 +138,34 @@
 /* A text action keeps a finger's whole target. */
 .friends-action {
   min-height: var(--tap-target);
+}
+
+/* A friend's status (PR (d)): a dot in a status colour, with its words. */
+.friends-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.friends-status::before {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  content: '';
+}
+
+.friends-status[data-status='online']::before {
+  background: var(--color-favoured);
+}
+
+.friends-status[data-status='in_a_match']::before {
+  background: var(--color-accent);
+}
+
+.friends-challenge {
+  min-height: var(--tap-target);
+  padding-inline: var(--space-gap);
 }

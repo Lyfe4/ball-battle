@@ -5,8 +5,8 @@
 // a lineup is never built only to be stopped; never on load. Every state has a way on (ADR 0027).
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
-import { rememberGuest, type DeviceStorage } from '../app/online-device.ts';
-import { writeChallengeParams, writeOnlineSeriesParams, type SendStep } from '../app/online-url.ts';
+import { rememberGuest } from '../app/online-device.ts';
+import { writeChallengeParams, writeOnlineSeriesParams } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
 import type { BestOf, Format, Lineup } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
@@ -14,44 +14,17 @@ import type { Draft } from '../ui/lineup-draft.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
-import type { CurrentMatch } from '../api/live.ts';
 import { createFriendSetup } from './friend-setup.ts';
 import { createRematchLineup } from './rematch-lineup.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
+import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 import { challengeUrl, copyLink, shareLink } from './online-share.ts';
+
+export type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 
 /** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
 const LOBBY_POLL_MS = 2_000;
-
-export interface ChallengeHost {
-  /** Moves by the Back rules (ADR 0025). */
-  go(write: (params: URLSearchParams) => void): void;
-  /** Shows another screen in place of this entry. */
-  replaceWith(write: (params: URLSearchParams) => void): void;
-  /** Rewrites this entry's URL without showing it again. */
-  rewrite(write: (params: URLSearchParams) => void): void;
-  /** In-app Back, or `toParent` when there is no history to go back to. */
-  back(toParent: () => void): void;
-  home(): void;
-  /** The vs Friend setup, where challenges are sent from (ADR 0055). */
-  friend(): void;
-  readonly storage: DeviceStorage;
-  /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
-  primeSeries(id: string): Promise<void>;
-  /** Goes to the player's live match or lobby, read first. */
-  toMatch(match: CurrentMatch): Promise<void>;
-}
-
-export interface ChallengeScreens {
-  setVisible(visible: boolean): void;
-  /** A friend's link: its card, or the lineup that accepts it. */
-  showChallenge(token: string, step: 'card' | 'lineup'): void;
-  /** Sending a challenge: the vs Friend setup, or the lineup for it (or for a rematch). */
-  showSend(format: Format, bestOf: BestOf, step: SendStep, rematch?: string): void;
-  /** The page is visible again: a waiting lobby asks now. */
-  resumed(): void;
-}
 
 export function createChallengeScreens(
   roots: {
@@ -73,6 +46,8 @@ export function createChallengeScreens(
     { readonly format: Format; readonly bestOf: BestOf; readonly rematch?: string } | undefined;
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
+  /** The friend the challenge being sent is for (ADR 0079 PR (d)), if any. */
+  let inviting: { readonly id: string; readonly name: string } | undefined;
 
   const back = () => {
     host.back(() => {
@@ -183,6 +158,7 @@ export function createChallengeScreens(
       lineup: own,
       requestId,
       live: true,
+      ...(inviting === undefined ? {} : { friend: inviting.id }),
     };
     const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
     if (!answer.ok) {
@@ -192,6 +168,7 @@ export function createChallengeScreens(
     const link = answer.body;
     if (link === undefined) return;
     requestId = crypto.randomUUID();
+    inviting = undefined;
     // The sender's own card (the lobby) shares the link. It is read first, so the button stays
     // busy until the lobby can show; this lineup entry becomes it.
     token = link.token;
@@ -290,6 +267,8 @@ export function createChallengeScreens(
 
   return {
     setVisible(next) {
+      // Leaving these screens forgets a friend being challenged: a later challenge is a link.
+      if (!next && visible) inviting = undefined;
       visible = next;
       if (!next) {
         show('notice');
@@ -329,6 +308,18 @@ export function createChallengeScreens(
         // A card seen before is asked again (it may have been taken); a lobby asks on its own.
         if (lobby === undefined) void loadCard(false);
       }
+    },
+    async openInvite(next) {
+      const card = await callApi<ChallengeInfo>('GET', `challenges/${next}`);
+      token = next;
+      info = card.ok ? card.body : undefined;
+      host.go((url) => {
+        writeChallengeParams(url, next, info?.status === 'open' ? 'lineup' : 'card');
+      });
+    },
+    challengeFriend(friend) {
+      inviting = friend;
+      host.friend();
     },
     showSend(format, bestOf, step, again) {
       sending = again === undefined ? { format, bestOf } : { format, bestOf, rematch: again };

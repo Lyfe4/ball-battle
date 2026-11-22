@@ -1,8 +1,8 @@
 # 0079: Accounts: sign in with Google or an email code, linking the guest
 
 - Status: Accepted (2026-11-22). Built: PR (a), the switch and both sign-ins; PR (b), usernames,
-  Log out and Delete account; PR (c), friends (addendum of 2026-11-23). The inbox and challenging
-  a friend follow in PR (d)
+  Log out and Delete account; PR (c), friends, and PR (d), the inbox, status and challenging a
+  friend (addenda of 2026-11-23)
 - Date: 2026-11-22
 - Amends: ADR 0052 §2 (accounts are slice 2: how they are built), ADR 0069 (the privacy policy
   names what an account stores), ADR 0068 (the sweep keeps accounts for 24 months)
@@ -281,3 +281,59 @@ and remove, another pair's row untouched, each limit, a deleted account's rows g
 test seen failing with the block switched off), `friends-section.browser.test.ts`, unit tests of
 the code and words, `legal-pages.test.ts`, `check-bundle.test.ts`, and `friends.online.test.ts`
 (two phones signed in with email codes; one adds the other by username, the other accepts).
+
+## Addendum (2026-11-23): the inbox, status and challenging a friend (PR (d))
+
+- **`GET /me/inbox`**, accounts only: each accepted friend with a status, how many requests wait,
+  and live challenges friends sent the player that still wait. A complete, idempotent read (no
+  ETag yet: the answer is small and `no-store`). `/me/match` stays as it is for home's Back to
+  your match.
+- **The poll** (`inbox-poll.ts`): read once when home learns the device is an account (`/me`),
+  then every 30 s while the page is visible and the last answer had a friend, a waiting request or
+  an invite; none while hidden, one at once on return, none after sign-out, and a poke after any
+  change made in the Friends section. Only the wait lives there: a Supabase Realtime "poke" later
+  calls `poke` on each message and keeps a slow safety read; the read and screens don't change.
+  An account without friends costs one read per page load.
+- **Status**, decided in one SQL statement joined on accepted friendships only (a stranger, a
+  request or a removed friend learns nothing): **in a match** (an open live series they are still
+  heard from on within the away and grace times, or a lobby waiting), else **online** (a request of
+  theirs within 75 s: `profiles.active_at`, written by `profileOf` at most every 30 s, accounts
+  only), else **offline**. Changed from the proposal: "in a match" needs fresh presence, so an
+  abandoned series that nothing has settled (staging never sweeps) doesn't read as in a match.
+  Shown as a dot and words on each friend's row (Online, In a match, Offline).
+- **Challenge** on each friend's row: the vs Friend setup, then the lineup; Send challenge sends
+  an ordinary live link that also names the friend (`challenges.invitee`, `POST /challenges` with
+  `friend: <friendship id>`; only an accepted friend of an account, live only). The lobby says
+  "Waiting for Sam_R" and keeps the link and Share as the fallback. The friend being challenged is
+  held by the challenge screens until it is sent or the player leaves them.
+- **The friend's card**: the rematch's floating card (`rematch-notice.ts`, a new `invite` kind,
+  named "Challenge"), "Sam_R challenges you · Best of 3 · Reveal · live" with Accept and No thanks,
+  on any calm screen and never over a fight (it waits, as the rematch card does). Accept reads the
+  challenge and goes straight to its lineup (its card if it was taken or stopped meanwhile). No
+  thanks is `POST /challenges/:token/decline` (the invitee only): it leaves their inbox and the
+  sender's lobby reads "Sam_R said no thanks", the link still working for anyone else.
+- **Privacy**: the policy names `active_at` (who sees it, the 75 s) and who a challenge was sent
+  to; `legal-pages.test.ts` reads the 75 s against `ONLINE_MS`.
+
+Real use: two friends on phones, one on home and one challenging: the card arrives within 30 s
+(the poll), so a friend who says "I'll send it" still sees it without a message; a phone in a
+pocket (hidden) reads nothing and its friends see it offline after 75 s; a friend in a live match
+gets the card only after the fight on screen ends. iOS backgrounding means a closed or hidden page
+gets nothing until it shows again (push needs the app).
+
+Library behaviour relied on: `document.hidden` and `visibilitychange` (a hidden tab is also
+throttled, so no timer is relied on there); Postgres `exists` with correlated subqueries per
+friend row; `make_interval(secs => ...)` with the database's `now()` for every time.
+
+Tests: `inbox.db.test.ts` (accounts only; status for accepted friends only, not a stranger, a
+request either way or a removed friend, seen failing without the accepted-only join; online from
+the friend's own requests and offline after 75 s; a guest never marked active; in a match while
+playing or in a lobby, not once away past the grace; a challenge in the friend's inbox, the lobby
+naming them to the sender only, No thanks by them alone, gone once the sender stops waiting; only
+a friend, from an account, live), `inbox-poll.test.ts` (fake timers: a read at the start, every
+30 s while visible, none while hidden, one on return, idle without friends until poked, none
+after sign-out), `inbox-watch.browser.test.ts` (the card's words, Accept to the lineup, No thanks,
+held over a fight and seen failing without that hold, nothing read signed out),
+`friends-section.browser.test.ts` (status words, the inbox's status taken, Challenge) and
+`friend-challenge.online.test.ts` (two phones: the friend on home, the sender sees them online and
+challenges them, the card arrives by the poll, Accept, a live match starts on both).

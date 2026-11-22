@@ -8,6 +8,7 @@ import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts'
 import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
 import { DECLINE_DAYS } from '../src/server/db/friends.ts';
+import { ONLINE_MS } from '../src/server/db/inbox.ts';
 import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
 
@@ -102,6 +103,13 @@ describe('the privacy policy and terms', () => {
     ];
     expect(Math.max(...counts.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(86_400);
     expect(privacy.replace(/\s+/g, ' ')).toContain('how many friends are looked up and asked');
+  });
+
+  it('name when an account was last active, its 75 s, and who a challenge went to (ADR 0079)', () => {
+    expect(ONLINE_MS).toBe(75_000);
+    expect(privacy).toContain('When you were last active, as one time we overwrite');
+    expect(privacy.replace(/\s+/g, ' ')).toContain('in the last 75 seconds');
+    expect(privacy).toContain('Who a challenge was sent to, and whether they said no thanks');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {

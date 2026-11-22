@@ -18,6 +18,7 @@ import {
   hasAnyone,
   NO_FRIENDS,
   removeQuestion,
+  STATUS_WORDS,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
 
@@ -31,12 +32,18 @@ export interface FriendsHost {
   readonly line: (answer: ApiFailure) => string;
   /** Copies the code; false where there is no clipboard. */
   readonly copy: (text: string) => Promise<boolean>;
+  /** Challenge: the vs Friend setup, the challenge going to this friend (PR (d)). */
+  readonly challenge?: (friend: FriendEntry) => void;
+  /** The friends changed here (a request sent or answered): the inbox reads now. */
+  readonly changed?: () => void;
 }
 
 export interface FriendsSection {
   readonly element: HTMLElement;
   /** Reads the list afresh and draws it. */
   open(): Promise<void>;
+  /** The friends' status from the inbox (PR (d)), drawn if the section shows. */
+  statuses(friends: readonly FriendEntry[]): void;
 }
 
 function textButton(text: string, label: string): HTMLButtonElement {
@@ -102,8 +109,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     const item = element('li', 'friends-row');
     item.dataset['friend'] = friend.id;
     const name = element('span', 'friends-name', friend.name);
+    // The name, and under it a friend's status: the actions keep the row's right.
+    const who = element('span', 'friends-who');
+    who.append(name);
     const actions = element('span', 'friends-actions');
-    item.append(name, actions);
+    item.append(who, actions);
     const change = (method: 'POST' | 'DELETE', path: string) => () =>
       send(host.api<FriendsResponse>(method, path));
     if (group.key === 'incoming') {
@@ -130,6 +140,21 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       busyOnClick(remove, change('DELETE', `friends/${friend.id}`));
       actions.append(keep, remove);
     } else {
+      // Its status: a dot and words (PR (d)), for accepted friends only.
+      const status = friend.status ?? 'offline';
+      const state = element('span', 'friends-status', STATUS_WORDS[status]);
+      state.dataset['status'] = status;
+      name.after(state);
+      const challenge = host.challenge;
+      if (challenge !== undefined) {
+        const send = element('button', 'hud-button friends-challenge', 'Challenge');
+        send.type = 'button';
+        send.setAttribute('aria-label', `Challenge ${friend.name}`);
+        send.addEventListener('click', () => {
+          challenge(friend);
+        });
+        actions.append(send);
+      }
       const remove = textButton('Remove', `Remove ${friend.name}`);
       remove.addEventListener('click', () => {
         asking = friend.id;
@@ -169,6 +194,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     asking = undefined;
     if (answer.body !== undefined) list = answer.body;
     draw();
+    host.changed?.();
     return answer.body;
   }
 
@@ -220,5 +246,16 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   }
   busyOnClick(retry, open);
 
-  return { element: root, open };
+  return {
+    element: root,
+    open,
+    statuses(friends) {
+      if (list === undefined || root.hidden) return;
+      const before = JSON.stringify(list.friends);
+      if (before === JSON.stringify(friends)) return;
+      list = { ...list, friends };
+      // Never under a question being asked: Remove's stays until it is answered.
+      if (asking === undefined) draw();
+    },
+  };
 }

@@ -28,7 +28,7 @@ export const ONLINE_MARK = /\/api\/v1\/(?!me["'`])/;
  * Friend on) holds none of it.
  */
 export const ACCOUNTS_MARK =
-  /\bauth\/(?:options|email|google|switch)\b|\bme\/username\b|["'`]friends(?:\/|["'`])/;
+  /\bauth\/(?:options|email|google|switch)\b|\bme\/(?:username|inbox)\b|["'`]friends(?:\/|["'`])/;
 
 /**
  * What is wrong with one bundled file: `online` says whether this build may call the API, and

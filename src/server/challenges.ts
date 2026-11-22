@@ -17,6 +17,7 @@ import {
   openSeriesOf,
 } from './db/challenges.ts';
 import { cancelLobby, liveNowOf, lobbySeen } from './db/live.ts';
+import { inviteeOf } from './friend-challenge.ts';
 import { ApiError, type Deps } from './http.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
 import { createSeries } from './series-service.ts';
@@ -73,15 +74,25 @@ export async function createChallenge(
   deps: Deps,
   creator: string,
   request: CreateChallenge,
+  account = false,
 ): Promise<ChallengeLink> {
   await checkLineup(request.lineup, request.bestOf);
   if (request.live && !LIVE_FORMATS.includes(request.format)) {
     throw new ApiError(400, 'bad_request', 'Live matches are Reveal or Showdown');
   }
+  if (request.friend !== undefined && !request.live) {
+    throw new ApiError(400, 'bad_request', 'A challenge to a friend is live');
+  }
+  const friend = request.friend;
   const token = await tokenFor(deps.config, creator, request.requestId);
   return deps.sql.begin(async (db) => {
     const existing = await challengeByHash(db, await hashOf(token));
     if (existing === undefined) {
+      // A challenge to a friend (ADR 0079 PR (d)): only an accepted friend of an account.
+      const invitee =
+        friend === undefined
+          ? undefined
+          : await inviteeOf(db, deps.config, { userId: creator, account }, friend);
       if (request.live) await checkNotLive(db, creator);
       else if ((await openChallengesOf(db, creator)) >= MOST_OPEN_CHALLENGES) {
         throw new ApiError(409, 'too_many_series', 'You have enough links waiting already');
@@ -95,6 +106,7 @@ export async function createChallenge(
         lineup: request.lineup,
         requestId: request.requestId,
         live: request.live,
+        ...(invitee === undefined ? {} : { invitee }),
       });
     }
     const made = existing ?? (await challengeByHash(db, await hashOf(token)));
@@ -147,6 +159,9 @@ export async function challengeInfo(
     seriesId: status === 'accepted' || status === 'yours' ? found.seriesId : null,
     live: found.live,
     own,
+    // Who it was sent to is the sender's alone to see.
+    invitee: own ? found.inviteeName : null,
+    declined: own && found.declined,
   };
 }
 

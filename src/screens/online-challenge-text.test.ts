@@ -22,6 +22,8 @@ const info = (over: Partial<ChallengeInfo> = {}): ChallengeInfo => ({
   seriesId: null,
   live: true,
   own: false,
+  invitee: null,
+  declined: false,
   ...over,
 });
 

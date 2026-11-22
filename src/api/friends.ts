@@ -1,12 +1,40 @@
-// Friends (ADR 0079, PR (c)): what the page and the API say to each other about an account's
-// friends and friend requests. Accounts only; a friendship is named by its own id, never a player's.
+// Friends (ADR 0079, PR (c) and (d)): what the page and the API say to each other about an
+// account's friends, friend requests, their status and challenges. Accounts only; a friendship is
+// named by its own id, never a player's.
+import type { BestOf, Format } from '../sim/index.ts';
+
+/**
+ * An accepted friend's status (PR (d)): in a live match or waiting in a lobby, else online (a
+ * request within 75 s), else offline. Never shown for a request or a stranger.
+ */
+export type FriendStatus = 'online' | 'in_a_match' | 'offline';
 
 /** A friend, or the other side of a request. */
 export interface FriendEntry {
-  /** The friendship's id: what accept and remove name. */
+  /** The friendship's id: what accept, remove and challenge name. */
   readonly id: string;
   /** The name everyone sees: the username, else "Player 1234". */
   readonly name: string;
+  /** An accepted friend's status; absent for a request. */
+  readonly status?: FriendStatus;
+}
+
+/** A live challenge a friend sent this account, waiting in their lobby (PR (d)). */
+export interface Invite {
+  /** The link's token: Accept opens its lineup. */
+  readonly token: string;
+  readonly from: string;
+  readonly format: Format;
+  readonly bestOf: BestOf;
+}
+
+/** GET /api/v1/me/inbox: read every 30 s while the page is visible and the account has friends. */
+export interface InboxResponse {
+  /** Accepted friends, each with a status. */
+  readonly friends: readonly FriendEntry[];
+  /** Requests waiting for this account's answer. */
+  readonly requests: number;
+  readonly invites: readonly Invite[];
 }
 
 /** GET /api/v1/friends, and the answer to every change. */

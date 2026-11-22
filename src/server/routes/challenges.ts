@@ -4,6 +4,8 @@
 //   builds a lineup. Needs no session: opening a link isn't an online action yet.
 // - POST /api/v1/challenges/:token/accept {lineup}: starts the series.
 // - POST /api/v1/challenges/:token/cancel: the sender stops waiting in a live lobby (ADR 0053).
+// - POST /api/v1/challenges/:token/decline: the friend a challenge was sent to says No thanks
+//   (ADR 0079 PR (d)).
 // The sender's own GET of a waiting live link is the lobby's heartbeat, counted as a read.
 import {
   decodeAcceptChallenge,
@@ -11,12 +13,13 @@ import {
   isChallengeToken,
 } from '../../api/challenges.ts';
 import { acceptChallenge, cancelChallenge, challengeInfo, createChallenge } from '../challenges.ts';
+import { declineInvite } from '../friend-challenge.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
 import { optionalSession, sessionOf } from '../session.ts';
 
-const ONE = /^\/api\/v1\/challenges\/([A-Za-z0-9_-]+)(\/accept|\/cancel)?$/;
+const ONE = /^\/api\/v1\/challenges\/([A-Za-z0-9_-]+)(\/accept|\/cancel|\/decline)?$/;
 
 export const challenges: RouteHandler = async (request, context) => {
   guard(request, ['POST']);
@@ -26,7 +29,7 @@ export const challenges: RouteHandler = async (request, context) => {
     throw new ApiError(400, 'bad_request', 'Send {format, bestOf, lineup, requestId}');
   }
   await spend(context.deps.sql, player.userId, LIMITS.challenges);
-  return json(201, await createChallenge(context.deps, player.userId, body));
+  return json(201, await createChallenge(context.deps, player.userId, body, player.account));
 };
 
 export const challengeOne: RouteHandler = async (request, context) => {
@@ -41,6 +44,12 @@ export const challengeOne: RouteHandler = async (request, context) => {
   }
   guard(request, ['POST']);
   const player = await sessionOf(request, context);
+  if (match[2] === '/decline') {
+    // The friend it was sent to says No thanks (ADR 0079 PR (d)); the sender's lobby says so.
+    await spend(context.deps.sql, player.userId, LIMITS.moves);
+    await declineInvite(context.deps, token, player.userId);
+    return json(204, null);
+  }
   if (match[2] === '/cancel') {
     await spend(context.deps.sql, player.userId, LIMITS.moves);
     return json(200, await cancelChallenge(context.deps, token, player.userId));
