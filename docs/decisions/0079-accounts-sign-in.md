@@ -85,8 +85,18 @@ here) decodes the ID token.
 ## Consequences
 
 - Each environment with accounts needs: Supabase Auth's Google provider (the client id, nonce
-  check on), its SMTP pointed at Resend with the hourly email limit at 100, and the email change
-  and magic link templates showing `{{ .Token }}`. Manual linking stays off.
+  check on), "Confirm email" on (`/health` fails without it, `auth_email_confirmations`), its SMTP
+  pointed at Resend with the hourly email limit at 100, OTP expiry 600 s, and the confirm signup,
+  magic link and email change templates showing `{{ .Token }}` (`supabase/templates/code.html`).
+  Manual linking stays off. Resend's domain is `play.calvinrdevelopment.com` (DNS in Netlify):
+  the DKIM TXT, the two CNAMEs and the DMARC `p=none` record Resend lists, all as Resend gives them.
+- **A known timing leak.** For a guest, an address that already has an account takes two Auth
+  calls (the email change refused, then `/otp`) where a new one takes one, so "We sent a code"
+  comes back a little later (about one round trip to Auth). Someone timing many requests could
+  guess which emails have accounts. Accepted for now: the per-address, per-guest and per-network
+  limits cap how many addresses one person can try (20 a day per network), and Google sign-in
+  leaks nothing. If it matters later, the fix is to answer before Auth is called (send in the
+  background) or to pad the fast path.
 - Deploy previews can test email codes but not Google.
 - Slice 1 (this and PR (b)) reaches production only together with friends.
 - Not taken: Realtime now, the hosted OAuth redirect, merging accounts, Unicode usernames, an
