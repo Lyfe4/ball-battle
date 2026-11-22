@@ -178,11 +178,12 @@
     grid-area: 1 / 1 / 2 / -1;
   }
 
-  .quick-slots {
+  /* Scoped to the picker: the legend is a shared part (the manual's chart shows it too). */
+  .quick-setup > .quick-slots {
     grid-area: 2 / 1 / 4 / 2;
   }
 
-  .quick-why {
+  .quick-setup > .quick-why {
     grid-area: 4 / 1;
   }
 
@@ -190,7 +191,7 @@
     grid-area: 5 / 1;
   }
 
-  .quick-legend {
+  .quick-setup > .quick-legend {
     grid-area: 2 / 2;
   }
 
