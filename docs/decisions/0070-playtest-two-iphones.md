@@ -5,6 +5,7 @@
 - Amends: ADR 0055 (a rematch reaches the other player anywhere, not only on the end screen), ADR
   0061 (the toss keeps time by speed, never by a jump), ADR 0064 (every control sounds, softly)
 - Builds on: ADR 0053, 0054 (the live clock and countdown), ADR 0063 (catching up gently)
+- Amended by: its addendum of 2026-11-23 (the one who asked hears the yes)
 
 ## Context
 
@@ -132,3 +133,59 @@ The owner played vs Friend on two iPhones (Safari) and vs Bot, and found five th
 | Rematch asked, home (phone)               | Rematch asked, home (desktop)               | No thanks under a finger                  |
 | ----------------------------------------- | ------------------------------------------- | ----------------------------------------- |
 | ![](../images/playtest/rematch-phone.png) | ![](../images/playtest/rematch-desktop.png) | ![](../images/playtest/pressed-phone.png) |
+
+## Addendum (2026-11-23): the one who asked hears the yes
+
+The owner and a friend finished a live match on two iPhones. The owner asked for a rematch and went
+home; the friend accepted, built a lineup and saw "Waiting for your friend's lineup", while the
+owner's phone showed nothing: no sign of the yes, and no way back.
+
+**Why.** Played headless with both phones on screen, the asker was moved to the lineup within 2 s
+of the yes, silently. On a phone three things stood between the asker and that move:
+
+1. **The watch ended before the rematch did.** A device kept the watch for 2 minutes 40 s from the
+   end (`WATCH_MS`), but a rematch can still be waiting on the asker 3 minutes 30 s after it (2
+   minutes to ask, 30 s to answer, a minute for the lineups). A reload past that (Safari reloads
+   a tab it put away while the player locked the phone or answered a message) or any screen
+   change (home's demo ending a fight counts) dropped it without a word.
+2. **A hidden page hears nothing** (iOS suspends it), so the yes was only heard on return, if the
+   watch had lasted.
+3. **The move said nothing.** Even when it worked, the asker was moved without being told why, and
+   home offered no way back.
+
+**Decision.**
+
+- **The watch lasts as long as the rematch**: each answer's deadline (the answer's, then the
+  lineups') extends it, kept on the device, so a reload or a locked phone never drops a rematch
+  that can still move.
+- **The asker is told, not moved** (`agreed`): the floating card says "Player 4821 accepted" with
+  the seconds left for the lineups and its bar, and **Choose lineup** goes straight to it; on any
+  calm screen, never over a fight. The one who accepts from the card still goes straight to the
+  lineup (Accept is that tap). Either player who leaves the lineup without handing one in gets
+  the same card ("Rematch on: choose your lineup").
+- **Home's way back**: while the rematch waits on the player, Play's place says **Back to your
+  rematch** ("Waiting for Player 4821 to answer" back to the end screen, or "Choose your lineup ·
+  vs Player 4821" to the lineup), in Play's look (`createHomeBack`, the one component "Back to
+  your match" is made with). A live match comes first.
+- **Both told when time runs out after a yes**: "No rematch: time ran out." reaches anyone who said
+  yes, not only the one who asked. A no still reaches the asker only (the other said it).
+- **A started rematch finds the player who handed in a lineup and went home**: straight into the
+  new match once no fight is on (its start window is running).
+- The rematch's own screens (the end screen and the new lineup) ask for themselves, so the watch
+  keeps quiet while either shows.
+
+**Real use.** The asker locks the phone after asking and comes back after the friend's yes: the
+watch is still on (extended by the answer's deadline), the card shows on return. Both phones on
+home: the card on one, the friend's lineup on the other. The asker on a vs Bot fight: the card
+waits for the fight to end. The friend leaves the lineup: the asker's card counts down and both
+read "No rematch: time ran out." when it ends.
+
+**Tests.** `rematch-text.test.ts` (the card for each side, both told of the time running out after
+a yes, home's way back only while it waits on the player), `rematch-watch.browser.test.ts` (a
+fake server: the asker hears the yes with 58 s left and Choose lineup and is never moved without a
+tap, home leads to the end screen then the lineup, the watch extended to the lineups' deadline, a
+player whose lineup was in moved into the new match), and `rematch-yes-away.online.test.ts` (two
+phones: the asker goes home after asking, home shows Back to your rematch, the friend accepts from
+home and builds a lineup, the asker gets the card, Choose lineup, and both are in the same new
+match). Each failed before the fix. Not verified on real iPhones: Safari's own reload of a tab
+put away (the extended watch is what covers it).
