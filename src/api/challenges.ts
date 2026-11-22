@@ -14,6 +14,11 @@ export interface CreateChallenge {
    * Without it, the series is played by turns (kept in the code, hidden from players).
    */
   readonly live: boolean;
+  /**
+   * The accepted friend it is for (a friendship's id, ADR 0079 PR (d)): it reaches their inbox
+   * while the lobby waits. Live only; the link still works for anyone.
+   */
+  readonly friend?: string;
 }
 
 export interface ChallengeLink {
@@ -42,6 +47,10 @@ export interface ChallengeInfo {
   readonly live: boolean;
   /** The viewer sent it (a stopped link reads differently to its sender). */
   readonly own: boolean;
+  /** To its sender: the friend it was sent to (ADR 0079 PR (d)), else null. */
+  readonly invitee: string | null;
+  /** To its sender: that friend said No thanks. */
+  readonly declined: boolean;
 }
 
 /** POST /api/v1/challenges/:token/accept. */
@@ -66,14 +75,22 @@ export const lineupOf = (value: unknown): string[] | undefined =>
 
 export function decodeCreateChallenge(body: unknown): CreateChallenge | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
-  const { format, bestOf, lineup, requestId, live } = body as Record<string, unknown>;
+  const { format, bestOf, lineup, requestId, live, friend } = body as Record<string, unknown>;
   const named = FORMATS.find((name) => name === format);
   const length = bestOf === 3 || bestOf === 5 ? bestOf : undefined;
   const balls = lineupOf(lineup);
   if (named === undefined || length === undefined || balls === undefined) return undefined;
   if (typeof requestId !== 'string' || !UUID.test(requestId)) return undefined;
   if (live !== undefined && typeof live !== 'boolean') return undefined;
-  return { format: named, bestOf: length, lineup: balls, requestId, live: live === true };
+  if (friend !== undefined && (typeof friend !== 'string' || !UUID.test(friend))) return undefined;
+  return {
+    format: named,
+    bestOf: length,
+    lineup: balls,
+    requestId,
+    live: live === true,
+    ...(friend === undefined ? {} : { friend }),
+  };
 }
 
 export function decodeAcceptChallenge(body: unknown): AcceptChallenge | undefined {

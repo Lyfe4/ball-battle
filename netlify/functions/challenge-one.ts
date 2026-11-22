@@ -9,5 +9,6 @@ export const config: Config = {
     '/api/v1/challenges/:token',
     '/api/v1/challenges/:token/accept',
     '/api/v1/challenges/:token/cancel',
+    '/api/v1/challenges/:token/decline',
   ],
 };

@@ -30,6 +30,7 @@ import {
   withdrawRow,
   type FriendCounts,
 } from './db/friends.ts';
+import { friendStatuses } from './db/inbox.ts';
 import { ApiError, type Deps } from './http.ts';
 import { LIMITS, spend } from './rate-limit.ts';
 
@@ -66,7 +67,8 @@ export async function listFriends(deps: Deps, userId: string): Promise<FriendsRe
   const entry = ({ id, name }: { id: string; name: string }) => ({ id, name });
   return {
     code,
-    friends: rows.filter((row) => row.accepted).map(entry),
+    // With each one's status (PR (d)), read in the one statement joined on accepted friendships.
+    friends: await friendStatuses(deps.sql, userId),
     incoming: rows.filter((row) => !row.accepted && !row.mine && !row.declined).map(entry),
     // Declined or not, a request the player sent reads as sent (ADR 0079): a "no" is never told.
     outgoing: rows.filter((row) => !row.accepted && row.mine && !row.withdrawn).map(entry),
