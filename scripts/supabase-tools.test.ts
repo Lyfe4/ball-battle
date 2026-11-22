@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { localVersions, migrationGap } from './migrate.ts';
-import { forwardingProblem, madeUpIp } from './project-check.ts';
+import { codesProblem, forwardingProblem, madeUpIp } from './project-check.ts';
 import { projectRefOf } from './supabase-projects.ts';
 
 describe('the daily check', () => {
@@ -55,6 +55,8 @@ describe('migrations', () => {
       '1fe76249365689f374d1854b03e196f52fc629951c0cf261af637d0290f44eb1',
     '20261121064854_api_statement_timeout.sql':
       'beeab3f005f64d869fa2b2fa490e207c5fa8f919c5e00cd38b56a4eeabb24237',
+    '20261122090000_accounts.sql':
+      'baba9f2f68a70a57e6b85245f82da162c91ba4e68b91da4a5f64a76893665fc0',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));
@@ -66,5 +68,13 @@ describe('migrations', () => {
 
   it('pins no file that is gone', () => {
     expect(Object.keys(PINNED).filter((file) => !files.includes(file))).toEqual([]);
+  });
+});
+
+describe('the daily check of this month’s email codes (ADR 0079)', () => {
+  it('fails from 2,200, the same point /api/v1/health says near', () => {
+    expect(codesProblem(0)).toBeUndefined();
+    expect(codesProblem(2199)).toBeUndefined();
+    expect(codesProblem(2200)).toMatch(/^2200 email codes this month, near the 2700 cap/);
   });
 });

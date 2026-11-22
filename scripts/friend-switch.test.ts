@@ -19,7 +19,7 @@ function section(name: string): string {
 describe('the vs Friend switch', () => {
   it('builds production’s client from BALLBATTLE_ONLINE, unset meaning off', () => {
     expect(section('context.production')).toContain(
-      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" pnpm build"',
+      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" VITE_ACCOUNTS=\\"${BALLBATTLE_ACCOUNTS:-}\\" pnpm build"',
     );
   });
 
@@ -32,6 +32,12 @@ describe('the vs Friend switch', () => {
   it('keeps previews and the main branch deploy on', () => {
     expect(section('context.deploy-preview.environment')).toContain('VITE_ONLINE = "1"');
     expect(section('context.branch-deploy.environment')).toContain('VITE_ONLINE = "1"');
+  });
+
+  it('builds previews and the main branch deploy with accounts, production only by its switch', () => {
+    expect(section('context.deploy-preview.environment')).toContain('VITE_ACCOUNTS = "1"');
+    expect(section('context.branch-deploy.environment')).toContain('VITE_ACCOUNTS = "1"');
+    expect(section('build.environment')).not.toContain('ACCOUNTS');
   });
 
   it('means the same to the functions: only "1" is on', () => {

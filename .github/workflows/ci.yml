@@ -104,7 +104,7 @@ jobs:
       # pooler, as on Netlify. The services the game doesn't use are left out.
       - run: >-
           pnpm exec supabase start
-          -x studio,mailpit,postgres-meta,imgproxy,logflare,vector,edge-runtime,realtime,storage-api
+          -x studio,postgres-meta,imgproxy,logflare,vector,edge-runtime,realtime,storage-api
       # The route handlers called with Request objects, against the real database: the schema's
       # access rules, sessions, the series machine and challenges.
       - run: pnpm test:db
@@ -129,7 +129,7 @@ jobs:
       - run: pnpm exec playwright install chromium
       - run: >-
           pnpm exec supabase start
-          -x studio,mailpit,postgres-meta,imgproxy,logflare,vector,edge-runtime,realtime,storage-api
+          -x studio,postgres-meta,imgproxy,logflare,vector,edge-runtime,realtime,storage-api
       # The functions' settings from the local stack (scripts/local-env.ts), and an online build
       # served by `netlify dev` with the functions on one origin, as on a deploy preview.
       - run: node scripts/local-env.ts > .env

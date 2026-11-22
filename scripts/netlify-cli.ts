@@ -13,14 +13,18 @@ export function isPlainArgument(arg: string): boolean {
   return PLAIN.test(arg);
 }
 
-/** The CLI calls that switch vs Friend: set or unset the variable, then a production build. */
+/** The production switches: vs Friend (ADR 0068), and accounts on top of it (ADR 0079). */
+export type Switch = 'BALLBATTLE_ONLINE' | 'BALLBATTLE_ACCOUNTS';
+
+/** The CLI calls that flip a switch: set or unset its variable, then a production build. */
 export function switchCalls(
   wanted: 'on' | 'off',
+  variable: Switch = 'BALLBATTLE_ONLINE',
 ): readonly [setVariable: readonly string[], triggerBuild: readonly string[]] {
   return [
     wanted === 'on'
-      ? ['env:set', 'BALLBATTLE_ONLINE', '1', '--context', 'production']
-      : ['env:unset', 'BALLBATTLE_ONLINE', '--context', 'production'],
+      ? ['env:set', variable, '1', '--context', 'production']
+      : ['env:unset', variable, '--context', 'production'],
     // Netlify's "Trigger deploy" (createSiteBuild): a fresh build of the production branch.
     ['deploy', '--trigger', '--site', SITE_ID],
   ];

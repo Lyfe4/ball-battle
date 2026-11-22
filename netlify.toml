@@ -51,18 +51,23 @@
 # Online play is built only where it is switched on: deploy previews and the main branch deploy
 # (staging), never production until launch (ADR 0052 section 6). The functions read their own
 # BALLBATTLE_ONLINE, set per context in the dashboard with their secrets.
+# Accounts (ADR 0079) are built the same way, VITE_ACCOUNTS beside VITE_ONLINE, and the functions
+# read their own BALLBATTLE_ACCOUNTS, set per context in the dashboard. Production has neither yet:
+# accounts reach it only together with friends.
 # Production follows the vs Friend switch (ADR 0068): BALLBATTLE_ONLINE, set or unset for the
 # production context in Netlify's dashboard (or `node scripts/friend-switch.ts on|off`), builds the
 # client with or without online play, and the functions read the same variable. One variable, one
 # redeploy, so the page and the API are never switched apart. Unset is off.
 [context.production]
-  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" pnpm build"
+  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" VITE_ACCOUNTS=\"${BALLBATTLE_ACCOUNTS:-}\" pnpm build"
 
 [context.deploy-preview.environment]
   VITE_ONLINE = "1"
+  VITE_ACCOUNTS = "1"
 
 [context.branch-deploy.environment]
   VITE_ONLINE = "1"
+  VITE_ACCOUNTS = "1"
 
 # `netlify dev`: an online build (`pnpm build:online`) and the functions on one origin,
 # http://localhost:8888, against a local Supabase (`pnpm exec supabase start`) and the settings in
