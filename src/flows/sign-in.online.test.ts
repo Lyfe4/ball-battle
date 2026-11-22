@@ -6,9 +6,9 @@
 // Chromium only, like the friend challenge.
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { signInWith } from './account-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
-const MAILPIT = process.env['MAILPIT_URL'] ?? 'http://127.0.0.1:54324';
 const PHONE = { width: 390, height: 664 };
 
 let browser: Browser;
@@ -35,51 +35,7 @@ async function phone(): Promise<Page> {
   return context.newPage();
 }
 
-/** How many emails `email` has had. */
-async function mailCount(email: string): Promise<number> {
-  const query = encodeURIComponent(`to:"${email}"`);
-  const body = (await (await fetch(`${MAILPIT}/api/v1/search?query=${query}`)).json()) as {
-    messages?: { ID: string }[];
-  };
-  return body.messages?.length ?? 0;
-}
-
-/** The code in `email`'s newest email, once there are more than `before`. */
-async function codeFor(email: string, before: number): Promise<string> {
-  const deadline = Date.now() + 15_000;
-  for (;;) {
-    const query = encodeURIComponent(`to:"${email}"`);
-    const { messages = [] } = (await (
-      await fetch(`${MAILPIT}/api/v1/search?query=${query}`)
-    ).json()) as { messages?: { ID: string }[] };
-    const newest = messages[0];
-    if (messages.length > before && newest !== undefined) {
-      const message = (await (await fetch(`${MAILPIT}/api/v1/message/${newest.ID}`)).json()) as {
-        Text: string;
-      };
-      const code = /\b\d{6}\b/.exec(message.Text)?.[0];
-      if (code !== undefined) return code;
-    }
-    if (Date.now() > deadline) throw new Error(`No code for ${email}`);
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-}
-
 const me = (page: Page) => page.evaluate(async () => (await fetch('/api/v1/me')).json());
-
-/**
- * Types `email`, sends a code, reads it from the mail catcher and types it, until `then` (the
- * username's question for an account without one, else signed in) shows.
- */
-async function signInWith(page: Page, email: string, then = 'You’re signed in'): Promise<void> {
-  const before = await mailCount(email);
-  await page.getByLabel('Your email').fill(email);
-  await page.getByRole('button', { name: 'Email me a code' }).click();
-  await page.getByRole('heading', { name: 'Check your email' }).waitFor();
-  await page.getByLabel('The code').fill(await codeFor(email, before));
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByRole('heading', { name: then }).waitFor();
-}
 
 /**
  * From home, opens the account by its button beside the gear (ADR 0079 addendum of 2026-11-22),
