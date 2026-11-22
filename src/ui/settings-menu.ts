@@ -238,8 +238,16 @@ function place(): void {
     delete panel.dataset['compact'];
     paused.hidden = false;
     spot = at();
-    // Over the court and too tall to clear its gear: capped above the gear, scrolling inside.
-    if (spot.maxHeight !== undefined) panel.style.maxHeight = `${String(spot.maxHeight)}px`;
+    if (spot.maxHeight !== undefined) {
+      // Over the court and too tall to clear its gear: the compact form when that fits whole (at
+      // 390 x 664 the full form, capped, cut Show all tips again and Close off at the bottom), else
+      // the full form capped above the gear, scrolling inside.
+      panel.dataset['compact'] = '';
+      const compact = at();
+      if (compact.maxHeight === undefined) spot = compact;
+      else delete panel.dataset['compact'];
+      if (spot.maxHeight !== undefined) panel.style.maxHeight = `${String(spot.maxHeight)}px`;
+    }
   }
   menu.covers = spot.covers;
   paused.hidden = !spot.covers;

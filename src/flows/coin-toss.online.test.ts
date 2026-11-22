@@ -5,7 +5,15 @@
 import type { BrowserContext, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TOSS_FLIP_MS, TOSS_HOLD_MS } from '../api/live.ts';
-import { closePhones, openPhones, phone, startLiveMatch, type Phones } from './live-support.ts';
+import {
+  closePhones,
+  openPhones,
+  phone,
+  SIDEWAYS,
+  SIDEWAYS_LARGE,
+  startLiveMatch,
+  type Phones,
+} from './live-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 let phones: Phones;
@@ -92,6 +100,29 @@ describe('a live Reveal match’s coin toss', () => {
   );
 
   it(
+    'shows the whole toss without a scroll on phones turned sideways',
+    { timeout: 120_000 },
+    async () => {
+      // On an iPhone sideways the toss opened below the fold (ADR 0061, 0067): both phones here
+      // see the coin's whole stage and the result line at scroll 0 as it lands.
+      const sender = await phone(phones, SIDEWAYS);
+      const friend = await phone(phones, SIDEWAYS_LARGE);
+      await startLiveMatch(BASE, sender, friend);
+      const landed = '#online-series .coin-toss[data-stage="landed"]';
+      const results = await Promise.all(
+        [sender, friend].map(async (page) => {
+          await page.locator(landed).waitFor({ timeout: 20_000 });
+          return page.evaluate<Record<string, unknown>>(WHOLE_TOSS);
+        }),
+      );
+      for (const seen of results) {
+        expect(seen).toStrictEqual({ scrollY: 0, stage: true, words: true });
+      }
+      expect(phones.errors).toStrictEqual([]);
+    },
+  );
+
+  it(
     'flips smoothly on a first game whose clock is still settling (playtest: first game)',
     { timeout: 120_000 },
     async () => {
@@ -130,6 +161,19 @@ describe('a live Reveal match’s coin toss', () => {
     },
   );
 });
+
+/** At this moment: the page's scroll, and whether the toss's stage and words are whole on screen. */
+const WHOLE_TOSS = `(() => {
+  const whole = (selector) => {
+    const box = document.querySelector(selector)?.getBoundingClientRect();
+    return box !== undefined && box.top >= 0 && box.bottom <= window.innerHeight + 0.5;
+  };
+  return {
+    scrollY: window.scrollY,
+    stage: whole('#online-series .coin-toss-stage'),
+    words: whole('#online-series .coin-toss-words'),
+  };
+})()`;
 
 /** Records the coin flip's own time on every frame it runs (its animation's currentTime). */
 const FLIP_PROBE = `

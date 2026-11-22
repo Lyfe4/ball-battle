@@ -135,8 +135,41 @@
   }
 }
 
+/*
+ * A phone turned sideways (ADR 0061, 0067): 320 to 375 px of height under the header and the bar,
+ * which the coin, its rise and the words under it overran. The coin is sized from the height left
+ * (about 10rem goes to the header, the bar and the gap under the toss) and the words sit beside it,
+ * so the whole toss shows at the top without a scroll.
+ */
+@media (min-aspect-ratio: 5/4) {
+  .coin-toss {
+    --coin-size: clamp(56px, calc((100dvh - 10rem) / 2), 112px);
+
+    grid-template-columns: auto minmax(0, 18rem);
+    align-items: end;
+    justify-content: center;
+    column-gap: var(--space-gap);
+  }
+
+  /* Level with the coin's face at rest, not its rise. */
+  .coin-toss-words {
+    padding-bottom: calc(var(--coin-size) * 0.55);
+    font-size: clamp(1.25rem, 3.4vw, 1.75rem);
+    text-align: start;
+  }
+}
+
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .coin-toss {
     --coin-size: 128px;
+
+    grid-template-columns: none;
+    justify-content: normal;
+  }
+
+  .coin-toss-words {
+    padding-bottom: 0;
+    font-size: clamp(1.5rem, 7vw, 2rem);
+    text-align: center;
   }
 }

@@ -79,32 +79,41 @@
 
 /*
  * A phone turned sideways (ADR 0067 addendum) reads the score line too, so the court, the
- * health bars and speed fit its 375 px without scrolling; a desktop keeps the full track.
+ * health bars and speed fit its 375 px without scrolling; a desktop keeps the full track. Between
+ * rounds as well: the full track took a 320 px screen and pushed the picks below the fold.
  */
 @media (min-aspect-ratio: 5/4) {
-  .series[data-phase='playing'] .series-bar-about {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between']) .series-bar-about {
     display: none;
   }
 
-  .series[data-phase='playing'] .series-bar-score:not([hidden]) {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between'])
+    .series-bar-score:not([hidden]) {
     display: inline-flex;
   }
 
-  .series[data-phase='playing']:not([data-track-open]) > .series-track {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between']):not(
+      [data-track-open]
+    )
+    > .series-track {
     display: none;
   }
 }
 
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  .series[data-phase='playing'] .series-bar-about {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between']) .series-bar-about {
     display: block;
   }
 
-  .series[data-phase='playing'] .series-bar-score:not([hidden]) {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between'])
+    .series-bar-score:not([hidden]) {
     display: none;
   }
 
-  .series[data-phase='playing']:not([data-track-open]) > .series-track {
+  :is(.series, .answer-step):is([data-phase='playing'], [data-phase='between']):not(
+      [data-track-open]
+    )
+    > .series-track {
     display: grid;
   }
 }

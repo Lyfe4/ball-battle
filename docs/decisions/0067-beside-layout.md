@@ -133,3 +133,27 @@ height). Both were seen failing on the old stylesheets. Not checked headless: Sa
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | ![The iPhone's card, clipped](../images/landscape/small-card-before.png)    | ![The card inside the court](../images/landscape/small-card-after.png)                |
 | ![Free play's picker in a box](../images/landscape/small-picker-before.png) | ![Free play's picker, the page scrolling](../images/landscape/small-picker-after.png) |
+
+## Addendum (2026-11-23): the toss and the picks above the fold
+
+Seen on the owner's iPhone sideways: Reveal's coin toss opened below the fold (the screen starts at
+its top, and under the header and the bar the coin's rise, the coin and the result line took 272
+px of a 320 px screen), and between rounds the full track (158 px) pushed the picks below it.
+
+- **The toss beside** (coin-toss.css): the coin is sized from the height left,
+  `clamp(56px, (100dvh - 10rem) / 2, 112px)`, and the result line sits beside the coin, level with
+  its face at rest, rather than under it. At 667 x 320 the whole toss ends at 291 px; at 812 x 375
+  the coin keeps its full 112 px. A desktop keeps the column and its 128 px coin. Live and offline
+  alike: it is one part (ADR 0061).
+- **The score line between rounds** (series-bar.css): beside, a pick screen reads "Round 2 · You
+  1–0 Bot ▾" in place of what is played, as mid-fight, and the track is a tap away. The round
+  screen (`phase` between) and round 1's pick (`answer-step`, now marked `data-phase="between"`)
+  both. The track opened there closes when the fight starts (its open state is keyed by phase and
+  round). At 667 x 320 the banner and the first pick show whole at scroll 0 (round 2's two picks
+  whole); a phone and a desktop keep the full track.
+
+Tests: `landscape-toss.landscape.browser.test.ts` (both landscape projects): the coin's stage in the
+air and landed, and the result line, whole at scroll 0; then on round 1's pick and round 2's the
+score line, no track, the banner and the first pick whole, and the track opened by the line. Live:
+`coin-toss.online.test.ts` puts one phone at 667 x 320 and the other at 812 x 375 and checks the
+landed toss whole on both at scroll 0. Each was seen failing on the old stylesheets.

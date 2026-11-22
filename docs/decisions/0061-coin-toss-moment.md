@@ -2,7 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-17
-- Amended by: ADR 0070 (the flip keeps time by its speed, never by a jump; its stage only moves on)
+- Amended by: ADR 0070 (the flip keeps time by its speed, never by a jump; its stage only moves on),
+  ADR 0067 addendum of 2026-11-23 (on a phone turned sideways the words sit beside the coin)
 - Amends: ADR 0041 (the toss in the pick banner), ADR 0053 (the live start), ADR 0054 (the lead
   into a fight)
 - Builds on: ADR 0029 (Reveal's coin toss), ADR 0053 (times are the database's)
