@@ -152,6 +152,11 @@
     margin-block: 0;
     overflow-y: visible;
   }
+
+  /* Free play's picker is two columns here (quick-setup.css): it takes the whole width. */
+  .stage[data-screen='pick'] .hud {
+    width: 100%;
+  }
 }
 
 /*
