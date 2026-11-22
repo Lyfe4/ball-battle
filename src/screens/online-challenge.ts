@@ -222,6 +222,7 @@ export function createChallengeScreens(
     show('notice', cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent)), focus);
     if (card.live && card.status === 'yours' && visible) {
       lobby = window.setTimeout(() => void loadCard(false), LOBBY_POLL_MS);
+      host.lobbyWaits?.();
     }
   }
 

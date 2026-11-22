@@ -1,5 +1,6 @@
-// The inbox reaching a signed-in player anywhere in the game (ADR 0079, PR (d)). It reads
-// `/me/inbox` on the poll's time (inbox-poll.ts: every 30 s while visible, with friends) and:
+// The inbox reaching a signed-in player anywhere in the game (ADR 0079, PR (d)), from the page's
+// first screen, whichever it is. It reads `/me/inbox` on the poll's time (inbox-poll.ts: every 30 s
+// while visible, with friends; every 2 s while something is expected) and:
 //
 // - a friend's live challenge shows as the rematch's floating card (one look, ADR 0070): who and
 //   what, Accept straight to the lineup and No thanks, on any calm screen and never over a fight,
@@ -23,6 +24,8 @@ export interface InboxWatchHost {
   fighting(): boolean;
   /** The friends' status, as each answer brings it. */
   friends(friends: readonly FriendEntry[]): void;
+  /** Something is expected (a rematch window, a lobby waiting): the inbox reads every 2 s. */
+  expecting(): boolean;
 }
 
 export interface InboxWatch {
@@ -32,6 +35,8 @@ export interface InboxWatch {
   poke(): void;
   /** The screen changed (a fight started or ended): shown or held. */
   refresh(): void;
+  /** Something may be expected now: the next read comes within 2 s (inbox-poll.ts). */
+  quicken(): void;
 }
 
 export function createInboxWatch(
@@ -107,6 +112,7 @@ export function createInboxWatch(
   const poll = createInboxPoll({
     read,
     hidden: () => document.hidden,
+    expecting: () => host.expecting(),
     setTimer: (run, ms) => window.setTimeout(run, ms),
     clearTimer: (id) => {
       window.clearTimeout(id);
@@ -129,5 +135,8 @@ export function createInboxWatch(
       poll.poke();
     },
     refresh: render,
+    quicken() {
+      poll.quicken();
+    },
   };
 }

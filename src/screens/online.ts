@@ -42,6 +42,8 @@ export interface OnlineHost {
   readonly ended?: (view: SeriesView) => void;
   /** The friends changed on the account screen: the inbox reads now (ADR 0079 PR (d)). */
   readonly friendsChanged?: () => void;
+  /** The sender's lobby waits for the friend: the inbox reads quickly meanwhile. */
+  readonly lobbyWaits?: () => void;
 }
 
 export interface OnlineScreens {
@@ -145,6 +147,7 @@ export function createOnlineScreens(
       storage: host.storage,
       primeSeries: (id) => primer.series(id),
       toMatch,
+      ...(host.lobbyWaits === undefined ? {} : { lobbyWaits: host.lobbyWaits }),
     },
   );
 

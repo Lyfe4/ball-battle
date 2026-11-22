@@ -1,7 +1,8 @@
 // The inbox's wait (ADR 0079, PR (d)), with fake timers: a read at the start, one every 30 s while
-// visible and worth it, none while hidden, one at once on return, none after sign-out.
+// visible and worth it, every 2 s while something is expected, none while hidden, one at once on
+// return, none after sign-out.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInboxPoll, INBOX_MS } from './inbox-poll.ts';
+import { createInboxPoll, INBOX_EXPECTING_MS, INBOX_MS } from './inbox-poll.ts';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -12,6 +13,7 @@ afterEach(() => {
 
 function poll(answers: () => boolean = () => true) {
   let hidden = false;
+  let expecting = false;
   let reads = 0;
   const inbox = createInboxPoll({
     read: () => {
@@ -19,6 +21,7 @@ function poll(answers: () => boolean = () => true) {
       return Promise.resolve(answers());
     },
     hidden: () => hidden,
+    expecting: () => expecting,
     setTimer: (run, ms) => Number(setTimeout(run, ms)),
     clearTimer: (id) => {
       clearTimeout(id);
@@ -30,6 +33,10 @@ function poll(answers: () => boolean = () => true) {
     hide: (value: boolean) => {
       hidden = value;
       inbox.visibility();
+    },
+    expect: (value: boolean) => {
+      expecting = value;
+      inbox.quicken();
     },
   };
 }
@@ -96,6 +103,7 @@ describe('the inbox poll', () => {
         return fail ? Promise.reject(new Error('offline')) : Promise.resolve(true);
       },
       hidden: () => hidden,
+      expecting: () => false,
       setTimer: (run, ms) => Number(setTimeout(run, ms)),
       clearTimer: (id) => {
         clearTimeout(id);
@@ -107,5 +115,37 @@ describe('the inbox poll', () => {
     hidden = false;
     await vi.advanceTimersByTimeAsync(INBOX_MS);
     expect(reads).toBe(2);
+  });
+
+  it('reads every 2 s while something is expected, from the moment it is, then 30 s again', async () => {
+    // Calvin, 2026-11-23: a challenge or a rematch's news should arrive at once, not in 30 s.
+    const { inbox, reads, expect: expectNow, hide } = poll(() => false);
+    inbox.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reads(), 'nothing to watch: idle').toBe(1);
+    expectNow(true);
+    await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS);
+    expect(reads()).toBe(2);
+    await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS * 4);
+    expect(reads()).toBe(6);
+    hide(true);
+    await vi.advanceTimersByTimeAsync(INBOX_MS);
+    expect(reads(), 'hidden: none, expected or not').toBe(6);
+    hide(false);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reads()).toBe(7);
+    expectNow(false);
+    await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS * 20);
+    expect(reads(), 'the last fast read ran, then idle again').toBe(8);
+  });
+
+  it('quickens a 30 s wait without reading at once', async () => {
+    const { inbox, reads, expect: expectNow } = poll();
+    inbox.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expectNow(true);
+    expect(reads()).toBe(1);
+    await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS);
+    expect(reads()).toBe(2);
   });
 });

@@ -22,6 +22,8 @@ export interface ChallengeHost {
   primeSeries(id: string): Promise<void>;
   /** Goes to the player's live match or lobby, read first. */
   toMatch(match: CurrentMatch): Promise<void>;
+  /** The sender's lobby waits for the friend (each of its asks): news is expected. */
+  readonly lobbyWaits?: () => void;
 }
 
 export interface ChallengeScreens {
