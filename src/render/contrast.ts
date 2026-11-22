@@ -38,3 +38,12 @@ export function relativeLuminance(hex: string): number {
   });
   return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (b ?? 0);
 }
+
+/**
+ * `readableOn` for colours read from the page (a ball's, a token's): unchanged if either isn't
+ * `#rrggbb`, so a colour the page couldn't resolve is shown as it is rather than throwing.
+ */
+export function readableTextOn(color: string, background: string): string {
+  const hex = /^#[0-9a-f]{6}$/i;
+  return hex.test(color) && hex.test(background) ? readableOn(color, background) : color;
+}

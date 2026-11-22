@@ -51,6 +51,17 @@
   }
 }
 
+/* The ball's small drawing, then its name and ability in its own colour (arena-tips.ts). */
+.arena-caption-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arena-caption-mark {
+  flex: none;
+}
+
 .arena-caption-title {
   font-weight: 800;
 }
