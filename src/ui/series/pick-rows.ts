@@ -14,7 +14,7 @@ export interface PickRows {
   /** Shows one row per option; rebuilt only when the choice changes. */
   show(choice: PickChoice, seats?: Seats): void;
   /** Focuses the first option. */
-  focus(): void;
+  focus(options?: FocusOptions): void;
 }
 
 const OWN_PX = 36;
@@ -172,8 +172,8 @@ export function createPickRows(
       heads(choice);
       rows.replaceChildren(...choice.options.map((ball) => row(choice, ball)));
     },
-    focus() {
-      rows.querySelector<HTMLButtonElement>('.pick-row-pick')?.focus();
+    focus(options) {
+      rows.querySelector<HTMLButtonElement>('.pick-row-pick')?.focus(options);
     },
   };
 }

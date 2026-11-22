@@ -1,3 +1,4 @@
+import { BESIDE_LAYOUT } from '../app/layout-query.ts';
 import {
   awaitingPick,
   bestOfOf,
@@ -232,9 +233,13 @@ export function createSeriesPanel(
       if (!visible) leave.close();
     },
     focusAction() {
-      if (!picks.element.hidden) picks.focus();
-      else if (!next.hidden) next.focus();
-      else if (!newSeries.hidden) newSeries.focus();
+      // Beside the court (a phone turned sideways, ADR 0067 addendum of 2026-11-22) the round screen
+      // opens at its top, its header and track in view: scrolling to the action would cut them off
+      // at the top edge. On a phone the action is scrolled to, as before.
+      const options = { preventScroll: matchMedia(BESIDE_LAYOUT).matches };
+      if (!picks.element.hidden) picks.focus(options);
+      else if (!next.hidden) next.focus(options);
+      else if (!newSeries.hidden) newSeries.focus(options);
     },
     update(moment) {
       const { state, current, linkState } = moment;

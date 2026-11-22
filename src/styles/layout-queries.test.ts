@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { BESIDE_LAYOUT } from '../app/layout-query.ts';
 
 const SRC = fileURLToPath(new URL('..', import.meta.url));
 
@@ -40,6 +41,10 @@ describe('layout media queries', () => {
       query: (match[1] ?? '').replace(/\s+/g, ' '),
     })),
   );
+
+  it('match the script copy of the beside query', () => {
+    expect(BESIDE_LAYOUT).toBe(BESIDE);
+  });
 
   it('are found', () => {
     expect(queries.length).toBeGreaterThan(20);
