@@ -47,6 +47,8 @@ export interface OnlinePlay {
   isLive(): boolean;
   /** The ended live series whose end screen shows now, which offers its own rematch. */
   endScreen(): string | undefined;
+  /** The series on screen, if this screen shows: a rematch's new match once it started. */
+  seriesShown(): string | undefined;
   /**
    * A live fight's playback rate, the arena having played `playedMs` of it: 1, or a little off 1
    * while it catches up with the server's moment (ADR 0063).

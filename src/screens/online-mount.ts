@@ -15,7 +15,9 @@ import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
 import { createInboxWatch } from './inbox-watch.ts';
-import { createRematchWatch } from './rematch-watch.ts';
+import { createRematchWatch, type RematchHomeBack } from './rematch-watch.ts';
+import { createHomeBack } from '../ui/online/back-to-match.ts';
+import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi } from '../app/api.ts';
@@ -79,13 +81,22 @@ export function mountOnline(context: MountContext): OnlineMount {
   let fighting = false;
   const rematchRoot = document.createElement('div');
   document.body.append(rematchRoot);
+  /** The ended series whose rematch lineup shows now (`?view=send&rematch=`), if any. */
+  let lineupOf: string | undefined;
+  /** Home's way back to a rematch waiting on this player, as the watch last said. */
+  let rematchWaiting: RematchHomeBack | undefined;
   const rematchWatch = createRematchWatch(rematchRoot, BALL_LOOKUP, {
     storage: browserStorage,
     go: (write) => {
       context.go(write);
     },
     fighting: () => fighting,
-    endScreen: () => screens.play.endScreen(),
+    ownScreen: () => screens.play.endScreen() ?? lineupOf,
+    seriesShown: () => screens.play.seriesShown(),
+    backChanged: (back) => {
+      rematchWaiting = back;
+      showPlay();
+    },
   });
   // Friends' challenges and status reach a signed-in account anywhere (ADR 0079 PR (d)): only in a
   // build with accounts.
@@ -174,15 +185,26 @@ export function mountOnline(context: MountContext): OnlineMount {
   };
   const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
   // "Back to your match" takes Play's place while a live match or lobby is on (ADR 0053), and is
-  // asked about again every few seconds on home so it goes when the match ends.
-  playRow?.before(screens.backToMatch.element);
+  // asked about again every few seconds on home so it goes when the match ends. A rematch waiting
+  // on this player does the same (2026-11-23), told by the rematch watch; a match comes first.
+  const rematchBack = createHomeBack((back: RematchHomeBack) => {
+    back.open();
+  }, rematchBackWords);
+  playRow?.before(screens.backToMatch.element, rematchBack.element);
+  let matchShowing = false;
+  function showPlay(): void {
+    const rematchShowing = rematchBack.show(matchShowing ? null : (rematchWaiting ?? null));
+    if (playRow !== null) playRow.hidden = matchShowing || rematchShowing;
+  }
   let homeAsk: number | undefined;
   const askHome = async (): Promise<void> => {
     if (homeAsk !== undefined) window.clearTimeout(homeAsk);
     homeAsk = undefined;
-    const showing = await screens.backToMatch.refresh();
-    if (playRow !== null) playRow.hidden = showing;
-    if (showing && !homeRoot.hidden) homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
+    matchShowing = await screens.backToMatch.refresh();
+    showPlay();
+    if (matchShowing && !homeRoot.hidden) {
+      homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
+    }
   };
   // A live fight's line, where the speed toggle sits (it makes way: live fights are 1x only).
   const liveLine = document.createElement('p');
@@ -198,7 +220,12 @@ export function mountOnline(context: MountContext): OnlineMount {
     handlers: {
       online: screens.online,
       challenge: screens.challenge,
-      send: screens.send,
+      send: {
+        show: (route, from) => {
+          lineupOf = route.rematch;
+          screens.send.show(route, from);
+        },
+      },
       signin: screens.signin,
     },
     // With accounts, everything about the player is on the account screen; settings are this
@@ -216,6 +243,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     phase: () => screens.play.phase(),
     sides: () => screens.play.sides(),
     setVisible: (screen) => {
+      if (screen !== 'send') lineupOf = undefined;
       if (screen === 'signin') whoStale = true;
       screens.setVisible(screen);
     },
