@@ -6,9 +6,10 @@
   min-height: var(--tap-target);
 }
 
+/* A row's words have the menu's one row look (settings-menu.css): the switches'. */
 .settings-sound-label {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .settings-volume {

@@ -216,7 +216,9 @@ function place(): void {
   const width = menuWidth(gear, panel.offsetWidth, screen, insets, court);
   if (width !== undefined) panel.style.width = `${String(width)}px`;
   let spot = at();
-  if (spot.covers) {
+  // Compact when its own form covers the court, or would have to scroll inside the screen's height
+  // (a phone turned sideways, 320 px tall: it cut a switch in half, ADR 0040 addendum).
+  if (spot.covers || panel.scrollHeight > panel.clientHeight + 1) {
     panel.dataset['compact'] = '';
     spot = at();
   }
