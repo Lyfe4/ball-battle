@@ -41,6 +41,7 @@ describe('the bundle check', () => {
       'f(`auth/email/verify`)',
       'location.assign("/api/v1/auth/google")',
       'f("auth/switch")',
+      'f("PUT","me/username")',
     ]) {
       expect(problemsIn('a.js', text, true, false), text).toHaveLength(1);
       expect(problemsIn('a.js', text, true, true), text).toStrictEqual([]);

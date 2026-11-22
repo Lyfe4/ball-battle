@@ -23,10 +23,10 @@ export const SECRET_MARKS: readonly RegExp[] = [
 export const ONLINE_MARK = /\/api\/v1\/(?!me["'`])/;
 
 /**
- * What only accounts' code contains (ADR 0079): the sign-in routes. An online build without
+ * What only accounts' code contains (ADR 0079): the sign-in routes and choosing a username. An online build without
  * accounts (production with vs Friend on) holds none of it.
  */
-export const ACCOUNTS_MARK = /\bauth\/(?:options|email|google|switch)\b/;
+export const ACCOUNTS_MARK = /\bauth\/(?:options|email|google|switch)\b|\bme\/username\b/;
 
 /**
  * What is wrong with one bundled file: `online` says whether this build may call the API, and

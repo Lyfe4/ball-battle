@@ -1,7 +1,7 @@
 # 0079: Accounts: sign in with Google or an email code, linking the guest
 
-- Status: Accepted (2026-11-22). Built: PR (a), the switch and both sign-ins. Usernames, friends
-  and the inbox follow in PRs (b) to (d)
+- Status: Accepted (2026-11-22). Built: PR (a), the switch and both sign-ins; PR (b), usernames,
+  Log out and Delete account. Friends and the inbox follow in PRs (c) and (d)
 - Date: 2026-11-22
 - Amends: ADR 0052 §2 (accounts are slice 2: how they are built), ADR 0069 (the privacy policy
   names what an account stores), ADR 0068 (the sweep keeps accounts for 24 months)
@@ -79,13 +79,50 @@ subject an HMAC (as `ipSubject`):
 
 **Accounts are kept 24 months unseen**, guests 90 days, by the same sweep.
 
+**Usernames (PR (b)).** An account may choose one; a guest stays "Player 1234". `profiles.username`
+keeps it as typed, unique by a `lower(username)` index (no `citext` extension), with a check on
+the column for the format: letters a-z in either case, digits and `_`, 3 to 15 characters, said
+in exactly those words (`USERNAME_RULE`) to anything else. The name everyone sees is
+`coalesce(username, display_name)`, read where a name was read before: the live link, a series'
+names, the list, `/me`.
+
+- Chosen right after a sign-in, when the account has none: once, with Skip for now. The sign-in
+  screen, reached from settings' Your account, shows it afterwards with Change username.
+- One change per 30 days by the database's `now()` (`username_set_at`); the same name again is no
+  change. A name given up is free at once. Two claims of one name at once: the index decides,
+  the other gets `username_taken`.
+- Our own blocklist (`username-words.ts`, `username-rules.ts`), no dependency: words found anywhere
+  in a name, and short ones only as a whole part (split at `_` and before a capital), read after
+  folding case, digits as letters (1 as i and as l), `_` between letters and a letter held down.
+  So "glass", "therapist" and "Kirk" pass and "sh1t", "a55" and "BigAss" don't. The owner clears a
+  name in SQL. Guest-like names ("Player1234", "deleted_player") and the game's own are refused.
+- Checked on the server only: the page sends what was typed and shows the answer under the field.
+- **No "is it free?" check while typing** (changed from the proposal's `GET ?check=`): saving is
+  the check, and every try counts first, 20 an hour per account and 100 per network, so "taken"
+  can't list who plays.
+
+**Log out and Delete account (PR (b)).** Settings' Online group, for an account: Your account, Log
+out and Delete account (Forget me's request and in-place question, in an account's words: its
+username and games go with it; finished matches stay in opponents' history as "Deleted player").
+Log out is `DELETE /session` as before, refused `409 in_a_match` during the account's live match
+or lobby, which it would lose; then the device forgets every `ballbattle.*` key, as Forget me does.
+
+**/health and sign-in's settings (PR (b)).** Sign-in's own settings, `auth_email_confirmations` and
+`auth_google`, are `"accounts": "ok" | "misconfigured" | "off"` (with `accountsFailed` naming
+them), never a 503: a sign-in setting must not make the game look down to UptimeRobot or hold up
+the vs Friend switch or Publish. Confirm email off is still serious (a guest could take any
+address), so: `friend-switch.ts --accounts on` fails after its deploy unless `accounts` is `ok`,
+and UptimeRobot gets a keyword monitor for `"accounts":"ok"` beside the one for
+`"emailCodes":"ok"` (production reads `off` until accounts ship; add the monitor then).
+
 **No new dependency.** PKCE, the signed cookies and the nonce use Web Crypto; `jose` (already
 here) decodes the ID token.
 
 ## Consequences
 
 - Each environment with accounts needs: Supabase Auth's Google provider (the client id, nonce
-  check on), "Confirm email" on (`/health` fails without it, `auth_email_confirmations`), its SMTP
+  check on), "Confirm email" on (`/health` says `"accounts":"misconfigured"` without it, naming
+  `auth_email_confirmations`, and stays 200), its SMTP
   pointed at Resend with the hourly email limit at 100, OTP expiry 600 s, and the confirm signup,
   magic link and email change templates showing `{{ .Token }}` (`supabase/templates/code.html`).
   Manual linking stays off. Resend's domain is `play.calvinrdevelopment.com` (DNS in Netlify):
@@ -100,4 +137,4 @@ here) decodes the ID token.
 - Deploy previews can test email codes but not Google.
 - Slice 1 (this and PR (b)) reaches production only together with friends.
 - Not taken: Realtime now, the hosted OAuth redirect, merging accounts, Unicode usernames, an
-  export endpoint, the 60/30 split.
+  export endpoint, the 60/30 split, a username check while typing.

@@ -37,6 +37,19 @@ async function liveState(path = accounts ? 'auth/options' : 'health'): Promise<s
   return `answering ${String(response.status)}`;
 }
 
+/** Fails the run when /health says a sign-in setting is wrong (`accounts`, ADR 0079). */
+async function checkAccountSettings(): Promise<void> {
+  const health = (await fetch(`${LIVE}/api/v1/health`, { cache: 'no-store' })
+    .then((response) => response.json())
+    .catch(() => ({}))) as { accounts?: string; accountsFailed?: string[] };
+  if (health.accounts === 'ok') return;
+  console.error(
+    `Sign-in is set up wrong (${health.accountsFailed?.join(', ') ?? 'no answer'}): fix it in ` +
+      'Supabase now, or switch accounts off (--accounts off).',
+  );
+  process.exitCode = 1;
+}
+
 const wanted = process.argv[2];
 if (wanted === 'status') {
   console.log(`${what} on ${LIVE}: ${await liveState()}`);
@@ -64,8 +77,11 @@ if (wanted === 'status') {
     await new Promise((resolve) => setTimeout(resolve, 15_000));
     state = await liveState();
   }
-  if (state === wanted) console.log(`${what} is ${wanted} on ${LIVE}.`);
-  else {
+  if (state === wanted) {
+    console.log(`${what} is ${wanted} on ${LIVE}.`);
+    // Sign-in's settings never make /health fail (ADR 0079): they are its own field, read here.
+    if (accounts && wanted === 'on') await checkAccountSettings();
+  } else {
     console.error(`After 10 minutes the live API is ${state}: check Deploys in Netlify.`);
     process.exitCode = 1;
   }

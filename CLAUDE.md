@@ -189,6 +189,9 @@ Each line is a rule; its ADR has the reasoning.
 - Sign-in steps live in sealed `__Host-` cookies (`sealed-cookie.ts`, 10 minutes); Google's state
   is also marked used in the database. Google runs only where its client is set (exact redirect
   URIs: local and staging, never previews).
+- Usernames are checked on the server only (`username-rules.ts`, our own blocklist); the name
+  shown is `coalesce(username, display_name)`. One change per 30 days by `now()`; no free-name
+  check, every try is counted. `/health` reports sign-in's settings as `accounts`, never a 503.
 - Email codes are counted before Auth is called (`LIMITS.codes*`, `spendAll`): the player's own
   limits first, then everyone's caps (90 a day, 2,700 a month), which answer `email_busy` alike.
   An email answer never says whether an address has an account.
