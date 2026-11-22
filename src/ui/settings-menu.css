@@ -170,6 +170,11 @@
   gap: 0 var(--space-gap);
 }
 
+/* Compact keeps speed on the title's row: the Fights group lends its rows to the panel's grid. */
+.settings-panel[data-compact] .settings-play {
+  display: contents;
+}
+
 .settings-panel[data-compact] .settings-heading,
 .settings-panel[data-compact] .segmented-label {
   position: absolute;
