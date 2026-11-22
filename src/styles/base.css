@@ -36,6 +36,20 @@ button {
   box-shadow: var(--focus-ring);
 }
 
+/*
+ * One shape for a highlight (UX pass, 2026-11-22): a summary's hover and pressed fill takes the
+ * card's corners, square only along the edge where its card opens under it. Any other control
+ * that fills when pointed at declares its own corners (press.test.ts checks both).
+ */
+:where(details) > :where(summary) {
+  border-radius: var(--radius);
+}
+
+:where(details[open]) > :where(summary) {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
 [hidden] {
   display: none !important;
 }
