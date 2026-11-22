@@ -42,8 +42,24 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
   const header = createScreenHeader('Round 1', 'Change lineup', actions.onBack, {
     settings: false,
   });
-  const bar = createSeriesBar();
+  // A phone turned sideways reads the score line here too, the track a tap away (ADR 0067), so the
+  // picks show without a scroll; elsewhere the line stays what is played and the track shows.
   const track = createSeriesTrack(lookup);
+  track.element.id = 'answer-track';
+  root.dataset['phase'] = 'between';
+  let shownSetup: SeriesState['setup'] | undefined;
+  const drawBar = () => {
+    if (shownSetup === undefined) return;
+    const open = root.hasAttribute('data-track-open');
+    bar.show(shownSetup, { round: 0, you: 0, bot: 0, open });
+  };
+  const bar = createSeriesBar({
+    id: track.element.id,
+    onToggle: () => {
+      root.toggleAttribute('data-track-open');
+      drawBar();
+    },
+  });
   const banner = createPickBanner(lookup);
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
@@ -96,7 +112,9 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
   return {
     element: root,
     open(state) {
-      bar.show(state.setup);
+      shownSetup = state.setup;
+      root.removeAttribute('data-track-open');
+      drawBar();
       track.update(state, trackOf(state, undefined));
       opened = state;
       reveal();

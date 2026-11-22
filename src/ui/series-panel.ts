@@ -109,15 +109,19 @@ export function createSeriesPanel(
   status.setAttribute('aria-live', 'polite');
 
   // The full track. While a round plays on a phone it waits under the score line (ADR 0039):
-  // opened, it stays open for the rest of that round and closes when the next one starts.
+  // opened, it stays open for the rest of that round and closes when the next one starts. A phone
+  // turned sideways reads the line between rounds too (ADR 0067), so the picks show without a
+  // scroll; the track opened there closes when the fight starts.
   const track = createSeriesTrack(definitions);
   track.element.id = 'series-track';
-  /** The round being fought (0-based), and the round the track was opened in. */
+  /** The round the score line names (0-based): the one fought, or between rounds the next. */
   let fought: number | undefined;
-  let trackOpenFor: number | undefined;
+  /** Which line the track was opened under: the phase and its round. */
+  let lineKey: string | undefined;
+  let trackOpenFor: string | undefined;
   let drawBar = (): void => undefined;
   const toggleTrack = () => {
-    trackOpenFor = trackOpenFor === undefined ? fought : undefined;
+    trackOpenFor = trackOpenFor === undefined ? lineKey : undefined;
     root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
     drawBar();
   };
@@ -254,9 +258,11 @@ export function createSeriesPanel(
       const playing = phase === 'playing';
       const finished = phase === 'finished';
       setAttr(root, 'data-phase', phase);
-      // The track's open state belongs to the round being fought, so a new round starts closed.
-      fought = playing ? current?.round : undefined;
-      if (trackOpenFor !== fought) trackOpenFor = undefined;
+      // The track's open state belongs to the round being fought (or picked for), so a new round
+      // and its fight each start closed.
+      fought = playing ? current?.round : finished ? undefined : state.rounds.length;
+      lineKey = fought === undefined ? undefined : `${phase}:${String(fought)}`;
+      if (trackOpenFor !== lineKey) trackOpenFor = undefined;
       root.toggleAttribute('data-track-open', trackOpenFor !== undefined);
       const score = scoreOf(state);
       drawBar = () => {
