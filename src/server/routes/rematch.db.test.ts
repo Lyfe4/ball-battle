@@ -1,15 +1,18 @@
 // A rematch after a live friend match (ADR 0055), against the local database: offered once a live
 // match ends (a forfeit too), asked and answered once per series, both answering at once, a no or
-// time running out ending it for both, and the new match: a new live series between the same two
-// players, the same format and length, new lineups and new seeds.
+// the ask running out ending it for both, and once both say yes the lineups picked together (ADR
+// 0080) whose clock makes the new match: a new live series between the same two players, the same
+// format and length, new lineups and new seeds.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
-import { REMATCH_ANSWER_MS, REMATCH_LINEUP_MS, type RematchView } from '../../api/rematch.ts';
+import { REMATCH_ANSWER_MS, type RematchView } from '../../api/rematch.ts';
+import { startLineupMs, type StartView } from '../../api/start.ts';
 import type { SeriesView } from '../../api/series.ts';
-import { newLive, startedLive } from '../test/live-support.ts';
-import { LINEUP_3, newPlayer, newSeries, type Player } from '../test/series-support.ts';
+import { newLive, sendLive, startedLive } from '../test/live-support.ts';
+import { newPlayer, newSeries, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { seriesOne } from './series.ts';
+import { startOne } from './starts.ts';
 
 const deps = testDeps();
 /** A second function instance, with its own connection. */
@@ -36,6 +39,15 @@ const rematch = (player: Player, id: string, body?: unknown) =>
 const view = async (player: Player, id: string, body?: unknown) =>
   (await rematch(player, id, body)).body as RematchView;
 const code = (body: unknown) => errorOf(body)?.code;
+/** `player` locks `lineup` into the rematch's lineups picked together. */
+const lockIn = async (player: Player, startId: string | null, lineup: readonly string[]) =>
+  (
+    await player.browser.call(startOne, 'POST', `/api/v1/starts/${startId ?? ''}`, {
+      lineup,
+      lock: true,
+      seq: 1,
+    })
+  ).body as StartView;
 
 /** A live match that ended: A left it, so B won by forfeit. */
 async function ended() {
@@ -117,12 +129,14 @@ describe('a rematch', () => {
     expect(await view(players.a, id, { answer: 'yes' })).toMatchObject({ state: 'asked' });
     expect(await view(players.b, id)).toMatchObject({ state: 'asked', askedBy: 'a' });
 
-    expect(await view(players.b, id, { answer: 'yes' })).toMatchObject({ state: 'agreed' });
-    expect(await view(players.a, id, { lineup: NEW.a })).toMatchObject({
-      state: 'agreed',
-      lineupIn: true,
-    });
-    const started = await view(players.b, id, { lineup: NEW.b });
+    const agreed = await view(players.b, id, { answer: 'yes' });
+    expect(agreed).toMatchObject({ state: 'agreed' });
+    // The lineups are picked together from the yes (ADR 0080), on their own clock.
+    expect((agreed.deadline ?? 0) - agreed.now).toBeGreaterThan(startLineupMs(3) - 5_000);
+    expect(await lockIn(players.a, agreed.startId, NEW.a)).toMatchObject({ rematchOf: id });
+    expect(await view(players.a, id)).toMatchObject({ state: 'agreed', lineupIn: true });
+    await lockIn(players.b, agreed.startId, NEW.b);
+    const started = await view(players.b, id);
     expect(started.state).toBe('started');
     expect(started.seriesId).not.toBeNull();
     expect((await view(players.a, id)).seriesId).toBe(started.seriesId);
@@ -180,7 +194,19 @@ describe('a rematch', () => {
     expect(code(again.body)).toBe('rematch_closed');
   });
 
-  it('ends for both when the answer or the lineups run out of time', async () => {
+  it('takes the last release’s lineup on its own route, into the lineups picked together', async () => {
+    const { id, players } = await ended();
+    await view(players.a, id, { answer: 'yes' });
+    await view(players.b, id, { answer: 'yes' });
+    expect(await view(players.a, id, { lineup: NEW.a })).toMatchObject({ lineupIn: true });
+    const started = await view(players.b, id, { lineup: NEW.b });
+    expect(started.state).toBe('started');
+    expect((await rematch(players.a, id, { lineup: ['storm', 'storm', 'ghost'] })).status).toBe(
+      200,
+    );
+  });
+
+  it('ends for both when the answer runs out; lineups out of time still make the match', async () => {
     const unanswered = await ended();
     await view(unanswered.players.a, unanswered.id, { answer: 'yes' });
     await travelRematch(unanswered.id, REMATCH_ANSWER_MS + 1_000);
@@ -190,12 +216,17 @@ describe('a rematch', () => {
 
     const slow = await ended();
     await view(slow.players.a, slow.id, { answer: 'yes' });
-    await view(slow.players.b, slow.id, { answer: 'yes' });
-    await view(slow.players.a, slow.id, { lineup: NEW.a });
-    await travelRematch(slow.id, REMATCH_LINEUP_MS + 1_000);
-    expect((await view(slow.players.a, slow.id)).state).toBe('expired');
-    const lineup = await rematch(slow.players.b, slow.id, { lineup: NEW.b });
-    expect(code(lineup.body)).toBe('rematch_closed');
+    const agreed = await view(slow.players.b, slow.id, { answer: 'yes' });
+    await lockIn(slow.players.a, agreed.startId, NEW.a);
+    // B opened the lineup but never finished it: finished at random when the clock runs out.
+    await slow.players.b.browser.call(startOne, 'GET', `/api/v1/starts/${agreed.startId ?? ''}`);
+    await admin`update game.starts set deadline_at = now() - interval '1 second',
+      agreed_at = now() - interval '61 seconds' where id = ${agreed.startId ?? ''}`;
+    const started = await view(slow.players.a, slow.id);
+    expect(started.state).toBe('started');
+    const [row] = await admin<{ status: string; lineup_a: string[] }[]>`
+      select status, lineup_a from game.series where id = ${started.seriesId ?? ''}`;
+    expect(row).toStrictEqual({ status: 'open', lineup_a: [...NEW.a] });
   });
 
   it('refuses a yes from a player who is in another live match by then', async () => {
@@ -211,19 +242,22 @@ describe('a rematch', () => {
     expect((await view(players.b, id, { answer: 'no' })).state).toBe('declined');
   });
 
-  it('refuses a lineup that isn’t one, and a player who is in another live match', async () => {
+  it('refuses a lineup that isn’t one, and holds both players to it from the yes', async () => {
     const { id, players } = await ended();
     await view(players.a, id, { answer: 'yes' });
     await view(players.b, id, { answer: 'yes' });
     expect((await rematch(players.a, id, { lineup: ['storm', 'storm', 'ghost'] })).status).toBe(
       400,
     );
-    await view(players.a, id, { lineup: NEW.a });
-    // B is in another live match by the time their lineup is in: no second one starts.
-    const busy = await newLive(deps);
-    await admin`update game.series set player_b = ${players.b.userId} where id = ${busy.id}`;
-    const refused = await rematch(players.b, id, { lineup: LINEUP_3.b });
-    expect(code(refused.body)).toBe('in_a_match');
+    // Choosing the rematch's lineup is their live match: neither can start another one.
+    for (const player of [players.a, players.b]) {
+      const sent = await sendLive(player);
+      expect(sent.status).toBe(409);
+      expect(code(sent.body)).toBe('in_a_match');
+    }
+    const [{ n } = { n: 0 }] = await admin<{ n: number }[]>`
+      select count(*)::int as n from game.starts where rematch_of = ${id} and series_id is null`;
+    expect(n).toBe(1);
     expect((await view(players.a, id)).state).toBe('agreed');
   });
 });

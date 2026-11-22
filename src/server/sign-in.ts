@@ -74,7 +74,7 @@ export async function whileNotLive<T>(
   await settleOwnLive(deps, players);
   return deps.sql.begin(async (db) => {
     try {
-      for (const player of [...players].sort()) await checkNotLive(db, player);
+      for (const player of [...players].sort()) await checkNotLive(db, deps.config, player);
     } catch (error) {
       if (error instanceof ApiError && error.code === 'in_a_match') {
         throw new ApiError(409, 'in_a_match', 'Finish or leave your match first, then sign in');

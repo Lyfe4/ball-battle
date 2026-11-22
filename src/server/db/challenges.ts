@@ -13,11 +13,16 @@ export interface ChallengeRow {
   readonly creatorName: string | null;
   readonly format: Format;
   readonly bestOf: BestOf;
-  readonly lineup: readonly string[];
+  /** The sender's lineup: a series by turns', or a live link sent by the last release's page. */
+  readonly lineup: readonly string[] | null;
   readonly expiresAt: Date;
   readonly expired: boolean;
   readonly seriesId: string | null;
-  /** Who accepted it: side B of its series. */
+  /** The lineups picked together once a live link was accepted (ADR 0080). */
+  readonly startId: string | null;
+  /** Someone accepted it: it has a start or a series. */
+  readonly accepted: boolean;
+  /** Who accepted it: side B of its start or series. */
   readonly acceptor: string | null;
   readonly live: boolean;
   /** A live link nobody accepted whose sender cancelled it or left the lobby. */
@@ -35,10 +40,11 @@ interface Raw {
   readonly creator_name: string | null;
   readonly format: Format;
   readonly best_of: BestOf;
-  readonly lineup: string[];
+  readonly lineup: string[] | null;
   readonly expires_at: Date;
   readonly expired: boolean;
   readonly series_id: string | null;
+  readonly start_id: string | null;
   readonly acceptor: string | null;
   readonly live: boolean;
   readonly stopped: boolean;
@@ -56,15 +62,18 @@ export async function challengeByHash(
   const forUpdate = lock ? db`for update of c` : db``;
   const [raw] = await db<Raw[]>`
     select c.id, c.creator, coalesce(p.username, p.display_name) as creator_name, c.format, c.best_of, c.lineup,
-      c.expires_at, c.expires_at < now() as expired, c.series_id, s.player_b as acceptor,
+      c.expires_at, c.expires_at < now() as expired,
+      coalesce(c.series_id, st.series_id) as series_id, c.start_id,
+      coalesce(st.player_b, s.player_b) as acceptor,
       c.live, c.request_id, c.invitee, coalesce(i.username, i.display_name) as invitee_name,
       c.invitee_declined_at is not null as declined,
-      (c.live and c.series_id is null and (c.cancelled_at is not null
+      (c.live and c.series_id is null and c.start_id is null and (c.cancelled_at is not null
         or c.creator_seen_at <= now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))) as stopped
     from game.challenges c
     left join game.profiles p on p.user_id = c.creator
     left join game.profiles i on i.user_id = c.invitee
     left join game.series s on s.id = c.series_id
+    left join game.starts st on st.id = c.start_id
     where c.token_hash = ${hash}
     ${forUpdate}`;
   return raw === undefined
@@ -79,6 +88,8 @@ export async function challengeByHash(
         expiresAt: raw.expires_at,
         expired: raw.expired,
         seriesId: raw.series_id,
+        startId: raw.start_id,
+        accepted: raw.series_id !== null || raw.start_id !== null,
         acceptor: raw.acceptor,
         live: raw.live,
         stopped: raw.stopped,
@@ -95,7 +106,7 @@ export interface NewChallenge {
   readonly ruleset: number;
   readonly format: Format;
   readonly bestOf: BestOf;
-  readonly lineup: readonly string[];
+  readonly lineup: readonly string[] | null;
   readonly requestId: string;
   readonly live: boolean;
   /** The friend it is for, if any (ADR 0079 PR (d)). */
@@ -107,7 +118,8 @@ export async function insertChallenge(db: Db, challenge: NewChallenge): Promise<
     insert into game.challenges (token_hash, creator, ruleset, format, best_of, lineup,
       request_id, expires_at, live, creator_seen_at, invitee)
     values (${challenge.tokenHash}, ${challenge.creator}, ${challenge.ruleset}, ${challenge.format},
-      ${challenge.bestOf}, ${[...challenge.lineup]}, ${challenge.requestId},
+      ${challenge.bestOf}, ${challenge.lineup === null ? null : [...challenge.lineup]},
+      ${challenge.requestId},
       now() + interval '7 days', ${challenge.live},
       case when ${challenge.live} then now() end, ${challenge.invitee ?? null})
     on conflict (creator, request_id) do nothing`;
@@ -117,6 +129,12 @@ export async function markAccepted(db: Db, id: string, seriesId: string): Promis
   await db`update game.challenges set series_id = ${seriesId} where id = ${id} and series_id is null`;
 }
 
+/** A live link accepted into lineups picked together (ADR 0080). */
+export async function markStarted(db: Db, id: string, startId: string): Promise<void> {
+  await db`update game.challenges set start_id = ${startId}
+    where id = ${id} and series_id is null and start_id is null`;
+}
+
 /**
  * Links by turns a player has out that nobody has accepted yet and that haven't expired. A live
  * link is one at a time instead (`liveNowOf`), and stops when its sender leaves.
@@ -124,7 +142,8 @@ export async function markAccepted(db: Db, id: string, seriesId: string): Promis
 export async function openChallengesOf(db: Db, creator: string): Promise<number> {
   const [row] = await db<{ count: number }[]>`
     select count(*)::int as count from game.challenges
-    where creator = ${creator} and not live and series_id is null and expires_at > now()`;
+    where creator = ${creator} and not live and series_id is null and start_id is null
+      and expires_at > now()`;
   return row?.count ?? 0;
 }
 

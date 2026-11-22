@@ -6,7 +6,11 @@ import type { BestOf, Format } from '../sim/index.ts';
 export interface CreateChallenge {
   readonly format: Format;
   readonly bestOf: BestOf;
-  readonly lineup: readonly string[];
+  /**
+   * The sender's lineup: a series by turns'. A live challenge is sent without one (ADR 0080); the
+   * last release's page still sends one, taken for one release.
+   */
+  readonly lineup?: readonly string[];
   /** The client's id for this create (a UUID), so a retry returns the same link. */
   readonly requestId: string;
   /**
@@ -43,6 +47,8 @@ export interface ChallengeInfo {
    */
   readonly status: 'open' | 'yours' | 'taken' | 'accepted' | 'expired' | 'stopped';
   readonly seriesId: string | null;
+  /** The lineups being picked together once a live link is accepted (ADR 0080), as `seriesId`. */
+  readonly startId: string | null;
   /** Played live (ADR 0053). */
   readonly live: boolean;
   /** The viewer sent it (a stopped link reads differently to its sender). */
@@ -53,13 +59,18 @@ export interface ChallengeInfo {
   readonly declined: boolean;
 }
 
-/** POST /api/v1/challenges/:token/accept. */
+/**
+ * POST /api/v1/challenges/:token/accept: nothing for a live link (ADR 0080), the lineup for one by
+ * turns (and from the last release's page, for one release).
+ */
 export interface AcceptChallenge {
-  readonly lineup: readonly string[];
+  readonly lineup?: readonly string[];
 }
 
+/** A live link accepted: its start (the lineups picked together); by turns, its series. */
 export interface Accepted {
-  readonly seriesId: string;
+  readonly seriesId: string | null;
+  readonly startId: string | null;
 }
 
 const FORMATS: readonly Format[] = ['blind', 'reveal', 'showdown'];
@@ -78,15 +89,16 @@ export function decodeCreateChallenge(body: unknown): CreateChallenge | undefine
   const { format, bestOf, lineup, requestId, live, friend } = body as Record<string, unknown>;
   const named = FORMATS.find((name) => name === format);
   const length = bestOf === 3 || bestOf === 5 ? bestOf : undefined;
-  const balls = lineupOf(lineup);
-  if (named === undefined || length === undefined || balls === undefined) return undefined;
+  const balls = lineup === undefined ? undefined : lineupOf(lineup);
+  if (named === undefined || length === undefined) return undefined;
+  if (lineup !== undefined && balls === undefined) return undefined;
   if (typeof requestId !== 'string' || !UUID.test(requestId)) return undefined;
   if (live !== undefined && typeof live !== 'boolean') return undefined;
   if (friend !== undefined && (typeof friend !== 'string' || !UUID.test(friend))) return undefined;
   return {
     format: named,
     bestOf: length,
-    lineup: balls,
+    ...(balls === undefined ? {} : { lineup: balls }),
     requestId,
     live: live === true,
     ...(friend === undefined ? {} : { friend }),
@@ -95,7 +107,9 @@ export function decodeCreateChallenge(body: unknown): CreateChallenge | undefine
 
 export function decodeAcceptChallenge(body: unknown): AcceptChallenge | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
-  const balls = lineupOf((body as Record<string, unknown>)['lineup']);
+  const lineup = (body as Record<string, unknown>)['lineup'];
+  if (lineup === undefined) return {};
+  const balls = lineupOf(lineup);
   return balls === undefined ? undefined : { lineup: balls };
 }
 

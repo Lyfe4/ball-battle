@@ -121,7 +121,7 @@ export function sendLive(
 }
 
 export const tokenOf = (answer: Answer): string => (answer.body as ChallengeLink).token;
-export const seriesOf = (answer: Answer): string => (answer.body as Accepted).seriesId;
+export const seriesOf = (answer: Answer): string => (answer.body as Accepted).seriesId ?? '';
 
 export const acceptLink = (by: Player, token: string): Promise<Answer> =>
   by.browser.call(challengeOne, 'POST', `/api/v1/challenges/${token}/accept`, {

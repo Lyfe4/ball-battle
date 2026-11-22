@@ -7,11 +7,19 @@ import { liveNowOf } from './db/live.ts';
 import { loadSeries } from './db/series-record.ts';
 import type { Deps } from './http.ts';
 import { settleLive } from './live-service.ts';
+import { settleStart } from './start-settle.ts';
 import { sideOf } from './view.ts';
 
 export async function currentMatch(deps: Deps, userId: string): Promise<CurrentMatch | null> {
-  const now = await liveNowOf(deps.sql, userId);
+  let now = await liveNowOf(deps.sql, userId);
+  // Lineups whose clock ran out are made into their series first (ADR 0080).
+  if (now?.kind === 'start' && (await settleStart(deps.sql, deps.config, now.id))) {
+    now = await liveNowOf(deps.sql, userId);
+  }
   if (now === undefined) return null;
+  if (now.kind === 'start') {
+    return { kind: 'start', id: now.id, format: now.format, bestOf: now.bestOf };
+  }
   if (now.kind === 'lobby') {
     const token = await tokenFor(deps.config, userId, now.requestId);
     return { kind: 'lobby', token, format: now.format, bestOf: now.bestOf };

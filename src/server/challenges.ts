@@ -13,6 +13,7 @@ import {
   insertChallenge,
   lockPlayer,
   markAccepted,
+  markStarted,
   openChallengesOf,
   openSeriesOf,
 } from './db/challenges.ts';
@@ -21,6 +22,8 @@ import { inviteeOf } from './friend-challenge.ts';
 import { ApiError, type Deps } from './http.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
 import { createSeries } from './series-service.ts';
+import { openStart } from './start.ts';
+import { settleStartIn } from './start-settle.ts';
 
 /** How many series by turns a player may have open at once (ADR 0052 section 11, decided). */
 export const MOST_OPEN_SERIES = 3;
@@ -60,12 +63,27 @@ export async function checkLineup(lineup: readonly string[], bestOf: number): Pr
   }
 }
 
-/** Refuses a player who already has a live match or a lobby waiting (one at a time). */
-export async function checkNotLive(db: TransactionSql, player: string): Promise<void> {
+/**
+ * Refuses a player who already has a live match, a lobby waiting or a lineup being picked (one at a
+ * time). A lineup whose clock ran out is made into its series first: it may have just ended.
+ */
+export async function checkNotLive(
+  db: TransactionSql,
+  config: Config,
+  player: string,
+): Promise<void> {
   await lockPlayer(db, player);
-  const now = await liveNowOf(db, player);
+  let now = await liveNowOf(db, player);
+  if (now?.kind === 'start' && (await settleStartIn(db, config, now.id))) {
+    now = await liveNowOf(db, player);
+  }
   if (now !== undefined) {
-    const where = now.kind === 'series' ? 'You are in a match already' : 'Your lobby is waiting';
+    const where =
+      now.kind === 'series'
+        ? 'You are in a match already'
+        : now.kind === 'start'
+          ? 'You are choosing a lineup already'
+          : 'Your lobby is waiting';
     throw new ApiError(409, 'in_a_match', `${where}: finish it first`);
   }
 }
@@ -76,7 +94,10 @@ export async function createChallenge(
   request: CreateChallenge,
   account = false,
 ): Promise<ChallengeLink> {
-  await checkLineup(request.lineup, request.bestOf);
+  // A live challenge is sent without a lineup (ADR 0080); one from a page of the last release still
+  // carries one, kept for its sender's side of the start. By turns, the lineup comes with it.
+  if (request.lineup !== undefined) await checkLineup(request.lineup, request.bestOf);
+  else if (!request.live) throw new ApiError(400, 'bad_request', 'Send your lineup');
   if (request.live && !LIVE_FORMATS.includes(request.format)) {
     throw new ApiError(400, 'bad_request', 'Live matches are Reveal or Showdown');
   }
@@ -93,7 +114,7 @@ export async function createChallenge(
         friend === undefined
           ? undefined
           : await inviteeOf(db, deps.config, { userId: creator, account }, friend);
-      if (request.live) await checkNotLive(db, creator);
+      if (request.live) await checkNotLive(db, deps.config, creator);
       else if ((await openChallengesOf(db, creator)) >= MOST_OPEN_CHALLENGES) {
         throw new ApiError(409, 'too_many_series', 'You have enough links waiting already');
       }
@@ -103,7 +124,7 @@ export async function createChallenge(
         ruleset: CURRENT_RULESET,
         format: request.format,
         bestOf: request.bestOf,
-        lineup: request.lineup,
+        lineup: request.lineup ?? null,
         requestId: request.requestId,
         live: request.live,
         ...(invitee === undefined ? {} : { invitee }),
@@ -132,31 +153,32 @@ export async function challengeInfo(
   let found = await challengeByHash(deps.sql, await hashOf(token));
   if (found === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
   const own = viewer !== undefined && viewer === found.creator;
-  if (own && found.live && found.seriesId === null && !found.stopped) {
+  if (own && found.live && !found.accepted && !found.stopped) {
     await lobbySeen(deps.sql, found.id);
     // A friend may have accepted between the read and the heartbeat: the lobby moves on at once.
     found = (await challengeByHash(deps.sql, await hashOf(token))) ?? found;
   }
-  const status: ChallengeInfo['status'] =
-    found.seriesId !== null
-      ? viewer !== undefined && viewer === found.acceptor
-        ? 'accepted'
-        : own
-          ? 'yours'
-          : 'taken'
-      : found.stopped
-        ? 'stopped'
-        : own
-          ? 'yours'
-          : found.expired
-            ? 'expired'
-            : 'open';
+  const status: ChallengeInfo['status'] = found.accepted
+    ? viewer !== undefined && viewer === found.acceptor
+      ? 'accepted'
+      : own
+        ? 'yours'
+        : 'taken'
+    : found.stopped
+      ? 'stopped'
+      : own
+        ? 'yours'
+        : found.expired
+          ? 'expired'
+          : 'open';
+  const mine = status === 'accepted' || status === 'yours';
   return {
     format: found.format,
     bestOf: found.bestOf,
     from: found.creatorName,
     status,
-    seriesId: status === 'accepted' || status === 'yours' ? found.seriesId : null,
+    seriesId: mine ? found.seriesId : null,
+    startId: mine ? found.startId : null,
     live: found.live,
     own,
     // Who it was sent to is the sender's alone to see.
@@ -166,14 +188,19 @@ export async function challengeInfo(
 }
 
 /**
- * Accepts a link with the friend's lineup and starts the series, the challenger as side A. Once
- * only: a retry by the same friend gets the same series; anyone else is told it's taken.
+ * Accepts a link, the challenger as side A. A live link starts the lineups (ADR 0080): both pick at
+ * once, and the series is made when both are in. Once only: a retry by the same friend gets the
+ * same start (or series); anyone else is told it's taken.
+ *
+ * `lineup` is a series by turns' (or a page of the last release's, for one release): with the
+ * challenger's lineup in hand too, the series starts at once as it did before. A page of the last
+ * release can't join lineups picked together, so it is told to reload.
  */
 export async function acceptChallenge(
   deps: Deps,
   token: string,
   acceptor: string,
-  lineup: readonly string[],
+  lineup?: readonly string[],
 ): Promise<Accepted> {
   const hash = await hashOf(token);
   return deps.sql.begin(async (db) => {
@@ -181,8 +208,10 @@ export async function acceptChallenge(
     await lockPlayer(db, acceptor);
     const found = await challengeByHash(db, hash, true);
     if (found === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
-    if (found.seriesId !== null) {
-      if (found.acceptor === acceptor) return { seriesId: found.seriesId };
+    if (found.accepted) {
+      if (found.acceptor === acceptor) {
+        return { seriesId: found.seriesId, startId: found.startId };
+      }
       throw new ApiError(409, 'challenge_taken', 'Someone else has taken this challenge');
     }
     if (found.creator === acceptor) {
@@ -192,20 +221,36 @@ export async function acceptChallenge(
       throw new ApiError(410, 'challenge_stopped', 'Your friend stopped waiting for this match');
     }
     if (found.expired) throw new ApiError(410, 'challenge_expired', 'This challenge has expired');
-    await checkLineup(lineup, found.bestOf);
-    if (found.live) await checkNotLive(db, acceptor);
+    if (lineup === undefined && !found.live)
+      throw new ApiError(400, 'bad_request', 'Send {lineup}');
+    if (lineup !== undefined) await checkLineup(lineup, found.bestOf);
+    if (found.live) await checkNotLive(db, deps.config, acceptor);
     else if ((await openSeriesOf(db, acceptor)) >= MOST_OPEN_SERIES) {
       throw new ApiError(409, 'too_many_series', 'Finish one of your open series first');
+    }
+    const theirs = found.lineup;
+    if (lineup === undefined) {
+      const startId = await openStart(db, {
+        players: { a: found.creator, b: acceptor },
+        format: found.format,
+        bestOf: found.bestOf,
+        ...(theirs === null ? {} : { ready: { a: theirs } }),
+      });
+      await markStarted(db, found.id, startId);
+      return { seriesId: null, startId };
+    }
+    if (theirs === null) {
+      throw new ApiError(409, 'conflict', 'This game has a new version: reload the page to accept');
     }
     const seriesId = await createSeries(db, deps.config, {
       format: found.format,
       bestOf: found.bestOf,
       players: { a: found.creator, b: acceptor },
-      lineups: { a: found.lineup, b: lineup },
+      lineups: { a: theirs, b: lineup },
       live: found.live,
     });
     await markAccepted(db, found.id, seriesId);
-    return { seriesId };
+    return { seriesId, startId: null };
   });
 }
 

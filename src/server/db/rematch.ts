@@ -21,7 +21,12 @@ export interface RematchRow {
   readonly asked: number | null;
   readonly agreed: number | null;
   readonly declinedBy: Side | null;
-  readonly lineups: Readonly<Record<Side, readonly string[] | null>>;
+  /** The lineups picked together once both said yes (ADR 0080): its id, deadline, who is in. */
+  readonly start: {
+    readonly id: string;
+    readonly deadline: number;
+    readonly locked: Readonly<Record<Side, boolean>>;
+  } | null;
   readonly newSeriesId: string | null;
   /** The database's clock at the read. */
   readonly now: number;
@@ -50,8 +55,10 @@ export async function rematchRow(
       asked: number | null;
       agreed: number | null;
       declined_by: Side | null;
-      lineup_a: string[] | null;
-      lineup_b: string[] | null;
+      start_id: string | null;
+      deadline: number | null;
+      locked_a: boolean;
+      locked_b: boolean;
       new_series_id: string | null;
       now: number;
     }[]
@@ -62,9 +69,13 @@ export async function rematchRow(
         as finished,
       r.asked_by, (extract(epoch from r.asked_at) * 1000)::float8 as asked,
       (extract(epoch from r.agreed_at) * 1000)::float8 as agreed,
-      r.declined_by, r.lineup_a, r.lineup_b, r.new_series_id,
+      r.declined_by, st.id as start_id,
+      (extract(epoch from st.deadline_at) * 1000)::float8 as deadline,
+      st.locked_a is not null as locked_a, st.locked_b is not null as locked_b,
+      coalesce(st.series_id, r.new_series_id) as new_series_id,
       (extract(epoch from now()) * 1000)::float8 as now
     from game.series s left join game.rematches r on r.series_id = s.id
+    left join game.starts st on st.rematch_of = s.id
     where s.id = ${seriesId}`;
   if (row === undefined) return undefined;
   return {
@@ -78,7 +89,14 @@ export async function rematchRow(
     asked: row.asked,
     agreed: row.agreed,
     declinedBy: row.declined_by,
-    lineups: { a: row.lineup_a, b: row.lineup_b },
+    start:
+      row.start_id === null || row.deadline === null
+        ? null
+        : {
+            id: row.start_id,
+            deadline: row.deadline,
+            locked: { a: row.locked_a, b: row.locked_b },
+          },
     newSeriesId: row.new_series_id,
     now: row.now,
   };
@@ -103,25 +121,4 @@ export async function declineRematch(db: Db, seriesId: string, side: Side): Prom
   await db`
     update game.rematches set declined_by = ${side}
     where series_id = ${seriesId} and agreed_at is null and declined_by is null`;
-}
-
-/** `side`'s new lineup is in. */
-export async function setRematchLineup(
-  db: Db,
-  seriesId: string,
-  side: Side,
-  lineup: readonly string[],
-): Promise<void> {
-  if (side === 'a') {
-    await db`update game.rematches set lineup_a = ${[...lineup]} where series_id = ${seriesId}`;
-  } else {
-    await db`update game.rematches set lineup_b = ${[...lineup]} where series_id = ${seriesId}`;
-  }
-}
-
-/** The new match started. */
-export async function startedRematch(db: Db, seriesId: string, newSeriesId: string): Promise<void> {
-  await db`
-    update game.rematches set new_series_id = ${newSeriesId}
-    where series_id = ${seriesId} and new_series_id is null`;
 }
