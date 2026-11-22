@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { endpoint } from '../http.ts';
 import { EVERYONE, LIMITS } from '../rate-limit.ts';
 import { adminSql, testDeps } from '../test/support.ts';
@@ -9,6 +9,9 @@ const deps = testDeps();
 const admin = adminSql();
 beforeAll(async () => {
   await admin`delete from game.rate_limits`;
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 afterAll(async () => {
   await deps.sql.end();
@@ -32,6 +35,40 @@ describe('GET /api/v1/health', () => {
       ruleset: RULESET_VERSION,
       failed: [],
       emailCodes: 'ok',
+      accounts: 'ok',
+      accountsFailed: [],
+    });
+  });
+
+  it('names a sign-in setting that is wrong in `accounts`, and stays 200 (ADR 0079)', async () => {
+    // Auth as it is, but with "Confirm email" off and no Google provider.
+    const real = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const answer = await real(input, init);
+      if (!String(input instanceof Request ? input.url : input).endsWith('/auth/v1/settings')) {
+        return answer;
+      }
+      const settings = (await answer.json()) as { external: object };
+      return Response.json({
+        ...settings,
+        mailer_autoconfirm: true,
+        external: { ...settings.external, google: false },
+      });
+    });
+    const handler = endpoint(
+      'health',
+      health,
+      () => deps,
+      () => undefined,
+    );
+    const response = await handler(new Request('http://localhost/api/v1/health'));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: 'ok',
+      auth: 'ok',
+      failed: [],
+      accounts: 'misconfigured',
+      accountsFailed: ['auth_email_confirmations', 'auth_google'],
     });
   });
 

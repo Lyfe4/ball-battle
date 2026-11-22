@@ -66,15 +66,37 @@ async function codeFor(email: string, before: number): Promise<string> {
 
 const me = (page: Page) => page.evaluate(async () => (await fetch('/api/v1/me')).json());
 
-/** Types `email`, sends a code, reads it from the mail catcher and types it. */
-async function signInWith(page: Page, email: string): Promise<void> {
+/**
+ * Types `email`, sends a code, reads it from the mail catcher and types it, until `then` (the
+ * username's question for an account without one, else signed in) shows.
+ */
+async function signInWith(page: Page, email: string, then = 'You’re signed in'): Promise<void> {
   const before = await mailCount(email);
   await page.getByLabel('Your email').fill(email);
   await page.getByRole('button', { name: 'Email me a code' }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
   await page.getByLabel('The code').fill(await codeFor(email, before));
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByRole('heading', { name: 'You’re signed in' }).waitFor();
+  await page.getByRole('heading', { name: then }).waitFor();
+}
+
+/** Opens home's settings and presses `name` in its Online group. */
+async function inSettings(page: Page, name: string): Promise<void> {
+  await page.getByRole('button', { name: 'Settings' }).first().click();
+  await page.getByRole('button', { name, exact: true }).click();
+}
+
+/**
+ * Presses `press` and waits for the page to start afresh on home, signed out, with nothing of the
+ * player left here.
+ */
+async function signsOut(page: Page, press: () => Promise<void>): Promise<void> {
+  const reloaded = page.waitForEvent('load');
+  await press();
+  await reloaded;
+  expect(page.url()).toBe(`${BASE}/`);
+  expect(await page.evaluate(async () => (await fetch('/api/v1/me')).status)).toBe(401);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toStrictEqual([]);
 }
 
 describe('signing in with an email code', () => {
@@ -93,13 +115,39 @@ describe('signing in with an email code', () => {
     });
     const guest = (await me(first)) as { name: string };
     await first.goto(`${BASE}/?view=signin`);
-    await signInWith(first, email);
-    expect(await me(first)).toStrictEqual({ name: guest.name, account: true });
+    await signInWith(first, email, 'Choose a username');
+    expect(await me(first)).toStrictEqual({ name: guest.name, account: true, username: null });
+
+    // The server alone checks a name, and says why not under the field.
+    await first.getByLabel('Username').fill('sh1t_head');
+    await first.getByRole('button', { name: 'Save' }).click();
+    await first.getByText('That name isn’t allowed: choose another').waitFor();
+    const username = `Sam_${crypto.randomUUID().slice(0, 8)}`;
+    await first.getByLabel('Username').fill(username);
+    await first.getByRole('button', { name: 'Save' }).click();
+    await first.getByText(`Opponents see you as ${username}.`).waitFor();
+    expect(await me(first)).toStrictEqual({ name: username, account: true, username });
 
     const second = await phone();
     await second.goto(`${BASE}/?view=signin`);
     await second.getByRole('button', { name: 'I’m 16 or older' }).click();
     await signInWith(second, email);
-    expect(await me(second)).toStrictEqual({ name: guest.name, account: true });
+    expect(await me(second)).toStrictEqual({ name: username, account: true, username });
+
+    // Log out, then back in: the account and its username are still there.
+    await second.goto(BASE);
+    await signsOut(second, () => inSettings(second, 'Log out'));
+    await second.goto(`${BASE}/?view=signin`);
+    await second.getByRole('button', { name: 'I’m 16 or older' }).click();
+    await signInWith(second, email);
+    await second.getByText(`Opponents see you as ${username}.`).waitFor();
+
+    // Delete account: gone, on this phone and the other.
+    await second.goto(BASE);
+    await inSettings(second, 'Delete account');
+    await signsOut(second, () =>
+      second.getByRole('button', { name: 'Delete', exact: true }).click(),
+    );
+    expect(await first.evaluate(async () => (await fetch('/api/v1/me')).status)).toBe(401);
   });
 });

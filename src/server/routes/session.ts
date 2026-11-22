@@ -4,7 +4,8 @@
 //   second tab makes no second guest).
 // - DELETE logs out: ends the session in Auth and clears the cookie. The client clears every
 //   `ballbattle.*` key itself. A guest who logs out can't come back, so the game offers "Forget
-//   me" instead; logout is here for accounts (slice 2) and for completeness.
+//   me" instead; settings offer Log out to accounts (ADR 0079), never during their live match or
+//   lobby (409 `in_a_match`), which would be lost.
 import { decodeCreateGuest } from '../../api/session.ts';
 import { AuthError, signOut, signUpGuest } from '../auth.ts';
 import { deleteUser } from '../auth-admin.ts';
@@ -15,6 +16,7 @@ import { ApiError, json, type RouteHandler } from '../http.ts';
 import { report } from '../monitor.ts';
 import { ipSubject, LIMITS, spend } from '../rate-limit.ts';
 import { optionalSession } from '../session.ts';
+import { checkNotLiveNow } from '../sign-in.ts';
 import { playerResponse } from './me.ts';
 
 async function createGuest(...[request, context]: Parameters<RouteHandler>): Promise<Response> {
@@ -59,7 +61,19 @@ async function createGuest(...[request, context]: Parameters<RouteHandler>): Pro
 
 async function logout(...[request, context]: Parameters<RouteHandler>): Promise<Response> {
   const tokens = readSession(request);
-  if (tokens !== undefined) await signOut(context.deps.config, tokens.access);
+  if (tokens !== undefined) {
+    // A session that no longer works logs out all the same.
+    const player = await optionalSession(request, context).catch(() => undefined);
+    if (player?.account === true) {
+      await checkNotLiveNow(context.deps, [player.userId]).catch((error: unknown) => {
+        if (error instanceof ApiError && error.code === 'in_a_match') {
+          throw new ApiError(409, 'in_a_match', 'Finish or leave your match first, then log out');
+        }
+        throw error;
+      });
+    }
+    await signOut(context.deps.config, (player?.tokens ?? tokens).access);
+  }
   context.setCookie(clearedSessionCookie());
   return json(204, null);
 }

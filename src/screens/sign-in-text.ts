@@ -129,15 +129,6 @@ export function switchCard(
   };
 }
 
-/** Signed in. */
-export function signedInCard(done: () => void): NoticeContent {
-  return {
-    title: 'You’re signed in',
-    body: ['Your games stay with your account. Sign in on another device to play as you there.'],
-    buttons: [{ text: 'Done', onClick: done }],
-  };
-}
-
 /** Accounts aren't on here (the switch went off after the page loaded). */
 export function signInOffCard(home: () => void): NoticeContent {
   return {

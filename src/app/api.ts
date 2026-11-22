@@ -51,7 +51,7 @@ const TIMEOUT_MS = 15_000;
  * body. No answer within TIMEOUT_MS, headers and body, is `timeout`.
  */
 export function callApi<T>(
-  method: 'GET' | 'POST' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   body?: unknown,
   headers: Readonly<Record<string, string>> = {},
@@ -68,7 +68,7 @@ export const FORGET_ME_URL = '/api/v1/me';
 
 /** `callApi` to a whole same-origin URL. */
 export async function requestApi<T>(
-  method: 'GET' | 'POST' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   url: string,
   body?: unknown,
   headers: Readonly<Record<string, string>> = {},

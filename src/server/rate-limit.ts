@@ -121,6 +121,13 @@ export const LIMITS = {
   triesAtAddress: { bucket: 'code.tries.address', max: 10, windowSeconds: 3600 },
   /** Tries from one network. */
   triesFromNetwork: { bucket: 'code.tries.network', max: 50, windowSeconds: 600 },
+  /**
+   * Usernames tried by one account (ADR 0079): fixing a few typos, or a few taken names, fits;
+   * using "taken" to list who plays doesn't. There is no separate "is it free?" check.
+   */
+  usernames: { bucket: 'username', max: 20, windowSeconds: 3600 },
+  /** And from one network: a class choosing names at once fits. */
+  usernamesFromNetwork: { bucket: 'username.network', max: 100, windowSeconds: 3600 },
   /** A Google sign-in's state, used once (ADR 0079): a copied cookie can't finish it again. */
   googleState: { bucket: 'google.state', max: 1, windowSeconds: 600 },
 } as const satisfies Record<string, Limit>;

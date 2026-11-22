@@ -86,3 +86,25 @@ export type GoogleResult = (typeof GOOGLE_RESULTS)[number];
 
 export const isGoogleResult = (value: unknown): value is GoogleResult =>
   GOOGLE_RESULTS.some((result) => result === value);
+
+/** What a username may be, in the words the server refuses with and the page shows (ADR 0079). */
+export const USERNAME_RULE = 'Letters a–z, numbers and _ only, 3–15 characters';
+
+/** PUT /api/v1/me/username: choose a username (an account only; the server checks it all). */
+export interface UsernameRequest {
+  readonly username: string;
+}
+
+/** The answer to choosing one: the username as kept. */
+export interface UsernameResponse {
+  readonly username: string;
+}
+
+/** The body of PUT /api/v1/me/username, if it is one: the name as typed, trimmed. */
+export function decodeUsername(body: unknown): UsernameRequest | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const { username } = body as Record<string, unknown>;
+  return typeof username === 'string' && username.length <= 64
+    ? { username: username.trim() }
+    : undefined;
+}

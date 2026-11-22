@@ -44,6 +44,7 @@ const FIELD_INPUT: Readonly<
 > = {
   email: { type: 'email', autocomplete: 'email', inputMode: 'email' },
   code: { type: 'text', autocomplete: 'one-time-code', inputMode: 'numeric' },
+  username: { type: 'text', autocomplete: 'off', inputMode: 'text' },
 };
 
 /** A field's label, input and error line; the input stays while its kind does. */
@@ -69,6 +70,8 @@ function createField() {
         input.spellcheck = false;
         input.autocapitalize = 'off';
         if (field.kind === 'code') input.maxLength = 7;
+        // Safari's own: no word suggestions replacing what was typed.
+        if (field.kind === 'username') input.setAttribute('autocorrect', 'off');
         input.addEventListener('input', () => {
           onInput(input?.value ?? '');
         });

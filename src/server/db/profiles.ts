@@ -5,7 +5,10 @@ type Db = Sql | TransactionSql;
 
 export interface Profile {
   readonly userId: string;
+  /** The name others see: the username, else the generated "Player 1234". */
   readonly name: string;
+  /** An account's chosen name (ADR 0079), null until chosen and always for a guest. */
+  readonly username: string | null;
   /** Signed in to an account (ADR 0079): `account_at` is set. Never read from a token. */
   readonly account: boolean;
 }
@@ -33,14 +36,18 @@ export async function createProfile(sql: Db, userId: string): Promise<Profile> {
  * don't write on every request). The inactive-guest cleanup reads `last_seen_at`.
  */
 export async function profileOf(sql: Db, userId: string): Promise<Profile | undefined> {
-  const [row] = await sql<{ readonly display_name: string; readonly account: boolean }[]>`
+  const [row] = await sql<
+    { readonly name: string; readonly username: string | null; readonly account: boolean }[]
+  >`
     with seen as (
       update game.profiles set last_seen_at = now()
       where user_id = ${userId} and last_seen_at < now() - interval '1 day'
     )
-    select display_name, account_at is not null as account
+    select coalesce(username, display_name) as name, username, account_at is not null as account
     from game.profiles where user_id = ${userId}`;
-  return row === undefined ? undefined : { userId, name: row.display_name, account: row.account };
+  return row === undefined
+    ? undefined
+    : { userId, name: row.name, username: row.username, account: row.account };
 }
 
 /**
@@ -73,4 +80,44 @@ export async function inactivePlayers(
     order by last_seen_at
     limit ${limit}`;
   return rows.map((row) => row.user_id);
+}
+
+/** Days a username stays before it may change again (ADR 0079). */
+export const USERNAME_DAYS = 30;
+
+export type UsernameChange =
+  | { readonly kind: 'set' | 'same' | 'taken' }
+  | { readonly kind: 'too_soon'; readonly days: number };
+
+const isTaken = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  (error as { code?: unknown }).code === '23505' &&
+  (error as { constraint_name?: unknown }).constraint_name === 'profiles_username_key';
+
+/**
+ * Gives `userId` the username `name` (already checked by `username-rules.ts`): kept as typed,
+ * unique ignoring case (the index decides between two claims at once), and at most one change per
+ * USERNAME_DAYS by the database's clock. A name the owner cleared in SQL may be chosen again at once.
+ */
+export async function setUsername(sql: Sql, userId: string, name: string): Promise<UsernameChange> {
+  try {
+    return await sql.begin(async (db): Promise<UsernameChange> => {
+      const [row] = await db<{ readonly username: string | null; readonly days: number | null }[]>`
+        select username, ceil(extract(epoch from (username_set_at
+          + make_interval(days => ${USERNAME_DAYS}) - now())) / 86400)::int as days
+        from game.profiles where user_id = ${userId} for update`;
+      if (row?.username === name) return { kind: 'same' };
+      if (row?.username != null && row.days !== null && row.days > 0) {
+        return { kind: 'too_soon', days: row.days };
+      }
+      await db`
+        update game.profiles set username = ${name}, username_set_at = now()
+        where user_id = ${userId}`;
+      return { kind: 'set' };
+    });
+  } catch (error) {
+    if (isTaken(error)) return { kind: 'taken' };
+    throw error;
+  }
 }

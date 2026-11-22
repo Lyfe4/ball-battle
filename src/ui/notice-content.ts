@@ -13,12 +13,12 @@ export interface NoticeButton {
 }
 
 /**
- * One thing to type (ADR 0079: an email, a sign-in code), between the body and the buttons. Its
+ * One thing to type (ADR 0079: an email, a sign-in code, a username), between the body and the buttons. Its
  * input is kept while the notice shows the same kind of field, so a new message never loses what
  * was typed; Enter presses the first button.
  */
 export interface NoticeField {
-  readonly kind: 'email' | 'code';
+  readonly kind: 'email' | 'code' | 'username';
   readonly label: string;
   /** Each change, as typed. */
   readonly onInput: (value: string) => void;

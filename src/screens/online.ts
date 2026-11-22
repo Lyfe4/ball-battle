@@ -16,6 +16,7 @@ import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
+import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
 import { createSignIn } from './sign-in.ts';
 import { closeSettings } from '../ui/settings-menu.ts';
@@ -190,6 +191,10 @@ export function createOnlineScreens(
             closeSettings();
             host.go(writeSignInParams);
           },
+          logOut: () =>
+            logOut(host.storage, () => {
+              window.location.assign('/');
+            }),
         }
       : {}),
   });

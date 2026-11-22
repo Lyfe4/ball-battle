@@ -23,6 +23,7 @@ import {
 import { writeSignInParams } from '../app/online-url.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
+import { createAccountStep } from './account-step.ts';
 import { inAMatchCard } from './current-match.ts';
 import { onlineNotice } from './online-text.ts';
 import {
@@ -30,7 +31,6 @@ import {
   chooseCard,
   codeCard,
   GOOGLE_PROBLEMS,
-  signedInCard,
   signInOffCard,
   switchCard,
 } from './sign-in-text.ts';
@@ -65,7 +65,7 @@ export function createSignIn(
 ): SignInScreen {
   const notice = createNotice(roots.notice, host.back);
   createSkeleton(roots.loading, 'card', host.back);
-  const api = <T>(method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown) =>
+  const api = <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown) =>
     callApi<T>(method, path, body, {}, host.send);
 
   let visible = false;
@@ -84,9 +84,25 @@ export function createSignIn(
     notice.show(content, focus);
   }
 
-  function done(): void {
+  const account = createAccountStep({
+    show: (content) => {
+      show(content);
+    },
+    loading: () => {
+      roots.notice.hidden = true;
+      roots.loading.hidden = !visible;
+    },
+    api,
+    done: host.back,
+    failed: (answer, retry, line) => {
+      failed(answer, retry, line);
+    },
+  });
+
+  /** Signed in: a sign-in just now asks for a username, once (ADR 0079). */
+  function done(justSignedIn = true): void {
     rememberAccount(host.storage, true);
-    show(signedInCard(host.back));
+    void account.open(justSignedIn);
   }
 
   /** A refusal or a failure: in a match, signed in already, or a line under the field. */
@@ -101,7 +117,7 @@ export function createSignIn(
           show(inAMatchCard(answer.message, host.toMatch, host.home));
           return;
         case 'already_signed_in':
-          done();
+          done(false);
           return;
         case 'accounts_off':
           show(signInOffCard(host.home));
@@ -259,7 +275,7 @@ export function createSignIn(
   /** Where the screen starts: signed in already, the 16+ question, or the ways in. */
   function start(problem?: string): void {
     if (hasAccount(host.storage)) {
-      done();
+      done(false);
       return;
     }
     if (hasGuest(host.storage) || adult) {

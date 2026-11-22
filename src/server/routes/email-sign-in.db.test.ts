@@ -63,7 +63,11 @@ describe('a guest adding an email', () => {
     expect(userIdOf(guest.browser.cookie ?? '')).toBe(guest.userId);
     expect(await accountOf(guest.userId)).toBe(true);
     const { body: after } = await guest.browser.call(me, 'GET', '/api/v1/me');
-    expect(after).toStrictEqual({ name: (before as { name: string }).name, account: true });
+    expect(after).toStrictEqual({
+      name: (before as { name: string }).name,
+      account: true,
+      username: null,
+    });
     const [row] = await admin<{ player_a: string }[]>`
       select player_a from game.series where id = ${series}`;
     expect(row?.player_a).toBe(guest.userId);

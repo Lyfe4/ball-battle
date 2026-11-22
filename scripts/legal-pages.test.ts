@@ -7,6 +7,7 @@ import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
 import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
+import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
 
 const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
@@ -71,6 +72,17 @@ describe('the privacy policy and terms', () => {
       86_400,
     );
     expect(privacy).toContain('<strong>Resend</strong>');
+  });
+
+  it('name the username, its 30 days, Delete account and Log out (ADR 0079)', () => {
+    expect(USERNAME_DAYS).toBe(30);
+    expect(privacy).toContain('Your username, if you choose one, and when you chose it');
+    expect(privacy).toContain(`once every ${String(USERNAME_DAYS)} days`);
+    const counts = [LIMITS.usernames, LIMITS.usernamesFromNetwork];
+    expect(Math.max(...counts.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(86_400);
+    expect(privacy).toContain('how many usernames are tried');
+    expect(privacy).toContain('<strong>Delete account</strong>');
+    expect(privacy).toContain('<strong>Log out</strong>');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {
