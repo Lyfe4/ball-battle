@@ -19,54 +19,53 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     x: 'brawler',
     y: 'bomber',
     intended: 'even',
-    reason: 'It runs into bombs like anyone, and hits hard when it gets there.',
+    reason: 'The Brawler runs into the Bomber’s bombs, and hits hard when it gets there.',
   },
   {
     x: 'bomber',
     y: 'speedster',
     intended: 'x',
     level: 'strong',
-    reason:
-      'The fastest ball covers the most ground, so it runs into the most bombs, each a big blast.',
+    reason: 'The Speedster covers the most ground, so it sets off the most of the Bomber’s bombs.',
   },
   {
     x: 'frost',
     y: 'bomber',
     intended: 'even',
-    reason: 'The slowest ball runs into few bombs, but it can’t outrun a blast either.',
+    reason: 'The slow Frost sets off few of the Bomber’s bombs, but can’t outrun a blast either.',
   },
   {
     x: 'thorns',
     y: 'bomber',
     intended: 'y',
     level: 'edge',
-    reason: 'Blasts never touch the spikes, and the slow Thorns can’t keep clear of the bombs.',
+    reason: 'The Bomber’s blasts never touch the spikes, and the slow Thorns can’t keep clear.',
   },
   {
     x: 'magnet',
     y: 'bomber',
     intended: 'even',
-    reason: 'The pull drags it across the bombs, and its heavy hits pay them back.',
+    reason: 'The Magnet pulls the Bomber close, and its heavy bumps pay back the blasts.',
   },
   {
     x: 'necromancer',
     y: 'bomber',
     intended: 'y',
     level: 'edge',
-    reason: 'A blast hits harder than a skull bites, and it clears the skull for a while too.',
+    reason:
+      'A Bomber blast hits harder than a skull bites, and clears the Necromancer’s skull too.',
   },
   {
     x: 'titan',
     y: 'bomber',
     intended: 'even',
-    reason: 'A growing giant sets off more bombs, and its growing bumps pay them back.',
+    reason: 'The growing Titan sets off more of the Bomber’s bombs, and its bumps pay them back.',
   },
   {
     x: 'inferno',
     y: 'bomber',
     intended: 'y',
     level: 'edge',
-    reason:
-      'Both lie in wait, but one blast hits harder than the burns it takes crossing the fire.',
+    reason: 'One Bomber blast hits harder than the burns it takes crossing the Inferno’s fire.',
   },
 ];
