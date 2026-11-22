@@ -99,9 +99,14 @@
   text-underline-offset: 0.2em;
 }
 
+/*
+ * The chevron after every text link, one space from its words. A no-break space: a plain one is
+ * dropped where the link is a flex box (the footer's, the notice's links read "Privacy policy›"),
+ * and it keeps the chevron from wrapping onto a line of its own.
+ */
 .text-link::after {
-  content: ' ›';
-  content: ' ›' / '';
+  content: '\a0›';
+  content: '\a0›' / '';
 }
 
 /* Disabled: flat on the page, with no slab to press into, in muted text. */
