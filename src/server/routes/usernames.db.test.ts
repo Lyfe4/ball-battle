@@ -4,11 +4,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
 import type { Answer } from '../test/client.ts';
+import { AWAY_AFTER_MS, GRACE_MS } from '../../api/live.ts';
 import {
   acceptLink,
   linkInfo,
+  liveRow,
   sendLive,
   seriesOf,
+  silence,
   startedLive,
   tokenOf,
 } from '../test/live-support.ts';
@@ -30,6 +33,9 @@ afterAll(async () => {
   await other.sql.end();
   await admin.end();
 });
+
+/** Quiet for longer than a live match waits for a player to come back (ADR 0053). */
+const ABANDONED_MS = AWAY_AFTER_MS + GRACE_MS + 1_000;
 
 const code = (answer: Answer) => [answer.status, errorOf(answer.body)?.code];
 
@@ -169,6 +175,16 @@ describe('logging out', () => {
     const answer = await players.a.browser.call(session, 'DELETE', '/api/v1/session');
     expect(code(answer)).toStrictEqual([409, 'in_a_match']);
     expect(players.a.browser.cookie).toBeDefined();
+  });
+
+  it('is not refused by a live match both players left, which its clock has ended', async () => {
+    const { id, players } = await startedLive(deps, admin);
+    await admin`update game.profiles set account_at = now() where user_id = ${players.a.userId}`;
+    // Nobody has read the series since both went quiet: its stored status is still open.
+    for (const side of ['a', 'b'] as const) await silence(admin, id, side, ABANDONED_MS);
+    const answer = await players.a.browser.call(session, 'DELETE', '/api/v1/session');
+    expect(answer.status).toBe(204);
+    expect((await liveRow(admin, id)).status).toBe('forfeit');
   });
 });
 

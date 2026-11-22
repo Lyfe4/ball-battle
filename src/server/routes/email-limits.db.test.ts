@@ -4,6 +4,7 @@
 // rather than spent on real emails.
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
+import { AWAY_AFTER_MS, GRACE_MS } from '../../api/live.ts';
 import {
   EMAIL_BUSY,
   emailSubject,
@@ -13,7 +14,7 @@ import {
   type Limit,
 } from '../rate-limit.ts';
 import { TestBrowser } from '../test/client.ts';
-import { startedLive } from '../test/live-support.ts';
+import { liveRow, silence, startedLive } from '../test/live-support.ts';
 import { mailCount, newEmail, nextCode } from '../test/mail.ts';
 import { newPlayer } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
@@ -109,6 +110,15 @@ describe('during a live match', () => {
     const answer = await send(players.a.browser, email);
     expect([answer.status, errorOf(answer.body)?.code]).toStrictEqual([409, 'in_a_match']);
     expect(await mailCount(email)).toBe(0);
+  });
+
+  it('a live match both players left is settled first, and no longer refuses', async () => {
+    const { id, players } = await startedLive(deps, admin);
+    for (const side of ['a', 'b'] as const) {
+      await silence(admin, id, side, AWAY_AFTER_MS + GRACE_MS + 1_000);
+    }
+    expect((await send(players.a.browser, newEmail())).status).toBe(202);
+    expect((await liveRow(admin, id)).status).toBe('forfeit');
   });
 
   it('and at the end, when the match began after the code was sent', async () => {

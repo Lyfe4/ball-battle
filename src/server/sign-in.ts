@@ -7,8 +7,11 @@ import { signOut } from './auth.ts';
 import { checkNotLive } from './challenges.ts';
 import { sessionCookie } from './cookie.ts';
 import type { TransactionSql } from './db.ts';
+import { liveNowOf } from './db/live.ts';
 import { markAccount } from './db/profiles.ts';
+import { loadSeries } from './db/series-record.ts';
 import { ApiError, type Deps, type RouteContext } from './http.ts';
+import { settleLive } from './live-service.ts';
 import { clearedCookie, openCookie, sealCookie } from './sealed-cookie.ts';
 import { optionalSession, type Session } from './session.ts';
 
@@ -45,15 +48,30 @@ export async function signInPlayer(
 }
 
 /**
+ * Each player's own live match, with what its clock decided by now written (ADR 0053): one both
+ * players left is forfeited here rather than refusing as if it still went on. Before the lock,
+ * since settling writes on its own connections and a function has one.
+ */
+async function settleOwnLive(deps: Deps, players: readonly string[]): Promise<void> {
+  for (const player of players) {
+    const now = await liveNowOf(deps.sql, player);
+    if (now?.kind !== 'series') continue;
+    const loaded = await loadSeries(deps.sql, now.id);
+    if (loaded !== undefined) await settleLive(deps, loaded);
+  }
+}
+
+/**
  * Runs `then` holding every player's live lock (ADR 0053's `in_a_match`, taken in one order so two
  * of these never wait on each other), refusing while any of them has a live match or a lobby. No
  * sign-in starts or finishes during one.
  */
-export function whileNotLive<T>(
+export async function whileNotLive<T>(
   deps: Deps,
   players: readonly string[],
   then: (db: TransactionSql) => Promise<T>,
 ): Promise<T> {
+  await settleOwnLive(deps, players);
   return deps.sql.begin(async (db) => {
     try {
       for (const player of [...players].sort()) await checkNotLive(db, player);
