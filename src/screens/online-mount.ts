@@ -99,7 +99,6 @@ export function mountOnline(context: MountContext): OnlineMount {
         },
       })
     : undefined;
-  if (inboxWatch !== undefined) document.body.append(inboxRoot);
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
     ended: (view) => {
       rematchWatch.ended(view);

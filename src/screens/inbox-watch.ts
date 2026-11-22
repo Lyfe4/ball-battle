@@ -81,10 +81,14 @@ export function createInboxWatch(
 
   function render(): void {
     const calm = !host.fighting();
-    card.show(
-      calm && invite !== undefined ? { kind: 'invite', line: inviteLine(invite) } : undefined,
-      failure,
-    );
+    const said =
+      calm && invite !== undefined
+        ? { kind: 'invite' as const, line: inviteLine(invite) }
+        : undefined;
+    // The card joins the page the first time it has something to say: a page with no challenge
+    // holds one floating card of this look, the rematch's.
+    if (said !== undefined && !root.isConnected) document.body.append(root);
+    card.show(said, failure);
   }
 
   async function read(): Promise<boolean> {
