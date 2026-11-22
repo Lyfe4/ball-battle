@@ -3,6 +3,7 @@
 // `export default endpoint('health', health)`; tests call the same handler with their own deps.
 import type { ErrorBody } from '../api/errors.ts';
 import { ApiError } from './http-error.ts';
+import { withPlayerHint } from './cookie.ts';
 import { configOf, type Config } from './config.ts';
 import { databaseFor, type Sql } from './db.ts';
 import { failureOf, type Stage } from './failure.ts';
@@ -137,7 +138,7 @@ export function endpoint(
       }
     }
     response.headers.set('X-Request-Id', requestId);
-    for (const cookie of cookies) response.headers.append('Set-Cookie', cookie);
+    for (const cookie of withPlayerHint(cookies)) response.headers.append('Set-Cookie', cookie);
     const entry = {
       requestId,
       route: name,

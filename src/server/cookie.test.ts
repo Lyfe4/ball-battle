@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clearedSessionCookie, cookieValue, readSession, sessionCookie } from './cookie.ts';
+import { hasPlayerHint } from '../api/session.ts';
+import {
+  clearedPlayerHintCookie,
+  clearedSessionCookie,
+  cookieValue,
+  playerHintCookie,
+  readSession,
+  sessionCookie,
+  withPlayerHint,
+} from './cookie.ts';
 
 const requestWith = (cookie: string) =>
   new Request('https://x.test/', { headers: { Cookie: cookie } });
@@ -32,5 +41,43 @@ describe('the session cookie', () => {
       '__Host-bb_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
     );
     expect(cookieValue('a=1; b=2', 'b')).toBe('2');
+  });
+});
+
+describe('the player hint (ADR 0079 addendum of 2026-11-22)', () => {
+  const session = sessionCookie({ access: 'a.b.c', refresh: 'r1' });
+
+  it('is readable by the page and holds nothing but that a player is here', () => {
+    expect(playerHintCookie()).toBe(
+      '__Host-bb_player=1; Path=/; Secure; SameSite=Lax; Max-Age=34560000',
+    );
+    expect(playerHintCookie()).not.toContain('HttpOnly');
+  });
+
+  it('follows the session: set with it, cleared with it, untouched without it', () => {
+    expect(withPlayerHint(['a=1', session])).toStrictEqual(['a=1', session, playerHintCookie()]);
+    expect(withPlayerHint([clearedSessionCookie()])).toStrictEqual([
+      clearedSessionCookie(),
+      clearedPlayerHintCookie(),
+    ]);
+    // A refresh, then the session ended in the same answer: the last word wins.
+    expect(withPlayerHint([session, clearedSessionCookie()]).at(-1)).toBe(
+      clearedPlayerHintCookie(),
+    );
+    // A `/me` read sets the hint alone; a sign-in step's cookie leaves it as it is.
+    expect(withPlayerHint([playerHintCookie()])).toStrictEqual([playerHintCookie()]);
+    expect(withPlayerHint(['__Host-bb_email=x; Path=/'])).toStrictEqual([
+      '__Host-bb_email=x; Path=/',
+    ]);
+  });
+});
+
+describe('the page reads the hint the server sets', () => {
+  it('finds it among other cookies, and not once cleared', () => {
+    const pair = playerHintCookie().split(';')[0] ?? '';
+    expect(hasPlayerHint(`a=1; ${pair}; b=2`)).toBe(true);
+    expect(hasPlayerHint(clearedPlayerHintCookie().split(';')[0] ?? '')).toBe(false);
+    expect(hasPlayerHint('')).toBe(false);
+    expect(hasPlayerHint('bb_player=1')).toBe(false);
   });
 });

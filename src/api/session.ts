@@ -17,6 +17,17 @@ export interface PlayerResponse {
   readonly username?: string | null;
 }
 
+/**
+ * A cookie beside the HttpOnly session, readable by the page, holding only `1`: this device has a
+ * player (ADR 0079 addendum of 2026-11-22). Home asks `/me` only where it is set.
+ */
+export const PLAYER_HINT_COOKIE = '__Host-bb_player';
+
+/** Whether a `document.cookie` string holds the player hint. */
+export function hasPlayerHint(cookies: string): boolean {
+  return cookies.split(';').some((part) => part.trim() === `${PLAYER_HINT_COOKIE}=1`);
+}
+
 /** The body of POST /api/v1/session, if it is one. */
 export function decodeCreateGuest(body: unknown): CreateGuestRequest | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
