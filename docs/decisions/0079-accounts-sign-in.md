@@ -170,3 +170,56 @@ here) decodes the ID token.
     still signed in (Sign in then finds it and recovers, after the 16+ question).
 - Not taken: Realtime now, the hosted OAuth redirect, merging accounts, Unicode usernames, an
   export endpoint, the 60/30 split, a username check while typing.
+
+## Addendum (2026-11-22): the account on home, settings for the device
+
+The UX pass (proposal approved 2026-11-22) gave the player one place. Sign in, Your account, Log
+out and Delete account sat in settings' Online group, so a per-device menu held the player's
+identity, nothing on home said whether you were signed in, and settings decided it from
+`localStorage`, which Safari clears after 7 days without a visit while the session cookie stays.
+
+- **The account entry on home**, beside the gear (accounts builds only): a round sun-yellow button
+  with the username's initial ("Your account, Sam_R") once signed in; a quiet "Sign in" pill for a
+  guest or nobody (owner's decision: an unlabelled icon reads as "profile", not "sign in"). It
+  opens the account screen (`?view=signin`). Home only; every other screen keeps one gear.
+- **The account screen is the one place for the player.** Signed in: the username and Change,
+  then Log out and Delete account as quiet actions at the card's end; Delete asks once in the
+  card's place, Keep first. A guest: the ways in, then Forget me, asked the same way. Friends
+  (PR (c)) join as a section of this screen, not a screen of their own, until the list needs
+  search. vs Friend still allows guests (owner's decision): the friend you send a link to plays
+  within a minute.
+- **Settings are this device's alone**, in two headed groups: **Fights** (speed, sound) and
+  **Tips** (Ability hints, What to watch cards, Show all tips again); Close alone at the end.
+  Compact form unchanged. A build without accounts keeps Forget me in settings (ADR 0078: there is
+  no account screen there).
+- **Signed in is what `/me` says** (`who-am-i.ts`), read when home shows after a page load or
+  after the account screen, and when the account screen opens; never polled, at most once per
+  home in a tab. The device's keys are a cache it updates.
+- **A hint cookie decides whether to ask.** `__Host-bb_player=1` (Secure, SameSite=Lax, not
+  HttpOnly, 400 days) holds nothing but "this device has a player". The server sets and clears it
+  with the session cookie in one place (`withPlayerHint`, `http.ts`), and every `/me` read sets it
+  again, so a device signed in before it existed gets it on its first read. A device with neither
+  the hint nor a remembered player asks nothing: a first visit costs no function call. Set by the
+  server, so Safari's 7-day cap on script storage doesn't reach it. The privacy policy names it.
+- **A neutral face when `/me` can't say.** Offline, timed out or failing, the button shows a plain
+  head and shoulders named "Your account", never "Sign in" to a player who may be signed in; the
+  next home asks again. The account screen then falls back to the device's keys, as before.
+
+Real use: a family iPad shows whose account it is before anyone plays online, and Log out is one
+tap from home; a player on a train with no signal sees the face, and home and Play work; Safari
+after 8 days: `/me` says signed in, so no false Sign in and no 16+ question.
+
+Library and platform behaviour relied on: `document.cookie` lists only cookies the page may read
+(the session stays HttpOnly); a `__Host-` cookie needs Secure, `Path=/` and no Domain, as the
+session cookie already does (so `netlify dev` on localhost behaves as it does for the session);
+Safari's ITP caps cookies set by
+script at 7 days but not ones the site's own server set; `Set-Cookie` headers are appended in
+order, so a later clear wins over an earlier set.
+
+Tests: `who-am-i.test.ts` (no request without the hint or a remembered player, `/me` over the
+keys, 401 clears them, a failure keeps them and is unknown), `account-look.test.ts` (initial,
+Sign in, the face), `cookie.test.ts` (the hint follows the session, the page reads what the server
+sets), `sign-in.browser.test.ts` (a wiped device shown its account, Delete asked once, a guest's
+Forget me, no request on a first visit; seen failing without the `/me` read), `settings.browser`
+(the two groups; seen failing on the old menu), and `sign-in.online.test.ts` (Log out and Delete
+account from home's account button, Sign in shown after).
