@@ -76,3 +76,22 @@ describe('the sign-in screen’s cards (ADR 0079)', () => {
     expect(texts(card)).toStrictEqual(['Switch to it', 'Stay as guest']);
   });
 });
+
+describe('a guest’s Forget me on the account screen (ADR 0079 addendum of 2026-11-22)', () => {
+  it('ends the ways in with Forget me only for a guest, with codes on or off', () => {
+    for (const emailCodes of [true, false]) {
+      const guest = chooseCard({
+        google: true,
+        emailCodes,
+        userAgent: SAFARI,
+        email,
+        sendCode: nothing,
+        withGoogle: nothing,
+        cancel: none,
+        forgetMe: none,
+      });
+      expect(guest.more?.map((action) => action.text)).toStrictEqual(['Forget me']);
+      expect(choose(true, emailCodes).more).toBeUndefined();
+    }
+  });
+});

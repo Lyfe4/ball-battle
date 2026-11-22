@@ -3,9 +3,7 @@
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
 import type { Navigation } from '../app/navigation.ts';
-import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
-import { hasAccount, hasGuest, type DeviceStorage } from '../app/online-device.ts';
-import { writeSignInParams } from '../app/online-url.ts';
+import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element } from '../ui/dom.ts';
@@ -19,7 +17,6 @@ import { forgetMeHost } from './forget-me-host.ts';
 import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
 import { createSignIn } from './sign-in.ts';
-import { closeSettings } from '../ui/settings-menu.ts';
 import { createPrimer } from './online-prime.ts';
 
 export interface OnlineHost {
@@ -161,6 +158,9 @@ export function createOnlineScreens(
     if (document.visibilityState === 'visible') challenges.resumed();
   });
 
+  const startAfresh = () => {
+    window.location.assign('/');
+  };
   const signIn = createSignIn(
     { notice: signInNotice, loading: signInLoading },
     {
@@ -177,27 +177,15 @@ export function createOnlineScreens(
         window.location.assign(url);
       },
       userAgent: navigator.userAgent,
+      cookies: () => document.cookie,
+      // The account screen is the one place for the player (ADR 0079 addendum of 2026-11-22).
+      logOut: () => logOut(host.storage, startAfresh),
+      forget: () => forgetMeHost(host.storage, startAfresh).forget(),
     },
   );
 
-  const forgetMe = createForgetMe({
-    ...forgetMeHost(host.storage, () => {
-      window.location.assign('/');
-    }),
-    ...(ACCOUNTS_BUILD
-      ? {
-          hasAccount: () => hasAccount(host.storage),
-          signIn: () => {
-            closeSettings();
-            host.go(writeSignInParams);
-          },
-          logOut: () =>
-            logOut(host.storage, () => {
-              window.location.assign('/');
-            }),
-        }
-      : {}),
-  });
+  // Settings' Forget me, in an online build without accounts (no account screen there).
+  const forgetMe = createForgetMe(forgetMeHost(host.storage, startAfresh));
 
   return {
     online: {

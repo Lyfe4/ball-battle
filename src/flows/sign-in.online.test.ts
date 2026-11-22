@@ -1,7 +1,8 @@
 // Signing in with an email code through the real page (ADR 0079): `netlify dev` serving an online
 // build with accounts, the API against the local Supabase, and the codes read from its mail
 // catcher. A phone's guest adds an email and stays the same player; a second phone (no guest)
-// answers the 16+ question and signs in to that same player. iPhone Safari's visible size,
+// answers the 16+ question and signs in to that same player. Log out and Delete account are on the
+// account screen, reached from home's account button. iPhone Safari's visible size,
 // Chromium only, like the friend challenge.
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -80,9 +81,13 @@ async function signInWith(page: Page, email: string, then = 'You’re signed in'
   await page.getByRole('heading', { name: then }).waitFor();
 }
 
-/** Opens home's settings and presses `name` in its Online group. */
-async function inSettings(page: Page, name: string): Promise<void> {
-  await page.getByRole('button', { name: 'Settings' }).first().click();
+/**
+ * From home, opens the account by its button beside the gear (ADR 0079 addendum of 2026-11-22),
+ * which `/me` says is `username`'s, and presses `name` at the end of the account's card.
+ */
+async function onAccount(page: Page, username: string, name: string): Promise<void> {
+  await page.getByRole('button', { name: `Your account, ${username}` }).click();
+  await page.getByRole('heading', { name: 'You’re signed in' }).waitFor();
   await page.getByRole('button', { name, exact: true }).click();
 }
 
@@ -136,7 +141,9 @@ describe('signing in with an email code', () => {
 
     // Log out, then back in: the account and its username are still there.
     await second.goto(BASE);
-    await signsOut(second, () => inSettings(second, 'Log out'));
+    await signsOut(second, () => onAccount(second, username, 'Log out'));
+    // Signed out, home offers Sign in again.
+    await second.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
     await second.goto(`${BASE}/?view=signin`);
     await second.getByRole('button', { name: 'I’m 16 or older' }).click();
     await signInWith(second, email);
@@ -144,7 +151,7 @@ describe('signing in with an email code', () => {
 
     // Delete account: gone, on this phone and the other.
     await second.goto(BASE);
-    await inSettings(second, 'Delete account');
+    await onAccount(second, username, 'Delete account');
     await signsOut(second, () =>
       second.getByRole('button', { name: 'Delete', exact: true }).click(),
     );

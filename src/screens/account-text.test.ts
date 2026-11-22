@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NoticeField } from '../ui/notice-content.ts';
-import { signedInCard, usernameCard } from './account-text.ts';
+import { deleteCard, signedInCard, usernameCard } from './account-text.ts';
 
 const none = () => undefined;
 const field: NoticeField = { kind: 'username', label: 'Username', onInput: none };
@@ -36,5 +36,31 @@ describe('the account’s cards (ADR 0079)', () => {
     expect(card.body[1]).toBe(
       'Letters a–z, numbers and _ only, 3–15 characters. You can change it once a month.',
     );
+  });
+});
+
+describe('the account screen holds the player (ADR 0079 addendum of 2026-11-22)', () => {
+  const logOut = () => Promise.resolve();
+
+  it('ends the signed-in card with Log out and Delete account, quietly', () => {
+    const card = signedInCard('sam', none, none, { logOut, deleteAccount: none });
+    expect(card.more?.map((action) => action.text)).toStrictEqual(['Log out', 'Delete account']);
+    expect(card.note).toBeUndefined();
+    const failed = signedInCard('sam', none, none, {
+      logOut,
+      deleteAccount: none,
+      problem: 'You’re offline',
+    });
+    expect(failed.note).toBe('You’re offline');
+    expect(signedInCard('sam', none, none).more).toBeUndefined();
+  });
+
+  it('asks once before deleting, Keep first, and says why a try failed', () => {
+    const account = deleteCard(true, logOut, none);
+    expect(account.title).toBe('Delete your account?');
+    expect(account.buttons.map((button) => button.text)).toStrictEqual(['Keep', 'Delete']);
+    const guest = deleteCard(false, logOut, none, 'You’re offline');
+    expect(guest.title).toBe('Delete your guest?');
+    expect(guest.body[0]).toBe('You’re offline');
   });
 });

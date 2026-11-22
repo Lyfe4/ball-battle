@@ -1,10 +1,13 @@
 // The sign-in screen once signed in (ADR 0079): straight after a sign-in, an account without a
 // username is asked for one (once: Skip goes on); later, the screen shows the username with a way
-// to change it. The server checks every name and its words are shown under the field.
+// to change it, then Log out and Delete account (its addendum of 2026-11-22: the account screen is
+// the one place for the player). The server checks every name and its words are shown under the
+// field.
 import type { UsernameResponse } from '../api/accounts.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import type { ApiFailure, ApiResult } from '../app/api.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
+import { askToDelete } from './account-delete.ts';
 import { signedInCard, usernameCard } from './account-text.ts';
 
 export interface AccountStepHost {
@@ -27,6 +30,12 @@ export interface AccountStepHost {
     retry: () => Promise<unknown>,
     line: (text: string) => void,
   ) => void;
+  /**
+   * Log out and Delete account: each resolves undefined when done (the page starts afresh), else
+   * the line that says why not. Absent, the card offers neither.
+   */
+  readonly logOut?: () => Promise<string | undefined>;
+  readonly forget?: () => Promise<string | undefined>;
 }
 
 export interface AccountStep {
@@ -38,11 +47,32 @@ export function createAccountStep(host: AccountStepHost): AccountStep {
   let username: string | null = null;
   let typed = '';
 
-  function signedIn(): void {
+  function signedIn(problem?: string): void {
+    const { logOut, forget } = host;
+    const actions =
+      logOut === undefined || forget === undefined
+        ? undefined
+        : {
+            logOut: async () => {
+              const failed = await logOut();
+              if (failed !== undefined) signedIn(failed);
+            },
+            deleteAccount: () => {
+              askToDelete(host.show, true, forget, () => {
+                signedIn();
+              });
+            },
+            ...(problem === undefined ? {} : { problem }),
+          };
     host.show(
-      signedInCard(username, host.done, () => {
-        choose();
-      }),
+      signedInCard(
+        username,
+        host.done,
+        () => {
+          choose();
+        },
+        actions,
+      ),
     );
   }
 

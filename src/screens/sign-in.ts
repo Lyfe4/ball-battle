@@ -3,13 +3,7 @@
 // the field kept while the words change (notice.ts). Google is a full navigation to our own
 // `/api/v1/auth/google`, whose callback comes back here as `?view=signin&google=<result>`; the
 // result is read once and dropped from the address, so a reload doesn't repeat it.
-import {
-  normalCode,
-  normalEmail,
-  type AuthOptions,
-  type GoogleResult,
-  type SignInResponse,
-} from '../api/accounts.ts';
+import { type AuthOptions, type GoogleResult, type SignInResponse } from '../api/accounts.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
@@ -21,22 +15,17 @@ import {
   type DeviceStorage,
 } from '../app/online-device.ts';
 import { writeSignInParams } from '../app/online-url.ts';
+import { whoAmI } from '../app/who-am-i.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createAccountStep } from './account-step.ts';
+import { askToDelete } from './account-delete.ts';
+import { createCodeStep } from './sign-in-code.ts';
+import { offerSwitch } from './sign-in-switch.ts';
 import { inAMatchCard } from './current-match.ts';
 import { onlineNotice } from './online-text.ts';
-import {
-  adultSignInCard,
-  chooseCard,
-  codeCard,
-  GOOGLE_PROBLEMS,
-  signInOffCard,
-  switchCard,
-} from './sign-in-text.ts';
+import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './sign-in-text.ts';
 
-/** Auth sends at most one code a minute to an address. */
-export const RESEND_AFTER_MS = 60_000;
 const GOOGLE_START = '/api/v1/auth/google';
 
 export interface SignInHost {
@@ -52,6 +41,11 @@ export interface SignInHost {
   readonly userAgent: string;
   /** The page's fetch; tests give their own. */
   readonly send?: Fetch;
+  /** The page's cookies (`document.cookie`): the player hint says whether to ask `/me`. */
+  readonly cookies: () => string;
+  /** Log out, and Delete account or Forget me (account-step.ts): undefined when done. */
+  readonly logOut?: () => Promise<string | undefined>;
+  readonly forget?: () => Promise<string | undefined>;
 }
 
 export interface SignInScreen {
@@ -71,10 +65,6 @@ export function createSignIn(
   let visible = false;
   let options: AuthOptions = { google: false, emailCodes: true };
   let email = '';
-  let code = '';
-  /** The address the last code went to, and when it may be sent again. */
-  let sent: { readonly to: string; readonly resendAt: number } | undefined;
-  let resendTimer: number | undefined;
   /** The 16+ confirmation, on a device without a guest. */
   let adult = false;
 
@@ -83,6 +73,23 @@ export function createSignIn(
     roots.notice.hidden = !visible;
     notice.show(content, focus);
   }
+
+  const codes = createCodeStep({
+    api,
+    show,
+    choose,
+    failed,
+    signedIn,
+    done: () => {
+      done();
+    },
+    visible: () => visible,
+    adult: () => adult,
+    email: () => email,
+    setEmail: (value) => {
+      email = value;
+    },
+  });
 
   const account = createAccountStep({
     show: (content) => {
@@ -97,6 +104,8 @@ export function createSignIn(
     failed: (answer, retry, line) => {
       failed(answer, retry, line);
     },
+    ...(host.logOut === undefined ? {} : { logOut: host.logOut }),
+    ...(host.forget === undefined ? {} : { forget: host.forget }),
   });
 
   /** Signed in: a sign-in just now asks for a username, once (ADR 0079). */
@@ -140,6 +149,7 @@ export function createSignIn(
   }
 
   function choose(problem?: string, fieldError?: string): void {
+    const forget = host.forget;
     show(
       chooseCard({
         google: options.google,
@@ -154,96 +164,24 @@ export function createSignIn(
           },
           ...(fieldError === undefined ? {} : { error: fieldError }),
         },
-        sendCode,
+        sendCode: codes.send,
         withGoogle: () => {
           host.leaveFor(adult ? `${GOOGLE_START}?adult=1` : GOOGLE_START);
           // The button stays busy while the page leaves.
           return new Promise(() => undefined);
         },
         cancel: host.back,
+        ...(forget === undefined || !hasGuest(host.storage)
+          ? {}
+          : {
+              forgetMe: () => {
+                askToDelete(show, false, forget, () => {
+                  choose(problem);
+                });
+              },
+            }),
       }),
     );
-  }
-
-  async function sendCode(): Promise<void> {
-    const to = normalEmail(email);
-    if (to === undefined) {
-      choose(undefined, 'Type your email address');
-      return;
-    }
-    const body = adult ? { email: to, adult } : { email: to };
-    const answer = await api<unknown>('POST', 'auth/email', body);
-    if (!answer.ok) {
-      failed(answer, sendCode, (text) => {
-        choose(undefined, text);
-      });
-      return;
-    }
-    sent = { to, resendAt: Date.now() + RESEND_AFTER_MS };
-    code = '';
-    window.clearTimeout(resendTimer);
-    resendTimer = window.setTimeout(() => {
-      if (visible) askCode(undefined, false);
-    }, RESEND_AFTER_MS);
-    askCode();
-  }
-
-  function askCode(error?: string, focus = true): void {
-    if (sent === undefined) {
-      choose();
-      return;
-    }
-    const to = sent.to;
-    const resend = () => {
-      email = to;
-      return sendCode();
-    };
-    show(
-      codeCard({
-        email: to,
-        code: {
-          kind: 'code',
-          label: 'The code',
-          onInput: (value) => {
-            code = value;
-          },
-          ...(error === undefined ? {} : { error }),
-        },
-        verify,
-        anotherEmail: () => {
-          sent = undefined;
-          choose();
-        },
-        resend: Date.now() >= sent.resendAt ? resend : undefined,
-      }),
-      focus,
-    );
-  }
-
-  async function verify(): Promise<void> {
-    const typed = normalCode(code);
-    if (typed === undefined) {
-      askCode('Type the 6 digits from the email');
-      return;
-    }
-    const answer = await api<SignInResponse>('POST', 'auth/email/verify', { code: typed });
-    if (answer.ok) {
-      signedIn(answer.body?.outcome, 'email');
-      return;
-    }
-    if (answer.kind === 'error' && answer.code === 'sign_in_expired') {
-      sent = undefined;
-      choose(undefined, answer.message);
-      return;
-    }
-    // A lost answer may have signed in all the same: ask before saying it didn't.
-    if (answer.kind !== 'error' && (await isAccount())) {
-      done();
-      return;
-    }
-    failed(answer, verify, (text) => {
-      askCode(text);
-    });
   }
 
   function signedIn(outcome: SignInResponse['outcome'] | undefined, via: 'email' | 'google') {
@@ -251,25 +189,7 @@ export function createSignIn(
       done();
       return;
     }
-    const switchTo = async (): Promise<void> => {
-      const answer = await api<SignInResponse>('POST', 'auth/switch', {});
-      if (answer.ok) done();
-      else if (answer.kind === 'error' && answer.code === 'sign_in_expired') choose(answer.message);
-      else
-        failed(answer, switchTo, (text) => {
-          choose(text);
-        });
-    };
-    const stay = async (): Promise<void> => {
-      await api('DELETE', 'auth/switch');
-      host.back();
-    };
-    show(switchCard(via, switchTo, stay));
-  }
-
-  async function isAccount(): Promise<boolean> {
-    const me = await api<PlayerResponse>('GET', 'me');
-    return me.ok && me.body?.account === true;
+    offerSwitch({ api, show, done, choose, failed, back: host.back }, via);
   }
 
   /** Where the screen starts: signed in already, the 16+ question, or the ways in. */
@@ -300,7 +220,14 @@ export function createSignIn(
     }
     options = answer.body ?? options;
     if (google === undefined) {
-      start();
+      // Signed in as the server says: Safari clears the device's keys after 7 days without a
+      // visit while the session cookie stays (ADR 0079 addendum of 2026-11-22). Not known
+      // (offline, failing): the device's keys decide, as before.
+      const who = await whoAmI(host.storage, host.cookies(), () =>
+        api<PlayerResponse>('GET', 'me'),
+      );
+      if (who.kind === 'account') done(false);
+      else start();
       return;
     }
     // Read once: a reload or Back shows the screen afresh.
@@ -315,9 +242,8 @@ export function createSignIn(
 
   return {
     show(google) {
-      sent = undefined;
+      codes.reset();
       email = '';
-      code = '';
       void open(google);
     },
     setVisible(next) {
@@ -325,7 +251,7 @@ export function createSignIn(
       if (!next) {
         roots.notice.hidden = true;
         roots.loading.hidden = true;
-        window.clearTimeout(resendTimer);
+        codes.stop();
       }
     },
   };

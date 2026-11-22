@@ -190,6 +190,17 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         busyOnClick(quiet, content.quiet.onClick);
         rest.push(quiet);
       }
+      if (content.more !== undefined && content.more.length > 0) {
+        const more = element('div', 'notice-more');
+        for (const spec of content.more) {
+          const action = element('button', 'text-link notice-quiet', spec.text);
+          action.type = 'button';
+          action.setAttribute('aria-label', spec.label ?? spec.text);
+          busyOnClick(action, spec.onClick);
+          more.append(action);
+        }
+        rest.push(more);
+      }
       after.replaceChildren(...rest);
       after.hidden = rest.length === 0;
       if (focus && content.field !== undefined) field.focus();

@@ -51,4 +51,9 @@ export interface NoticeContent {
   readonly note?: string;
   /** A quiet action, as a text link, last: Cancel challenge, Not now. */
   readonly quiet?: NoticeButton;
+  /**
+   * More quiet actions after it, on a row of their own at the card's end: the account screen's Log
+   * out and Delete account, a guest's Forget me (ADR 0079 addendum of 2026-11-22).
+   */
+  readonly more?: readonly NoticeButton[];
 }
