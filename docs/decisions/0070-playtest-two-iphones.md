@@ -189,3 +189,41 @@ phones: the asker goes home after asking, home shows Back to your rematch, the f
 home and builds a lineup, the asker gets the card, Choose lineup, and both are in the same new
 match). Each failed before the fix. Not verified on real iPhones: Safari's own reload of a tab
 put away (the extended watch is what covers it).
+
+## Addendum (2026-11-23, later): the yes still didn't reach the asker after a match played out
+
+The owner tried again on staging with two signed-in accounts, after #142 was live there (deployed
+20:47 UTC; the two friend-challenge rematches in staging's `game.rematches` were asked at 21:19
+and 21:25 UTC). Sam challenged Jo from the Friends section, they played the match out, Sam asked
+for a rematch and went home, Jo accepted and handed in a lineup: Sam's phone showed nothing, and
+home had no way back.
+
+**Why.** Not the friend challenge, nor accounts: the end. The server marks a live series
+`finished` at its last pick, while that last fight still plays (up to a minute and more). The
+page's read then calls `ended`, the watch asks at once, and hears `none` with `offered: false` (a
+rematch opens only once the last fight has ended, `offerable`). The watch took that as "nothing can
+come of it" and forgot itself 0.4 s later; nothing started it again. #142's tests, and the watch's
+own, ended their matches by forfeit, whose rematch opens at once, so they never met it. Seen in
+a trace of the asker's storage: set and removed within half a second of the last pick.
+
+**Decision.**
+
+- The watch knows when its rematch opens (`opensAt`: the last fight's `endsAt`, 0 after a forfeit,
+  `rematchWatchFor`). Until then "none, not offered" means not yet (`rematchNotYet`, 5 s of
+  margin), never over: the watch stays, asks again only at that end (not every 2 s through the
+  fight) and lasts the whole offer from it.
+- The friend waiting on the rematch's lineup sees the seconds left ("The match starts when it's in ·
+  47 s left"), so that wait visibly ends; when it does, both phones read that time ran out.
+
+Every waiting state of a rematch now has an end both phones hear: the answer's 30 s (the asker
+told, the one asked loses the card), the lineups' 60 s (both told), and the offer's 2 minutes from
+the last fight's end (the watch ends quietly).
+
+**Tests.** `rematch-watch.browser.test.ts`: a match played out keeps the watch through "not
+offered yet" and then shows the ask; it asks once until the fight's end, not every 2 s, and the
+watch lasts the offer from that end (both failed before the fix). `rematch-watch.test.ts`: when a
+watch opens, and an older stored watch read as open at once. `friend-rematch.online.test.ts`: two
+signed-in phones following the owner's flow exactly (Friends section challenge, the card on home,
+the match played out, Rematch and Home, the friend's yes and lineup), the card and home's way
+back on the asker's phone, Choose lineup, both in one new match; seen failing against the build
+of `main` at "Back to your rematch".

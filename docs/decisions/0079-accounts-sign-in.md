@@ -337,3 +337,48 @@ held over a fight and seen failing without that hold, nothing read signed out),
 `friends-section.browser.test.ts` (status words, the inbox's status taken, Challenge) and
 `friend-challenge.online.test.ts` (two phones: the friend on home, the sender sees them online and
 challenges them, the card arrives by the poll, Accept, a live match starts on both).
+
+## Addendum (2026-11-23, later): the inbox from any screen, and quickly while news is expected
+
+The owner, on staging with two signed-in phones: a friend's challenge showed only after opening
+the account screen.
+
+**Why.** The inbox poll started only from home's `/me` ask (`homeShown`). A page opened (or
+reloaded) on any other screen, the manual for one, never read the inbox. Coming back to home from
+the account screen asks `/me` again, which restarts the poll with a read at once: that read is
+what brought the card, not the account screen.
+
+**Decision.**
+
+- `/me` is asked once the page loads, on whichever screen it opens (one read where the device may
+  have a player, as before), so the inbox starts everywhere; the card still never covers a fight.
+- **Quickly while something is expected** (`expecting`, `INBOX_EXPECTING_MS` = 2 s): a rematch of
+  the last live match can still move (the rematch watch is on), or the player's lobby waits (each
+  of its asks marks it for 5 s). Otherwise 30 s, and never while hidden. `quicken` cuts a running
+  30 s wait to 2 s without a read, when the screen changes, a live match ends or the lobby asks.
+  The rematch watch keeps its own 2 s away from the end screen (the end screen and the rematch's
+  lineup ask every second), and now waits for the last fight's end instead of asking through it.
+
+Cost in function calls per visible player per hour (a hidden page makes none):
+
+| State                                                  | Inbox            | Other reads               |
+| ------------------------------------------------------ | ---------------- | ------------------------- |
+| Signed in, no friends                                  | 1 per page load  | `/me` once per page load  |
+| Friends, nothing expected                              | 120 (every 30 s) |                           |
+| A rematch window, away from the end screen (≤ 3.5 min) | 1,800 (2 s)      | rematch watch 1,800 (2 s) |
+| On the end screen or the rematch lineup                | 1,800 (2 s)      | 3,600 (1 s)               |
+| Waiting in the lobby                                   | 1,800 (2 s)      | lobby 1,800 (2 s)         |
+
+A rematch window lasts at most 3.5 minutes from the last fight's end, so a match that ends adds at
+most about 105 inbox reads; an idle hour with friends stays 120.
+
+**What it doesn't fix.** A friend's challenge to someone who expects nothing still arrives with
+the next 30 s read (15 s on average): nothing tells their page a challenge is coming before it
+exists. That delay feeling slow is the trigger for the Realtime poke in "Moving off polling"
+(`docs/accounts-and-friends-proposal.md`), and it has now been felt. The swap stays as planned:
+`poke` on each message, `expecting` and both timers become the slow safety read.
+
+**Tests.** `inbox-poll.test.ts`: every 2 s from the moment something is expected, none while
+hidden, back to idle after; a 30 s wait cut to 2 s without a read (both failed before).
+`friend-challenge.online.test.ts`: the friend's page opened on the manual gets the card and
+accepts (failed against the build of `main`: no card in 40 s); the friend on home as before.

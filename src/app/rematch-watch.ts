@@ -3,6 +3,7 @@
 // are in the game, and still does if they close the tab and come back in time. Kept on the device
 // only (`ballbattle.*`, cleared by Forget me); the server decides everything about the rematch.
 import { REMATCH_ANSWER_MS, REMATCH_OFFER_MS } from '../api/rematch.ts';
+import type { LiveView } from '../api/live.ts';
 import type { BestOf, Format, Side } from '../sim/series.ts';
 import type { DeviceStorage } from './online-device.ts';
 
@@ -24,6 +25,36 @@ export interface RematchWatch {
   readonly bestOf: BestOf;
   /** Until when, by this device's clock (ms since the epoch). */
   readonly until: number;
+  /**
+   * When a rematch can first be asked, by the server's clock: the end of the last fight of a match
+   * played out (the series is finished at its last pick, while that fight still plays), 0 when at
+   * once. Before then "none, not offered" means not yet, never over.
+   */
+  readonly opensAt: number;
+}
+
+/** The watch for live series `view` that ended, at device time `now`; `they` names the other player. */
+export function rematchWatchFor(
+  view: {
+    readonly id: string;
+    readonly you: Side;
+    readonly format: Format;
+    readonly bestOf: BestOf;
+    readonly live: Pick<LiveView, 'fights'>;
+  },
+  they: string,
+  now: number,
+): RematchWatch {
+  return {
+    id: view.id,
+    you: view.you,
+    they,
+    format: view.format,
+    bestOf: view.bestOf,
+    until: now + WATCH_MS,
+    // A match played out ends with its last fight; a forfeit's rematch opens at once.
+    opensAt: Math.max(0, ...view.live.fights.map((fight) => fight.endsAt)),
+  };
 }
 
 function safely<T>(read: () => T, fallback: T): T {
@@ -53,6 +84,8 @@ export function rematchWatchOf(storage: DeviceStorage, now: number): RematchWatc
   if (typeof raw !== 'object' || raw === null) return undefined;
   const fields = raw as Record<string, unknown>;
   const { id, you, they, format, bestOf, until } = fields;
+  // A watch kept before `opensAt` existed opened at once.
+  const opensAt = typeof fields['opensAt'] === 'number' ? fields['opensAt'] : 0;
   if (
     typeof id !== 'string' ||
     (you !== 'a' && you !== 'b') ||
@@ -64,5 +97,5 @@ export function rematchWatchOf(storage: DeviceStorage, now: number): RematchWatc
   ) {
     return undefined;
   }
-  return { id, you, they, format, bestOf, until };
+  return { id, you, they, format, bestOf, until, opensAt };
 }

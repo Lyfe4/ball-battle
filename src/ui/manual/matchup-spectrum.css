@@ -297,10 +297,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /*
+   * Pinned like a header (2026-11-23): at the very top, solid in the page's colour with a small gap
+   * and a clean edge under it, so the columns pass underneath and nothing shows through or above.
+   */
   .spectrum-aside {
     z-index: 2;
-    top: var(--space-sheet);
-    box-shadow: 0 0 0 var(--space-small) var(--color-page);
+    top: 0;
+    padding-block: var(--space-small);
+    border-bottom: 1px solid var(--color-raised);
+    background: var(--color-page);
   }
 
   .spectrum-aside > .spectrum-detail {

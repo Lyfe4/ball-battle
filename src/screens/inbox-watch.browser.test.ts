@@ -45,6 +45,7 @@ function watch(fighting = false) {
       return Promise.resolve();
     },
     fighting: () => fight,
+    expecting: () => false,
     friends: (friends) => {
       seen.push(friends.map((f) => `${f.name} ${f.status ?? ''}`).join());
     },

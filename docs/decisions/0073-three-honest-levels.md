@@ -169,7 +169,11 @@ a desktop.
   about 7 in 10").
 - **The reason** (the pairing, the verdict, Open <ball>): on a phone under the tapped chip's row, in
   the chip's band; beside, in a sticky panel next to the bands; on a desktop, a strip above the
-  columns (and first in the tab order there, as it shows). Said once through a status line; Escape
+  columns (and first in the tab order there, as it shows), pinned at the top like a header while
+  the page scrolls: solid in the page's colour, a small gap and a hairline under it, so the
+  columns pass underneath (2026-11-23: it was see-through, the hint sat over the column headings
+  and its page-coloured ring sliced through the columns; `matchup-spectrum-desktop.ts` checks it
+  opaque, above the headings at scroll 0, and hiding every heading it passes over). Said once through a status line; Escape
   closes it (focus back on the chip), or closes the chooser (focus back on Change ball).
 - **Layouts**: a phone stacks the bands; beside stacks them with the panel; only the desktop query
   sets the five columns, each heading the mark and count on a row and its words under them, two

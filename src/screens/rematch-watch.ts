@@ -1,26 +1,25 @@
-// A rematch reaches both players wherever they are in the game (ADR 0055, 0070; playtest
-// 2026-11-19: a friend tapped Rematch while the other player had gone home, and nothing told them;
-// 2026-11-23: the other way round, the one who asked went home and never heard the friend's yes).
-// When a live match ends on this device it is remembered for as long as a rematch of it can still
-// move (rematch-watch.ts in app). Away from the rematch's own screens (the end screen and the new
-// lineup, which ask for themselves), this asks the server every ASK_MS while something can still
-// happen, and says so on the floating card, at once on any calm screen and never over a fight,
-// where it waits until the fight is over:
+// A rematch reaches both players wherever they are in the game (ADR 0055, 0070; playtests of
+// 2026-11-19 and 2026-11-23). A live match that ends on this device is remembered for as long as a
+// rematch of it can move (rematch-watch.ts in app), from the end of its last fight: a match played
+// out is finished at its last pick, and "not offered" until that fight ends means not yet. Away
+// from the rematch's own screens (the end screen and the new lineup ask for themselves), this asks
+// every ASK_MS while something can happen, and says so on the floating card on any calm screen,
+// never over a fight, where it waits:
 //
 // - the other player asks: who, the seconds left, Accept (straight to the lineup) and No thanks;
-// - both said yes and this player's lineup is still to come: "Player 4821 accepted", the seconds
-//   left for the lineups, and Choose lineup; home shows the way back too (`back`);
+// - both said yes, this player's lineup to come: "Player 4821 accepted", the seconds, Choose lineup;
+//   home shows the way back too (`back`);
 // - the new match started once this player's lineup was in: straight into it;
 // - a no, or the time running out, to the one who asked and to anyone who said yes, with OK.
 //
-// A hidden page doesn't ask (iOS suspends it anyway) and asks at once when it is back. Every time
-// is the server's: the page counts down from the time each answer carried.
+// A hidden page doesn't ask, and asks at once when back. Every time is the server's.
 import { callApi, failureKindOf } from '../app/api.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import { writeOnlineSeriesParams, writeSendParams } from '../app/online-url.ts';
 import {
   forgetRematchWatch,
   rememberRematchWatch,
+  rematchWatchFor,
   rematchWatchOf,
   WATCH_MS,
   type RematchWatch,
@@ -31,7 +30,13 @@ import { seatsOf } from '../app/online-series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { createRematchNotice } from '../ui/online/rematch-notice.ts';
 import { failureLine } from './online-failure-text.ts';
-import { rematchBackOf, rematchNoticeOf, rematchOpen, type RematchBack } from './rematch-text.ts';
+import {
+  rematchBackOf,
+  rematchNoticeOf,
+  rematchNotYet,
+  rematchOpen,
+  type RematchBack,
+} from './rematch-text.ts';
 
 /** How often a page away from the end screen asks while a rematch can still move. */
 export const ASK_MS = 2_000;
@@ -68,6 +73,8 @@ export interface RematchWatcher {
   ended(view: SeriesView): void;
   /** The screen changed (a fight started or ended, another screen): shown or asked again. */
   refresh(): void;
+  /** A rematch of the last live match can still be asked or move (the inbox reads quickly). */
+  active(): boolean;
 }
 
 export function createRematchWatch(
@@ -91,6 +98,9 @@ export function createRematchWatch(
 
   const serverNow = () => (rematch === undefined ? 0 : rematch.now + Date.now() - heardAt);
   const away = () => watch !== undefined && host.ownScreen() !== watch.id;
+  /** The last fight still plays: a rematch can't be asked yet, but will be. */
+  const notYet = () =>
+    watch !== undefined && rematch !== undefined && rematchNotYet(rematch, watch.opensAt);
 
   function forget(): void {
     if (watch !== undefined) forgetRematchWatch(host.storage, watch.id);
@@ -132,16 +142,22 @@ export function createRematchWatch(
    * happen. A timer already set is kept: the display tick redraws four times a second.
    */
   function schedule(): void {
+    const waiting = notYet();
     const wanted =
-      away() && !document.hidden && !busy && (rematch === undefined || rematchOpen(rematch));
+      away() &&
+      !document.hidden &&
+      !busy &&
+      (rematch === undefined || rematchOpen(rematch) || waiting);
     if (!wanted) stopAsking();
     else {
+      // Before the last fight ends nothing can happen: the next ask is at its end.
+      const opens = waiting && watch !== undefined ? watch.opensAt - serverNow() : 0;
       asking ??= window.setTimeout(
         () => {
           asking = undefined;
           void ask();
         },
-        askedOnce ? ASK_MS : 0,
+        askedOnce ? Math.max(ASK_MS, opens) : 0,
       );
     }
   }
@@ -157,8 +173,15 @@ export function createRematchWatch(
     failure = undefined;
     if (next.state === 'agreed') saidYes = true;
     const watching = watch;
-    if (watching !== undefined && next.deadline !== null) {
-      const until = heardAt + next.deadline - next.now + DEADLINE_MARGIN_MS;
+    // The wait that ends next: the answer's or the lineups' deadline, or, before the last fight's
+    // end, the whole offer from that end.
+    const ends =
+      next.deadline ??
+      (watching !== undefined && rematchNotYet(next, watching.opensAt)
+        ? watching.opensAt + WATCH_MS
+        : null);
+    if (watching !== undefined && ends !== null) {
+      const until = heardAt + ends - next.now + DEADLINE_MARGIN_MS;
       if (until > watching.until) {
         watch = { ...watching, until };
         rememberRematchWatch(host.storage, watch);
@@ -243,7 +266,7 @@ export function createRematchWatch(
     }
     const calm = away() && !host.fighting();
     // Nothing more can come of it, and nothing to say: the watch ends.
-    if (rematch !== undefined && !rematchOpen(rematch) && said === undefined) forget();
+    if (rematch !== undefined && !rematchOpen(rematch) && !notYet() && said === undefined) forget();
     notice.show(calm ? said : undefined, failure);
     const counting = calm && (said?.kind === 'asked' || said?.kind === 'agreed');
     if (counting && ticking === undefined) {
@@ -266,15 +289,9 @@ export function createRematchWatch(
 
   return {
     ended(view) {
-      if (view.live == null || view.status === 'open' || watch?.id === view.id) return;
-      watch = {
-        id: view.id,
-        you: view.you,
-        they: seatsOf(view).they,
-        format: view.format,
-        bestOf: view.bestOf,
-        until: Date.now() + WATCH_MS,
-      };
+      const { live } = view;
+      if (live == null || view.status === 'open' || watch?.id === view.id) return;
+      watch = rematchWatchFor({ ...view, live }, seatsOf(view).they, Date.now());
       rematch = undefined;
       saidYes = false;
       failure = undefined;
@@ -286,5 +303,6 @@ export function createRematchWatch(
       if (watch !== undefined && watch.until <= Date.now()) forget();
       render();
     },
+    active: () => watch !== undefined && watch.until > Date.now(),
   };
 }

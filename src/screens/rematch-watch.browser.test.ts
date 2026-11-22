@@ -7,90 +7,9 @@
 // shows home's way back while it waits on the player, and ends quietly when the time runs out.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../style.css';
-import type { RematchView } from '../api/rematch.ts';
-import type { SeriesView } from '../api/series.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { createRematchWatch, type RematchWatchHost } from './rematch-watch.ts';
-
-const ID = '11111111-2222-4333-8444-555555555555';
-const T = 1_800_000_000_000;
-
-/** The ended live match, as side `you` sees it (only what the watch reads). */
-const ended = (you: 'a' | 'b') =>
-  ({
-    id: ID,
-    you,
-    names: { a: 'Player 4195', b: 'Player 6282' },
-    format: 'reveal',
-    bestOf: 3,
-    status: 'forfeit',
-    live: { startedAt: T - 9_000 },
-  }) as unknown as SeriesView;
-
-const view = (over: Partial<RematchView>): RematchView => ({
-  state: 'none',
-  askedBy: null,
-  declinedBy: null,
-  deadline: null,
-  now: T,
-  lineupIn: false,
-  seriesId: null,
-  offered: true,
-  ...over,
-});
-
-/** The fake server: what GET answers now, every request it was sent, and its answer to a POST. */
-function server(answer: RematchView) {
-  const sent: { method: string; body: unknown }[] = [];
-  const state = { answer, onPost: (): RematchView => answer };
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
-    const raw = init?.body;
-    const body: unknown = typeof raw === 'string' ? JSON.parse(raw) : undefined;
-    sent.push({ method: init?.method ?? 'GET', body });
-    if (init?.method === 'POST') state.answer = state.onPost();
-    await new Promise((done) => setTimeout(done, 5));
-    return new Response(JSON.stringify(state.answer), { status: 200 });
-  });
-  return { sent, state };
-}
-
-function host(over: Partial<RematchWatchHost> = {}) {
-  const moves: string[] = [];
-  const memory = new Map<string, string>();
-  const storage = () => ({
-    getItem: (key: string) => memory.get(key) ?? null,
-    setItem: (key: string, value: string) => void memory.set(key, value),
-    removeItem: (key: string) => void memory.delete(key),
-    key: () => null,
-    length: 0,
-  });
-  let fighting = false;
-  const backs: (string | undefined)[] = [];
-  const made: RematchWatchHost = {
-    storage,
-    go: (write) => {
-      const url = new URLSearchParams();
-      write(url);
-      moves.push(url.toString());
-    },
-    fighting: () => fighting,
-    ownScreen: () => undefined,
-    seriesShown: () => undefined,
-    backChanged: (back) => {
-      if (backs.at(-1) !== back?.kind) backs.push(back?.kind);
-    },
-    ...over,
-  };
-  return {
-    made,
-    moves,
-    memory,
-    backs,
-    fight: (on: boolean) => {
-      fighting = on;
-    },
-  };
-}
+import { createRematchWatch } from './rematch-watch.ts';
+import { ended, host, ID, played, server, T, view } from './rematch-watch-support.ts';
 
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
 let root: HTMLElement;
@@ -275,5 +194,41 @@ describe('a rematch asked of a player away from the end screen', () => {
     await wait(2_200);
     expect(other.moves).toStrictEqual([`online=${NEW}`]);
     expect(other.memory.size).toBe(0);
+  });
+
+  it('keeps watching a match played out until its last fight ends, then hears the ask', async () => {
+    // 2026-11-23 on staging: the series is finished at its last pick, while its last fight still
+    // plays. The watch asked at once, heard "none, not offered yet", and forgot itself, so the
+    // one who asked heard nothing of the yes later.
+    const fake = server(view({ state: 'none', offered: false, now: T }));
+    const page = host();
+    createRematchWatch(root, BALL_LOOKUP, page.made).ended(played('a', T + 1_000));
+    await wait(100);
+    expect(page.memory.size, 'not offered yet is not over').toBe(1);
+    fake.state.answer = view({
+      state: 'asked',
+      askedBy: 'b',
+      deadline: T + 32_000,
+      now: T + 2_000,
+    });
+    await wait(2_200);
+    expect(card()).toMatchObject({ shown: true, title: 'Player 6282 wants a rematch' });
+    // Answered, so this watch asks nothing more of the next test's server.
+    fake.state.onPost = () => view({ state: 'declined', askedBy: 'b', declinedBy: 'a' });
+    button('No thanks')?.click();
+    await wait(50);
+    expect(page.memory.size).toBe(0);
+  });
+
+  it('asks again only when the last fight has ended, not every 2 s before', async () => {
+    const fake = server(view({ state: 'none', offered: false, now: T }));
+    const page = host();
+    createRematchWatch(root, BALL_LOOKUP, page.made).ended(played('b', T + 60_000));
+    await wait(2_500);
+    expect(fake.sent).toHaveLength(1);
+    const kept = JSON.parse(page.memory.values().next().value ?? '{}') as { until: number };
+    expect(kept.until, 'the watch lasts from the end').toBeGreaterThan(
+      Date.now() + 60_000 + 150_000,
+    );
   });
 });

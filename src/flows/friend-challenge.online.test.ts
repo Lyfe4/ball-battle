@@ -84,4 +84,41 @@ describe('challenging a friend', () => {
       expect(errors).toStrictEqual([]);
     },
   );
+
+  it(
+    'reaches the friend on the manual, a page opened there, as a card',
+    { timeout: 180_000 },
+    async () => {
+      // 2026-11-23: the inbox started only when home showed, so a page opened on any other screen
+      // never read it and the challenge waited until the friend went home.
+      const stem = crypto.randomUUID().slice(0, 6);
+      const sam = `Sam_${stem}`;
+      const jo = `Jo_${stem}`;
+      const one = await signedInPhone(browser, BASE, sam, errors);
+      const two = await signedInPhone(browser, BASE, jo, errors);
+      await befriend(one, two, jo, sam);
+
+      // The friend's page opens on the manual (a reload there) and stays there.
+      await two.goto(`${BASE}/?view=manual`);
+      await two.getByRole('region', { name: 'Ball manual' }).waitFor();
+
+      await one.goto(`${BASE}/?view=signin`);
+      const row = friendsOf(one).locator('.friends-row', { hasText: jo });
+      await row.getByRole('button', { name: `Challenge ${jo}` }).click();
+      await one.getByRole('button', { name: 'Choose lineup' }).click();
+      await buildLineup(one, 'Send challenge');
+      await one.getByRole('heading', { name: `Waiting for ${jo}` }).waitFor();
+
+      const card = two.getByRole('region', { name: 'Challenge' });
+      await card
+        .getByText(`${sam} challenges you · Best of 3 · Reveal · live`)
+        .waitFor({ timeout: INBOX_MS + 10_000 });
+      expect(new URL(two.url()).searchParams.get('view')).toBe('manual');
+      await card.getByRole('button', { name: 'Accept' }).click();
+      await buildLineup(two, 'Accept challenge');
+      await two.waitForURL(/[?&]online=/);
+      await one.waitForURL(/[?&]online=/, { timeout: 20_000 });
+      expect(errors).toStrictEqual([]);
+    },
+  );
 });

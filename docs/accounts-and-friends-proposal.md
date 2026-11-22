@@ -292,7 +292,9 @@ Polling is the starting point, not the end state.
 - **Triggers, whichever comes first:**
   - about 1,000 live matches a month;
   - Netlify function calls past ~60% of the plan's limit;
-  - the 30 s challenge delay feeling slow once friends ship to everyone;
+  - the 30 s challenge delay feeling slow once friends ship to everyone (felt in the playtest of
+    2026-11-23, ADR 0079's last addendum: the poll now runs every 2 s while news is expected, but a
+    cold challenge still waits for the 30 s read);
   - at the latest, before an open ranked live queue.
 - **Designed for the swap:** `/me/inbox` and the live series reads stay complete, idempotent
   reads with an ETag. The poke only says "read now", so the API, the answers and the screens

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   forgetRematchWatch,
   rememberRematchWatch,
+  rematchWatchFor,
   rematchWatchOf,
   WATCH_MS,
   type RematchWatch,
@@ -26,6 +27,7 @@ const watch: RematchWatch = {
   format: 'reveal',
   bestOf: 3,
   until: T + WATCH_MS,
+  opensAt: 0,
 };
 
 describe('the match a rematch may follow', () => {
@@ -56,5 +58,21 @@ describe('the match a rematch may follow', () => {
     expect(() => {
       rememberRematchWatch(broken, watch);
     }).not.toThrow();
+  });
+
+  it('opens at the end of the last fight of a match played out, at once after a forfeit', () => {
+    const series = { id: watch.id, you: 'b', format: 'reveal', bestOf: 3 } as const;
+    const fights = [
+      { round: 1, fightAt: T - 90_000, endsAt: T - 60_000 },
+      { round: 2, fightAt: T - 20_000, endsAt: T + 15_000 },
+    ];
+    const played = rematchWatchFor({ ...series, live: { fights } }, 'Player 4821', T);
+    expect(played).toStrictEqual({ ...watch, opensAt: T + 15_000 });
+    expect(rematchWatchFor({ ...series, live: { fights: [] } }, 'Player 4821', T).opensAt).toBe(0);
+  });
+
+  it('reads a watch kept before it knew when the rematch opens as open at once', () => {
+    memory.set('ballbattle.online.rematch', JSON.stringify({ ...watch, opensAt: undefined }));
+    expect(rematchWatchOf(storage, T)?.opensAt).toBe(0);
   });
 });

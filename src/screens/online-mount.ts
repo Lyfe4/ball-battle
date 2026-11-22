@@ -101,10 +101,14 @@ export function mountOnline(context: MountContext): OnlineMount {
   // Friends' challenges and status reach a signed-in account anywhere (ADR 0079 PR (d)): only in a
   // build with accounts.
   const inboxRoot = document.createElement('div');
+  /** Until when (device time) the sender's lobby is known to wait: refreshed by each of its asks. */
+  let lobbyWaiting = 0;
   const inboxWatch = ACCOUNTS_BUILD
     ? createInboxWatch(inboxRoot, BALL_LOOKUP, {
         open: (token) => screens.openInvite(token),
         fighting: () => fighting,
+        // A rematch window or a lobby waiting: news is expected, read every 2 s (2026-11-23).
+        expecting: () => rematchWatch.active() || lobbyWaiting > Date.now(),
         friends: (friends) => {
           screens.friendStatuses(friends);
         },
@@ -113,6 +117,12 @@ export function mountOnline(context: MountContext): OnlineMount {
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
     ended: (view) => {
       rematchWatch.ended(view);
+      inboxWatch?.quicken();
+    },
+    lobbyWaits: () => {
+      // The lobby asks every 2 s while it shows; a little longer covers its next ask.
+      lobbyWaiting = Date.now() + 5_000;
+      inboxWatch?.quicken();
     },
     friendsChanged: () => {
       inboxWatch?.poke();
@@ -183,6 +193,9 @@ export function mountOnline(context: MountContext): OnlineMount {
     else inboxWatch?.signedIn(who.kind === 'account');
     account.show(who);
   };
+  // Who this is is asked once the page loads, on whichever screen it opens (2026-11-23: a page
+  // opened on the manual never read the inbox, so a friend's challenge waited for home).
+  void askWho();
   const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
   // "Back to your match" takes Play's place while a live match or lobby is on (ADR 0053), and is
   // asked about again every few seconds on home so it goes when the match ends. A rematch waiting
@@ -257,6 +270,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       fighting = now;
       rematchWatch.refresh();
       inboxWatch?.refresh();
+      inboxWatch?.quicken();
     },
     footLine: (onScreen, noSpeed) => {
       const live = onScreen && screens.play.isLive();
