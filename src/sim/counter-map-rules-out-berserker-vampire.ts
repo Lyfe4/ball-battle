@@ -117,7 +117,7 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     y: 'berserker',
     intended: 'x',
     level: 'strong',
-    reason: 'The Berserker only bumps, and the Vampire heals 95% of every bump it lands.',
+    reason: 'The Berserker only bumps, and the Vampire heals 95% of each one.',
   },
   {
     x: 'archer',

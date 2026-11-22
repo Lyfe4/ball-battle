@@ -26,7 +26,7 @@ export const BATCH_FIVE_ENTRIES: readonly CounterEntry[] = [
     y: 'speedster',
     intended: 'x',
     level: 'strong',
-    reason: 'The Speedster covers the most ground, so it sets off the most of the Bomber’s bombs.',
+    reason: 'The Speedster covers the most ground, so it sets off the most Bomber bombs.',
   },
   {
     x: 'frost',

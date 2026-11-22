@@ -20,15 +20,14 @@ export const HEX_ENTRIES: readonly CounterEntry[] = [
     y: 'speedster',
     intended: 'x',
     level: 'strong',
-    reason: 'The Hex’s curse bursts for 19 on the Speedster, more than a plain Speedster bump.',
+    reason: 'The Hex’s curse bursts for 19 on the Speedster, more than a plain bump.',
   },
   {
     x: 'hex',
     y: 'vampire',
     intended: 'y',
     level: 'strong',
-    reason:
-      'The Hex’s curse bursts for only 10 on the small Vampire, and its bumps heal that back.',
+    reason: 'A Hex curse bursts for 10 on the Vampire, and one Vampire bump heals that back.',
   },
   {
     x: 'hex',

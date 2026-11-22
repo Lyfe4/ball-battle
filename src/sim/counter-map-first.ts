@@ -25,7 +25,7 @@ export const FIRST_ENTRIES: readonly CounterEntry[] = [
     y: 'speedster',
     intended: 'x',
     level: 'strong',
-    reason: 'Every Frost bump slows the Speedster, so it bounces off fewer walls to build stacks.',
+    reason: 'Every Frost bump slows the Speedster, so it builds fewer stacks off the walls.',
   },
   {
     x: 'brawler',
