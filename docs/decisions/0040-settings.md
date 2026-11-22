@@ -88,9 +88,10 @@ motion override (the system setting is respected).
 
 Since the two groups (ADR 0079 addendum), "Fights" and "Tips" had the same quiet grey as "Speed"
 and "Sound", while "Ability hints" was white and bold: on a real iPhone the headings read as row
-labels. Now a group heading has the setup screens' section look ("Length", "Format": quiet, small,
-bold) with a hairline (`--color-sunken`) between the groups, and every row's words share the
-switches' look (text colour, 600). No new rows; the compact form still hides the headings.
+labels. Now a group heading is small but in the text's own bright colour at the heaviest weight
+(800, a little letter-spacing), with room above the second group (groups are apart by space, never
+a line, tokens.css), and every row's words share the switches' look (text colour, 500, the body
+size). No new rows; the compact form still hides the headings.
 `small-landscape.landscape-small.browser.test.ts` checks the rows share one look and the
 headings differ from it.
 

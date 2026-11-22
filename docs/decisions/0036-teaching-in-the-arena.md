@@ -183,6 +183,11 @@ times, in a different place from the caption, with nothing tying the two togethe
   last 360 ms (2.4 s in all); the caption fades up 6 px over 320 ms. No pulse, bounce or flash.
   With reduced motion both only fade.
 
+- **A title never repeats its ball's name.** The Boomerang's ability was "Boomerang", so its
+  caption read "Boomerang: Boomerang"; it is "Comes back" (text only). No other ball repeats its
+  own name (`balls.test.ts`); "Sniper: Sniper shot" stays, since "Sniper shot" is the game's word
+  for that shot in the What to watch reasons.
+
 Tests: `small-landscape.landscape-small.browser.test.ts` checks the ring shows with the caption,
 its colour is the title's and not the text colour, and the ball's drawing is beside the title;
 `arena-tips.wide.browser.test.ts` is unchanged.

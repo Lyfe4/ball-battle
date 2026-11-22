@@ -99,8 +99,16 @@ so the size takes them off instead. It runs the two sideways flows above and its
 - **Setup screens and the round screen have no court beside them** (as on a phone and, for setup,
   a desktop, ADR 0020): the page scrolls a column `min(40rem, 100%)` wide, the manual's. With
   nothing fighting, the browser's bar moving resizes nothing, so the page scrolling is safe here;
-  the inner scroll box beside an empty court was what cut tiles. Free play's grid gets six
-  columns and every name keeps one line. A desktop keeps the dimmed round beside its round screen.
+  the inner scroll box beside an empty court was what cut tiles. A desktop keeps the dimmed round
+  beside its round screen.
+- **Every beside screen opens at its top.** The round screen's first action takes focus without
+  scrolling the page beside the court (`BESIDE_LAYOUT`, `src/app/layout-query.ts`, held to the
+  CSS by `layout-queries.test.ts`): scrolling to it sliced the header, its gear and ? and the
+  track off at the top edge. A phone still scrolls to it.
+- **Free play's picker is two columns beside the court**, as on a desktop (the same areas,
+  quick-setup.css): the slots, why and Start match in a 16rem column, the legend and the grid
+  beside it, the page as wide as the screen. At 667 x 320 two whole rows of tiles show at the top,
+  and Start match, sticky in its own column, never covers a tile.
 - **The panel beside a fight is exactly as wide as the room**: `--beside-room` (layout.css), the
   width less the stage's padding, the gap and the court, safe areas included (it was `100vw -
 100dvh - 3rem`, 32 px short at 667 x 320, where the score line wrapped). Home's panel is at most
@@ -109,7 +117,11 @@ so the size takes them off instead. It runs the two sideways flows above and its
   last row, shows whole under speed: the longest (two lines, 77 px) leaves the Free play panel at
   279 of 288 px.
 
-Tests: `small-landscape.landscape-small.browser.test.ts` opens the iPhone's pairing (Archer vs
+Tests: `beside-tops.landscape.browser.test.ts` (both landscape projects) visits home, the picker,
+the vs Bot setup, the lineup, a round and its round screen: at scroll 0 nothing cut off above the
+screen, everything reachable, no sideways scroll; and the picker's first row whole above Start
+match, which covers no tile at the top, middle or end of the page (seen failing without each
+fix: no tile above Start; the round screen scrolled 29 and 216 px). `small-landscape.landscape-small.browser.test.ts` opens the iPhone's pairing (Archer vs
 Necromancer, the longest edge line) at 667 x 320: the card inside the court and no part of it
 wider than its box, the caption and ring together in the ball's colour and the caption whole
 inside the panel, settings inside the screen, and Free play's picker with no inner scroll box, no
