@@ -160,7 +160,7 @@ export function leadTakenAt(
 }
 
 /** Starts a sentence with a capital: "your Titan hit …" reads "Your Titan hit …". */
-const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const capitalised = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /**
  * The story of the match that starts at `start`. `labels` names each slot's ball where its name
@@ -182,6 +182,10 @@ function tell(
   shares: HealthShares,
   labels: readonly string[] | undefined,
 ): MatchStory {
+  // A label that starts with a player's name ("sam_99’s Titan") keeps the name as they chose it.
+  const named = (labels ?? []).filter((label) => !/^(?:your|the)\b/.test(label));
+  const sentence = (text: string) =>
+    named.some((label) => text.startsWith(label)) ? text : capitalised(text);
   const nameOf = (ballId: string) => {
     const slot = start.balls.findIndex((b) => b.id === ballId);
     const ball = start.balls[slot];

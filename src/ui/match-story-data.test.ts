@@ -187,6 +187,20 @@ describe('how it was won (ADR 0036, 0037)', () => {
     for (const moment of story.moments) expect(moment.text.charAt(0)).toMatch(/[A-Z0-9]/);
   });
 
+  it('keeps a username as its player chose it, at the start of a line too (ADR 0079)', () => {
+    const story = storyOf(start('titan', 'titan', 2), BALL_LOOKUP, [
+      'your Titan',
+      'sam_99’s Titan',
+    ]);
+    expect(story.sides.map((side) => side.name).sort()).toStrictEqual([
+      'Your Titan',
+      'sam_99’s Titan',
+    ]);
+    expect(story.result).toMatch(
+      /^(Your Titan knocked out sam_99’s Titan|sam_99’s Titan knocked out your Titan|Time up)/,
+    );
+  });
+
   it('reads a tick as the match clock', () => {
     expect(clockOf(0)).toBe('0:00');
     expect(clockOf(7 * 60 + 5)).toBe('0:07');
