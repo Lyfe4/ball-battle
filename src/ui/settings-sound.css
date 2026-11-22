@@ -9,7 +9,7 @@
 /* A row's words have the menu's one row look (settings-menu.css): the switches'. */
 .settings-sound-label {
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .settings-volume {

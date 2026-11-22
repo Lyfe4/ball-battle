@@ -85,27 +85,27 @@
 }
 
 /*
- * A group's heading has the setup screens' section look ("Length", "Format": quiet, small, bold),
- * and a hairline between the groups (notice.css's), so "Fights" and "Tips" read as headings and
- * every row under them has one look: the switches' words (below).
+ * A group's heading (ADR 0040 addendum of 2026-11-22): small, but in the text's own bright colour
+ * and the heaviest weight, with room above it, so "Fights" and "Tips" read as headings over rows
+ * whose words are larger and lighter (500, below). Groups are apart by space, never a line.
  */
 .settings-heading {
   margin: 0;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: var(--font-size-small);
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
+  letter-spacing: 0.02em;
 }
 
 .settings-group + .settings-group {
-  padding-top: var(--space-small);
-  border-top: 1px solid var(--color-sunken);
+  padding-top: var(--space-gap);
 }
 
 /* Speed's word, as Sound's (settings-sound.css) and the switches'. */
 .settings-speed .segmented-label {
   color: var(--color-text);
   font-size: inherit;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* A switch: the words, then a pill whose thumb slides to the end when it is on. */
@@ -121,7 +121,7 @@
   background: none;
   color: var(--color-text);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
