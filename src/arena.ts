@@ -139,7 +139,9 @@ export function createArena(
   failure.hidden = true;
   container.append(failure);
   const sticker = createWinnerSticker(container, lookup);
-  const tips = createArenaTips(container, lookup, host.tips);
+  // The page's caption line under the match; an arena without the page (a test) keeps its own.
+  const caption = document.getElementById('arena-caption') ?? element('p', 'arena-caption');
+  const tips = createArenaTips(container, caption, lookup, host.tips);
   /** True while the match waits on its ready moment's Fight! (ADR 0037): no tick runs. */
   let held = false;
   /** Real time played since the match left its ready moment, at whatever rate it ran. */

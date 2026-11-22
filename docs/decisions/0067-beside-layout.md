@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-18
 - Amends: ADR 0031 (the desktop query is the one desktop query; the beside query is named too)
+- Amended by: its addendum of 2026-11-22 (a calm fight on a phone turned sideways)
 
 ## Context
 
@@ -37,3 +38,41 @@ scroll. It fails with the beside rules folded into the desktop query.
 - Positive: a phone turned sideways is a layout we mean and test, not an accident.
 - Positive: no visual change at any size: the rules stay as they are.
 - Negative: one more browser project (one flow, three engines) in CI's "rest" part.
+
+## Addendum (2026-11-22): a calm fight on a phone turned sideways
+
+At 812 x 375, mid-series, the panel held the whole track, two stacked health bars, then speed and
+Leave series on rows of their own: speed was cut off and Leave series needed a scroll. Scrolling
+the page on a real phone moves the browser's bar, which changes `100dvh`, so the court resized as
+the player scrolled. The UX pass (approved 2026-11-22) changes the beside layout only; every rule
+sits in the beside query and the desktop query restores today's desktop.
+
+- **The phone's score line** ("Round 1 · You 0–0 Bot ▾") in place of the track while a round is
+  fought, the track a tap away, as on a phone (ADR 0039).
+- **Speed and Leave series on one row** (`.hud-foot`), as on a phone; a desktop keeps a row each.
+- **The panel as wide as the room allows**, `clamp(var(--hud-width), 100vw - 100dvh - 3rem,
+22rem)`, so its lines don't wrap.
+- **The panel scrolls inside itself** (`max-height: 100%`, `overflow-y: auto`, `overscroll-behavior:
+contain`), so the page never scrolls, the browser's bar never moves and the court keeps its size.
+  This is an exception to "prefer the page scrolling" (CLAUDE.md), for the beside layout only and
+  by the owner's decision: it is the only way to keep the court still. A desktop still scrolls the
+  page to a tall panel (ADR 0038).
+- **No roster strip on home** beside the court: there is no room for it at 375 px of height; a
+  desktop keeps it.
+- The ability caption (ADR 0036 addendum of 2026-11-22) is the panel's last row here, in flow
+  (an absolutely placed caption would be clipped by the scrolling panel).
+
+Tests: `landscape-series.landscape.browser.test.ts` plays a series round at 812 x 375: the score
+line and no track, the court, both bars, speed, Leave series and the score line on screen, speed
+and Leave series on one row, the page not taller than the screen and `scrollY` 0, and, with the
+track opened and the panel scrolled to its end, `scrollY` still 0 and the court the same size.
+Seen failing on the old stylesheets. The desktop flows (`consistency`, `desktop-layout`,
+`panel-parts`) are unchanged.
+
+| Before                                                            | After                                                           |
+| ----------------------------------------------------------------- | --------------------------------------------------------------- |
+| ![A round sideways, before](../images/landscape/fight-before.png) | ![A round sideways, after](../images/landscape/fight-after.png) |
+| ![Home sideways, before](../images/landscape/home-before.png)     | ![Home sideways, after](../images/landscape/home-after.png)     |
+
+Not checked headless: a real phone's browser bar (the resize can't be reproduced there; the fix
+removes its cause, page scrolling).

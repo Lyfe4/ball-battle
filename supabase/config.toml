@@ -174,8 +174,8 @@ jwt_expiry = 3600
 enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
 # Requires enable_refresh_token_rotation = true.
-# BallBattle: an hour, as on staging and production (ADR 0079, "Staying signed in").
-refresh_token_reuse_interval = 3600
+# BallBattle: 300 s, Supabase's most, as on staging and production (ADR 0079, "Staying signed in").
+refresh_token_reuse_interval = 300
 # Allow/disallow new user signups to your project. Existing users can still sign in.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.

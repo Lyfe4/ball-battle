@@ -198,10 +198,6 @@
   .stage[data-home] .hud {
     width: var(--setup-width);
   }
-
-  .home-strip {
-    display: flex;
-  }
 }
 
 /*
@@ -211,6 +207,11 @@
  * stack in an empty column.
  */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* The roster as a strip, on a desktop only: a phone turned sideways has no room for it. */
+  .home-strip {
+    display: flex;
+  }
+
   .stage[data-home] .hud {
     width: clamp(var(--panel-width-wide), 100vw - 100dvh - 4rem, 38rem);
     max-width: none;

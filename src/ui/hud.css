@@ -137,7 +137,8 @@
   display: none;
 }
 
-@media (min-aspect-ratio: 5/4) {
+/* A phone turned sideways keeps speed and Leave series on one row; a desktop gives each its own. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .hud-foot {
     display: contents;
   }

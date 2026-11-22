@@ -68,12 +68,11 @@ const knockedOut = (world: WorldState, ids: readonly string[]): WorldState => ({
 function setUp() {
   const container = document.createElement('div');
   document.body.append(container);
-  const tips = createArenaTips(container, BALL_LOOKUP, createTips(storage));
+  const caption = document.createElement('p');
+  document.body.append(caption);
+  const tips = createArenaTips(container, caption, BALL_LOOKUP, createTips(storage));
   tips.start(true);
-  const shown = () => {
-    const hint = container.querySelector<HTMLElement>('.ability-hint');
-    return hint === null || hint.hidden ? undefined : hint.textContent;
-  };
+  const shown = () => (caption.hidden ? undefined : caption.textContent);
   return { tips, shown };
 }
 
@@ -83,11 +82,11 @@ describe('arena hints', () => {
     const { tips, shown } = setUp();
     tips.apply(events(lead, half, thorns), world, 0);
     tips.update(world, 0);
-    expect(shown()).toContain('Spikes!');
+    expect(shown()).toContain('Spikes');
     // Its turn comes after its lead half is out.
     const later = knockedOut(world, [lead.id]);
     tips.update(later, HINT_MS);
-    expect(shown()).toContain('Split!');
+    expect(shown()).toContain('Split');
   });
 
   it('gives a hint back when nothing of its side is left by its turn, to show next fight', () => {

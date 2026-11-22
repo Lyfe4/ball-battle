@@ -30,6 +30,22 @@ function sheets(dir: string): { path: string; text: string }[] {
   });
 }
 
+/** A selector list's selectors: its commas outside `:is()`, `:not()` and the like. */
+function splitSelectors(head: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let at = 0; at < head.length; at += 1) {
+    if (head[at] === '(') depth += 1;
+    else if (head[at] === ')') depth -= 1;
+    else if (head[at] === ',' && depth === 0) {
+      parts.push(head.slice(start, at));
+      start = at + 1;
+    }
+  }
+  return [...parts, head.slice(start)];
+}
+
 /** Every style rule with the `@media` it sits in ('' for none). Enough of CSS for these files. */
 function rulesOf(file: string, text: string): Rule[] {
   const source = text.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -47,7 +63,7 @@ function rulesOf(file: string, text: string): Rule[] {
         rules.push({
           file,
           media: stack.filter((one) => one.startsWith('@media')).join(' '),
-          selectors: head.split(',').map((one) => one.replace(/\s+/g, ' ').trim()),
+          selectors: splitSelectors(head).map((one) => one.replace(/\s+/g, ' ').trim()),
           body: source.slice(start, at).replace(/\s+/g, ' ').trim(),
         });
       }
@@ -59,6 +75,26 @@ function rulesOf(file: string, text: string): Rule[] {
 
 /** The volume slider: a finger drags its thumb, which moves under it (its own feedback). */
 const OWN_FEEDBACK = ['.settings-volume'];
+
+/** The classes the game puts on a `<summary>` (`element('summary', '…')`): base.css shapes them. */
+function summaryClasses(dir: string): Set<string> {
+  const found = new Set<string>();
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.ts') || entry.name.endsWith('.test.ts')) continue;
+    const text = readFileSync(join(entry.parentPath, entry.name), 'utf8');
+    for (const match of text.matchAll(/element\('summary', '([\w -]+)'/g)) {
+      for (const name of (match[1] ?? '').split(' ')) found.add(name);
+    }
+  }
+  return found;
+}
+
+/** The class a hover or pressed rule fills: the last one in its selector, outside any `:has()`. */
+function filledClassOf(selector: string): string | undefined {
+  return /(\.[\w-]+)(?![\s\S]*\.[\w-])/.exec(selector.replace(/:has\(.*\)/, ''))?.[1];
+}
+
+const SUMMARIES = summaryClasses(SRC);
 
 const RULES = sheets(SRC).flatMap((sheet) => rulesOf(sheet.path, sheet.text));
 const declarations = (body: string) =>
@@ -97,6 +133,43 @@ describe('a tap shows on every control', () => {
       })
       .map(({ rule, selector }) => `${rule.file}: ${selector}`);
     expect(missing).toStrictEqual([]);
+  });
+
+  // One shape for a highlight (UX pass, 2026-11-22): a fill drawn on a control without corners of
+  // its own shows square on a rounded control or card (the manual's How it works, the story's How
+  // it was won, Free play's why, fair play). Summaries take their card's corners from base.css's
+  // one rule; every other control that fills when pointed at or pressed declares its corners.
+  it('fills a highlight in its control’s own shape', () => {
+    const shared = RULES.filter(
+      (rule) =>
+        rule.file === 'styles/base.css' &&
+        rule.selectors.includes(':where(details) > :where(summary)') &&
+        rule.body.includes('border-radius: var(--radius)'),
+    );
+    expect(shared).toHaveLength(1);
+    expect(SUMMARIES.size).toBeGreaterThan(3);
+    const fills = RULES.filter((rule) => /\b(background|box-shadow|outline)\b/.test(rule.body))
+      .flatMap((rule) =>
+        rule.selectors
+          .filter((one) => one.includes(':hover') || one.includes('[data-pressed]'))
+          .map((selector) => ({ file: rule.file, selector })),
+      )
+      .map(({ file, selector }) => ({ file, selector, name: filledClassOf(selector) }));
+    expect(fills.length).toBeGreaterThan(5);
+    const own = (name: string) => new RegExp(`\\${name}(?![\\w-])`);
+    const square = fills
+      .filter(({ name }) => {
+        // A fill on no class can't be checked: name the control.
+        if (name === undefined) return true;
+        const rules = RULES.filter((rule) => rule.selectors.some((one) => own(name).test(one)));
+        // A summary keeps the shared corners unless a rule of its own squares them.
+        if (SUMMARIES.has(name.slice(1))) {
+          return rules.some((rule) => /border-radius: 0\b/.test(rule.body));
+        }
+        return !rules.some((rule) => rule.body.includes('border-radius:'));
+      })
+      .map(({ file, selector }) => `${file}: ${selector}`);
+    expect(square).toStrictEqual([]);
   });
 
   it('gives every control a hover look', () => {
