@@ -3,7 +3,7 @@
 // against the series replayed here from its revealed seeds), the story of each round and the
 // fair-play check work on both, and teaching shows the same as against the bot: the What to watch
 // card during Get ready and the countdown, gone by Fight! on both phones at once, and the ability
-// hints ("Split!"), only on a phone with them switched on. Chromium against `netlify dev`.
+// hints (the caption "Slime: Split"), only on a phone with them switched on. Chromium against `netlify dev`.
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SeriesView } from '../api/series.ts';
@@ -55,7 +55,7 @@ const PROBE = `
     held = now;
     const reason = document.querySelector('.ready-reason');
     if (shown(reason) && !seen.reasons.includes(reason.textContent)) seen.reasons.push(reason.textContent);
-    const hint = document.querySelector('.ability-hint-name');
+    const hint = document.querySelector('#arena-caption:not([hidden]) .arena-caption-title');
     if (shown(hint) && !seen.hints.includes(hint.textContent)) seen.hints.push(hint.textContent);
     const rows = [...document.querySelectorAll('.hud-ball')].filter(shown);
     seen.maxRows = Math.max(seen.maxRows, rows.length);
@@ -168,7 +168,7 @@ describe('the Slime in a live friend match', () => {
       // Teaching on: What to watch during the countdown, and the Slime's hint when it splits.
       expect(a.reasons.length).toBeGreaterThan(0);
       expect(a.reasons.every((line) => /^(What to watch: \S|Same ball)/.test(line))).toBe(true);
-      expect(a.hints).toContain('Split!');
+      expect(a.hints).toContain('Slime: Split');
       // Teaching off: neither.
       expect(b.reasons).toStrictEqual([]);
       expect(b.hints).toStrictEqual([]);
@@ -203,7 +203,7 @@ describe('the Slime in a live friend match', () => {
         expect(seen.ends).toStrictEqual(expected);
         // The mirror's card on each phone, and the hint once per device.
         expect(seen.reasons).toContain('Same ball, same tricks.');
-        expect(seen.hints).toContain('Split!');
+        expect(seen.hints).toContain('Slime: Split');
       }
       expect(phones.errors).toStrictEqual([]);
     },
