@@ -4,6 +4,7 @@
 // `/api/v1/auth/google`, whose callback comes back here as `?view=signin&google=<result>`; the
 // result is read once and dropped from the address, so a reload doesn't repeat it.
 import { type AuthOptions, type GoogleResult, type SignInResponse } from '../api/accounts.ts';
+import type { FriendEntry } from '../api/friends.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
@@ -49,11 +50,17 @@ export interface SignInHost {
   /** Log out, and Delete account or Forget me (account-step.ts): undefined when done. */
   readonly logOut?: () => Promise<string | undefined>;
   readonly forget?: () => Promise<string | undefined>;
+  /** Challenge a friend (ADR 0079 PR (d)): the vs Friend setup, for them. */
+  readonly challenge?: (friend: FriendEntry) => void;
+  /** The friends changed on this screen: the inbox reads now. */
+  readonly friendsChanged?: () => void;
 }
 
 export interface SignInScreen {
   show(google: GoogleResult | undefined): void;
   setVisible(visible: boolean): void;
+  /** The friends' status from the inbox, for the Friends section if it shows. */
+  statuses(friends: readonly FriendEntry[]): void;
 }
 
 export function createSignIn(
@@ -108,6 +115,8 @@ export function createSignIn(
             return false;
           }
         },
+        ...(host.challenge === undefined ? {} : { challenge: host.challenge }),
+        ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
       })
     : undefined;
 
@@ -266,6 +275,9 @@ export function createSignIn(
       codes.reset();
       email = '';
       void open(google);
+    },
+    statuses(list) {
+      friends?.statuses(list);
     },
     setVisible(next) {
       visible = next;

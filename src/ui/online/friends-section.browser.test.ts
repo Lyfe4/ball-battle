@@ -12,7 +12,7 @@ const json = (status: number, body: unknown) =>
 
 const START: FriendsResponse = {
   code: '7KQ2M9XD',
-  friends: [{ id: 'f-1', name: 'Robin' }],
+  friends: [{ id: 'f-1', name: 'Robin', status: 'in_a_match' }],
   incoming: [
     { id: 'r-1', name: 'Sam_R' },
     { id: 'r-2', name: 'Player 4821' },
@@ -64,13 +64,21 @@ function section() {
     }
     return Promise.resolve(json(200, list));
   };
+  const challenged: string[] = [];
+  let changes = 0;
   const friends = createFriendsSection({
     api: (method, path, body) => callApi(method, path, body, {}, send),
     line: (answer: ApiFailure) => (answer.kind === 'error' ? answer.message : 'offline'),
     copy: () => Promise.resolve(true),
+    challenge: (friend) => {
+      challenged.push(friend.id);
+    },
+    changed: () => {
+      changes += 1;
+    },
   });
   document.body.replaceChildren(friends.element);
-  return { friends, sent, root: friends.element };
+  return { friends, sent, root: friends.element, challenged, changes: () => changes };
 }
 
 const until = async (check: () => boolean, what: string) => {
@@ -139,5 +147,22 @@ describe('the Friends section', () => {
       'No account has that username or friend code',
     );
     expect(input.value).toBe('nobody');
+  });
+
+  it('shows each friend’s status in words, takes the inbox’s, and challenges a friend', async () => {
+    const { friends, root, challenged, changes } = section();
+    await friends.open();
+    const status = () => root.querySelector('[data-friend="f-1"] .friends-status');
+    expect([status()?.textContent, status()?.getAttribute('data-status')]).toStrictEqual([
+      'In a match',
+      'in_a_match',
+    ]);
+    friends.statuses([{ id: 'f-1', name: 'Robin', status: 'online' }]);
+    expect(status()?.textContent).toBe('Online');
+    named(root, 'Challenge Robin')?.click();
+    expect(challenged).toStrictEqual(['f-1']);
+    // A change made here tells the inbox to read now.
+    named(root, 'Accept Sam_R')?.click();
+    await until(() => changes() === 1, 'the inbox poked');
   });
 });

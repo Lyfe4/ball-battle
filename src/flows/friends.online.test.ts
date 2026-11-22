@@ -3,15 +3,13 @@
 // One adds the other by username from the account screen's Friends section; the other sees the
 // request there, accepts it, and both list each other as friends. `netlify dev` serving an online
 // build with accounts; iPhone Safari's visible size, Chromium only.
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { signInWith } from './account-support.ts';
-import { PHONE } from './live-support.ts';
+import { signedInPhone } from './account-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 
 let browser: Browser;
-const contexts: BrowserContext[] = [];
 const errors: string[] = [];
 
 beforeAll(async () => {
@@ -25,27 +23,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const context of contexts) await context.close();
   await browser.close();
 });
 
-/** A fresh phone, signed in to a new account named `username`, on its account screen. */
-async function account(username: string): Promise<Page> {
-  const context = await browser.newContext({ viewport: PHONE });
-  contexts.push(context);
-  const page = await context.newPage();
-  page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
-  });
-  await page.goto(`${BASE}/?view=signin`);
-  await page.getByRole('button', { name: 'I’m 16 or older' }).click();
-  await signInWith(page, `${username.toLowerCase()}@example.com`, 'Choose a username');
-  await page.getByLabel('Username').fill(username);
-  await page.getByRole('button', { name: 'Save' }).click();
-  await page.getByText(`Opponents see you as ${username}.`).waitFor();
-  return page;
-}
+const account = (username: string) => signedInPhone(browser, BASE, username, errors);
 
 const friendsOf = (page: Page) => page.locator('.friends');
 /** Waits for `name` in `group` of the page's Friends section. */

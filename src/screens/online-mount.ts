@@ -14,6 +14,7 @@ import { getElement } from '../ui/dom.ts';
 import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
+import { createInboxWatch } from './inbox-watch.ts';
 import { createRematchWatch } from './rematch-watch.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
@@ -86,9 +87,25 @@ export function mountOnline(context: MountContext): OnlineMount {
     fighting: () => fighting,
     endScreen: () => screens.play.endScreen(),
   });
+  // Friends' challenges and status reach a signed-in account anywhere (ADR 0079 PR (d)): only in a
+  // build with accounts.
+  const inboxRoot = document.createElement('div');
+  const inboxWatch = ACCOUNTS_BUILD
+    ? createInboxWatch(inboxRoot, BALL_LOOKUP, {
+        open: (token) => screens.openInvite(token),
+        fighting: () => fighting,
+        friends: (friends) => {
+          screens.friendStatuses(friends);
+        },
+      })
+    : undefined;
+  if (inboxWatch !== undefined) document.body.append(inboxRoot);
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
     ended: (view) => {
       rematchWatch.ended(view);
+    },
+    friendsChanged: () => {
+      inboxWatch?.poke();
     },
     navigation: context.navigation,
     go: (write) => {
@@ -153,6 +170,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     );
     // Not known (offline, failing): the face stays, and the next home asks again.
     if (who.kind === 'unknown') whoStale = true;
+    else inboxWatch?.signedIn(who.kind === 'account');
     account.show(who);
   };
   const playRow = homeRoot.querySelector<HTMLElement>('.home-play-row');
@@ -211,6 +229,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     screenChanged: (now) => {
       fighting = now;
       rematchWatch.refresh();
+      inboxWatch?.refresh();
     },
     footLine: (onScreen, noSpeed) => {
       const live = onScreen && screens.play.isLive();

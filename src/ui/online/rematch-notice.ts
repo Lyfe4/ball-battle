@@ -26,10 +26,11 @@ export function createRematchNotice(
   root: HTMLElement,
   lookup: DefinitionLookup,
   actions: RematchNoticeActions,
+  label = 'Rematch',
 ): RematchNoticeCard {
   root.classList.add('floating-notice', 'rematch-notice');
   root.setAttribute('role', 'region');
-  root.setAttribute('aria-label', 'Rematch');
+  root.setAttribute('aria-label', label);
   root.hidden = true;
   const clock = createPickClock(lookup, root);
   // Read out as it comes, wherever the player is: the card's title, or why it ended.
@@ -56,18 +57,24 @@ export function createRematchNotice(
   return {
     show(notice, failure) {
       setHidden(root, notice === undefined || notice.kind === 'lineup');
-      document.body.toggleAttribute('data-rematch-notice', !root.hidden);
+      // Any card of this look that shows (a rematch's or a friend's challenge) marks the page.
+      const shown = [...document.querySelectorAll('.rematch-notice')].some(
+        (card) => card instanceof HTMLElement && !card.hidden,
+      );
+      document.body.toggleAttribute('data-rematch-notice', shown);
       if (notice === undefined || notice.kind === 'lineup') return;
       const asked = notice.kind === 'asked';
+      // Asked or invited: Accept and No thanks; ended: OK.
+      const answers = asked || notice.kind === 'invite';
       clock.show(asked ? notice.clock : undefined);
-      // The line is the asked card's title once (for a screen reader), or why it ended.
+      // The line is the asked card's title once (for a screen reader), the invite, or why it ended.
       setText(said, asked ? notice.clock.title : notice.line);
       said.classList.toggle('visually-hidden', asked);
       setText(failed, failure ?? '');
       setHidden(failed, failure === undefined);
-      setHidden(accept, !asked);
-      setHidden(decline, !asked);
-      setHidden(ok, asked);
+      setHidden(accept, !answers);
+      setHidden(decline, !answers);
+      setHidden(ok, answers);
     },
   };
 }

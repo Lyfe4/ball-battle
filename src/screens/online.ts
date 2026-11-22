@@ -9,6 +9,7 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
+import type { FriendEntry } from '../api/friends.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
@@ -39,6 +40,8 @@ export interface OnlineHost {
   readonly storage: DeviceStorage;
   /** A live series ended on this device: a rematch of it reaches the player anywhere. */
   readonly ended?: (view: SeriesView) => void;
+  /** The friends changed on the account screen: the inbox reads now (ADR 0079 PR (d)). */
+  readonly friendsChanged?: () => void;
 }
 
 export interface OnlineScreens {
@@ -52,6 +55,10 @@ export interface OnlineScreens {
   readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
+  /** The friends' status from the inbox, for the account screen's Friends section. */
+  friendStatuses(friends: readonly FriendEntry[]): void;
+  /** A friend's challenge accepted from the floating card: its lineup, read first. */
+  openInvite(token: string): Promise<void>;
 }
 
 export function createOnlineScreens(
@@ -181,6 +188,10 @@ export function createOnlineScreens(
       // The account screen is the one place for the player (ADR 0079 addendum of 2026-11-22).
       logOut: () => logOut(host.storage, startAfresh),
       forget: () => forgetMeHost(host.storage, startAfresh).forget(),
+      challenge: (friend) => {
+        challenges.challengeFriend(friend);
+      },
+      ...(host.friendsChanged === undefined ? {} : { friendsChanged: host.friendsChanged }),
     },
   );
 
@@ -219,5 +230,9 @@ export function createOnlineScreens(
       challenges.setVisible(screen === 'challenge' || screen === 'send');
       play.setVisible(screen === 'online');
     },
+    friendStatuses(friends) {
+      signIn.statuses(friends);
+    },
+    openInvite: (token) => challenges.openInvite(token),
   };
 }

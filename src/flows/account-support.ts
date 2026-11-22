@@ -1,6 +1,7 @@
 // Accounts in the online flows (ADR 0079): an email code read from the local Supabase's mail
 // catcher (Mailpit) and typed into the real page.
-import type { Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
+import { PHONE } from './live-support.ts';
 
 /** The local Supabase's mail catcher (`supabase start`), where every code is sent. */
 const MAILPIT = 'http://127.0.0.1:54324';
@@ -51,4 +52,29 @@ export async function signInWith(
   await page.getByLabel('The code').fill(await codeFor(email, before));
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByRole('heading', { name: then }).waitFor();
+}
+
+/**
+ * A fresh phone (iPhone Safari's visible size) signed in to a new account named `username`, with
+ * that username, left on its account screen. Its console errors go to `errors`.
+ */
+export async function signedInPhone(
+  browser: Browser,
+  base: string,
+  username: string,
+  errors: string[],
+): Promise<Page> {
+  const context = await browser.newContext({ viewport: PHONE });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await page.goto(`${base}/?view=signin`);
+  await page.getByRole('button', { name: 'I’m 16 or older' }).click();
+  await signInWith(page, `${username.toLowerCase()}@example.com`, 'Choose a username');
+  await page.getByLabel('Username').fill(username);
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByText(`Opponents see you as ${username}.`).waitFor();
+  return page;
 }

@@ -133,13 +133,28 @@ export function cardFor(
         // The lobby (ADR 0055): one main button, Share; the link to read in a quiet box with
         // Copy; the stay rule; Cancel as a quiet link.
         const share = actions.canShare;
+        // Sent to a friend (ADR 0079 PR (d)): their name, and whether they said No thanks; the
+        // link still works for anyone.
+        const friend = info.invitee;
+        const waiting =
+          friend === null
+            ? 'Waiting for your friend'
+            : info.declined
+              ? `${friend} said no thanks`
+              : `Waiting for ${friend}`;
+        const told =
+          friend === null
+            ? ''
+            : info.declined
+              ? 'The link still works for anyone you send it to. '
+              : `${friend} has it in the game too. `;
         return {
           title: 'Your challenge',
-          waiting: { title: 'Waiting for your friend', line: `${what} · live` },
+          waiting: { title: waiting, line: `${what} · live` },
           body: [],
           buttons: [shareButton(actions)],
           link: share ? { url: actions.url, copy: actions.copy } : { url: actions.url },
-          note: `The match starts the moment they accept. ${STAY_STEP}`,
+          note: `${told}The match starts the moment they accept. ${STAY_STEP}`,
           quiet: { text: 'Cancel challenge', onClick: actions.cancel },
         };
       }
