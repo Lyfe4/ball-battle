@@ -102,3 +102,13 @@ Safari) the full menu fit beside the court but cut "What to watch cards" in half
 | Before                                                          | After                                                         |
 | --------------------------------------------------------------- | ------------------------------------------------------------- |
 | ![Headings like labels](../images/settings/headings-before.png) | ![Headings, then rows](../images/settings/headings-after.png) |
+
+## Addendum (2026-11-23): compact when it must cover the court and still won't fit
+
+At 390 x 664 (iPhone Safari upright) with the gear under the court, the menu fits neither above nor
+below its gear, so it covers the court (ADR 0044) in the room above the gear. It used to keep its
+full form there, capped at that room and scrolling inside: Show all tips again and Close were cut
+off at the bottom, and nothing said the menu scrolled. Now it takes its compact form in that place
+when the compact form fits whole (338 of 362 px there), and only otherwise keeps the full form
+capped. The "match waits" line still shows. Test: `settings-live.safari.browser.test.ts` (the real
+menu, the gear where a phone mid-fight has it: no scroll inside, not over its gear; seen failing).
