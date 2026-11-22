@@ -79,8 +79,9 @@ describe('the smallest phone turned sideways', () => {
     expect(titleColor).not.toBe(getComputedStyle(caption ?? document.body).color);
     expect(getComputedStyle(ring ?? document.body).borderTopColor).toBe(titleColor);
     expect(caption?.querySelector('canvas.arena-caption-mark')).not.toBeNull();
-    // Measured once its entrance (a few pixels of slide) is over.
-    await atRest(() => JSON.stringify(box(caption)));
+    // Measured once its entrance (a few pixels of slide) is over: its own animations finished, not
+    // a still box, which it also is for a frame or two before the slide starts.
+    await Promise.all(caption?.getAnimations().map((animation) => animation.finished) ?? []);
     const hud = box(document.querySelector('.hud'));
     const cap = box(caption);
     expect({
