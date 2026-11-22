@@ -1,4 +1,4 @@
-# Accounts and friends: proposal (revised 2026-11-22, approved in direction)
+# Accounts and friends: proposal (revised 2026-11-22, approved; decisions in ADR 0079)
 
 ## Where things stand
 
@@ -114,13 +114,8 @@ under the server key (as `ipSubject`), never the address.
   It takes five networks to empty the day.
   - The cost: a class signing up by email on one school network gets 20 codes a day. The rest of
     them use Google, which no cap touches, and the message says so.
-- **Existing accounts keep a reserve.** New sign-ups (a guest's email upgrade, a new device's
-  first code) may use only 60 of the 90. The last 30 are for codes to emails that already have an
-  account.
-  - The server knows which path it took (the email change or the `/otp` fallback), so the answer
-    is still the same "We sent a code".
-  - An attacker spraying made-up addresses (always new) can empty only the 60. Players coming back
-    to their account can still sign in by email, and everyone can still use Google.
+- ~~Existing accounts keep a reserve (60/30).~~ Dropped in ADR 0079: once the new-sign-up share
+  ran out, known and new emails would get different answers, which leaks who has an account.
 - **Repeated attacks:** an `email_codes` setting in the config switches email codes off (the
   button says "Use Google for now"). Each player's per-address and per-guest limits stay as they
   are.
@@ -237,7 +232,6 @@ the spike notes ride in PR (a).
   - the same answer for new and known emails;
   - the 6th wrong code is refused;
   - the 91st code of the day answers `email_busy`;
-  - the 61st new-account code is refused while an existing account's code still goes;
   - one network's 21st code of the day is refused;
   - `/health` says `emailCodes: "near"` at 70, and stays 200;
   - a guest keeps its series after linking;
