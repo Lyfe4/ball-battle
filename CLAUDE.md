@@ -296,7 +296,7 @@ Each line is a rule; its ADR has the reasoning.
   re-arranged for the space, never the phone column centred. Desktop rules go in the one query
   `(min-width: 64rem) and (min-aspect-ratio: 5/4)` beside the phone rules. Between them, any
   landscape screen (a phone turned sideways) is the beside layout, `(min-aspect-ratio: 5/4)`
-  verbatim: the court at full height, the panel beside it (ADR 0067, `layout-queries.test.ts`). Prefer the page scrolling to inner scroll boxes; keep sensible maximum widths (`--sheet-width`). Check every screen at 375×812, 1280×800, 1440×900 and
+  verbatim: the court at full height, the panel beside it (ADR 0067, `layout-queries.test.ts`). Prefer the page scrolling to inner scroll boxes, except the beside layout's panel mid-fight, which scrolls inside itself so the browser bar never moves and the court keeps its size (ADR 0067 addendum); keep sensible maximum widths (`--sheet-width`). Check every screen at 375×812, 1280×800, 1440×900 and
   1920×1080.
 - The arena shows only when something fights; setup and reading screens take the whole phone
   screen and show no arena on a desktop, and start at the top; only the panel beside a match
