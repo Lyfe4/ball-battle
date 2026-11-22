@@ -162,7 +162,7 @@ export function signUpGuest(config: Config, clientIp: string | undefined): Promi
 
 /**
  * New tokens for a refresh token. Auth rotates refresh tokens but accepts a used one again within
- * its reuse interval (an hour, ADR 0079), answering with the session's current one: two tabs
+ * its reuse interval (300 s, Supabase's most, ADR 0079), answering with the session's current one: two tabs
  * refreshing at once both succeed, and a refresh whose answer never reached the phone recovers.
  */
 export function refreshSession(config: Config, refresh: string): Promise<AuthSession> {
