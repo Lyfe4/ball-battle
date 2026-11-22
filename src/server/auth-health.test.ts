@@ -91,6 +91,16 @@ describe('health’s Auth checks', () => {
     expect((await checked({ google: true }, google as Config)).failed).toStrictEqual([]);
   });
 
+  it('name every sign-in setting that is wrong at once, each noted', async () => {
+    const google = { ...config, accounts: true, google: { clientId: 'x', clientSecret: 'y' } };
+    const { failed, notes } = await checked({ autoconfirm: true }, google);
+    expect(failed).toStrictEqual(['auth_email_confirmations', 'auth_google']);
+    expect(notes).toStrictEqual([
+      'auth: email confirmations are off',
+      'auth: the Google provider is off',
+    ]);
+  });
+
   it('name each key Auth refuses, never its value', async () => {
     const { failed, notes } = await checked({ publishable: 'other', secret: 'other' });
     expect(failed).toStrictEqual(['auth_publishable_key', 'auth_secret_key']);

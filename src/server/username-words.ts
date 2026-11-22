@@ -1,0 +1,95 @@
+// The words a username may not hold (ADR 0079), our own list: no dependency, and short enough to
+// read. Each is written as `username-rules.ts` folds a name (lower case, digits read as letters,
+// no `_`). The owner can clear a name that slips through in SQL (`update game.profiles set
+// username = null where ...`).
+
+/**
+ * Found anywhere in a name: long or unusual enough that an innocent word rarely holds them
+ * ("scunthorpe" is refused; such a player picks another name).
+ */
+export const BLOCKED_ANYWHERE: readonly string[] = [
+  'fuck',
+  'fvck',
+  'shit',
+  'cunt',
+  'nigg',
+  'niga',
+  'nigr',
+  'faggot',
+  'fagot',
+  'bitch',
+  'biatch',
+  'whore',
+  'slut',
+  'pussy',
+  'penis',
+  'vagina',
+  'porn',
+  'wanker',
+  'twat',
+  'bollock',
+  'motherf',
+  'dildo',
+  'blowjob',
+  'handjob',
+  'jizz',
+  'cumshot',
+  'hitler',
+  'nazi',
+  'heilh',
+  'kkk',
+  'retard',
+  'tranny',
+  'paedo',
+  'molest',
+  'killyourself',
+  // Posing as the game or its staff.
+  'admin',
+  'moderator',
+  'ballbattle',
+  'battleball',
+  'official',
+];
+
+/**
+ * Refused only as a whole part of a name (split at `_` and at a capital): too short to search
+ * inside other words ("glass", "peacock", "grape", "therapist", "torpedo" stay fine).
+ */
+export const BLOCKED_WHOLE: readonly string[] = [
+  'ass',
+  'arse',
+  'cock',
+  'dick',
+  'fag',
+  'cum',
+  'sex',
+  'rape',
+  'tit',
+  'tits',
+  'boob',
+  'boobs',
+  'spic',
+  'kike',
+  'chink',
+  'gook',
+  'coon',
+  'homo',
+  'dyke',
+  'nonce',
+  'fuk',
+  'pedo',
+  'rapist',
+  'kys',
+  'wank',
+  'mod',
+  'staff',
+  'support',
+  'system',
+  'root',
+  'owner',
+  'deleted',
+  'player',
+  'guest',
+  'null',
+  'undefined',
+];

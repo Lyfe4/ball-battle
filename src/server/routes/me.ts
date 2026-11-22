@@ -4,6 +4,8 @@
 //   challenges, and their open series (forfeited to the opponent). Finished series stay in the
 //   opponent's history with this player shown as "Deleted player". The cookie is cleared; the
 //   client clears every `ballbattle.*` key.
+// - PUT /api/v1/me/username {username}: an account chooses its username (ADR 0079, username.ts),
+//   only while accounts are on.
 // - GET /api/v1/me/match: the live match or lobby to go back to, or null (ADR 0053). Never a
 //   heartbeat: a player on home is away from their match.
 import type { PlayerResponse } from '../../api/session.ts';
@@ -17,10 +19,14 @@ import { guard } from '../guard.ts';
 import { alsoWhileOff, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
 import { sessionOf } from '../session.ts';
+import { requireAccounts } from '../sign-in.ts';
+import { chooseUsername } from '../username.ts';
 
 /** The player as they see themselves; an account says so only where accounts are on (ADR 0079). */
 export function playerResponse(config: Config, player: Profile): PlayerResponse {
-  return config.accounts ? { name: player.name, account: player.account } : { name: player.name };
+  return config.accounts
+    ? { name: player.name, account: player.account, username: player.username }
+    : { name: player.name };
 }
 
 export const me: RouteHandler = alsoWhileOff(
@@ -43,4 +49,10 @@ export const meMatch: RouteHandler = async (request, context) => {
   const match = await currentMatch(context.deps, player.userId);
   const body: CurrentMatchResponse = { match };
   return json(200, body, { 'Cache-Control': 'private, no-store' });
+};
+
+export const meUsername: RouteHandler = async (request, context) => {
+  requireAccounts(context);
+  guard(request, ['PUT']);
+  return json(200, await chooseUsername(request, context));
 };

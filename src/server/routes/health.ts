@@ -4,10 +4,11 @@
 // kept a few minutes, auth-health.ts), so a deploy whose settings or bundled
 // files are wrong says so here before any player meets it. A failed check answers 503 naming the
 // check (`database`, `ruleset`, `auth_anonymous_sign_ins`, ...); what went wrong is in the log line
-// only (stage and kind, failure.ts).
-import type { EmailCodes, HealthCheck, HealthResponse } from '../../api/health.ts';
+// only (stage and kind, failure.ts). Sign-in's settings (ADR 0079) are `accounts`, apart, and stay
+// 200: a sign-in setting never makes the game look down.
+import type { AccountsCheck, EmailCodes, HealthCheck, HealthResponse } from '../../api/health.ts';
 import type { Config } from '../config.ts';
-import { createAuthHealth } from '../auth-health.ts';
+import { createAuthHealth, isAccountCheck } from '../auth-health.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
 import { EVERYONE, ipSubject, LIMITS, spend } from '../rate-limit.ts';
 import { CURRENT_RULESET, rulesetSim } from '../rulesets.ts';
@@ -75,18 +76,24 @@ export const health: RouteHandler = async (request, context) => {
     ),
     authChecks(deps.config, noteFailure),
   ]);
+  const accountsFailed = auth.filter(isAccountCheck);
+  const authFailed = auth.filter(
+    (check): check is Exclude<typeof check, AccountsCheck> => !isAccountCheck(check),
+  );
   const failed: HealthCheck[] = [
     ...(database?.ok === 1 ? [] : (['database'] as const)),
     ...(ruleset === undefined ? (['ruleset'] as const) : []),
-    ...auth,
+    ...authFailed,
   ];
   const body: HealthResponse = {
     status: failed.length === 0 ? 'ok' : 'down',
     database: database?.ok === 1 ? 'ok' : 'down',
-    auth: auth.length === 0 ? 'ok' : 'down',
+    auth: authFailed.length === 0 ? 'ok' : 'down',
     ruleset: ruleset ?? null,
     failed,
     emailCodes: emailCodesOf(deps.config, database ?? { day: 0, month: 0 }),
+    accounts: !deps.config.accounts ? 'off' : accountsFailed.length > 0 ? 'misconfigured' : 'ok',
+    accountsFailed,
   };
   return json(failed.length === 0 ? 200 : 503, body);
 };

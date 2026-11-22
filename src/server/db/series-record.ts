@@ -109,7 +109,8 @@ export async function loadSeries(
       returning side, seen_at
     )
     select s.id, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
-      pa.display_name as name_a, pb.display_name as name_b, s.lineup_a, s.lineup_b, s.key_id,
+      coalesce(pa.username, pa.display_name) as name_a,
+      coalesce(pb.username, pb.display_name) as name_b, s.lineup_a, s.lineup_b, s.key_id,
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
       s.live, now() as now, s.created_at, s.started_at, s.turn_opens_at, s.end_reason,

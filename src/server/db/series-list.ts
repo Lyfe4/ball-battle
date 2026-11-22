@@ -29,7 +29,7 @@ export async function listFor(sql: Sql, userId: string): Promise<SeriesSummary[]
       (select * from mine where status <> 'open' order by finished_at desc limit 10)
     )
     select l.id, l.format, l.best_of, l.you, l.status, l.turn, l.turn_deadline, l.winner,
-      p.display_name as opponent,
+      coalesce(p.username, p.display_name) as opponent,
       (select count(*)::int from game.rounds r where r.series_id = l.id and r.winner = 'a') as wins_a,
       (select count(*)::int from game.rounds r where r.series_id = l.id and r.winner = 'b') as wins_b
     from listed l

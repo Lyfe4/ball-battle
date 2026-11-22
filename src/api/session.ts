@@ -9,10 +9,12 @@ export interface CreateGuestRequest {
 
 /** The player as they see themselves: GET /api/v1/me, and the answer to creating a guest. */
 export interface PlayerResponse {
-  /** "Player 4821". */
+  /** The name opponents see: the account's username, else "Player 4821". */
   readonly name: string;
   /** Signed in to an account (ADR 0079), rather than a guest. Absent where accounts are off. */
   readonly account?: boolean;
+  /** The account's username, null until chosen (ADR 0079). Absent where accounts are off. */
+  readonly username?: string | null;
 }
 
 /** The body of POST /api/v1/session, if it is one. */

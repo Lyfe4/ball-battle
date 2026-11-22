@@ -48,7 +48,7 @@ export async function challengeByHash(
 ): Promise<ChallengeRow | undefined> {
   const forUpdate = lock ? db`for update of c` : db``;
   const [raw] = await db<Raw[]>`
-    select c.id, c.creator, p.display_name as creator_name, c.format, c.best_of, c.lineup,
+    select c.id, c.creator, coalesce(p.username, p.display_name) as creator_name, c.format, c.best_of, c.lineup,
       c.expires_at, c.expires_at < now() as expired, c.series_id, s.player_b as acceptor,
       c.live, c.request_id,
       (c.live and c.series_id is null and (c.cancelled_at is not null

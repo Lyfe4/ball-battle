@@ -57,6 +57,8 @@ describe('migrations', () => {
       'beeab3f005f64d869fa2b2fa490e207c5fa8f919c5e00cd38b56a4eeabb24237',
     '20261122090000_accounts.sql':
       'baba9f2f68a70a57e6b85245f82da162c91ba4e68b91da4a5f64a76893665fc0',
+    '20261122120000_usernames.sql':
+      '09b6cd1df250f9cf2d91f945784f5a97bbf97ba1be135ca82d6f055f14e378b8',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));

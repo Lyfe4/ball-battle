@@ -44,6 +44,16 @@ export const ERROR_CODES = [
   'wrong_code',
   /** A sign-in step with nothing started on this device (its 10 minutes ran out). */
   'sign_in_expired',
+  /** Usernames are for accounts (ADR 0079): a guest signs in first. */
+  'not_an_account',
+  /** A username outside a–z, 0–9 and _, or not 3–15 characters long. */
+  'username_invalid',
+  /** A username our blocklist refuses. */
+  'username_blocked',
+  /** A username someone else has (ignoring case). */
+  'username_taken',
+  /** A username changed less than 30 days ago. */
+  'username_too_soon',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
   'ruleset_missing',
   'internal',
