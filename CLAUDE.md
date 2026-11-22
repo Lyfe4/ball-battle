@@ -197,6 +197,10 @@ Each line is a rule; its ADR has the reasoning.
 - Usernames are checked on the server only (`username-rules.ts`, our own blocklist); the name
   shown is `coalesce(username, display_name)`. One change per 30 days by `now()`; no free-name
   check, every try is counted. `/health` reports sign-in's settings as `accounts`, never a 503.
+- Friends (ADR 0079 addendum of 2026-11-23) are between accounts only, one `game.friendships`
+  row per pair, named to the page by its own `id` (never a user id). A lookup is one exact username
+  or code, counted first per account and network; a decline is kept 30 days and still reads as sent
+  to its sender. The Friends section is part of the account screen.
 - Email codes are counted before Auth is called (`LIMITS.codes*`, `spendAll`): the player's own
   limits first, then everyone's caps (90 a day, 2,700 a month), which answer `email_busy` alike.
   An email answer never says whether an address has an account.
