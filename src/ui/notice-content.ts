@@ -40,6 +40,12 @@ export interface NoticeContent {
   readonly waiting?: { readonly title: string; readonly line: string };
   /** A field to type in (an email, a code). */
   readonly field?: NoticeField;
+  /**
+   * A part the screen draws and keeps itself, after the body and the field: the account screen's
+   * Friends section (ADR 0079). The same element each time, so what it holds stays. An element,
+   * typed opaquely so a screen's words stay free of the DOM.
+   */
+  readonly part?: object;
   /** A short numbered list in a box: "How it goes". */
   readonly steps?: { readonly title: string; readonly items: readonly string[] };
   /** A link in a quiet box under the buttons, with Copy where there is a clipboard. */

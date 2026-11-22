@@ -156,6 +156,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         });
         parts.push(field.element);
       }
+      if (content.part instanceof HTMLElement) parts.push(content.part);
       body.replaceChildren(...parts);
       footer.replaceChildren(
         ...content.buttons.map((spec, index) => {

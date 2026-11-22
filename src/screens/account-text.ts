@@ -20,8 +20,11 @@ export function signedInCard(
   done: () => void,
   change: () => void,
   actions?: AccountActions,
+  friends?: object,
 ): NoticeContent {
   return {
+    // Friends, a section of this screen rather than one of its own (ADR 0079 addendum).
+    ...(friends === undefined ? {} : { part: friends }),
     ...(actions === undefined
       ? {}
       : {

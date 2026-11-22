@@ -1,0 +1,136 @@
+/*
+ * The account screen's Friends section (friends-section.ts, ADR 0079): calm platform style (ADR
+ * 0032), one slab per row, the field in the notice's own look. Phone first; it keeps the notice's
+ * width everywhere.
+ */
+.friends {
+  display: grid;
+  gap: var(--space-gap);
+  margin-top: var(--space-gap);
+}
+
+.friends[hidden] {
+  display: none;
+}
+
+.friends-heading {
+  margin: 0;
+  font-size: var(--font-size-lead);
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+}
+
+.friends-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-small);
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.friends-code[hidden],
+.friends-add[hidden],
+.friends-problem-box[hidden] {
+  display: none;
+}
+
+.friends-code-value {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.friends-add-row {
+  display: flex;
+  gap: var(--space-small);
+}
+
+.friends-add-row .notice-field-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.friends-add-button {
+  flex: none;
+  min-width: 5.5rem;
+}
+
+.friends-said {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.friends-said[data-error] {
+  color: var(--color-unfavoured);
+  font-weight: 700;
+}
+
+.friends-problem {
+  margin: 0;
+}
+
+.friends-group {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.friends-group-title {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.friends-list {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.friends-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+}
+
+.friends-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.friends-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-gap);
+  margin-left: auto;
+}
+
+.friends-accept {
+  min-height: var(--tap-target);
+  padding-inline: var(--space-gap);
+}
+
+.friends-waiting,
+.friends-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* A text action keeps a finger's whole target. */
+.friends-action {
+  min-height: var(--tap-target);
+}

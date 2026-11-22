@@ -36,6 +36,8 @@ export interface AccountStepHost {
    */
   readonly logOut?: () => Promise<string | undefined>;
   readonly forget?: () => Promise<string | undefined>;
+  /** The Friends section (ADR 0079, PR (c)), shown under the signed-in card and read afresh. */
+  readonly friends?: { readonly element: HTMLElement; open(): Promise<void> };
 }
 
 export interface AccountStep {
@@ -72,8 +74,10 @@ export function createAccountStep(host: AccountStepHost): AccountStep {
           choose();
         },
         actions,
+        host.friends?.element,
       ),
     );
+    void host.friends?.open();
   }
 
   /** The username's field; a new visit starts empty, an error keeps what was typed. */

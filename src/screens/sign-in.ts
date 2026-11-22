@@ -6,6 +6,7 @@
 import { type AuthOptions, type GoogleResult, type SignInResponse } from '../api/accounts.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { PlayerResponse } from '../api/session.ts';
+import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import {
   hasAccount,
@@ -17,12 +18,14 @@ import {
 import { writeSignInParams } from '../app/online-url.ts';
 import { whoAmI } from '../app/who-am-i.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
+import { createFriendsSection } from '../ui/online/friends-section.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createAccountStep } from './account-step.ts';
 import { askToDelete } from './account-delete.ts';
 import { createCodeStep } from './sign-in-code.ts';
 import { offerSwitch } from './sign-in-switch.ts';
 import { inAMatchCard } from './current-match.ts';
+import { failureLine } from './online-failure-text.ts';
 import { onlineNotice } from './online-text.ts';
 import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './sign-in-text.ts';
 
@@ -91,6 +94,23 @@ export function createSignIn(
     },
   });
 
+  // Friends (ADR 0079, PR (c)): only in a build with accounts, so one without holds none of it.
+  const friends = ACCOUNTS_BUILD
+    ? createFriendsSection({
+        api,
+        line: (answer) =>
+          failureLine(failureKindOf(answer), answer.kind === 'error' ? answer.message : undefined),
+        copy: async (text) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+      })
+    : undefined;
+
   const account = createAccountStep({
     show: (content) => {
       show(content);
@@ -106,6 +126,7 @@ export function createSignIn(
     },
     ...(host.logOut === undefined ? {} : { logOut: host.logOut }),
     ...(host.forget === undefined ? {} : { forget: host.forget }),
+    ...(friends === undefined ? {} : { friends }),
   });
 
   /** Signed in: a sign-in just now asks for a username, once (ADR 0079). */

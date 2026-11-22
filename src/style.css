@@ -35,6 +35,7 @@
 @import './ui/settings-menu.css';
 @import './ui/settings-sound.css';
 @import './ui/online/online.css';
+@import './ui/online/friends-section.css';
 @import './ui/symbol-tooltip.css';
 @import './ui/winner-sticker.css';
 @import './ui/sticker.css';

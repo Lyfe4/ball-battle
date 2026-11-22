@@ -21,6 +21,7 @@ const TABLES = [
   'rate_limits',
   'presence',
   'rematches',
+  'friendships',
 ];
 
 describe('the game schema', () => {

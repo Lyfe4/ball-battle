@@ -1,7 +1,8 @@
 # 0079: Accounts: sign in with Google or an email code, linking the guest
 
 - Status: Accepted (2026-11-22). Built: PR (a), the switch and both sign-ins; PR (b), usernames,
-  Log out and Delete account. Friends and the inbox follow in PRs (c) and (d)
+  Log out and Delete account; PR (c), friends (addendum of 2026-11-23). The inbox and challenging
+  a friend follow in PR (d)
 - Date: 2026-11-22
 - Amends: ADR 0052 §2 (accounts are slice 2: how they are built), ADR 0069 (the privacy policy
   names what an account stores), ADR 0068 (the sweep keeps accounts for 24 months)
@@ -223,3 +224,60 @@ sets), `sign-in.browser.test.ts` (a wiped device shown its account, Delete asked
 Forget me, no request on a first visit; seen failing without the `/me` read), `settings.browser`
 (the two groups; seen failing on the old menu), and `sign-in.online.test.ts` (Log out and Delete
 account from home's account button, Sign in shown after).
+
+## Addendum (2026-11-23): friends (PR (c))
+
+Accounts add each other and answer requests from a **Friends section of the account screen** (as
+approved: a section, not a screen of its own), under the signed-in card: your friend code with
+Copy, a field to add by username or friend code, then Requests (Accept, Decline), Your friends
+(Remove, asked once in place, Keep first) and Sent (Cancel). Every change answers with the whole
+list. A guest sees no section (it is the sign-in screen) and every friends route answers
+`403 not_an_account`; with accounts off they answer `accounts_off`.
+
+- **Schema** (`20261123090000_friends.sql`, expand only): `profiles.friend_code` (8 Crockford
+  base32 characters, unique, made the first time the account opens its friends) and
+  `game.friendships`, one row per pair (`low < high`): who asked, when, accepted, declined, and
+  `withdrawn_at`. A row has its own `id`, which the page uses: no player's user id leaves the
+  server. Deleting either profile deletes the row.
+- **Routes**: `GET /friends`, `POST /friends {to}`, `POST /friends/:id/accept`,
+  `DELETE /friends/:id` (remove a friend, cancel a request, or decline one). Rules in
+  `friends.ts`, SQL in `db/friends.ts`.
+- **One row decides races.** A double tap, two taps at once, and two requests between the same
+  pair at once (one each way) all meet on the pair's row (`insert ... on conflict do nothing`, then
+  the row read `for update`). Asking someone who had asked you makes you friends.
+- **Lookups can't list who plays.** A request names one exact username (ignoring case) or one
+  code (typed in any case, with a dash or spaces, I and L read as 1 and O as 0). Every request is
+  counted before the lookup: 30 an hour per account and 300 per network (a class adding each
+  other fits). Only accounts are found. Usernames are public in matches already; "no account has
+  that name" at 30 an hour is no faster than watching matches.
+- **Spam.** 20 new requests a day per account (answering one never counts), at most 50 waiting
+  out per account and 100 waiting in, 200 friends.
+- **A decline stops repeats.** It keeps the row 30 days (`DECLINE_DAYS`), and to its sender it
+  still reads as sent: sending it again does nothing and tells them nothing. Cancelling a declined
+  request hides it from the sender (`withdrawn_at`) but keeps the row, so cancel-and-resend can't
+  get round it. The one who declined may still ask, which makes them friends (the other wanted
+  it). The sweep drops declines after 30 days. **Not built: a permanent block.** Decline covers 30
+  days; a block (and the "Report this name" button above) should come with PR (d) or before
+  friends ship, once real use shows whether 30 days is enough.
+- **Privacy**: the policy names the friend code, friendships and requests (with the 30 days a
+  decline is kept) and the new counts; dated 23 November 2026.
+- **Bundle**: a path starting `friends` is accounts' code (`ACCOUNTS_MARK`); the section is made
+  only where `ACCOUNTS_BUILD`.
+
+Real use: two friends on one school network add each other by typing a username they read off a
+match (no code needed); someone mistypes a name three times (3 of 30 lookups); a stranger who keeps
+re-adding after a decline sees "Request sent" and reaches nobody for 30 days.
+
+Library behaviour relied on: Postgres `insert ... on conflict do nothing` waits for a concurrent
+insert of the same key to commit, then does nothing, and a later statement in the same READ
+COMMITTED transaction sees the committed row; `select ... for update` locks the row until commit;
+postgres.js nests a fragment (a tagged `db` query) inside a query; `crypto.getRandomValues` byte `% 32` is
+uniform (256 is a multiple of 32).
+
+Tests: `friends.db.test.ts` (guests refused and never found, accounts off, the code made once, by
+username in any case and by a typed code, no user id in any answer, an unknown name and yourself,
+a double tap and two taps at once, both asking at once, accept, decline and its 30 days, cancel
+and remove, another pair's row untouched, each limit, a deleted account's rows gone; the decline
+test seen failing with the block switched off), `friends-section.browser.test.ts`, unit tests of
+the code and words, `legal-pages.test.ts`, `check-bundle.test.ts`, and `friends.online.test.ts`
+(two phones signed in with email codes; one adds the other by username, the other accepts).
