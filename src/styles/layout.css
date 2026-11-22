@@ -153,8 +153,9 @@
     overflow-y: visible;
   }
 
-  /* Free play's picker is two columns here (quick-setup.css): it takes the whole width. */
-  .stage[data-screen='pick'] .hud {
+  /* Free play's picker and a lineup are two columns here (quick-setup.css, series-setup.css): they take the whole width. */
+  .stage[data-screen='pick'] .hud,
+  .stage[data-setup] .hud:has(.series-setup:not([hidden]) > .lineup-step:not([hidden])) {
     width: 100%;
   }
 }

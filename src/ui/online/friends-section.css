@@ -72,6 +72,12 @@
   margin: 0;
 }
 
+/* Requests, Sent and Your friends: apart by space, so each heading sits with its own rows. */
+.friends-lists {
+  display: grid;
+  gap: calc(var(--space-gap) * 1.5);
+}
+
 .friends-group {
   display: grid;
   gap: var(--space-small);

@@ -199,8 +199,34 @@
  * (`--beside-room`, layout.css), so a 667 x 320 phone's demo court keeps full height.
  */
 @media (min-aspect-ratio: 5/4) {
+  /*
+   * The page scrolls, as on every other beside screen (iPhone 13 sideways, 2026-11-23: the panel
+   * scrolled inside its own box, whose scroll bar clipped Play and the gear). The stage keeps the
+   * screen's height, so the demo court keeps its full height, and a panel taller than the screen
+   * runs on below it, starting at the top. `svh` is the height with Safari's bar shown, which
+   * doesn't change as the bar moves, so the court never resizes on a scroll.
+   */
+  .stage[data-home] {
+    height: 100svh;
+    align-items: flex-start;
+  }
+
   .stage[data-home] .hud {
     width: clamp(var(--hud-width), var(--beside-room), var(--setup-width));
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  /*
+   * Free play and the manual above the fold at 667 x 320: rows 8 px apart, as mid-fight beside, and
+   * no pitch line (the demo beside it is the pitch). A desktop restores both.
+   */
+  .home {
+    gap: var(--space-small);
+  }
+
+  .home-pitch {
+    display: none;
   }
 }
 
@@ -216,9 +242,19 @@
     display: flex;
   }
 
+  /* The court at the screen's full height and the column centred beside it, as before. */
+  .stage[data-home] {
+    height: 100dvh;
+    align-items: center;
+  }
+
   .stage[data-home] .hud {
     width: clamp(var(--panel-width-wide), 100vw - 100dvh - 4rem, 38rem);
     max-width: none;
+  }
+
+  .home-pitch {
+    display: block;
   }
 
   .home {

@@ -8,12 +8,18 @@ import { drawBoomerangBar } from './ball-designs/boomerang.ts';
 import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { theme } from './theme.ts';
 
-/** Arrows and other projectiles: a short streak behind a round head, in the owner's colour. */
+/**
+ * Arrows and other projectiles: a short streak behind a round head, in the owner's colour. Once
+ * the match is over nothing flies: the last world still holds whatever was in the air at the
+ * knockout, which hung frozen over the dimmed round between rounds (a loser's boomerang, 2026-11-23
+ * walk), so a finished match draws none.
+ */
 export function drawProjectiles(
   ctx: CanvasRenderingContext2D,
   world: WorldState,
   definitions: DefinitionLookup,
 ): void {
+  if (world.match.status === 'finished') return;
   for (const projectile of world.projectiles) {
     const color = ownerColor(world.balls, definitions, projectile.ownerId);
     if (projectile.returning !== undefined) {

@@ -2,8 +2,15 @@
 import type { CurrentMatch } from '../../api/live.ts';
 import { FORMAT_SHORT, bestOfName } from '../series-text.ts';
 
+/** A way back's words: what it opens, a quiet line under it, and both for a screen reader. */
+export interface BackWords {
+  readonly label: string;
+  readonly meta: string;
+  readonly spoken: string;
+}
+
 /** The button's words: what it opens, and what is being played. */
-export function backWords(match: CurrentMatch): { label: string; meta: string; spoken: string } {
+export function backWords(match: CurrentMatch): BackWords {
   const what = `${bestOfName(match.bestOf)} · ${FORMAT_SHORT[match.format]}`;
   if (match.kind === 'lobby') {
     return {
@@ -18,4 +25,19 @@ export function backWords(match: CurrentMatch): { label: string; meta: string; s
     meta: `vs ${opponent} · ${what}`,
     spoken: `Back to your match against ${opponent}, ${what}`,
   };
+}
+
+/**
+ * Home's way back to a rematch that waits on this player (2026-11-23): the end screen while the
+ * one who asked waits for the answer, or the new lineup once both said yes.
+ */
+export function rematchBackWords(back: {
+  readonly kind: 'answer' | 'lineup';
+  readonly they: string;
+}): BackWords {
+  const meta =
+    back.kind === 'answer'
+      ? `Waiting for ${back.they} to answer`
+      : `Choose your lineup · vs ${back.they}`;
+  return { label: 'Back to your rematch', meta, spoken: `Back to your rematch: ${meta}` };
 }

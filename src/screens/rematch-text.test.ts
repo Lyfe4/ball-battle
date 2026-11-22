@@ -4,6 +4,7 @@ import {
   rematchChoiceOf,
   rematchClockOf,
   rematchEnding,
+  rematchBackOf,
   rematchNoticeOf,
   rematchOpen,
 } from './rematch-text.ts';
@@ -76,12 +77,28 @@ describe('a rematch reaching a player away from the end screen (playtest 2026-11
     expect(rematchNoticeOf(rematch(), 'a', 'Player 4821', T)).toBeUndefined();
   });
 
-  it('takes both players to the new lineup once both said yes', () => {
+  it('tells both players once both said yes, with the seconds left for the lineups', () => {
+    // 2026-11-23: the one who asked went home and never heard the friend's yes.
     const agreed = rematch({ state: 'agreed', askedBy: 'a', deadline: T + 60_000 });
-    for (const you of ['a', 'b'] as const) {
-      expect(rematchNoticeOf(agreed, you, 'Player 4821', T)).toStrictEqual({ kind: 'lineup' });
-    }
+    expect(rematchNoticeOf(agreed, 'a', 'Player 4821', T)).toMatchObject({
+      kind: 'agreed',
+      clock: { title: 'Player 4821 accepted', seconds: 60, total: 60 },
+    });
+    expect(rematchNoticeOf(agreed, 'b', 'Player 4821', T)).toMatchObject({
+      kind: 'agreed',
+      clock: { title: 'Rematch on: choose your lineup', seconds: 60 },
+    });
+    // Its lineup in: waiting for the other's, nothing to say; out of time, nothing either.
     expect(rematchNoticeOf({ ...agreed, lineupIn: true }, 'a', 'Them', T)).toBeUndefined();
+    expect(rematchNoticeOf(agreed, 'a', 'Them', T + 60_000)).toBeUndefined();
+  });
+
+  it('takes a player whose lineup was in into the new match once it started', () => {
+    const started = rematch({ state: 'started', askedBy: 'a', seriesId: 'new' });
+    expect(rematchNoticeOf(started, 'b', 'Them', T)).toStrictEqual({
+      kind: 'started',
+      seriesId: 'new',
+    });
   });
 
   it('tells the one who asked of a no or the time running out, and nobody else', () => {
@@ -97,6 +114,11 @@ describe('a rematch reaching a player away from the end screen (playtest 2026-11
       line: 'No rematch: time ran out.',
     });
     expect(rematchNoticeOf(late, 'b', 'Player 4821', T)).toBeUndefined();
+    // Unless they said yes: then both are told the time ran out.
+    expect(rematchNoticeOf(late, 'b', 'Player 4821', T, true)).toStrictEqual({
+      kind: 'ended',
+      line: 'No rematch: time ran out.',
+    });
     // Taking back one's own ask says nothing.
     const takenBack = rematch({ state: 'declined', askedBy: 'a', declinedBy: 'a' });
     expect(rematchNoticeOf(takenBack, 'a', 'Player 4821', T)).toBeUndefined();
@@ -107,9 +129,20 @@ describe('a rematch reaching a player away from the end screen (playtest 2026-11
     expect(rematchOpen(rematch({ offered: false }))).toBe(false);
     expect(rematchOpen(asked('a'))).toBe(true);
     expect(rematchOpen(rematch({ state: 'agreed' }))).toBe(true);
-    expect(rematchOpen(rematch({ state: 'agreed', lineupIn: true }))).toBe(false);
+    // Its lineup in, the new match is still to start: the player who went home is moved into it.
+    expect(rematchOpen(rematch({ state: 'agreed', lineupIn: true }))).toBe(true);
     for (const state of ['started', 'declined', 'expired'] as const) {
       expect(rematchOpen(rematch({ state }))).toBe(false);
     }
+  });
+
+  it('gives home a way back while it waits on this player, and only then', () => {
+    expect(rematchBackOf(asked('a'), 'a', T)).toBe('answer');
+    expect(rematchBackOf(asked('a'), 'b', T), 'the one asked has the card').toBeUndefined();
+    const agreed = rematch({ state: 'agreed', askedBy: 'a', deadline: T + 60_000 });
+    for (const you of ['a', 'b'] as const) expect(rematchBackOf(agreed, you, T)).toBe('lineup');
+    expect(rematchBackOf({ ...agreed, lineupIn: true }, 'a', T)).toBeUndefined();
+    expect(rematchBackOf(agreed, 'a', T + 60_000), 'out of time').toBeUndefined();
+    expect(rematchBackOf(rematch(), 'a', T)).toBeUndefined();
   });
 });

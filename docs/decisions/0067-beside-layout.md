@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-18
 - Amends: ADR 0031 (the desktop query is the one desktop query; the beside query is named too)
-- Amended by: its addenda of 2026-11-22 (a calm fight on a phone turned sideways; the smallest phone sideways in Safari)
+- Amended by: its addenda of 2026-11-22 (a calm fight on a phone turned sideways; the smallest phone sideways in Safari) and 2026-11-23 (the toss and the picks above the fold; home, the lineup and the rest of the screen walk)
 
 ## Context
 
@@ -157,3 +157,45 @@ air and landed, and the result line, whole at scroll 0; then on round 1's pick a
 score line, no track, the banner and the first pick whole, and the track opened by the line. Live:
 `coin-toss.online.test.ts` puts one phone at 667 x 320 and the other at 812 x 375 and checks the
 landed toss whole on both at scroll 0. Each was seen failing on the old stylesheets.
+
+## Addendum (2026-11-23): home, the lineup and the rest of the screen walk
+
+From the owner's iPhone 13 sideways and the overnight screen walk at 390 x 664, 667 x 320, 812 x 375
+and 1280 x 800. Every sideways change sits in the beside query; a desktop restores its own look.
+
+- **Home scrolls the page**, as every other beside screen: its panel scrolled inside a box whose
+  scroll bar clipped Play and the gear. The court is sticky at the top and sized with `100svh`
+  (the height with Safari's bar shown, which doesn't change as the bar moves), so it neither moves
+  nor resizes while the page scrolls. At 667 x 320 Free play and Ball manual now show without a
+  scroll: rows 8 px apart, as mid-fight, and no pitch line (the demo beside it is the pitch).
+- **The matchup chart uses the column** (seven a row at 812 x 375, names on one line): Free play's
+  beside rules placed `.quick-legend` and `.quick-why` without naming the picker, and the chart,
+  which shows the same legend, was pushed into two columns with the grid in the narrow one. The
+  rules are scoped to `.quick-setup` now. (Its redesign is a separate proposal.)
+- **The lineup is the picker's two columns beside** (as Free play and a desktop): the mode line,
+  the tray and Reveal lineups in a 16rem column, the grid beside them from the top; the button,
+  sticky in its own column, covers no tile. Two whole rows show at 667 x 320 (was a sliver).
+- **The vs Bot and vs Friend setups are two columns beside** (as a desktop): the formats on the
+  right show at the top; Choose lineup sticks under the left column. A sticky footer is now above
+  what scrolls under it (`z-index: 3`, at every size): a chosen option's check badge stuck out
+  over it.
+- **Settings mid-fight takes the panel's room** when nowhere by its gear is clear (both sizes):
+  from the court's gap to the screen's edge, top to bottom, so the panel's ? and Leave series no
+  longer peek out around it; still off the court (`placeMenu`'s `fill`).
+- **The account screen ends with Done** beside (it stuck over a fifth of the screen at 667 x 320,
+  Add a friend under it); on a desktop sign-in and the account start at the top of the sheet,
+  without the short notice's card (a reading screen, ADR 0020).
+- **Round 1's score line drops "Round 1 ·"** beside: its header already says it.
+
+Not sideways, from the same walk: a finished match draws no projectiles (a loser's boomerang hung
+frozen over the dimmed round at 1280 x 800); a text link's chevron is a no-break space from its
+words in `button.css` alone (a flex link dropped the space: "Privacy policy›"); the friends' groups
+are 12 px further apart.
+
+Tests: `beside-walk.landscape.browser.test.ts` (both landscape projects): home with no inner scroll
+box, its top whole, the court still while the page scrolls, Free play and Ball manual above the
+fold; the chart's grid the column's width, six or more a row, no name wrapped; the lineup's whole
+first row with names above the fold and Reveal lineups over no tile at the top, middle or end; and
+the account's Done over no part of the Friends section. Each part was seen failing without its fix.
+`settings-place.test.ts` places the menu over the panel's room at 812 x 375, and
+`projectiles.browser.test.ts` draws nothing for a finished match (each failed first).

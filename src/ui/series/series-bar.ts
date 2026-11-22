@@ -64,6 +64,10 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
   const score = element('button', 'series-bar-score');
   score.type = 'button';
   const scoreWords = element('span', 'series-bar-score-text');
+  // "Round 2 · " on its own, so a screen whose header already names the round can drop it.
+  const scoreRound = element('span', 'series-bar-score-round');
+  const scoreRest = element('span', 'series-bar-score-rest');
+  scoreWords.append(scoreRound, scoreRest);
   const more = element('span', 'series-bar-more', '▾');
   more.setAttribute('aria-hidden', 'true');
   markSymbol(more, 'more');
@@ -86,7 +90,10 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
       // Called every frame: only changed attributes are written.
       const text = scoreText(line, seats);
       // The line shows the short name; its accessible name says the whole one.
-      setText(scoreWords, scoreText(line, seats, true));
+      const words = scoreText(line, seats, true);
+      const round = words.slice(0, words.indexOf(' · ') + ' · '.length);
+      setText(scoreRound, round);
+      setText(scoreRest, words.slice(round.length));
       setAttribute(score, 'aria-expanded', String(line.open));
       setAttribute(score, 'aria-label', `${text}: the series track`);
     },

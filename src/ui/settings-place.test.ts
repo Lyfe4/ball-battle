@@ -110,6 +110,29 @@ describe('placeMenu', () => {
     expect(menuWidth(gear(100, 700), 320, phone)).toBeUndefined();
   });
 
+  it('takes the panel’s whole room beside a sideways court when nowhere by its gear is clear', () => {
+    // 812 x 375 mid-fight (2026-11-23 walk): the court on the left, the gear at the panel's top.
+    const sideways = { width: 812, height: 375, top: 0 };
+    const court = { left: 52, top: 16, width: 343, height: 343 };
+    const placed = placeMenu(
+      gear(630, 48),
+      { width: 320, height: 300 },
+      sideways,
+      undefined,
+      court,
+    );
+    expect(placed).toStrictEqual({
+      left: 403,
+      top: 16,
+      covers: false,
+      fill: { width: 812 - 16 - 403, height: 375 - 32 },
+    });
+    // Over the panel from the court's gap to the screen's edge: the panel's ? (716 to 760) and
+    // Leave series under it, never the court.
+    expect(placed.left + (placed.fill?.width ?? 0)).toBeGreaterThan(760);
+    expect(placed.left).toBeGreaterThan(court.left + court.width);
+  });
+
   it('is never taller than the visible screen less its edges and safe areas', () => {
     expect(menuMaxHeight(safari, { top: 0, right: 0, bottom: 34, left: 0 })).toBe(664 - 32 - 34);
   });

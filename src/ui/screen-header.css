@@ -153,6 +153,8 @@
 .screen-footer {
   position: sticky;
   bottom: 0;
+  /* Above what scrolls under it: a chosen option's check badge (choice.css, z-index 2) stuck out. */
+  z-index: 3;
   display: flex;
   gap: var(--space-small);
   padding-block: var(--space-small) var(--space-gutter);

@@ -211,14 +211,21 @@ function place(): void {
     );
   panel.style.maxHeight = `${String(menuMaxHeight(screen, insets))}px`;
   panel.style.width = '';
+  panel.style.minHeight = '';
   delete panel.dataset['compact'];
   paused.hidden = true;
   const width = menuWidth(gear, panel.offsetWidth, screen, insets, court);
   if (width !== undefined) panel.style.width = `${String(width)}px`;
   let spot = at();
-  // Compact when its own form covers the court, or would have to scroll inside the screen's height
-  // (a phone turned sideways, 320 px tall: it cut a switch in half, ADR 0040 addendum).
-  if (spot.covers || panel.scrollHeight > panel.clientHeight + 1) {
+  const scrolls = () => panel.scrollHeight > panel.clientHeight + 1;
+  if (spot.fill !== undefined) {
+    // The panel's room, whole (settings-place.ts): compact inside it if its own form scrolls.
+    panel.style.width = `${String(spot.fill.width)}px`;
+    panel.style.minHeight = `${String(spot.fill.height)}px`;
+    if (scrolls()) panel.dataset['compact'] = '';
+  } else if (spot.covers || scrolls()) {
+    // Compact when its own form covers the court, or would have to scroll inside the screen's
+    // height (a phone turned sideways, 320 px tall: it cut a switch in half, ADR 0040 addendum).
     panel.dataset['compact'] = '';
     spot = at();
   }

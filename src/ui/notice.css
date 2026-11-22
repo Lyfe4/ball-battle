@@ -277,6 +277,15 @@
   .stage[data-screen='outdated'] {
     justify-content: center;
   }
+
+  /*
+   * The account screen sideways (2026-11-23 walk): at 667 x 320 a sticky Done took a fifth of the
+   * screen and Add a friend sat under it. Done ends the page here, after the Friends section; the
+   * page scrolls to it.
+   */
+  .stage[data-screen='signin'] .notice > .screen-footer {
+    position: static;
+  }
 }
 
 /*
@@ -307,6 +316,16 @@
     padding: var(--space-gap) var(--space-gutter) var(--space-gutter);
     border-radius: var(--radius);
     background: var(--color-surface);
+  }
+
+  /*
+   * Sign-in and the account are screens to read, not a short notice (2026-11-23 walk): like every
+   * setup and reading screen they start at the top of the sheet, without the card (ADR 0020, 0025).
+   */
+  .stage[data-screen='signin'] .notice {
+    margin-top: 0;
+    padding: 0;
+    background: none;
   }
 }
 

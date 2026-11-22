@@ -1,8 +1,9 @@
 // A rematch reaching a player away from the end screen (ADR 0055, playtest 2026-11-19): a card that
 // floats at the bottom of any screen, like the new-version card, so it never moves what is on
 // screen. Asked: the end screen's pick card ("Player 4821 wants a rematch", the seconds and the
-// bar) with Accept and No thanks. Ended, to the one who asked: why, with OK. Each answer is a
-// request: its button is busy until the server has it (busy-button.ts), so a double tap sends one.
+// bar) with Accept and No thanks. Agreed (2026-11-23): "Player 4821 accepted", the seconds left
+// for the lineups, and Choose lineup. Ended: why, with OK. Each answer is a request: its button is
+// busy until the server has it (busy-button.ts), so a double tap sends one.
 import type { RematchNotice } from '../../screens/rematch-text.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { busyOnClick } from '../busy-button.ts';
@@ -10,6 +11,7 @@ import { element, setHidden, setText } from '../dom.ts';
 import { createPickClock } from '../series/pick-clock.ts';
 
 export interface RematchNoticeActions {
+  /** Accept, or Choose lineup once both said yes. */
   accept(): Promise<void>;
   decline(): Promise<void>;
   /** OK on an ending: it goes. */
@@ -17,7 +19,7 @@ export interface RematchNoticeActions {
 }
 
 export interface RematchNoticeCard {
-  /** Shows `notice` (asked or ended), or hides; `failure` is a line under it (a refused answer). */
+  /** Shows `notice` (asked, agreed or ended), or hides; `failure` is a line under it (a refused answer). */
   show(notice: RematchNotice | undefined, failure?: string): void;
 }
 
@@ -56,25 +58,27 @@ export function createRematchNotice(
 
   return {
     show(notice, failure) {
-      setHidden(root, notice === undefined || notice.kind === 'lineup');
+      const card = notice?.kind === 'started' ? undefined : notice;
+      setHidden(root, card === undefined);
       // Any card of this look that shows (a rematch's or a friend's challenge) marks the page.
       const shown = [...document.querySelectorAll('.rematch-notice')].some(
-        (card) => card instanceof HTMLElement && !card.hidden,
+        (one) => one instanceof HTMLElement && !one.hidden,
       );
       document.body.toggleAttribute('data-rematch-notice', shown);
-      if (notice === undefined || notice.kind === 'lineup') return;
-      const asked = notice.kind === 'asked';
-      // Asked or invited: Accept and No thanks; ended: OK.
-      const answers = asked || notice.kind === 'invite';
-      clock.show(asked ? notice.clock : undefined);
-      // The line is the asked card's title once (for a screen reader), the invite, or why it ended.
-      setText(said, asked ? notice.clock.title : notice.line);
-      said.classList.toggle('visually-hidden', asked);
+      if (card === undefined) return;
+      // A clock (asked, or both said yes) with its title, or a line (an invite, an ending).
+      const clocked = 'clock' in card ? card.clock : undefined;
+      const answers = card.kind === 'asked' || card.kind === 'invite';
+      clock.show(clocked);
+      // The line is the clock's title once (for a screen reader), the invite, or why it ended.
+      setText(said, 'clock' in card ? card.clock.title : card.line);
+      said.classList.toggle('visually-hidden', clocked !== undefined);
       setText(failed, failure ?? '');
       setHidden(failed, failure === undefined);
-      setHidden(accept, !answers);
+      setText(accept, card.kind === 'agreed' ? 'Choose lineup' : 'Accept');
+      setHidden(accept, !answers && card.kind !== 'agreed');
       setHidden(decline, !answers);
-      setHidden(ok, answers);
+      setHidden(ok, answers || card.kind === 'agreed');
     },
   };
 }
