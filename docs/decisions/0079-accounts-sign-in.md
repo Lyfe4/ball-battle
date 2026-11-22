@@ -149,5 +149,22 @@ here) decodes the ID token.
   background) or to pad the fast path.
 - Deploy previews can test email codes but not Google.
 - Slice 1 (this and PR (b)) reaches production only together with friends.
+- **Staying signed in** (checked 2026-11-22). The session cookie lasts 400 days (Chrome's most),
+  renewed at each hourly refresh; refresh tokens don't expire (no time-box on the Free plan), and
+  Safari's 7-day limit doesn't reach an HttpOnly cookie its own site set. So only the sweep ends a
+  quiet device's session: a guest after 90 days unseen, an account after 24 months.
+  - **The refresh token reuse interval is an hour** (3600 s, Supabase's default 10 s), on staging
+    first, then production, and in `supabase/config.toml`. A refresh whose answer never reached
+    the phone (a dropped connection, a tab closed mid-request) left the cookie holding a used
+    token; past 10 s Auth read its next use as theft and ended the session, losing a guest for
+    good. Within the interval Auth answers with the session's current token instead. The cost: a
+    stolen copy of an older cookie still works for an hour after its refresh without ending the
+    session. Our tokens never reach the page's JavaScript, so a thief needs the device or its
+    cookie store, and holds the current cookie then anyway. Still uncovered: a device that comes
+    back more than an hour after such a refresh.
+  - **For the coming UX proposal: settings should read signed in or out from the server (`/me`),
+    not `localStorage`.** Safari clears a site's script storage after 7 days without a visit, so
+    `ballbattle.online.account` goes while the cookie stays: settings offer Sign in to a device
+    still signed in (Sign in then finds it and recovers, after the 16+ question).
 - Not taken: Realtime now, the hosted OAuth redirect, merging accounts, Unicode usernames, an
   export endpoint, the 60/30 split, a username check while typing.
