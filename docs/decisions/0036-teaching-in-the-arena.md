@@ -7,6 +7,7 @@
 - Amended by: ADR 0040 (tips are two switches in settings), ADR 0041 (a rule gets a one-time hint)
 - Amended by: ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment, a
   story led by its result)
+- Amended by: its addendum of 2026-11-22 (the hint is a caption in a fixed place and a ring)
 
 ## Context
 
@@ -123,3 +124,46 @@ lines, about 73 × 39 px, so it fits by a ball at 375 px wide.
 | Before                                           | After, phone                                             | After, desktop                                                          |
 | ------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------- |
 | ![Poison! alone](../images/tips/hint-before.png) | ![Tip over Poison!](../images/tips/hint-after-phone.png) | ![Tip over Poison! on a desktop](../images/tips/hint-after-desktop.png) |
+
+## Addendum (2026-11-22): a caption in a fixed place, and a ring
+
+The 2026-11-18 "Tip" label still didn't teach. It followed a moving ball for 1.6 s with one word
+("Bombs!"), so a player watching the fight saw a sticker fly past and couldn't say what it was, and
+a phone player had to find it on a court as wide as the screen. The UX pass (approved 2026-11-22)
+replaces it.
+
+- **One caption, in a fixed place, for 4 s.** The ball and its ability ("Bomber: Bombs") over the
+  ball's own one-line description ("Drops a big bomb now and then: it blows when touched."), in the
+  frame tip's quiet box (one look, ADR 0063). Phone: under the speed row. Beside a phone's court
+  turned sideways: the panel's last row (the panel scrolls inside itself there, ADR 0067
+  addendum). Desktop: under the panel. On the phone and the desktop it floats, so showing it never
+  moves the court or the panel.
+- **A ring on the thing it is about.** A soft ring pulses three times (2.4 s) where a zone
+  appeared (the bomb, the lightning's mark, the fire), else on the ball. With reduced motion it
+  shows still and fades.
+- **The sentence is the definition's `description`**, one source, already shown in the manual
+  (owner's decision; a per-ability sentence only if playtests say it reads wrong). Where a
+  description said what the ball is rather than what the moment shows, it was rewritten, still
+  within the manual's two lines at 375 px (`manual-text.touch.browser.test.ts`): the Frost ("Every
+  hit slows its enemy right down; it is slow itself."), the Hex (the "it" that read as the Hex:
+  "3 s later the ball loses 27% of its health"), the Kraken ("Tentacles grab its enemy and crush
+  it; more on big balls.") and the Spartan ("Plants its shield to halve hits, then throws its
+  spear."). Text only: no ruleset bump.
+- **Nothing slows.** No slow-mo or hold: sim and presentation time are untouched (ADR 0007), so a
+  live fight stays in step with the other phone.
+- **Heard once.** The caption is a polite `role="status"`, written as it starts, so a screen reader
+  reads it once; the sticker was hidden from them. The ring stays `aria-hidden`.
+- Unchanged: once per ball per device (`ballbattle.hintsSeen`), one at a time, a hint whose ball
+  is gone waits for next time, never in the home demo, the Ability hints switch (ADR 0040).
+
+The rules for the ready card's "What to watch" line are in `docs/what-to-watch.md`; the existing
+reasons are rewritten to them later.
+
+Tests: `arena-tips.browser.test.ts` reads the caption; `arena-tips.wide.browser.test.ts` waits for
+"Venom: Poison" with the Venom's description, its status role and the ring, and checks the court
+and the panel didn't move.
+
+| Before                                                             | After                                                                      |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| ![Bombs! sticker, phone](../images/tips/caption-before-phone.png)  | ![Caption under speed, phone](../images/tips/caption-after-phone.png)      |
+| ![Bombs! sticker, desktop](../images/tips/caption-before-wide.png) | ![Caption under the panel, desktop](../images/tips/caption-after-wide.png) |

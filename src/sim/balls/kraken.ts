@@ -76,7 +76,7 @@ const within = (spot: Spot, ball: BallState): boolean => {
 export const kraken = defineBall<KrakenState>({
   id: 'kraken',
   name: 'Kraken',
-  description: 'Tentacles rise and crush its enemy; big balls get more.',
+  description: 'Tentacles grab its enemy and crush it; more on big balls.',
   color: '#0891b2',
   ability: { name: 'Tentacles', shownBy: { kind: 'status', status: 'held' } },
   howItWorks: [

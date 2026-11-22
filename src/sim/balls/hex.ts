@@ -49,7 +49,7 @@ const NO_CURSE: HexState = { cursedId: '', cursedTick: 0, burstTick: 0 };
 export const hex = defineBall<HexState>({
   id: 'hex',
   name: 'Hex',
-  description: 'Its bump curses: 3 s later it takes 27% of its health.',
+  description: 'Its bump curses: 3 s later the ball loses 27% of its health.',
   color: '#d946ef',
   ability: { name: 'Curse', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
   howItWorks: [

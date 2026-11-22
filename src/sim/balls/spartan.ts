@@ -56,7 +56,7 @@ export function spartanRaisedOf(ball: BallState): boolean | undefined {
 export const spartan = defineBall<SpartanState>({
   id: 'spartan',
   name: 'Spartan',
-  description: 'Plants its shield, then throws its spear.',
+  description: 'Plants its shield to halve hits, then throws its spear.',
   color: '#dc2626',
   ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' } },
   howItWorks: [

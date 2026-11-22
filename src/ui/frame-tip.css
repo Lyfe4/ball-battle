@@ -3,7 +3,8 @@
  * fight, in a notice's surface box (notice.css), never over the court. Only where a match is
  * watched: home, the manual and the setup screens never show it.
  */
-.frame-tip {
+.frame-tip,
+.arena-caption {
   margin: 0;
   padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
@@ -16,5 +17,46 @@
 .frame-tip[hidden],
 .stage[data-setup] .frame-tip,
 .stage:not([data-screen='match'], [data-screen='series'], [data-screen='online']) .frame-tip {
+  display: none;
+}
+
+/*
+ * The ability caption (arena-tips.ts, ADR 0036 addendum of 2026-11-22): the same quiet box, in a fixed
+ * place under the match for about 4 s. It floats under the panel's last row (the speed row on a
+ * phone), so showing it never moves the court or the panel.
+ */
+.hud {
+  position: relative;
+}
+
+.arena-caption {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + var(--space-gap));
+  display: grid;
+  gap: 2px;
+}
+
+/* Beside a phone's court turned sideways: the last row of the panel (it scrolls inside itself). */
+@media (min-aspect-ratio: 5/4) {
+  .arena-caption {
+    position: static;
+  }
+}
+
+/* A desktop: under the panel again, clear of everything, so it never moves the panel. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .arena-caption {
+    position: absolute;
+  }
+}
+
+.arena-caption-title {
+  font-weight: 800;
+}
+
+.arena-caption[hidden],
+.stage[data-setup] .arena-caption,
+.stage:not([data-screen='match'], [data-screen='series'], [data-screen='online']) .arena-caption {
   display: none;
 }

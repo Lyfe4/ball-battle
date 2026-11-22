@@ -17,7 +17,7 @@ export const SLOW_TICKS = 270;
 export const frost = defineBall({
   id: 'frost',
   name: 'Frost',
-  description: 'Slow and sturdy. Every hit slows its enemy right down.',
+  description: 'Every hit slows its enemy right down; it is slow itself.',
   color: '#bae6fd',
   ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' } },
   howItWorks: [

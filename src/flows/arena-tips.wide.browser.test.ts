@@ -1,8 +1,9 @@
 // The real page in a real browser (`pnpm test:browsers`, at desktop size): teaching in the arena
 // (ADR 0036, 0037). A Free play match of a pairing new to this device waits on its ready moment:
 // both balls still where the match starts, the card saying who is favoured and what to watch, and
-// Fight! to start. The first time a ball's ability shows, a short label names it, once per device;
-// a finished match leads "How it was won" with its result. The same pairing again starts by
+// Fight! to start. The first time a ball's ability shows, a caption under the panel names it and
+// says what it does, and a ring marks the ball, once per device, never moving the court; a
+// finished match leads "How it was won" with its result. The same pairing again starts by
 // itself, and with the cards switched off in settings no card shows.
 import { describe, expect, it } from 'vitest';
 import page from '../../index.html?raw';
@@ -12,6 +13,7 @@ import {
   READY_SEEN_STORAGE_KEY,
   TIPS_STORAGE_KEY,
 } from '../app/tips.ts';
+import { venom } from '../sim/balls/venom.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { atRest, button, changes, settle, until, visible } from './page-support.ts';
 
@@ -49,22 +51,29 @@ describe('tips in the arena', () => {
     // than any guess to draw it, and a picture taken mid-pop-in would then rightly change.
     await atRest(canvasNow);
     expect(await changes(canvasNow, 1800)).toBe(false);
-    expect(visible('.ability-hint')).toHaveLength(0);
+    expect(visible('#arena-caption')).toHaveLength(0);
 
     button('Fight!').click();
     await settle();
     expect(visible('.ready-card')).toHaveLength(0);
     expect(await changes(canvasNow, 900)).toBe(true);
 
-    // The first poisoning shows the Venom's hint, and the device remembers it.
+    // The first poisoning shows the Venom's caption and its ring, and the device remembers it.
+    const court = () => JSON.stringify(document.getElementById('arena')?.getBoundingClientRect());
+    const panel = () => JSON.stringify(visible('.hud-ball')[0]?.getBoundingClientRect());
+    const before = { court: court(), panel: panel() };
     await until(
-      () => visible('.ability-hint-name')[0]?.textContent === 'Poison!',
+      () => visible('#arena-caption')[0]?.textContent.startsWith('Venom: Poison') === true,
       20_000,
-      'the Poison! hint',
+      'the Venom: Poison caption',
       false,
     );
-    // Marked as a tip, so it never reads as something gone wrong.
-    expect(visible('.ability-hint-label')[0]?.textContent).toBe('Tip');
+    const caption = visible('#arena-caption')[0];
+    expect(caption?.getAttribute('role')).toBe('status');
+    expect(caption?.querySelector('.arena-caption-text')?.textContent).toBe(venom.description);
+    expect(visible('.tip-ring')).toHaveLength(1);
+    // It floats under the panel: the court and the panel stay where they were.
+    expect({ court: court(), panel: panel() }).toStrictEqual(before);
     expect(window.localStorage.getItem(HINTS_SEEN_STORAGE_KEY)).toContain('venom');
 
     // At the end, "How it was won" is offered, closed, its summary the result in one line.
