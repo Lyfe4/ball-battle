@@ -4,8 +4,8 @@
 // - home: the page scrolls, never a box inside it whose scroll bar clipped Play and the gear; its
 //   top whole at scroll 0, the court its full size while the page scrolls, Free play and Ball
 //   manual above the fold;
-// - the manual's matchup chart: the ball grid as wide as the column, every name on one line (the
-//   Free play picker's beside rules squeezed it into three a row);
+// - the manual's matchup chart: its bands use the column, every name on one line (first written
+//   for the old chart's grid, which Free play's beside rules squeezed into three a row);
 // - the lineup: a whole row of tiles with their names above the fold, and Reveal lineups, sticky
 //   in its own column, covering no tile at the top, the middle or the end of the page;
 // - the account: Done ends the page rather than sticking over the Friends section.
@@ -74,18 +74,19 @@ describe('beside screens from the iPhone and the screen walk', () => {
     expect(box(court).height, 'the court keeps its size').toBeCloseTo(courtBefore.height, 0);
     window.scrollTo(0, 0);
 
-    // The matchup chart: every ball against the one chosen, as many a row as the column holds.
+    // The matchup chart: every ball against the one chosen, using the column.
     await click(button('Ball manual'));
     await settle();
     await click(button('Matchup chart'));
     await settle();
-    const grid = visible('.matchup-one-body .ball-grid')[0];
-    if (grid === undefined) throw new Error('no chart grid');
-    const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
-    const column = box(grid.closest('.manual') ?? grid);
-    expect(box(grid).width, 'the grid spans its column').toBeGreaterThan(column.width - 2);
-    expect(columns, 'as many a row as fit').toBeGreaterThanOrEqual(6);
-    const wrapped = visible('.matchup-one-body .ball-tile-name').filter(
+    // (Replaced 2026-11-23 with the new chart: its bands span the column, no name wraps.)
+    const spectrum = visible('.matchup-spectrum')[0];
+    if (spectrum === undefined) throw new Error('no chart');
+    const column = box(spectrum.closest('.manual') ?? spectrum);
+    for (const band of visible('.spectrum-bands')) {
+      expect(box(band).width, 'the bands span their column').toBeGreaterThan(column.width / 2);
+    }
+    const wrapped = visible('.spectrum-chip-name').filter(
       (name) => name.getClientRects().length > 1 || box(name).height > 24,
     );
     expect(wrapped.map((name) => name.textContent)).toStrictEqual([]);
