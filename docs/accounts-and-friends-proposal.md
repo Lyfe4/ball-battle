@@ -91,23 +91,57 @@ Mail goes through Resend Free (100 a day, 3,000 a month, one domain) from a subd
 Our own limits are counted before Auth is called, in `game.rate_limits`. Each subject is an HMAC
 under the server key (as `ipSubject`), never the address.
 
-| What                         | Limit                                                                 | The player reads                                                    |
-| ---------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Codes sent to one email      | 3 an hour, 10 a day                                                   | "We've sent a few codes to that address: try again in 40 min"       |
-| Codes sent from one network  | 30 an hour (a class fits), 100 a day                                  | "Lots of sign-ins on this network: try again in 12 min"             |
-| Codes sent by one guest      | 5 an hour                                                             | as per email                                                        |
-| Resend again                 | 60 s after the last (the button counts down; Auth also enforces 60 s) | the countdown                                                       |
-| Wrong codes for one email    | 5 per code, then the code is dead and a new one is needed; 10 an hour | "That code has expired: send a new one"                             |
-| Wrong codes from one network | 50 per 10 min                                                         | "Too many tries: wait a little"                                     |
-| **All of us, a day**         | **90** (Resend's 100 less a margin)                                   | "Email codes are busy today: continue with Google, or try tomorrow" |
-| **All of us, a month**       | **2,700** (of 3,000)                                                  | the same, "try again next month"                                    |
+| What                         | Limit                                                                 | The player reads                                                                          |
+| ---------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Codes sent to one email      | 3 an hour, 5 a day                                                    | "We've sent a few codes to that address: try again in 40 min"                             |
+| Codes sent from one network  | 10 an hour, 20 a day                                                  | "Lots of email sign-ins on this network today: continue with Google, or try again in 3 h" |
+| Codes sent by one guest      | 5 an hour                                                             | as per email                                                                              |
+| Resend again                 | 60 s after the last (the button counts down; Auth also enforces 60 s) | the countdown                                                                             |
+| Wrong codes for one email    | 5 per code, then the code is dead and a new one is needed; 10 an hour | "That code has expired: send a new one"                                                   |
+| Wrong codes from one network | 50 per 10 min                                                         | "Too many tries: wait a little"                                                           |
+| **All of us, a day**         | **90** (Resend's 100 less a margin)                                   | "Email codes are busy today: continue with Google, or try tomorrow"                       |
+| **All of us, a month**       | **2,700** (of 3,000)                                                  | the same, "try again next month"                                                          |
 
 - The two "all of us" buckets are global subjects in `rate_limits`, refused before Auth is called.
   The player gets a clear `503 email_busy`, not a mail error. Google is untouched by them.
-- Passing 70 a day reports to Sentry once, so we hear before players do.
 - If Resend still refuses (or Auth's own hourly cap, raised to 100 in the dashboard, trips), Auth's
   error maps to the same `email_busy`.
 - Supabase's "identity linked" notification emails stay off: they would spend the quota.
+
+**One attacker can't spend everyone's codes:**
+
+- **One network** gets at most 20 of the day's 90 (an IPv6 /64 counts as one network, as today).
+  It takes five networks to empty the day.
+  - The cost: a class signing up by email on one school network gets 20 codes a day. The rest of
+    them use Google, which no cap touches, and the message says so.
+- **Existing accounts keep a reserve.** New sign-ups (a guest's email upgrade, a new device's
+  first code) may use only 60 of the 90. The last 30 are for codes to emails that already have an
+  account.
+  - The server knows which path it took (the email change or the `/otp` fallback), so the answer
+    is still the same "We sent a code".
+  - An attacker spraying made-up addresses (always new) can empty only the 60. Players coming back
+    to their account can still sign in by email, and everyone can still use Google.
+- **Repeated attacks:** an `email_codes` setting in the config switches email codes off (the
+  button says "Use Google for now"). Each player's per-address and per-guest limits stay as they
+  are.
+
+**How you find out the cap is near, with what exists today** (no Sentry DSN is set, so a report
+to Sentry would reach no one):
+
+1. **`/api/v1/health` gains `"emailCodes": "ok" | "near" | "full"`**, read from the two global
+   buckets: near is 70 a day or 2,200 a month. The health answer stays 200, so the friend switch
+   and the up/down monitor aren't affected.
+   - **In UptimeRobot, add a keyword monitor** on the same URL that alerts when
+     `"emailCodes":"ok"` is missing. You get UptimeRobot's email within its check interval.
+   - The free plan offers keyword monitors; check yours has a slot.
+2. **The monthly count is also checked by `supabase-daily.yml`**, which already runs daily and
+   emails you when it fails. A new step fails past 2,200 this month: a second, slower alarm that
+   needs no UptimeRobot change.
+3. Telling people "near" through a public endpoint only tells an attacker how far they've got,
+   which they can work out anyway.
+
+_Decision for you, only if you'd rather not add the keyword monitor:_ the daily workflow alone
+then catches the monthly cap, but the daily cap only shows up as players reading "busy today".
 
 ### Schema (expand-only migrations)
 
@@ -203,6 +237,9 @@ the spike notes ride in PR (a).
   - the same answer for new and known emails;
   - the 6th wrong code is refused;
   - the 91st code of the day answers `email_busy`;
+  - the 61st new-account code is refused while an existing account's code still goes;
+  - one network's 21st code of the day is refused;
+  - `/health` says `emailCodes: "near"` at 70, and stays 200;
   - a guest keeps its series after linking;
   - switching deletes the guest;
   - sign-in during a live match gets `409`.
@@ -321,8 +358,8 @@ Taken:
 
 ## Spike: linking Google to a guest (local)
 
-**Status: half done.** The source is read and the local probe has run; the end-to-end run with a
-real Google ID token waits on a Google OAuth test client.
+**Status: done (2026-11-22).** Linking works over REST: the guest keeps its user id. Run locally
+against Supabase Auth v2.197.0 with a real Google test client and one Google sign-in.
 
 **The call** (Supabase Auth v2.197.0, the version the local CLI runs):
 
@@ -330,7 +367,8 @@ real Google ID token waits on a Google OAuth test client.
 POST /auth/v1/token?grant_type=id_token
 apikey: <publishable key>
 Authorization: Bearer <the guest's access token>
-{ "provider": "google", "id_token": "<Google's>", "nonce": "<raw nonce>", "link_identity": true }
+{ "provider": "google", "id_token": "<Google's>", "access_token": "<Google's>",
+  "nonce": "<raw nonce>", "link_identity": true }
 ```
 
 **From Auth's source** (`internal/api/token_oidc.go`, `identity.go`):
@@ -357,23 +395,39 @@ Authorization: Bearer <the guest's access token>
 - Without a user bearer: `403 bad_jwt`.
 - The hosted linking route, with manual linking off: `404 manual_linking_disabled`.
 
-**Still to run with a real Google client:**
+**Full run** (one Google sign-in, scope `openid email`; the ID token carried only `sub`, `email`,
+`email_verified`, `nonce`, `at_hash` and the standard claims, with no name or photo):
 
-- a link keeps the guest id;
-- `identity_already_exists` for a second guest;
-- plain sign-in returns the linked user;
-- wrong nonce;
-- `email_exists`, then joining the email account.
+| Case                                                 | Result                                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| Link Google to a guest                               | `200`, **same user id**, `is_anonymous: false`, providers `[google]`    |
+| Link the same Google to a second guest               | `422 identity_already_exists`                                           |
+| Plain sign-in with that Google                       | `200`, the linked user (the first guest's id)                           |
+| Wrong nonce / no nonce                               | `400 invalid nonce` / `400` "both exist or not"                         |
+| Link when Google's email is on an email-only account | `400 email_exists`                                                      |
+| Then plain sign-in with Google                       | `200`, **the email account's id**, providers `[email, google]` (joined) |
 
-The throwaway script covers all of these from one Google sign-in.
+**What the source didn't say, and what PR (a) does about it:**
 
-**Meaning for PR (a):** the plan stands as designed. Two additions:
+- **The guest's old access token still works after linking**, until it expires (an hour), and its
+  `is_anonymous` claim is stale.
+  - The callback replaces the cookie, so this only matters to a copy of the old token.
+  - Rules never read `is_anonymous` from a token: they read `profiles.account_at`, which the
+    callback writes.
+- **Auth doesn't remember used ID tokens:** one token was accepted for several grants in the run.
+  Replay protection is ours:
+  - the ID token never leaves the function;
+  - the state, verifier and nonce cookie is one use, cleared on every outcome.
+- **Auth logs a warning when the ID token has `at_hash` and no `access_token` is sent,** and says
+  future versions will require it. The callback sends Google's `access_token` alongside, so a
+  Supabase upgrade can't break sign-in.
 
-- Map `email_exists` to the "Switch to it?" path.
-- Leave manual linking off in every project: the hosted path stays closed and ours doesn't need
-  it.
+**Meaning for PR (a):** the design stands; no fallback to the hosted redirect. Four additions:
 
-The fallback (the hosted redirect) is not needed unless the full run surprises us.
+- `email_exists` goes to the "Switch to it?" path.
+- Manual linking stays off in every project.
+- Send `access_token` with the ID token.
+- A unit test that the callback refuses a second use of its cookie.
 
 ## Draft ADR 0079 (outline)
 
