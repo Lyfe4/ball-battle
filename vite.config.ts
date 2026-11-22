@@ -65,13 +65,14 @@ function phoneProject(
   suffix: string,
   width: number,
   height: number,
+  also: readonly string[] = [],
 ): TestProjectInlineConfiguration {
   return {
     extends: true,
     plugins: [fixedSeeds],
     test: {
       name,
-      include: [`src/**/*.${suffix}.browser.test.ts`],
+      include: [`src/**/*.${suffix}.browser.test.ts`, ...also],
       browser: {
         enabled: true,
         provider: playwright({ launchOptions, contextOptions: { hasTouch: true } }),
@@ -177,6 +178,7 @@ export default defineConfig({
             '**/*.iphone.browser.test.ts',
             '**/*.safari.browser.test.ts',
             '**/*.landscape.browser.test.ts',
+            '**/*.landscape-small.browser.test.ts',
           ],
           setupFiles: [BROWSER_SETUP],
           browser: {
@@ -239,6 +241,13 @@ export default defineConfig({
       phoneProject('browsers-safari', 'safari', 390, 664),
       // A phone turned sideways: the beside layout below the desktop width (ADR 0067).
       phoneProject('browsers-landscape', 'landscape', 812, 375),
+      // The smallest common phone sideways in Safari (ADR 0067 addendum of 2026-11-22): an iPhone
+      // SE's width, and an iPhone 13's height less Safari's bar at the top and the home bar's safe
+      // area (measured from a real iPhone 13: about 844 x 327 visible, the court 290 square). The
+      // sideways flows run here too.
+      phoneProject('browsers-landscape-small', 'landscape-small', 667, 320, [
+        'src/**/*.landscape.browser.test.ts',
+      ]),
     ],
   },
 });
