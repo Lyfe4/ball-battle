@@ -26,7 +26,15 @@ function memory(entries: Record<string, string> = {}): ProfileHost['storage'] {
   return () => store;
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+/** Waits until `check`, as long as a slow engine needs, failing with `what`. */
+const until = async (check: () => boolean, what: string) => {
+  const end = Date.now() + 3000;
+  while (!check()) {
+    if (Date.now() > end) throw new Error(`Timed out waiting for ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+};
+const titled = (title: string) => until(() => texts('h1')[0] === title, title);
 const texts = (selector: string) =>
   [...document.querySelectorAll<HTMLElement>(selector)]
     .filter((node) => node.closest('[hidden]') === null)
@@ -79,9 +87,7 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
 describe('Profile', () => {
   it('shows an account by its username, the stats to come, and its actions', async () => {
     const { asked, done } = profile([200, { name: 'robin_b', account: true, username: 'robin_b' }]);
-    await settle();
-    await settle();
-    expect(texts('h1')).toStrictEqual(['robin_b']);
+    await titled('robin_b');
     expect(texts('.notice-text')[0]).toBe('@robin_b · Opponents see you as robin_b.');
     expect(texts('.soon-card-title')).toStrictEqual(['Your stats']);
     expect(texts('.soon-sticker')).toStrictEqual(['Coming soon']);
@@ -93,59 +99,47 @@ describe('Profile', () => {
 
     // Asked once, Keep first; a failed try says why (here the fake says offline).
     press('Delete account');
-    await settle();
-    expect(texts('h1')).toStrictEqual(['Delete your account?']);
+    await titled('Delete your account?');
     expect(texts('.screen-footer button')).toStrictEqual(['Keep', 'Delete']);
     press('Delete');
-    await settle();
-    await settle();
-    expect(document.body.textContent).toContain('You’re offline');
+    await until(() => document.body.textContent.includes('You’re offline'), 'why it failed');
     expect(done).toStrictEqual(['forget']);
     press('Keep');
-    await settle();
-    expect(texts('h1')).toStrictEqual(['robin_b']);
+    await titled('robin_b');
     done.length = 0;
 
     press('Change username');
-    await settle();
-    expect(texts('h1')).toStrictEqual(['Change your username']);
+    await titled('Change your username');
     press('Cancel');
-    await settle();
+    await titled('robin_b');
     press('Log out');
-    await settle();
+    await until(() => done.length > 0, 'Log out');
     expect(done).toStrictEqual(['log out']);
   });
 
   it('tells a guest what signing in unlocks, with Sign in and Forget me', async () => {
     const { done } = profile([200, { name: 'Player 4821', account: false }]);
-    await settle();
-    await settle();
-    expect(texts('h1')).toStrictEqual(['Guest']);
+    await titled('Guest');
     expect(texts('.notice-text')).toContain('Playing on this device.');
     expect(texts('.notice-more button')).toStrictEqual(['Forget me on this device']);
     press('Sign in');
     expect(done).toStrictEqual(['sign in']);
     press('Forget me on this device');
-    await settle();
-    expect(texts('h1')).toStrictEqual(['Delete your guest?']);
+    await titled('Delete your guest?');
   });
 
   it('asks nothing for nobody on this device, and offers no Forget me', async () => {
     const { asked } = profile([500, {}], '');
-    await settle();
+    await titled('Guest');
     expect(asked).toStrictEqual([]);
-    expect(texts('h1')).toStrictEqual(['Guest']);
     expect(texts('.notice-more button')).toStrictEqual([]);
   });
 
   it('claims nothing when the server can’t say, and Try again asks again', async () => {
     const { asked } = profile([503, { error: { code: 'unavailable', message: 'down' } }]);
-    await settle();
-    await settle();
-    expect(texts('h1')).toStrictEqual(['Your profile']);
+    await titled('Your profile');
     press('Try again');
-    await settle();
-    await settle();
+    await until(() => asked.length === 2, 'the second read');
     expect(asked).toStrictEqual(['GET me', 'GET me']);
   });
 });
