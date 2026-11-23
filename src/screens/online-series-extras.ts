@@ -80,6 +80,8 @@ export function createSeriesExtras(
       return {
         note: all ? note : undefined,
         live,
+        // Live, played out or forfeit while this page still shows a fight of it: nothing to leave.
+        over: live && view.status !== 'open',
         ...(choice === undefined ? {} : { rematch: choice }),
         ...(toss === undefined ? {} : { toss }),
       };

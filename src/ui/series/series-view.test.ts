@@ -13,7 +13,15 @@ import {
   type SeriesState,
 } from '../../sim/series.ts';
 import { betweenLine } from '../series-text.ts';
-import { lastPlayOf, pairingOf, pickChoiceOf, seriesScreenOf, trackOf } from './series-view.ts';
+import {
+  lastPlayOf,
+  offersLeave,
+  pairingOf,
+  pickChoiceOf,
+  seriesScreenOf,
+  trackOf,
+  type SeriesScreen,
+} from './series-view.ts';
 
 const series = (format: Format) =>
   startSeries({
@@ -246,5 +254,34 @@ describe('the end of a live match, and a rematch (ADR 0055)', () => {
   it('offers Rematch beside Home, and Rematch or No thanks when the friend asked', () => {
     expect(end('offer').actions).toStrictEqual(['rematch', 'newSeries']);
     expect(end('answer').actions).toStrictEqual(['rematch', 'decline']);
+  });
+});
+
+describe('the way out', () => {
+  const fight: SeriesScreen = {
+    phase: 'playing',
+    choice: undefined,
+    pairing: undefined,
+    waiting: false,
+    actions: [],
+  };
+
+  it('shows mid-fight, and while a live match waits on the other player', () => {
+    expect(offersLeave(fight, { note: undefined, live: true })).toBe(true);
+    expect(offersLeave(fight, undefined)).toBe(true);
+    const waits = { ...fight, phase: 'between', waiting: true, actions: ['leave'] } as const;
+    expect(offersLeave(waits, { note: 'Waiting', live: true })).toBe(true);
+  });
+
+  it('goes once the other player left mid-fight: the match is over, told at the fight’s end', () => {
+    expect(offersLeave(fight, { note: undefined, live: true, over: true })).toBe(false);
+  });
+
+  it('goes at the result, and while a series by turns waits with Home as its way on', () => {
+    expect(offersLeave({ ...fight, phase: 'finished', actions: ['newSeries'] }, undefined)).toBe(
+      false,
+    );
+    const waits = { ...fight, phase: 'between', waiting: true, actions: ['newSeries'] } as const;
+    expect(offersLeave(waits, { note: 'Waiting', live: false })).toBe(false);
   });
 });
