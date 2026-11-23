@@ -37,6 +37,8 @@ export function offlineMount(goHome: () => void): OnlineMount {
     sides: () => undefined,
     setVisible: () => undefined,
     homeShown: () => undefined,
+    // Home offers no friend without online play (PLAY_CHOICES): nothing to send.
+    playFriend: () => Promise.resolve(),
     isLive: () => false,
     liveRate: () => 1,
     screenChanged: () => undefined,

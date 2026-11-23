@@ -1,14 +1,15 @@
 // The Play tab's wiring (home, ADR 0081): the demo matches on the arena behind the menu, one after
-// another (lively pairs from the counter map, not announced as counters); the chooser, Play, Change
-// rules and Free play (ADR 0055). main.ts owns the arena and hands this module what it needs through
-// `HomeHost`.
+// another (lively pairs from the counter map, not announced as counters); the mode box and its sheet,
+// Play and Free play (ADR 0055, 0081 Option B). main.ts owns the arena and hands this module what it
+// needs through `HomeHost`.
 import { demoAt } from '../app/demo.ts';
 import {
+  loadPlayChoice,
   loadPlaySetup,
   PLAY_CHOICES,
-  writeChangeRulesParams,
-  writeOpponentPlayParams,
+  savePlayChoice,
   writePlayParams,
+  type FriendSetup,
 } from '../app/modes.ts';
 import { writePickParams, writeShellParams } from '../app/route.ts';
 import { browserStorage as storage } from '../app/storage.ts';
@@ -32,6 +33,11 @@ export interface HomeHost {
   resume(): void;
   /** Forgets the held series (New series opens Play's lineup after it). */
   forget(): void;
+  /**
+   * Play against a friend (online builds): a live challenge on these rules, straight to the link
+   * to share, the 16+ question first on a device without a guest. Busy until it shows.
+   */
+  playFriend(setup: FriendSetup): Promise<void>;
 }
 
 export interface HomeController {
@@ -68,25 +74,19 @@ export function createHomeController(
   };
 
   const home = createHome(root, balls, PLAY_CHOICES, {
-    onPlay: (opponent) => {
-      if (opponent === 'bot' && host.held() !== undefined) {
-        host.resume();
-        return;
-      }
-      host.go((url) => {
-        writeOpponentPlayParams(url, opponent, loadPlaySetup(storage));
-      });
+    onPlay: (choice) => {
+      if (choice.opponent === 'friend') return host.playFriend(choice.friend);
+      if (host.held() !== undefined) host.resume();
+      else play();
+      return undefined;
     },
     onNewSeries: () => {
       host.forget();
       play();
     },
-    // The chosen opponent's setup: vs Bot opens on Play's choices, vs Friend on the first live
-    // format.
-    onChangeRules: (opponent) => {
-      host.go((url) => {
-        writeChangeRulesParams(url, opponent, loadPlaySetup(storage));
-      });
+    // Each opponent's rules are remembered as they are chosen (ADR 0081 addendum).
+    onChoice: (choice) => {
+      savePlayChoice(storage, choice);
     },
     // Free play opens on the pair the demo is showing (ADR 0020).
     onFreePlay: () => {
@@ -128,8 +128,8 @@ export function createHomeController(
       home.setVisible(visible);
     },
     open() {
-      // As last set up on this device: a setup or a lineup may have changed it.
-      home.setPlay(loadPlaySetup(storage), host.held());
+      // As last chosen on this device: a setup or a lineup may have changed it.
+      home.setPlay(loadPlayChoice(storage, PLAY_CHOICES), host.held());
       waiting = reducedMotion.matches;
       home.setWaiting(waiting);
       startDemo();

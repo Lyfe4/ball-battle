@@ -44,3 +44,34 @@
 .segmented-button[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* A choice's few quiet words under its name (a format's way of playing, in the Play sheet). */
+.segmented-text,
+.segmented-hint {
+  display: block;
+}
+
+.segmented-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-tiny);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/*
+ * A choice in rows (a setup's and the Play sheet's): its name on a line of its own, the buttons
+ * sharing the row under it.
+ */
+.segmented-rows {
+  flex-wrap: wrap;
+  justify-content: stretch;
+}
+
+.segmented-rows > .segmented-label {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.segmented-rows > .segmented-button {
+  flex: 1;
+}

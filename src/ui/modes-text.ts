@@ -1,7 +1,13 @@
-// The words for the ways to play (ADR 0046, 0055): home's Play and its opponent cards, the setup
-// screens, the bot level on the lineup step. Pure, so they are tested without a DOM.
+// The words for the ways to play (ADR 0046, 0055, 0081): the Play tab's mode box, its sheet and
+// Play, the setup screens, the bot level on the lineup step. Pure, so they are tested without a DOM.
 import { PICK_SECONDS } from '../api/live.ts';
-import { botChooses, type Opponent, type PlaySetup } from '../app/modes.ts';
+import {
+  botChooses,
+  type FriendSetup,
+  type Opponent,
+  type PlayChoice,
+  type PlaySetup,
+} from '../app/modes.ts';
 import {
   bestOfOf,
   DEFAULT_BEST_OF,
@@ -35,7 +41,7 @@ export function playSpoken(setup: PlaySetup): string {
   return `${PLAY_LABEL} ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}, against ${against}`;
 }
 
-/** Each opponent in the Play tab's chooser, and the heading of the setup screen it opens. */
+/** Each opponent as the sheet names it, and the heading of its setup screen. */
 export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }>> = {
   bot: { name: 'vs Bot' },
   friend: { name: 'vs Friend' },
@@ -44,15 +50,50 @@ export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }
 /** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
 export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; once they accept, you both pick your lineups.`;
 
-/** The chooser's name, for screen readers: the buttons say who. */
-export const CHOOSER_LABEL = 'Play against';
+/** Play against a friend (ADR 0081): a live match sent by a link, on the sheet's rules. */
+export function friendPlaySpoken(setup: FriendSetup): string {
+  return `${PLAY_LABEL} a friend live, ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}: send them a link`;
+}
 
-/** What Play starts against a friend (ADR 0081): the send screen, a live match by a link. */
-export const FRIEND_PLAY_LINE = 'Live · send a link';
-export const FRIEND_PLAY_SPOKEN = 'Play a friend live: send them a link';
+/** The mode box's first line: who Play is against ("vs Normal bot"; Blind has no level). */
+export function boxWho(choice: PlayChoice): string {
+  if (choice.opponent === 'friend') return OPPONENT_CARDS.friend.name;
+  return botChooses(choice.bot.format) ? levelLine(choice.bot.level) : OPPONENT_CARDS.bot.name;
+}
 
-/** The Play tab's quiet links under Play. */
-export const CHANGE_RULES = 'Change rules';
+/** The mode box's second line: the rules ("Best of 5 · Reveal", a friend's "Live · …"). */
+export function boxRules(choice: PlayChoice): string {
+  if (choice.opponent === 'friend') {
+    return `Live · ${setupLine(choice.friend.format, choice.friend.bestOf)}`;
+  }
+  return setupLine(choice.bot.format, choice.bot.bestOf);
+}
+
+/** The mode box's name: what it opens, then both lines in words. */
+export function boxSpoken(choice: PlayChoice): string {
+  const { format, bestOf } = choice.opponent === 'friend' ? choice.friend : choice.bot;
+  const live = choice.opponent === 'friend' ? 'live, ' : '';
+  return `${SHEET_WORDS.title}: ${boxWho(choice)}, ${live}${bestOfName(bestOf)}, ${FORMAT_SHORT[format]}`;
+}
+
+/** The sheet's heading, its groups' names and its way out. */
+export const SHEET_WORDS = {
+  title: 'What to play',
+  against: 'Against',
+  length: 'Length',
+  format: 'Format',
+  level: 'Bot',
+  done: 'Done',
+} as const;
+
+/** Each format in a few words, under its name in the sheet (the setup's cards say it whole). */
+export const FORMAT_HINTS: Readonly<Record<Format, string>> = {
+  reveal: 'take turns',
+  showdown: 'winner shows',
+  blind: 'set order',
+};
+
+/** The Play tab's quiet link under Play. */
 export const FREE_PLAY = 'Free play';
 
 /** "Best of 3 · Reveal": what the lineup is for, since Play skips the setup screen. */

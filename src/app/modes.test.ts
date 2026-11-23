@@ -11,9 +11,14 @@ import {
   savePlaySetup,
   SETUP_FORMATS,
   writeBotSetupParams,
-  writeChangeRulesParams,
-  writeOpponentPlayParams,
   writePlayParams,
+  FIRST_FRIEND,
+  FRIEND_BEST_OF_STORAGE_KEY,
+  FRIEND_FORMAT_STORAGE_KEY,
+  loadPlayChoice,
+  offeredFormat,
+  PLAY_OPPONENT_STORAGE_KEY,
+  savePlayChoice,
 } from './modes.ts';
 import { parseRoute } from './route.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from './series-length.ts';
@@ -77,37 +82,70 @@ describe('home’s Play (ADR 0055)', () => {
   });
 });
 
-describe('the Play tab’s chooser (ADR 0055, 0081)', () => {
+describe('what the Play tab’s box starts (ADR 0081, Option B)', () => {
   it('offers vs Friend only where online play is built, the bot always and first', () => {
     expect(playChoicesFor(true)).toStrictEqual(['bot', 'friend']);
     expect(playChoicesFor(false)).toStrictEqual(['bot']);
   });
 
-  it('plays the remembered bot series against the bot, and opens the send screen for a friend', () => {
-    const setup = { format: 'showdown', bestOf: 5, level: 'hard' } as const;
-    const bot = new URLSearchParams('view=manual');
-    writeOpponentPlayParams(bot, 'bot', setup);
-    expect(bot.toString()).toBe('mode=bo5&fmt=showdown&step=lineup');
-    // A friend match needs a link: Play never remembers one (ADR 0055).
-    const friend = new URLSearchParams('view=manual');
-    writeOpponentPlayParams(friend, 'friend', setup);
-    expect(friend.toString()).toBe('view=send&fmt=reveal&mode=bo3');
+  it('is the bot on a first visit, and a live Best of 3 · Reveal for a friend', () => {
+    expect(FIRST_FRIEND).toStrictEqual({ format: 'reveal', bestOf: 3 });
+    expect(loadPlayChoice(memory().storage, ['bot', 'friend'])).toStrictEqual({
+      opponent: 'bot',
+      bot: FIRST_PLAY,
+      friend: FIRST_FRIEND,
+    });
   });
 
-  it('changes the rules on the chosen opponent’s setup, the bot’s on Play’s choices', () => {
-    const setup = { format: 'blind', bestOf: 5, level: 'easy' } as const;
-    const bot = new URLSearchParams();
-    writeChangeRulesParams(bot, 'bot', setup);
-    expect(bot.toString()).toBe('mode=bo5'); // No format is Blind.
-    expect(parseRoute(bot, BALL_LOOKUP)).toMatchObject({ screen: 'series', step: 'rules' });
-    const friend = new URLSearchParams();
-    writeChangeRulesParams(friend, 'friend', setup);
-    expect(friend.toString()).toBe('view=send&fmt=reveal&mode=bo3');
+  it('remembers each opponent’s rules, and who was chosen last', () => {
+    const { storage, store } = memory();
+    savePlayChoice(storage, {
+      opponent: 'friend',
+      bot: { format: 'blind', bestOf: 5, level: 'hard' },
+      friend: { format: 'showdown', bestOf: 5 },
+    });
+    expect(store.get(PLAY_OPPONENT_STORAGE_KEY)).toBe('friend');
+    expect(store.get(FRIEND_FORMAT_STORAGE_KEY)).toBe('showdown');
+    expect(store.get(FRIEND_BEST_OF_STORAGE_KEY)).toBe('5');
+    // The bot's are Play's own, shared with the setup and the lineup's level (ADR 0055).
+    expect(store.get(PLAY_FORMAT_STORAGE_KEY)).toBe('blind');
+    expect(loadPlayChoice(storage, ['bot', 'friend'])).toStrictEqual({
+      opponent: 'friend',
+      bot: { format: 'blind', bestOf: 5, level: 'hard' },
+      friend: { format: 'showdown', bestOf: 5 },
+    });
   });
 
-  it('offers every format against the bot, and only the live ones against a friend', () => {
-    expect([...SETUP_FORMATS.bot].sort()).toStrictEqual([...FORMATS].sort());
+  it('falls back to the bot where the build has no friend, and to a live format for a friend', () => {
+    const { storage } = memory({
+      [PLAY_OPPONENT_STORAGE_KEY]: 'friend',
+      [FRIEND_FORMAT_STORAGE_KEY]: 'blind',
+      [FRIEND_BEST_OF_STORAGE_KEY]: '7',
+    });
+    expect(loadPlayChoice(storage, ['bot']).opponent).toBe('bot');
+    expect(loadPlayChoice(storage, ['bot', 'friend']).friend).toStrictEqual(FIRST_FRIEND);
+    const throws = () => {
+      throw new Error('blocked');
+    };
+    expect(loadPlayChoice(throws, ['bot', 'friend'])).toStrictEqual({
+      opponent: 'bot',
+      bot: FIRST_PLAY,
+      friend: FIRST_FRIEND,
+    });
+    expect(() => {
+      savePlayChoice(throws, loadPlayChoice(throws, ['bot']));
+    }).not.toThrow();
+  });
+
+  it('offers the formats in one order everywhere: Reveal, Showdown, Blind', () => {
+    expect(SETUP_FORMATS.bot).toStrictEqual(['reveal', 'showdown', 'blind']);
     expect(SETUP_FORMATS.friend).toStrictEqual(['reveal', 'showdown']);
+    expect([...SETUP_FORMATS.bot].sort()).toStrictEqual([...FORMATS].sort());
+  });
+
+  it('keeps a format an opponent offers, else its first', () => {
+    expect(offeredFormat(SETUP_FORMATS.friend, 'showdown')).toBe('showdown');
+    expect(offeredFormat(SETUP_FORMATS.friend, 'blind')).toBe('reveal');
   });
 
   it('shows the bot’s level only where the bot makes choices', () => {
