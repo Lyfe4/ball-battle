@@ -332,5 +332,5 @@ Production bundle (November 2026, ruleset 23, 30 balls): 357.60 kB JS (112.23 kB
 
 ## License
 
-All rights reserved. The code is public to read, but not licensed for reuse, copying or
-redistribution; see [LICENSE](LICENSE).
+All rights reserved. The code is not licensed for reuse, copying or redistribution; see
+[LICENSE](LICENSE).

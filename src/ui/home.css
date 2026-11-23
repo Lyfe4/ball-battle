@@ -178,7 +178,7 @@
   list-style: none;
 }
 
-/* Source, Privacy and Terms: quiet, in a row that wraps, each a full tap target. */
+/* Privacy and Terms: quiet, in a row that wraps, each a full tap target. */
 .home-footer {
   display: flex;
   flex-wrap: wrap;

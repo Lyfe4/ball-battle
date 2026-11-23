@@ -46,7 +46,6 @@ export interface Home {
 }
 
 const STRIP_ICON_PX = 28;
-const SOURCE_URL = 'https://github.com/Lyfe4/ball-battle';
 
 /**
  * The front door, phone first (ADR 0055): the live demo match on the arena above, then which balls
@@ -136,17 +135,14 @@ export function createHome(
     }),
   );
 
-  const source = element('a', 'text-link home-source', 'Source on GitHub');
-  source.href = SOURCE_URL;
-  source.rel = 'noopener';
   // The privacy policy and terms (ADR 0069), quiet at the very end: pages of their own.
   const page = (text: string, href: string) => {
-    const anchor = element('a', 'text-link home-source', text);
+    const anchor = element('a', 'text-link', text);
     anchor.href = href;
     return anchor;
   };
   const footer = element('p', 'home-footer');
-  footer.append(source, page('Privacy', '/privacy.html'), page('Terms', '/terms.html'));
+  footer.append(page('Privacy', '/privacy.html'), page('Terms', '/terms.html'));
 
   // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
   const head = element('div', 'home-head');

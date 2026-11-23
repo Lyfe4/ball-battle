@@ -27,7 +27,7 @@ script.
 - Phone first: one column, a chunky way back at the top. On a desktop the way back sits in a
   column of its own beside the text, which keeps a readable line length.
 - Linked from the 16+ question (opening in a tab of its own, so the question stays where it was)
-  and from home's footer, beside Source on GitHub.
+  and from home's footer (beside Source on GitHub until 2026-11-23, when that link was removed).
 - Not taken: in-game screens (`?view=privacy`). They would need the game's script to read a
   policy, and a route, a screen key and history rules for what is only reading.
 

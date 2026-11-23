@@ -72,7 +72,7 @@
 }
 
 /*
- * A text link (Source on GitHub, More about…, Leave series): the focus colour, bolder, with a
+ * A text link (More about…, Leave series): the focus colour, bolder, with a
  * trailing chevron, so it reads as a link without an underline.
  */
 .text-link {
