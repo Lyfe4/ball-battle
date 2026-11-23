@@ -1,9 +1,9 @@
 // The matchup chart (ADR 0073 addendum of 2026-11-23): one ball against every other, as a spectrum
-// of five bands from "Beats Thorns" to "Thorns beats". The hero names the ball read against, with
-// Change ball (Free play's ball grid, in place); each band is a calm tint with its mark, heading and
-// count; each ball is a chip whose accessible name says the level. A tap explains the pair with the
-// pairing, the verdict and Open <ball>: under the chip's row on a phone, in a sticky panel beside
-// the bands sideways, and in a strip above the five columns on a desktop.
+// of five bands from "Thorns beats" to "Beats Thorns", said from the chosen ball's side. The hero
+// names it, with Change ball (Free play's ball grid, in place); each band is a calm tint with its
+// mark, heading and count; each ball is a chip whose accessible name says the level. A tap explains
+// the pair with the pairing, the verdict and Open <ball>: under the chip's row on a phone, in a
+// sticky panel beside the bands sideways, and in a strip above the five columns on a desktop.
 import { BESIDE_LAYOUT, DESKTOP_LAYOUT } from '../../app/layout-query.ts';
 import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { BallDefinition } from '../../sim/types.ts';
@@ -79,7 +79,8 @@ export function createMatchupSpectrum(
   const heroWords = element('div', 'spectrum-hero-words');
   const heroName = element('h2', 'spectrum-hero-name');
   const heroLine = element('p', 'spectrum-hero-line');
-  heroWords.append(element('p', 'spectrum-hero-eyebrow', 'Every ball against'), heroName, heroLine);
+  // Said from the chosen ball's side: "Thorns / against every ball".
+  heroWords.append(heroName, element('p', 'spectrum-hero-eyebrow', 'against every ball'), heroLine);
   const change = element('button', 'hud-button spectrum-change');
   change.type = 'button';
   hero.append(heroArt, heroWords, change);
@@ -154,11 +155,12 @@ export function createMatchupSpectrum(
     if (chosen === undefined) detail.remove();
     aside.replaceChildren(chosen === undefined ? hint : detail);
     if (chosen === undefined) return;
-    const verdict = verdictOf(chosen, against, nameOf);
-    setText(headline, `${nameOf(chosen)} vs ${nameOf(against)}: ${verdict.headline}`);
+    // The chosen ball first, as everywhere on the chart.
+    const verdict = verdictOf(against, chosen, nameOf);
+    setText(headline, `${nameOf(against)} vs ${nameOf(chosen)}: ${verdict.headline}`);
     setText(reason, verdict.reason);
     setText(open, `Open ${nameOf(chosen)}`);
-    pairing.show(lookup(chosen), lookup(against));
+    pairing.show(lookup(against), lookup(chosen));
     if (beside.matches) return;
     const tapped = bands.querySelector<HTMLElement>(`.spectrum-chip[data-ball="${chosen}"]`);
     const list = tapped?.parentElement;

@@ -154,20 +154,21 @@ order made a player hunt for what beats a ball. Of three proposals (a spectrum, 
 strong counters, a check against a lineup), the owner chose the spectrum, polished, with columns on
 a desktop.
 
-- **One ball against every other, sorted by outcome**, in five bands: Beats Thorns, Edge on Thorns,
-  Even, Thorns has the edge, Thorns beats. Each heading says it from one point of view (the balls in
-  the band), carries the band's mark (▲▲ ▲ = ▼ ▼▼, as the pick rows draw them) and a count; the band
-  is a calm tint of its marks' colour (`--color-band-*`, precomputed in `tokens.css`, so a browser
-  without `color-mix` draws the same). The tint only echoes the words and the mark.
-- **The hero** names the ball read against, large, with its one line; **Change ball** opens Free
+- **One ball against every other, sorted by outcome**, in five bands said from the chosen ball's
+  side, as the pick screens say it to "you" (a green ▲ means you're favoured): Thorns beats, Thorns
+  has the edge, Even, Edge on Thorns, Beats Thorns. Each heading carries the band's mark (▲▲ ▲ = ▼
+  ▼▼, as the pick rows draw them, the chosen ball's) and a count; the band is a calm tint of its
+  marks' colour (`--color-band-*`, precomputed in `tokens.css`, so a browser without `color-mix`
+  draws the same). The tint only echoes the words and the mark.
+- **The hero** names the chosen ball, large, "against every ball" under it, then its one line; **Change ball** opens Free
   play's ball grid in its place (no scrolling strip: an inner scroll box, and one ball in 31 is
   found faster in the grid). It opens on the first ball in the roster with strong counters both
   ways, so every band shows something.
 - **Chips**, not tiles: the ball small and its name, a 44 px target, no mark of its own (the band
-  says it). The accessible name says the level and who wins those odds ("Archer: slightly favoured
-  against Thorns, wins about 6 in 10"; "Brawler: strongly unfavoured against Thorns, Thorns wins
-  about 7 in 10").
-- **The reason** (the pairing, the verdict, Open <ball>): on a phone under the tapped chip's row, in
+  says it). The accessible name says the chosen ball's level against it and who wins those odds
+  ("Archer: Thorns slightly unfavoured, Archer wins about 6 in 10"; "Brawler: Thorns strongly
+  favoured, Thorns wins about 7 in 10").
+- **The reason** (the pairing and the verdict with the chosen ball first, Open <ball>): on a phone under the tapped chip's row, in
   the chip's band; beside, in a sticky panel next to the bands; on a desktop, a strip above the
   columns (and first in the tab order there, as it shows), pinned at the top like a header while
   the page scrolls: solid in the page's colour, a small gap and a hairline under it, so the
@@ -181,6 +182,13 @@ a desktop.
 - Removed: `matchup-chart.ts` (the grid), `matchup-one.ts` (the phone form) and
   `matchup-chart.css`. Free play keeps its legend (`matchup-legend.ts`), its marks and its grid as
   they were.
+
+**The point of view flipped (2026-11-23, a beta player).** The chart first said each band from the
+balls in it ("Beats Thorns" first, its ▲▲ theirs), the opposite of the pick screens, where the
+player's own ball is "you" and green ▲ means you're favoured: reading Thorns' chart, green meant bad
+for Thorns. Now the chosen ball is "you" throughout: the headings, the marks and tints (green ▲▲,
+what it beats, first; red ▼▼, what beats it, last, so the columns' order on a desktop flips too),
+the reason's pairing and verdict and every chip's name. The layout is unchanged.
 
 Tests: `matchup-spectrum-text.test.ts` (every pair in the band of its lean and level, the headings,
 the accessible names); `matchup-spectrum.touch` (bands stacked, the reason under the tapped chip's

@@ -21,8 +21,19 @@ export const bands = () => visible('.spectrum-band');
 export const chips = () => visible('.spectrum-chip');
 export const detail = () => visible('.spectrum-detail')[0];
 
-/** Five bands, top to bottom (or left to right), each a heading with a count. */
+/**
+ * Five bands, top to bottom (or left to right), each a heading with a count, said from the chosen
+ * ball's side: what it beats first, what beats it last (2026-11-23 addendum).
+ */
 export function checkBands(): void {
+  const hero = document.querySelector('.spectrum-hero-name')?.textContent ?? '';
+  expect(visible('.spectrum-band-title').map((title) => title.textContent)).toStrictEqual([
+    `${hero} beats`,
+    `${hero} has the edge`,
+    'Even',
+    `Edge on ${hero}`,
+    `Beats ${hero}`,
+  ]);
   expect(bands().map((band) => band.dataset['band'])).toStrictEqual([
     'beats',
     'edge',
