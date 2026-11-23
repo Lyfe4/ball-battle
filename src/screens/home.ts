@@ -1,11 +1,16 @@
-// The home screen's wiring: the demo matches on the arena behind the menu, one after another (lively
-// pairs from the counter map, not announced as counters); Play, the opponent cards, Free play and
-// the manual (ADR 0055). main.ts owns the arena and hands this module what it needs through
+// The Play tab's wiring (home, ADR 0081): the demo matches on the arena behind the menu, one after
+// another (lively pairs from the counter map, not announced as counters); the chooser, Play, Change
+// rules and Free play (ADR 0055). main.ts owns the arena and hands this module what it needs through
 // `HomeHost`.
 import { demoAt } from '../app/demo.ts';
-import { HOME_CARDS, loadPlaySetup, writeBotSetupParams, writePlayParams } from '../app/modes.ts';
-import { writeSendParams } from '../app/online-url.ts';
-import { writeManualParams, writePickParams } from '../app/route.ts';
+import {
+  loadPlaySetup,
+  PLAY_CHOICES,
+  writeChangeRulesParams,
+  writeOpponentPlayParams,
+  writePlayParams,
+} from '../app/modes.ts';
+import { writePickParams } from '../app/route.ts';
 import { browserStorage as storage } from '../app/storage.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
 import { getDefinition } from '../sim/definitions.ts';
@@ -60,32 +65,31 @@ export function createHomeController(
     });
   };
 
-  const home = createHome(root, balls, HOME_CARDS, {
-    onPlay: () => {
-      if (host.held() === undefined) play();
-      else host.resume();
+  const home = createHome(root, balls, PLAY_CHOICES, {
+    onPlay: (opponent) => {
+      if (opponent === 'bot' && host.held() !== undefined) {
+        host.resume();
+        return;
+      }
+      host.go((url) => {
+        writeOpponentPlayParams(url, opponent, loadPlaySetup(storage));
+      });
     },
     onNewSeries: () => {
       host.forget();
       play();
     },
-    // Each opponent's setup: vs Bot opens on Play's choices, vs Friend on the first live format.
-    onOpponent: (opponent) => {
-      const { format, bestOf } = loadPlaySetup(storage);
+    // The chosen opponent's setup: vs Bot opens on Play's choices, vs Friend on the first live
+    // format.
+    onChangeRules: (opponent) => {
       host.go((url) => {
-        if (opponent === 'bot') writeBotSetupParams(url, format, bestOf);
-        else writeSendParams(url, 'reveal', 3);
+        writeChangeRulesParams(url, opponent, loadPlaySetup(storage));
       });
     },
     // Free play opens on the pair the demo is showing (ADR 0020).
     onFreePlay: () => {
       host.go((url) => {
         writePickParams(url, demoAt(index).matchup);
-      });
-    },
-    onManual: () => {
-      host.go((url) => {
-        writeManualParams(url);
       });
     },
     onWatch: () => {

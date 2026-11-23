@@ -5,12 +5,14 @@ import { BOT_LEVEL_STORAGE_KEY } from './bot-level.ts';
 import {
   botChooses,
   FIRST_PLAY,
-  homeCardsFor,
+  playChoicesFor,
   loadPlaySetup,
   PLAY_FORMAT_STORAGE_KEY,
   savePlaySetup,
   SETUP_FORMATS,
   writeBotSetupParams,
+  writeChangeRulesParams,
+  writeOpponentPlayParams,
   writePlayParams,
 } from './modes.ts';
 import { parseRoute } from './route.ts';
@@ -75,10 +77,32 @@ describe('home’s Play (ADR 0055)', () => {
   });
 });
 
-describe('home’s opponent cards (ADR 0055)', () => {
-  it('offers vs Friend only where online play is built, the bot always', () => {
-    expect(homeCardsFor(true)).toStrictEqual(['bot', 'friend']);
-    expect(homeCardsFor(false)).toStrictEqual(['bot']);
+describe('the Play tab’s chooser (ADR 0055, 0081)', () => {
+  it('offers vs Friend only where online play is built, the bot always and first', () => {
+    expect(playChoicesFor(true)).toStrictEqual(['bot', 'friend']);
+    expect(playChoicesFor(false)).toStrictEqual(['bot']);
+  });
+
+  it('plays the remembered bot series against the bot, and opens the send screen for a friend', () => {
+    const setup = { format: 'showdown', bestOf: 5, level: 'hard' } as const;
+    const bot = new URLSearchParams('view=manual');
+    writeOpponentPlayParams(bot, 'bot', setup);
+    expect(bot.toString()).toBe('mode=bo5&fmt=showdown&step=lineup');
+    // A friend match needs a link: Play never remembers one (ADR 0055).
+    const friend = new URLSearchParams('view=manual');
+    writeOpponentPlayParams(friend, 'friend', setup);
+    expect(friend.toString()).toBe('view=send&fmt=reveal&mode=bo3');
+  });
+
+  it('changes the rules on the chosen opponent’s setup, the bot’s on Play’s choices', () => {
+    const setup = { format: 'blind', bestOf: 5, level: 'easy' } as const;
+    const bot = new URLSearchParams();
+    writeChangeRulesParams(bot, 'bot', setup);
+    expect(bot.toString()).toBe('mode=bo5'); // No format is Blind.
+    expect(parseRoute(bot, BALL_LOOKUP)).toMatchObject({ screen: 'series', step: 'rules' });
+    const friend = new URLSearchParams();
+    writeChangeRulesParams(friend, 'friend', setup);
+    expect(friend.toString()).toBe('view=send&fmt=reveal&mode=bo3');
   });
 
   it('offers every format against the bot, and only the live ones against a friend', () => {

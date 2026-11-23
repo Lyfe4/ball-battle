@@ -97,7 +97,7 @@ describe('beside screens on a phone turned sideways', () => {
 
     await click(visible('.screen-back')[0] ?? document.body);
     await settle();
-    await click(button('vs Bot'));
+    await click(button('Change rules'));
     await settle();
     await checkTop('vs Bot setup');
     await click(button('Choose lineup'));

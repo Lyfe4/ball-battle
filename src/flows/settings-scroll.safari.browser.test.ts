@@ -1,6 +1,6 @@
 // The settings menu scrolls inside itself where it is capped (settings-menu.ts, ADR 0044), through
-// the real page at 390 x 664 (browsers-safari). On home the menu must cover the demo court and
-// keep off its own gear, so it is capped to the room above the gear; a menu taller than that (an
+// the real page at 390 x 664 (browsers-safari). On the Play tab the gear is at the top of the page
+// (ADR 0081), so the menu opens under it, capped to the room below it; a menu taller than that (an
 // account's Online rows, stood in for here by room before its last row) scrolls. Scrolling it must
 // not re-place it: re-placing lifted the cap for a moment, and the browser put the scroll back
 // to the top (seen on a tablet). Opens on home and never moves to another screen (CLAUDE.md).
@@ -15,9 +15,9 @@ describe('the settings menu', () => {
     await import('../main.ts');
     await settle();
 
-    // Taller than the room above the gear, shorter than the screen.
+    // Taller than the room below the gear.
     const taller = document.createElement('style');
-    taller.textContent = '.settings-foot { padding-top: 200px; }';
+    taller.textContent = '.settings-foot { padding-top: 700px; }';
     document.head.append(taller);
     const gear = visible('.settings-toggle')[0];
     gear?.click();

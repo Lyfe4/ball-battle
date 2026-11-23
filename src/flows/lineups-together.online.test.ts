@@ -12,6 +12,7 @@ import {
   openPhones,
   panelOf,
   phone,
+  playAFriend,
   sendChallenge,
   type Phones,
 } from './live-support.ts';
@@ -31,7 +32,7 @@ const SENDER = ['storm', 'quake', 'ghost'] as const;
 /** The sender sends a link from vs Friend; the friend opens it and accepts: both on the lineups. */
 async function agreed(sender: Page, friend: Page): Promise<void> {
   await sender.goto(`${BASE}/`);
-  await sender.locator('.home-card[data-opponent="friend"]').click();
+  await playAFriend(sender);
   await confirmAge(sender);
   await sender.getByRole('heading', { name: 'vs Friend' }).waitFor();
   // No lineup before the friend accepts: the setup sends it.

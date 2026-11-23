@@ -1,11 +1,12 @@
-// Home by opponent (ADR 0055), through the real page. Run at 375 x 812 and 390 x 664 with touch,
-// 1280 x 800 and 1920 x 1080: Play opens the remembered series' lineup in one tap (a first visit:
-// Best of 3 · Reveal · vs Normal bot), the level is changed there and remembered; the vs Bot card
-// opens its setup, whose choices survive Back from the lineup and become Play's; Free play and the
-// manual are one step in; Back from every screen lands where the ADR's table says, by the browser's
-// Back and the in-app ‹, and Escape only ever closes; every stop has a way forward and nothing
-// scrolls sideways; old links open what they should (Other modes opens home); a held series is
-// still resumed.
+// The Play tab (ADR 0055, 0081), through the real page. Run at 375 x 812 and 390 x 664 with touch,
+// 1280 x 800 and 1920 x 1080: Play shows whole without a scroll, clear of the tab bar; it opens the
+// remembered series' lineup in one tap (a first visit: Best of 3 · Reveal · vs Normal bot), the
+// level is changed there and remembered; Change rules opens the bot's setup, whose choices survive
+// Back from the lineup and become Play's; Free play and the Balls tab are one step in; Back from
+// every screen lands where the ADR's table says, by the browser's Back and the in-app ‹, and Escape
+// only ever closes; every stop has a way forward and nothing scrolls sideways; old links open what
+// they should (Other modes opens home); a held series is still resumed. This build has no online
+// play, so the chooser has one choice and doesn't show (play-chooser.browser.test.ts has both).
 import { expect } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -85,23 +86,23 @@ async function pickLineup(ids: readonly string[]): Promise<void> {
 }
 
 /**
- * The opponent cards are two compact buttons under Play (the old Best of 3 / Best of 5 toggles'
- * size): the title alone, centred, a card no taller than Play.
+ * Play without scrolling (ADR 0081, requirement 4): at the top of the page, Play lies wholly on
+ * screen, above the tab bar on a phone held upright (the demo court gives way); the rail beside
+ * leaves the screen's whole height.
  */
-function checkCards(): void {
+function checkPlayShows(): void {
+  expect(window.scrollY).toBe(0);
   const play = visible('.home-play')[0]?.getBoundingClientRect();
-  for (const card of visible('.home-card')) {
-    expect(card.querySelectorAll('span')).toHaveLength(1);
-    const box = card.getBoundingClientRect();
-    const name = card.querySelector('.home-card-name')?.getBoundingClientRect();
-    expect(
-      Math.abs((name?.left ?? 0) + (name?.width ?? 0) / 2 - (box.left + box.width / 2)),
-    ).toBeLessThan(2);
-    expect(
-      Math.abs((name?.top ?? 0) + (name?.height ?? 0) / 2 - (box.top + box.height / 2)),
-    ).toBeLessThan(2);
-    expect(box.height).toBeLessThan(play?.height ?? 0);
-  }
+  const bar = visible('nav.tab-bar')[0]?.getBoundingClientRect();
+  if (play === undefined || bar === undefined) throw new Error('No Play or no tab bar');
+  const upright = bar.top > window.innerHeight / 2;
+  const floor = upright ? bar.top : window.innerHeight;
+  expect({
+    playBottom: Math.round(play.bottom) <= Math.round(floor),
+    top: play.top >= 0,
+  }).toStrictEqual({ playBottom: true, top: true });
+  // One choice in a build without online play: no chooser to make.
+  expect(visible('.home-chooser')).toHaveLength(0);
 }
 
 /** Play: the remembered series' lineup in one tap; the level changed there is Play's next time. */
@@ -114,9 +115,7 @@ async function play(): Promise<void> {
     'Play Best of 3, Reveal, against the Normal bot',
   );
   expect(playMeta()).toBe('Best of 3 · Reveal · vs Normal bot');
-  // One card per opponent under Play: the bot in every build (vs Friend needs online play).
-  expect(visible('.home-card-name').map((name) => name.textContent)).toContain('vs Bot');
-  checkCards();
+  checkPlayShows();
   if (plays[0] !== undefined) await click(plays[0]);
   await settle();
 
@@ -157,9 +156,9 @@ async function play(): Promise<void> {
   expect(playMeta()).toBe('Best of 3 · Reveal · vs Easy bot');
 }
 
-/** The vs Bot card: its setup, its choices kept through the lineup and Back, then Play's. */
+/** Change rules: the bot's setup, its choices kept through the lineup and Back, then Play's. */
 async function botSetup(): Promise<void> {
-  await click(visible('.home-card[data-opponent="bot"]')[0] ?? document.body);
+  await click(button('Change rules'));
   await settle();
   expect(search()).toBe('?mode=bo3&fmt=reveal');
   expect(visible('.rules-step .screen-title')[0]?.textContent).toBe('vs Bot');
@@ -216,7 +215,7 @@ async function botSetup(): Promise<void> {
   expect(search()).toBe('');
 }
 
-/** Free play and the manual: quiet links, one step in and one Back out. */
+/** Free play, a quiet link, and the Balls tab: one step in and one Back out. */
 async function quietLinks(): Promise<void> {
   await click(button('Free play'));
   await settle();
@@ -224,7 +223,8 @@ async function quietLinks(): Promise<void> {
   checkStop('Free play');
   await inAppBack();
   expect(search()).toBe('');
-  await click(button('Ball manual'));
+  const balls = visible('nav.tab-bar a').find((tab) => tab.textContent.trim() === 'Balls');
+  await click(balls ?? document.body);
   await settle();
   expect(search()).toBe('?view=manual');
   checkStop('manual');
@@ -264,7 +264,7 @@ async function oldLinks(): Promise<void> {
 
 /** A Reveal series left with Back is still held, and home's Play resumes it. */
 async function resume(): Promise<void> {
-  await click(visible('.home-card[data-opponent="bot"]')[0] ?? document.body);
+  await click(button('Change rules'));
   await settle();
   await click(button('Best of 3'));
   await card('Reveal');

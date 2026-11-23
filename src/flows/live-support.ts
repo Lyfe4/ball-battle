@@ -8,6 +8,12 @@ import { attemptWatchMs, LEAD_MS, roundWatchMs, TOSS_LEAD_MS } from '../api/live
 import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
 import { MAX_ATTEMPTS } from '../sim/series.ts';
 
+/** The Play tab's way to a friend match (ADR 0081): vs Friend in the chooser, then Play. */
+export async function playAFriend(page: Page): Promise<void> {
+  await page.locator('.home-chooser button[data-opponent="friend"]').click();
+  await page.locator('.home-play-row .home-play').click();
+}
+
 /** iPhone Safari's visible size (ADR 0039). */
 export const PHONE = { width: 390, height: 664 };
 
@@ -190,9 +196,10 @@ export async function startLiveMatch(
     friend: [],
   },
 ): Promise<string> {
-  // From home, as a player starts it (ADR 0055): vs Friend, the 16+ question first, then its setup.
+  // From home, as a player starts it (ADR 0055, 0081): vs Friend and Play, the 16+ question first,
+  // then its setup.
   await sender.goto(`${base}/`);
-  await sender.locator('.home-card[data-opponent="friend"]').click();
+  await playAFriend(sender);
   await confirmAge(sender);
   await sender.getByRole('heading', { name: 'vs Friend' }).waitFor();
   if (format !== 'reveal') {

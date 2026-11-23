@@ -231,3 +231,21 @@ checklist.
 - **Sizes** are tokens (`--tab-bar-height` 64 px, `--tab-rail-width` 76 px, `--tab-rail-width-wide`
   11rem). At 667 x 320 the rail holds four tabs with room to spare (a fifth, Shop, still needs the
   48 px tabs noted above).
+
+## Addendum (2026-11-24): the Play tab, as built (PR 4)
+
+- **The chooser** is a segmented choice in the one chosen look (`choice.css`): vs Bot, and vs Friend
+  in online builds; with one choice (no online play) it doesn't show. It starts on vs Bot every time
+  the tab opens, and choosing adds no history step. The cards went (`PLAY_CHOICES` replaces
+  `HOME_CARDS`; `writeOpponentPlayParams` and `writeChangeRulesParams` say where each leads).
+- **vs Friend**: Play says "Live · send a friend a link" and opens the send screen; Change rules
+  steps aside, as it would open the same screen. A held bot series shows as Resume series only with
+  vs Bot chosen.
+- **The title row on top.** On a phone held upright the title row (with Sign in and the gear) sits
+  above the court, as in the mockup: the panel's boxes are `display: contents` on home there, so the
+  row can lead the column. Beside and on a desktop it stays at the top of the panel.
+- **The pitch line** shows on a desktop only (beside already hid it): on a phone its room goes to
+  the court, which at 390 × 664 is about 40 px taller than before.
+- **Kept:** the roster strip on a desktop, Privacy · Terms at the end, "Back to your match" and
+  "Back to your rematch" in the chooser's and Play's place.
+- **The status strip's slot** is in place and hidden; PR 7 fills it.

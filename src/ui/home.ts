@@ -4,9 +4,13 @@ import type { BallDefinition } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
 import type { SeriesState } from '../sim/series.ts';
 import type { Opponent, PlaySetup } from '../app/modes.ts';
+import { createSegmented } from './segmented.ts';
 import {
-  BALL_MANUAL,
+  CHANGE_RULES,
+  CHOOSER_LABEL,
   FREE_PLAY,
+  FRIEND_PLAY_LINE,
+  FRIEND_PLAY_SPOKEN,
   OPPONENT_CARDS,
   PLAY_LABEL,
   playLine,
@@ -17,15 +21,14 @@ import {
 } from './modes-text.ts';
 
 export interface HomeActions {
-  /** Play (ADR 0055): the last series set up against the bot, straight to its lineup; or, with a
-   * series held, carry on with it. */
-  readonly onPlay: () => void;
+  /** Play (ADR 0055, 0081): against the bot, the last series set up, straight to its lineup, or
+   * with a series held, carry on with it; against a friend, the send screen. */
+  readonly onPlay: (opponent: Opponent) => void;
   /** With a series held: forget it and start a fresh one. */
   readonly onNewSeries: () => void;
-  /** An opponent's card: its setup screen. */
-  readonly onOpponent: (opponent: Opponent) => void;
+  /** Change rules: the chosen opponent's setup screen. */
+  readonly onChangeRules: (opponent: Opponent) => void;
   readonly onFreePlay: () => void;
-  readonly onManual: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
 }
@@ -37,8 +40,8 @@ export interface Home {
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
   /**
-   * Play with what it starts (`setup`), or Resume series with its format and score while one is
-   * held, and New series.
+   * Opens on vs Bot with Play saying what it starts (`setup`), or Resume series with its format
+   * and score while one is held, and New series.
    */
   setPlay(setup: PlaySetup, held: SeriesState | undefined): void;
   /** Moves focus to Play (or Resume series): the one obvious first action. */
@@ -48,11 +51,11 @@ export interface Home {
 const STRIP_ICON_PX = 28;
 
 /**
- * The front door, phone first (ADR 0055): the live demo match on the arena above, then which balls
- * are playing, the name, the pitch (a strategy game about building a lineup; counters are for the
- * manual to reveal, not the headline), a large Play that says what it starts (the player's last
- * series against the bot), one card per opponent under it, then Free play and the manual as quiet
- * links. On a wide screen it sits beside the arena with the roster's drawings as a strip.
+ * The Play tab (ADR 0081), phone first: the title row with the gear at the top, the live demo
+ * match on the arena, which balls are playing, the status strip's slot (filled by the inbox, PR 7),
+ * a chooser of who to play, one large Play that says what it starts, then Change rules and Free
+ * play as quiet links, and Privacy · Terms at the end. On a wide screen it sits beside the arena,
+ * with the pitch line and the roster's drawings as a strip on a desktop.
  */
 export function createHome(
   root: HTMLElement,
@@ -75,7 +78,35 @@ export function createHome(
   const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
-  // Play leads, one tap to the remembered series' lineup, saying what it plays (ADR 0055).
+  // What waits on the player (friends online, challenges): hidden until it has something (PR 7).
+  const status = element('div', 'home-status');
+  status.hidden = true;
+
+  let setup: PlaySetup | undefined;
+  let held: SeriesState | undefined;
+  let chosen: Opponent = 'bot';
+
+  // Who to play, a choice in the one look (choice.css), only where there is more than one.
+  const chooser = element('div', 'home-chooser');
+  const segments = createSegmented(
+    chooser,
+    'home-chooser',
+    CHOOSER_LABEL,
+    opponents.map((opponent) => ({ value: opponent, text: OPPONENT_CARDS[opponent].name })),
+    chosen,
+    (opponent) => {
+      chosen = opponent;
+      showPlay();
+    },
+  );
+  chooser.querySelector('.segmented-label')?.classList.add('visually-hidden');
+  for (const [at, button] of chooser.querySelectorAll('button').entries()) {
+    const opponent = opponents[at];
+    if (opponent !== undefined) button.dataset['opponent'] = opponent;
+  }
+  chooser.hidden = opponents.length < 2;
+
+  // Play leads, one tap to what it says it starts (ADR 0055).
   const play = element('button', 'hud-button hud-button-primary home-play');
   // One of the few buttons that tap (sound.ts): Play is a key moment.
   play.dataset['sound'] = 'tap';
@@ -83,32 +114,16 @@ export function createHome(
   const playLabel = element('span', 'home-play-label');
   const playMeta = element('span', 'home-play-meta');
   play.append(playLabel, playMeta);
-  play.addEventListener('click', actions.onPlay);
+  play.addEventListener('click', () => {
+    actions.onPlay(chosen);
+  });
   // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
   const fresh = element('button', 'text-link home-new-series', 'New series');
   fresh.type = 'button';
   fresh.addEventListener('click', actions.onNewSeries);
+  // The chooser and Play are one row: "Back to your match" takes their place (online-mount.ts).
   const playRow = element('div', 'home-play-row');
-  playRow.append(play, fresh);
-
-  // One card per opponent, each opening its setup: two today, a 2 x 2 grid with Ranked and Casual.
-  const cards = element('ul', 'home-cards');
-  cards.setAttribute('aria-label', 'Choose who to play');
-  cards.append(
-    ...opponents.map((opponent) => {
-      const item = element('li', 'home-cards-item');
-      const card = element('button', 'home-card');
-      card.type = 'button';
-      card.dataset['opponent'] = opponent;
-      // The title alone: "vs Bot" and "vs Friend" say who it plays.
-      card.append(element('span', 'home-card-name', OPPONENT_CARDS[opponent].name));
-      card.addEventListener('click', () => {
-        actions.onOpponent(opponent);
-      });
-      item.append(card);
-      return item;
-    }),
-  );
+  playRow.append(chooser, play, fresh);
 
   const link = (text: string, onClick: () => void) => {
     const button = element('button', 'text-link home-link', text);
@@ -118,8 +133,11 @@ export function createHome(
     button.addEventListener('click', onClick);
     return button;
   };
+  const changeRules = link(CHANGE_RULES, () => {
+    actions.onChangeRules(chosen);
+  });
   const more = element('div', 'home-more');
-  more.append(link(FREE_PLAY, actions.onFreePlay), link(BALL_MANUAL, actions.onManual));
+  more.append(changeRules, link(FREE_PLAY, actions.onFreePlay));
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -144,10 +162,30 @@ export function createHome(
   const footer = element('p', 'home-footer');
   footer.append(page('Privacy', '/privacy.html'), page('Terms', '/terms.html'));
 
-  // The title shares its row with the settings gear (ADR 0040), at the top right of the panel.
+  // The title shares its row with the settings gear (ADR 0040): the top of the page on a phone,
+  // the top of the panel beside the court.
   const head = element('div', 'home-head');
   head.append(title, createSettingsToggle());
-  root.append(demo, head, pitch, playRow, cards, more, strip, footer);
+  root.append(head, demo, pitch, status, playRow, more, strip, footer);
+
+  /** Play as the chosen opponent and the held series say. */
+  function showPlay(): void {
+    if (setup === undefined) return;
+    const resuming = chosen === 'bot' && held !== undefined;
+    const label = resuming ? RESUME_PLAY.label : PLAY_LABEL;
+    let meta = FRIEND_PLAY_LINE;
+    let spoken = FRIEND_PLAY_SPOKEN;
+    if (chosen === 'bot') {
+      meta = held === undefined ? playLine(setup) : resumeLine(held);
+      spoken = held === undefined ? playSpoken(setup) : resumeSpoken(held);
+    }
+    setText(playLabel, label);
+    setText(playMeta, meta);
+    play.setAttribute('aria-label', spoken);
+    fresh.hidden = !resuming;
+    // A friend's Play is its setup already: Change rules would open the same screen.
+    changeRules.hidden = chosen !== 'bot';
+  }
 
   return {
     setVisible(visible) {
@@ -160,11 +198,13 @@ export function createHome(
     setWaiting(waiting) {
       watch.hidden = !waiting;
     },
-    setPlay(setup, held) {
-      setText(playLabel, held === undefined ? PLAY_LABEL : RESUME_PLAY.label);
-      setText(playMeta, held === undefined ? playLine(setup) : resumeLine(held));
-      play.setAttribute('aria-label', held === undefined ? playSpoken(setup) : resumeSpoken(held));
-      fresh.hidden = held === undefined;
+    setPlay(next, nextHeld) {
+      setup = next;
+      held = nextHeld;
+      // The chooser starts on vs Bot each time the tab opens (ADR 0081).
+      chosen = 'bot';
+      segments.select(chosen);
+      showPlay();
     },
     focus() {
       play.focus();

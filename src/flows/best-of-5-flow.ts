@@ -44,10 +44,11 @@ function fitsWidth(framed: Framed, where: string): void {
   });
 }
 
-/** The vs Bot setup, from home: Best of 5 (kept across a reload), the format's card, the lineup. */
+/** The vs Bot setup, from home's Change rules: Best of 5 (kept across a reload), the format's card,
+ * the lineup. */
 async function fromBotSetup(framed: Framed, format: Format): Promise<void> {
   await visit(framed, '');
-  shown(framed, '.home-card[data-opponent="bot"]')[0]?.click();
+  buttonIn(framed, 'Change rules').click();
   await settle();
   const five = buttonIn(framed, 'Best of 5');
   if (five.getAttribute('aria-pressed') !== 'true') {

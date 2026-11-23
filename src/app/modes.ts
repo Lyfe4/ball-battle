@@ -1,13 +1,15 @@
-// The ways to play and where each leads (ADR 0046, 0055). Home's Play starts the player's last
-// series against the bot, as they set it up (its length, format and level), straight to its lineup;
-// a first visit plays Best of 3 · Reveal · vs Normal bot. Under Play, one card per opponent opens
-// that opponent's setup screen: vs Bot, and vs Friend in builds with online play. Play only ever
-// remembers bot games: a friend match needs a link, so it never becomes Play's setup.
+// The ways to play and where each leads (ADR 0046, 0055, 0081). The Play tab's chooser picks who to
+// play: vs Bot, and vs Friend in builds with online play. Against the bot, Play starts the player's
+// last series as they set it up (its length, format and level), straight to its lineup; a first
+// visit plays Best of 3 · Reveal · vs Normal bot. Against a friend, Play opens the send screen.
+// Change rules opens the chosen opponent's setup. Play only ever remembers bot games: a friend
+// match needs a link, so it never becomes Play's setup.
 import { LIVE_FORMATS } from '../api/live.ts';
 import { DEFAULT_BOT } from '../sim/bot.ts';
 import { DEFAULT_BEST_OF, FORMATS, type BestOf, type Format } from '../sim/series.ts';
 import { loadBotLevel, saveBotLevel } from './bot-level.ts';
 import { ONLINE_BUILD } from './online-build.ts';
+import { writeSendParams } from './online-url.ts';
 import { loadSeriesLength, saveSeriesLength } from './series-length.ts';
 import { writeSeriesModeParams } from './series-url.ts';
 
@@ -79,17 +81,42 @@ export function writeBotSetupParams(params: URLSearchParams, format: Format, bes
 }
 
 /**
- * Who a home card plays against, the most competitive first. Ranked and Casual join this list
- * later (ADR 0055): the cards become a 2 × 2 grid and nothing else on home moves.
+ * Who the Play tab's chooser plays against. Ranked and Casual join this list later, as more
+ * choices in the same chooser (ADR 0081, amending ADR 0055's 2 × 2 grid).
  */
 export type Opponent = 'friend' | 'bot';
 
-/** Home's cards in a build with or without online play: vs Friend needs online play. */
-export function homeCardsFor(online: boolean): readonly Opponent[] {
+/** The chooser's choices in a build with or without online play, the bot first: it starts there. */
+export function playChoicesFor(online: boolean): readonly Opponent[] {
   return online ? ['bot', 'friend'] : ['bot'];
 }
 
-export const HOME_CARDS: readonly Opponent[] = homeCardsFor(ONLINE_BUILD);
+export const PLAY_CHOICES: readonly Opponent[] = playChoicesFor(ONLINE_BUILD);
+
+/** The friend setup a first live match opens on: the first live format, Best of 3. */
+function writeFriendSetup(params: URLSearchParams): void {
+  writeSendParams(params, LIVE_FORMATS[0] ?? 'reveal', DEFAULT_BEST_OF);
+}
+
+/** Play against `opponent`: the bot's remembered series at its lineup, or the send screen. */
+export function writeOpponentPlayParams(
+  params: URLSearchParams,
+  opponent: Opponent,
+  setup: PlaySetup,
+): void {
+  if (opponent === 'bot') writePlayParams(params, setup);
+  else writeFriendSetup(params);
+}
+
+/** Change rules for `opponent`: the vs Bot setup on Play's choices, or the friend setup. */
+export function writeChangeRulesParams(
+  params: URLSearchParams,
+  opponent: Opponent,
+  setup: PlaySetup,
+): void {
+  if (opponent === 'bot') writeBotSetupParams(params, setup.format, setup.bestOf);
+  else writeFriendSetup(params);
+}
 
 /** The formats each opponent's setup offers: live play is Reveal and Showdown only (ADR 0053). */
 export const SETUP_FORMATS: Readonly<Record<Opponent, readonly Format[]>> = {

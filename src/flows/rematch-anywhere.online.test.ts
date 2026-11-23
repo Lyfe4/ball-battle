@@ -48,7 +48,10 @@ describe('a rematch asked of a player who has left the end screen', () => {
       const friend = await phone(phones);
       const first = await startLiveMatch(BASE, sender, friend);
       await forfeit(friend);
-      await friend.getByRole('button', { name: 'Ball manual' }).click();
+      await friend
+        .getByRole('navigation', { name: 'Main' })
+        .getByRole('link', { name: 'Balls' })
+        .click();
       await friend.waitForURL(/view=manual/);
 
       await rematchButton(sender).click();

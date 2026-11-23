@@ -207,7 +207,8 @@ async function liveRun(browser: Browser): Promise<void> {
   const friend = await phone(browser);
   // From home, as a player starts it (ADR 0055): vs Friend, the 16+ question, Reveal, the lineup.
   await sender.goto(`${base}/`);
-  await sender.locator('.home-card[data-opponent="friend"]').click();
+  await sender.locator('.home-chooser button[data-opponent="friend"]').click();
+  await sender.locator('.home-play-row .home-play').click();
   await age(sender);
   await sender.getByRole('button', { name: 'Choose lineup' }).click();
   await lineup(sender, 'Send challenge');
