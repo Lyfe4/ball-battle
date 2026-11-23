@@ -43,7 +43,7 @@ The rest of home
 - [ ] One settings gear, at the top right of the title row (ADR 0040) (PR 3)
 - [ ] Phone: the panel under the demo court; beside layout and desktop: beside it (ADR 0031, 0067)
       (PR 3, PR 4)
-- [ ] `?view=modes` opens home (PR 2)
+- [x] `?view=modes` opens home (PR 2: kept in every build, `route.test.ts`)
 
 Online on home
 
@@ -59,6 +59,14 @@ Online on home
       match comes first (PR 4)
 - [ ] Builds without accounts: no account button, and Forget me in settings (ADR 0078) (PR 5)
 
+## Links every build keeps (`src/app/route.ts`, `src/app/online-url.ts`)
+
+- [x] `?challenge=`, `?start=`, `?online=` and `?view=send` open their screens in online builds and
+      home without online play (PR 2: `route.test.ts`, `shell-routes*.browser.test.ts`)
+- [x] `?view=signin`, and Google's return `?view=signin&google=…`, open sign-in with accounts and
+      home without (PR 2: the same tests)
+- [x] `?view=manual`, `?view=pick`, series and replay links open as before in every build (PR 2)
+
 ## The account screen (`?view=signin`, `src/screens/sign-in.ts`, accounts builds only)
 
 Signing in
@@ -66,7 +74,8 @@ Signing in
 - [ ] A device without a guest is asked the 16+ question before signing in (PR 5)
 - [ ] Sign in with an email code: the address, then "Check your email" and the code (PR 5)
 - [ ] Sign in with Google, only where its client is set; it returns as `?view=signin&google=…`,
-      read once and dropped from the address (PR 5)
+      read once and dropped from the address (PR 5; its return URL kept in PR 2,
+      `shell-routes-accounts.browser.test.ts`)
 - [ ] A guest links to the same player; an existing account is "Switch to it?", which deletes the
       guest (PR 5)
 - [ ] No sign-in starts or finishes during a live match or lobby: the "already in a match" card, with
@@ -86,7 +95,7 @@ Once signed in
 - [ ] Log out (PR 5)
 - [ ] Delete account, asked first (PR 5)
 - [ ] A guest's Forget me ("Delete your guest?") (PR 5)
-- [ ] Back goes home (PR 2, PR 5)
+- [ ] Back goes home (PR 5; PR 2 added the tab Back rule, the account screen's own Back unchanged)
 
 The Friends section
 

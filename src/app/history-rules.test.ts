@@ -10,6 +10,8 @@ import {
   writeManualParams,
   writeMatchUrl,
   writePickParams,
+  writeShellParams,
+  type ShellView,
 } from './route.ts';
 import { FIRST_PLAY, writeBotSetupParams, writePlayParams } from './modes.ts';
 import { writeSeriesModeParams } from './series-url.ts';
@@ -70,6 +72,17 @@ describe('moveFor', () => {
     ['home', 'pick', undefined, 'push'],
     ['manual', 'manual-entry', 'home', 'push'],
     ['series-lineup', 'series', 'series-rules', 'push'],
+    // The shell's tabs (ADR 0081): Play is the root, the others one step above it.
+    ['home', 'friends', undefined, 'push'],
+    ['friends', 'ranks', 'home', 'replace'],
+    ['manual', 'friends', 'home', 'replace'],
+    ['ranks', 'manual', 'home', 'replace'],
+    ['friends', 'home', 'home', 'return'],
+    ['friends', 'home', undefined, 'replace'],
+    ['manual-entry', 'friends', 'manual', 'push'],
+    ['friends', 'profile', 'home', 'push'],
+    ['manual-entry', 'profile', 'manual', 'push'],
+    ['profile', 'manual-entry', 'manual-entry', 'return'],
   ];
   it.each(cases)('%s → %s (came from %s): %s', (from, to, previous, move) => {
     expect(moveFor(from, to, previous)).toBe(move);
@@ -217,5 +230,84 @@ describe('Back through whole flows', () => {
     expect(at()).toContain('seed=3');
     back();
     expect(at()).toBe('?view=pick&a=brawler&b=quake');
+  });
+});
+
+describe('Back with the shell’s tabs (ADR 0081)', () => {
+  /** The app in a build with accounts, where every tab and Profile are screens. */
+  function shell() {
+    const history = fakeWindow('https://ballbattle.test/');
+    const navigation = createNavigation(history.win, (url) =>
+      screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false, true, true)),
+    );
+    const to = (view: ShellView) => {
+      navigation.go((url) => {
+        writeShellParams(url, view);
+      });
+    };
+    return {
+      navigation,
+      to,
+      back: () => {
+        history.win.history.back();
+      },
+      at: () => query(history.href()),
+      entries: history.entries,
+    };
+  }
+
+  it('keeps every tab one step above Play, however many tabs were visited', () => {
+    const { navigation, to, back, at, entries } = shell();
+    to('friends');
+    to('ranks');
+    navigation.go((url) => {
+      writeManualParams(url);
+    });
+    to('friends');
+    expect(at()).toBe('?view=friends');
+    expect(entries).toHaveLength(2);
+    back();
+    expect(at()).toBe('');
+  });
+
+  it('goes to Play from any tab in one move that is a Back, so Back from Play leaves', () => {
+    const { navigation, to, back, at } = shell();
+    to('ranks');
+    to('friends');
+    navigation.go(writeHomeParams);
+    expect(at()).toBe('');
+    // Nothing of the game's is behind Play: the browser's Back leaves.
+    expect(navigation.go(writeHomeParams)).toBe('replace');
+    back();
+    expect(at()).toBe('');
+  });
+
+  it('puts Play in place of a tab the visitor arrived on from a link', () => {
+    const history = fakeWindow('https://ballbattle.test/?view=friends');
+    const navigation = createNavigation(history.win, (url) =>
+      screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false, true, true)),
+    );
+    navigation.go(writeHomeParams);
+    expect(query(history.href())).toBe('');
+    expect(history.entries).toHaveLength(1);
+  });
+
+  it('returns from Profile to the screen it was opened on', () => {
+    const { navigation, to, back, at } = shell();
+    navigation.go((url) => {
+      writeManualParams(url, { ball: 'vampire' });
+    });
+    to('profile');
+    expect(at()).toBe('?view=profile');
+    back();
+    expect(at()).toBe('?view=manual&ball=vampire');
+    to('profile');
+    navigation.go((url) => {
+      writeManualParams(url, { ball: 'vampire' });
+    });
+    // Going back to where Profile was opened from is a Back, not a second copy of that screen.
+    expect(at()).toBe('?view=manual&ball=vampire');
+    back();
+    expect(at()).toBe('');
   });
 });

@@ -98,6 +98,9 @@ describe('router', () => {
       send: handler('send'),
       start: handler('start'),
       signin: handler('signin'),
+      friends: handler('friends'),
+      profile: handler('profile'),
+      ranks: handler('ranks'),
     };
     return { log, handlers };
   }
@@ -120,7 +123,15 @@ describe('router', () => {
 
 describe('isSetupScreen', () => {
   it('is every setup and reading screen, and a series only while nothing is played', () => {
-    for (const screen of ['pick', 'manual', 'outdated', 'send'] as const) {
+    for (const screen of [
+      'pick',
+      'manual',
+      'outdated',
+      'send',
+      'friends',
+      'profile',
+      'ranks',
+    ] as const) {
       expect(isSetupScreen(screen, false)).toBe(true);
     }
     expect(isSetupScreen('home', false)).toBe(false);
@@ -157,6 +168,9 @@ describe('screenTitle', () => {
     expect(screenTitle('series', 5, undefined, true)).toBe('vs Bot · BallBattle');
     expect(screenTitle('manual')).toBe('Ball manual · BallBattle');
     expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Ball manual · BallBattle');
+    expect(screenTitle('friends')).toBe('Friends · BallBattle');
+    expect(screenTitle('profile')).toBe('Profile · BallBattle');
+    expect(screenTitle('ranks')).toBe('Ranks · BallBattle');
   });
 });
 

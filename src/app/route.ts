@@ -3,6 +3,7 @@
 // ever written. Quick-match links (`?a=&b=&seed=`) and series links (`?mode=bo3...`, ADR 0017,
 // 0019) keep their meaning.
 import { parseMatchup, writeMatchParams, type Matchup } from './matchup.ts';
+import { ACCOUNTS_BUILD } from './accounts-build.ts';
 import { ONLINE_BUILD } from './online-build.ts';
 import { parseOnlineRoute, type OnlineRoute } from './online-url.ts';
 import { replaysHere, RULESET_VERSION } from '../sim/ruleset.ts';
@@ -43,8 +44,17 @@ export type Route =
    * for a link from before versions).
    */
   | { readonly screen: 'outdated'; readonly kind: 'match' | 'series'; readonly made: number }
+  /**
+   * The shell's screens (ADR 0081): the Friends tab (online builds), Profile and the Ranks tab
+   * (builds with accounts). Elsewhere their URLs open home.
+   */
+  | { readonly screen: ShellView }
   /** Online play (ADR 0052), only in builds that have it: a series, a challenge, sending one. */
   | OnlineRoute;
+
+/** The shell's screens a URL names by `?view=` (ADR 0081). */
+export const SHELL_VIEWS = ['friends', 'profile', 'ranks'] as const;
+export type ShellView = (typeof SHELL_VIEWS)[number];
 
 /** Where a best-of-3 screen is: the rules first, then the steps a link can name. */
 export type SeriesScreenStep = 'rules' | SeriesStep;
@@ -67,6 +77,17 @@ export function writeManualParams(
   params.set(VIEW, 'manual');
   if (page.ball !== undefined) params.set(BALL, page.ball);
   else if (page.chart === true) params.set(TAB, 'chart');
+}
+
+/** One of the shell's screens (ADR 0081): `?view=friends`, nothing else. */
+export function writeShellParams(params: URLSearchParams, view: ShellView): void {
+  for (const key of [...params.keys()]) params.delete(key);
+  params.set(VIEW, view);
+}
+
+/** Whether a build has the shell's screen `view`: Friends needs online play, the rest accounts. */
+function hasShellView(view: ShellView, online: boolean, accounts: boolean): boolean {
+  return view === SHELL_VIEWS[0] ? online : online && accounts;
 }
 
 /** The quick-match setup with these two balls: `?view=pick&a=&b=`, nothing else. */
@@ -104,18 +125,24 @@ export function writeHomeParams(params: URLSearchParams): void {
  * replayed only if `verifySeries` (the same check a server runs, ADR 0022) accepts it; otherwise
  * it opens the lineup step, prefilled with what the link holds, like any other incomplete link.
  * `verify` false skips that replay, for reading only which screen a URL is on (history-rules.ts).
- * `online` is whether this build has online play; without it, online URLs open home.
+ * `online` is whether this build has online play; without it, online URLs open home. `accounts`
+ * is whether it has accounts; without them, sign-in, Profile and Ranks open home (ADR 0079, 0081).
  */
 export function parseRoute(
   params: URLSearchParams,
   definitions: DefinitionLookup,
   verify = true,
   online = ONLINE_BUILD,
+  accounts = ACCOUNTS_BUILD,
 ): Route {
-  const onlineRoute = online ? parseOnlineRoute(params) : undefined;
+  const onlineRoute = online ? parseOnlineRoute(params, accounts) : undefined;
   if (onlineRoute !== undefined) return onlineRoute;
   const validIds = [...definitions.keys()];
   const view = params.get(VIEW)?.trim().toLowerCase();
+  const shell = SHELL_VIEWS.find((name) => name === view);
+  if (shell !== undefined) {
+    return hasShellView(shell, online, accounts) ? { screen: shell } : { screen: 'home' };
+  }
   // Other modes went with home by opponent (ADR 0055): its old links open home.
   if (view === 'modes') return { screen: 'home' };
   if (view === 'pick') return { screen: 'pick', matchup: parseMatchup(params, validIds) };

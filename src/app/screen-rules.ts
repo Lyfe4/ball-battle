@@ -64,7 +64,18 @@ export function seriesRound(link: RouteOf<'series'>['link'], inHand: SeriesInHan
 /** A setup or reading screen is up (choosing balls, setting up a series): no match is watched. */
 export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
   if (screen === 'series' || screen === 'online') return !seriesPlaying;
-  return ['pick', 'manual', 'outdated', 'challenge', 'send', 'start', 'signin'].includes(screen);
+  return [
+    'pick',
+    'manual',
+    'outdated',
+    'challenge',
+    'send',
+    'start',
+    'signin',
+    'friends',
+    'profile',
+    'ranks',
+  ].includes(screen);
 }
 
 /**
@@ -101,6 +112,9 @@ const TITLES: Readonly<Record<Screen, string>> = {
   send: 'vs Friend · BallBattle',
   start: 'Your lineup · BallBattle',
   signin: 'Sign in · BallBattle',
+  friends: 'Friends · BallBattle',
+  profile: 'Profile · BallBattle',
+  ranks: 'Ranks · BallBattle',
 };
 
 /** The vs Bot setup's title (ADR 0055): who the series is against, as its heading says. */

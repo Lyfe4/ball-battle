@@ -8,6 +8,8 @@ import { playLikeTheGame } from '../sim/test-support.ts';
 import { writeSeriesParams } from './series-url.ts';
 import {
   clearView,
+  SHELL_VIEWS,
+  writeShellParams,
   parseRoute,
   writeHomeParams,
   writeManualParams,
@@ -245,6 +247,80 @@ describe('parseRoute', () => {
           step: 'lineup',
         });
       }
+    });
+  });
+});
+
+describe('the shell’s screens (ADR 0081)', () => {
+  /** A URL as a build with (`online`, `accounts`) reads it. */
+  const as = (query: string, online: boolean, accounts: boolean) =>
+    parseRoute(new URLSearchParams(query), BALL_LOOKUP, true, online, accounts);
+  const builds = [
+    ['with accounts (previews, staging)', true, true],
+    ['online without accounts (production with vs Friend on)', true, false],
+    ['without online play (production today)', false, false],
+  ] as const;
+
+  it('opens Friends in online builds, Profile and Ranks only with accounts, else home', () => {
+    const opens = (online: boolean, accounts: boolean) =>
+      ['view=friends', 'view=profile', 'view=ranks'].map((query) => as(query, online, accounts));
+    expect(opens(true, true)).toStrictEqual([
+      { screen: 'friends' },
+      { screen: 'profile' },
+      { screen: 'ranks' },
+    ]);
+    expect(opens(true, false)).toStrictEqual([
+      { screen: 'friends' },
+      { screen: 'home' },
+      { screen: 'home' },
+    ]);
+    expect(opens(false, false)).toStrictEqual([
+      { screen: 'home' },
+      { screen: 'home' },
+      { screen: 'home' },
+    ]);
+  });
+
+  it('round-trips each, over whatever screen the URL was on', () => {
+    for (const view of SHELL_VIEWS) {
+      const params = new URLSearchParams('mode=bo3&la=storm,frost,venom&seed=4');
+      writeShellParams(params, view);
+      expect(params.toString()).toBe(`view=${view}`);
+      expect(as(params.toString(), true, true)).toStrictEqual({ screen: view });
+    }
+  });
+
+  it.each(builds)('keeps every older URL’s meaning in a build %s', (_name, online, accounts) => {
+    const id = '0b8f9c1e-2a4d-4e6f-8a1b-3c5d7e9f0a2b';
+    // Online links open their screens wherever online play is built, and home where it isn't.
+    const live = (route: object) => (online ? route : { screen: 'home' });
+    expect(as(`online=${id}`, online, accounts)).toStrictEqual(
+      live({ screen: 'online', series: id }),
+    );
+    expect(as(`start=${id}`, online, accounts)).toStrictEqual(live({ screen: 'start', id }));
+    expect(as('challenge=AbCdEfGhIjKlMnOpQrStUv', online, accounts)).toStrictEqual(
+      live({ screen: 'challenge', token: 'AbCdEfGhIjKlMnOpQrStUv' }),
+    );
+    // Without online play a send link's length still opens the bot setup, as it always has.
+    expect(as('view=send&fmt=showdown&mode=bo5', online, accounts)).toMatchObject(
+      online
+        ? { screen: 'send', format: 'showdown', bestOf: 5 }
+        : { screen: 'series', step: 'rules', link: { format: 'showdown', bestOf: 5 } },
+    );
+    // Google's return lands on sign-in in a build with accounts, home elsewhere.
+    expect(as('view=signin&google=signed_in', online, accounts)).toStrictEqual(
+      accounts ? { screen: 'signin', google: 'signed_in' } : { screen: 'home' },
+    );
+    expect(as('', online, accounts)).toStrictEqual({ screen: 'home' });
+    expect(as('view=modes', online, accounts)).toStrictEqual({ screen: 'home' });
+    expect(as('view=manual&tab=chart', online, accounts)).toStrictEqual({
+      screen: 'manual',
+      ball: undefined,
+      chart: true,
+    });
+    expect(as('view=pick&a=storm&b=frost', online, accounts)).toStrictEqual({
+      screen: 'pick',
+      matchup: { a: 'storm', b: 'frost' },
     });
   });
 });
