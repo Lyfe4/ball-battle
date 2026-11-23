@@ -1,11 +1,12 @@
 // Settings (ADR 0040, 0044): one small menu behind a gear that sits beside every `?` and at the top
 // of every screen. There is one panel on the page, opened by whichever gear was pressed, so it
 // looks the same everywhere (and like the legend: the shared info panel). It floats over the page
-// (never pushing the layout), placed by its gear, kept off the court and inside the visible
-// screen; on a short phone it first tries a compact form, and only when nothing keeps it off the
-// court does it cover it, and the match waits (`settingsCoverCourt`). A live match can't wait (it
-// plays on the server's clock, ADR 0053), so there it never covers the court: it takes the room
-// beside it and scrolls inside itself (ADR 0054). The gear toggles it; Close,
+// (never pushing the layout), placed under its gear with its right edge on the gear's row, kept off
+// a fight's court where it can and inside the visible screen. One form everywhere (ADR 0081
+// addendum of 2026-11-24): the same width, headings, rows and spacing on every screen; when
+// nothing keeps it off the court it covers it, and the match waits (`settingsCoverCourt`). A live
+// match can't wait (it plays on the server's clock, ADR 0053), so there it never covers the court:
+// it takes the room beside it and scrolls inside itself (ADR 0054). The gear toggles it; Close,
 // Escape and a tap outside close it, and focus returns to the gear. Everything in it is saved per
 // device by the code it calls.
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
@@ -13,7 +14,7 @@ import type { Tips } from '../app/tips.ts';
 import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import type { Box } from './tooltip-place.ts';
-import { menuMaxHeight, menuWidth, placeClear, placeMenu, type Insets } from './settings-place.ts';
+import { menuMaxHeight, placeClear, placeMenu, type Insets } from './settings-place.ts';
 
 /** What the menu reads and changes, set once by main.ts. */
 export interface SettingsHost {
@@ -21,7 +22,7 @@ export interface SettingsHost {
   readonly speed: () => PlaybackSpeed;
   /** The in-fight speed buttons and this menu show the same remembered choice. */
   readonly setSpeed: (speed: PlaybackSpeed) => void;
-  /** The court on screen, if one shows: the menu keeps off it (ADR 0044). */
+  /** A match's court on screen, if one shows (not home's demo): the menu keeps off it (ADR 0044). */
   readonly court: () => Box | undefined;
   /**
    * Whether the match on screen may wait while the menu covers its court (ADR 0044). False for a
@@ -121,7 +122,7 @@ function buildMenu(): Menu {
   tipsGroup.setAttribute('aria-labelledby', `${PANEL_ID}-tips`);
   const tipsHeading = element('p', 'settings-heading', 'Tips');
   tipsHeading.id = `${PANEL_ID}-tips`;
-  tipsGroup.append(tipsHeading, hints, cards, again);
+  tipsGroup.append(tipsHeading, hints, cards);
   // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play, and tips.
   const playGroup = element('div', 'settings-group settings-play');
   playGroup.setAttribute('role', 'group');
@@ -130,7 +131,7 @@ function buildMenu(): Menu {
   playHeading.id = `${PANEL_ID}-play`;
   playGroup.append(playHeading, speedRow);
 
-  const paused = element('p', 'settings-paused', 'The match waits while this is open.');
+  const paused = element('p', 'settings-paused', 'The match waits');
   paused.hidden = true;
   const close = element('button', 'text-link panel-close settings-close', 'Close');
   close.type = 'button';
@@ -140,8 +141,14 @@ function buildMenu(): Menu {
     closeMenu(true);
   });
   const foot = element('div', 'settings-foot');
-  foot.append(close);
-  panel.append(title, paused, playGroup, tipsGroup, foot);
+  // Show all tips again and Close share the last row: the whole menu then fits above its gear on a
+  // phone mid-fight (390 x 664), never over the gear that closes it, nor scrolling (2026-11-24).
+  foot.append(again, close);
+  // The note that the match waits shares the title's row, so every row sits where it does on any
+  // other screen, and it shows even when the menu scrolls inside itself.
+  const top = element('div', 'settings-top');
+  top.append(title, paused);
+  panel.append(top, playGroup, tipsGroup, foot);
   if (host?.sound !== undefined) speedRow.after(host.sound.element);
   if (host?.online !== undefined) foot.before(host.online.element);
 
@@ -183,9 +190,9 @@ function safeInsets(probe: HTMLElement): Insets {
 }
 
 /**
- * Puts the open panel by its gear, inside the visible screen and off the court (ADR 0044): at its
- * own size if that keeps off the court, else in its compact form, else at its own size over the
- * court, saying the match waits.
+ * Puts the open panel by its gear, inside the visible screen and off a match's court where it can
+ * (ADR 0044), always in its one form: over the court only when no place keeps off it, saying the
+ * match waits, or beside it, scrolling, for a live match that can't.
  */
 function place(): void {
   if (menu?.opener === undefined) return;
@@ -194,6 +201,15 @@ function place(): void {
   // Measuring lifts the cap for a moment, which scrolls the menu to its top: kept where it was.
   const scrolled = panel.scrollTop;
   const gear = opener.getBoundingClientRect();
+  // Its right edge on the gear's row's (a header with a ? after the gear included), so the menu
+  // sits at the same place across the screen wherever the gear is in its row.
+  const row = opener.parentElement?.getBoundingClientRect() ?? gear;
+  const anchor = {
+    left: row.right - gear.width,
+    top: gear.top,
+    width: gear.width,
+    height: gear.height,
+  };
   const insets = safeInsets(probe);
   const court = host?.court();
   const screen = {
@@ -201,65 +217,29 @@ function place(): void {
     height: view?.height ?? window.innerHeight,
     top: view?.offsetTop ?? 0,
   };
-  const at = () =>
-    placeMenu(
-      gear,
-      { width: panel.offsetWidth, height: panel.offsetHeight },
-      screen,
-      insets,
-      court,
-    );
   panel.style.maxHeight = `${String(menuMaxHeight(screen, insets))}px`;
-  panel.style.width = '';
-  panel.style.minHeight = '';
-  delete panel.dataset['compact'];
   paused.hidden = true;
-  const width = menuWidth(gear, panel.offsetWidth, screen, insets, court);
-  if (width !== undefined) panel.style.width = `${String(width)}px`;
-  let spot = at();
-  const scrolls = () => panel.scrollHeight > panel.clientHeight + 1;
-  if (spot.fill !== undefined) {
-    // The panel's room, whole (settings-place.ts): compact inside it if its own form scrolls.
-    panel.style.width = `${String(spot.fill.width)}px`;
-    panel.style.minHeight = `${String(spot.fill.height)}px`;
-    if (scrolls()) panel.dataset['compact'] = '';
-  } else if (spot.covers || scrolls()) {
-    // Compact when its own form covers the court, or would have to scroll inside the screen's
-    // height (a phone turned sideways, 320 px tall: it cut a switch in half, ADR 0040 addendum).
-    panel.dataset['compact'] = '';
-    spot = at();
+  const size = () => ({ width: panel.offsetWidth, height: panel.offsetHeight });
+  let spot = placeMenu(anchor, size(), screen, insets, court);
+  if (spot.covers) {
+    // Over the court: the note that the match waits shows, at the end of the menu.
+    paused.hidden = false;
+    spot = placeMenu(anchor, size(), screen, insets, court);
   }
   if (spot.covers && court !== undefined && !(host?.mayWait() ?? true)) {
-    // A live match: compact, beside the court, scrolling inside itself if it must.
-    const clear = placeClear(
-      gear,
-      { width: panel.offsetWidth, height: panel.offsetHeight },
-      screen,
-      court,
-      insets,
-    );
+    // A live match: beside the court, scrolling inside itself if it must.
+    paused.hidden = true;
+    const clear = placeClear(anchor, size(), screen, court, insets);
     panel.style.maxHeight = `${String(clear.maxHeight)}px`;
     spot = { left: clear.left, top: clear.top, covers: false };
-  }
-  if (spot.covers) {
-    delete panel.dataset['compact'];
-    paused.hidden = false;
-    spot = at();
-    if (spot.maxHeight !== undefined) {
-      // Over the court and too tall to clear its gear: the compact form when that fits whole (at
-      // 390 x 664 the full form, capped, cut Show all tips again and Close off at the bottom), else
-      // the full form capped above the gear, scrolling inside.
-      panel.dataset['compact'] = '';
-      const compact = at();
-      if (compact.maxHeight === undefined) spot = compact;
-      else delete panel.dataset['compact'];
-      if (spot.maxHeight !== undefined) panel.style.maxHeight = `${String(spot.maxHeight)}px`;
-    }
+  } else if (spot.maxHeight !== undefined) {
+    panel.style.maxHeight = `${String(spot.maxHeight)}px`;
   }
   menu.covers = spot.covers;
   paused.hidden = !spot.covers;
-  panel.style.left = `${String(spot.left)}px`;
-  panel.style.top = `${String(spot.top)}px`;
+  // Whole pixels: its rows sit the same way on every screen, and its text stays crisp.
+  panel.style.left = `${String(Math.round(spot.left))}px`;
+  panel.style.top = `${String(Math.round(spot.top))}px`;
   panel.scrollTop = scrolled;
 }
 

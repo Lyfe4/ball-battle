@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  MENU_MIN_WIDTH,
-  menuMaxHeight,
-  menuWidth,
-  placeClear,
-  placeMenu,
-} from './settings-place.ts';
+import { menuMaxHeight, placeClear, placeMenu } from './settings-place.ts';
 
 const phone = { width: 375, height: 812, top: 0 };
 const size = { width: 300, height: 260 };
@@ -84,52 +78,33 @@ describe('placeMenu', () => {
     ).toStrictEqual({ left: 16, top: 78, covers: true });
   });
 
-  it('keeps to the side panel beside a desktop court, never over it', () => {
+  it('keeps to the side panel beside a desktop court, at its own width', () => {
     const desktop = { width: 1280, height: 800, top: 0 };
-    const court = { left: 147, top: 16, width: 860, height: 768 };
+    const court = { left: 147, top: 16, width: 760, height: 768 };
     const side = gear(1200, 180);
-    // 249 px between the court (and its gap) and the screen's edge: the menu narrows to it.
-    expect(menuWidth(side, 320, desktop, undefined, court)).toBe(249);
-    const placed = placeMenu(side, { width: 249, height: 300 }, desktop, undefined, court);
-    expect(placed).toStrictEqual({ left: 1015, top: 232, covers: false });
-    // Still its own width, it would reach over the court: it covers rather than leave the screen.
-    expect(placeMenu(side, { width: 320, height: 300 }, desktop, undefined, court).covers).toBe(
+    // One width everywhere (ADR 0081 addendum of 2026-11-24): never narrowed to the panel.
+    const placed = placeMenu(side, { width: 320, height: 300 }, desktop, undefined, court);
+    expect(placed).toStrictEqual({ left: 924, top: 232, covers: false });
+    // Where its own width reaches over the court, it covers rather than leave the screen.
+    const wide = { ...court, width: 860 };
+    expect(placeMenu(side, { width: 320, height: 300 }, desktop, undefined, wide).covers).toBe(
       true,
     );
   });
 
-  it('keeps its own width with room beside the court, or none worth narrowing to', () => {
-    const court = { left: 0, top: 0, width: 600, height: 600 };
-    expect(
-      menuWidth(gear(900, 0), 320, { width: 1400, height: 800, top: 0 }, undefined, court),
-    ).toBeUndefined();
-    expect(
-      menuWidth(gear(700, 0), 320, { width: 800, height: 800, top: 0 }, undefined, court),
-    ).toBeUndefined();
-    expect(MENU_MIN_WIDTH).toBeGreaterThan(800 - 16 - 608);
-    expect(menuWidth(gear(100, 700), 320, phone)).toBeUndefined();
-  });
-
-  it('takes the panel’s whole room beside a sideways court when nowhere by its gear is clear', () => {
-    // 812 x 375 mid-fight (2026-11-23 walk): the court on the left, the gear at the panel's top.
+  it('stays beside a sideways court, over its own gear, when nowhere by the gear is clear', () => {
+    // 812 x 375 mid-fight: the court on the left, the gear at the panel's top, the menu as tall as
+    // the screen allows. It keeps its width and stays off the court.
     const sideways = { width: 812, height: 375, top: 0 };
     const court = { left: 52, top: 16, width: 343, height: 343 };
     const placed = placeMenu(
-      gear(630, 48),
-      { width: 320, height: 300 },
+      gear(752, 48),
+      { width: 320, height: 343 },
       sideways,
       undefined,
       court,
     );
-    expect(placed).toStrictEqual({
-      left: 403,
-      top: 16,
-      covers: false,
-      fill: { width: 812 - 16 - 403, height: 375 - 32 },
-    });
-    // Over the panel from the court's gap to the screen's edge: the panel's ? (716 to 760) and
-    // Leave series under it, never the court.
-    expect(placed.left + (placed.fill?.width ?? 0)).toBeGreaterThan(760);
+    expect(placed).toStrictEqual({ left: 476, top: 16, covers: false });
     expect(placed.left).toBeGreaterThan(court.left + court.width);
   });
 

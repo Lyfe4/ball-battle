@@ -27,6 +27,9 @@ export interface Manual {
  * detail) with the previous and next balls at its foot, to step through the roster in order. Everything comes from the definitions and
  * the counter map, so it can't go stale.
  */
+/** The Balls tab's heading (ADR 0081: the tab's word; "Ball manual" before 2026-11-24). */
+const BALLS_TITLE = 'Balls';
+
 export function createManual(
   root: HTMLElement,
   balls: readonly BallDefinition[],
@@ -35,7 +38,7 @@ export function createManual(
   root.replaceChildren();
   root.classList.add('manual');
   const roster = balls.map((ball) => ball.id);
-  const header = createScreenHeader('Ball manual', 'Back', actions.onBack, {
+  const header = createScreenHeader(BALLS_TITLE, 'Back', actions.onBack, {
     legend: true,
     tab: 'balls',
   });
@@ -103,7 +106,9 @@ export function createManual(
       index.hidden = ball !== undefined;
       entry.hidden = ball === undefined;
       const name = balls.find((b) => b.id === ball)?.name;
-      header.setTitle(name ?? 'Ball manual');
+      // The Balls tab has no Back; a ball's own page, opened from it, does (ADR 0081).
+      header.setTitle(name ?? BALLS_TITLE);
+      header.setBack(ball !== undefined);
       if (ball !== undefined) {
         detail.show(ball);
         const at = roster.indexOf(ball);

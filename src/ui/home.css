@@ -102,10 +102,11 @@
     max-width: 32rem;
   }
 
-  /* Its gear's menu floats over the parts below it, as it did inside the panel. */
+  /*
+   * First in the column. No layer of its own: one (z-index 2) held the settings menu, which opens
+   * inside this row, below the chooser's check sticker (2026-11-24).
+   */
   .stage[data-home] .home-head {
-    position: relative;
-    z-index: 2;
     order: -1;
   }
 }

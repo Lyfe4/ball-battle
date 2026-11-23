@@ -96,7 +96,7 @@ describe('challenging a friend', () => {
 
       // The friend's page opens on the manual (a reload there) and stays there.
       await two.goto(`${BASE}/?view=manual`);
-      await two.getByRole('region', { name: 'Ball manual' }).waitFor();
+      await two.getByRole('region', { name: 'Balls' }).waitFor();
 
       await one.goto(`${BASE}/?view=friends`);
       const row = friendsOf(one).locator('.friends-row', { hasText: jo });

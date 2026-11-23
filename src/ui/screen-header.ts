@@ -9,6 +9,8 @@ export interface ScreenHeader {
   focus(): void;
   /** For a screen whose heading follows what it shows (the manual's ball). */
   setTitle(title: string): void;
+  /** Shows or hides Back: a tab screen has none, a screen opened from it has one (the manual's ball). */
+  setBack(shown: boolean): void;
 }
 
 export interface ScreenHeaderOptions {
@@ -21,7 +23,8 @@ export interface ScreenHeaderOptions {
   readonly settings?: boolean;
   /**
    * The tab this screen is, if it is one (ADR 0081): on a phone the shell puts the avatar first in
-   * its header while it shows as that tab (shell.ts).
+   * its header while it shows as that tab (shell.ts), and it has no Back (addendum of 2026-11-24):
+   * the tab bar and the browser's Back lead away. `setBack` shows it on a screen opened from it.
    */
   readonly tab?: TabId;
 }
@@ -44,6 +47,7 @@ export function createScreenHeader(
   back.dataset['sound'] = 'back';
   back.setAttribute('aria-label', backLabel);
   back.addEventListener('click', onBack);
+  back.hidden = options.tab !== undefined;
   const heading = element('h1', 'screen-title', title);
   heading.tabIndex = -1;
   // Settings (ADR 0040) at the top right of every screen, just before the ? where there is one.
@@ -60,6 +64,9 @@ export function createScreenHeader(
     },
     setTitle: (next) => {
       heading.textContent = next;
+    },
+    setBack: (shown) => {
+      back.hidden = !shown;
     },
   };
 }

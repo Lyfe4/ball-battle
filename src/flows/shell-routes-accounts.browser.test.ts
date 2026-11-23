@@ -1,6 +1,6 @@
 // The shell's URLs (ADR 0081) in a build with accounts (previews, staging): Friends, Profile and
-// Ranks open their screens, each with a way on and Back to Play, and every older URL keeps its
-// screen, Google's sign-in return included.
+// Ranks open their screens, each with a way on and the tab bar back to Play, and every older URL
+// keeps its screen, Google's sign-in return included.
 import { describe, expect, it } from 'vitest';
 import { button, until, visible } from './page-support.ts';
 import {
@@ -11,6 +11,7 @@ import {
   openAs,
   placeholderTitle,
   pressPlaceholder,
+  tabLink,
 } from './shell-routes-support.ts';
 
 describe('the shell’s URLs with accounts (previews, staging)', () => {
@@ -25,7 +26,9 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
       'Everyone',
     ]);
     expect(visible('#shell-screen .soon-sticker')).toHaveLength(3);
-    button('Back').click();
+    // A tab has no Back of its own (ADR 0081 addendum of 2026-11-24): the Play tab leads home.
+    expect(visible('#shell-screen .screen-back')).toHaveLength(0);
+    tabLink('Play').click();
     await expectHome();
 
     // Profile (PR 5): nobody on this device, so the guest's Profile, with Sign in.
