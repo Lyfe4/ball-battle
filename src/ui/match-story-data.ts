@@ -6,6 +6,7 @@ import { sideHealth } from '../sim/side.ts';
 import { step } from '../sim/step.ts';
 import type { DamageEvent, DefinitionLookup, SimEvent, WorldState } from '../sim/types.ts';
 import { sideEvents } from './side-events.ts';
+import { wholeNumber } from './whole-number.ts';
 
 /** Damage one ball dealt by one source: its contact hits, or its ability. */
 export interface DamageShare {
@@ -56,10 +57,15 @@ const PRIORITY: readonly MomentKind[] = ['finish', 'lead', 'rewind', 'bigHit'];
 export function sourceWords(side: SideStory): string {
   const many = side.sources.length > 1 || side.healed > 0;
   const words = many
-    ? side.sources.map((share) => `${share.label} ${String(share.amount)}`)
+    ? side.sources.map((share) => `${share.label} ${wholeNumber(share.amount)}`)
     : side.sources.map((share) => (share.label === 'Hits' ? 'all hits' : `all ${share.label}`));
-  if (side.healed > 0) words.push(`healed ${String(side.healed)}`);
+  if (side.healed > 0) words.push(`healed ${wholeNumber(side.healed)}`);
   return words.join(' · ');
+}
+
+/** One ball's damage dealt in words: "58 damage". */
+export function dealtWords(side: SideStory): string {
+  return `${wholeNumber(side.dealt)} damage`;
 }
 
 /** A tick as the match clock reads it: "0:07". */
@@ -299,7 +305,7 @@ function tell(
     candidates.push({
       tick: biggest.tick,
       kind: 'bigHit',
-      text: `${by} for ${String(biggest.amount)}, the round’s biggest hit.`,
+      text: `${by} for ${wholeNumber(biggest.amount)}, the round’s biggest hit.`,
     });
   }
   const moments = chooseMoments(candidates).map((moment) => ({

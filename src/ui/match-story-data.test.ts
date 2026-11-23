@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import { playToEnd } from '../sim/series-verify.ts';
 import { createWorld } from '../sim/world.ts';
@@ -7,6 +7,7 @@ import {
   BIG_HIT,
   chooseMoments,
   clockOf,
+  dealtWords,
   leadTakenAt,
   MAX_MOMENTS,
   sourceWords,
@@ -205,5 +206,46 @@ describe('how it was won (ADR 0036, 0037)', () => {
     expect(clockOf(0)).toBe('0:00');
     expect(clockOf(7 * 60 + 5)).toBe('0:07');
     expect(clockOf(75 * 60)).toBe('1:15');
+  });
+});
+
+describe('numbers in the match story', () => {
+  /** Every number a player reads in a story: whole, never a decimal or "e" notation. */
+  const NOT_WHOLE = /\d[.,]\d|\de[-+]?\d/;
+
+  it('are whole for every ball, however fractional its hits and heals', () => {
+    const wrong: string[] = [];
+    for (const ball of BALLS) {
+      // Against the Berserker (an 18.2 bump) and the Vampire (fractional heals).
+      for (const other of ['berserker', 'vampire']) {
+        const story = storyOf(start(ball.id, other, 3), BALL_LOOKUP);
+        const read = [
+          story.result,
+          ...story.moments.map((moment) => moment.text),
+          ...story.sides.map((side) => `${dealtWords(side)} · ${sourceWords(side)}`),
+        ];
+        for (const text of read)
+          if (NOT_WHOLE.test(text)) wrong.push(`${ball.id} v ${other}: ${text}`);
+      }
+    }
+    expect(wrong).toStrictEqual([]);
+  });
+
+  it('rounds each amount on its own', () => {
+    const side: SideStory = {
+      ballId: 'a',
+      definitionId: 'berserker',
+      name: 'Berserker',
+      repeat: false,
+      won: true,
+      dealt: 58.4,
+      sources: [
+        { label: 'Hits', amount: 36.4, ability: false },
+        { label: 'Rage', amount: 22, ability: true },
+      ],
+      healed: 12.6,
+    };
+    expect(dealtWords(side)).toBe('58 damage');
+    expect(sourceWords(side)).toBe('Hits 36 · Rage 22 · healed 13');
   });
 });
