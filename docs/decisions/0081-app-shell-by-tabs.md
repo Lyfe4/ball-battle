@@ -213,3 +213,21 @@ checklist.
    rematch already opens new lineups (ADR 0080) (`series-view.test.ts`, `no-dead-end.test.ts`,
    `best-of-5-flow`, the online `rematch-anywhere` and `live-match` flows).
 9. The Ranks placeholder, in accounts builds only.
+
+## Addendum (2026-11-23): the tab bar, as built (PR 3)
+
+- **Where it shows.** Play (home), Balls (the manual's roster and chart), Friends and Ranks. A
+  ball's own page, Profile, sign-in, every setup, lineup, match, series and live screen are bare
+  (`tabOf`, `src/app/tabs.ts`, tested against every screen key).
+- **Room for it.** On a phone held upright the stage ends a bar's height plus the home bar plus a
+  gutter above the bottom, and a floating card sits above the bar. Beside, the stage starts after
+  the rail (`--stage-left`, layout.css), so `--beside-room` stays exact, notch included.
+- **Home's demo court gives way to the rail** (amends ADR 0067's full-height court, for home only).
+  Beside, home's panel never gets narrower than a row it can't break (the title with Sign in and
+  the gear), and the court takes what is left: full height at 812 x 375 and 1920 x 1080; 268 px of
+  288 at 667 x 320 in an online build; 804 of 868 at 1440 x 900, 644 of 768 at 1280 x 800. A fight
+  never has the rail, so ADR 0039 and 0067 hold for every match. The Play tab (PR 4) redraws this
+  panel.
+- **Sizes** are tokens (`--tab-bar-height` 64 px, `--tab-rail-width` 76 px, `--tab-rail-width-wide`
+  11rem). At 667 x 320 the rail holds four tabs with room to spare (a fifth, Shop, still needs the
+  48 px tabs noted above).

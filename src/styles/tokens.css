@@ -118,6 +118,13 @@
   --sheet-width: 64rem;
   --sheet-narrow: 36rem;
   --panel-width-wide: 26rem;
+  /*
+   * The shell's tab bar (ADR 0081): its height along a phone's bottom, the rail's width beside (an
+   * icon over its word), and the desktop rail's (the word beside the icon).
+   */
+  --tab-bar-height: 64px;
+  --tab-rail-width: 76px;
+  --tab-rail-width-wide: 11rem;
   --space-sheet: clamp(24px, 6vh, 64px);
   --space-columns: 32px;
   --tap-target: 44px;

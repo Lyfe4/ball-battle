@@ -1,11 +1,7 @@
 // The shell's screens (ADR 0081) before their own pull requests: Friends, Profile and Ranks, one
-// notice in the shared look (notice.ts) with Back and one way on. Reached only by their URLs until
-// the tab bar links them (the build plan's PR 3).
-import type { Moves } from '../app/moves.ts';
-import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
-import { SHELL_VIEWS, type ShellView } from '../app/route.ts';
-import type { ScreenHandler } from '../app/router.ts';
-import type { Screen } from '../app/route.ts';
+// notice in the shared look (notice.ts) with Back and one way on. The tab bar links Friends and
+// Ranks (shell.ts); Profile is reached by its URL until the avatar opens it.
+import type { ShellView } from '../app/route.ts';
 import { createNotice } from '../ui/notice.ts';
 import { PLACEHOLDERS, type PlaceholderWay } from './shell-placeholder-text.ts';
 
@@ -45,40 +41,6 @@ export function createShellPlaceholder(
           },
         ],
       });
-    },
-  };
-}
-
-export type ShellScreensHost = Pick<Moves, 'go' | 'goHome' | 'backOrHome'>;
-
-export interface ShellScreens {
-  readonly handlers: { readonly [S in ShellView]: ScreenHandler<S> };
-  /** Shows the placeholder on its own screens, hides it on every other. */
-  setVisible(screen: Screen): void;
-}
-
-/** The placeholder wired to the page: Back by the rules (ADR 0025), each button to its screen. */
-export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScreens {
-  const screen = createShellPlaceholder(root, {
-    back: host.backOrHome,
-    open: (way) => {
-      if (way === 'home') host.goHome();
-      else if (way === 'send') {
-        host.go((url) => {
-          writeSendParams(url, 'reveal', 3);
-        });
-      } else host.go(writeSignInParams);
-    },
-  });
-  const handler = (view: ShellView) => ({
-    show: () => {
-      screen.show(view);
-    },
-  });
-  return {
-    handlers: { friends: handler('friends'), profile: handler('profile'), ranks: handler('ranks') },
-    setVisible(current) {
-      screen.setVisible(SHELL_VIEWS.some((view) => view === current));
     },
   };
 }

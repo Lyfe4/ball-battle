@@ -268,8 +268,9 @@
     font-size: 1.5rem;
   }
 
+  /* The bands the wider column: the reason at most 40% of the width, so beside the tab rail too. */
   .spectrum-body {
-    grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, min(18rem, 40%));
     align-items: start;
   }
 
