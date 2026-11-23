@@ -32,10 +32,16 @@ const PARTS = [
   '.settings-close',
 ];
 
+/** A part's words, and where it sits inside the menu (undefined: not shown). */
+interface Part {
+  readonly words: string;
+  readonly at?: readonly [number, number];
+}
+
 interface Look {
   readonly left: number;
   readonly width: number;
-  readonly parts: readonly string[];
+  readonly parts: readonly Part[];
   /** Ancestors that make a layer of their own (z-index set): none, so nothing paints over it. */
   readonly layers: readonly string[];
 }
@@ -54,10 +60,9 @@ async function look(where: string): Promise<Look> {
       const at = node.getBoundingClientRect();
       const text = node.textContent.trim();
       const words = text === '' ? (node.getAttribute('aria-label') ?? selector) : text;
-      // Shown or not, and where inside the menu (rounded: sub-pixel text differs by engine).
       return seen(node)
-        ? `${words} @${String(Math.round(at.left - box.left))},${String(Math.round(at.top - box.top))}`
-        : `${words} (hidden)`;
+        ? { words, at: [at.left - box.left, at.top - box.top] as const }
+        : { words };
     }),
   );
   const layers: string[] = [];
@@ -108,10 +113,26 @@ describe('the settings menu at 390 x 664', () => {
 
     const reference = looks['manual'];
     if (reference === undefined) throw new Error('no reference');
+    // Each part as words and place, within a pixel of the reference's (text centred in a row can
+    // land on a half pixel, which rounds either way on another machine's fonts).
+    const said = (part: Part, like?: Part): string => {
+      if (part.at === undefined) return `${part.words} (hidden)`;
+      const [x, y] = like?.at !== undefined && like.words === part.words ? like.at : part.at;
+      const close = Math.abs(x - part.at[0]) <= 1 && Math.abs(y - part.at[1]) <= 1;
+      const [shownX, shownY] = close ? [x, y] : part.at;
+      return `${part.words} @${String(Math.round(shownX))},${String(Math.round(shownY))}`;
+    };
+    const read = (seenLook: Look) => ({
+      left: seenLook.left,
+      width: seenLook.width,
+      parts: seenLook.parts.map((part, at) => said(part, reference.parts[at])),
+      layers: seenLook.layers,
+    });
+    const expected = { ...read(reference), layers: [] };
     // Every heading and label shows, and the speed sits under Fights, not beside the title.
-    expect(reference.parts.filter((part) => part.endsWith('(hidden)'))).toStrictEqual([]);
+    expect(expected.parts.filter((part) => part.endsWith('(hidden)'))).toStrictEqual([]);
     for (const [where, seenLook] of Object.entries(looks)) {
-      expect({ where, ...seenLook }).toStrictEqual({ where, ...reference, layers: [] });
+      expect({ where, ...read(seenLook) }).toStrictEqual({ where, ...expected });
     }
   });
 });
