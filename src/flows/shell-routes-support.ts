@@ -79,3 +79,23 @@ export const LINKS = {
   send: '?view=send&fmt=reveal&mode=bo3',
   google: '?view=signin&google=signed_in',
 } as const;
+
+/** The tab bar, if it shows. */
+export const tabBar = (): HTMLElement | undefined => visible('nav.tab-bar')[0];
+
+/** The tabs' words, in order, as the bar shows them (none when it is hidden). */
+export const tabLabels = (): string[] =>
+  visible('nav.tab-bar .tab-bar-label').map((label) => label.textContent.trim());
+
+/** The tab marked as the page on show. */
+export const currentTab = (): string | undefined =>
+  document.querySelector('nav.tab-bar [aria-current="page"] .tab-bar-label')?.textContent.trim();
+
+/** The tab link named `label`. */
+export function tabLink(label: string): HTMLAnchorElement {
+  const link = [...document.querySelectorAll<HTMLAnchorElement>('nav.tab-bar a')].find(
+    (node) => node.querySelector('.tab-bar-label')?.textContent.trim() === label,
+  );
+  if (link === undefined) throw new Error(`No tab "${label}"`);
+  return link;
+}

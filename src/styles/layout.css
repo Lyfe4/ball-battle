@@ -11,11 +11,15 @@
   gap: var(--space-gap);
   /* dvh tracks the visible viewport on mobile as browser chrome shows and hides. */
   height: 100dvh;
-  /* Clear of a notch, the home bar and rounded corners (viewport-fit=cover), never less than the gutter. */
+  /*
+   * Clear of a notch, the home bar and rounded corners (viewport-fit=cover), never less than the
+   * gutter. The left side is a variable: the tab rail widens it on the tab screens (tab-bar.css).
+   */
+  --stage-left: max(var(--space-gutter), env(safe-area-inset-left));
+
   padding: max(var(--space-gutter), env(safe-area-inset-top))
     max(var(--space-gutter), env(safe-area-inset-right))
-    max(var(--space-gutter), env(safe-area-inset-bottom))
-    max(var(--space-gutter), env(safe-area-inset-left));
+    max(var(--space-gutter), env(safe-area-inset-bottom)) var(--stage-left);
 }
 
 .arena-container {
@@ -70,8 +74,7 @@
      */
     --beside-room: calc(
       100vw - 100dvh - var(--space-gap) - 1px + max(var(--space-gutter), env(safe-area-inset-top)) +
-        max(var(--space-gutter), env(safe-area-inset-bottom)) -
-        max(var(--space-gutter), env(safe-area-inset-left)) -
+        max(var(--space-gutter), env(safe-area-inset-bottom)) - var(--stage-left) -
         max(var(--space-gutter), env(safe-area-inset-right))
     );
 

@@ -9,6 +9,7 @@ import {
   openAs,
   placeholderTitle,
   pressPlaceholder,
+  tabLabels,
 } from './shell-routes-support.ts';
 
 describe('the shell’s URLs online without accounts (production with vs Friend on)', () => {
@@ -16,6 +17,8 @@ describe('the shell’s URLs online without accounts (production with vs Friend 
     await openAs({ online: true, accounts: false }, '?view=friends');
     await onScreen('friends');
     expect(placeholderTitle()).toBe('Friends');
+    // Friends is a tab here; Ranks is not until accounts are on.
+    expect(tabLabels()).toStrictEqual(['Play', 'Balls', 'Friends']);
     expect(document.title).toBe('Friends · BallBattle');
     // Its way on: challenging a friend with a link, which needs no account.
     await pressPlaceholder('Challenge a friend');

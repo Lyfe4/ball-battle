@@ -21,7 +21,7 @@ import { createArena } from './arena.ts';
 import { createHomeController } from './screens/home.ts';
 import { createBallLink, createManualScreen } from './screens/manual.ts';
 import { createOutdatedController } from './screens/outdated.ts';
-import { mountShell } from './screens/shell-placeholder.ts';
+import { mountShell } from './screens/shell.ts';
 import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
 import { offlineMount } from './screens/online-off.ts';
