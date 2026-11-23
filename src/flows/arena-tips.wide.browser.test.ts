@@ -63,7 +63,9 @@ describe('tips in the arena', () => {
     const panel = () => JSON.stringify(visible('.hud-ball')[0]?.getBoundingClientRect());
     const before = { court: court(), panel: panel() };
     await until(
-      () => visible('#arena-caption')[0]?.textContent.startsWith('Venom: Poison') === true,
+      () =>
+        visible('#arena-caption')[0]?.querySelector('.arena-caption-title')?.textContent ===
+        'Venom: Poison',
       20_000,
       'the Venom: Poison caption',
       false,
