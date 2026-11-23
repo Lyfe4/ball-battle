@@ -82,18 +82,35 @@ const counted = (count: number, one: string, many: string) =>
 
 /**
  * The Play tab's status strip (ADR 0081): what waits on the player first, then who is online;
- * nothing at all when there is nothing to say (never "0 friends online").
+ * nothing at all when there is nothing to say (never "0 friends online"). One thing is said whole
+ * ("1 challenge waiting"); more than one, each in short ("1 challenge · 2 online"), so a phone's
+ * strip shows every part rather than cutting the last (2026-11-24).
  */
 export function statusLine(inbox: InboxResponse): string | undefined {
   const online = inbox.friends.filter((friend) => friend.status === 'online').length;
   const parts = [
     inbox.invites.length > 0
-      ? `${counted(inbox.invites.length, 'challenge', 'challenges')} waiting`
-      : '',
-    inbox.requests > 0 ? counted(inbox.requests, 'friend request', 'friend requests') : '',
-    online > 0 ? `${counted(online, 'friend', 'friends')} online` : '',
-  ].filter((part) => part !== '');
-  return parts.length === 0 ? undefined : parts.join(' · ');
+      ? {
+          long: `${counted(inbox.invites.length, 'challenge', 'challenges')} waiting`,
+          short: counted(inbox.invites.length, 'challenge', 'challenges'),
+        }
+      : undefined,
+    inbox.requests > 0
+      ? {
+          long: counted(inbox.requests, 'friend request', 'friend requests'),
+          short: counted(inbox.requests, 'request', 'requests'),
+        }
+      : undefined,
+    online > 0
+      ? {
+          long: `${counted(online, 'friend', 'friends')} online`,
+          short: `${String(online)} online`,
+        }
+      : undefined,
+  ].filter((part) => part !== undefined);
+  if (parts.length === 0) return undefined;
+  if (parts.length === 1) return parts[0]?.long;
+  return parts.map((part) => part.short).join(' · ');
 }
 
 /** What waits on the player, for the Friends tab's badge: challenges and friend requests. */

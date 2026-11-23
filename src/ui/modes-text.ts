@@ -48,7 +48,7 @@ export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PI
 export const CHOOSER_LABEL = 'Play against';
 
 /** What Play starts against a friend (ADR 0081): the send screen, a live match by a link. */
-export const FRIEND_PLAY_LINE = 'Live · send a friend a link';
+export const FRIEND_PLAY_LINE = 'Live · send a link';
 export const FRIEND_PLAY_SPOKEN = 'Play a friend live: send them a link';
 
 /** The Play tab's quiet links under Play. */

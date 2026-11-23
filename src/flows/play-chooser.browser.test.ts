@@ -30,7 +30,7 @@ describe('the Play tab’s chooser', () => {
     choice('vs Friend').click();
     await settle();
     expect(pressed()).toStrictEqual(['vs Friend']);
-    expect(playMeta()).toBe('Live · send a friend a link');
+    expect(playMeta()).toBe('Live · send a link');
     expect(play()?.getAttribute('aria-label')).toBe('Play a friend live: send them a link');
     expect(visible('.home-link').map((link) => link.textContent)).toStrictEqual(['Free play']);
     // Choosing adds no history step: it is a choice on this screen.

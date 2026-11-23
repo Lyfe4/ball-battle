@@ -56,6 +56,8 @@ export function createProfile(
   const stats = createComingSoon(
     'Your stats',
     PROFILE_STATS.map((label) => ({ label })),
+    undefined,
+    true,
   );
   const api = <T>(method: 'GET' | 'PUT', path: string, body?: unknown) =>
     callApi<T>(method, path, body, {}, host.send);
