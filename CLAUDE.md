@@ -8,9 +8,10 @@ Where it's heading (PvP best of 3 with blind lineups, soft counters, then a back
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
 online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080).
-Home is by opponent (ADR 0055, `src/app/modes.ts`): Play opens the last series set up against the
-bot in one tap (first visit: Best of 3 · Reveal · vs Normal bot), and a card per opponent opens
-its setup screen (vs Bot; vs Friend in online builds). The series rules and bots are pure sim code
+The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
+"What to play" (who, length, format, the bot's level), remembered per opponent; Play goes straight
+in (first visit: Best of 3 · Reveal · vs Normal bot to its lineup; vs Friend in online builds sends
+the challenge and shows its link). The series rules and bots are pure sim code
 (`src/sim/series.ts`, `src/sim/bot.ts`), the same functions a server would run, so keep them
 deterministic and DOM-free. Every decision is an ADR in `docs/decisions/` (indexed in its
 README, with status); the last audit is `docs/audit-2026-11.md`.
@@ -344,10 +345,12 @@ Each line is a rule; its ADR has the reasoning.
   that restyles a shared part, and `src/flows/consistency-flow.ts` checks the legends at four sizes.
   The legend and settings are one info panel (`info-panel.css`, `.panel-close`). Escape only ever
   closes things.
-- Home by opponent (ADR 0055): Play remembers only bot games (`PlaySetup`, saved by the vs Bot
-  setup's Choose lineup) and opens that lineup in one tap; the opponents are data in
-  `PLAY_CHOICES`, the Play tab's chooser (Ranked and Casual join it later, ADR 0081); every setup is the one
-  `rules-step.ts` screen, and its choices rewrite its own entry. A lineup's in-app Back without
+- Home by opponent (ADR 0055, 0081 Option B): the box over Play says what it starts (`PlayChoice`:
+  who, and each opponent's rules, remembered per opponent) and opens the "What to play" dialog
+  (`play-sheet.ts`), whose Against row is `PLAY_CHOICES` (Ranked and Casual join it later); Play
+  goes straight to the bot's lineup or, against a friend, sends the challenge (no rules step).
+  Formats are always Reveal, Showdown, Blind (`SETUP_FORMATS`). Every setup is the one
+  `rules-step.ts` screen (old links, the Friends tab), and its choices rewrite its own entry. A lineup's in-app Back without
   history goes to its setup. `?mode=bo3` links open the vs Bot setup; `?view=modes` opens home; a
   lineup URL's format is its own (none is Blind). The 16+ question comes first in the vs Friend
   flow, on a device without a guest. While a series is held (`held()`), home's Play is Resume

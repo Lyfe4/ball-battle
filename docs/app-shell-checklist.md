@@ -22,11 +22,13 @@ Title and Play
 - [x] The title "BallBattle" and the pitch line (PR 4: the title row at the top of the page on a
       phone, the top of the panel beside; the pitch line on a desktop only, as beside already did)
 - [x] Play starts the remembered bot series (format, length, level; first visit Best of 3 · Reveal
-      · Normal), one tap to its lineup, its line saying what it plays (PR 4: with vs Bot chosen)
-- [x] Play's spoken name says what it plays (`playSpoken`; against a friend `FRIEND_PLAY_SPOKEN`)
-      (PR 4)
+      · Normal), one tap to its lineup, its line saying what it plays (PR 4: with vs Bot chosen;
+      Option B: the box over Play says it, and Play says "Play")
+- [x] Play's spoken name says what it plays (`playSpoken`; against a friend `friendPlaySpoken`)
+      (PR 4; Option B: the friend's rules in it)
 - [x] Play taps (`data-sound="tap"`) (PR 4)
-- [x] Home focuses Play when it opens (PR 4: `play-chooser.browser.test.ts`)
+- [x] Home focuses Play when it opens (PR 4; Option B: no ring until a key is pressed,
+      `play-box.safari.browser.test.ts`)
 - [x] A held series: Play becomes Resume series with its format and score; New series forgets it and
       opens Play's lineup (ADR 0042, 0046) (PR 4: with vs Bot chosen; vs Friend's Play is a friend
       match and New series steps aside)
@@ -34,9 +36,16 @@ Title and Play
 Ways to play
 
 - [x] vs Bot opens the bot setup on Play's choices (format, length) (PR 4: vs Bot in the chooser,
-      then Change rules)
+      then Change rules; Option B: changed meaning, the box's "What to play" sheet sets the bot's
+      length, format and level in place, and Play goes to the lineup; the setup screen stays for
+      `?mode=` links)
 - [x] vs Friend (online builds only) opens the send screen, Reveal, Best of 3 (PR 4: vs Friend in
-      the chooser, then Play; Change rules steps aside, as it would open the same screen)
+      the chooser, then Play; Option B: changed meaning, vs Friend in the sheet with its live
+      length and format, remembered, and Play sends the challenge straight to the link, the 16+
+      question first on a device without a guest; the send screen stays for `?view=send`, the
+      Friends tab and a friend's row)
+- [x] The chooser and Change rules went (Option B: one box over Play and its sheet, ADR 0081
+      addendum; Ranked and Casual join the sheet's Against row later)
 - [x] Free play opens the quick-match pick on the pair the demo is showing (ADR 0020) (PR 4)
 - [x] Ball manual opens the manual (PR 3: the Balls tab opens it, `tab-bar.browser.test.ts`; PR 4:
       home's link went)
