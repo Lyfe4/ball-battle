@@ -51,5 +51,10 @@ describe('the bundle check', () => {
     expect(problemsIn('a.js', 'const author="x"; oauth/emails', true, false)).toStrictEqual([]);
     // Words about friends in the page's text are not the friends routes.
     expect(problemsIn('a.js', 't("Play your friends")', true, false)).toStrictEqual([]);
+    // Nor is the Friends tab's name (ADR 0081), which an online build without accounts holds.
+    for (const text of ['e==="friends"', 'const v=["friends","profile"]', 'f("friends")']) {
+      expect(problemsIn('a.js', text, true, false), text).toStrictEqual([]);
+    }
+    expect(problemsIn('a.js', 'f( "DELETE" , "friends" )', true, false)).toHaveLength(1);
   });
 });
