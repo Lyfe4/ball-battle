@@ -1,10 +1,28 @@
 // Accounts in the online flows (ADR 0079): an email code read from the local Supabase's mail
 // catcher (Mailpit) and typed into the real page.
 import type { Browser, Page } from 'playwright';
+import postgres from 'postgres';
 import { PHONE } from './live-support.ts';
 
 /** The local Supabase's mail catcher (`supabase start`), where every code is sent. */
 const MAILPIT = 'http://127.0.0.1:54324';
+/** The local Supabase's database (`supabase start`), as its superuser. */
+const LOCAL_DATABASE = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+
+/**
+ * Forgets the local database's count of codes sent from this network. Every phone of a run is one
+ * network to the server, and the suite sends more codes than the 10 an hour one network may ask
+ * for (ADR 0079; the limit itself is tested in `email-limits.db.test.ts`). Local only, as the codes
+ * are: the mail catcher and this database are the local stack's.
+ */
+async function forgetNetworkCodes(): Promise<void> {
+  const sql = postgres(LOCAL_DATABASE, { max: 1, onnotice: () => undefined });
+  try {
+    await sql`delete from game.rate_limits where bucket in ('code.network', 'code.network.day')`;
+  } finally {
+    await sql.end();
+  }
+}
 
 /** How many emails `email` has had. */
 export async function mailCount(email: string): Promise<number> {
@@ -46,6 +64,7 @@ export async function signInWith(
   then = 'You’re signed in',
 ): Promise<void> {
   const before = await mailCount(email);
+  await forgetNetworkCodes();
   await page.getByLabel('Your email').fill(email);
   await page.getByRole('button', { name: 'Email me a code' }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
