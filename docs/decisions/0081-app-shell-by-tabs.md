@@ -306,3 +306,13 @@ checklist.
   which folds it into the badge, as 20 s unanswered does (`INVITE_FOLD_MS`); a folded challenge
   never pops up again on this page and stays in Waiting for you, with Accept and No thanks there. A
   rematch's card keeps its own rule (`isFighting`, ADR 0070).
+
+## Addendum (2026-11-24): the end screen, as built (PR 8)
+
+- **Against the bot**: Rematch (primary, "Same balls, new fights": today's same setup, new seed),
+  Change balls ("Same rules, a new lineup": today's New series, back to its lineup step) and Home
+  (the Play tab; the decided series is no longer held). Copy link stays under them.
+- **Online**: unchanged, Rematch ("Same friend, new lineups") and Home, or Rematch and No thanks; a
+  rematch opens the ADR 0080 lineups as before.
+- The buttons are one part (`series/end-buttons.ts`), each with what it does on a second line and
+  its first line as its name.

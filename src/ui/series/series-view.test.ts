@@ -234,6 +234,21 @@ describe('an online series waiting on the other player (ADR 0027, 0053)', () => 
   });
 });
 
+describe('the end of a series against the bot (ADR 0081)', () => {
+  it('offers Rematch, Change balls (its lineup) and Home', () => {
+    const ended = play(series('blind'), 'a', 'a');
+    const end = seriesScreenOf({
+      state: ended,
+      current: undefined,
+      settled: true,
+      linkState: undefined,
+      seats: { you: 'a', their: 'the bot’s', them: 'the bot', they: 'the bot' },
+      due: [],
+    });
+    expect(end).toMatchObject({ phase: 'finished', actions: ['rematch', 'newSeries', 'home'] });
+  });
+});
+
 describe('the end of a live match, and a rematch (ADR 0055)', () => {
   const ended = play(series('blind'), 'a', 'a');
   const end = (rematch?: 'offer' | 'answer') =>
