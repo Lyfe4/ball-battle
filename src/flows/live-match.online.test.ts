@@ -4,6 +4,7 @@
 // back in time, then gone for good. Chromium only, against `netlify dev` (`pnpm test:online`).
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AWAY_AFTER_MS, GRACE_MS } from '../api/live.ts';
 import {
   closePhones,
   finished,
@@ -36,6 +37,9 @@ const awayOf = (page: Page) =>
   page
     .locator('#online-series .pick-clock[data-kind="away"]:visible')
     .or(page.locator('.live-line:visible', { hasText: /disconnected · \d+ s/ }));
+
+/** How long a dropped player's friend may wait to be told: away, the grace, then the fight's end. */
+const goneForGoodMs = (): number => AWAY_AFTER_MS + GRACE_MS + liveRoundBudgetMs();
 
 describe('a live friend match', () => {
   it(
@@ -181,7 +185,7 @@ describe('a live friend match', () => {
 
   it(
     'waits for a player whose connection drops, and gives the match away once they’re gone',
-    { timeout: 180_000 },
+    { timeout: 110_000 + goneForGoodMs() },
     async () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
@@ -202,11 +206,12 @@ describe('a live friend match', () => {
       }
       expect(await panelOf(sender).locator('.series-result').isVisible()).toBe(false);
 
-      // Gone for good: the friend loses after the notice and the grace period.
+      // Gone for good: the friend loses after the notice and the grace period, told at the end of
+      // the fight under way, which can be as late as the round's longest watch.
       await friendContext.setOffline(true);
       await noteOf(sender)
         .filter({ hasText: 'disconnected. You win.' })
-        .waitFor({ timeout: 70_000 });
+        .waitFor({ timeout: goneForGoodMs() });
       await friendContext.setOffline(false);
       await noteOf(friend)
         .filter({ hasText: 'You were away too long and lost.' })
