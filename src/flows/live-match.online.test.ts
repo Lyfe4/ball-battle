@@ -9,6 +9,7 @@ import {
   finished,
   footOf,
   forgetLoading,
+  liveRoundBudgetMs,
   loadingSeen,
   noteOf,
   openPhones,
@@ -141,7 +142,7 @@ describe('a live friend match', () => {
 
   it(
     'lets a player leave mid-fight: the other watches the fight to its end, then is told',
-    { timeout: 240_000 },
+    { timeout: 150_000 + liveRoundBudgetMs() },
     async () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
@@ -166,10 +167,11 @@ describe('a live friend match', () => {
       }
       expect(await footOf(sender).isVisible()).toBe(true);
       expect(await finished(sender)).toBe(false);
-      // ...and is told at the fight's end.
+      // ...and is told at the fight's end, which can be as late as the round's longest watch: a
+      // fight to the time limit, or a draw fought again.
       await noteOf(sender)
         .filter({ hasText: 'left the match. You win.' })
-        .waitFor({ timeout: 60_000 });
+        .waitFor({ timeout: liveRoundBudgetMs() });
       await expect(
         panelOf(sender).locator('.series-result .sticker-title').innerText(),
       ).resolves.toBe('You win');

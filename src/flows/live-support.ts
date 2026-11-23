@@ -4,8 +4,9 @@
 // flow plays whatever the screen offers rather than pinning a seed.
 import { chromium, webkit, type Browser, type BrowserContext, type Page } from 'playwright';
 import { expect } from 'vitest';
-import { attemptWatchMs, LEAD_MS, TOSS_LEAD_MS } from '../api/live.ts';
+import { attemptWatchMs, LEAD_MS, roundWatchMs, TOSS_LEAD_MS } from '../api/live.ts';
 import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
+import { MAX_ATTEMPTS } from '../sim/series.ts';
 
 /** iPhone Safari's visible size (ADR 0039). */
 export const PHONE = { width: 390, height: 664 };
@@ -261,6 +262,15 @@ export const finished = (page: Page) => panelOf(page).locator('.series-result').
  */
 export const liveMatchBudgetMs = (bestOf: number): number =>
   TOSS_LEAD_MS + bestOf * (LEAD_MS + attemptWatchMs(MATCH_TIME_LIMIT_TICKS) + 10_000);
+
+/**
+ * The longest one round can take to watch from its Fight!, as the server times it
+ * (`roundWatchMs`): every attempt a draw allows, each to the time limit, with 10 s for reads.
+ * A player told something "at the fight's end" may wait this long; a flat 60 s ran out on a
+ * fight that went to the limit (about 70 s to watch) on #149.
+ */
+export const liveRoundBudgetMs = (): number =>
+  roundWatchMs(Array.from({ length: MAX_ATTEMPTS }, () => MATCH_TIME_LIMIT_TICKS)) + 10_000;
 
 /** Where a live series stands on `page`'s screen ("Round 2 · You 1–0 P4821"), for a failure. */
 async function standing(page: Page): Promise<string> {
