@@ -233,3 +233,16 @@
   min-height: var(--tap-target);
   padding-inline: var(--space-gap);
 }
+
+/*
+ * Desktop (ADR 0031): a list to read, so the reading width every notice keeps (--sheet-narrow),
+ * centred, rather than cards stretched across the sheet (2026-11-24 staging walk). Ranks too.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .friends-screen,
+  .ranks-screen {
+    justify-self: center;
+    width: 100%;
+    max-width: var(--sheet-narrow);
+  }
+}
