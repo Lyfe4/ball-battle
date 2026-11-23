@@ -243,3 +243,12 @@ bars, no flip-flop, smooth at 1506 units a second, reduced motion moves at once)
 ring fading), `arena-tips-motion.test.ts` (with reduced motion the stylesheet only fades) and the
 flow `tips-arena-flow.ts` at 390 x 664, 667 x 320, 812 x 375 and 1280 x 800 (the dashed cream ring
 and tag inside the court on every frame, the card's parts, written once, where it sits).
+
+The Bomber's first bomb, 0.9 s after its tip shows:
+
+| Before                                                                                   | After                                                                                           |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| ![Ring in the Bomber's pink, phone](../images/tips/tip-look-before-390x664.png)          | ![Cream ring and Bombs tag, phone](../images/tips/tip-look-after-390x664.png)                   |
+| ![Ring in the Bomber's pink, small sideways](../images/tips/tip-look-before-667x320.png) | ![Cream ring and Bombs tag, small sideways](../images/tips/tip-look-after-667x320.png)          |
+| ![Ring in the Bomber's pink, sideways](../images/tips/tip-look-before-812x375.png)       | ![Cream ring and Bombs tag, sideways](../images/tips/tip-look-after-812x375.png)                |
+| ![Ring in the Bomber's pink, desktop](../images/tips/tip-look-before-1280x800.png)       | ![Cream ring and Bombs tag, caption atop the panel](../images/tips/tip-look-after-1280x800.png) |
