@@ -7,10 +7,10 @@ import { errorOf } from '../../api/errors.ts';
 import { LOBBY_SEEN_MS } from '../../api/live.ts';
 import {
   acceptLink,
+  playLink,
   linkInfo,
   liveRow,
   sendLive,
-  seriesOf,
   tokenOf,
 } from '../test/live-support.ts';
 import { newPlayer, read } from '../test/series-support.ts';
@@ -71,7 +71,7 @@ describe('a live link', () => {
     const [sender, friend] = [await newPlayer(deps), await newPlayer(deps)];
     const token = tokenOf(await sendLive(sender));
     expect((await linkInfo(friend, token)).body).toMatchObject({ status: 'open', live: true });
-    const id = seriesOf(await acceptLink(friend, token));
+    const id = await playLink(sender, friend, token);
     expect((await liveRow(admin, id)).started).toBeNull();
     // The sender's lobby moves on to the series it started.
     expect((await linkInfo(sender, token)).body).toMatchObject({ status: 'yours', seriesId: id });
@@ -110,7 +110,7 @@ describe('one live match at a time', () => {
 
   it('refuses a player in a live match both sending and accepting', async () => {
     const [a, b, c] = [await newPlayer(deps), await newPlayer(deps), await newPlayer(deps)];
-    seriesOf(await acceptLink(b, tokenOf(await sendLive(a))));
+    await playLink(a, b, tokenOf(await sendLive(a)));
     expect(code((await sendLive(a)).body)).toBe('in_a_match');
     const fromC = tokenOf(await sendLive(c));
     const refused = await acceptLink(b, fromC);
@@ -138,7 +138,7 @@ describe('one live match at a time', () => {
 
   it('lets a player start again once their match has ended', async () => {
     const [a, b] = [await newPlayer(deps), await newPlayer(deps)];
-    const id = seriesOf(await acceptLink(b, tokenOf(await sendLive(a))));
+    const id = await playLink(a, b, tokenOf(await sendLive(a)));
     await admin`update game.series set status = 'forfeit', winner = 'b', turn = null,
       turn_deadline = null, turn_opens_at = null, finished_at = now() where id = ${id}`;
     expect((await sendLive(a)).status).toBe(201);

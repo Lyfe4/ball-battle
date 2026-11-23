@@ -1,7 +1,7 @@
 // A live friend match, two phones, end to end (ADR 0053): the lobby, a whole match played at the
 // server's times (both screens fighting together, at 1x), home's "Back to your match", a pick that
-// runs out, Leave and forfeit, and a player whose connection drops: back in time, then gone for
-// good. Chromium only, against `netlify dev` (`pnpm test:online`).
+// runs out, Leave and forfeit (between fights and mid-fight), and a player whose connection drops:
+// back in time, then gone for good. Chromium only, against `netlify dev` (`pnpm test:online`).
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -135,6 +135,44 @@ describe('a live friend match', () => {
         panelOf(sender).locator('.series-result .sticker-title').innerText(),
       ).resolves.toBe('You win');
       expect(await sender.getByRole('button', { name: 'Leave match' }).isVisible()).toBe(false);
+      expect(phones.errors).toStrictEqual([]);
+    },
+  );
+
+  it(
+    'lets a player leave mid-fight: the other watches the fight to its end, then is told',
+    { timeout: 240_000 },
+    async () => {
+      const sender = await phone(phones);
+      const friend = await phone(phones);
+      await startLiveMatch(BASE, sender, friend);
+      const start = Date.now();
+      while (!(await footOf(sender).isVisible())) {
+        expect(Date.now() - start, 'no fight began').toBeLessThan(120_000);
+        for (const page of [sender, friend]) await pickIfDue(page);
+        await sender.waitForTimeout(250);
+      }
+
+      await friend.getByRole('button', { name: 'Leave match' }).click();
+      await friend.getByText('Leave and forfeit?').waitFor();
+      await friend.getByRole('button', { name: 'Leave', exact: true }).click();
+      await friend.waitForURL((url) => !url.search.includes('online='));
+
+      // The winner keeps watching, with no way to leave a match that is already over...
+      const left = Date.now();
+      while (await sender.getByRole('button', { name: 'Leave match' }).isVisible()) {
+        expect(Date.now() - left, 'Leave match stayed for the winner').toBeLessThan(5_000);
+        await sender.waitForTimeout(200);
+      }
+      expect(await footOf(sender).isVisible()).toBe(true);
+      expect(await finished(sender)).toBe(false);
+      // ...and is told at the fight's end.
+      await noteOf(sender)
+        .filter({ hasText: 'left the match. You win.' })
+        .waitFor({ timeout: 60_000 });
+      await expect(
+        panelOf(sender).locator('.series-result .sticker-title').innerText(),
+      ).resolves.toBe('You win');
       expect(phones.errors).toStrictEqual([]);
     },
   );

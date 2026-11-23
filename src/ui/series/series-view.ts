@@ -245,6 +245,11 @@ export interface SeriesMoment {
      */
     readonly live?: boolean;
     /**
+     * The series is over on the server while this page still shows a fight of it (the other
+     * player left mid-fight): it is told at the fight's end, and there is nothing left to leave.
+     */
+    readonly over?: boolean;
+    /**
      * At the end of a live match (ADR 0055): `offer`, Rematch may be asked (beside Home);
      * `answer`, the other player asked, so Rematch or No thanks.
      */
@@ -276,6 +281,15 @@ function endActionsOf(online: SeriesMoment['online']): readonly SeriesAction[] {
   if (online === undefined) return ['rematch', 'newSeries'];
   if (online.rematch === 'answer') return ['rematch', 'decline'];
   return online.rematch === 'offer' ? ['rematch', 'newSeries'] : ['newSeries'];
+}
+
+/**
+ * Whether the way out (Leave series, Home, Leave match) shows: not at the result, not while an
+ * online series waits with Home as its way on, and not once the server has ended the series.
+ */
+export function offersLeave(screen: SeriesScreen, online: SeriesMoment['online']): boolean {
+  if (screen.phase === 'finished' || online?.over === true) return false;
+  return !screen.waiting || screen.actions.includes('leave');
 }
 
 /** What a series screen shows and offers at this moment; the panel renders exactly this. */

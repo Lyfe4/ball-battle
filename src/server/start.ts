@@ -21,7 +21,6 @@ export function openStart(
     readonly format: Format;
     readonly bestOf: BestOf;
     readonly rematchOf?: string;
-    readonly ready?: Partial<Record<Side, readonly string[]>>;
   },
 ): Promise<string> {
   return insertStart(db, { ...input, lineupMs: startLineupMs(input.bestOf) });

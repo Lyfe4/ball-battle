@@ -13,7 +13,7 @@ export interface ChallengeRow {
   readonly creatorName: string | null;
   readonly format: Format;
   readonly bestOf: BestOf;
-  /** The sender's lineup: a series by turns', or a live link sent by the last release's page. */
+  /** The sender's lineup: a series by turns' (a live link has none, ADR 0080). */
   readonly lineup: readonly string[] | null;
   readonly expiresAt: Date;
   readonly expired: boolean;

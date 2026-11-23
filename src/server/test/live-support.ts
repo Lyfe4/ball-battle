@@ -3,10 +3,12 @@
 // the series' past is moved instead). Times compared here are the database's.
 import type { Accepted, ChallengeLink } from '../../api/challenges.ts';
 import { TOSS_LEAD_MS } from '../../api/live.ts';
+import type { StartView } from '../../api/start.ts';
 import type { BestOf, Format, Side } from '../../sim/index.ts';
 import type { Sql } from '../db.ts';
 import type { Deps } from '../http.ts';
 import { challengeOne, challenges } from '../routes/challenges.ts';
+import { startOne } from '../routes/starts.ts';
 import { createSeries } from '../series-service.ts';
 import type { Answer } from './client.ts';
 import { LINEUP_3, LINEUP_5, newPlayer, read, type Player } from './series-support.ts';
@@ -114,19 +116,35 @@ export function sendLive(
   return from.browser.call(challenges, 'POST', '/api/v1/challenges', {
     format,
     bestOf: 3,
-    lineup: LINEUP_3.a,
     requestId,
     live: true,
   });
 }
 
 export const tokenOf = (answer: Answer): string => (answer.body as ChallengeLink).token;
-export const seriesOf = (answer: Answer): string => (answer.body as Accepted).seriesId ?? '';
 
+/** Accepts a live link: its start opens, where both pick their lineups (ADR 0080). */
 export const acceptLink = (by: Player, token: string): Promise<Answer> =>
-  by.browser.call(challengeOne, 'POST', `/api/v1/challenges/${token}/accept`, {
-    lineup: LINEUP_3.b,
-  });
+  by.browser.call(challengeOne, 'POST', `/api/v1/challenges/${token}/accept`, {});
+
+/** `friend` accepts `sender`'s live link and both lock in their lineups: the series made. */
+export async function playLink(sender: Player, friend: Player, token: string): Promise<string> {
+  const { startId } = (await acceptLink(friend, token)).body as Accepted;
+  let made: StartView | undefined;
+  for (const [player, lineup] of [
+    [sender, LINEUP_3.a],
+    [friend, LINEUP_3.b],
+  ] as const) {
+    const answer = await player.browser.call(startOne, 'POST', `/api/v1/starts/${startId ?? ''}`, {
+      lineup,
+      lock: true,
+      seq: 1,
+    });
+    made = answer.body as StartView;
+  }
+  if (made?.seriesId == null) throw new Error('Both locked in, and no series');
+  return made.seriesId;
+}
 
 export const linkInfo = (by: Player, token: string): Promise<Answer> =>
   by.browser.call(challengeOne, 'GET', `/api/v1/challenges/${token}`);

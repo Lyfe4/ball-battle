@@ -64,13 +64,9 @@ export async function makeSeries(
     live: true,
   });
   await markMade(db, row.id, id, lineups);
-  // What waited on this start reads its series: an old sender's lobby, an old rematch screen.
+  // The link that opened this start reads its series too.
   await db`update game.challenges set series_id = ${id} where start_id = ${row.id}
     and series_id is null`;
-  if (row.rematchOf !== null) {
-    await db`update game.rematches set new_series_id = ${id} where series_id = ${row.rematchOf}
-      and new_series_id is null`;
-  }
   const missed = SIDES.filter((side) => !row.opened[side]);
   if (missed.length > 0) {
     const series = await loadSeries(db, id);

@@ -194,16 +194,15 @@ describe('a rematch', () => {
     expect(code(again.body)).toBe('rematch_closed');
   });
 
-  it('takes the last release’s lineup on its own route, into the lineups picked together', async () => {
+  it('refuses a lineup on its own route: the lineups are picked on the start (ADR 0080)', async () => {
     const { id, players } = await ended();
     await view(players.a, id, { answer: 'yes' });
-    await view(players.b, id, { answer: 'yes' });
-    expect(await view(players.a, id, { lineup: NEW.a })).toMatchObject({ lineupIn: true });
-    const started = await view(players.b, id, { lineup: NEW.b });
-    expect(started.state).toBe('started');
-    expect((await rematch(players.a, id, { lineup: ['storm', 'storm', 'ghost'] })).status).toBe(
-      200,
-    );
+    const agreed = await view(players.b, id, { answer: 'yes' });
+    const old = await rematch(players.a, id, { lineup: NEW.a });
+    expect(old.status).toBe(400);
+    expect(code(old.body)).toBe('bad_request');
+    expect(await view(players.a, id)).toMatchObject({ state: 'agreed', lineupIn: false });
+    expect(agreed.startId).not.toBeNull();
   });
 
   it('ends for both when the answer runs out; lineups out of time still make the match', async () => {
@@ -242,13 +241,10 @@ describe('a rematch', () => {
     expect((await view(players.b, id, { answer: 'no' })).state).toBe('declined');
   });
 
-  it('refuses a lineup that isn’t one, and holds both players to it from the yes', async () => {
+  it('holds both players to it from the yes', async () => {
     const { id, players } = await ended();
     await view(players.a, id, { answer: 'yes' });
     await view(players.b, id, { answer: 'yes' });
-    expect((await rematch(players.a, id, { lineup: ['storm', 'storm', 'ghost'] })).status).toBe(
-      400,
-    );
     // Choosing the rematch's lineup is their live match: neither can start another one.
     for (const player of [players.a, players.b]) {
       const sent = await sendLive(player);

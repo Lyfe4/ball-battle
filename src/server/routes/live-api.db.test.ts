@@ -8,10 +8,10 @@ import { AWAY_AFTER_MS, GRACE_MS, NOW_HEADER, type CurrentMatchResponse } from '
 import type { Player } from '../test/series-support.ts';
 import {
   acceptLink,
+  playLink,
   linkInfo,
   liveRow,
   sendLive,
-  seriesOf,
   silence,
   startedLive,
   tokenOf,
@@ -135,7 +135,7 @@ describe('cancel in the lobby', () => {
   it('after the friend accepted, answers the series to go to', async () => {
     const [sender, friend] = [await newPlayer(deps), await newPlayer(deps)];
     const token = tokenOf(await sendLive(sender));
-    const id = seriesOf(await acceptLink(friend, token));
+    const id = await playLink(sender, friend, token);
     expect((await cancel(sender, token)).body).toMatchObject({ status: 'yours', seriesId: id });
   });
 
@@ -158,7 +158,7 @@ describe('the match to go back to', () => {
       format: 'showdown',
       bestOf: 3,
     });
-    const id = seriesOf(await acceptLink(friend, token));
+    const id = await playLink(sender, friend, token);
     for (const player of [sender, friend]) {
       expect(await matchOf(player)).toMatchObject({ kind: 'series', id, format: 'showdown' });
     }

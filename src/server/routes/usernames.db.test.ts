@@ -6,11 +6,10 @@ import { errorOf } from '../../api/errors.ts';
 import type { Answer } from '../test/client.ts';
 import { AWAY_AFTER_MS, GRACE_MS } from '../../api/live.ts';
 import {
-  acceptLink,
+  playLink,
   linkInfo,
   liveRow,
   sendLive,
-  seriesOf,
   silence,
   startedLive,
   tokenOf,
@@ -146,7 +145,7 @@ describe('choosing a username', () => {
     const friend = await newPlayer(deps);
     const token = tokenOf(await sendLive(creator));
     expect((await linkInfo(friend, token)).body).toMatchObject({ from: name });
-    const id = seriesOf(await acceptLink(friend, token));
+    const id = await playLink(creator, friend, token);
     expect((await read(friend, id)).names.a).toBe(name);
     const { body } = await friend.browser.call(seriesList, 'GET', '/api/v1/series');
     const listed = (body as { series: { opponent: string }[] }).series;

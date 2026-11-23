@@ -25,6 +25,7 @@ import { createSeriesTrack } from './series/series-track.ts';
 import { createMatchStory } from './match-story.ts';
 import {
   lastPlayOf,
+  offersLeave,
   seriesScreenOf,
   trackOf,
   type SeriesMoment,
@@ -355,7 +356,7 @@ export function createSeriesPanel(
       setHidden(buttons, !play && !again && !fresh && !actions.includes('decline'));
       setHidden(share, !finished || online);
       if (!finished) setText(share, 'Copy link');
-      leave.setHidden(finished || (screen.waiting && !actions.includes('leave')));
+      leave.setHidden(!offersLeave(screen, moment.online));
       leave.setLive(moment.online?.live === true);
       const said = playing ? undefined : moment.online?.note;
       setHidden(note, said === undefined);

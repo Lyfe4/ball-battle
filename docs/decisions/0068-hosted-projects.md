@@ -57,11 +57,10 @@ The forwarded address on the session means forwarding works. Shown both ways on 
 with it on, the check passed. A failure fails the run, and GitHub emails whoever last changed the
 schedule.
 
-- **Cost:** nothing. The repository is public, so Actions minutes are free (about 2 minutes a day
-  anyway). Each project gets one sign-up and three small queries a day.
+- **Cost:** about 2 Actions minutes a day (what CI as a whole costs: `docs/ci-cost.md`). Each project gets one sign-up and three small queries a day.
 - **What it can't see:** the anonymous limit's number (the token can't read Auth's settings). The
   probe is still run by hand after any change to Auth's rate limits.
-- GitHub turns off a public repository's scheduled workflows after 60 days without a commit, and
+- GitHub turns off a repository's scheduled workflows after 60 days without a commit, and
   emails before it does.
 
 ### Migrations reach each database before its code

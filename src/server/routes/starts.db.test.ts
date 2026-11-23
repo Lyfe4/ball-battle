@@ -266,20 +266,13 @@ describe('the lineups picked together', () => {
   });
 });
 
-describe('a page of the last release', () => {
-  it('sends a live challenge with its lineup: the sender is locked in, the friend picks', async () => {
+describe('a lineup with a live link', () => {
+  // The last release's pages sent one, taken for one release (ADR 0080); that release has passed.
+  it('is refused when sending or accepting: lineups are picked together', async () => {
     const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
-    const token = tokenOf(await send(players.a, 3, A));
-    const { startId } = (await accept(players.b, token)).body as Accepted;
-    const made = await moved(players.b, startId ?? '', B, true, 1);
-    expect(made.seriesId).not.toBeNull();
-    expect(await lineupsOf(made.seriesId ?? '')).toStrictEqual({ lineup_a: A, lineup_b: B });
-    // The old lobby waits for a series id on the link: it gets one.
-    expect((await linkInfo(players.a, token)).body).toMatchObject({ seriesId: made.seriesId });
-  });
-
-  it('is told to reload when it accepts a challenge sent without a lineup', async () => {
-    const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
+    const sent = await send(players.a, 3, A);
+    expect(sent.status).toBe(400);
+    expect(code(sent.body)).toBe('bad_request');
     const token = tokenOf(await send(players.a));
     const old = await players.b.browser.call(
       challengeOne,
@@ -287,7 +280,10 @@ describe('a page of the last release', () => {
       `/api/v1/challenges/${token}/accept`,
       { lineup: B },
     );
-    expect(old.status).toBe(409);
-    expect(code(old.body)).toBe('conflict');
+    expect(old.status).toBe(400);
+    expect(code(old.body)).toBe('bad_request');
+    // Still open: the friend can accept it as today's page does.
+    const { startId } = (await accept(players.b, token)).body as Accepted;
+    expect(startId).not.toBeNull();
   });
 });

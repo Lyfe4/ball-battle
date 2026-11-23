@@ -17,7 +17,7 @@ import {
 } from './spectrum-support.ts';
 
 const LABEL =
-  /^[A-Z][\w ]+: (strongly|slightly) (favoured against [A-Z][\w ]+, wins|unfavoured against [A-Z][\w ]+, [A-Z][\w ]+ wins) about [67] in 10$|^[A-Z][\w ]+: even with [A-Z][\w ]+, about 1 in 2$/;
+  /^[A-Z][\w ]+: [A-Z][\w ]+ (strongly|slightly) (un)?favoured, [A-Z][\w ]+ wins about [67] in 10$|^[A-Z][\w ]+: even with [A-Z][\w ]+, about 1 in 2$/;
 
 describe('the matchup chart on a phone', () => {
   it('stacks five bands and opens a reason under the tapped chip’s row', async () => {

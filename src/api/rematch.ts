@@ -5,7 +5,6 @@
 // no, or the ask running out, ends it for both. Every time is the database's; the page only
 // counts down.
 import type { Side } from '../sim/index.ts';
-import { lineupOf } from './challenges.ts';
 
 /** From the ask, the other player has this long to answer. */
 export const REMATCH_ANSWER_MS = 30_000;
@@ -40,20 +39,16 @@ export interface RematchView {
   readonly startId: string | null;
 }
 
-/**
- * POST /api/v1/series/:id/rematch: ask or answer (yes or no). {lineup} is the last release's page
- * handing in its new lineup, taken for one release (ADR 0080).
- */
-export type RematchRequest =
-  { readonly answer: 'yes' | 'no' } | { readonly lineup: readonly string[] };
+/** POST /api/v1/series/:id/rematch: ask or answer (yes or no). */
+export interface RematchRequest {
+  readonly answer: 'yes' | 'no';
+}
 
 export function decodeRematchRequest(body: unknown): RematchRequest | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
   const fields = body as Record<string, unknown>;
   const answer = fields['answer'];
-  if (answer === 'yes' || answer === 'no') return { answer };
-  const lineup = lineupOf(fields['lineup']);
-  return lineup === undefined ? undefined : { lineup };
+  return answer === 'yes' || answer === 'no' ? { answer } : undefined;
 }
 
 const STATES: readonly RematchState[] = [

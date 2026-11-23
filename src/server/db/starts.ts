@@ -91,21 +91,14 @@ export interface NewStart {
   readonly bestOf: BestOf;
   readonly lineupMs: number;
   readonly rematchOf?: string;
-  /** A side whose lineup is already in (an old challenge's sender, an old phone's rematch). */
-  readonly ready?: Partial<Record<Side, readonly string[]>>;
 }
 
 /** A new start; returns its id. A rematch's second start is refused by its unique key. */
 export async function insertStart(db: Db, start: NewStart): Promise<string> {
-  const a = start.ready?.a;
-  const b = start.ready?.b;
   const [row] = await db<{ id: string }[]>`
-    insert into game.starts (player_a, player_b, format, best_of, rematch_of, deadline_at,
-      opened_a, draft_a, locked_a, opened_b, draft_b, locked_b)
+    insert into game.starts (player_a, player_b, format, best_of, rematch_of, deadline_at)
     values (${start.players.a}, ${start.players.b}, ${start.format}, ${start.bestOf},
-      ${start.rematchOf ?? null}, now() + make_interval(secs => ${start.lineupMs / 1000}),
-      ${a === undefined ? null : db`now()`}, ${[...(a ?? [])]}, ${a === undefined ? null : db`now()`},
-      ${b === undefined ? null : db`now()`}, ${[...(b ?? [])]}, ${b === undefined ? null : db`now()`})
+      ${start.rematchOf ?? null}, now() + make_interval(secs => ${start.lineupMs / 1000}))
     returning id`;
   if (row === undefined) throw new Error('A start just made is missing');
   return row.id;

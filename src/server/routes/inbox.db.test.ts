@@ -8,7 +8,7 @@ import { errorOf } from '../../api/errors.ts';
 import type { InboxResponse } from '../../api/friends.ts';
 import type { Answer } from '../test/client.ts';
 import { linkInfo, newLive, sendLive, silence, tokenOf } from '../test/live-support.ts';
-import { LINEUP_3, newPlayer, read, type Player } from '../test/series-support.ts';
+import { newPlayer, read, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { challengeOne, challenges } from './challenges.ts';
 import { me as meRoute, meInbox } from './me.ts';
@@ -136,7 +136,6 @@ describe('challenging a friend', () => {
     from.browser.call(challenges, 'POST', '/api/v1/challenges', {
       format: 'reveal',
       bestOf: 3,
-      lineup: LINEUP_3.a,
       requestId: crypto.randomUUID(),
       live,
       friend,
