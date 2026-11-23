@@ -20,7 +20,7 @@ import {
   type RematchRow,
 } from './db/rematch.ts';
 import { ApiError, type Deps } from './http.ts';
-import { moveStart, openStart } from './start.ts';
+import { openStart } from './start.ts';
 import { settleStart } from './start-settle.ts';
 import { sideOf } from './view.ts';
 
@@ -100,8 +100,8 @@ export async function rematchOf(
 }
 
 /**
- * POST: ask or answer. A lineup is the last release's page handing in its rematch lineup (for one
- * release, ADR 0080): it is locked into the start. Retries and double taps change nothing more.
+ * POST: ask or answer; the lineups are then picked on the start (ADR 0080). Retries and double taps
+ * change nothing more.
  */
 export async function moveRematch(
   deps: Deps,
@@ -109,12 +109,6 @@ export async function moveRematch(
   userId: string,
   request: RematchRequest,
 ): Promise<RematchView> {
-  if (!('answer' in request)) {
-    const { row } = playerOf(await rematchRow(deps.sql, seriesId), userId);
-    if (row.start === null) throw closed();
-    await moveStart(deps, row.start.id, userId, { lineup: request.lineup, lock: true, seq: 0 });
-    return rematchOf(deps, seriesId, userId);
-  }
   const answer = request.answer;
   return deps.sql.begin(async (db) => {
     const { row: before, side } = playerOf(await rematchRow(db, seriesId, true), userId);

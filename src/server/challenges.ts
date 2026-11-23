@@ -94,8 +94,11 @@ export async function createChallenge(
   request: CreateChallenge,
   account = false,
 ): Promise<ChallengeLink> {
-  // A live challenge is sent without a lineup (ADR 0080); one from a page of the last release still
-  // carries one, kept for its sender's side of the start. By turns, the lineup comes with it.
+  // A live challenge is sent without a lineup: both pick together once it's accepted (ADR 0080).
+  // By turns, the lineup comes with it.
+  if (request.live && request.lineup !== undefined) {
+    throw new ApiError(400, 'bad_request', 'A live challenge is sent without a lineup');
+  }
   if (request.lineup !== undefined) await checkLineup(request.lineup, request.bestOf);
   else if (!request.live) throw new ApiError(400, 'bad_request', 'Send your lineup');
   if (request.live && !LIVE_FORMATS.includes(request.format)) {
@@ -192,9 +195,8 @@ export async function challengeInfo(
  * once, and the series is made when both are in. Once only: a retry by the same friend gets the
  * same start (or series); anyone else is told it's taken.
  *
- * `lineup` is a series by turns' (or a page of the last release's, for one release): with the
- * challenger's lineup in hand too, the series starts at once as it did before. A page of the last
- * release can't join lineups picked together, so it is told to reload.
+ * `lineup` is a series by turns': with the challenger's lineup in hand too, the series starts at
+ * once. A live link takes none.
  */
 export async function acceptChallenge(
   deps: Deps,
@@ -221,27 +223,27 @@ export async function acceptChallenge(
       throw new ApiError(410, 'challenge_stopped', 'Your friend stopped waiting for this match');
     }
     if (found.expired) throw new ApiError(410, 'challenge_expired', 'This challenge has expired');
-    if (lineup === undefined && !found.live)
-      throw new ApiError(400, 'bad_request', 'Send {lineup}');
-    if (lineup !== undefined) await checkLineup(lineup, found.bestOf);
-    if (found.live) await checkNotLive(db, deps.config, acceptor);
-    else if ((await openSeriesOf(db, acceptor)) >= MOST_OPEN_SERIES) {
-      throw new ApiError(409, 'too_many_series', 'Finish one of your open series first');
-    }
-    const theirs = found.lineup;
-    if (lineup === undefined) {
+    if (found.live) {
+      if (lineup !== undefined) {
+        throw new ApiError(400, 'bad_request', 'A live challenge is accepted without a lineup');
+      }
+      await checkNotLive(db, deps.config, acceptor);
       const startId = await openStart(db, {
         players: { a: found.creator, b: acceptor },
         format: found.format,
         bestOf: found.bestOf,
-        ...(theirs === null ? {} : { ready: { a: theirs } }),
       });
       await markStarted(db, found.id, startId);
       return { seriesId: null, startId };
     }
-    if (theirs === null) {
-      throw new ApiError(409, 'conflict', 'This game has a new version: reload the page to accept');
+    if (lineup === undefined) throw new ApiError(400, 'bad_request', 'Send {lineup}');
+    await checkLineup(lineup, found.bestOf);
+    if ((await openSeriesOf(db, acceptor)) >= MOST_OPEN_SERIES) {
+      throw new ApiError(409, 'too_many_series', 'Finish one of your open series first');
     }
+    // Sent with the sender's lineup: a link by turns always is (createChallenge).
+    const theirs = found.lineup;
+    if (theirs === null) throw new Error('A challenge by turns without its lineup');
     const seriesId = await createSeries(db, deps.config, {
       format: found.format,
       bestOf: found.bestOf,

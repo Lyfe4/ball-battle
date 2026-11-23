@@ -85,3 +85,22 @@ settles the clock), exactly as the old Accept did. The random fill uses the plat
 - A slow phone never strands the other player; a phone that never shows up still loses, as before.
 - Random fill may feel unfair to a slow picker; measure it with the owner on phones (the proposal's
   open risk) before tightening to a forfeit.
+
+## Addendum (2026-11-23): the last release's paths removed
+
+The release with lineups picked together has been published, so the one-release paths above are
+gone; the next publish ships their removal.
+
+- A live challenge sent or accepted **with** a lineup is refused (400 `bad_request`); a rematch
+  lineup POSTed to `/series/:id/rematch` is refused like any body that isn't a yes or no. A page
+  still cached from before is offered the reload by the build check (ADR 0066).
+- A start no longer takes a side's lineup when it opens (`ready`), and a start made from a rematch
+  no longer writes `game.rematches.new_series_id`: the rematch reads its new series from the start
+  (`coalesce(st.series_id, r.new_series_id)` keeps old rows readable). A challenge's `series_id`
+  is still written, as the link's own record of its match.
+- Kept: a rematch agreed before lineups were picked together (no start) still reads as ended, since
+  those rows stay in the database; and old lineup URLs still open the setup or the card.
+- The columns no longer written (`challenges.lineup` for live links, `rematches.lineup_a`,
+  `lineup_b`, `new_series_id`) stay: migrations are expand only (ADR 0068).
+- Tests: `starts.db.test.ts` ("a lineup with a live link") and `rematch.db.test.ts` show both
+  refusals; the live database tests now reach a series through the start (`playLink`).

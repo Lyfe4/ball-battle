@@ -1,6 +1,6 @@
 // /api/v1/challenges (ADR 0052, "Friend challenges"):
 // - POST /api/v1/challenges {format, bestOf, requestId, live}: a link to send a friend; by turns
-//   with the sender's `lineup` (the last release's page sends one live too, ADR 0080).
+//   with the sender's `lineup` (by turns only; a live link takes none, ADR 0080).
 // - GET /api/v1/challenges/:token: the format and length, and who sent it, before the friend
 //   accepts. Needs no session: opening a link isn't an online action yet.
 // - POST /api/v1/challenges/:token/accept {}: a live link starts the lineups picked together

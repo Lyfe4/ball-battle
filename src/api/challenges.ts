@@ -6,10 +6,7 @@ import type { BestOf, Format } from '../sim/index.ts';
 export interface CreateChallenge {
   readonly format: Format;
   readonly bestOf: BestOf;
-  /**
-   * The sender's lineup: a series by turns'. A live challenge is sent without one (ADR 0080); the
-   * last release's page still sends one, taken for one release.
-   */
+  /** The sender's lineup: a series by turns'. A live challenge is sent without one (ADR 0080). */
   readonly lineup?: readonly string[];
   /** The client's id for this create (a UUID), so a retry returns the same link. */
   readonly requestId: string;
@@ -61,7 +58,7 @@ export interface ChallengeInfo {
 
 /**
  * POST /api/v1/challenges/:token/accept: nothing for a live link (ADR 0080), the lineup for one by
- * turns (and from the last release's page, for one release).
+ * turns.
  */
 export interface AcceptChallenge {
   readonly lineup?: readonly string[];
