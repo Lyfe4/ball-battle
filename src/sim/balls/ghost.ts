@@ -32,7 +32,7 @@ export const ghost = defineBall<GhostState>({
   name: 'Ghost',
   description: 'Phases every 4 s: slips through all, hitting as it goes.',
   color: '#c4b5fd',
-  ability: { name: 'Phase', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
+  ability: { name: 'Phase', shownBy: { kind: 'hookDamage', hook: 'onHitBall' }, tipOn: 'self' },
   howItWorks: [
     `It is phased for ${secondsOf(PHASE_TICKS)} s of every ${secondsOf(PHASE_CYCLE_TICKS)} s. Then nothing touches it: balls, shots, skulls and bombs pass through, and no hit lands.`,
     `Passing through a ball while phased hits it for ${SPECTRAL_HIT}, once per pass.`,

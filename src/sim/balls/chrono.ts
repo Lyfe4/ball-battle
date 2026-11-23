@@ -68,7 +68,7 @@ export const chrono = defineBall<ChronoState>({
   name: 'Chrono',
   description: `Rewinds a hit of ${BIG_HIT} or more, then recharges for ${secondsOf(RECHARGE_TICKS)} s.`,
   color: '#d4a373',
-  ability: { name: 'Rewind', shownBy: { kind: 'rewound' } },
+  ability: { name: 'Rewind', shownBy: { kind: 'rewound' }, tipOn: 'self' },
   howItWorks: [
     `When an ability hits it for ${BIG_HIT} or more, or would knock it out, it jumps back to where it was up to ${secondsOf(MOMENT_EVERY_TICKS * REWIND_MOMENTS)} s earlier, with the health it had then.`,
     `Then it recharges for ${secondsOf(RECHARGE_TICKS)} s. Bumps and small hits are never rewound.`,

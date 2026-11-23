@@ -3,8 +3,9 @@
 // iPhone 13's height once Safari's bar at the top and the safe areas are taken off. On a real
 // iPhone 13 the ready card's longest lines ran off its right edge, the card spilled past the court
 // and Free play's picker scrolled inside a box that cut tiles in half. Here: a strong pairing's
-// card whole inside the court with no line wider than its box, the ability caption and its ring in
-// the ball's colour, settings' headings and rows, and Free play's picker scrolling the page.
+// card whole inside the court with no line wider than its box, the ability caption (its title in
+// the ball's colour) and its ring in the tip's cream, settings' headings and rows, and Free
+// play's picker scrolling the page.
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -62,8 +63,9 @@ describe('the smallest phone turned sideways', () => {
       clipped: card === undefined ? ['no card'] : tooWide(card),
     }).toStrictEqual({ inside: true, across: true, clipped: [] });
 
-    // The caption and its ring appear together, both in the ball's colour, the caption's ball
-    // drawn beside its title, and the caption whole on screen, inside the panel.
+    // The caption and its ring appear together (its title in the ball's colour, the ring in the
+    // tip's cream), the caption's ball drawn beside its title, and the caption whole on screen,
+    // inside the panel.
     await click(button('Fight!'));
     await until(
       () => visible('#arena-caption')[0]?.textContent.includes(':') === true,
@@ -77,7 +79,9 @@ describe('the smallest phone turned sideways', () => {
     expect(ring, 'the ring shows with the caption').toBeDefined();
     const titleColor = getComputedStyle(title ?? document.body).color;
     expect(titleColor).not.toBe(getComputedStyle(caption ?? document.body).color);
-    expect(getComputedStyle(ring ?? document.body).borderTopColor).toBe(titleColor);
+    // The ring wears the tip's own cream, the colour of the caption's "i" (ADR 0036 addendum).
+    const cream = getComputedStyle(caption?.querySelector('.tip-i') ?? document.body);
+    expect(getComputedStyle(ring ?? document.body).borderTopColor).toBe(cream.backgroundColor);
     expect(caption?.querySelector('canvas.arena-caption-mark')).not.toBeNull();
     // Measured once its entrance (a few pixels of slide) is over: its own animations finished, not
     // a still box, which it also is for a frame or two before the slide starts.

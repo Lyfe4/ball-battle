@@ -1,7 +1,7 @@
 // The real page in a real browser (`pnpm test:browsers`, at desktop size): teaching in the arena
 // (ADR 0036, 0037). A Free play match of a pairing new to this device waits on its ready moment:
 // both balls still where the match starts, the card saying who is favoured and what to watch, and
-// Fight! to start. The first time a ball's ability shows, a caption under the panel names it and
+// Fight! to start. The first time a ball's ability shows, a caption atop the panel names it and
 // says what it does, and a ring marks the ball, once per device, never moving the court; a
 // finished match leads "How it was won" with its result. The same pairing again starts by
 // itself, and with the cards switched off in settings no card shows.
@@ -63,7 +63,9 @@ describe('tips in the arena', () => {
     const panel = () => JSON.stringify(visible('.hud-ball')[0]?.getBoundingClientRect());
     const before = { court: court(), panel: panel() };
     await until(
-      () => visible('#arena-caption')[0]?.textContent.startsWith('Venom: Poison') === true,
+      () =>
+        visible('#arena-caption')[0]?.querySelector('.arena-caption-title')?.textContent ===
+        'Venom: Poison',
       20_000,
       'the Venom: Poison caption',
       false,
@@ -72,7 +74,7 @@ describe('tips in the arena', () => {
     expect(caption?.getAttribute('role')).toBe('status');
     expect(caption?.querySelector('.arena-caption-text')?.textContent).toBe(venom.description);
     expect(visible('.tip-ring')).toHaveLength(1);
-    // It floats under the panel: the court and the panel stay where they were.
+    // It floats atop the panel: the court and the panel stay where they were.
     expect({ court: court(), panel: panel() }).toStrictEqual(before);
     expect(window.localStorage.getItem(HINTS_SEEN_STORAGE_KEY)).toContain('venom');
 

@@ -8,6 +8,8 @@
 - Amended by: ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment, a
   story led by its result)
 - Amended by: its addendum of 2026-11-22 (the hint is a caption in a fixed place and a ring)
+- Amended by: its addendum of 2026-11-23 (the tip's own look: a cream ring and tag where the
+  ball's definition says, a longer caption card)
 
 ## Context
 
@@ -196,3 +198,57 @@ its colour is the title's and not the text colour, and the ball's drawing is bes
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | ![A faint ring, sideways](../images/tips/ring-before-sideways.png) | ![Ring and title in the Storm's blue](../images/tips/ring-after-sideways.png) |
 | ![A faint ring, phone](../images/tips/ring-before-phone.png)       | ![Ring and title in the ball's colour](../images/tips/ring-after-phone.png)   |
+
+## Addendum (2026-11-23): the tip's own look
+
+The ring in the ball's colour still read as part of the fight: on a real iPhone the owner took it
+for an effect and looked for the words late. Two rounds of prototypes (`proto/tips-in-the-arena`,
+looks compared in clips at 390 x 664, 667 x 320 and 1280 x 800) settled the "middle ground": the
+tip gets a look of its own that no ball wears, and stays a little longer. Nothing pauses (the
+first-tip pause was prototyped and left out; a live match never waits, ADR 0054).
+
+- **In the arena, a dashed cream ring and an "i" tag.** A 3 px dashed ring in `--color-tip` (the
+  palette's cream, worn by no ball), a page-coloured edge each side so it reads on a light ball and
+  on the floor, and beside it a tag: an "i" and the ability's own name ("Bombs"), dark on cream. It
+  settles from 1.3x over 360 ms, holds still, and fades over its last 600 ms: 3 s in all.
+- **Where it goes is data.** Each ball's `ability.tipOn` says what the tip is about: `zone` (the
+  Bomber, the Inferno, the Storm), `minion` (the Necromancer), `struck`, the ball the ability
+  landed on (the Frost, the Venom, the Kraken, the Hex, the Spider), `copy` (the Mirage's copy
+  while there is one) or `self` (every other ball, the Banshee's wail included). A shot's tip is on
+  the ball that fired it: every shot crosses the court in well under a second (the Spartan's spear
+  1500 units a second, the Archer's arrows 1650, the Boomerang 1700, the Sniper 2400; each lives
+  under 0.6 s at the median), too fast for the eye to follow a label, where a skeleton (640, about
+  4 s) is easy to follow. The render code has no ball names in it. `tip-target.test.ts` fails when a
+  ball with an ability declares none, or one its `shownBy` can't point from, and plays every ball
+  until its tip shows to read back the rule it followed. Text only: no fight changes.
+- **The ring goes with its thing.** A zone's ring fades as soon as the zone strikes or ends, a
+  minion's as soon as it is gone; a Slime's ring moves to the surviving half.
+- **The tag's place.** One of the ring's four diagonal corners, scored: any part outside the court
+  costs most, then covering another ball or any ball's health bar (its own included), then a mild
+  preference for above right. It keeps its corner until another is clearly better (a margin of
+  0.5), and only its offset from the ring eases (140 ms), so it rides exactly on the fastest ball in
+  play (a Slime half just after a split, 1506 units a second) and never jumps. Its box is clamped
+  inside the court. With reduced motion nothing glides or scales; the ring and tag only fade.
+- **The caption, a card.** The quiet box with a faint 1 px cream outline (25%), no stripe; the
+  same "i", the ball's drawing, its title in the ball's colour and its sentence. About 7 s, or until
+  the next tip but never before 4 s, then a 600 ms fade. On a desktop it sits at the top of the
+  panel, above its first row, nearer the fight; on a phone under the speed row; on a phone turned
+  sideways the panel's last row, as before. A screen reader hears it once (a polite status written
+  once per tip). Once per device, the settings switch and "Show all tips again" are unchanged.
+
+Tests: `tip-target.test.ts` (the data check, each rule in a real fight, shots on the shooter, the
+zone's and minion's ring going), `tip-place.test.ts` (inside the court, clear of balls and health
+bars, no flip-flop, smooth at 1506 units a second, reduced motion moves at once),
+`arena-tip-look.browser.test.ts` (3 s ring, 7 s caption, the next tip after 4 s, a struck zone's
+ring fading), `arena-tips-motion.test.ts` (with reduced motion the stylesheet only fades) and the
+flow `tips-arena-flow.ts` at 390 x 664, 667 x 320, 812 x 375 and 1280 x 800 (the dashed cream ring
+and tag inside the court on every frame, the card's parts, written once, where it sits).
+
+The Bomber's first bomb, 0.9 s after its tip shows:
+
+| Before                                                                                   | After                                                                                           |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| ![Ring in the Bomber's pink, phone](../images/tips/tip-look-before-390x664.png)          | ![Cream ring and Bombs tag, phone](../images/tips/tip-look-after-390x664.png)                   |
+| ![Ring in the Bomber's pink, small sideways](../images/tips/tip-look-before-667x320.png) | ![Cream ring and Bombs tag, small sideways](../images/tips/tip-look-after-667x320.png)          |
+| ![Ring in the Bomber's pink, sideways](../images/tips/tip-look-before-812x375.png)       | ![Cream ring and Bombs tag, sideways](../images/tips/tip-look-after-812x375.png)                |
+| ![Ring in the Bomber's pink, desktop](../images/tips/tip-look-before-1280x800.png)       | ![Cream ring and Bombs tag, caption atop the panel](../images/tips/tip-look-after-1280x800.png) |

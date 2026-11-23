@@ -78,7 +78,7 @@ export const kraken = defineBall<KrakenState>({
   name: 'Kraken',
   description: 'Tentacles grab its enemy and crush it; more on big balls.',
   color: '#0891b2',
-  ability: { name: 'Tentacles', shownBy: { kind: 'status', status: 'held' } },
+  ability: { name: 'Tentacles', shownBy: { kind: 'status', status: 'held' }, tipOn: 'struck' },
   howItWorks: [
     `Every ${secondsOf(GRAB_EVERY_TICKS + RIPPLE_TICKS)} s ripples mark where its enemy is heading; ${secondsOf(RIPPLE_TICKS)} s later tentacles rise there and wrap it.`,
     `A wrapped ball moves at ${percentOf(HELD_SHARE)}; after ${secondsOf(HOLD_TICKS)} s it is crushed for ${CRUSH_PER_TENTACLE} a tentacle: ${CRUSH_PER_TENTACLE * STANDARD_TENTACLES} on most balls, more on big ones. It anchors while it squeezes.`,

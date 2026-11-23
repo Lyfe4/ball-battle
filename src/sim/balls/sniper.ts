@@ -48,7 +48,7 @@ export const sniper = defineBall<SniperState>({
   name: 'Sniper',
   description: 'Locks on and fires one heavy shot every 2 s.',
   color: '#818cf8',
-  ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' } },
+  ability: { name: 'Sniper shot', shownBy: { kind: 'projectileFired' }, tipOn: 'self' },
   howItWorks: [
     `It locks onto where the nearest enemy is, shows a laser for ${secondsOf(CHARGE_TICKS)} s, then fires one shot down it for ${SHOT_DAMAGE}.`,
     `It doesn’t lead, so a moving ball often slips off the line. One shot about every ${secondsOf(COOLDOWN_TICKS + CHARGE_TICKS)} s.`,

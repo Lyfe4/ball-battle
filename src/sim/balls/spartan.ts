@@ -58,7 +58,7 @@ export const spartan = defineBall<SpartanState>({
   name: 'Spartan',
   description: 'Plants its shield to halve hits, then throws its spear.',
   color: '#dc2626',
-  ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' } },
+  ability: { name: 'Shield and spear', shownBy: { kind: 'projectileFired' }, tipOn: 'self' },
   howItWorks: [
     `Its rhythm is ${secondsOf(CYCLE_TICKS)} s. For ${secondsOf(SHIELD_TICKS)} s its shield is planted: it moves at ${percentOf(SHIELDED_SPEED)} speed and every hit on it is cut to ${percentOf(SHIELDED_SHARE)}, rounded down.`,
     `Then it throws its spear where the nearest enemy is, for ${SPEAR_DAMAGE}, and fights in the open.`,

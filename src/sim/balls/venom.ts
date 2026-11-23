@@ -21,7 +21,7 @@ export const venom = defineBall({
   name: 'Venom',
   description: 'Bumps poison its enemy: a few small hits follow.',
   color: '#84cc16',
-  ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' } },
+  ability: { name: 'Poison', shownBy: { kind: 'status', status: 'poisoned' }, tipOn: 'struck' },
   howItWorks: [
     `Its bump poisons: ${POISON_DAMAGE} damage every ${secondsOf(POISON_INTERVAL_TICKS)} s, ${Math.floor(POISON_TICKS / POISON_INTERVAL_TICKS)} times.`,
     'Each new bump starts the poison again; it never stacks.',

@@ -28,7 +28,7 @@ export const inferno = defineBall({
   name: 'Inferno',
   description: 'Leaves a trail of fire that burns. Its burns never stack.',
   color: '#fdba74',
-  ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' } },
+  ability: { name: 'Fire trail', shownBy: { kind: 'zoneSpawned' }, tipOn: 'zone' },
   howItWorks: [
     `Every ${secondsOf(DROP_EVERY_TICKS)} s it leaves a patch of fire behind it that burns for ${secondsOf(PATCH_TICKS)} s.`,
     `An enemy in the fire takes ${BURN_DAMAGE} every ${secondsOf(BURN_EVERY_TICKS)} s, however many patches it is in.`,

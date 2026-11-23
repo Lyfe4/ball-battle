@@ -22,7 +22,11 @@ export const thorns = defineBall({
   name: 'Thorns',
   description: 'Spiked: every bump it takes hurts the attacker back.',
   color: '#16a34a',
-  ability: { name: 'Spikes', shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' } },
+  ability: {
+    name: 'Spikes',
+    shownBy: { kind: 'hookDamage', hook: 'onDamageTaken' },
+    tipOn: 'self',
+  },
   howItWorks: [
     `Every bump it takes hurts the attacker back for ${percentOf(REFLECT_SHARE)} of it, rounded.`,
     'Only bumps meet its spikes: shots, strikes and poison don’t.',

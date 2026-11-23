@@ -21,9 +21,10 @@
 }
 
 /*
- * The ability caption (arena-tips.ts, ADR 0036 addendum of 2026-11-22): the same quiet box, in a fixed
- * place under the match for about 4 s. It floats under the panel's last row (the speed row on a
- * phone), so showing it never moves the court or the panel.
+ * The ability caption (arena-tips.ts, ADR 0036 addenda of 2026-11-22 and 2026-11-23): the same quiet
+ * box with a very faint cream outline, the tip's own colour, in a fixed place by the match for about
+ * 7 s. On a phone it floats under the panel's last row (the speed row), so showing it never moves
+ * the court or the panel.
  */
 .hud {
   position: relative;
@@ -35,6 +36,7 @@
   top: calc(100% + var(--space-gap));
   display: grid;
   gap: 2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-tip) 25%, transparent);
 }
 
 /* Beside a phone's court turned sideways: the last row of the panel (it scrolls inside itself). */
@@ -44,14 +46,16 @@
   }
 }
 
-/* A desktop: under the panel again, clear of everything, so it never moves the panel. */
+/* A desktop: at the top of the panel, nearer the fight, floating so it never moves the panel. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .arena-caption {
     position: absolute;
+    top: auto;
+    bottom: calc(100% + var(--space-gap));
   }
 }
 
-/* The ball's small drawing, then its name and ability in its own colour (arena-tips.ts). */
+/* The tip's "i", the ball's small drawing, then its name and ability in its colour (arena-tips.ts). */
 .arena-caption-head {
   display: flex;
   align-items: center;

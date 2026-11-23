@@ -49,7 +49,7 @@ export const jouster = defineBall<JousterState>({
   name: 'Jouster',
   description: 'Its lance hits triple head-on, but a glance only scratches.',
   color: '#a16207',
-  ability: { name: 'Lance', shownBy: { kind: 'hook', hook: 'onTick' } },
+  ability: { name: 'Lance', shownBy: { kind: 'hook', hook: 'onTick' }, tipOn: 'self' },
   howItWorks: [
     `Every ${secondsOf(CHARGE_EVERY_TICKS)} s it charges straight at its enemy, ${percentOf(CHARGE_SPEED - 1)} faster for up to ${secondsOf(CHARGE_TICKS)} s.`,
     `A head-on bump does ${String(LANCE_TIMES)} times its ${String(BUMP)}; a glancing one ${percentOf(GLANCE_SHARE)} of it.`,

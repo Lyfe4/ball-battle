@@ -65,7 +65,7 @@ export const mirage = defineBall<MirageState>({
   name: 'Mirage',
   description: 'Aimed shots go for the shimmering copy beside it.',
   color: '#fda4af',
-  ability: { name: 'Copy', shownBy: { kind: 'hook', hook: 'onTick' } },
+  ability: { name: 'Copy', shownBy: { kind: 'hook', hook: 'onTick' }, tipOn: 'copy' },
   howItWorks: [
     `Its copy hangs ${String(COPY_OFFSET)} away. Arrows, spears, boomerangs, lightning and shots aim at the copy while it shows.`,
     `A shot or a strike reaching the copy pops it; it comes back ${secondsOf(COPY_BACK_TICKS)} s later on another side.`,

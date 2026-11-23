@@ -51,7 +51,7 @@ export const hex = defineBall<HexState>({
   name: 'Hex',
   description: 'Its bump curses: 3 s later its enemy loses 27% health.',
   color: '#d946ef',
-  ability: { name: 'Curse', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
+  ability: { name: 'Curse', shownBy: { kind: 'hookDamage', hook: 'onTick' }, tipOn: 'struck' },
   howItWorks: [
     `Its bump marks the other ball. ${CURSE_FUSE_TICKS / TICK_RATE} s later the mark bursts for ${percentOf(CURSE_SHARE)} of that ball’s full health.`,
     'A bump on a ball already marked does nothing: the countdown keeps running.',

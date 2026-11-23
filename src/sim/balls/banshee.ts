@@ -34,7 +34,7 @@ export const banshee = defineBall<BansheeState>({
   name: 'Banshee',
   description: 'Every few seconds it wails all around; nothing blocks it.',
   color: '#a0729f',
-  ability: { name: 'Wail', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
+  ability: { name: 'Wail', shownBy: { kind: 'hookDamage', hook: 'onTick' }, tipOn: 'self' },
   howItWorks: [
     `Every ${secondsOf(WAIL_EVERY_TICKS)} s it wails: ${WAIL_DAMAGE} to every enemy within ${WAIL_RADIUS}, a third of the court.`,
     'No shield, phasing or floating takes any of it. Its bump is weak.',

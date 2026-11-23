@@ -150,7 +150,7 @@ export type HookName =
 
 export type DamageCause = 'contact' | 'ability';
 
-export type { AbilityLabel, AbilitySign } from './ability-label.ts';
+export type { AbilityLabel, AbilitySign, TipOn } from './ability-label.ts';
 
 /**
  * What delivered ability damage (output only; ADR 0036): a projectile, a zone's strike, a lasting

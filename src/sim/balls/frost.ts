@@ -19,7 +19,7 @@ export const frost = defineBall({
   name: 'Frost',
   description: 'Every hit slows its enemy right down; it is slow itself.',
   color: '#bae6fd',
-  ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' } },
+  ability: { name: 'Slow', shownBy: { kind: 'status', status: 'slowed' }, tipOn: 'struck' },
   howItWorks: [
     `Its bump slows the other ball by ${percentOf(SLOW_FACTOR)} for ${secondsOf(SLOW_TICKS)} s.`,
     'Each new bump starts the slow again; it never stacks.',
