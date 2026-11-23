@@ -14,6 +14,8 @@ import { getElement } from '../ui/dom.ts';
 import type { SettingsHost } from '../ui/settings-menu.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import { createOnlineScreens } from './online.ts';
+import type { InboxResponse } from '../api/friends.ts';
+import { invitesMayShow, isFighting, type ScreenMoment } from '../app/screen-rules.ts';
 import { createInboxWatch } from './inbox-watch.ts';
 import { createRematchWatch, type RematchHomeBack } from './rematch-watch.ts';
 import { createHomeBack } from '../ui/online/back-to-match.ts';
@@ -53,9 +55,10 @@ export interface OnlineMount {
   liveRate(playedMs: number): number;
   /**
    * The screen changed (another screen, a fight started or ended): a rematch notice may show, or
-   * waits while `fighting` (rematch-watch.ts).
+   * waits while fighting (`isFighting`, rematch-watch.ts); a friend's challenge waits through a
+   * fight or a lineup pick (`invitesMayShow`, ADR 0081).
    */
-  screenChanged(fighting: boolean): void;
+  screenChanged(screen: Screen, now: ScreenMoment): void;
   /**
    * The line under a live fight, where the speed toggle sits: shown on the online screen when a
    * live match is on and the toggle would show (`noSpeed` false). True when the toggle hides.
@@ -74,6 +77,8 @@ export interface MountContext {
   worldsShown(): number;
   showControls(): void;
   redraw(): void;
+  /** What waits on the player, from the inbox (undefined: nothing, or not signed in). */
+  waiting(inbox: InboxResponse | undefined): void;
 }
 
 export function mountOnline(context: MountContext): OnlineMount {
@@ -82,6 +87,8 @@ export function mountOnline(context: MountContext): OnlineMount {
   const foot = getElement('hud-speed', HTMLElement).parentElement ?? document.body;
   // A rematch asked while the player is elsewhere in the game reaches them there (rematch-watch.ts).
   let fighting = false;
+  /** A friend's challenge may pop up (not over a fight or a lineup pick). */
+  let calm = true;
   const rematchRoot = document.createElement('div');
   document.body.append(rematchRoot);
   /** Home's way back to a rematch waiting on this player, as the watch last said. */
@@ -107,11 +114,13 @@ export function mountOnline(context: MountContext): OnlineMount {
   const inboxWatch = ACCOUNTS_BUILD
     ? createInboxWatch(inboxRoot, BALL_LOOKUP, {
         open: (token) => screens.openInvite(token),
-        fighting: () => fighting,
+        calm: () => calm,
         // A rematch window or a lobby waiting: news is expected, read every 2 s (2026-11-23).
         expecting: () => rematchWatch.active() || lobbyWaiting > Date.now(),
-        friends: (friends) => {
-          screens.friendStatuses(friends);
+        // One answer, three views (ADR 0081): the Friends tab's lists, its badge, Play's strip.
+        inbox: (answer) => {
+          screens.friendStatuses(answer?.friends ?? [], answer?.invites ?? []);
+          context.waiting(answer);
         },
       })
     : undefined;
@@ -128,6 +137,8 @@ export function mountOnline(context: MountContext): OnlineMount {
     friendsChanged: () => {
       inboxWatch?.poke();
     },
+    acceptInvite: (token) => inboxWatch?.accept(token) ?? Promise.resolve(),
+    declineInvite: (token) => inboxWatch?.decline(token) ?? Promise.resolve(undefined),
     navigation: context.navigation,
     go: (write) => {
       context.go(write);
@@ -266,8 +277,9 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
-    screenChanged: (now) => {
-      fighting = now;
+    screenChanged: (screen, now) => {
+      fighting = isFighting(screen, now);
+      calm = invitesMayShow(screen, now);
       rematchWatch.refresh();
       inboxWatch?.refresh();
       inboxWatch?.quicken();

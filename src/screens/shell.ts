@@ -15,6 +15,7 @@ import { screenKeyOf } from '../app/history-rules.ts';
 import { tabOf, TABS, type Tab } from '../app/tabs.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createTabBar } from '../ui/tab-bar.ts';
+import { friendsTabLabel } from './friends-text.ts';
 import { createShellPlaceholder } from './shell-placeholder.ts';
 import { PLACEHOLDER_VIEWS, type PlaceholderView } from './shell-placeholder-text.ts';
 
@@ -24,6 +25,8 @@ export interface ShellScreens {
   readonly handlers: { readonly [S in ShellView]: ScreenHandler<S> };
   /** Lays the shell out for the screen on show: its placeholder, and the bar on a tab screen. */
   setVisible(screen: Screen): void;
+  /** What waits on the player: the Friends tab's badge (ADR 0081). */
+  waiting(count: number): void;
 }
 
 /** A tab's URL, written over the current one. */
@@ -68,6 +71,9 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
       // never routes here (their URLs open home), so these are only the safe way out.
       friends: { show: host.goHome },
       profile: { show: host.goHome },
+    },
+    waiting(count) {
+      bar.badge('friends', count, friendsTabLabel(count));
     },
     setVisible(current) {
       screen.setVisible(PLACEHOLDER_VIEWS.some((view) => view === current));

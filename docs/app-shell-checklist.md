@@ -63,7 +63,8 @@ Online on home
 - [x] `/me` is asked once the page loads, on whichever screen it opens, and again on the next home
       after a sign-in, a log out or a new name; never polled (PR 5: also after Profile; Profile reads
       it once when it opens)
-- [ ] An account starts the inbox watch; anything else stops it (PR 7)
+- [x] An account starts the inbox watch; anything else stops it (PR 7: unchanged; stopping clears
+      the badge and the strip)
 - [x] "Back to your match" takes Play's place while a live match or lobby is on, asked again every
       10 s while it shows on home (ADR 0053) (PR 4: it takes the chooser's and Play's place)
 - [x] "Back to your rematch" takes Play's place while a rematch waits on this player (ADR 0070); a
@@ -131,15 +132,17 @@ The Friends section
 
 ## The inbox and the floating card (`src/screens/inbox-watch.ts`, `src/app/inbox-poll.ts`)
 
-- [ ] The inbox is read on start, every 30 s while visible with something to watch, every 2 s while
+- [x] The inbox is read on start, every 30 s while visible with something to watch, every 2 s while
       something is expected, never while hidden, at once when the page shows again; a change here
-      pokes it (PR 7: unchanged)
-- [ ] A friend's challenge shows as the floating card on any calm screen, never over a fight, where it
-      waits (PR 7: also never over a lineup pick; folds into the badge)
-- [ ] Accept goes straight to the lineup, busy until it is read; No thanks declines; a failure says
-      why under the card (PR 7)
-- [ ] A challenge answered here never shows again on this page; one the sender stopped is gone (PR 7)
-- [ ] A rematch reaches the other player anywhere, as the same card (ADR 0070) (PR 7: unchanged)
+      pokes it (PR 7: unchanged, `inbox-poll.test.ts` untouched)
+- [x] A friend's challenge shows as the floating card on any calm screen, never over a fight, where it
+      waits (PR 7: also never over a lineup pick, `invitesMayShow`; Later, or 20 s unanswered, folds
+      it into the badge for good on this page)
+- [x] Accept goes straight to the lineup, busy until it is read; No thanks declines; a failure says
+      why under the card (PR 7: also from Waiting for you on the Friends tab)
+- [x] A challenge answered here never shows again on this page; one the sender stopped is gone (PR 7)
+- [x] A rematch reaches the other player anywhere, as the same card (ADR 0070) (PR 7: unchanged,
+      its own rule, `rematch-watch.browser.test.ts`)
 
 ## The end of a series (`src/ui/series-panel.ts`, `src/ui/series/series-view.ts`)
 

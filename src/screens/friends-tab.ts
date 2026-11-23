@@ -3,7 +3,7 @@
 // places the link card first while there are no friends yet); for a guest or nobody, what signing
 // in unlocks, with Sign in, never a wall; with accounts off, that friends lists are on the way. It
 // reads `/me` (only where there may be a player) and `/me/friends` when it opens; never on a timer.
-import type { FriendEntry } from '../api/friends.ts';
+import type { FriendEntry, Invite } from '../api/friends.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
@@ -29,6 +29,9 @@ export interface FriendsTabHost {
   readonly challenge: (friend: FriendEntry) => void;
   /** The friends changed here: the inbox reads now. */
   readonly changed?: () => void;
+  /** Accept and No thanks on a friend's challenge (the inbox's, ADR 0081). */
+  readonly acceptInvite?: (token: string) => Promise<void>;
+  readonly declineInvite?: (token: string) => Promise<string | undefined>;
   /** The page's fetch; tests give their own. */
   readonly send?: Fetch;
 }
@@ -38,6 +41,8 @@ export interface FriendsTab {
   setVisible(visible: boolean): void;
   /** The friends' status from the inbox, drawn if the list shows. */
   statuses(friends: readonly FriendEntry[]): void;
+  /** The friends' open challenges from the inbox, first in Waiting for you. */
+  invites(invites: readonly Invite[]): void;
 }
 
 /** A card of the tab: its title, then what it holds. */
@@ -83,6 +88,8 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
         },
         challenge: host.challenge,
         ...(host.changed === undefined ? {} : { changed: host.changed }),
+        ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
+        ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
         link,
       })
     : undefined;
@@ -149,6 +156,9 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     },
     statuses(list) {
       friends?.statuses(list);
+    },
+    invites(list) {
+      friends?.challenges(list);
     },
   };
 }

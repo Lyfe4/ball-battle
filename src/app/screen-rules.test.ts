@@ -5,6 +5,7 @@ import { createRouter, type ScreenHandlers } from './router.ts';
 import {
   initialAppState,
   isCalmMoment,
+  invitesMayShow,
   isFighting,
   isSetupScreen,
   readyMomentOf,
@@ -180,6 +181,31 @@ describe('readyMomentOf', () => {
     expect(readyMomentOf('home', false, false, true)).toBe('still');
     expect(readyMomentOf('series', true, true, true)).toBe('live');
     expect(readyMomentOf('match', false, false, true)).toBe('quick');
+  });
+});
+
+describe('invitesMayShow (ADR 0081)', () => {
+  const at = (matchOver: boolean, phase: string | undefined, live = false) => ({
+    matchOver,
+    phase,
+    live,
+  });
+  it('waits through a fight and a lineup pick, and shows once the match is over', () => {
+    // A fight, and a live match at any moment.
+    expect(invitesMayShow('match', at(false, undefined))).toBe(false);
+    expect(invitesMayShow('online', at(false, 'between', true))).toBe(false);
+    // A lineup pick: a series' lineup and its rounds between fights, a start's lineup.
+    expect(invitesMayShow('series', at(false, undefined))).toBe(false);
+    expect(invitesMayShow('series', at(false, 'between'))).toBe(false);
+    expect(invitesMayShow('online', at(false, 'between'))).toBe(false);
+    expect(invitesMayShow('start', at(false, undefined))).toBe(false);
+    // Over: the match's end, and every calm screen.
+    expect(invitesMayShow('series', at(false, 'finished'))).toBe(true);
+    expect(invitesMayShow('online', at(false, 'finished'))).toBe(true);
+    expect(invitesMayShow('match', at(true, undefined))).toBe(true);
+    for (const screen of ['home', 'manual', 'friends', 'ranks', 'profile', 'pick'] as const) {
+      expect(invitesMayShow(screen, at(false, undefined)), screen).toBe(true);
+    }
   });
 });
 

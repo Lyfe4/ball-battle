@@ -10,7 +10,7 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
-import type { FriendEntry } from '../api/friends.ts';
+import type { FriendEntry, Invite } from '../api/friends.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams } from './current-match.ts';
@@ -47,6 +47,9 @@ export interface OnlineHost {
   readonly ended?: (view: SeriesView) => void;
   /** The friends changed on the account screen: the inbox reads now (ADR 0079 PR (d)). */
   readonly friendsChanged?: () => void;
+  /** Accept and No thanks on a friend's challenge in the Friends tab (the inbox's, ADR 0081). */
+  readonly acceptInvite?: (token: string) => Promise<void>;
+  readonly declineInvite?: (token: string) => Promise<string | undefined>;
   /** The sender's lobby waits for the friend: the inbox reads quickly meanwhile. */
   readonly lobbyWaits?: () => void;
 }
@@ -67,8 +70,8 @@ export interface OnlineScreens {
   readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
-  /** The friends' status from the inbox, for the account screen's Friends section. */
-  friendStatuses(friends: readonly FriendEntry[]): void;
+  /** The inbox's friends and open challenges, for the Friends tab's lists (ADR 0081). */
+  friendStatuses(friends: readonly FriendEntry[], invites: readonly Invite[]): void;
   /** A friend's challenge accepted from the floating card: its lineups, read first. */
   openInvite(token: string): Promise<void>;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
@@ -260,6 +263,8 @@ export function createOnlineScreens(
       challenges.challengeFriend(friend);
     },
     ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
+    ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
+    ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
   });
 
   // Settings' Forget me, in an online build without accounts (no account screen there).
@@ -318,8 +323,9 @@ export function createOnlineScreens(
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },
-    friendStatuses(friends) {
+    friendStatuses(friends, invites) {
       friendsTab.statuses(friends);
+      friendsTab.invites(invites);
     },
     openInvite: (token) => challenges.openInvite(token),
     rematchShown: () => challenges.rematchShown(),

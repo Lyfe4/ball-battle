@@ -41,7 +41,42 @@
   line-height: 1.45;
 }
 
-/* What waits on the player (PR 7 fills it); nothing at all while it has nothing to say. */
+/*
+ * The status strip (ADR 0081): what waits on the player and who is online, from the inbox, leading
+ * to the Friends tab. A calm pill in the page's own text, with a green dot; its arrow is the chevron
+ * every text link draws (`.text-link::after`, one-chevron.test.ts). Nothing at all while it has
+ * nothing to say.
+ */
+.home-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-gap);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: start;
+}
+
+.home-status::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-favoured);
+}
+
+.home-status-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .home-status[hidden] {
   display: none;
 }

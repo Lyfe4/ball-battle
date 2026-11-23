@@ -10,7 +10,7 @@ import {
   writeOpponentPlayParams,
   writePlayParams,
 } from '../app/modes.ts';
-import { writePickParams } from '../app/route.ts';
+import { writePickParams, writeShellParams } from '../app/route.ts';
 import { browserStorage as storage } from '../app/storage.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
 import { getDefinition } from '../sim/definitions.ts';
@@ -44,6 +44,8 @@ export interface HomeController {
   drawn(resultShown: boolean): void;
   /** Leaving home: no demo is queued behind the next screen. */
   leave(): void;
+  /** The status strip's line from the inbox, or nothing (ADR 0081). */
+  setStatus(line: string | undefined): void;
 }
 
 export function createHomeController(
@@ -90,6 +92,11 @@ export function createHomeController(
     onFreePlay: () => {
       host.go((url) => {
         writePickParams(url, demoAt(index).matchup);
+      });
+    },
+    onStatus: () => {
+      host.go((url) => {
+        writeShellParams(url, 'friends');
       });
     },
     onWatch: () => {
@@ -141,5 +148,8 @@ export function createHomeController(
       }, NEXT_DEMO_MS);
     },
     leave: cancel,
+    setStatus(line) {
+      home.setStatus(line);
+    },
   };
 }

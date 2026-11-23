@@ -1,12 +1,15 @@
-// A friend's live challenge reaches a signed-in player anywhere (ADR 0079, PR (d)), over a fake
-// inbox: the rematch's floating card says who and what, never over a fight (it waits for the fight
-// to end), Accept goes straight to the challenge's lineup, No thanks tells the server and the card
-// goes; the friends' status is handed on; signed out, nothing is read.
+// A friend's live challenge reaches a signed-in player anywhere (ADR 0079, PR (d); ADR 0081), over
+// a fake inbox: the rematch's floating card says who and what, never over a fight or a lineup pick
+// (it waits until the match is over), Accept goes straight to the challenge's lineup, No thanks
+// tells the server and the card goes; ignored (closed, or 20 s) it folds back into the badge and
+// doesn't come back; the whole answer is handed on (the badge, the strip, the Friends tab); signed
+// out, nothing is read and nothing waits.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../style.css';
 import type { InboxResponse } from '../api/friends.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
-import { createInboxWatch } from './inbox-watch.ts';
+import { waitingCount } from './friends-text.ts';
+import { createInboxWatch, INVITE_FOLD_MS } from './inbox-watch.ts';
 
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
 const INBOX: InboxResponse = {
@@ -19,7 +22,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function watch(fighting = false) {
+function watch(busy = false, foldMs = INVITE_FOLD_MS) {
   const sent: string[] = [];
   let inbox = INBOX;
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
@@ -38,26 +41,37 @@ function watch(fighting = false) {
   document.body.replaceChildren(root);
   const went: string[] = [];
   const seen: string[] = [];
-  let fight = fighting;
-  const inboxWatch = createInboxWatch(root, BALL_LOOKUP, {
-    open: (token) => {
-      went.push(token);
-      return Promise.resolve();
+  /** What the badge would count, after each answer handed on. */
+  const badge: number[] = [];
+  let calm = !busy;
+  const inboxWatch = createInboxWatch(
+    root,
+    BALL_LOOKUP,
+    {
+      open: (token) => {
+        went.push(token);
+        return Promise.resolve();
+      },
+      calm: () => calm,
+      expecting: () => false,
+      inbox: (answer) => {
+        badge.push(answer === undefined ? 0 : waitingCount(answer));
+        if (answer !== undefined) {
+          seen.push(answer.friends.map((f) => `${f.name} ${f.status ?? ''}`).join());
+        }
+      },
     },
-    fighting: () => fight,
-    expecting: () => false,
-    friends: (friends) => {
-      seen.push(friends.map((f) => `${f.name} ${f.status ?? ''}`).join());
-    },
-  });
+    foldMs,
+  );
   return {
     inboxWatch,
     root,
     sent,
     went,
     seen,
-    setFighting: (value: boolean) => {
-      fight = value;
+    badge,
+    setBusy: (value: boolean) => {
+      calm = !value;
     },
   };
 }
@@ -91,15 +105,48 @@ describe('a friend’s challenge on the floating card', () => {
     expect(root.hidden).toBe(true);
   });
 
-  it('waits while a fight is on screen, and shows once it is over', async () => {
-    const { inboxWatch, root, sent, setFighting } = watch(true);
+  it('waits through a fight or a lineup pick, counted on the badge, and shows once it is over', async () => {
+    const { inboxWatch, root, sent, setBusy, badge } = watch(true);
     inboxWatch.signedIn(true);
     await until(() => sent.length === 1, 'the read');
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(root.hidden).toBe(true);
-    setFighting(false);
+    // Not shown, but waiting: the badge counts it already.
+    expect(badge.at(-1)).toBe(1);
+    setBusy(false);
     inboxWatch.refresh();
     expect(root.hidden).toBe(false);
+  });
+
+  it('folds back into the badge when unanswered for its time, and never pops up again', async () => {
+    // 20 s in the game (INVITE_FOLD_MS); a short time here, in real time.
+    expect(INVITE_FOLD_MS).toBe(20_000);
+    const { inboxWatch, root, badge } = watch(false, 300);
+    inboxWatch.signedIn(true);
+    await until(() => !root.hidden, 'the card');
+    const shownAt = Date.now();
+    await until(() => root.hidden === true, 'the card to fold');
+    expect(Date.now() - shownAt).toBeGreaterThanOrEqual(250);
+    // Still waiting on the player: on the badge, and in Waiting for you.
+    expect(badge.at(-1)).toBe(1);
+    const answers = badge.length;
+    inboxWatch.poke();
+    await until(() => badge.length > answers, 'the next read');
+    inboxWatch.refresh();
+    expect(root.hidden).toBe(true);
+  });
+
+  it('closed, it folds too, and Accept from the Friends tab still works', async () => {
+    const { inboxWatch, root, went, badge } = watch();
+    inboxWatch.signedIn(true);
+    await until(() => !root.hidden, 'the card');
+    press(root, 'Later');
+    expect(root.hidden).toBe(true);
+    inboxWatch.refresh();
+    expect(root.hidden).toBe(true);
+    await inboxWatch.accept(TOKEN);
+    expect(went).toStrictEqual([TOKEN]);
+    expect(badge.at(-1)).toBe(0);
   });
 
   it('No thanks tells the server, and the card goes', async () => {
@@ -111,10 +158,11 @@ describe('a friend’s challenge on the floating card', () => {
     expect(sent).toContain(`POST /api/v1/challenges/${TOKEN}/decline`);
   });
 
-  it('reads nothing for a player who isn’t signed in', async () => {
-    const { inboxWatch, sent } = watch();
+  it('reads nothing for a player who isn’t signed in, and nothing waits', async () => {
+    const { inboxWatch, sent, badge } = watch();
     inboxWatch.signedIn(false);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(sent).toStrictEqual([]);
+    expect(badge).toStrictEqual([0]);
   });
 });

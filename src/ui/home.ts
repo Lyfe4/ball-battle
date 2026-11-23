@@ -1,7 +1,7 @@
 import { createSettingsToggle } from './settings-menu.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
-import { element, setText } from './dom.ts';
+import { element, setHidden, setText } from './dom.ts';
 import type { SeriesState } from '../sim/series.ts';
 import type { Opponent, PlaySetup } from '../app/modes.ts';
 import { createSegmented } from './segmented.ts';
@@ -29,6 +29,8 @@ export interface HomeActions {
   /** Change rules: the chosen opponent's setup screen. */
   readonly onChangeRules: (opponent: Opponent) => void;
   readonly onFreePlay: () => void;
+  /** The status strip: the Friends tab, where what it says waits (ADR 0081). */
+  readonly onStatus: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
 }
@@ -46,6 +48,8 @@ export interface Home {
   setPlay(setup: PlaySetup, held: SeriesState | undefined): void;
   /** Moves focus to Play (or Resume series): the one obvious first action. */
   focus(): void;
+  /** The status strip's line, or nothing: it hides (ADR 0081, never "0 friends online"). */
+  setStatus(line: string | undefined): void;
 }
 
 const STRIP_ICON_PX = 28;
@@ -78,9 +82,14 @@ export function createHome(
   const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
-  // What waits on the player (friends online, challenges): hidden until it has something (PR 7).
-  const status = element('div', 'home-status');
+  // What waits on the player and who is online, from the inbox (ADR 0081): a link to the Friends
+  // tab, its arrow the one our links draw (`.text-link::after`); hidden while it has nothing.
+  const status = element('button', 'text-link home-status');
+  status.type = 'button';
   status.hidden = true;
+  const statusText = element('span', 'home-status-text');
+  status.append(statusText);
+  status.addEventListener('click', actions.onStatus);
 
   let setup: PlaySetup | undefined;
   let held: SeriesState | undefined;
@@ -208,6 +217,10 @@ export function createHome(
     },
     focus() {
       play.focus();
+    },
+    setStatus(line) {
+      setText(statusText, line ?? '');
+      setHidden(status, line === undefined);
     },
   };
 }

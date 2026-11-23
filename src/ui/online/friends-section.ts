@@ -9,12 +9,15 @@ import {
   type AddFriendResponse,
   type FriendEntry,
   type FriendsResponse,
+  type Invite,
 } from '../../api/friends.ts';
 import type { ApiFailure, ApiResult } from '../../app/api.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { element } from '../dom.ts';
+import { challengeLine } from '../../screens/online-text.ts';
 import {
   addedLine,
+  challengesYou,
   FRIEND_GROUPS,
   hasAnyone,
   NO_FRIENDS,
@@ -39,6 +42,9 @@ export interface FriendsHost {
   readonly changed?: () => void;
   /** The tab's link card, placed first with no friends yet, else last (ADR 0081). */
   readonly link?: HTMLElement;
+  /** A friend's challenge in Waiting for you: Accept (its lineup) and No thanks (ADR 0081). */
+  readonly acceptInvite?: (token: string) => Promise<void>;
+  readonly declineInvite?: (token: string) => Promise<string | undefined>;
 }
 
 export interface FriendsSection {
@@ -47,6 +53,8 @@ export interface FriendsSection {
   open(): Promise<void>;
   /** The friends' status from the inbox (PR (d)), drawn if the section shows. */
   statuses(friends: readonly FriendEntry[]): void;
+  /** The friends' open challenges from the inbox, first in Waiting for you (ADR 0081). */
+  challenges(invites: readonly Invite[]): void;
 }
 
 function textButton(text: string, label: string): HTMLButtonElement {
@@ -106,6 +114,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   /** The row whose Remove is being asked, by friendship id. */
   let asking: string | undefined;
   let list: FriendsResponse | undefined;
+  let invites: readonly Invite[] = [];
 
   function say(text: string, error = false): void {
     said.textContent = text;
@@ -173,6 +182,30 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     return item;
   }
 
+  /** A friend's challenge: who and what, Accept and No thanks. */
+  function challengeRow(invite: Invite): HTMLElement {
+    const item = element('li', 'friends-row');
+    item.dataset['invite'] = invite.token;
+    const who = element('span', 'friends-who');
+    who.append(
+      element('span', 'friends-name', challengesYou(invite.from)),
+      element('span', 'friends-status friends-challenge-what', challengeLine(invite)),
+    );
+    const actions = element('span', 'friends-actions');
+    const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
+    accept.type = 'button';
+    accept.setAttribute('aria-label', `Accept ${invite.from}’s challenge`);
+    busyOnClick(accept, () => host.acceptInvite?.(invite.token));
+    const decline = textButton('No thanks', `No thanks to ${invite.from}’s challenge`);
+    busyOnClick(decline, async () => {
+      const why = await host.declineInvite?.(invite.token);
+      if (why !== undefined) say(why, true);
+    });
+    actions.append(accept, decline);
+    item.append(who, actions);
+    return item;
+  }
+
   function draw(): void {
     if (list === undefined) return;
     code = list.code;
@@ -188,9 +221,15 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       shown.append(title, items);
       return shown;
     };
-    const groups = FRIEND_GROUPS.filter((group) => now[group.key].length > 0);
+    const groups = FRIEND_GROUPS.filter(
+      (group) => now[group.key].length > 0 || (group.key === 'incoming' && invites.length > 0),
+    );
     // What waits on you and your friends lead; what you sent sits with your code (ADR 0081).
     lists.replaceChildren(...groups.filter((group) => group.key !== 'outgoing').map(box));
+    // A friend's challenges come first in Waiting for you: they wait on a clock.
+    lists
+      .querySelector('.friends-group[data-group="incoming"] .friends-list')
+      ?.prepend(...invites.map(challengeRow));
     sent.replaceChildren(...groups.filter((group) => group.key === 'outgoing').map(box));
     empty.hidden = hasAnyone(now);
     // With no friends yet, playing by a link comes first; with friends, last.
@@ -265,6 +304,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   return {
     element: root,
     open,
+    challenges(next) {
+      if (JSON.stringify(next) === JSON.stringify(invites)) return;
+      invites = next;
+      if (list !== undefined && !root.hidden && asking === undefined) draw();
+    },
     statuses(friends) {
       if (list === undefined || root.hidden) return;
       const before = JSON.stringify(list.friends);
