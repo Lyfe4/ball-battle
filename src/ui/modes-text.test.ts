@@ -44,9 +44,9 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     expect(OPPONENT_CARDS).toEqual({ bot: { name: 'vs Bot' }, friend: { name: 'vs Friend' } });
   });
 
-  it('says what a live friend match asks before the lineup', () => {
+  it('says what a live friend match asks before it is sent', () => {
     expect(FRIEND_SETUP_NOTE).toBe(
-      'Live: you both stay until the end, 30 s a pick. You send a link; the match starts when they accept.',
+      'Live: you both stay until the end, 30 s a pick. You send a link; once they accept, you both pick your lineups.',
     );
   });
 

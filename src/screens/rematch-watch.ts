@@ -15,7 +15,7 @@
 // A hidden page doesn't ask, and asks at once when back. Every time is the server's.
 import { callApi, failureKindOf } from '../app/api.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
-import { writeOnlineSeriesParams, writeSendParams } from '../app/online-url.ts';
+import { writeOnlineSeriesParams, writeStartParams } from '../app/online-url.ts';
 import {
   forgetRematchWatch,
   rememberRematchWatch,
@@ -111,10 +111,12 @@ export function createRematchWatch(
     askedOnce = false;
   }
 
-  /** The new lineup for the watched series. */
-  const toLineup = (watching: RematchWatch) => {
+  /** The rematch's lineups picked together (ADR 0080). */
+  const toLineup = () => {
+    const id = rematch?.startId;
+    if (id == null) return;
     host.go((url) => {
-      writeSendParams(url, watching.format, watching.bestOf, 'lineup', watching.id);
+      writeStartParams(url, id);
     });
   };
 
@@ -122,7 +124,7 @@ export function createRematchWatch(
     accept: async () => {
       const watching = watch;
       // Both said yes already: Choose lineup.
-      if (watching !== undefined && rematch?.state === 'agreed') toLineup(watching);
+      if (watching !== undefined && rematch?.state === 'agreed') toLineup();
       else await answer('yes');
     },
     decline: () => answer('no'),
@@ -220,7 +222,7 @@ export function createRematchWatch(
     // A no: this player knows; nothing more to show or ask.
     if (reply === 'no' && next !== undefined) forget();
     // Accept takes them straight to the new lineup.
-    else if (next?.state === 'agreed' && !next.lineupIn) toLineup(watching);
+    else if (next?.state === 'agreed' && !next.lineupIn) toLineup();
     render();
   }
 
@@ -232,7 +234,7 @@ export function createRematchWatch(
     const open =
       kind === 'lineup'
         ? () => {
-            toLineup(watching);
+            toLineup();
           }
         : () => {
             host.go((url) => {
@@ -248,7 +250,14 @@ export function createRematchWatch(
     const said =
       watching === undefined || rematch === undefined || !away()
         ? undefined
-        : rematchNoticeOf(rematch, watching.you, watching.they, serverNow(), saidYes);
+        : rematchNoticeOf(
+            rematch,
+            watching.you,
+            watching.they,
+            serverNow(),
+            saidYes,
+            watching.bestOf,
+          );
     host.backChanged(away() ? homeBack(watching) : undefined);
     if (said?.kind === 'started') {
       // Already on it (its lineup screen moved in), or moved now once no fight is on.

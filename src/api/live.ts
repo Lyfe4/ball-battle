@@ -86,7 +86,7 @@ export interface LiveView {
   readonly endReason: LiveEndReason | null;
 }
 
-/** GET /api/v1/me/match: the live match or lobby to go back to (home's "Back to your match"). */
+/** GET /api/v1/me/match: the live match, lineup or lobby to go back to (home's "Back to your match"). */
 export type CurrentMatch =
   | {
       readonly kind: 'series';
@@ -98,6 +98,13 @@ export type CurrentMatch =
   | {
       readonly kind: 'lobby';
       readonly token: string;
+      readonly format: Format;
+      readonly bestOf: 3 | 5;
+    }
+  /** Lineups being picked together (ADR 0080). */
+  | {
+      readonly kind: 'start';
+      readonly id: string;
       readonly format: Format;
       readonly bestOf: 3 | 5;
     };

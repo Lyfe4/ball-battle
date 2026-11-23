@@ -75,7 +75,7 @@ describe('a friend challenge', () => {
     const link = (await send(sender)).body as ChallengeLink;
     const accepted = await accept(friend, link.token);
     expect(accepted.status).toBe(200);
-    const { seriesId } = accepted.body as Accepted;
+    const seriesId = (accepted.body as Accepted).seriesId ?? '';
     const mine = await read(sender, seriesId);
     expect(mine.you).toBe('a');
     expect(mine.lineups).toStrictEqual({ a: LINEUP_3.a, b: LINEUP_3.b });

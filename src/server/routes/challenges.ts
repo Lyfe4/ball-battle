@@ -1,8 +1,10 @@
 // /api/v1/challenges (ADR 0052, "Friend challenges"):
-// - POST /api/v1/challenges {format, bestOf, lineup, requestId}: a link to send a friend.
+// - POST /api/v1/challenges {format, bestOf, requestId, live}: a link to send a friend; by turns
+//   with the sender's `lineup` (the last release's page sends one live too, ADR 0080).
 // - GET /api/v1/challenges/:token: the format and length, and who sent it, before the friend
-//   builds a lineup. Needs no session: opening a link isn't an online action yet.
-// - POST /api/v1/challenges/:token/accept {lineup}: starts the series.
+//   accepts. Needs no session: opening a link isn't an online action yet.
+// - POST /api/v1/challenges/:token/accept {}: a live link starts the lineups picked together
+//   (`startId`, ADR 0080); {lineup} starts a series by turns.
 // - POST /api/v1/challenges/:token/cancel: the sender stops waiting in a live lobby (ADR 0053).
 // - POST /api/v1/challenges/:token/decline: the friend a challenge was sent to says No thanks
 //   (ADR 0079 PR (d)).
@@ -26,7 +28,7 @@ export const challenges: RouteHandler = async (request, context) => {
   const player = await sessionOf(request, context);
   const body = decodeCreateChallenge(await jsonBody(request));
   if (body === undefined) {
-    throw new ApiError(400, 'bad_request', 'Send {format, bestOf, lineup, requestId}');
+    throw new ApiError(400, 'bad_request', 'Send {format, bestOf, requestId}');
   }
   await spend(context.deps.sql, player.userId, LIMITS.challenges);
   return json(201, await createChallenge(context.deps, player.userId, body, player.account));
@@ -55,7 +57,7 @@ export const challengeOne: RouteHandler = async (request, context) => {
     return json(200, await cancelChallenge(context.deps, token, player.userId));
   }
   const body = decodeAcceptChallenge(await jsonBody(request));
-  if (body === undefined) throw new ApiError(400, 'bad_request', 'Send {lineup}');
+  if (body === undefined) throw new ApiError(400, 'bad_request', 'Send {} or {lineup}');
   await spend(context.deps.sql, player.userId, LIMITS.moves);
   return json(200, await acceptChallenge(context.deps, token, player.userId, body.lineup));
 };

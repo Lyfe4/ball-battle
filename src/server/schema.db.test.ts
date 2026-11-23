@@ -22,6 +22,7 @@ const TABLES = [
   'presence',
   'rematches',
   'friendships',
+  'starts',
 ];
 
 describe('the game schema', () => {

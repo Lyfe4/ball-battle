@@ -1,5 +1,5 @@
 // The next screen, read before moving to it (ADR 0054). A button that leads into an online series
-// (Accept challenge, Back to your match; the lobby when the friend accepts) stays busy while the
+// (Accept, Lock in, Back to your match; the lobby when the friend accepts) stays busy while the
 // series is read, and the series screen shows that answer at once: no "Loading…" page between
 // screens. A failed read isn't kept (the screen reads again itself and says what failed), and an
 // answer not taken within PRIME_MS is dropped, so a stale one is never shown.

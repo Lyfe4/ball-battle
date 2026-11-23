@@ -2,7 +2,6 @@
 // it: kept apart so the screens' file holds only their behaviour.
 import type { CurrentMatch } from '../api/live.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
-import type { SendStep } from '../app/online-url.ts';
 import type { BestOf, Format } from '../sim/series.ts';
 
 export interface ChallengeHost {
@@ -28,21 +27,25 @@ export interface ChallengeHost {
 
 export interface ChallengeScreens {
   setVisible(visible: boolean): void;
-  /** A friend's link: its card, or the lineup that accepts it. */
-  showChallenge(token: string, step: 'card' | 'lineup'): void;
-  /** Sending a challenge: the vs Friend setup, or the lineup for it (or for a rematch). */
-  showSend(format: Format, bestOf: BestOf, step: SendStep, rematch?: string): void;
+  /** A friend's link: its card (Accept), or the sender's lobby. */
+  showChallenge(token: string): void;
+  /** Sending a challenge: the vs Friend setup, which sends it (ADR 0080). */
+  showSend(format: Format, bestOf: BestOf): void;
+  /** The lineups picked together once a challenge or rematch is agreed (ADR 0080). */
+  showStart(id: string): void;
+  /** The ended series whose rematch's lineups show now, if any: it asks for itself. */
+  rematchShown(): string | undefined;
   /** The page is visible again: a waiting lobby asks now. */
   resumed(): void;
   /**
-   * Challenge a friend from the Friends section (ADR 0079 PR (d)): the vs Friend setup, then the
-   * lineup, and the challenge sent goes to their inbox too. Kept until it is sent or the player
+   * Challenge a friend from the Friends section (ADR 0079 PR (d)): the vs Friend setup, and the
+   * challenge sent goes to their inbox too. Kept until it is sent or the player
    * leaves these screens.
    */
   challengeFriend(friend: { readonly id: string; readonly name: string }): void;
   /**
-   * A friend's challenge accepted from the floating card (PR (d)): read first, then straight to
-   * its lineup (or its card, if it was taken or stopped meanwhile).
+   * A friend's challenge accepted from the floating card (PR (d)): accepted at once, then straight
+   * to the lineups picked together (or its card, if it was taken or stopped meanwhile).
    */
   openInvite(token: string): Promise<void>;
 }

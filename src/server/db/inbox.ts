@@ -27,8 +27,13 @@ export async function friendStatuses(db: Db, userId: string): Promise<FriendEntr
             and pr.seen_at > now() - make_interval(secs => ${(AWAY_AFTER_MS + GRACE_MS) / 1000}))
           or exists (
           select 1 from game.challenges c
-          where c.creator = o.user_id and c.live and c.series_id is null and c.cancelled_at is null
+          where c.creator = o.user_id and c.live and c.series_id is null and c.start_id is null
+            and c.cancelled_at is null
             and c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
+          or exists (
+          select 1 from game.starts st
+          where st.series_id is null and st.deadline_at > now()
+            and o.user_id in (st.player_a, st.player_b))
           then 'in_a_match'
         when o.active_at > now() - make_interval(secs => ${ONLINE_MS / 1000}) then 'online'
         else 'offline'
@@ -54,7 +59,8 @@ export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
       coalesce(p.username, p.display_name) as "from", c.format, c.best_of as "bestOf"
     from game.challenges c
     join game.profiles p on p.user_id = c.creator
-    where c.invitee = ${userId} and c.live and c.series_id is null and c.cancelled_at is null
+    where c.invitee = ${userId} and c.live and c.series_id is null and c.start_id is null
+      and c.cancelled_at is null
       and c.invitee_declined_at is null and c.expires_at > now()
       and c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})
     order by c.created_at desc`;

@@ -1,9 +1,9 @@
 // A rematch on the end screen of a live match (ADR 0055): asks the server where it stands every
 // second while one may be asked or is under way, asks or answers it, and moves both players on:
-// to the new lineup once both said yes, into the new match once it started. The server's clock
+// to the lineups picked together once both said yes (ADR 0080), into the new match once it started. The server's clock
 // decides; the page counts down from the time each answer carried.
 import { callApi, failureKindOf } from '../app/api.ts';
-import { writeSendParams } from '../app/online-url.ts';
+import { writeStartParams } from '../app/online-url.ts';
 import { decodeRematchView, type RematchView } from '../api/rematch.ts';
 import type { SeriesView } from '../api/series.ts';
 import { seatsOf } from '../app/online-series.ts';
@@ -83,9 +83,12 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
     if (view !== undefined && visible && movedFor !== view.id) {
       if (next.state === 'agreed' && !next.lineupIn) {
         movedFor = view.id;
-        host.go((url) => {
-          writeSendParams(url, view.format, view.bestOf, 'lineup', view.id);
-        });
+        const startId = next.startId;
+        if (startId !== null) {
+          host.go((url) => {
+            writeStartParams(url, startId);
+          });
+        }
       } else if (next.state === 'started' && next.seriesId !== null) {
         movedFor = view.id;
         void host.intoSeries(next.seriesId);
@@ -141,7 +144,7 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
         : rematchChoiceOf(rematch, series.you),
     clock() {
       if (series === undefined || rematch === undefined) return undefined;
-      return rematchClockOf(rematch, series.you, seatsOf(series).they, serverNow());
+      return rematchClockOf(rematch, series.you, seatsOf(series).they, serverNow(), series.bestOf);
     },
     note() {
       if (series === undefined) return undefined;

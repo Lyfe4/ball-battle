@@ -32,6 +32,7 @@ export async function declineInvite(deps: Deps, token: string, userId: string): 
   const rows = await deps.sql`
     update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now())
     where token_hash = ${await hashOf(token)} and invitee = ${userId} and series_id is null
+      and start_id is null
     returning 1`;
   if (rows.length === 0) throw new ApiError(404, 'not_found', 'No such challenge');
 }

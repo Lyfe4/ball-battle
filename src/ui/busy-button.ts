@@ -1,6 +1,6 @@
 // A button that waits on the server (ADR 0052, 0053): every online action takes a second or more
 // (functions in Ohio, the database in Sydney), so the button shows it is working. One component for
-// every such button (Send challenge, Accept challenge, a pick, Cancel, Leave and forfeit, Forget me,
+// every such button (Send challenge, Accept, Lock in, a pick, Cancel, Leave and forfeit, Forget me,
 // Try again, Back to your match). From the tap it is busy (`aria-busy`, a short spoken label, and a
 // second tap does nothing); after BUSY_SHOW_MS, so a quick answer never flickers, a small ball
 // bounces in place of its words (busy-button.css), the words kept invisible so its size never

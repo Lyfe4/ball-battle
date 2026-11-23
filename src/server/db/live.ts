@@ -13,9 +13,18 @@ export async function markPresent(db: Db, seriesId: string, side: Side): Promise
     on conflict (series_id, side) do update set seen_at = excluded.seen_at`;
 }
 
-/** Where a player is live right now: an open live series, or a lobby still waiting. */
+/**
+ * Where a player is live right now: an open live series, a lobby still waiting, or lineups being
+ * picked together (ADR 0080; until made into a series, so past its deadline too until settled).
+ */
 export type LiveNow =
   | { readonly kind: 'series'; readonly id: string }
+  | {
+      readonly kind: 'start';
+      readonly id: string;
+      readonly format: Format;
+      readonly bestOf: BestOf;
+    }
   | {
       readonly kind: 'lobby';
       readonly requestId: string;
@@ -29,20 +38,26 @@ export type LiveNow =
  */
 export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undefined> {
   const [row] = await db<
-    { kind: 'series' | 'lobby'; ref: string; format: Format; best_of: BestOf }[]
+    { kind: 'series' | 'lobby' | 'start'; ref: string; format: Format; best_of: BestOf }[]
   >`
     (select 'series' as kind, id::text as ref, format, best_of, created_at from game.series
       where live and status = 'open' and (player_a = ${player} or player_b = ${player}))
     union all
     (select 'lobby', request_id::text, format, best_of, created_at from game.challenges
-      where creator = ${player} and live and series_id is null and cancelled_at is null
+      where creator = ${player} and live and series_id is null and start_id is null
+        and cancelled_at is null
         and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
+    union all
+    (select 'start', id::text, format, best_of, agreed_at from game.starts
+      where series_id is null and (player_a = ${player} or player_b = ${player}))
     order by created_at desc
     limit 1`;
   if (row === undefined) return undefined;
-  return row.kind === 'series'
-    ? { kind: 'series', id: row.ref }
-    : { kind: 'lobby', requestId: row.ref, format: row.format, bestOf: row.best_of };
+  if (row.kind === 'series') return { kind: 'series', id: row.ref };
+  if (row.kind === 'start') {
+    return { kind: 'start', id: row.ref, format: row.format, bestOf: row.best_of };
+  }
+  return { kind: 'lobby', requestId: row.ref, format: row.format, bestOf: row.best_of };
 }
 
 /**
@@ -52,7 +67,8 @@ export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undef
 export async function lobbySeen(db: Db, challengeId: string): Promise<void> {
   await db`
     update game.challenges set creator_seen_at = now()
-    where id = ${challengeId} and live and series_id is null and cancelled_at is null
+    where id = ${challengeId} and live and series_id is null and start_id is null
+      and cancelled_at is null
       and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})`;
 }
 
@@ -75,5 +91,5 @@ export async function cancelLobby(db: Db, challengeId: string, creator: string):
   await db`
     update game.challenges set cancelled_at = now()
     where id = ${challengeId} and creator = ${creator} and live and series_id is null
-      and cancelled_at is null`;
+      and start_id is null and cancelled_at is null`;
 }

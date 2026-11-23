@@ -201,6 +201,19 @@
   font-weight: 700;
 }
 
+/* Against a player picking at the same time (ADR 0080): "Jo is choosing · 42 s", beside the mode. */
+.lineup-status {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineup-status[hidden] {
+  display: none;
+}
+
 .lineup-level {
   display: contents;
 }

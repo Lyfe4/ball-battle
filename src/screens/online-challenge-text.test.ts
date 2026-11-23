@@ -8,7 +8,8 @@ const actions: CardActions = {
   canShare: true,
   copy: () => Promise.resolve('Copied'),
   home: () => undefined,
-  lineup: () => undefined,
+  accept: () => Promise.resolve(),
+  lineups: () => Promise.resolve(),
   series: () => undefined,
   sendOwn: () => undefined,
   share: () => Promise.resolve('Shared'),
@@ -20,6 +21,7 @@ const info = (over: Partial<ChallengeInfo> = {}): ChallengeInfo => ({
   from: 'Player 6908',
   status: 'open',
   seriesId: null,
+  startId: null,
   live: true,
   own: false,
   invitee: null,
@@ -34,7 +36,7 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
     expect(card.chips).toStrictEqual(['Best of 3', 'Reveal', 'Live · 30 s a pick']);
     expect(card.steps?.title).toBe('How it goes');
     expect(card.steps?.items).toHaveLength(3);
-    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Build your lineup']);
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Accept']);
     expect(card.quiet?.text).toBe('Not now');
     // The title stays for screen readers.
     expect(card.title).toBe('Player 6908 challenges you');
@@ -42,7 +44,7 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
 
   it('says how each format goes, and the stay rule last', () => {
     expect(howItGoes({ format: 'reveal', bestOf: 5 })).toStrictEqual([
-      'Build your lineup of 5 without seeing theirs.',
+      'Accept, then you both pick 5 at once, without seeing theirs.',
       'Take turns showing a ball; the other answers.',
       'Stay until the end: leaving for 30 s loses the match.',
     ]);
@@ -67,7 +69,7 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
     expect(lobby.link?.url).toBe('https://ballbattle.test/?challenge=abc');
     expect(lobby.link?.copy).toBeDefined();
     expect(lobby.note).toBe(
-      'The match starts the moment they accept. Stay until the end: leaving for 30 s loses the match.',
+      'Once they accept, you both pick your lineups. Stay until the end: leaving for 30 s loses the match.',
     );
     expect(lobby.quiet?.text).toBe('Cancel challenge');
   });

@@ -1,5 +1,6 @@
 import { BOT_LEVELS } from '../../sim/bot.ts';
 import { BEST_OF, DEFAULT_BEST_OF, type BestOf, type Format } from '../../sim/series.ts';
+import { busyOnClick } from '../busy-button.ts';
 import { element, setText } from '../dom.ts';
 import { lengthChoiceOf } from '../modes-text.ts';
 import { createScreenHeader } from '../screen-header.ts';
@@ -28,14 +29,16 @@ export interface RulesOptions {
   readonly levels: boolean;
   /** One quiet line under the choices: what the match asks of the player (live play). */
   readonly note?: string;
+  /** What the main button says (else Choose lineup): vs Friend sends the challenge from here. */
+  readonly next?: string;
 }
 
 export interface RulesActions {
   readonly onBack: () => void;
   /** Any choice changed (the screen keeps it, so Back to it finds it as it was). */
   readonly onChange: (choices: SetupChoices) => void;
-  /** The player goes on to their lineup with these choices. */
-  readonly onNext: (choices: SetupChoices) => void;
+  /** The player goes on with these choices; a promise is a request (the button shows it). */
+  readonly onNext: (choices: SetupChoices) => unknown;
 }
 
 let count = 0;
@@ -122,11 +125,10 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
   body.append(lengthGroup, formatGroup, levelRoot);
   if (options.note !== undefined) body.append(element('p', 'rules-note', options.note));
 
-  const next = element('button', 'hud-button hud-button-primary', 'Choose lineup');
+  const next = element('button', 'hud-button hud-button-primary', options.next ?? 'Choose lineup');
   next.type = 'button';
-  next.addEventListener('click', () => {
-    actions.onNext(choices);
-  });
+  if (options.next !== undefined) next.dataset['sound'] = 'tap';
+  busyOnClick(next, () => actions.onNext(choices));
   const footer = element('div', 'screen-footer');
   footer.append(next);
   root.append(header.element, body, footer);

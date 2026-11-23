@@ -1,6 +1,8 @@
 // A rematch's words (ADR 0055), pure: the card on the end screen while one is asked (with its
 // seconds, on the pick card's bar), and the line both players read when it ends without a match.
-import { REMATCH_ANSWER_MS, REMATCH_LINEUP_MS, type RematchView } from '../api/rematch.ts';
+import { REMATCH_ANSWER_MS, type RematchView } from '../api/rematch.ts';
+import { startLineupMs } from '../api/start.ts';
+import type { BestOf } from '../sim/series.ts';
 import { secondsUntil } from '../app/live-play.ts';
 import type { Side } from '../sim/series.ts';
 import { URGENT_SECONDS, type PickClock } from './pick-clock-text.ts';
@@ -11,10 +13,11 @@ export function rematchClockOf(
   you: Side,
   they: string,
   now: number,
+  bestOf: BestOf = 3,
 ): PickClock | undefined {
   const { deadline } = rematch;
   if (deadline === null) return undefined;
-  const total = rematch.state === 'agreed' ? REMATCH_LINEUP_MS : REMATCH_ANSWER_MS;
+  const total = rematch.state === 'agreed' ? startLineupMs(bestOf) : REMATCH_ANSWER_MS;
   const seconds = secondsUntil(deadline, now);
   const timed = {
     seconds,
@@ -80,8 +83,9 @@ export function rematchNoticeOf(
   they: string,
   now: number,
   yes = false,
+  bestOf: BestOf = 3,
 ): RematchNotice | undefined {
-  const clock = rematchClockOf(rematch, you, they, now);
+  const clock = rematchClockOf(rematch, you, they, now, bestOf);
   const running = clock !== undefined && clock.seconds > 0;
   if (rematch.state === 'asked' && rematch.askedBy !== you) {
     return running ? { kind: 'asked', clock } : undefined;

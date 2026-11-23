@@ -50,6 +50,7 @@ export interface OnlineScreens {
   readonly online: ScreenHandler<'online'>;
   readonly challenge: ScreenHandler<'challenge'>;
   readonly send: ScreenHandler<'send'>;
+  readonly start: ScreenHandler<'start'>;
   readonly signin: ScreenHandler<'signin'>;
   readonly play: OnlinePlay;
   /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
@@ -59,8 +60,10 @@ export interface OnlineScreens {
   setVisible(screen: string): void;
   /** The friends' status from the inbox, for the account screen's Friends section. */
   friendStatuses(friends: readonly FriendEntry[]): void;
-  /** A friend's challenge accepted from the floating card: its lineup, read first. */
+  /** A friend's challenge accepted from the floating card: its lineups, read first. */
   openInvite(token: string): Promise<void>;
+  /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
+  rematchShown(): string | undefined;
 }
 
 export function createOnlineScreens(
@@ -212,12 +215,17 @@ export function createOnlineScreens(
     },
     challenge: {
       show: (route) => {
-        challenges.showChallenge(route.token, route.step);
+        challenges.showChallenge(route.token);
       },
     },
     send: {
       show: (route) => {
-        challenges.showSend(route.format, route.bestOf, route.step, route.rematch);
+        challenges.showSend(route.format, route.bestOf);
+      },
+    },
+    start: {
+      show: (route) => {
+        challenges.showStart(route.id);
       },
     },
     signin: {
@@ -230,12 +238,13 @@ export function createOnlineScreens(
     forgetMe,
     setVisible(screen) {
       signIn.setVisible(screen === 'signin');
-      challenges.setVisible(screen === 'challenge' || screen === 'send');
+      challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },
     friendStatuses(friends) {
       signIn.statuses(friends);
     },
     openInvite: (token) => challenges.openInvite(token),
+    rematchShown: () => challenges.rematchShown(),
   };
 }

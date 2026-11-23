@@ -7,7 +7,14 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { signedInPhone } from './account-support.ts';
-import { buildLineup, liveMatchBudgetMs, panelOf, playOut } from './live-support.ts';
+import {
+  buildLineup,
+  liveMatchBudgetMs,
+  panelOf,
+  pickTogether,
+  playOut,
+  sendChallenge,
+} from './live-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 
@@ -64,15 +71,10 @@ describe('a rematch of a friend’s challenge', () => {
       await asker.goto(`${BASE}/?view=signin`);
       const row = friendsOf(asker).locator('.friends-row', { hasText: jo });
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
-      await asker.getByRole('button', { name: 'Choose lineup' }).click();
-      await buildLineup(asker, 'Send challenge');
-      await asker.getByRole('heading', { name: `Waiting for ${jo}` }).waitFor();
+      await sendChallenge(asker, `Waiting for ${jo}`);
       const invite = friend.getByRole('region', { name: 'Challenge' });
       await invite.getByRole('button', { name: 'Accept' }).click({ timeout: 40_000 });
-      await buildLineup(friend, 'Accept challenge');
-      await friend.waitForURL(/[?&]online=/);
-      await asker.waitForURL(/[?&]online=/, { timeout: 20_000 });
-      const first = new URL(asker.url()).searchParams.get('online');
+      const first = await pickTogether([{ page: friend }, { page: asker }]);
 
       await playOut([{ page: asker }, { page: friend }]);
 
@@ -89,9 +91,9 @@ describe('a rematch of a friend’s challenge', () => {
 
       // Jo, who stayed on the end screen, says yes there and hands in a lineup.
       await panelOf(friend).getByRole('button', { name: 'Rematch' }).click({ timeout: 10_000 });
-      await friend.waitForURL(/[?&]rematch=/, { timeout: 15_000 });
-      await buildLineup(friend, 'Start rematch');
-      await friend.getByText('Waiting for your friend’s lineup').waitFor({ timeout: 10_000 });
+      await friend.waitForURL(/[?&]start=/, { timeout: 15_000 });
+      await buildLineup(friend, 'Lock in');
+      await friend.getByText(/^Waiting for .+’s lineup$/).waitFor({ timeout: 10_000 });
 
       // Sam, home all along: the card says Jo accepted, with the seconds to choose.
       const told = rematchCardOf(asker);
@@ -100,8 +102,8 @@ describe('a rematch of a friend’s challenge', () => {
         .waitFor({ timeout: 10_000 });
       await asker.getByRole('button', { name: /^Back to your rematch/ }).waitFor();
       await told.getByRole('button', { name: 'Choose lineup' }).click();
-      await asker.waitForURL(/[?&]rematch=/, { timeout: 15_000 });
-      await buildLineup(asker, 'Start rematch');
+      await asker.waitForURL(/[?&]start=/, { timeout: 15_000 });
+      await buildLineup(asker, 'Lock in');
 
       for (const page of [asker, friend]) {
         await page.waitForURL(

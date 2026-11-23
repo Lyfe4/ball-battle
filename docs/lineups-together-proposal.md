@@ -1,4 +1,4 @@
-# Proposal: pick lineups together after accepting (2026-11-23, not built)
+# Proposal: pick lineups together after accepting (2026-11-23, built: ADR 0080)
 
 The owner's suggestion: a challenge (a friend's or a link) is sent without a lineup; once the
 friend accepts, both pick their 3 (or 5) at the same time, each in secret, against a timer, then
