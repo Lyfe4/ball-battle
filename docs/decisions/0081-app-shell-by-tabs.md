@@ -343,3 +343,39 @@ checklist.
 - **Small fixes:** the status strip's arrow wears the links' colour; Profile's stats sit flat in its
   card (`soon-card-flat`) rather than a card in a card; vs Friend's Play line is shorter; the strip says one thing whole ("1 challenge waiting")
   and several in short ("1 challenge · 1 request · 2 online"), so a phone shows them all.
+
+## Addendum (2026-11-24, later): tab headers without Back, and one settings menu
+
+Amends ADR 0025 (§3: every screen has its own Back) for the tab screens, and ADR 0044 (the
+settings menu's compact form and its narrowing beside a court).
+
+- **No Back on a tab screen.** Play, Balls, Friends and Ranks have the avatar (accounts builds),
+  the title and the gear, as in the mockups; the tab bar and the phone's or browser's Back lead
+  away, and Back from any tab is still Play, then out of the game (above, "Back with tabs"). A
+  screen opened from a tab keeps its Back: a ball's page, Profile, a setup, sign-in. The manual's
+  one header shows Back on a ball's page only (`setBack`). No screen is a dead end: every tab
+  screen has the tab bar.
+- **"Balls", not "Ball manual"**: the tab's word is its heading, its region's name and its title
+  ("Balls · BallBattle"; a ball's page "Frost · Balls · BallBattle"). Its `?` stays: it opens the
+  legend of the matchup marks (▲▲, ▲, even) that the chart and a ball's matchups show.
+- **One settings menu.** On Play it took ADR 0044's compact form to keep off the demo court (its
+  headings and Speed label hidden, speed beside the title), narrower placement further right, and
+  the chooser's check sticker painted over it: PR 4 gave the title row a layer (`z-index: 2`)
+  that held the menu, which opens inside that row, below the sticker. Now:
+  - one form everywhere (the compact form is gone, and so is narrowing to the panel beside a
+    court): the same width, headings, rows and spacing on every screen;
+  - its right edge on its gear's row (a header with a `?` after the gear included), under the gear,
+    on whole pixels;
+  - home's demo is no match: the menu sits by its gear over it, as on every other screen;
+  - in a fight it still keeps off the court where it can; over it, the match waits, and a short
+    note says so on the title's row ("The match waits"), so every row sits where it does
+    elsewhere; a live match still never waits (beside the court, scrolling inside itself, ADR
+    0054); on a screen too short for it whole, it scrolls inside itself;
+  - to fit whole above its gear on a phone mid-fight (390 x 664: 356 px of 362), Show all tips
+    again shares the last row with Close and the two groups are apart by the panel's own gap. It
+    never sits over the gear that closes it;
+  - nothing between the menu and the page makes a layer of its own.
+- Tests: `settings-one-look.safari.browser.test.ts` (Play, Balls, Friends, Ranks, Profile, a lineup
+  and a fight read the same, with no layer above the menu; failed on Play before),
+  `tab-headers.safari.browser.test.ts` (each tab's header, Back on a ball's page and Profile,
+  Back from a tab to Play).

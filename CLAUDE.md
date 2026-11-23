@@ -352,13 +352,17 @@ Each line is a rule; its ADR has the reasoning.
   lineup URL's format is its own (none is Blind). The 16+ question comes first in the vs Friend
   flow, on a device without a guest. While a series is held (`held()`), home's Play is Resume
   series and New series forgets it (`forget()`).
-- Settings (ADR 0040, 0044): one menu (`settings-menu.ts`) behind exactly one gear per screen, at
-  the top right before any `?`. It floats by its gear, never moves the layout, closes on the gear,
-  Close, Escape or a tap outside (focus back on the gear), keeps off the court where it can (else
-  the arena holds an offline match until it closes; a live match never waits, so there it scrolls
-  inside the room beside the court, ADR 0054), and holds only real per-device choices.
+- Settings (ADR 0040, 0044, 0081): one menu (`settings-menu.ts`) behind exactly one gear per
+  screen, at the top right before any `?`, in one form and width on every screen (no compact form;
+  nothing around it makes a layer, `settings-one-look`). It floats by its gear, never moves the
+  layout, closes on the gear, Close, Escape or a tap outside (focus back on the gear), keeps off
+  the court where it can (else the arena holds an offline match until it closes; a live match
+  never waits, so there it scrolls inside the room beside the court, ADR 0054), and holds only real
+  per-device choices.
 - Back follows one rule (ADR 0025, `src/app/history-rules.ts`): move with `navigation.go`, never by
-  choosing push or replace. Leaving an undecided series holds it; Back never drops it.
+  choosing push or replace. Leaving an undecided series holds it; Back never drops it. The four tab
+  screens have no in-app Back (the bar and the browser's Back lead away); a screen opened from a
+  tab keeps its Back (ADR 0081).
 - A series survives a reload (ADR 0042): the controller saves after every change through `keep`
   (`src/app/series-save.ts`, `localStorage`, never the URL); `restoreSeries` trusts a save only if
   `verifySeries` accepts it. Leave series and New series clear it; Back holds it; a fight under way
