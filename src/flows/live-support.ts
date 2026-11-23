@@ -11,7 +11,7 @@ import { MAX_ATTEMPTS } from '../sim/series.ts';
 /** The Play tab's way to a friend match (ADR 0081): vs Friend in the chooser, then Play. */
 export async function playAFriend(page: Page): Promise<void> {
   await page.locator('.home-chooser button[data-opponent="friend"]').click();
-  await page.locator('.home-play').click();
+  await page.locator('.home-play-row .home-play').click();
 }
 
 /** iPhone Safari's visible size (ADR 0039). */

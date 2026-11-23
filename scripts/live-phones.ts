@@ -154,7 +154,7 @@ export async function startMatch(
   await sender.page.goto(`${base}/`);
   await shot(sender.page, 'home-no-match');
   await sender.page.locator('.home-chooser button[data-opponent="friend"]').click();
-  await sender.page.locator('.home-play').click();
+  await sender.page.locator('.home-play-row .home-play').click();
   await confirmAge(sender.page);
   await sender.page.getByRole('heading', { name: 'vs Friend' }).waitFor();
   await sender.page.getByRole('button', { name: `Best of ${String(bestOf)}` }).click();
