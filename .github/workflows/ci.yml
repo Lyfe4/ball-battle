@@ -44,6 +44,14 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # Production's own build (netlify.toml [context.production]): vs Friend on, accounts off. No
+      # other build has this combination, so only here does check-bundle.ts see sign-in code that
+      # escaped ACCOUNTS_BUILD before Netlify does (2026-11-23: a publish failed on it).
+      - name: Build as production does (online, no accounts)
+        run: pnpm build
+        env:
+          VITE_ONLINE: '1'
+          VITE_ACCOUNTS: ''
 
   slow-tests:
     name: Slow roster tests
