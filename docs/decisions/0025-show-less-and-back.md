@@ -11,6 +11,7 @@
   (bot levels, Showdown, and pick screens that never give the bot's move away), ADR 0036 (teaching
   in the arena), ADR 0037 (clarity fixes: whose edge a mark shows, sentence prompts, a ready moment,
   a story led by its result)
+- Amended by: ADR 0081 (§3: Back with tabs, Play the root)
 
 ## Context
 

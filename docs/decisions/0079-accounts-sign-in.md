@@ -8,6 +8,7 @@
   names what an account stores), ADR 0068 (the sweep keeps accounts for 24 months)
 - Builds on: `docs/accounts-and-friends-proposal.md` (approved in direction 2026-11-22, with its
   spike against Supabase Auth v2.197.0), changed as below
+- Amended by: ADR 0081 (the account screen becomes Profile and the Friends tab; a friend's challenge card folds into a badge)
 
 ## Context
 
