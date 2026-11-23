@@ -13,7 +13,8 @@ names, the verdict and the length.
 3. **No verdict.** The mark beside it already says who is favoured and how much: drop the
    trailing ": even." (92 reasons end with it) and words like "wins" or "loses".
 4. **One idea per clause.** "But" only when the second clause outweighs the first.
-5. **About 90 characters at most**, so it fits the ready card at 375 px in two lines.
+5. **About 90 characters at most**, so it fits the ready card at 375 px in three lines at most (a
+   90-character line takes three there, as measured in PR #137, not two).
 6. **True in the fight.** Every claim must hold in the fight as the sim plays it, for both balls:
    check the definitions (`src/sim/balls/`) and the matchup's measured shape
    (`docs/balance-matrix.csv`), never memory.
