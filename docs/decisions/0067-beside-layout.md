@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-18
 - Amends: ADR 0031 (the desktop query is the one desktop query; the beside query is named too)
+- Amended by: ADR 0081 addendum of 2026-11-23 (home's demo court gives way to the tab rail where the panel needs the room)
 - Amended by: its addenda of 2026-11-22 (a calm fight on a phone turned sideways; the smallest phone sideways in Safari) and 2026-11-23 (the toss and the picks above the fold; home, the lineup and the rest of the screen walk)
 
 ## Context

@@ -32,7 +32,8 @@ Ways to play
       rules)
 - [ ] vs Friend (online builds only) opens the send screen, Reveal, Best of 3 (PR 4: the chooser)
 - [ ] Free play opens the quick-match pick on the pair the demo is showing (ADR 0020) (PR 4)
-- [ ] Ball manual opens the manual (PR 3: the Balls tab)
+- [x] Ball manual opens the manual (PR 3: the Balls tab opens it, `tab-bar.browser.test.ts`; home's
+      link stays until PR 4)
 
 The rest of home
 
@@ -40,9 +41,11 @@ The rest of home
       dropped on purpose)
 - [ ] Privacy and Terms as quiet links at the end (ADR 0069) (PR 4: the end of the Play tab; PR 5:
       Profile too)
-- [ ] One settings gear, at the top right of the title row (ADR 0040) (PR 3)
+- [x] One settings gear, at the top right of the title row (ADR 0040) (PR 3: unchanged beside the
+      bar and rail)
 - [ ] Phone: the panel under the demo court; beside layout and desktop: beside it (ADR 0031, 0067)
-      (PR 3, PR 4)
+      (PR 4; PR 3 kept it, the court yielding to the rail where the panel needs the room:
+      `tab-rail.landscape-small.browser.test.ts`)
 - [x] `?view=modes` opens home (PR 2: kept in every build, `route.test.ts`)
 
 Online on home
