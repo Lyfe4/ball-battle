@@ -1,8 +1,8 @@
 // Where the settings menu goes (settings-menu.ts, ADR 0040, 0044), as pure functions so they are
 // tested without a DOM. It prefers its gear: under it, its right edge on the gear's, or over it.
-// With a court on screen it keeps off the court: beside a desktop's court it narrows to the side
-// panel, and on a phone it may move under or over the court (over the health bars and speed,
-// never the fight). Only when no place is clear does it cover the court, and it says so, so the
+// It keeps its one width everywhere (ADR 0081 addendum of 2026-11-24). With a court on screen it
+// keeps off the court where it can: beside a desktop's court on the gear's side, and on a phone
+// under or over the court (over the health bars and speed, never the fight). Only when no place is clear does it cover the court, and it says so, so the
 // match can wait. It always stays inside the visible screen, clear of its edges and the safe areas.
 import type { Box } from './tooltip-place.ts';
 
@@ -11,8 +11,6 @@ const GAP = 8;
 const EDGE = 16;
 /** The least height a capped menu may scroll in; with less room it keeps its own height. */
 const MIN_SCROLL_HEIGHT = 160;
-/** The narrowest the menu gets to fit beside a court: its longest row still fits on one line. */
-export const MENU_MIN_WIDTH = 240;
 
 /** The visible screen: the layout width, and the visual viewport's height and offset. */
 export interface Screen {
@@ -42,11 +40,6 @@ export interface Placement {
   readonly covers: boolean;
   /** Set when even that place would be over its gear: the menu is capped and scrolls inside. */
   readonly maxHeight?: number;
-  /**
-   * Beside a court with no room by its gear (a phone turned sideways): the menu takes the panel's
-   * whole room, this wide and tall, so nothing of the panel peeks out around it.
-   */
-  readonly fill?: Size;
 }
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -60,32 +53,6 @@ function overlaps(a: Box, b: Box): boolean {
     a.top < b.top + b.height &&
     b.top < a.top + a.height
   );
-}
-
-/** The room beside the court on the gear's side, when the gear sits beside it (a desktop). */
-function roomBeside(gear: Box, screen: Screen, insets: Insets, court: Box): number | undefined {
-  if (gear.left >= court.left + court.width) {
-    return screen.width - EDGE - insets.right - (court.left + court.width + GAP);
-  }
-  if (gear.left + gear.width <= court.left) return court.left - GAP - EDGE - insets.left;
-  return undefined;
-}
-
-/**
- * The menu's width: its own, or narrower to fit beside the court on the gear's side, down to
- * MENU_MIN_WIDTH. Undefined keeps its own width.
- */
-export function menuWidth(
-  gear: Box,
-  natural: number,
-  screen: Screen,
-  insets: Insets = NO_INSETS,
-  court?: Box,
-): number | undefined {
-  if (court === undefined) return undefined;
-  const room = roomBeside(gear, screen, insets, court);
-  if (room === undefined || room >= natural || room < MENU_MIN_WIDTH) return undefined;
-  return Math.floor(room);
 }
 
 export function placeMenu(
@@ -121,7 +88,7 @@ export function placeMenu(
       return { left, top: candidate, covers: false };
     }
   }
-  // Nowhere clear of the court: it covers it (the caller tries the compact form, then lets the match
+  // Nowhere clear of the court: it covers it (the caller then lets the match
   // wait), but never its own gear, which closes it: the first spot inside the screen clear of it,
   // else the room above the gear, scrolling inside (large text or a short phone).
   const offGear = [above, below, minTop, maxTop]
@@ -129,14 +96,6 @@ export function placeMenu(
     .find((candidate) => !overlaps({ left, top: candidate, ...size }, gear));
   if (offGear !== undefined) {
     return { left, top: offGear, covers: overlaps({ left, top: offGear, ...size }, court) };
-  }
-  // In the panel beside a court (a phone turned sideways, 2026-11-23 walk): over its gear anyway,
-  // it would leave the panel's ? and Leave series peeking out around it, so it takes the panel's
-  // room whole, still off the court.
-  const besideWidth = screen.width - EDGE - insets.right - (courtRight + GAP);
-  if (gear.left >= courtRight && besideWidth >= size.width) {
-    const fill = { width: besideWidth, height: menuMaxHeight(screen, insets) };
-    return { left: courtRight + GAP, top: minTop, covers: false, fill };
   }
   const room = gear.top - GAP - minTop;
   if (room >= MIN_SCROLL_HEIGHT) {

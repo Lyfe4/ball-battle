@@ -66,6 +66,14 @@
   }
 }
 
+/* The title, and on its row the note that the match waits (only while the menu covers the court). */
+.settings-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
 .settings-title {
   margin: 0;
   font-size: 1.125rem;
@@ -99,9 +107,7 @@
   letter-spacing: 0.02em;
 }
 
-.settings-group + .settings-group {
-  padding-top: var(--space-gap);
-}
+/* Apart by the panel's own gap: room enough, and the menu fits above its gear mid-fight. */
 
 /* Speed's word, as Sound's (settings-sound.css) and the switches'. */
 .settings-speed .segmented-label {
@@ -163,46 +169,12 @@
 .settings-paused {
   margin: 0;
   color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-align: end;
 }
 
 .settings-paused[hidden] {
   display: none;
-}
-
-/*
- * Compact (ADR 0044): on a short phone, the form that may fit beside the court. The title shares
- * its row with speed, and the words a sighted player doesn't need (the "Speed" and "Tips in the
- * arena" captions) are left to screen readers; every control keeps its full tap target.
- */
-.settings-panel[data-compact] {
-  grid-template-columns: 1fr auto;
-  gap: 0 var(--space-gap);
-}
-
-.settings-panel[data-compact] .settings-title {
-  align-self: center;
-}
-
-.settings-panel[data-compact] .settings-group,
-.settings-panel[data-compact] .settings-sound,
-.settings-panel[data-compact] .settings-foot {
-  grid-column: 1 / -1;
-  gap: 0 var(--space-gap);
-}
-
-/* Compact keeps speed on the title's row: the Fights group lends its rows to the panel's grid. */
-.settings-panel[data-compact] .settings-play {
-  display: contents;
-}
-
-.settings-panel[data-compact] .settings-heading,
-.settings-panel[data-compact] .segmented-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 /* "Show all tips again" and Close share the last row. */

@@ -47,7 +47,7 @@ describe('settings over the court', () => {
       court.top < box.bottom;
     expect(covers).toBe(true);
     expect(visible('.settings-paused').map((note) => note.textContent)).toStrictEqual([
-      'The match waits while this is open.',
+      'The match waits',
     ]);
     expect(await courtMoves(1000)).toBe(false);
 

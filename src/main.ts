@@ -282,7 +282,8 @@ const settingsHost = {
   tips,
   speed: () => state.speed,
   setSpeed,
-  court: arena.court,
+  // Home's demo is no match: the menu sits by its gear over it, as on every other screen.
+  court: () => (router.current() === 'home' ? undefined : arena.court()),
   mayWait,
   sound: createSoundSettings(),
 };
