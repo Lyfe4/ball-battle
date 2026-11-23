@@ -62,3 +62,22 @@
   font-size: 1.3rem;
   font-weight: 800;
 }
+
+.soon-card-line {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+/* The Ranks tab (ranks.ts): the intro, its coming-soon cards and its way on, one column. */
+.ranks {
+  display: grid;
+  gap: var(--space-gap);
+  margin-top: var(--space-gap);
+}
+
+.ranks-intro {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}

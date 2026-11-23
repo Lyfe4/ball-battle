@@ -151,3 +151,7 @@ The Friends section
 - [x] Online: Rematch ("Same friend, new lineups") and Home, or Rematch and No thanks to answer one
       (PR 8: unchanged)
 - [x] Copy link for a decided series (PR 8: unchanged, under the buttons)
+
+## New in the shell (nothing moved here; for the record)
+
+- [x] Ranks in builds with accounts only, plainly coming soon, with a way on (PR 9)
