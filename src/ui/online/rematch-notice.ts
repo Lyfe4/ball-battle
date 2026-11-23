@@ -14,7 +14,7 @@ export interface RematchNoticeActions {
   /** Accept, or Choose lineup once both said yes. */
   accept(): Promise<void>;
   decline(): Promise<void>;
-  /** OK on an ending: it goes. */
+  /** OK on an ending, or Later on a friend's challenge (it folds into the badge): it goes. */
   dismiss(): void;
 }
 
@@ -78,7 +78,9 @@ export function createRematchNotice(
       setText(accept, card.kind === 'agreed' ? 'Choose lineup' : 'Accept');
       setHidden(accept, !answers && card.kind !== 'agreed');
       setHidden(decline, !answers);
-      setHidden(ok, answers || card.kind === 'agreed');
+      // A friend's challenge can wait (ADR 0081): Later folds it into the Friends tab's badge.
+      setText(ok, card.kind === 'invite' ? 'Later' : 'OK');
+      setHidden(ok, card.kind !== 'invite' && (answers || card.kind === 'agreed'));
     },
   };
 }

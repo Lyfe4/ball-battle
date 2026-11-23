@@ -1,6 +1,12 @@
 // The Friends tab's words (ADR 0079, PR (c); ADR 0081): pure, so every state is tested without a
 // DOM.
-import type { AddFriendResponse, FriendStatus, FriendsResponse, Invite } from '../api/friends.ts';
+import type {
+  AddFriendResponse,
+  FriendStatus,
+  FriendsResponse,
+  InboxResponse,
+  Invite,
+} from '../api/friends.ts';
 import { challengeLine } from './online-text.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
@@ -70,3 +76,35 @@ export const FRIENDS_SOON = {
   title: 'Friends lists are on the way',
   body: 'Soon you can add friends by a code and see who’s online. Until then, a link works for anyone.',
 } as const;
+
+const counted = (count: number, one: string, many: string) =>
+  `${String(count)} ${count === 1 ? one : many}`;
+
+/**
+ * The Play tab's status strip (ADR 0081): what waits on the player first, then who is online;
+ * nothing at all when there is nothing to say (never "0 friends online").
+ */
+export function statusLine(inbox: InboxResponse): string | undefined {
+  const online = inbox.friends.filter((friend) => friend.status === 'online').length;
+  const parts = [
+    inbox.invites.length > 0
+      ? `${counted(inbox.invites.length, 'challenge', 'challenges')} waiting`
+      : '',
+    inbox.requests > 0 ? counted(inbox.requests, 'friend request', 'friend requests') : '',
+    online > 0 ? `${counted(online, 'friend', 'friends')} online` : '',
+  ].filter((part) => part !== '');
+  return parts.length === 0 ? undefined : parts.join(' · ');
+}
+
+/** What waits on the player, for the Friends tab's badge: challenges and friend requests. */
+export function waitingCount(inbox: InboxResponse): number {
+  return inbox.invites.length + inbox.requests;
+}
+
+/** The Friends tab's accessible name, with what waits in it (ADR 0081). */
+export function friendsTabLabel(waiting: number): string {
+  return waiting === 0 ? 'Friends' : `Friends, ${String(waiting)} waiting`;
+}
+
+/** A friend's challenge in Waiting for you: who asks. */
+export const challengesYou = (name: string) => `${name} challenges you`;

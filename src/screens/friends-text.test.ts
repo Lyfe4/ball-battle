@@ -1,6 +1,15 @@
 // The Friends section's words (ADR 0079, PR (c)).
 import { describe, expect, it } from 'vitest';
-import { addedLine, hasAnyone, inviteLine, STATUS_WORDS } from './friends-text.ts';
+import type { InboxResponse } from '../api/friends.ts';
+import {
+  addedLine,
+  friendsTabLabel,
+  hasAnyone,
+  inviteLine,
+  STATUS_WORDS,
+  statusLine,
+  waitingCount,
+} from './friends-text.ts';
 
 const EMPTY = { code: '7KQ2M9XD', friends: [], incoming: [], outgoing: [] };
 
@@ -24,5 +33,39 @@ describe('the Friends section’s words', () => {
       'Sam_R challenges you · Best of 5 · Showdown · live',
     );
     expect(Object.values(STATUS_WORDS)).toStrictEqual(['Online', 'In a match', 'Offline']);
+  });
+});
+
+describe('what waits, on the strip and the badge (ADR 0081)', () => {
+  const friend = (status: 'online' | 'in_a_match' | 'offline') => ({
+    id: status,
+    name: 'X',
+    status,
+  });
+  const invite = {
+    token: 't',
+    from: 'Sam',
+    format: 'reveal',
+    bestOf: 3,
+  } as unknown as InboxResponse['invites'][number];
+
+  it('puts what waits first, then who is online, and says nothing when there is nothing', () => {
+    expect(
+      statusLine({ friends: [friend('online'), friend('online')], requests: 0, invites: [invite] }),
+    ).toBe('1 challenge waiting · 2 friends online');
+    expect(statusLine({ friends: [friend('online')], requests: 2, invites: [] })).toBe(
+      '2 friend requests · 1 friend online',
+    );
+    // Never "0 friends online": in a match or offline is not online.
+    expect(
+      statusLine({ friends: [friend('in_a_match'), friend('offline')], requests: 0, invites: [] }),
+    ).toBeUndefined();
+  });
+
+  it('counts what waits on the player for the badge, and names it', () => {
+    expect(waitingCount({ friends: [friend('online')], requests: 1, invites: [invite] })).toBe(2);
+    expect(waitingCount({ friends: [], requests: 0, invites: [] })).toBe(0);
+    expect(friendsTabLabel(2)).toBe('Friends, 2 waiting');
+    expect(friendsTabLabel(0)).toBe('Friends');
   });
 });

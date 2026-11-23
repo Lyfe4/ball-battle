@@ -82,13 +82,30 @@ export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
  * A fight is on screen: a Free play match before its result, a series round on the arena (its
  * ready card too), or a live match at any moment. A rematch notice waits until it is over.
  */
-export function isFighting(
-  screen: Screen,
-  now: { readonly matchOver: boolean; readonly phase: string | undefined; readonly live: boolean },
-): boolean {
+/** Where the screen on show stands: its match over, its series' phase, a live match on. */
+export interface ScreenMoment {
+  readonly matchOver: boolean;
+  readonly phase: string | undefined;
+  readonly live: boolean;
+}
+
+export function isFighting(screen: Screen, now: ScreenMoment): boolean {
   if (screen === 'match') return !now.matchOver;
   if (screen === 'online' && now.live) return true;
   return (screen === 'series' || screen === 'online') && now.phase === 'playing';
+}
+
+/**
+ * Whether a friend's challenge may pop up now (ADR 0081): never over a fight or a lineup pick (a
+ * series' lineup and its rounds, a live match's picks, a start's lineup, a coin toss); it waits
+ * until the match is over. Every calm screen may show it. A rematch's card keeps its own rule
+ * (`isFighting`, ADR 0070).
+ */
+export function invitesMayShow(screen: Screen, now: ScreenMoment): boolean {
+  if (isFighting(screen, now)) return false;
+  if (screen === 'start') return false;
+  if (screen === 'series' || screen === 'online') return now.phase === 'finished';
+  return true;
 }
 
 /**

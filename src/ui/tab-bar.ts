@@ -5,12 +5,14 @@
 // readers (`aria-current="page"`). Each tab holds a badge slot, empty until something waits there.
 // It shows on the tab screens alone: `body[data-tabs]` makes room for it (tab-bar.css).
 import type { Tab, TabId } from '../app/tabs.ts';
-import { element, setAttr, setHidden } from './dom.ts';
+import { element, setAttr, setHidden, setText } from './dom.ts';
 
 export interface TabBar {
   readonly element: HTMLElement;
   /** The tab on show, or none: the bar hides (a fight, a setup, any screen that isn't a tab). */
   show(current: TabId | undefined): void;
+  /** What waits in `id` (its badge, none at zero) and the tab's accessible name with it. */
+  badge(id: TabId, count: number, label: string): void;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -67,7 +69,7 @@ export function createTabBar(
     const item = element('li', 'tab-bar-item');
     item.append(link);
     list.append(item);
-    return { tab, link };
+    return { tab, link, badge };
   });
   nav.append(list);
   return {
@@ -79,6 +81,16 @@ export function createTabBar(
         if (tab.id === current) setAttr(link, 'aria-current', 'page');
         else if (link.hasAttribute('aria-current')) link.removeAttribute('aria-current');
       }
+    },
+    badge(id, count, label) {
+      const found = links.find(({ tab }) => tab.id === id);
+      if (found === undefined) return;
+      setText(found.badge, count > 9 ? '9+' : String(count));
+      setHidden(found.badge, count === 0);
+      // The count is in the tab's name ("Friends, 2 waiting"), so the badge itself is silent.
+      found.badge.setAttribute('aria-hidden', 'true');
+      if (count === 0) found.link.removeAttribute('aria-label');
+      else setAttr(found.link, 'aria-label', label);
     },
   };
 }

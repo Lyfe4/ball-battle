@@ -5,13 +5,7 @@ import { createNavigation } from './app/navigation.ts';
 import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
-import {
-  initialAppState,
-  isCalmMoment,
-  isFighting,
-  readyMomentOf,
-  screenTitle,
-} from './app/screen-rules.ts';
+import { initialAppState, isCalmMoment, readyMomentOf, screenTitle } from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
 import { loadSpeed, playbackSpeedFor, saveSpeed, type PlaybackSpeed } from './app/speed.ts';
@@ -21,6 +15,7 @@ import { createArena } from './arena.ts';
 import { createHomeController } from './screens/home.ts';
 import { createBallLink, createManualScreen } from './screens/manual.ts';
 import { createOutdatedController } from './screens/outdated.ts';
+import { inboxViews } from './screens/inbox-views.ts';
 import { mountShell } from './screens/shell.ts';
 import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
@@ -178,6 +173,7 @@ const online = ONLINE_BUILD
       redraw: () => {
         arena.redraw();
       },
+      waiting: inboxViews(shell, home),
     })
   : offlineMount(() => {
       goHome('replace');
@@ -328,7 +324,7 @@ function showControls(): void {
   const roundOver = seriesStage.onScreen() && phase !== undefined && phase !== 'playing';
   seriesStage.markRound(roundOver);
   newVersion.setCalm(isCalmMoment(screen, screen === 'series' ? phase : undefined));
-  online.screenChanged(isFighting(screen, { matchOver, phase, live: online.isLive() }));
+  online.screenChanged(screen, { matchOver, phase, live: online.isLive() });
   hudRoot.hidden = setup || screen === 'home' || roundOver;
   const noSpeed = setup || screen === 'home' || roundOver || (screen === 'match' && matchOver);
   // Live fights are 1x only (ADR 0053): a line takes the toggle's place.

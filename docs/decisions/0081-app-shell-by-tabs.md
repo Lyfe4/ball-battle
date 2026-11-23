@@ -288,3 +288,21 @@ checklist.
 - **Kept, not removed:** the "challenge this friend" path (`challengeFriend`, a friend sent with the
   challenge) is how a friend row's Challenge works; production can't reach it (no accounts), but it
   isn't dead code in the builds that have friends.
+
+## Addendum (2026-11-24): the badge, the strip and the pop-up, as built (PR 7)
+
+- **One answer, three views.** `inbox-watch.ts` hands its host the whole `/me/inbox` answer, less
+  the challenges answered here; `inbox-views.ts` draws the badge and the strip from it, and the
+  Friends tab its lists. No new endpoint and no new read: the poll (`inbox-poll.ts`) is unchanged.
+- **The badge** counts challenges and friend requests (`waitingCount`), "9+" past nine, and puts the
+  count in the tab's name ("Friends, 2 waiting"); the badge itself is silent to screen readers.
+- **The strip** (`statusLine`): what waits first ("1 challenge waiting", "2 friend requests"), then
+  "N friends online"; hidden when there is nothing (never "0 friends online"), and for guests and
+  with accounts off, whose pages never read the inbox. It is a text link to the Friends tab, so its
+  arrow is the one every link draws (`one-chevron.test.ts` pins the stylesheets that draw a
+  chevron).
+- **The pop-up** shows only where `invitesMayShow` says: never over a fight, a series' lineup or its
+  rounds, a live match's picks or a start's lineup; once the match is over. It gains **Later**,
+  which folds it into the badge, as 20 s unanswered does (`INVITE_FOLD_MS`); a folded challenge
+  never pops up again on this page and stays in Waiting for you, with Accept and No thanks there. A
+  rematch's card keeps its own rule (`isFighting`, ADR 0070).
