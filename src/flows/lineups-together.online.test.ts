@@ -13,7 +13,6 @@ import {
   panelOf,
   phone,
   playAFriend,
-  sendChallenge,
   type Phones,
 } from './live-support.ts';
 
@@ -34,9 +33,8 @@ async function agreed(sender: Page, friend: Page): Promise<void> {
   await sender.goto(`${BASE}/`);
   await playAFriend(sender);
   await confirmAge(sender);
-  await sender.getByRole('heading', { name: 'vs Friend' }).waitFor();
-  // No lineup before the friend accepts: the setup sends it.
-  await sendChallenge(sender);
+  // No lineup and no rules step before the friend accepts: Play sends it.
+  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
   await friend.goto(`${BASE}/?challenge=${token}`);
   await friend.getByRole('heading', { name: /challenges you$/ }).waitFor();
