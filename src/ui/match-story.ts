@@ -9,7 +9,7 @@
 import { ballColor } from '../render/ball-colors.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setText } from './dom.ts';
-import { clockOf, sourceWords, type MatchStory } from './match-story-data.ts';
+import { clockOf, dealtWords, sourceWords, type MatchStory } from './match-story-data.ts';
 import { storyTellerFor } from './match-story-teller.ts';
 
 export interface MatchStoryView {
@@ -57,7 +57,7 @@ export function createMatchStory(lookup: DefinitionLookup): MatchStoryView {
       const head = element('p', 'match-story-head');
       head.append(
         element('span', 'match-story-name', side.name),
-        ` ${String(side.dealt)} damage`,
+        ` ${dealtWords(side)}`,
         element('span', 'match-story-sources', ` · ${sourceWords(side)}`),
       );
       const bar = element('div', 'match-story-bar');

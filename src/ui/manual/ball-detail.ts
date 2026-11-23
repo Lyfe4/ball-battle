@@ -11,6 +11,7 @@ import {
   type MatchupLine,
 } from '../balls/matchups.ts';
 import { element, setText } from '../dom.ts';
+import { wholeNumber } from '../whole-number.ts';
 import { markSymbol } from '../symbol-tooltip.ts';
 import { hearBall, soundOn } from '../../sound/sound.ts';
 
@@ -170,23 +171,23 @@ export function createBallDetail(
       hear.setAttribute('aria-label', `Hear the ${ball.name}`);
       const shares = statShares(ball, balls);
       const values = [
-        [shares.health, ball.maxHealth],
-        [shares.hit, ball.contactDamage],
+        [shares.health, wholeNumber(ball.maxHealth)],
+        [shares.hit, wholeNumber(ball.contactDamage)],
         // A ball its ability speeds up shows the range it travels at, and its bar the top (ADR 0056).
         [
           shares.speed,
           ball.topSpeed === undefined
-            ? ball.speed
-            : `${String(ball.speed)}–${String(ball.topSpeed)}`,
+            ? wholeNumber(ball.speed)
+            : `${wholeNumber(ball.speed)}–${wholeNumber(ball.topSpeed)}`,
         ],
       ] as const;
       const speed = speedTrait(ball, balls);
       setText(trait, speed ?? '');
       trait.hidden = speed === undefined;
       statRows.forEach((row, index) => {
-        const [share, value] = values[index] ?? [0, 0];
+        const [share, value] = values[index] ?? [0, ''];
         row.fill.style.width = `${String(Math.round(share * 100))}%`;
-        setText(row.number, String(value));
+        setText(row.number, value);
       });
       const rules = ball.howItWorks ?? [];
       howRules.replaceChildren(...rules.map((rule) => element('li', 'ball-detail-how-rule', rule)));

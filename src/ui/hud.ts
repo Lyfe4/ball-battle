@@ -5,6 +5,7 @@ import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
 import { createMatchStory } from './match-story.ts';
 import { describeResult } from './result-text.ts';
+import { wholeNumber } from './whole-number.ts';
 
 export interface HudActions {
   readonly onReplay: () => void;
@@ -143,7 +144,7 @@ export function createHud(
         if (row === undefined || maxHealth === undefined) continue;
         // A side's health: a Slime's two halves added up (ADR 0060).
         const health = sideHealth(world.balls, ball.id);
-        setText(row.health, `${Math.ceil(health)} / ${maxHealth}`);
+        setText(row.health, `${Math.ceil(health)} / ${wholeNumber(maxHealth)}`);
         const percent = `${Math.max(0, (health / maxHealth) * 100)}%`;
         if (row.fill.style.width !== percent) row.fill.style.width = percent;
         if (row.ghost.style.width !== percent) row.ghost.style.width = percent;

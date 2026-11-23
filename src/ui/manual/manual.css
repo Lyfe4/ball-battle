@@ -66,10 +66,16 @@
   background: var(--color-text-muted);
 }
 
+/*
+ * One width for every number, wide enough for a range ("750–1013"), so a longer number never
+ * squeezes its bar: every bar of every ball is as long as every other.
+ */
 .ball-detail-number {
-  min-width: 2.5em;
+  flex: none;
+  width: 8ch;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  white-space: nowrap;
 }
 
 /* How its ability works: the summary as a row, the rules one tap away (ADR 0049). */
