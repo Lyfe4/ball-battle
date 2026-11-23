@@ -56,6 +56,7 @@ function card(name: string, title: string, ...parts: HTMLElement[]): HTMLElement
 }
 
 export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): FriendsTab {
+  root.classList.add('friends-screen');
   const header = createScreenHeader('Friends', 'Back', host.back);
   const body = element('div', 'friends-tab');
   root.append(header.element, body);
