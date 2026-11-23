@@ -328,7 +328,9 @@ Each line is a rule; its ADR has the reasoning.
   the actions of `seriesScreenOf`.
 - Teach in the arena, once (ADR 0036): read from sim events (`ability.shownBy`, a damage event's
   `via`), shown once per device (`src/app/tips.ts`), switchable in settings. A ball with an ability
-  to point at names it and its event. A `howItWorks` definition shows a folded "How it works" on
+  to point at names it, its event and where its tip goes (`ability.tipOn`: zone, minion, struck,
+  copy or self; a shot's on the shooter), never a special case in render code (2026-11-23
+  addendum); the tip's cream (`--color-tip`) is worn by no ball, and nothing pauses. A `howItWorks` definition shows a folded "How it works" on
   its manual page, written from the ability's constants (ADR 0049).
 - Show less by default (ADR 0025): information on a tap, a `<details>` or a "more" link; symbols
   over sentences where clear. Every symbol is understood without explanation or explained once in
