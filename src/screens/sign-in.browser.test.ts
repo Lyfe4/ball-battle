@@ -1,6 +1,7 @@
 // The account screen reads who this device is from the server (ADR 0079 addendum of 2026-11-22),
 // through a fake API: a device Safari wiped (no keys, the cookies kept) is shown its account, not
-// the 16+ question; a guest is offered Forget me; Delete account asks once, Keep first.
+// the 16+ question; a guest is offered Forget me. Log out and Delete account are Profile's
+// (profile.browser.test.ts, ADR 0081).
 import { describe, expect, it } from 'vitest';
 import type { Fetch } from '../app/api.ts';
 import { createSignIn, type SignInHost } from './sign-in.ts';
@@ -52,7 +53,6 @@ function screen(me: [number, unknown], storage = memory(), cookies = '__Host-bb_
       userAgent: navigator.userAgent,
       send,
       cookies: () => cookies,
-      logOut: () => Promise.resolve(undefined),
       forget: () => {
         deleted.push('forget');
         return Promise.resolve('You’re offline');
@@ -74,11 +74,6 @@ const until = async (check: () => boolean, what: string) => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 };
-const press = (root: HTMLElement, text: string) => {
-  [...root.querySelectorAll<HTMLButtonElement>('button')]
-    .find((b) => b.textContent === text)
-    ?.click();
-};
 
 describe('the account screen', () => {
   it('shows a signed-in account its account, though Safari wiped the device’s keys', async () => {
@@ -86,23 +81,8 @@ describe('the account screen', () => {
     const { notice } = screen([200, account]);
     await until(() => heading(notice) === 'You’re signed in', 'the signed-in card');
     expect(notice.textContent).toContain('Opponents see you as Sam_1.');
-    expect(quiet(notice)).toStrictEqual(['Log out', 'Delete account']);
-  });
-
-  it('asks before deleting an account, Keep first, and says why a try failed', async () => {
-    const account = { name: 'Sam_1', account: true, username: 'Sam_1' };
-    const { notice, deleted } = screen([200, account]);
-    await until(() => heading(notice) === 'You’re signed in', 'the signed-in card');
-    press(notice, 'Delete account');
-    await until(() => heading(notice) === 'Delete your account?', 'the question');
-    expect(
-      [...notice.querySelectorAll('.screen-footer button')].map((b) => b.textContent),
-    ).toStrictEqual(['Keep', 'Delete']);
-    press(notice, 'Delete');
-    await until(() => notice.textContent.includes('You’re offline'), 'why it failed');
-    expect(deleted).toStrictEqual(['forget']);
-    press(notice, 'Keep');
-    await until(() => heading(notice) === 'You’re signed in', 'back to the account');
+    // Log out and Delete account moved to Profile (ADR 0081).
+    expect(quiet(notice)).toStrictEqual([]);
   });
 
   it('offers a guest the ways in, then Forget me', async () => {

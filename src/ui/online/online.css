@@ -45,10 +45,9 @@
 }
 
 /*
- * The account entry on home (account-button.ts, ADR 0079 addendum of 2026-11-22), beside the gear,
- * which stays the last control on the title's row: the gear's round button with the account's
- * initial in sun yellow once signed in, a pill that says Sign in for a guest or nobody, and a plain
- * face while `/me` can't say.
+ * The avatar (account-button.ts, ADR 0081): the first control on the Play tab's title row, the
+ * gear's round button with the account's initial in sun yellow once signed in, and a plain face
+ * for a guest, nobody, or while `/me` can't say. It opens Profile.
  */
 .account-toggle {
   display: inline-grid;
@@ -56,9 +55,9 @@
   place-items: center;
   min-width: var(--tap-target);
   height: var(--tap-target);
+  width: var(--tap-target);
   margin-bottom: var(--press-depth);
-  margin-inline-start: auto;
-  padding: 0 var(--space-gap);
+  padding: 0;
   border: 0;
   border-radius: var(--tap-target);
   background: var(--color-raised);
@@ -68,11 +67,6 @@
   font-size: var(--font-size-small);
   font-weight: 700;
   cursor: pointer;
-}
-
-.account-toggle:not([data-look='sign-in']) {
-  width: var(--tap-target);
-  padding: 0;
 }
 
 .account-toggle[data-look='initial'] {

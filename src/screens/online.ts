@@ -18,6 +18,8 @@ import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
+import { writeSignInParams } from '../app/online-url.ts';
+import { createProfile } from './profile.ts';
 import { createSignIn } from './sign-in.ts';
 import { createPrimer } from './online-prime.ts';
 
@@ -53,6 +55,8 @@ export interface OnlineScreens {
   readonly send: ScreenHandler<'send'>;
   readonly start: ScreenHandler<'start'>;
   readonly signin: ScreenHandler<'signin'>;
+  /** Profile (ADR 0081), in accounts builds; elsewhere the shell's route sends it home. */
+  readonly profile?: ScreenHandler<'profile'>;
   readonly play: OnlinePlay;
   /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
   readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
@@ -89,6 +93,8 @@ export function createOnlineScreens(
   const panel = section('online-series', 'Online series');
   const signInNotice = section('online-signin', 'Sign in');
   const signInLoading = section('online-signin-loading', 'Sign in');
+  const profileNotice = section('online-profile', 'Profile');
+  const profileLoading = section('online-profile-loading', 'Profile');
   const exit = element('div', 'series-exit');
   exit.hidden = true;
   // Beside the offline screens: before the health bars, and the way out under them.
@@ -102,6 +108,8 @@ export function createOnlineScreens(
     panel,
     signInNotice,
     signInLoading,
+    profileNotice,
+    profileLoading,
   ]) {
     hud.insertBefore(node, status);
   }
@@ -196,13 +204,32 @@ export function createOnlineScreens(
           },
           userAgent: navigator.userAgent,
           cookies: () => document.cookie,
-          // The account screen is the one place for the player (ADR 0079 addendum of 2026-11-22).
-          logOut: () => logOut(host.storage, startAfresh),
+          // A guest's Forget me on the ways in; Log out and Delete account are Profile's (ADR 0081).
           forget: () => forgetMeHost(host.storage, startAfresh).forget(),
           challenge: (friend) => {
             challenges.challengeFriend(friend);
           },
           ...(host.friendsChanged === undefined ? {} : { friendsChanged: host.friendsChanged }),
+        },
+      )
+    : undefined;
+
+  // Profile (ADR 0081), as the sign-in screen: only in a build with accounts.
+  const profile = ACCOUNTS_BUILD
+    ? createProfile(
+        { notice: profileNotice, loading: profileLoading },
+        {
+          storage: host.storage,
+          back: () => {
+            host.navigation.back(home);
+          },
+          home,
+          signIn: () => {
+            host.go(writeSignInParams);
+          },
+          cookies: () => document.cookie,
+          logOut: () => logOut(host.storage, startAfresh),
+          forget: () => forgetMeHost(host.storage, startAfresh).forget(),
         },
       )
     : undefined;
@@ -239,11 +266,21 @@ export function createOnlineScreens(
         signIn?.show(route.google);
       },
     },
+    ...(profile === undefined
+      ? {}
+      : {
+          profile: {
+            show: () => {
+              profile.show();
+            },
+          },
+        }),
     play,
     backToMatch,
     forgetMe,
     setVisible(screen) {
       signIn?.setVisible(screen === 'signin');
+      profile?.setVisible(screen === 'profile');
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },

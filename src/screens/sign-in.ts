@@ -47,8 +47,7 @@ export interface SignInHost {
   readonly send?: Fetch;
   /** The page's cookies (`document.cookie`): the player hint says whether to ask `/me`. */
   readonly cookies: () => string;
-  /** Log out, and Delete account or Forget me (account-step.ts): undefined when done. */
-  readonly logOut?: () => Promise<string | undefined>;
+  /** A guest's Forget me, on the ways in: undefined when done. */
   readonly forget?: () => Promise<string | undefined>;
   /** Challenge a friend (ADR 0079 PR (d)): the vs Friend setup, for them. */
   readonly challenge?: (friend: FriendEntry) => void;
@@ -133,8 +132,7 @@ export function createSignIn(
     failed: (answer, retry, line) => {
       failed(answer, retry, line);
     },
-    ...(host.logOut === undefined ? {} : { logOut: host.logOut }),
-    ...(host.forget === undefined ? {} : { forget: host.forget }),
+    // Log out and Delete account are Profile's (ADR 0081): the signed-in card here offers neither.
     ...(friends === undefined ? {} : { friends }),
   });
 

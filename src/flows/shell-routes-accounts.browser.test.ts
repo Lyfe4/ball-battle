@@ -2,7 +2,7 @@
 // Ranks open their screens, each with a way on and Back to Play, and every older URL keeps its
 // screen, Google's sign-in return included.
 import { describe, expect, it } from 'vitest';
-import { button, until } from './page-support.ts';
+import { button, until, visible } from './page-support.ts';
 import {
   expectHome,
   follow,
@@ -22,10 +22,12 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
     button('Back').click();
     await expectHome();
 
+    // Profile (PR 5): nobody on this device, so the guest's Profile, with Sign in.
     await follow('?view=profile');
     await onScreen('profile');
-    expect(placeholderTitle()).toBe('Profile');
-    await pressPlaceholder('Your account');
+    await until(() => visible('#online-profile h1')[0]?.textContent === 'Guest', 5_000, 'Profile');
+    expect(placeholderTitle()).toBeUndefined();
+    button('Sign in').click();
     await onScreen('signin');
 
     await follow('?view=friends');

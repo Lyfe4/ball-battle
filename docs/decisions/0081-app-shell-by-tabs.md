@@ -249,3 +249,22 @@ checklist.
 - **Kept:** the roster strip on a desktop, Privacy · Terms at the end, "Back to your match" and
   "Back to your rematch" in the chooser's and Play's place.
 - **The status strip's slot** is in place and hidden; PR 7 fills it.
+
+## Addendum (2026-11-24): the avatar and Profile, as built (PR 5)
+
+- **The avatar** is first on the Play tab's title row (top left on a phone, the top of the panel
+  beside). It shows the account's initial by grapheme (`initialOf`, `Intl.Segmenter`), else the
+  plain face (a guest, nobody, an account without a username, or not known); its name is "Profile"
+  or "Profile, <username>". The "Sign in" pill went: Profile holds Sign in. Not on the rail yet: the
+  rail would need the avatar's `/me` state on every tab screen; it sits on Play only, as the mockup's
+  phone does.
+- **Profile** (`profile.ts`, `profile-text.ts`) is a notice in the shared look: the name and
+  @username, the stats card (`coming-soon.ts`, one look for every coming-soon card; Ranks reuses it),
+  Change username, then Log out and Delete account at the end; a guest is told what signing in
+  unlocks, with Sign in and "Forget me on this device"; Privacy · Terms close the screen. It reuses
+  the sign-in screen's account step (`account-step.ts` takes Profile's card), so the username's
+  rules, Log out and Delete account are one code path.
+- **The friend code** is not on Profile: Profile reads `/me` only (no new read), and `/me` carries no
+  code. It stays with Copy where the friends list is (the Friends tab, PR 6).
+- **The sign-in screen** keeps its own screen and its signed-in card (the username and the Friends
+  section until PR 6), without Log out and Delete account, which are Profile's now.

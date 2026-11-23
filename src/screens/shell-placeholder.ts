@@ -1,9 +1,11 @@
-// The shell's screens (ADR 0081) before their own pull requests: Friends, Profile and Ranks, one
-// notice in the shared look (notice.ts) with Back and one way on. The tab bar links Friends and
-// Ranks (shell.ts); Profile is reached by its URL until the avatar opens it.
-import type { ShellView } from '../app/route.ts';
+// The shell's screens (ADR 0081) before their own pull requests: Friends and Ranks, one notice in
+// the shared look (notice.ts) with Back and one way on. The tab bar links both (shell.ts).
 import { createNotice } from '../ui/notice.ts';
-import { PLACEHOLDERS, type PlaceholderWay } from './shell-placeholder-text.ts';
+import {
+  PLACEHOLDERS,
+  type PlaceholderView,
+  type PlaceholderWay,
+} from './shell-placeholder-text.ts';
 
 export interface ShellPlaceholderHost {
   /** Back: the screen it was opened from, else Play in its place. */
@@ -14,7 +16,7 @@ export interface ShellPlaceholderHost {
 
 export interface ShellPlaceholder {
   setVisible(visible: boolean): void;
-  show(view: ShellView): void;
+  show(view: PlaceholderView): void;
 }
 
 export function createShellPlaceholder(

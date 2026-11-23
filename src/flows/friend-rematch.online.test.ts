@@ -65,7 +65,7 @@ describe('a rematch of a friend’s challenge', () => {
       await befriend(asker, friend, jo, sam);
       // Both reload onto home, as Calvin did.
       await friend.goto(BASE);
-      await friend.getByRole('button', { name: `Your account, ${jo}` }).waitFor();
+      await friend.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
 
       // Sam challenges Jo from the Friends section; Jo accepts from the card.
       await asker.goto(`${BASE}/?view=signin`);

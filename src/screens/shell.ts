@@ -1,10 +1,10 @@
-// The shell (ADR 0081) wired to the page: the tab bar on the tab screens, and the Friends, Profile
-// and Ranks screens (placeholders until their own pull requests). main.ts hands over how to move.
+// The shell (ADR 0081) wired to the page: the tab bar on the tab screens, and the Friends and Ranks
+// screens (placeholders until their own pull requests). Profile is the online mount's (profile.ts);
+// where a build has none, its route is home. main.ts hands over how to move.
 import type { Moves } from '../app/moves.ts';
-import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
+import { writeSendParams } from '../app/online-url.ts';
 import {
   parseRoute,
-  SHELL_VIEWS,
   writeHomeParams,
   writeManualParams,
   writeShellParams,
@@ -17,6 +17,7 @@ import { tabOf, TABS, type Tab } from '../app/tabs.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createTabBar } from '../ui/tab-bar.ts';
 import { createShellPlaceholder } from './shell-placeholder.ts';
+import { PLACEHOLDER_VIEWS, type PlaceholderView } from './shell-placeholder-text.ts';
 
 export type ShellScreensHost = Pick<Moves, 'go' | 'goHome' | 'backOrHome'>;
 
@@ -39,11 +40,11 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     back: host.backOrHome,
     open: (way) => {
       if (way === 'home') host.goHome();
-      else if (way === 'send') {
+      else {
         host.go((url) => {
           writeSendParams(url, 'reveal', 3);
         });
-      } else host.go(writeSignInParams);
+      }
     },
   });
   const bar = createTabBar(
@@ -60,15 +61,21 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     },
   );
   document.body.append(bar.element);
-  const handler = (view: ShellView) => ({
+  const handler = (view: PlaceholderView) => ({
     show: () => {
       screen.show(view);
     },
   });
   return {
-    handlers: { friends: handler('friends'), profile: handler('profile'), ranks: handler('ranks') },
+    handlers: {
+      friends: handler('friends'),
+      ranks: handler('ranks'),
+      // Drawn by the online mount in a build with accounts, which replaces this; a build without
+      // never routes here (its URL opens home), so this is only the safe way out.
+      profile: { show: host.goHome },
+    },
     setVisible(current) {
-      screen.setVisible(SHELL_VIEWS.some((view) => view === current));
+      screen.setVisible(PLACEHOLDER_VIEWS.some((view) => view === current));
       // The bar follows the URL's screen key: the manual's index wears it, a ball's page doesn't.
       const route = parseRoute(new URLSearchParams(window.location.search), BALL_LOOKUP, false);
       bar.show(route.screen === current ? tabOf(screenKeyOf(route)) : undefined);
