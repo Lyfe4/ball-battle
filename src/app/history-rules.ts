@@ -10,6 +10,9 @@
 //    balls from a match, New series to the lineup).
 // 3. A series is one entry: the round-1 answer, every round and the result share a key, so Back
 //    from any of them lands on the lineup.
+// 4. Play (home) is the root of the shell's tabs (ADR 0081); the other tabs sit one step above it.
+//    A move between two of them replaces the entry, and a move from one to Play goes back to Play
+//    when this page came from it, else puts Play in its place, so Back from Play leaves the game.
 import type { Route } from './route.ts';
 
 export type ScreenKey =
@@ -26,9 +29,15 @@ export type ScreenKey =
   | 'challenge'
   | 'send'
   | 'start'
-  | 'signin';
+  | 'signin'
+  | 'friends'
+  | 'profile'
+  | 'ranks';
 
 export type Move = 'push' | 'replace' | 'return';
+
+/** The shell's tabs above Play (ADR 0081): Balls (the manual's index or chart), Friends, Ranks. */
+const TABS: readonly ScreenKey[] = ['manual', 'friends', 'ranks'];
 
 /** The screen a route is on, for history: the level Back steps between. */
 export function screenKeyOf(route: Route): ScreenKey {
@@ -51,5 +60,8 @@ export function screenKeyOf(route: Route): ScreenKey {
 export function moveFor(from: ScreenKey, to: ScreenKey, previous: ScreenKey | undefined): Move {
   if (from === to) return 'replace';
   if (previous === to) return 'return';
+  const tab = TABS.includes(from);
+  if (tab && TABS.includes(to)) return 'replace';
+  if (tab && to === 'home') return 'replace';
   return 'push';
 }

@@ -21,6 +21,7 @@ import { createArena } from './arena.ts';
 import { createHomeController } from './screens/home.ts';
 import { createBallLink, createManualScreen } from './screens/manual.ts';
 import { createOutdatedController } from './screens/outdated.ts';
+import { mountShell } from './screens/shell-placeholder.ts';
 import { createQuickController } from './screens/quick.ts';
 import { mountOnline } from './screens/online-mount.ts';
 import { offlineMount } from './screens/online-off.ts';
@@ -80,7 +81,7 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
 function showCurrentRoute(): void {
   router.show(currentRoute());
 }
-const { go, replaceWith, goHome } = createMoves(navigation, showCurrentRoute);
+const { go, replaceWith, goHome, backOrHome } = createMoves(navigation, showCurrentRoute);
 
 const ballLink = createBallLink(go);
 
@@ -98,11 +99,7 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
 
 const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
   go,
-  back: () => {
-    navigation.back(() => {
-      goHome('replace');
-    });
-  },
+  back: backOrHome,
 });
 
 const outdated = createOutdatedController(getElement('outdated', HTMLElement), {
@@ -110,6 +107,9 @@ const outdated = createOutdatedController(getElement('outdated', HTMLElement), {
   showCurrentRoute,
   goHome,
 });
+
+// The shell's screens (ADR 0081) until their own pull requests fill them: Friends, Profile, Ranks.
+const shell = mountShell(getElement('shell-screen', HTMLElement), { go, goHome, backOrHome });
 
 const quick = createQuickController(
   getElement('quick-setup', HTMLElement),
@@ -220,6 +220,7 @@ const router = createRouter(
       },
     },
     series: seriesScreens.screen,
+    ...shell.handlers,
     ...online.handlers,
   },
   initialRoute.screen,
@@ -318,6 +319,7 @@ function showControls(): void {
   home.setVisible(screen === 'home');
   manual.setVisible(screen === 'manual');
   outdated.setVisible(screen === 'outdated');
+  shell.setVisible(screen);
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
   // Between series rounds and at the end the arena, health and speed make way for the round

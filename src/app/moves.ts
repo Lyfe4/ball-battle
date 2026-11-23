@@ -13,6 +13,8 @@ export interface Moves {
   readonly replaceWith: (write: (params: URLSearchParams) => void) => void;
   /** Moves to the home screen, or puts it in place of this entry (a parent fallback). */
   readonly goHome: (how?: 'go' | 'replace') => void;
+  /** In-app Back on a screen whose parent is home: the entry before, else home in its place. */
+  readonly backOrHome: () => void;
 }
 
 export function createMoves(navigation: Navigation, show: () => void): Moves {
@@ -23,12 +25,18 @@ export function createMoves(navigation: Navigation, show: () => void): Moves {
     navigation.replace(write);
     show();
   };
+  const goHome = (how: 'go' | 'replace' = 'go') => {
+    if (how === 'replace') replaceWith(writeHomeParams);
+    else go(writeHomeParams);
+  };
   return {
     go,
     replaceWith,
-    goHome: (how = 'go') => {
-      if (how === 'replace') replaceWith(writeHomeParams);
-      else go(writeHomeParams);
+    goHome,
+    backOrHome: () => {
+      navigation.back(() => {
+        goHome('replace');
+      });
     },
   };
 }
