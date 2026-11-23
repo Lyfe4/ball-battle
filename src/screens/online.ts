@@ -2,6 +2,7 @@
 // sending one, home's "Back to your match" and settings' "Forget me". main.ts creates this only in a build
 // with online play (`ONLINE_BUILD`), so a production build holds none of it. Its parts of the page
 // are added here, beside the offline screens' own.
+import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
@@ -174,32 +175,37 @@ export function createOnlineScreens(
   const startAfresh = () => {
     window.location.assign('/');
   };
-  const signIn = createSignIn(
-    { notice: signInNotice, loading: signInLoading },
-    {
-      storage: host.storage,
-      back: () => {
-        host.navigation.back(home);
-      },
-      home,
-      rewrite: (write) => {
-        host.navigation.replace(write);
-      },
-      toMatch,
-      leaveFor: (url) => {
-        window.location.assign(url);
-      },
-      userAgent: navigator.userAgent,
-      cookies: () => document.cookie,
-      // The account screen is the one place for the player (ADR 0079 addendum of 2026-11-22).
-      logOut: () => logOut(host.storage, startAfresh),
-      forget: () => forgetMeHost(host.storage, startAfresh).forget(),
-      challenge: (friend) => {
-        challenges.challengeFriend(friend);
-      },
-      ...(host.friendsChanged === undefined ? {} : { friendsChanged: host.friendsChanged }),
-    },
-  );
+  // The account screen exists only in a build with accounts (ADR 0079): production with vs Friend
+  // on and accounts off holds none of its code (`scripts/check-bundle.ts`), and its route is home
+  // there (`parseOnlineRoute`).
+  const signIn = ACCOUNTS_BUILD
+    ? createSignIn(
+        { notice: signInNotice, loading: signInLoading },
+        {
+          storage: host.storage,
+          back: () => {
+            host.navigation.back(home);
+          },
+          home,
+          rewrite: (write) => {
+            host.navigation.replace(write);
+          },
+          toMatch,
+          leaveFor: (url) => {
+            window.location.assign(url);
+          },
+          userAgent: navigator.userAgent,
+          cookies: () => document.cookie,
+          // The account screen is the one place for the player (ADR 0079 addendum of 2026-11-22).
+          logOut: () => logOut(host.storage, startAfresh),
+          forget: () => forgetMeHost(host.storage, startAfresh).forget(),
+          challenge: (friend) => {
+            challenges.challengeFriend(friend);
+          },
+          ...(host.friendsChanged === undefined ? {} : { friendsChanged: host.friendsChanged }),
+        },
+      )
+    : undefined;
 
   // Settings' Forget me, in an online build without accounts (no account screen there).
   const forgetMe = createForgetMe(forgetMeHost(host.storage, startAfresh));
@@ -230,19 +236,19 @@ export function createOnlineScreens(
     },
     signin: {
       show: (route) => {
-        signIn.show(route.google);
+        signIn?.show(route.google);
       },
     },
     play,
     backToMatch,
     forgetMe,
     setVisible(screen) {
-      signIn.setVisible(screen === 'signin');
+      signIn?.setVisible(screen === 'signin');
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },
     friendStatuses(friends) {
-      signIn.statuses(friends);
+      signIn?.statuses(friends);
     },
     openInvite: (token) => challenges.openInvite(token),
     rematchShown: () => challenges.rematchShown(),
