@@ -58,21 +58,6 @@
   margin: 0;
 }
 
-/* A setup's segmented choices fill the row under their label, like the format cards. */
-.rules-step .segmented {
-  flex-wrap: wrap;
-  justify-content: stretch;
-}
-
-.rules-step .segmented-label {
-  flex-basis: 100%;
-  font-weight: 700;
-}
-
-.rules-step .segmented-button {
-  flex: 1;
-}
-
 .rules-format-group > .segmented-label {
   font-weight: 700;
 }

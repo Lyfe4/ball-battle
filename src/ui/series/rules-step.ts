@@ -1,3 +1,4 @@
+import { botChooses, offeredFormat } from '../../app/modes.ts';
 import { BOT_LEVELS } from '../../sim/bot.ts';
 import { BEST_OF, DEFAULT_BEST_OF, type BestOf, type Format } from '../../sim/series.ts';
 import { busyOnClick } from '../busy-button.ts';
@@ -67,7 +68,7 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
     actions.onChange(choices);
   }
 
-  const lengthRoot = element('div', 'rules-length');
+  const lengthRoot = element('div', 'rules-length segmented-rows');
   const length = createSegmented(
     lengthRoot,
     `${id}-length`,
@@ -104,7 +105,7 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
   const formatGroup = element('div', 'rules-group rules-format-group');
   formatGroup.append(formatTitle, group);
 
-  const levelRoot = element('div', 'rules-level');
+  const levelRoot = element('div', 'rules-level segmented-rows');
   const levels = createSegmented(
     levelRoot,
     `${id}-level`,
@@ -139,15 +140,14 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
     for (const { format, card } of cards) {
       card.setAttribute('aria-pressed', String(format === choices.format));
     }
-    levelRoot.hidden = !options.levels || choices.format === 'blind';
+    levelRoot.hidden = !options.levels || !botChooses(choices.format);
     levels.select(choices.level);
   }
 
   return {
     element: root,
     open(current) {
-      const offered = options.formats.includes(current.format);
-      choices = { ...current, format: offered ? current.format : (options.formats[0] ?? 'reveal') };
+      choices = { ...current, format: offeredFormat(options.formats, current.format) };
       render();
       header.focus();
     },

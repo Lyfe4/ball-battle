@@ -5,6 +5,7 @@
 import type { Navigation } from '../app/navigation.ts';
 import { writeShellParams, type Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
+import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
 import { writeSendParams } from '../app/online-url.ts';
 import { browserStorage } from '../app/storage.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
@@ -55,6 +56,8 @@ export interface OnlineMount {
   setVisible(screen: Screen): void;
   /** Home was opened: "Back to your match" asks again. */
   homeShown(): void;
+  /** The Play tab's Play against a friend (ADR 0081 addendum): straight to the link to share. */
+  playFriend(setup: FriendSetup): Promise<void>;
   /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
   isLive(): boolean;
   /** A live fight's rate: 1, or a little off while it catches up with the server (ADR 0063). */
@@ -155,9 +158,11 @@ export function mountOnline(context: MountContext): OnlineMount {
     home: () => {
       context.goHome();
     },
+    // The vs Friend setup (a friend's row's Challenge), on the friend's rules as last chosen here.
     friend: () => {
+      const { format, bestOf } = loadFriendSetup(browserStorage);
       context.go((url) => {
-        writeSendParams(url, 'reveal', 3);
+        writeSendParams(url, format, bestOf);
       });
     },
     showWorld: (world, seed) => {
@@ -280,6 +285,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     homeShown: () => {
       void askHome();
     },
+    playFriend: (setup) => screens.playFriend(setup),
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
     screenChanged: (screen, now) => {

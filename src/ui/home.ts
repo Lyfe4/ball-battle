@@ -3,17 +3,17 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
 import type { SeriesState } from '../sim/series.ts';
-import type { Opponent, PlaySetup } from '../app/modes.ts';
-import { createSegmented } from './segmented.ts';
+import type { Opponent, PlayChoice } from '../app/modes.ts';
+import { busyOnClick } from './busy-button.ts';
+import { shapeIcon } from './icons.ts';
+import { createPlaySheet } from './play-sheet.ts';
 import {
-  CHANGE_RULES,
-  CHOOSER_LABEL,
+  boxRules,
+  boxSpoken,
+  boxWho,
   FREE_PLAY,
-  FRIEND_PLAY_LINE,
-  FRIEND_PLAY_SPOKEN,
-  OPPONENT_CARDS,
+  friendPlaySpoken,
   PLAY_LABEL,
-  playLine,
   playSpoken,
   RESUME_PLAY,
   resumeLine,
@@ -21,13 +21,16 @@ import {
 } from './modes-text.ts';
 
 export interface HomeActions {
-  /** Play (ADR 0055, 0081): against the bot, the last series set up, straight to its lineup, or
-   * with a series held, carry on with it; against a friend, the send screen. */
-  readonly onPlay: (opponent: Opponent) => void;
+  /**
+   * Play (ADR 0055, 0081): what the box says. Against the bot, its series straight to the lineup,
+   * or with a series held, carry on with it; against a friend, a live challenge sent and its link
+   * to share. A promise is a request: Play stays busy until the next screen can show.
+   */
+  readonly onPlay: (choice: PlayChoice) => unknown;
   /** With a series held: forget it and start a fresh one. */
   readonly onNewSeries: () => void;
-  /** Change rules: the chosen opponent's setup screen. */
-  readonly onChangeRules: (opponent: Opponent) => void;
+  /** The sheet changed what Play starts: remembered on this device. */
+  readonly onChoice: (choice: PlayChoice) => void;
   readonly onFreePlay: () => void;
   /** The status strip: the Friends tab, where what it says waits (ADR 0081). */
   readonly onStatus: () => void;
@@ -42,10 +45,10 @@ export interface Home {
   /** Shows the Watch button while the demo waits (reduced motion). */
   setWaiting(waiting: boolean): void;
   /**
-   * Opens on vs Bot with Play saying what it starts (`setup`), or Resume series with its format
-   * and score while one is held, and New series.
+   * The box says what Play starts (`choice`), Play says it too, or against the bot with a series
+   * held, Resume series with its format and score, and New series.
    */
-  setPlay(setup: PlaySetup, held: SeriesState | undefined): void;
+  setPlay(choice: PlayChoice, held: SeriesState | undefined): void;
   /** Moves focus to Play (or Resume series): the one obvious first action. */
   focus(): void;
   /** The status strip's line, or nothing: it hides (ADR 0081, never "0 friends online"). */
@@ -56,10 +59,10 @@ const STRIP_ICON_PX = 28;
 
 /**
  * The Play tab (ADR 0081), phone first: the title row with the gear at the top, the live demo
- * match on the arena, which balls are playing, the status strip's slot (filled by the inbox, PR 7),
- * a chooser of who to play, one large Play that says what it starts, then Change rules and Free
- * play as quiet links, and Privacy · Terms at the end. On a wide screen it sits beside the arena,
- * with the pitch line and the roster's drawings as a strip on a desktop.
+ * match on the arena, which balls are playing, the status strip (filled by the inbox), the mode box
+ * saying what Play starts (it opens "What to play", play-sheet.ts), one large Play, then Free play
+ * as a quiet link, and Privacy · Terms at the end. On a wide screen it sits beside the arena, with
+ * the pitch line and the roster's drawings as a strip on a desktop.
  */
 export function createHome(
   root: HTMLElement,
@@ -91,29 +94,32 @@ export function createHome(
   status.append(statusText);
   status.addEventListener('click', actions.onStatus);
 
-  let setup: PlaySetup | undefined;
+  let choice: PlayChoice | undefined;
   let held: SeriesState | undefined;
-  let chosen: Opponent = 'bot';
 
-  // Who to play, a choice in the one look (choice.css), only where there is more than one.
-  const chooser = element('div', 'home-chooser');
-  const segments = createSegmented(
-    chooser,
-    'home-chooser',
-    CHOOSER_LABEL,
-    opponents.map((opponent) => ({ value: opponent, text: OPPONENT_CARDS[opponent].name })),
-    chosen,
-    (opponent) => {
-      chosen = opponent;
+  // What Play starts, in one tappable box (ADR 0081 addendum, Option B): who, then the rules; its
+  // arrow the one every link draws (`.text-link::after`). It opens the sheet that changes them.
+  const box = element('button', 'text-link play-box');
+  box.type = 'button';
+  box.setAttribute('aria-haspopup', 'dialog');
+  const boxIcon = element('span', 'play-box-icon');
+  const boxWhoLine = element('span', 'play-box-who');
+  const boxRulesLine = element('span', 'play-box-rules');
+  box.append(boxIcon, boxWhoLine, boxRulesLine);
+  let iconOf: Opponent | undefined;
+  const sheet = createPlaySheet(opponents, {
+    onChange: (next) => {
+      choice = next;
+      actions.onChoice(next);
       showPlay();
     },
-  );
-  chooser.querySelector('.segmented-label')?.classList.add('visually-hidden');
-  for (const [at, button] of chooser.querySelectorAll('button').entries()) {
-    const opponent = opponents[at];
-    if (opponent !== undefined) button.dataset['opponent'] = opponent;
-  }
-  chooser.hidden = opponents.length < 2;
+    onClosed: () => {
+      if (!root.hidden) box.focus({ preventScroll: true });
+    },
+  });
+  box.addEventListener('click', () => {
+    if (choice !== undefined) sheet.open(choice);
+  });
 
   // Play leads, one tap to what it says it starts (ADR 0055).
   const play = element('button', 'hud-button hud-button-primary home-play');
@@ -123,16 +129,21 @@ export function createHome(
   const playLabel = element('span', 'home-play-label');
   const playMeta = element('span', 'home-play-meta');
   play.append(playLabel, playMeta);
-  play.addEventListener('click', () => {
-    actions.onPlay(chosen);
-  });
+  busyOnClick(play, () => (choice === undefined ? undefined : actions.onPlay(choice)));
+  // Focused on arrival for the keyboard, with no ring until a key is pressed (2026-11-24: a ring
+  // round Play on every visit read as a choice already made).
+  const quiet = () => {
+    delete play.dataset['quietFocus'];
+  };
+  document.addEventListener('keydown', quiet, { capture: true });
+  play.addEventListener('blur', quiet);
   // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
   const fresh = element('button', 'text-link home-new-series', 'New series');
   fresh.type = 'button';
   fresh.addEventListener('click', actions.onNewSeries);
-  // The chooser and Play are one row: "Back to your match" takes their place (online-mount.ts).
+  // The box and Play are one row: "Back to your match" takes their place (online-mount.ts).
   const playRow = element('div', 'home-play-row');
-  playRow.append(chooser, play, fresh);
+  playRow.append(box, play, fresh);
 
   const link = (text: string, onClick: () => void) => {
     const button = element('button', 'text-link home-link', text);
@@ -142,11 +153,8 @@ export function createHome(
     button.addEventListener('click', onClick);
     return button;
   };
-  const changeRules = link(CHANGE_RULES, () => {
-    actions.onChangeRules(chosen);
-  });
   const more = element('div', 'home-more');
-  more.append(changeRules, link(FREE_PLAY, actions.onFreePlay));
+  more.append(link(FREE_PLAY, actions.onFreePlay));
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -176,30 +184,35 @@ export function createHome(
   const head = element('div', 'home-head');
   head.dataset['tabHead'] = 'play';
   head.append(title, createSettingsToggle());
-  root.append(head, demo, pitch, status, playRow, more, strip, footer);
+  root.append(head, demo, pitch, status, playRow, more, strip, footer, sheet.element);
 
-  /** Play as the chosen opponent and the held series say. */
+  /** The box and Play as the choice and the held series say. */
   function showPlay(): void {
-    if (setup === undefined) return;
-    const resuming = chosen === 'bot' && held !== undefined;
-    const label = resuming ? RESUME_PLAY.label : PLAY_LABEL;
-    let meta = FRIEND_PLAY_LINE;
-    let spoken = FRIEND_PLAY_SPOKEN;
-    if (chosen === 'bot') {
-      meta = held === undefined ? playLine(setup) : resumeLine(held);
-      spoken = held === undefined ? playSpoken(setup) : resumeSpoken(held);
+    if (choice === undefined) return;
+    if (iconOf !== choice.opponent) {
+      iconOf = choice.opponent;
+      boxIcon.replaceChildren(shapeIcon(choice.opponent, 'play-box-shape'));
     }
-    setText(playLabel, label);
-    setText(playMeta, meta);
+    setText(boxWhoLine, boxWho(choice));
+    setText(boxRulesLine, boxRules(choice));
+    box.setAttribute('aria-label', boxSpoken(choice));
+    const bot = choice.opponent === 'bot';
+    const resumed = bot ? held : undefined;
+    setText(playLabel, resumed === undefined ? PLAY_LABEL : RESUME_PLAY.label);
+    // Play's rules are the box's, said to a screen reader in Play's name; a held series has its
+    // own (its format and score), so Resume series shows them.
+    setText(playMeta, resumed === undefined ? '' : resumeLine(resumed));
+    setHidden(playMeta, resumed === undefined);
+    let spoken = friendPlaySpoken(choice.friend);
+    if (bot) spoken = resumed === undefined ? playSpoken(choice.bot) : resumeSpoken(resumed);
     play.setAttribute('aria-label', spoken);
-    fresh.hidden = !resuming;
-    // A friend's Play is its setup already: Change rules would open the same screen.
-    changeRules.hidden = chosen !== 'bot';
+    fresh.hidden = resumed === undefined;
   }
 
   return {
     setVisible(visible) {
       root.hidden = !visible;
+      if (!visible) sheet.close();
     },
     showDemo(a, b) {
       const name = (id: string) => byId.get(id)?.name ?? id;
@@ -209,14 +222,12 @@ export function createHome(
       watch.hidden = !waiting;
     },
     setPlay(next, nextHeld) {
-      setup = next;
+      choice = next;
       held = nextHeld;
-      // The chooser starts on vs Bot each time the tab opens (ADR 0081).
-      chosen = 'bot';
-      segments.select(chosen);
       showPlay();
     },
     focus() {
+      play.dataset['quietFocus'] = '';
       play.focus();
     },
     setStatus(line) {

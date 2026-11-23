@@ -60,14 +60,16 @@ describe('beside screens from the iPhone and the screen walk', () => {
       boxScrolls: hud.scrollHeight > hud.clientHeight + 1,
       top: box(hud).top >= 0,
     }).toStrictEqual({ overflow: 'visible', boxScrolls: false, top: true });
-    // Play, Change rules and Free play on screen without a scroll (667 x 320 too).
+    // The mode box, Play and Free play on screen without a scroll (667 x 320 too).
     const play = visible('.home-play')[0] ?? document.body;
     expect(box(play).bottom, 'Play above the fold').toBeLessThanOrEqual(window.innerHeight);
-    for (const name of ['Change rules', 'Free play']) {
-      expect(box(button(name)).bottom, `${name} above the fold`).toBeLessThanOrEqual(
-        window.innerHeight,
-      );
-    }
+    const modeBox = visible('.play-box')[0] ?? document.body;
+    expect(box(modeBox).bottom, 'the mode box above the fold').toBeLessThanOrEqual(
+      window.innerHeight,
+    );
+    expect(box(button('Free play')).bottom, 'Free play above the fold').toBeLessThanOrEqual(
+      window.innerHeight,
+    );
     // The page scrolls to the footer; the court keeps its size.
     const courtBefore = box(court);
     window.scrollTo(0, document.documentElement.scrollHeight);

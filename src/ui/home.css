@@ -1,7 +1,6 @@
 /*
- * The Play tab (ADR 0055, 0081): under the demo arena on a phone, beside it on a wide screen. A
- * chooser of who to play, one large Play that says what it starts, then Change rules and Free play
- * as quiet links.
+ * The Play tab (ADR 0055, 0081): under the demo arena on a phone, beside it on a wide screen. The
+ * box saying what Play starts, one large Play, then Free play as a quiet link.
  */
 .home {
   display: grid;
@@ -104,7 +103,7 @@
 
   /*
    * First in the column. No layer of its own: one (z-index 2) held the settings menu, which opens
-   * inside this row, below the chooser's check sticker (2026-11-24).
+   * inside this row, below a choice's check sticker (2026-11-24).
    */
   .stage[data-home] .home-head {
     order: -1;
@@ -154,21 +153,98 @@
 }
 
 /*
- * Who to play (ADR 0081): vs Bot and vs Friend side by side, each half the row, in the one chosen
- * look (choice.css). Ranked and Casual join it later as more choices.
+ * What Play starts (ADR 0081 addendum, Option B): one tappable box right above Play, the
+ * opponent's icon, who in large type, the rules quiet under it, and the arrow every link draws
+ * (`.text-link::after`, one-chevron.test.ts) at its end. It opens "What to play" (play-sheet.css).
  */
-.home-chooser .segmented-button {
-  flex: 1 1 0;
-  min-height: calc(var(--tap-target) + 4px);
-  font-size: var(--font-size-lead);
+.play-box {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-gap);
+  row-gap: 2px;
+  min-height: calc(var(--tap-target) + 16px);
+  margin-bottom: var(--press-depth);
+  padding: var(--space-small) var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  font-size: 1rem;
+  text-align: start;
+}
+
+.play-box::after {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: var(--color-focus);
+  font-size: 1.4rem;
   font-weight: 800;
 }
 
-.home-chooser[hidden] {
+.play-box-icon {
+  display: grid;
+  grid-row: 1 / span 2;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-raised);
+  color: var(--color-accent);
+}
+
+.play-box-shape {
+  width: 24px;
+  height: 24px;
+  fill: currentcolor;
+}
+
+.play-box-who {
+  grid-column: 2;
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.play-box-rules {
+  grid-column: 2;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* A box, not a line of text: no underline when pointed at or pressed, a lift instead. */
+@media (hover: hover) {
+  .play-box:hover {
+    text-decoration: none;
+    filter: brightness(1.08);
+  }
+}
+
+.play-box[data-pressed] {
+  text-decoration: none;
+  filter: brightness(1.08);
+}
+
+.play-box:active {
+  transform: translateY(var(--press-depth));
+  box-shadow: none;
+}
+
+.play-box:focus-visible {
+  box-shadow: var(--shadow-slab), var(--focus-ring);
+}
+
+/* Focused on arrival for the keyboard, ringed only once a key is pressed (home.ts). */
+.home-play[data-quiet-focus]:focus-visible {
+  box-shadow: var(--shadow-accent-slab);
+}
+
+.home-play-meta[hidden] {
   display: none;
 }
 
-/* Change rules and Free play: quiet links, side by side under Play. */
+/* Free play: a quiet link under Play. */
 .home-more {
   display: flex;
   flex-wrap: wrap;
@@ -295,9 +371,16 @@
     font-size: clamp(var(--font-size-small), 2vh, 1.125rem);
   }
 
-  .home-chooser .segmented-button {
-    min-height: clamp(3.25rem, 7vh, 4.5rem);
-    font-size: clamp(1.125rem, 2.6vh, 1.5rem);
+  .play-box {
+    min-height: clamp(4rem, 9vh, 5.5rem);
+  }
+
+  .play-box-who {
+    font-size: clamp(var(--font-size-lead), 2.6vh, 1.5rem);
+  }
+
+  .play-box-rules {
+    font-size: clamp(var(--font-size-small), 2vh, 1.125rem);
   }
 
   .home-link {

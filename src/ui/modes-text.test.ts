@@ -3,11 +3,13 @@ import { BOT_LEVELS } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { BEST_OF, FORMATS, recordOutcome, startSeries, type Outcome } from '../sim/series.ts';
 import {
-  CHANGE_RULES,
-  CHOOSER_LABEL,
-  FRIEND_PLAY_LINE,
-  FRIEND_PLAY_SPOKEN,
+  boxRules,
+  boxSpoken,
+  boxWho,
+  FORMAT_HINTS,
+  friendPlaySpoken,
   FRIEND_SETUP_NOTE,
+  SHEET_WORDS,
   lengthChoiceOf,
   levelLine,
   OPPONENT_CARDS,
@@ -46,13 +48,42 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
 
   it('names each opponent by its title alone: the title says who it plays', () => {
     expect(OPPONENT_CARDS).toEqual({ bot: { name: 'vs Bot' }, friend: { name: 'vs Friend' } });
-    expect(CHOOSER_LABEL).toBe('Play against');
-    expect(CHANGE_RULES).toBe('Change rules');
   });
 
-  it('says what Play starts against a friend: live, by a link', () => {
-    expect(FRIEND_PLAY_LINE).toBe('Live · send a link');
-    expect(FRIEND_PLAY_SPOKEN).toBe('Play a friend live: send them a link');
+  it('says in the box exactly what Play starts (ADR 0081, Option B)', () => {
+    const bot = { format: 'reveal', bestOf: 5, level: 'normal' } as const;
+    const friend = { format: 'reveal', bestOf: 3 } as const;
+    const vsBot = { opponent: 'bot', bot, friend } as const;
+    expect(boxWho(vsBot)).toBe('vs Normal bot');
+    expect(boxRules(vsBot)).toBe('Best of 5 · Reveal');
+    expect(boxSpoken(vsBot)).toBe('What to play: vs Normal bot, Best of 5, Reveal');
+    // Blind has no level to name.
+    const blind = { ...vsBot, bot: { ...bot, format: 'blind' } } as const;
+    expect(boxWho(blind)).toBe('vs Bot');
+    expect(boxRules(blind)).toBe('Best of 5 · Blind');
+    const vsFriend = { opponent: 'friend', bot, friend } as const;
+    expect(boxWho(vsFriend)).toBe('vs Friend');
+    expect(boxRules(vsFriend)).toBe('Live · Best of 3 · Reveal');
+    expect(boxSpoken(vsFriend)).toBe('What to play: vs Friend, live, Best of 3, Reveal');
+    expect(friendPlaySpoken({ format: 'showdown', bestOf: 5 })).toBe(
+      'Play a friend live, Best of 5, Showdown: send them a link',
+    );
+  });
+
+  it('heads the sheet and its groups, each format with a few words on how it plays', () => {
+    expect(SHEET_WORDS).toStrictEqual({
+      title: 'What to play',
+      against: 'Against',
+      length: 'Length',
+      format: 'Format',
+      level: 'Bot',
+      done: 'Done',
+    });
+    expect(FORMAT_HINTS).toStrictEqual({
+      reveal: 'take turns',
+      showdown: 'winner shows',
+      blind: 'set order',
+    });
   });
 
   it('says what a live friend match asks before it is sent', () => {

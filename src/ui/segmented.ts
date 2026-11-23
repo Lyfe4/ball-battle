@@ -6,6 +6,8 @@ export interface SegmentOption<T> {
   readonly text: string;
   /** Accessible name, when the visible text is terse (e.g. "2×"). */
   readonly label?: string;
+  /** A few quiet words under the text (a format's way of playing), heard after it. */
+  readonly hint?: string;
 }
 
 export interface Segmented<T> {
@@ -35,9 +37,13 @@ export function createSegmented<T>(
   root.append(caption);
 
   const buttons = options.map((option) => {
-    const button = element('button', 'segmented-button choice', option.text);
+    const button = element('button', 'segmented-button choice');
     button.type = 'button';
-    if (option.label !== undefined) button.setAttribute('aria-label', option.label);
+    button.append(element('span', 'segmented-text', option.text));
+    if (option.hint !== undefined) button.append(element('span', 'segmented-hint', option.hint));
+    const label =
+      option.label ?? (option.hint === undefined ? undefined : `${option.text}, ${option.hint}`);
+    if (label !== undefined) button.setAttribute('aria-label', label);
     button.addEventListener('click', () => {
       select(option.value);
       onChange(option.value);

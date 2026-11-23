@@ -44,12 +44,10 @@ function fitsWidth(framed: Framed, where: string): void {
   });
 }
 
-/** The vs Bot setup, from home's Change rules: Best of 5 (kept across a reload), the format's card,
- * the lineup. */
+/** The vs Bot setup, from its link (the Play tab's sheet sets rules in place since ADR 0081's
+ * Option B): Best of 5 (kept across a reload), the format's card, the lineup. */
 async function fromBotSetup(framed: Framed, format: Format): Promise<void> {
-  await visit(framed, '');
-  buttonIn(framed, 'Change rules').click();
-  await settle();
+  await visit(framed, '?mode=bo3&fmt=reveal');
   const five = buttonIn(framed, 'Best of 5');
   if (five.getAttribute('aria-pressed') !== 'true') {
     five.click();
@@ -221,7 +219,9 @@ export async function runBestOf5Flow(): Promise<void> {
   // Home's Play now plays the last series set up against the bot: Best of 5 Blind (ADR 0055).
   storage().removeItem(SERIES_STORAGE_KEY);
   await visit(framed, '');
-  expect(shown(framed, '.home-play-meta')[0]?.textContent).toBe('Best of 5 · Blind · vs bot');
+  expect(
+    shown(framed, '.play-box-who, .play-box-rules').map((line) => line.textContent),
+  ).toStrictEqual(['vs Bot', 'Best of 5 · Blind']);
   shown(framed, '.home-play')[0]?.click();
   await settle();
   expect({

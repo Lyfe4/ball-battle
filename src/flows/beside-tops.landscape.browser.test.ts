@@ -97,7 +97,10 @@ describe('beside screens on a phone turned sideways', () => {
 
     await click(visible('.screen-back')[0] ?? document.body);
     await settle();
-    await click(button('Change rules'));
+    // The vs Bot setup, as an old link opens it (the Play tab's sheet sets rules in place).
+    const setupEntry: unknown = history.state;
+    history.pushState(setupEntry, '', `${location.pathname}?mode=bo3&fmt=reveal`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: setupEntry }));
     await settle();
     await checkTop('vs Bot setup');
     await click(button('Choose lineup'));

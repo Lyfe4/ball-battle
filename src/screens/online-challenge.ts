@@ -1,9 +1,10 @@
-// Friend challenges on the page (ADR 0052, 0055, 0080): sending one (the vs Friend setup's Send
-// challenge, then the lobby with the link to share) and answering one (the card that says who sent
-// it, with Accept). Once accepted, both players pick their lineups together on one screen
-// (`?start=`, start-lineup.ts), the same screen a rematch uses. The guest is made here after the 16+
-// confirmation, asked once per device at the start of either flow (opening the vs Friend setup, or
-// Accept on a friend's card); never on load. Every state has a way on (ADR 0027).
+// Friend challenges on the page (ADR 0052, 0055, 0080): sending one (the Play tab's Play against a
+// friend, or the vs Friend setup's Send challenge, then the lobby with the link to share) and
+// answering one (the card that says who sent it, with Accept). Once accepted, both players pick
+// their lineups together on one screen (`?start=`, start-lineup.ts), the same screen a rematch uses.
+// The guest is made here after the 16+ confirmation, asked once per device at the start of either
+// flow (Play against a friend or opening the vs Friend setup, or Accept on a friend's card); never on
+// load. Every state has a way on (ADR 0027).
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { rememberGuest } from '../app/online-device.ts';
@@ -12,13 +13,13 @@ import {
   writeOnlineSeriesParams,
   writeStartParams,
 } from '../app/online-url.ts';
-import type { Accepted, ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
+import type { Accepted, ChallengeInfo } from '../api/challenges.ts';
 import type { BestOf, Format } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
-import type { SetupChoices } from '../ui/series/rules-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
+import { createSender } from './challenge-send.ts';
 import { createFriendSetup } from './friend-setup.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
@@ -44,12 +45,8 @@ export function createChallengeScreens(
   let visible = false;
   let info: ChallengeInfo | undefined;
   let token: string | undefined;
-  /** One id per challenge being sent, so a retry after a lost answer gets the same link. */
-  let requestId = crypto.randomUUID();
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
-  /** The friend the challenge being sent is for (ADR 0079 PR (d)), if any. */
-  let inviting: { readonly id: string; readonly name: string } | undefined;
 
   const home = () => {
     host.home();
@@ -64,7 +61,7 @@ export function createChallengeScreens(
     rewrite: (write) => {
       host.rewrite(write);
     },
-    send: (chosen) => send(chosen),
+    send: (chosen) => sender.send(chosen),
   });
   const lineup = createLineupStep(balls, {
     // Back holds the lineups: the clock runs on, and home leads back to them (ADR 0080).
@@ -145,35 +142,24 @@ export function createChallengeScreens(
     toMatch: (match) => host.toMatch(match),
   });
 
-  /** Sends the challenge from the vs Friend setup: no lineup (ADR 0080), straight to the lobby. */
-  async function send(chosen: SetupChoices): Promise<void> {
-    if (askFirst(() => send(chosen))) return;
-    // Live (ADR 0053): both players in the match until it ends.
-    const body = {
-      format: chosen.format,
-      bestOf: chosen.bestOf,
-      requestId,
-      live: true,
-      ...(inviting === undefined ? {} : { friend: inviting.id }),
-    };
-    const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
-    if (!answer.ok) {
-      failed(answer, () => send(chosen));
-      return;
-    }
-    const link = answer.body;
-    if (link === undefined) return;
-    requestId = crypto.randomUUID();
-    inviting = undefined;
-    // The sender's own card (the lobby) shares the link. It is read first, so the button stays
-    // busy until the lobby can show, which takes this setup's place.
-    token = link.token;
-    const card = await callApi<ChallengeInfo>('GET', `challenges/${link.token}`);
-    info = card.ok ? card.body : undefined;
-    host.go((url) => {
-      writeChallengeParams(url, link.token);
-    });
-  }
+  // Sending one: the setup's Send challenge and Play against a friend (challenge-send.ts).
+  const sender = createSender({
+    storage: host.storage,
+    go: (write) => {
+      host.go(write);
+    },
+    replaceWith: (write) => {
+      host.replaceWith(write);
+    },
+    askFirst: (then) => askFirst(then),
+    failed: (answer, retry) => {
+      failed(answer, retry);
+    },
+    sent: (next, card) => {
+      token = next;
+      info = card;
+    },
+  });
 
   /** Accepts the link on screen: into the lineups picked together (`how`: from the inbox, go). */
   async function accept(how: 'replace' | 'go' = 'replace'): Promise<void> {
@@ -271,7 +257,7 @@ export function createChallengeScreens(
   return {
     setVisible(next) {
       // Leaving these screens forgets a friend being challenged: a later challenge is a link.
-      if (!next && visible) inviting = undefined;
+      if (!next && visible) sender.invite(undefined);
       visible = next;
       if (!next) {
         show('notice');
@@ -310,12 +296,23 @@ export function createChallengeScreens(
       await accept('go');
     },
     challengeFriend(friend) {
-      inviting = friend;
+      sender.invite(friend);
       host.friend();
+    },
+    async playFriend(setup) {
+      token = undefined;
+      start.stop();
+      await sender.playFriend(setup);
     },
     showSend(format: Format, bestOf: BestOf) {
       token = undefined;
       start.stop();
+      // Play against a friend's own step (the 16+ question, or a failure), never its rules step.
+      const left = sender.takeLeft();
+      if (left !== undefined) {
+        left();
+        return;
+      }
       // The start of the vs Friend flow: the 16+ question first, on a device that hasn't answered.
       const open = () => {
         show('setup');

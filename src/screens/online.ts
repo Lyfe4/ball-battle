@@ -18,6 +18,7 @@ import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
+import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
 import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
 import { writeShellParams } from '../app/route.ts';
 import { createFriendsTab } from './friends-tab.ts';
@@ -74,6 +75,8 @@ export interface OnlineScreens {
   friendStatuses(friends: readonly FriendEntry[], invites: readonly Invite[]): void;
   /** A friend's challenge accepted from the floating card: its lineups, read first. */
   openInvite(token: string): Promise<void>;
+  /** The Play tab's Play against a friend: straight to the link to share (ADR 0081 addendum). */
+  playFriend(setup: FriendSetup): Promise<void>;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
   rematchShown(): string | undefined;
 }
@@ -251,9 +254,11 @@ export function createOnlineScreens(
     back: () => {
       host.navigation.back(home);
     },
+    // The vs Friend setup, on the friend's rules as last chosen here (ADR 0081 addendum).
     sendLink: () => {
+      const { format, bestOf } = loadFriendSetup(host.storage);
       host.go((url) => {
-        writeSendParams(url, 'reveal', 3);
+        writeSendParams(url, format, bestOf);
       });
     },
     signIn: () => {
@@ -328,6 +333,7 @@ export function createOnlineScreens(
       friendsTab.invites(invites);
     },
     openInvite: (token) => challenges.openInvite(token),
+    playFriend: (setup) => challenges.playFriend(setup),
     rematchShown: () => challenges.rematchShown(),
   };
 }

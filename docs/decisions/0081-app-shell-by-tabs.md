@@ -379,3 +379,59 @@ settings menu's compact form and its narrowing beside a court).
   and a fight read the same, with no layer above the menu; failed on Play before),
   `tab-headers.safari.browser.test.ts` (each tab's header, Back on a ball's page and Profile,
   Back from a tab to Play).
+
+## Addendum (2026-11-24, later still): the mode box and "What to play" (Option B)
+
+Replaces the Play tab's chooser and Change rules (the PR 4 addendum above), chosen by the owner
+from two mockups (Option B: `B-bot`, `B-friend`, `B-sheet`), with the tweaks from that review.
+Amends ADR 0055 further: Ranked and Casual become options in this sheet's Against row, replacing
+its 2 × 2 grid of cards; and Play now remembers the friend's rules and who was chosen last.
+
+- **One tappable box above Play** (`.play-box`, `src/ui/home.ts`) says exactly what Play starts:
+  the opponent's icon (our own shapes, `src/ui/icons.ts`), "vs Normal bot" (or "vs Bot" for Blind,
+  which has no level; or "vs Friend"), the rules under it ("Best of 5 · Reveal", a friend's "Live ·
+  Best of 3 · Reveal"), and the "›" every link draws (`.text-link::after`, one chevron). Its name
+  says it all ("What to play: vs Normal bot, Best of 5, Reveal") and that it opens a dialog. Play
+  says only "Play" (its spoken name keeps what it plays); a held series keeps its own line under
+  Resume series (format and score), since the box shows the next new series. Change rules and the
+  chooser went; Free play stays a link, the status strip where it was.
+- **The sheet, "What to play"** (`src/ui/play-sheet.ts`): a native modal `<dialog>`, so the page
+  behind is inert and its name is its heading. Against (only where the build offers a friend),
+  Length, Format (each opponent's own formats: the bot's three, a friend's live two), and Bot (the
+  level, only against the bot and never for Blind, as on the setup). Each row is the shared
+  segmented choice (`createSegmented`, now with an optional hint line and a `segmented-rows` layout
+  the setup uses too, so one look); a choice applies at once. Focus moves onto the first chosen
+  option, and back to the box on close. Escape, a tap outside, the top "Done" and a full-width
+  Done at the bottom (in thumb reach) close it. The top Done is a pointer's shortcut: hidden from
+  screen readers and the Tab order, so they meet one Done. On a phone held upright it is a sheet
+  along the bottom; beside and on a desktop a panel in the middle with the rows in two columns
+  (whole at 667 × 320, no scroll). No grab handle: it doesn't drag, so it shouldn't look as if it
+  did. Leaving the tab (Back) closes it.
+- **The formats in one order everywhere**: Reveal, Showdown, Blind (`SETUP_FORMATS`), in the sheet
+  and the setup screens. Each says a few words under its name in the sheet ("take turns", "winner
+  shows", "set order", from the setup cards' lines; the mockup's "one shown" and "all shown" didn't
+  describe Reveal and Showdown).
+- **Remembered per opponent** (`loadPlayChoice`, `savePlayChoice`, `src/app/modes.ts`): the bot's
+  rules are Play's as before (format, length and level, shared with the setup and the lineup's
+  level); a friend's are their own (`ballbattle.friendFormat`, `ballbattle.friendBestOf`, read only
+  as a live format); and who was chosen last (`ballbattle.playOpponent`). The box opens on what was
+  last chosen, not on vs Bot every time: it now says plainly what Play starts, so nothing is hidden
+  (ADR 0055's "Play never remembers a friend match" was because a friend match needed a link; Play
+  now makes the link). A build without online play always shows the bot. The vs Friend setup's
+  Send challenge also saves the friend's rules, and the Friends tab's links open it on them.
+- **Play goes straight in.** Against the bot, its lineup (or Resume series). Against a friend, the
+  challenge is sent on the sheet's rules and the lobby with the link to share shows, with no rules
+  step (`src/screens/challenge-send.ts`): with a guest, from home, Play busy until the lobby can
+  show (`busyOnClick`); without one, the send screen's entry shows the 16+ question first ("Play
+  online", "I'm 16 or older"), and the lobby takes that entry's place, so Back from the lobby is the
+  Play tab. A failure sending from home shows on the send screen with Try again. The send screen's
+  rules step still opens from `?view=send` links, the Friends tab and a friend's row; a reload of
+  the 16+ entry is that setup, as an old link.
+- **No ring round Play on arrival.** Home still focuses Play for the keyboard, but its focus ring
+  shows only once a key is pressed (`data-quiet-focus`): a ring on every visit read as a choice.
+- Tests: `play-box.safari.browser.test.ts` (the box's words for each opponent and rule set, the
+  dialog's focus, Escape, tap outside and both Dones, choices remembered per opponent, Play against
+  the bot and against a friend with and without a guest, the old send link; in the production
+  shape, online on and accounts off), the `home-play` flows (the sheet without a friend in a build
+  without online play), `modes.test.ts` and `modes-text.test.ts`; the online flows reach a friend
+  through the sheet.

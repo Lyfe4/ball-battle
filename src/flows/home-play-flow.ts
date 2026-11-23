@@ -1,12 +1,13 @@
 // The Play tab (ADR 0055, 0081), through the real page. Run at 375 x 812 and 390 x 664 with touch,
-// 1280 x 800 and 1920 x 1080: Play shows whole without a scroll, clear of the tab bar; it opens the
-// remembered series' lineup in one tap (a first visit: Best of 3 · Reveal · vs Normal bot), the
-// level is changed there and remembered; Change rules opens the bot's setup, whose choices survive
-// Back from the lineup and become Play's; Free play and the Balls tab are one step in; Back from
-// every screen lands where the ADR's table says, by the browser's Back and the in-app ‹, and Escape
-// only ever closes; every stop has a way forward and nothing scrolls sideways; old links open what
-// they should (Other modes opens home); a held series is still resumed. This build has no online
-// play, so the chooser has one choice and doesn't show (play-chooser.browser.test.ts has both).
+// 1280 x 800 and 1920 x 1080: the mode box and Play show whole without a scroll, clear of the tab
+// bar; Play opens the remembered series' lineup in one tap (a first visit: Best of 3 · Reveal · vs
+// Normal bot), the level is changed there and remembered; the box's sheet changes the rules, which
+// become Play's; old setup links still open the bot's setup, whose choices survive Back from the
+// lineup and become Play's; Free play and the Balls tab are one step in; Back from every screen
+// lands where the ADR's table says, by the browser's Back and the in-app ‹, and Escape only ever
+// closes; every stop has a way forward and nothing scrolls sideways; old links open what they
+// should (Other modes opens home); a held series is still resumed. This build has no online play,
+// so the sheet offers the bot alone (play-box.safari.browser.test.ts has both).
 import { expect } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -14,6 +15,7 @@ import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { PLAY_FORMAT_STORAGE_KEY } from '../app/modes.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
 import { back, button, settle, tossed, until, visible } from './page-support.ts';
+import { closeSheet, openSheet, playMeta, sheetChoice } from './play-sheet-support.ts';
 
 const search = () => location.search;
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
@@ -44,7 +46,7 @@ async function inAppBack(): Promise<void> {
 
 const levelToggle = () => visible('.lineup-level-toggle')[0];
 const setupLine = () => visible('.lineup-mode-name')[0]?.textContent;
-const playMeta = () => visible('.home-play-meta')[0]?.textContent;
+
 /** What the setup shows as chosen: the length, the format card's name, the level. */
 const pressed = () =>
   visible('.rules-step [aria-pressed="true"]').map((node) =>
@@ -101,8 +103,9 @@ function checkPlayShows(): void {
     playBottom: Math.round(play.bottom) <= Math.round(floor),
     top: play.top >= 0,
   }).toStrictEqual({ playBottom: true, top: true });
-  // One choice in a build without online play: no chooser to make.
-  expect(visible('.home-chooser')).toHaveLength(0);
+  // The box saying what Play starts sits right above it, whole on screen too.
+  const box = visible('.play-box')[0]?.getBoundingClientRect();
+  expect(box !== undefined && box.top >= 0 && box.bottom <= play.top).toBe(true);
 }
 
 /** Play: the remembered series' lineup in one tap; the level changed there is Play's next time. */
@@ -114,7 +117,7 @@ async function play(): Promise<void> {
   expect(plays[0]?.getAttribute('aria-label')).toBe(
     'Play Best of 3, Reveal, against the Normal bot',
   );
-  expect(playMeta()).toBe('Best of 3 · Reveal · vs Normal bot');
+  expect(playMeta()).toBe('vs Normal bot · Best of 3 · Reveal');
   checkPlayShows();
   if (plays[0] !== undefined) await click(plays[0]);
   await settle();
@@ -153,13 +156,52 @@ async function play(): Promise<void> {
   // A lineup reached from Play goes back home.
   await inAppBack();
   expect(search()).toBe('');
-  expect(playMeta()).toBe('Best of 3 · Reveal · vs Easy bot');
+  expect(playMeta()).toBe('vs Easy bot · Best of 3 · Reveal');
 }
 
-/** Change rules: the bot's setup, its choices kept through the lineup and Back, then Play's. */
-async function botSetup(): Promise<void> {
-  await click(button('Change rules'));
+/**
+ * The mode box's sheet: the bot alone in this build, so no Against; its rules change Play at once,
+ * add no history step, and are Play's next time.
+ */
+async function sheetRules(): Promise<void> {
+  const sheet = await openSheet();
+  checkStop('the sheet');
+  expect(
+    visible('dialog.play-sheet .segmented-label').map((label) => label.textContent),
+  ).toStrictEqual(['Length', 'Format', 'Bot']);
+  expect(
+    visible('dialog.play-sheet .play-sheet-format .segmented-text').map((t) => t.textContent),
+  ).toStrictEqual(['Reveal', 'Showdown', 'Blind']);
+  await sheetChoice('Best of 5');
+  await sheetChoice('Showdown');
+  await sheetChoice('Hard');
+  expect(playMeta()).toBe('vs Hard bot · Best of 5 · Showdown');
+  // Escape only closes it.
+  await userEvent.keyboard('{Escape}');
   await settle();
+  expect(sheet.open).toBe(false);
+  expect(search()).toBe('');
+  expect(window.localStorage.getItem(PLAY_FORMAT_STORAGE_KEY)).toBe('showdown');
+  expect(window.localStorage.getItem(SERIES_LENGTH_STORAGE_KEY)).toBe('5');
+  const plays = visible('.home-play');
+  if (plays[0] !== undefined) await click(plays[0]);
+  await settle();
+  expect(search()).toBe('?mode=bo5&fmt=showdown&step=lineup');
+  expect(setupLine()).toBe('Best of 5 · Showdown');
+  await back();
+  expect(search()).toBe('');
+  // Back to the first visit's rules for the setup's own walk.
+  await openSheet();
+  await sheetChoice('Best of 3');
+  await sheetChoice('Reveal');
+  await sheetChoice('Easy');
+  await closeSheet();
+  expect(playMeta()).toBe('vs Easy bot · Best of 3 · Reveal');
+}
+
+/** The bot's setup, from an old link: its choices kept through the lineup and Back, then Play's. */
+async function botSetup(): Promise<void> {
+  await open('?mode=bo3&fmt=reveal');
   expect(search()).toBe('?mode=bo3&fmt=reveal');
   expect(visible('.rules-step .screen-title')[0]?.textContent).toBe('vs Bot');
   expect(document.title).toBe('vs Bot · BallBattle');
@@ -200,11 +242,11 @@ async function botSetup(): Promise<void> {
   await settle();
   await inAppBack();
   expect(search()).toBe('?mode=bo5&fmt=showdown');
-  await inAppBack();
+  await back();
   expect(search()).toBe('');
 
   // Going on to the lineup made it Play's.
-  expect(playMeta()).toBe('Best of 5 · Showdown · vs Hard bot');
+  expect(playMeta()).toBe('vs Hard bot · Best of 5 · Showdown');
   expect(window.localStorage.getItem(PLAY_FORMAT_STORAGE_KEY)).toBe('showdown');
   expect(window.localStorage.getItem(SERIES_LENGTH_STORAGE_KEY)).toBe('5');
   const plays = visible('.home-play');
@@ -264,11 +306,12 @@ async function oldLinks(): Promise<void> {
 
 /** A Reveal series left with Back is still held, and home's Play resumes it. */
 async function resume(): Promise<void> {
-  await click(button('Change rules'));
-  await settle();
-  await click(button('Best of 3'));
-  await card('Reveal');
-  await click(button('Choose lineup'));
+  await openSheet();
+  await sheetChoice('Best of 3');
+  await sheetChoice('Reveal');
+  await closeSheet();
+  const plays = visible('.home-play');
+  if (plays[0] !== undefined) await click(plays[0]);
   await settle();
   await click(button('Reveal lineups'));
   await settle();
@@ -280,8 +323,6 @@ async function resume(): Promise<void> {
   expect(new URL(location.href).searchParams.get('step')).toBe('play');
   await back();
   expect(search()).toBe('?mode=bo3&fmt=reveal&step=lineup');
-  await back();
-  expect(search()).toBe('?mode=bo3&fmt=reveal');
   await back();
   expect(search()).toBe('');
   // Home's Play now resumes it (its own flow, home-resume-flow.ts, covers the rest).
@@ -320,6 +361,7 @@ export async function runHomePlayFlow(): Promise<void> {
   await settle();
 
   await play();
+  await sheetRules();
   await botSetup();
   await quietLinks();
   await oldLinks();

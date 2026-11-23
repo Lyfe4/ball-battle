@@ -1,6 +1,7 @@
 // What the friend challenge screens (online-challenge.ts) need from the page, and what they offer
 // it: kept apart so the screens' file holds only their behaviour.
 import type { CurrentMatch } from '../api/live.ts';
+import type { FriendSetup } from '../app/modes.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { BestOf, Format } from '../sim/series.ts';
 
@@ -31,6 +32,11 @@ export interface ChallengeScreens {
   showChallenge(token: string): void;
   /** Sending a challenge: the vs Friend setup, which sends it (ADR 0080). */
   showSend(format: Format, bestOf: BestOf): void;
+  /**
+   * The Play tab's Play against a friend (ADR 0081 addendum): sent on `setup` with no rules step,
+   * straight to the link to share; the 16+ question first on a device without a guest.
+   */
+  playFriend(setup: FriendSetup): Promise<void>;
   /** The lineups picked together once a challenge or rematch is agreed (ADR 0080). */
   showStart(id: string): void;
   /** The ended series whose rematch's lineups show now, if any: it asks for itself. */

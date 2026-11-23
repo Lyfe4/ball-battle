@@ -6,6 +6,7 @@
 // It shows on the tab screens alone: `body[data-tabs]` makes room for it (tab-bar.css).
 import type { Tab, TabId } from '../app/tabs.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
+import { shapeIcon } from './icons.ts';
 
 export interface TabBar {
   readonly element: HTMLElement;
@@ -17,28 +18,8 @@ export interface TabBar {
   badge(id: TabId, count: number, label: string): void;
 }
 
-const SVG = 'http://www.w3.org/2000/svg';
-
-/** Our own plain shapes: a ball in motion, four balls, two heads, a podium with a star. */
-const ICONS: Readonly<Record<TabId, string>> = {
-  play: 'M14 4a6 6 0 1 1 0 12a6 6 0 1 1 0-12ZM2 9h5v2H2ZM3 13h4v2H3ZM5 17h4v2H5Z',
-  balls:
-    'M7 4a4 4 0 1 1 0 8a4 4 0 1 1 0-8ZM17 4a4 4 0 1 1 0 8a4 4 0 1 1 0-8ZM7 13a4 4 0 1 1 0 8a4 4 0 1 1 0-8ZM17 13a4 4 0 1 1 0 8a4 4 0 1 1 0-8Z',
-  friends:
-    'M9 4a3.5 3.5 0 1 1 0 7a3.5 3.5 0 1 1 0-7ZM2 20a7 6 0 0 1 14 0ZM16.5 5a3 3 0 1 1 0 6a3 3 0 1 1 0-6ZM17.5 20a8 7 0 0 0-2.6-6.6a6 5 0 0 1 7.1 6.6Z',
-  ranks:
-    'M9 7h6v14H9ZM2 12h6v9H2ZM16 15h6v6h-6ZM12 1.5l1.2 2.4l2.6.4l-1.9 1.8l.5 2.6L12 7.5L9.6 8.7l.5-2.6L8.2 4.3l2.6-.4Z',
-};
-
 function icon(id: TabId): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', 'tab-bar-icon');
-  const path = document.createElementNS(SVG, 'path');
-  path.setAttribute('d', ICONS[id]);
-  svg.append(path);
-  return svg;
+  return shapeIcon(id, 'tab-bar-icon');
 }
 
 /**

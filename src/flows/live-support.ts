@@ -8,9 +8,16 @@ import { attemptWatchMs, LEAD_MS, roundWatchMs, TOSS_LEAD_MS } from '../api/live
 import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
 import { MAX_ATTEMPTS } from '../sim/series.ts';
 
-/** The Play tab's way to a friend match (ADR 0081): vs Friend in the chooser, then Play. */
-export async function playAFriend(page: Page): Promise<void> {
-  await page.locator('.home-chooser button[data-opponent="friend"]').click();
+/**
+ * The Play tab's way to a friend match (ADR 0081, Option B): the mode box's sheet, vs Friend and
+ * `format`, Done, then Play: straight to the link (the 16+ question first on a new device).
+ */
+export async function playAFriend(page: Page, format = 'Reveal'): Promise<void> {
+  await page.locator('.play-box').click();
+  const sheet = page.getByRole('dialog', { name: 'What to play' });
+  await sheet.getByRole('button', { name: 'vs Friend' }).click();
+  await sheet.getByRole('button', { name: new RegExp(`^${format},`) }).click();
+  await sheet.locator('.play-sheet-done').click();
   await page.locator('.home-play-row .home-play').click();
 }
 
@@ -196,17 +203,13 @@ export async function startLiveMatch(
     friend: [],
   },
 ): Promise<string> {
-  // From home, as a player starts it (ADR 0055, 0081): vs Friend and Play, the 16+ question first,
-  // then its setup.
+  // From home, as a player starts it (ADR 0055, 0081): the sheet's vs Friend and format, then
+  // Play; the 16+ question first, then straight to the lobby (no rules step).
   await sender.goto(`${base}/`);
-  await playAFriend(sender);
+  await playAFriend(sender, format === 'reveal' ? 'Reveal' : 'Showdown');
   await confirmAge(sender);
-  await sender.getByRole('heading', { name: 'vs Friend' }).waitFor();
-  if (format !== 'reveal') {
-    await sender.locator('#online-lineup .rules-card', { hasText: /^Showdown/ }).click();
-  }
-  await sendChallenge(sender);
-  // Send challenge stayed busy until the lobby could show: nothing loading between them.
+  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
+  // The age card's button stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
 
