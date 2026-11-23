@@ -14,6 +14,7 @@ import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { cue } from '../sound/sound.ts';
 import { createSticker } from './sticker.ts';
 import { busyOnClick } from './busy-button.ts';
+import { createEndButtons } from './series/end-buttons.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
 import { createPairing } from './balls/pairing.ts';
 import { createLeaveConfirm } from './series/leave-confirm.ts';
@@ -51,8 +52,10 @@ export interface SeriesActions {
   readonly onRematch: () => unknown;
   /** Online: No thanks to the friend's rematch (a request). */
   readonly onDecline?: () => unknown;
-  /** Back to the lineup builder. */
+  /** Back to the lineup builder: Change balls against the bot, Home online. */
   readonly onNewSeries: () => void;
+  /** Against the bot, at the end: Home (ADR 0081). */
+  readonly onHome?: () => void;
   /** Leaves the series before it is decided (it is held, to resume). */
   readonly onLeave: () => unknown;
   /** Something on the panel moved on by itself (the coin toss's stages): draw it again. */
@@ -152,32 +155,12 @@ export function createSeriesPanel(
 
   const buttons = element('div', 'hud-actions');
   const next = button('Play round', 'hud-button hud-button-primary', actions.onNext);
-  // Online the Rematch is the main way on, with what it is under it (ADR 0055); a request.
-  const rematch = button(
-    'Rematch',
-    online ? 'hud-button hud-button-primary' : 'hud-button',
-    () => undefined,
-  );
-  busyOnClick(rematch, actions.onRematch);
-  // One of the few buttons that tap (sound.ts).
-  rematch.dataset['sound'] = 'tap';
-  if (online) {
-    rematch.replaceChildren(
-      element('span', 'hud-button-label', 'Rematch'),
-      element('span', 'hud-button-sub', 'Same friend, new lineups'),
-    );
-    rematch.setAttribute('aria-label', 'Rematch');
-  }
+  const { rematch, newSeries, home } = createEndButtons(online, actions);
   const decline = button('No thanks', 'hud-button', () => undefined);
   busyOnClick(decline, () => actions.onDecline?.());
-  const newSeries = button(
-    online ? 'Home' : 'New series',
-    'hud-button hud-button-primary',
-    actions.onNewSeries,
-  );
   // Online: why it waits, or how it ended.
   const note = element('p', 'series-note');
-  buttons.append(next, rematch, decline, newSeries);
+  buttons.append(next, rematch, decline, newSeries, home);
   const share = button('Copy link', 'text-link series-share', () => {
     void copyLink();
   });
@@ -351,8 +334,9 @@ export function createSeriesPanel(
       setHidden(rematch, !again);
       setHidden(decline, !actions.includes('decline'));
       // Online, Home steps back beside a Rematch (ADR 0055): one main button.
-      newSeries.classList.toggle('hud-button-primary', !(online && again));
+      if (online) newSeries.classList.toggle('hud-button-primary', !again);
       setHidden(newSeries, !fresh);
+      setHidden(home, !actions.includes('home'));
       setHidden(buttons, !play && !again && !fresh && !actions.includes('decline'));
       setHidden(share, !finished || online);
       if (!finished) setText(share, 'Copy link');

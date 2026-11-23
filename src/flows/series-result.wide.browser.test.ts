@@ -37,7 +37,7 @@ async function open(search: string): Promise<void> {
 }
 
 describe('the Best of 3 result screen', () => {
-  it('Copy link, Rematch and New series each do what they say', async () => {
+  it('Copy link, Rematch, Change balls and Home each do what they say', async () => {
     // Seed 15: a short Reveal series the bot wins 2-0, the bot showing first in round 1.
     const seed = 15;
     const decided = setupWithPicks(
@@ -109,11 +109,16 @@ describe('the Best of 3 result screen', () => {
     expect(phase()).toBe('playing');
     expect(visible('.hud-ball-name')).toHaveLength(2);
 
-    // New series: back to the lineup, with this series' lineup and format kept.
+    // Change balls (ADR 0081): back to the lineup, with this series' lineup and format kept.
     await open(link);
     await playToResult();
-    await browserPage.getByRole('button', { name: 'New series' }).click();
-    // New series may go Back to the lineup entry (history-rules.ts), which lands when the browser
+    expect(
+      visible('#series .hud-actions button').map(
+        (node) => node.getAttribute('aria-label') ?? node.textContent.trim(),
+      ),
+    ).toStrictEqual(['Rematch', 'Change balls', 'Home']);
+    await browserPage.getByRole('button', { name: 'Change balls' }).click();
+    // Change balls may go Back to the lineup entry (history-rules.ts), which lands when the browser
     // gets to it, not within a fixed time.
     await until(
       () => new URL(location.href).searchParams.get('step') === 'lineup',
@@ -130,5 +135,12 @@ describe('the Best of 3 result screen', () => {
       'Ghost',
       'Speedster',
     ]);
+
+    // Home: the Play tab, with nothing held (the series is decided).
+    await open(link);
+    await playToResult();
+    button('Home').click();
+    await until(() => location.search === '', 5_000, 'the Play tab', false);
+    expect(visible('.home-play-label')[0]?.textContent).toBe('Play');
   }, 180_000);
 });

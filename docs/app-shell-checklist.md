@@ -146,8 +146,8 @@ The Friends section
 
 ## The end of a series (`src/ui/series-panel.ts`, `src/ui/series/series-view.ts`)
 
-- [ ] Against the bot: Rematch (same setup, new seed) and New series (PR 8: Rematch, Change balls,
-      Home)
-- [ ] Online: Rematch ("Same friend, new lineups") and Home, or Rematch and No thanks to answer one
+- [x] Against the bot: Rematch (same setup, new seed) and New series (PR 8: Rematch, Change balls,
+      Home; Change balls is New series renamed, the same lineup step)
+- [x] Online: Rematch ("Same friend, new lineups") and Home, or Rematch and No thanks to answer one
       (PR 8: unchanged)
-- [ ] Copy link for a decided series (PR 8)
+- [x] Copy link for a decided series (PR 8: unchanged, under the buttons)

@@ -123,15 +123,15 @@ async function liveSeries(
     await settle();
   }
 
-  // Decided: now the link names both lineups. New series forgets it.
+  // Decided: now the link names both lineups. Change balls forgets it.
   expect(paramOf(framed, 'lb')).not.toBeNull();
   const first = loadSeries(storage, BALL_LOOKUP)?.state.rounds[0];
   if (first === undefined) throw new Error('No round 1 saved');
   const shared: Shared = { search: framed.win().location.search, round1: [first.a, first.b] };
-  buttonIn(framed, 'New series').click();
-  // The lineup this series came from is an entry behind it, so New series goes Back to it
+  buttonIn(framed, 'Change balls').click();
+  // The lineup this series came from is an entry behind it, so Change balls goes Back to it
   // (history-rules.ts): a history traversal, which lands when the browser gets to it.
-  await waitFor(framed, () => paramOf(framed, 'step') === 'lineup', 15_000, 'New series to land');
+  await waitFor(framed, () => paramOf(framed, 'step') === 'lineup', 15_000, 'Change balls to land');
   expect(storage().getItem(SERIES_STORAGE_KEY)).toBeNull();
   expect(shown(framed, '.resume-card')).toHaveLength(0);
   return shared;

@@ -3,6 +3,7 @@
 // series saved before a reload is taken back here, held until the route shows it (ADR 0042).
 import { clearSeries, loadSeries, saveSeries, type SaveStorage } from '../app/series-save.ts';
 import type { ScreenHandler } from '../app/router.ts';
+import { writeHomeParams } from '../app/route.ts';
 import { seriesRound } from '../app/screen-rules.ts';
 import { writeSeriesModeParams } from '../app/series-url.ts';
 import type { Navigation } from '../app/navigation.ts';
@@ -105,6 +106,9 @@ export function createSeriesScreens(
       host.go((url) => {
         writeSeriesModeParams(url, last.format, 'lineup', last.bestOf);
       });
+    },
+    home: () => {
+      host.go(writeHomeParams);
     },
     leave: (left) => {
       navigation.back(() => {

@@ -48,6 +48,8 @@ export interface SeriesHost {
   /** After a series: set up the next one, with this one's lineup and format kept. */
   newSeries(last: SeriesSetup): void;
   /** Leaves the series for its setup, in the series' format and length. */
+  /** Home from the end of a series (ADR 0081): the Play tab. */
+  home(): void;
   leave(setup: SeriesSetup | undefined): void;
 }
 
@@ -146,6 +148,11 @@ export function createSeriesController(
       keep(undefined);
       onScreen = false;
       if (last !== undefined) host.newSeries(last);
+    },
+    onHome: () => {
+      keep(undefined);
+      onScreen = false;
+      host.home();
     },
     onLeave: () => {
       // Leaving on purpose forgets the series: there is nothing to resume (ADR 0042). A Back,

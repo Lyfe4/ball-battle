@@ -209,7 +209,7 @@ export function lastPlayOf(state: SeriesState): NextMatch | undefined {
  * `leave`: a live match's only way on while it waits (Leave and forfeit, ADR 0053). `decline`:
  * No thanks to a friend's rematch (ADR 0055).
  */
-export type SeriesAction = 'pick' | 'play' | 'rematch' | 'decline' | 'newSeries' | 'leave';
+export type SeriesAction = 'pick' | 'play' | 'rematch' | 'decline' | 'newSeries' | 'home' | 'leave';
 
 /** Where the series is: a round being fought, the screen between rounds, or the result. */
 export type SeriesPhase = 'playing' | 'between' | 'finished';
@@ -276,9 +276,13 @@ export interface SeriesScreen {
   readonly actions: readonly SeriesAction[];
 }
 
-/** The ways on at the end: offline Rematch and New series; online Home, and a friend's rematch. */
+/**
+ * The ways on at the end (ADR 0081): against the bot Rematch, Change balls (`newSeries`, its
+ * lineup) and Home; online Home (`newSeries`), and a friend's rematch, which already opens new
+ * lineups (ADR 0080).
+ */
 function endActionsOf(online: SeriesMoment['online']): readonly SeriesAction[] {
-  if (online === undefined) return ['rematch', 'newSeries'];
+  if (online === undefined) return ['rematch', 'newSeries', 'home'];
   if (online.rematch === 'answer') return ['rematch', 'decline'];
   return online.rematch === 'offer' ? ['rematch', 'newSeries'] : ['newSeries'];
 }
