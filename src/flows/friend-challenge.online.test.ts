@@ -59,7 +59,7 @@ describe('challenging a friend', () => {
 
       // The friend goes home: signed in with a friend, its page reads the inbox.
       await two.goto(BASE);
-      await two.getByRole('button', { name: `Your account, ${jo}` }).waitFor();
+      await two.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
 
       // The sender sees them online, and challenges them from the Friends section.
       await one.goto(`${BASE}/?view=signin`);

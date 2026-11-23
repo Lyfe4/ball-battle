@@ -8,7 +8,7 @@ import type { PlayerResponse } from '../api/session.ts';
 import type { ApiFailure, ApiResult } from '../app/api.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
 import { askToDelete } from './account-delete.ts';
-import { signedInCard, usernameCard } from './account-text.ts';
+import { signedInCard, usernameCard, type AccountActions } from './account-text.ts';
 
 export interface AccountStepHost {
   readonly show: (content: NoticeContent) => void;
@@ -38,11 +38,22 @@ export interface AccountStepHost {
   readonly forget?: () => Promise<string | undefined>;
   /** The Friends section (ADR 0079, PR (c)), shown under the signed-in card and read afresh. */
   readonly friends?: { readonly element: HTMLElement; open(): Promise<void> };
+  /**
+   * The signed-in view in place of the sign-in screen's card: Profile's (ADR 0081), given the
+   * username, Change username and the actions (Log out, Delete account) with the last problem.
+   */
+  readonly card?: (
+    username: string | null,
+    change: () => void,
+    actions: AccountActions | undefined,
+  ) => NoticeContent;
 }
 
 export interface AccountStep {
   /** Shows the account; `justSignedIn` asks for a username when it has none. */
   open(justSignedIn: boolean): Promise<void>;
+  /** Shows the account as `/me` already said, with no read of its own. */
+  show(username: string | null): void;
 }
 
 export function createAccountStep(host: AccountStepHost): AccountStep {
@@ -66,17 +77,14 @@ export function createAccountStep(host: AccountStepHost): AccountStep {
             },
             ...(problem === undefined ? {} : { problem }),
           };
-    host.show(
-      signedInCard(
-        username,
-        host.done,
-        () => {
-          choose();
-        },
-        actions,
-        host.friends?.element,
-      ),
-    );
+    const change = () => {
+      choose();
+    };
+    if (host.card !== undefined) {
+      host.show(host.card(username, change, actions));
+      return;
+    }
+    host.show(signedInCard(username, host.done, change, actions, host.friends?.element));
     void host.friends?.open();
   }
 
@@ -122,5 +130,11 @@ export function createAccountStep(host: AccountStepHost): AccountStep {
     else signedIn();
   }
 
-  return { open };
+  return {
+    open,
+    show(known) {
+      username = known;
+      signedIn();
+    },
+  };
 }

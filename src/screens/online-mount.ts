@@ -3,7 +3,7 @@
 // with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
 import type { Navigation } from '../app/navigation.ts';
-import type { Screen } from '../app/route.ts';
+import { writeShellParams, type Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
 import { writeSendParams } from '../app/online-url.ts';
 import { browserStorage } from '../app/storage.ts';
@@ -21,7 +21,6 @@ import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
 import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi } from '../app/api.ts';
-import { writeSignInParams } from '../app/online-url.ts';
 import { whoAmI } from '../app/who-am-i.ts';
 import { createAccountButton } from '../ui/online/account-button.ts';
 
@@ -29,7 +28,8 @@ import { createAccountButton } from '../ui/online/account-button.ts';
 const HOME_ASK_MS = 10_000;
 
 export interface OnlineMount {
-  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'start' | 'signin'>;
+  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'start' | 'signin'> &
+    Partial<Pick<ScreenHandlers, 'profile'>>;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
   settle(world: WorldState): void;
@@ -167,15 +167,17 @@ export function mountOnline(context: MountContext): OnlineMount {
     storage: browserStorage,
   });
   const homeRoot = getElement('home', HTMLElement);
-  // The account entry on home, beside the gear (ADR 0079 addendum of 2026-11-22): what `/me` says,
-  // read when home shows after a page load or the account screen, never polled.
+  // The avatar, first on the Play tab's title row (ADR 0081): what `/me` says, read when home shows
+  // after a page load, Profile or sign-in, never polled. It opens Profile.
   const account = ACCOUNTS_BUILD
     ? createAccountButton(() => {
-        context.go(writeSignInParams);
+        context.go((url) => {
+          writeShellParams(url, 'profile');
+        });
       })
     : undefined;
   if (account !== undefined) {
-    homeRoot.querySelector('.home-head .settings-toggle')?.before(account.element);
+    homeRoot.querySelector('.home-head')?.prepend(account.element);
   }
   /** Read again on the next home: a sign-in, a log out or a new username may have changed it. */
   let whoStale = true;
@@ -234,6 +236,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       send: screens.send,
       start: screens.start,
       signin: screens.signin,
+      ...(screens.profile === undefined ? {} : { profile: screens.profile }),
     },
     // With accounts, everything about the player is on the account screen; settings are this
     // device's alone. Without, Forget me stays in settings (ADR 0078).
@@ -250,7 +253,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     phase: () => screens.play.phase(),
     sides: () => screens.play.sides(),
     setVisible: (screen) => {
-      if (screen === 'signin') whoStale = true;
+      if (screen === 'signin' || screen === 'profile') whoStale = true;
       screens.setVisible(screen);
     },
     homeShown: () => {

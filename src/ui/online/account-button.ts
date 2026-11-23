@@ -1,8 +1,8 @@
-// The account entry on home (ADR 0079 addendum of 2026-11-22): beside the settings gear, a round
-// button with the account's initial once signed in, or a "Sign in" pill for a guest or nobody. It
-// opens the account screen, where sign-in, the username, Log out and Delete account live. What it
-// shows is what `/me` said (who-am-i.ts); while that isn't known (asking, offline, failing) it is a
-// plain round face that claims nothing, so a signed-in player is never told to sign in.
+// The avatar (ADR 0081, replacing ADR 0079's account button): first on the Play tab's title row, a
+// round button with the account's initial once signed in, else a plain face. It opens Profile, where
+// the username, Log out and Delete account live, or Sign in and Forget me for a guest. What it shows
+// is what `/me` said (who-am-i.ts); while that isn't known (asking, offline, failing) it is the
+// plain face that claims nothing, so a signed-in player is never told to sign in.
 import type { WhoAmI } from '../../app/who-am-i.ts';
 import { accountLook } from './account-look.ts';
 import { element, setAttr, setText } from '../dom.ts';

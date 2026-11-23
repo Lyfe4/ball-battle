@@ -46,7 +46,7 @@ The rest of home
 - [x] The roster strip of every ball's drawing on a wide screen, named "N balls" (PR 4: kept on a
       desktop, under the quiet links)
 - [x] Privacy and Terms as quiet links at the end (ADR 0069) (PR 4: the end of the Play tab; PR 5:
-      Profile too)
+      Profile's end too)
 - [x] One settings gear, at the top right of the title row (ADR 0040) (PR 3: unchanged beside the
       bar and rail)
 - [x] Phone: the panel under the demo court; beside layout and desktop: beside it (ADR 0031, 0067)
@@ -56,17 +56,20 @@ The rest of home
 
 Online on home
 
-- [ ] The account button beside the gear (accounts builds): the plain face while unknown, a "Sign in"
+- [x] The account button beside the gear (accounts builds): the plain face while unknown, a "Sign in"
       pill for a guest or nobody, the initial once signed in; it opens the account screen (PR 5: the
-      avatar)
-- [ ] `/me` is asked once the page loads, on whichever screen it opens, and again on the next home
-      after a sign-in, a log out or a new name; never polled (PR 5)
+      avatar, first on the title row; the grapheme initial, else the plain face; it opens Profile,
+      which holds Sign in. Changed meaning: no Sign in pill)
+- [x] `/me` is asked once the page loads, on whichever screen it opens, and again on the next home
+      after a sign-in, a log out or a new name; never polled (PR 5: also after Profile; Profile reads
+      it once when it opens)
 - [ ] An account starts the inbox watch; anything else stops it (PR 7)
 - [x] "Back to your match" takes Play's place while a live match or lobby is on, asked again every
       10 s while it shows on home (ADR 0053) (PR 4: it takes the chooser's and Play's place)
 - [x] "Back to your rematch" takes Play's place while a rematch waits on this player (ADR 0070); a
       match comes first (PR 4: as above)
-- [ ] Builds without accounts: no account button, and Forget me in settings (ADR 0078) (PR 5)
+- [x] Builds without accounts: no account button, and Forget me in settings (ADR 0078) (PR 5: no
+      avatar, no Profile; `pnpm build` with `VITE_ONLINE=1` passes `check-bundle`)
 
 ## Links every build keeps (`src/app/route.ts`, `src/app/online-url.ts`)
 
@@ -80,31 +83,35 @@ Online on home
 
 Signing in
 
-- [ ] A device without a guest is asked the 16+ question before signing in (PR 5)
-- [ ] Sign in with an email code: the address, then "Check your email" and the code (PR 5)
-- [ ] Sign in with Google, only where its client is set; it returns as `?view=signin&google=…`,
+- [x] A device without a guest is asked the 16+ question before signing in (PR 5: sign-in
+      unchanged, its own screen, opened from Profile's Sign in)
+- [x] Sign in with an email code: the address, then "Check your email" and the code (PR 5)
+- [x] Sign in with Google, only where its client is set; it returns as `?view=signin&google=…`,
       read once and dropped from the address (PR 5; its return URL kept in PR 2,
       `shell-routes-accounts.browser.test.ts`)
-- [ ] A guest links to the same player; an existing account is "Switch to it?", which deletes the
+- [x] A guest links to the same player; an existing account is "Switch to it?", which deletes the
       guest (PR 5)
-- [ ] No sign-in starts or finishes during a live match or lobby: the "already in a match" card, with
+- [x] No sign-in starts or finishes during a live match or lobby: the "already in a match" card, with
       a way to the match (PR 5)
-- [ ] Sign-in off (`accounts_off`): "Sign-in isn't on here" (PR 5)
-- [ ] The skeleton while it loads; failures say which (offline, timeout, server, refusal) with Try
+- [x] Sign-in off (`accounts_off`): "Sign-in isn't on here" (PR 5)
+- [x] The skeleton while it loads; failures say which (offline, timeout, server, refusal) with Try
       again (PR 5)
-- [ ] The route is home in a build without accounts, and the account code is out of the bundle
+- [x] The route is home in a build without accounts, and the account code is out of the bundle
       (`check-bundle.ts`) (PR 5)
 
 Once signed in
 
-- [ ] Straight after a sign-in, an account without a username is asked for one, once; Skip goes on
+- [x] Straight after a sign-in, an account without a username is asked for one, once; Skip goes on
       (PR 5)
-- [ ] "You're signed in", the username and Change your username; the server's words under the field;
-      one change per 30 days (PR 5)
-- [ ] Log out (PR 5)
-- [ ] Delete account, asked first (PR 5)
-- [ ] A guest's Forget me ("Delete your guest?") (PR 5)
-- [ ] Back goes home (PR 5; PR 2 added the tab Back rule, the account screen's own Back unchanged)
+- [x] "You're signed in", the username and Change your username; the server's words under the field;
+      one change per 30 days (PR 5: Profile's Change username, the same step; the sign-in card keeps
+      it until PR 6)
+- [x] Log out (PR 5: on Profile only; the sign-in card no longer offers it)
+- [x] Delete account, asked first (PR 5: on Profile only, `profile.browser.test.ts`)
+- [x] A guest's Forget me ("Delete your guest?") (PR 5: Profile's "Forget me on this device",
+      and the sign-in screen's ways in as before)
+- [x] Back goes home (PR 5: Profile's Back is the screen it came from, else Play; sign-in's
+      unchanged)
 
 The Friends section
 

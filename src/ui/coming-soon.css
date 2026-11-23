@@ -1,0 +1,64 @@
+/*
+ * A coming-soon card (coming-soon.ts, ADR 0081): Profile's stats and the Ranks boards. The title
+ * with a cream sticker, tilted as our stickers are, and tiles that show a dash until they hold
+ * something. The tiles sit back (sunken, quieter) so the card never reads as real numbers.
+ */
+.soon-card {
+  display: grid;
+  gap: var(--space-small);
+  padding: var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  text-align: start;
+}
+
+.soon-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
+.soon-card-title {
+  margin: 0;
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+}
+
+.soon-sticker {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-sticker);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-tiny);
+  font-weight: 800;
+  transform: rotate(-3deg);
+}
+
+.soon-card-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--space-small);
+  margin: 0;
+  opacity: 0.7;
+}
+
+.soon-card-tile {
+  min-width: 0;
+  padding: var(--space-small);
+  border-radius: var(--radius);
+  background: var(--color-sunken);
+}
+
+.soon-card-tile dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+
+.soon-card-tile dd {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
