@@ -1,6 +1,8 @@
-// The account screen's Friends section (ADR 0079, PR (c)) over a fake API: the code shown with a
+// The Friends tab's lists (ADR 0079, PR (c); ADR 0081) over a fake API: the code shown with a
 // dash, a friend added by what was typed, a request accepted and one declined, a friend removed
-// only after Remove is asked in place (Keep first), and a refusal said under the field.
+// only after Remove is asked in place (Keep first), a refusal said under the field, and the
+// sections in the tab's order: Waiting for you, Friends, your code and Add, then the link card; the
+// link card first while there are no friends (requirement 5).
 import { describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendsResponse } from '../../api/friends.ts';
@@ -21,8 +23,8 @@ const START: FriendsResponse = {
 };
 
 /** The section over an API that keeps a list and answers each change with it. */
-function section() {
-  let list: FriendsResponse = START;
+function section(start: FriendsResponse = START) {
+  let list: FriendsResponse = start;
   const sent: string[] = [];
   const send = (input: string, init: RequestInit) => {
     const path = new URL(input, location.href).pathname.replace('/api/v1/', '');
@@ -66,7 +68,10 @@ function section() {
   };
   const challenged: string[] = [];
   let changes = 0;
+  const link = document.createElement('section');
+  link.className = 'link-card-stand-in';
   const friends = createFriendsSection({
+    link,
     api: (method, path, body) => callApi(method, path, body, {}, send),
     line: (answer: ApiFailure) => (answer.kind === 'error' ? answer.message : 'offline'),
     copy: () => Promise.resolve(true),
@@ -102,10 +107,10 @@ describe('the Friends section', () => {
     expect(root.hidden).toBe(false);
     expect(root.querySelector('.friends-code-value')?.textContent).toBe('7KQ2-M9XD');
     expect(group(root, 'incoming')).toStrictEqual(['Sam_R', 'Player 4821']);
-    // Requests come first: they wait on the player.
+    // What waits on the player comes first, then the friends with their count.
     expect(
       [...root.querySelectorAll('.friends-group-title')].map((title) => title.textContent),
-    ).toStrictEqual(['Requests', 'Your friends']);
+    ).toStrictEqual(['Waiting for you', 'Friends · 1']);
 
     const input = root.querySelector<HTMLInputElement>('#friends-add-input');
     if (input === null) throw new Error('No field');
@@ -164,5 +169,39 @@ describe('the Friends section', () => {
     // A change made here tells the inbox to read now.
     named(root, 'Accept Sam_R')?.click();
     await until(() => changes() === 1, 'the inbox poked');
+  });
+
+  it('puts the sections in the tab’s order, the link card first with no friends yet', async () => {
+    /** The parts of the section as they come, by what each is. */
+    const order = (root: HTMLElement) =>
+      [...root.querySelectorAll('.friends-group, .friends-add-card, .link-card-stand-in')].map(
+        (part) =>
+          part.classList.contains('link-card-stand-in')
+            ? 'link'
+            : part.classList.contains('friends-add-card')
+              ? 'code and Add'
+              : (part as HTMLElement).dataset['group'],
+      );
+    const withFriends = section({
+      ...START,
+      outgoing: [{ id: 'o-9', name: 'Kim' }],
+    });
+    await withFriends.friends.open();
+    expect(order(withFriends.root)).toStrictEqual([
+      'incoming',
+      'friends',
+      'code and Add',
+      'outgoing',
+      'link',
+    ]);
+
+    const none = section({ ...START, friends: [] });
+    await none.friends.open();
+    expect(order(none.root)).toStrictEqual(['link', 'incoming', 'code and Add']);
+    // Nobody at all: the code card says so.
+    const nobody = section({ code: START.code, friends: [], incoming: [], outgoing: [] });
+    await nobody.friends.open();
+    expect(order(nobody.root)).toStrictEqual(['link', 'code and Add']);
+    expect(nobody.root.querySelector('.friends-empty')?.hasAttribute('hidden')).toBe(false);
   });
 });

@@ -5,10 +5,7 @@ describe('the shell’s placeholders (ADR 0081)', () => {
   it('give each screen its title and one way on, so none is a dead end', () => {
     expect(
       PLACEHOLDER_VIEWS.map((view) => [PLACEHOLDERS[view].title, PLACEHOLDERS[view].to]),
-    ).toStrictEqual([
-      ['Friends', 'send'],
-      ['Ranks', 'home'],
-    ]);
+    ).toStrictEqual([['Ranks', 'home']]);
     for (const view of PLACEHOLDER_VIEWS) {
       expect(PLACEHOLDERS[view].body.length).toBeGreaterThan(0);
       expect(PLACEHOLDERS[view].button.length).toBeGreaterThan(0);

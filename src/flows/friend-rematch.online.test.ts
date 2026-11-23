@@ -43,7 +43,7 @@ async function befriend(one: Page, two: Page, twoName: string, oneName: string):
   await one.getByLabel('Add a friend').fill(twoName);
   await friendsOf(one).getByRole('button', { name: 'Add', exact: true }).click();
   await friendsOf(one).getByText(`Request sent to ${twoName}.`).waitFor();
-  await two.goto(`${BASE}/?view=signin`);
+  await two.goto(`${BASE}/?view=friends`);
   await friendsOf(two)
     .getByRole('button', { name: `Accept ${oneName}` })
     .click();
@@ -68,7 +68,7 @@ describe('a rematch of a friend’s challenge', () => {
       await friend.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
 
       // Sam challenges Jo from the Friends section; Jo accepts from the card.
-      await asker.goto(`${BASE}/?view=signin`);
+      await asker.goto(`${BASE}/?view=friends`);
       const row = friendsOf(asker).locator('.friends-row', { hasText: jo });
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
       await sendChallenge(asker, `Waiting for ${jo}`);

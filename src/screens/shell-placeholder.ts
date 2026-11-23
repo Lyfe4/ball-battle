@@ -1,5 +1,5 @@
-// The shell's screens (ADR 0081) before their own pull requests: Friends and Ranks, one notice in
-// the shared look (notice.ts) with Back and one way on. The tab bar links both (shell.ts).
+// The shell's screens (ADR 0081) before their own pull requests: Ranks, one notice in the shared
+// look (notice.ts) with Back and one way on. The tab bar links it (shell.ts).
 import { createNotice } from '../ui/notice.ts';
 import {
   PLACEHOLDERS,

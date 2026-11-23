@@ -1,7 +1,7 @@
 // The account screen reads who this device is from the server (ADR 0079 addendum of 2026-11-22),
 // through a fake API: a device Safari wiped (no keys, the cookies kept) is shown its account, not
-// the 16+ question; a guest is offered Forget me. Log out and Delete account are Profile's
-// (profile.browser.test.ts, ADR 0081).
+// the 16+ question but taken on to the Friends tab; a guest is offered Forget me. Log out and
+// Delete account are Profile's (profile.browser.test.ts, ADR 0081).
 import { describe, expect, it } from 'vitest';
 import type { Fetch } from '../app/api.ts';
 import { createSignIn, type SignInHost } from './sign-in.ts';
@@ -41,6 +41,7 @@ function screen(me: [number, unknown], storage = memory(), cookies = '__Host-bb_
     return Promise.resolve(json(404, { error: { code: 'not_found', message: 'no' } }));
   };
   const deleted: string[] = [];
+  const landed: string[] = [];
   const signIn = createSignIn(
     { notice, loading },
     {
@@ -57,11 +58,14 @@ function screen(me: [number, unknown], storage = memory(), cookies = '__Host-bb_
         deleted.push('forget');
         return Promise.resolve('You’re offline');
       },
+      landed: () => {
+        landed.push('friends');
+      },
     },
   );
   signIn.setVisible(true);
   signIn.show(undefined);
-  return { notice, asked, deleted };
+  return { notice, asked, deleted, landed };
 }
 
 const heading = (root: HTMLElement) => root.querySelector('.screen-title')?.textContent ?? '';
@@ -76,13 +80,14 @@ const until = async (check: () => boolean, what: string) => {
 };
 
 describe('the account screen', () => {
-  it('shows a signed-in account its account, though Safari wiped the device’s keys', async () => {
+  it('takes a signed-in account to the Friends tab, though Safari wiped the device’s keys', async () => {
     const account = { name: 'Sam_1', account: true, username: 'Sam_1' };
-    const { notice } = screen([200, account]);
-    await until(() => heading(notice) === 'You’re signed in', 'the signed-in card');
-    expect(notice.textContent).toContain('Opponents see you as Sam_1.');
-    // Log out and Delete account moved to Profile (ADR 0081).
-    expect(quiet(notice)).toStrictEqual([]);
+    const { notice, landed } = screen([200, account]);
+    // Signed in already: no 16+ question and no ways in, straight on to Friends (ADR 0081), where
+    // "You're signed in" used to show; Profile holds the username, Log out and Delete account.
+    await until(() => landed.length === 1, 'the Friends tab');
+    expect(heading(notice)).not.toBe('Sign in');
+    expect(notice.textContent).not.toContain('16');
   });
 
   it('offers a guest the ways in, then Forget me', async () => {

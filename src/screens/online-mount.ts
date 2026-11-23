@@ -28,7 +28,10 @@ import { createAccountButton } from '../ui/online/account-button.ts';
 const HOME_ASK_MS = 10_000;
 
 export interface OnlineMount {
-  readonly handlers: Pick<ScreenHandlers, 'online' | 'challenge' | 'send' | 'start' | 'signin'> &
+  readonly handlers: Pick<
+    ScreenHandlers,
+    'online' | 'challenge' | 'send' | 'start' | 'signin' | 'friends'
+  > &
     Partial<Pick<ScreenHandlers, 'profile'>>;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
@@ -236,6 +239,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       send: screens.send,
       start: screens.start,
       signin: screens.signin,
+      friends: screens.friends,
       ...(screens.profile === undefined ? {} : { profile: screens.profile }),
     },
     // With accounts, everything about the player is on the account screen; settings are this

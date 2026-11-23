@@ -1,8 +1,9 @@
-// The account screen's Friends section (ADR 0079, PR (c)): a section of that screen, not a screen
-// of its own. Your friend code with Copy, a field to add a friend by username or code, then the
-// requests waiting on you (Accept, Decline), your friends (Remove, asked in place) and the requests
-// you sent (Cancel). Every change answers with the whole list, drawn again. The field takes the
-// notice's field look; every button that waits on the server is busy through busyOnClick.
+// The Friends tab's lists (ADR 0079, PR (c); ADR 0081): what waits on you (friend requests, Accept
+// and Decline), your friends (their status, Challenge, Remove asked in place), then your friend
+// code with Copy, a field to add a friend by username or code, and the requests you sent (Cancel).
+// The tab's "Play a friend with a link" card comes last, or first while there are no friends yet.
+// Every change answers with the whole list, drawn again. The field takes the notice's field look;
+// every button that waits on the server is busy through busyOnClick.
 import {
   shownFriendCode,
   type AddFriendResponse,
@@ -36,6 +37,8 @@ export interface FriendsHost {
   readonly challenge?: (friend: FriendEntry) => void;
   /** The friends changed here (a request sent or answered): the inbox reads now. */
   readonly changed?: () => void;
+  /** The tab's link card, placed first with no friends yet, else last (ADR 0081). */
+  readonly link?: HTMLElement;
 }
 
 export interface FriendsSection {
@@ -54,10 +57,7 @@ function textButton(text: string, label: string): HTMLButtonElement {
 }
 
 export function createFriendsSection(host: FriendsHost): FriendsSection {
-  const root = element('section', 'friends');
-  root.setAttribute('aria-labelledby', 'friends-heading');
-  const heading = element('h2', 'friends-heading', 'Friends');
-  heading.id = 'friends-heading';
+  const root = element('div', 'friends');
 
   const codeRow = element('p', 'friends-code');
   const codeText = element('strong', 'friends-code-value');
@@ -84,14 +84,22 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   row.append(input, add);
   field.append(label, row, said);
 
+  // Waiting for you, then your friends; your code and Add in a card of their own, with what you sent.
   const lists = element('div', 'friends-lists');
+  const addCard = element('section', 'friends-card friends-add-card');
+  addCard.setAttribute('aria-labelledby', 'friends-add-title');
+  const addTitle = element('h2', 'friends-card-title', 'Your friend code');
+  addTitle.id = 'friends-add-title';
+  const empty = element('p', 'friends-empty', NO_FRIENDS);
+  const sent = element('div', 'friends-sent');
+  addCard.append(addTitle, empty, codeRow, field, sent);
   const problem = element('p', 'friends-problem');
   problem.setAttribute('role', 'alert');
   const retry = textButton('Try again', 'Try again');
   const problemBox = element('div', 'friends-problem-box');
   problemBox.append(problem, retry);
   problemBox.hidden = true;
-  root.append(heading, codeRow, field, problemBox, lists);
+  root.append(problemBox, lists, addCard);
   root.hidden = true;
 
   let code = '';
@@ -170,18 +178,27 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     code = list.code;
     codeText.textContent = shownFriendCode(code);
     const now = list;
-    const groups = FRIEND_GROUPS.filter((group) => now[group.key].length > 0).map((group) => {
-      const box = element('div', 'friends-group');
-      box.dataset['group'] = group.key;
-      const title = element('h3', 'friends-group-title', group.title);
+    const box = (group: FriendGroup) => {
+      const shown = element('section', 'friends-group');
+      shown.dataset['group'] = group.key;
+      const count = group.key === 'friends' ? ` · ${String(now.friends.length)}` : '';
+      const title = element('h2', 'friends-group-title', `${group.title}${count}`);
       const items = element('ul', 'friends-list');
       items.append(...now[group.key].map((friend) => rowOf(group, friend)));
-      box.append(title, items);
-      return box;
-    });
-    lists.replaceChildren(
-      ...(hasAnyone(now) ? groups : [element('p', 'friends-empty', NO_FRIENDS)]),
-    );
+      shown.append(title, items);
+      return shown;
+    };
+    const groups = FRIEND_GROUPS.filter((group) => now[group.key].length > 0);
+    // What waits on you and your friends lead; what you sent sits with your code (ADR 0081).
+    lists.replaceChildren(...groups.filter((group) => group.key !== 'outgoing').map(box));
+    sent.replaceChildren(...groups.filter((group) => group.key === 'outgoing').map(box));
+    empty.hidden = hasAnyone(now);
+    // With no friends yet, playing by a link comes first; with friends, last.
+    const link = host.link;
+    if (link !== undefined) {
+      if (now.friends.length === 0) root.prepend(link);
+      else root.append(link);
+    }
   }
 
   /** A change's answer: the list drawn again, or why not under the field. */
@@ -232,14 +249,13 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       problem.textContent = host.line(answer);
       problemBox.hidden = false;
       root.hidden = false;
-      codeRow.hidden = true;
-      field.hidden = true;
+      addCard.hidden = true;
       lists.replaceChildren();
+      if (host.link !== undefined) root.append(host.link);
       return;
     }
     problemBox.hidden = true;
-    codeRow.hidden = false;
-    field.hidden = false;
+    addCard.hidden = false;
     list = answer.body;
     draw();
     root.hidden = false;

@@ -86,7 +86,8 @@ describe('signing in with an email code', () => {
     const username = `Sam_${crypto.randomUUID().slice(0, 8)}`;
     await first.getByLabel('Username').fill(username);
     await first.getByRole('button', { name: 'Save' }).click();
-    await first.getByText(`Opponents see you as ${username}.`).waitFor();
+    // Saved, the player lands on the Friends tab (ADR 0081).
+    await first.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
     expect(await me(first)).toStrictEqual({ name: username, account: true, username });
 
     const second = await phone();
@@ -103,7 +104,6 @@ describe('signing in with an email code', () => {
     await second.goto(`${BASE}/?view=signin`);
     await second.getByRole('button', { name: 'I’m 16 or older' }).click();
     await signInWith(second, email);
-    await second.getByText(`Opponents see you as ${username}.`).waitFor();
 
     // Delete account: gone, on this phone and the other.
     await second.goto(BASE);

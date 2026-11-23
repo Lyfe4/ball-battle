@@ -104,8 +104,8 @@ Once signed in
 - [x] Straight after a sign-in, an account without a username is asked for one, once; Skip goes on
       (PR 5)
 - [x] "You're signed in", the username and Change your username; the server's words under the field;
-      one change per 30 days (PR 5: Profile's Change username, the same step; the sign-in card keeps
-      it until PR 6)
+      one change per 30 days (PR 5: Profile's Change username, the same step; PR 6: "You're
+      signed in" went: a sign-in lands on the Friends tab, the username asked first, once)
 - [x] Log out (PR 5: on Profile only; the sign-in card no longer offers it)
 - [x] Delete account, asked first (PR 5: on Profile only, `profile.browser.test.ts`)
 - [x] A guest's Forget me ("Delete your guest?") (PR 5: Profile's "Forget me on this device",
@@ -115,16 +115,19 @@ Once signed in
 
 The Friends section
 
-- [ ] Your friend code with Copy (PR 6)
-- [ ] Add a friend by username or code; "sent" or "friends" said under the field (PR 6)
-- [ ] Requests waiting on you: Accept, Decline (PR 6)
-- [ ] Your friends with their status (Online, In a match, Offline), Challenge, and Remove asked in
-      place (PR 6)
-- [ ] Requests you sent: Cancel (PR 6)
-- [ ] No one yet: "No friends yet. Share your code, or add theirs." (PR 6)
-- [ ] Every change answers with the whole list, drawn again; every server button busy through
-      `busyOnClick` (PR 6)
-- [ ] Statuses from each inbox read update the section while it shows (PR 6, PR 7)
+- [x] Your friend code with Copy (PR 6: the Friends tab's "Your friend code" card)
+- [x] Add a friend by username or code; "sent" or "friends" said under the field (PR 6)
+- [x] Requests waiting on you: Accept, Decline (PR 6: "Waiting for you", ringed in pink;
+      a friend's challenges join it with the inbox in PR 7)
+- [x] Your friends with their status (Online, In a match, Offline), Challenge, and Remove asked in
+      place (PR 6: "Friends · N"; Challenge on every friend's row, as before)
+- [x] Requests you sent: Cancel (PR 6: under your code and Add)
+- [x] No one yet: "No friends yet. Share your code, or add theirs." (PR 6: in the code card,
+      with the link card first)
+- [x] Every change answers with the whole list, drawn again; every server button busy through
+      `busyOnClick` (PR 6: unchanged)
+- [x] Statuses from each inbox read update the section while it shows (PR 6: the tab takes them,
+      `friendStatuses`; PR 7 hands over the rest of the answer)
 
 ## The inbox and the floating card (`src/screens/inbox-watch.ts`, `src/app/inbox-poll.ts`)
 

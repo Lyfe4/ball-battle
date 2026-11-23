@@ -56,13 +56,10 @@ export async function codeFor(email: string, before: number): Promise<string> {
 
 /**
  * Types `email`, sends a code, reads it from the mail catcher and types it, until `then` (the
- * username's question for an account without one, else signed in) shows.
+ * username's question for an account without one, else the Friends tab it lands on, ADR 0081)
+ * shows.
  */
-export async function signInWith(
-  page: Page,
-  email: string,
-  then = 'You’re signed in',
-): Promise<void> {
+export async function signInWith(page: Page, email: string, then = 'Friends'): Promise<void> {
   const before = await mailCount(email);
   await forgetNetworkCodes();
   await page.getByLabel('Your email').fill(email);
@@ -70,7 +67,7 @@ export async function signInWith(
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
   await page.getByLabel('The code').fill(await codeFor(email, before));
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByRole('heading', { name: then }).waitFor();
+  await page.getByRole('heading', { name: then, exact: true }).waitFor();
 }
 
 /**
@@ -94,6 +91,8 @@ export async function signedInPhone(
   await signInWith(page, `${username.toLowerCase()}@example.com`, 'Choose a username');
   await page.getByLabel('Username').fill(username);
   await page.getByRole('button', { name: 'Save' }).click();
-  await page.getByText(`Opponents see you as ${username}.`).waitFor();
+  // Signed in with a username: the Friends tab, its lists read (ADR 0081).
+  await page.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
+  await page.locator('.friends-code-value').waitFor();
   return page;
 }

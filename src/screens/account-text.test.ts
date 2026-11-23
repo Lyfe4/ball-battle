@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NoticeField } from '../ui/notice-content.ts';
-import { deleteCard, signedInCard, usernameCard } from './account-text.ts';
+import { deleteCard, usernameCard } from './account-text.ts';
 
 const none = () => undefined;
 const field: NoticeField = { kind: 'username', label: 'Username', onInput: none };
@@ -9,8 +9,6 @@ const save = () => Promise.resolve();
 describe('the account’s cards (ADR 0079)', () => {
   it('each has a way on (ADR 0027), and a username can always be skipped', () => {
     const cards = [
-      signedInCard(null, none, none),
-      signedInCard('sam', none, none),
       usernameCard({ current: null, field, save, skip: none }),
       usernameCard({ current: 'sam', field, save, skip: none }),
     ];
@@ -23,13 +21,6 @@ describe('the account’s cards (ADR 0079)', () => {
     );
   });
 
-  it('says what opponents see, and offers the username', () => {
-    const named = signedInCard('sam_99', none, none);
-    expect(named.body[0]).toBe('Opponents see you as sam_99.');
-    expect(named.quiet?.text).toBe('Change username');
-    expect(signedInCard(null, none, none).quiet?.text).toBe('Choose a username');
-  });
-
   it('says the rule plainly, and the once-a-month change', () => {
     const card = usernameCard({ current: 'sam', field, save, skip: none });
     expect(card.title).toBe('Change your username');
@@ -39,21 +30,8 @@ describe('the account’s cards (ADR 0079)', () => {
   });
 });
 
-describe('the account screen holds the player (ADR 0079 addendum of 2026-11-22)', () => {
+describe('Delete account and Forget me (ADR 0079; Profile holds them, ADR 0081)', () => {
   const logOut = () => Promise.resolve();
-
-  it('ends the signed-in card with Log out and Delete account, quietly', () => {
-    const card = signedInCard('sam', none, none, { logOut, deleteAccount: none });
-    expect(card.more?.map((action) => action.text)).toStrictEqual(['Log out', 'Delete account']);
-    expect(card.note).toBeUndefined();
-    const failed = signedInCard('sam', none, none, {
-      logOut,
-      deleteAccount: none,
-      problem: 'You’re offline',
-    });
-    expect(failed.note).toBe('You’re offline');
-    expect(signedInCard('sam', none, none).more).toBeUndefined();
-  });
 
   it('asks once before deleting, Keep first, and says why a try failed', () => {
     const account = deleteCard(true, logOut, none);
