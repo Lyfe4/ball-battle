@@ -1,6 +1,7 @@
 /*
- * Home (ADR 0055): under the demo arena on a phone, beside it on a wide screen. One large Play that
- * says what it starts, one card per opponent under it, then Free play and the manual as quiet links.
+ * The Play tab (ADR 0055, 0081): under the demo arena on a phone, beside it on a wide screen. A
+ * chooser of who to play, one large Play that says what it starts, then Change rules and Free play
+ * as quiet links.
  */
 .home {
   display: grid;
@@ -34,9 +35,39 @@
 }
 
 .home-pitch {
+  display: none;
   margin: 0;
   color: var(--color-text-muted);
   line-height: 1.45;
+}
+
+/* What waits on the player (PR 7 fills it); nothing at all while it has nothing to say. */
+.home-status[hidden] {
+  display: none;
+}
+
+/*
+ * A phone held upright: the title row at the top of the page, above the court (ADR 0081), and the
+ * rest of the tab under it. The panel's boxes step aside so the court and the tab's parts are one
+ * column; the court gives way, so Play shows without a scroll at 390 x 664 with the bar.
+ */
+@media not all and (min-aspect-ratio: 5/4) {
+  .stage[data-home] > .hud,
+  .stage[data-home] .home {
+    display: contents;
+  }
+
+  .stage[data-home] .home > * {
+    width: 100%;
+    max-width: 32rem;
+  }
+
+  /* Its gear's menu floats over the parts below it, as it did inside the panel. */
+  .stage[data-home] .home-head {
+    position: relative;
+    z-index: 2;
+    order: -1;
+  }
 }
 
 /* Play, with what it plays under it (ADR 0046): the word large, the mode a quiet second line. */
@@ -68,6 +99,7 @@
 .home-play-row {
   display: grid;
   justify-items: stretch;
+  gap: var(--space-small);
 }
 
 .home-new-series {
@@ -81,80 +113,21 @@
 }
 
 /*
- * The opponent cards: two side by side today; with Ranked and Casual a 2 x 2 grid, nothing else
- * on home moving (ADR 0055). A card is a compact raised slab like the old Best of 3 / Best of 5
- * toggles, its title centred: two quiet buttons under the yellow Play, never rivals to it.
+ * Who to play (ADR 0081): vs Bot and vs Friend side by side, each half the row, in the one chosen
+ * look (choice.css). Ranked and Casual join it later as more choices.
  */
-.home-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-small);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* One card alone (a build without online play) takes the row. */
-.home-cards-item:only-child {
-  grid-column: 1 / -1;
-}
-
-.home-cards-item {
-  display: grid;
-}
-
-.home-card {
-  display: grid;
-  place-items: center;
-  min-height: calc(var(--tap-target) + 8px);
-  margin-bottom: var(--press-depth);
-  padding: var(--space-small) var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-raised);
-  box-shadow: var(--shadow-slab);
-  color: var(--color-text);
-  font: inherit;
-  text-align: center;
-  cursor: pointer;
-  transition:
-    transform 80ms ease-out,
-    box-shadow 80ms ease-out,
-    filter 120ms ease-out;
-}
-
-.home-card:is(:active, [data-pressed]) {
-  transform: translateY(var(--press-depth));
-  box-shadow: none;
-}
-
-.home-card:focus-visible {
-  box-shadow: var(--shadow-slab), var(--focus-ring);
-}
-
-/* Pointed at or pressed by a finger (press.ts): the same look. */
-@media (hover: hover) {
-  .home-card:hover {
-    filter: brightness(1.08);
-  }
-}
-
-.home-card[data-pressed] {
-  filter: brightness(1.08);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-card {
-    transition: none;
-  }
-}
-
-.home-card-name {
+.home-chooser .segmented-button {
+  flex: 1 1 0;
+  min-height: calc(var(--tap-target) + 4px);
   font-size: var(--font-size-lead);
   font-weight: 800;
-  line-height: 1.15;
 }
 
-/* Free play and the manual: quiet links, side by side under the cards. */
+.home-chooser[hidden] {
+  display: none;
+}
+
+/* Change rules and Free play: quiet links, side by side under Play. */
 .home-more {
   display: flex;
   flex-wrap: wrap;
@@ -281,11 +254,8 @@
     font-size: clamp(var(--font-size-small), 2vh, 1.125rem);
   }
 
-  .home-card {
+  .home-chooser .segmented-button {
     min-height: clamp(3.25rem, 7vh, 4.5rem);
-  }
-
-  .home-card-name {
     font-size: clamp(1.125rem, 2.6vh, 1.5rem);
   }
 

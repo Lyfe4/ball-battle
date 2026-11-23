@@ -20,6 +20,7 @@ import { signedInCard } from '../screens/account-text.ts';
 import { createFriendsSection } from '../ui/online/friends-section.ts';
 import { createNotice } from '../ui/notice.ts';
 import { button, frames, settle, visible } from './page-support.ts';
+import { tabLink } from './shell-routes-support.ts';
 
 const click = (target: Element) => userEvent.click(target, { timeout: 10_000 });
 const box = (node: Element) => node.getBoundingClientRect();
@@ -61,8 +62,10 @@ describe('beside screens from the iPhone and the screen walk', () => {
       boxScrolls: hud.scrollHeight > hud.clientHeight + 1,
       top: box(hud).top >= 0,
     }).toStrictEqual({ overflow: 'visible', boxScrolls: false, top: true });
-    // Free play and the manual on screen without a scroll (667 x 320 too).
-    for (const name of ['Free play', 'Ball manual']) {
+    // Play, Change rules and Free play on screen without a scroll (667 x 320 too).
+    const play = visible('.home-play')[0] ?? document.body;
+    expect(box(play).bottom, 'Play above the fold').toBeLessThanOrEqual(window.innerHeight);
+    for (const name of ['Change rules', 'Free play']) {
       expect(box(button(name)).bottom, `${name} above the fold`).toBeLessThanOrEqual(
         window.innerHeight,
       );
@@ -75,7 +78,7 @@ describe('beside screens from the iPhone and the screen walk', () => {
     window.scrollTo(0, 0);
 
     // The matchup chart: every ball against the one chosen, using the column.
-    await click(button('Ball manual'));
+    await click(tabLink('Balls'));
     await settle();
     await click(button('Matchup chart'));
     await settle();

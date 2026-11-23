@@ -35,7 +35,7 @@ export function playSpoken(setup: PlaySetup): string {
   return `${PLAY_LABEL} ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}, against ${against}`;
 }
 
-/** Each opponent card on home, and the heading of the setup screen it opens. */
+/** Each opponent in the Play tab's chooser, and the heading of the setup screen it opens. */
 export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }>> = {
   bot: { name: 'vs Bot' },
   friend: { name: 'vs Friend' },
@@ -44,9 +44,16 @@ export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }
 /** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
 export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; once they accept, you both pick your lineups.`;
 
-/** Home's quiet links under the cards. */
+/** The chooser's name, for screen readers: the buttons say who. */
+export const CHOOSER_LABEL = 'Play against';
+
+/** What Play starts against a friend (ADR 0081): the send screen, a live match by a link. */
+export const FRIEND_PLAY_LINE = 'Live · send a friend a link';
+export const FRIEND_PLAY_SPOKEN = 'Play a friend live: send them a link';
+
+/** The Play tab's quiet links under Play. */
+export const CHANGE_RULES = 'Change rules';
 export const FREE_PLAY = 'Free play';
-export const BALL_MANUAL = 'Ball manual';
 
 /** "Best of 3 · Reveal": what the lineup is for, since Play skips the setup screen. */
 export function setupLine(format: Format, bestOf: BestOf = DEFAULT_BEST_OF): string {

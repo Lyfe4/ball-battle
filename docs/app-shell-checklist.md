@@ -8,44 +8,50 @@ or marks a row dropped on purpose with its reason. "PR" is the build plan's numb
 
 The demo
 
-- [ ] The demo court behind the menu: a random first pair, then the counter map's lively pairs in
-      order; not announced as counters (PR 4)
-- [ ] "Demo match: A vs B" names the two balls (PR 4)
-- [ ] The next demo starts 2.5 s after a result shows; none is queued behind the next screen (PR 4)
-- [ ] Reduced motion: each demo waits on a still frame, with "Watch the demo" to play it (PR 4)
-- [ ] The demo is silent (ADR 0064) (PR 4)
+- [x] The demo court behind the menu: a random first pair, then the counter map's lively pairs in
+      order; not announced as counters (PR 4: unchanged, `src/screens/home.ts`)
+- [x] "Demo match: A vs B" names the two balls (PR 4: under the court)
+- [x] The next demo starts 2.5 s after a result shows; none is queued behind the next screen (PR 4:
+      unchanged)
+- [x] Reduced motion: each demo waits on a still frame, with "Watch the demo" to play it (PR 4:
+      unchanged)
+- [x] The demo is silent (ADR 0064) (PR 4: unchanged)
 
 Title and Play
 
-- [ ] The title "BallBattle" and the pitch line (PR 4: the wordmark in the top bar or the panel)
-- [ ] Play starts the remembered bot series (format, length, level; first visit Best of 3 · Reveal
-      · Normal), one tap to its lineup, its line saying what it plays (PR 4)
-- [ ] Play's spoken name says what it plays (`playSpoken`) (PR 4)
-- [ ] Play taps (`data-sound="tap"`) (PR 4)
-- [ ] Home focuses Play when it opens (PR 4)
-- [ ] A held series: Play becomes Resume series with its format and score; New series forgets it and
-      opens Play's lineup (ADR 0042, 0046) (PR 4)
+- [x] The title "BallBattle" and the pitch line (PR 4: the title row at the top of the page on a
+      phone, the top of the panel beside; the pitch line on a desktop only, as beside already did)
+- [x] Play starts the remembered bot series (format, length, level; first visit Best of 3 · Reveal
+      · Normal), one tap to its lineup, its line saying what it plays (PR 4: with vs Bot chosen)
+- [x] Play's spoken name says what it plays (`playSpoken`; against a friend `FRIEND_PLAY_SPOKEN`)
+      (PR 4)
+- [x] Play taps (`data-sound="tap"`) (PR 4)
+- [x] Home focuses Play when it opens (PR 4: `play-chooser.browser.test.ts`)
+- [x] A held series: Play becomes Resume series with its format and score; New series forgets it and
+      opens Play's lineup (ADR 0042, 0046) (PR 4: with vs Bot chosen; vs Friend's Play is a friend
+      match and New series steps aside)
 
 Ways to play
 
-- [ ] vs Bot opens the bot setup on Play's choices (format, length) (PR 4: the chooser and Change
-      rules)
-- [ ] vs Friend (online builds only) opens the send screen, Reveal, Best of 3 (PR 4: the chooser)
-- [ ] Free play opens the quick-match pick on the pair the demo is showing (ADR 0020) (PR 4)
-- [x] Ball manual opens the manual (PR 3: the Balls tab opens it, `tab-bar.browser.test.ts`; home's
-      link stays until PR 4)
+- [x] vs Bot opens the bot setup on Play's choices (format, length) (PR 4: vs Bot in the chooser,
+      then Change rules)
+- [x] vs Friend (online builds only) opens the send screen, Reveal, Best of 3 (PR 4: vs Friend in
+      the chooser, then Play; Change rules steps aside, as it would open the same screen)
+- [x] Free play opens the quick-match pick on the pair the demo is showing (ADR 0020) (PR 4)
+- [x] Ball manual opens the manual (PR 3: the Balls tab opens it, `tab-bar.browser.test.ts`; PR 4:
+      home's link went)
 
 The rest of home
 
-- [ ] The roster strip of every ball's drawing on a wide screen, named "N balls" (PR 4: kept or
-      dropped on purpose)
-- [ ] Privacy and Terms as quiet links at the end (ADR 0069) (PR 4: the end of the Play tab; PR 5:
+- [x] The roster strip of every ball's drawing on a wide screen, named "N balls" (PR 4: kept on a
+      desktop, under the quiet links)
+- [x] Privacy and Terms as quiet links at the end (ADR 0069) (PR 4: the end of the Play tab; PR 5:
       Profile too)
 - [x] One settings gear, at the top right of the title row (ADR 0040) (PR 3: unchanged beside the
       bar and rail)
-- [ ] Phone: the panel under the demo court; beside layout and desktop: beside it (ADR 0031, 0067)
+- [x] Phone: the panel under the demo court; beside layout and desktop: beside it (ADR 0031, 0067)
       (PR 4; PR 3 kept it, the court yielding to the rail where the panel needs the room:
-      `tab-rail.landscape-small.browser.test.ts`)
+      `tab-rail.landscape-small.browser.test.ts`; PR 4: the title row above the court on a phone)
 - [x] `?view=modes` opens home (PR 2: kept in every build, `route.test.ts`)
 
 Online on home
@@ -56,10 +62,10 @@ Online on home
 - [ ] `/me` is asked once the page loads, on whichever screen it opens, and again on the next home
       after a sign-in, a log out or a new name; never polled (PR 5)
 - [ ] An account starts the inbox watch; anything else stops it (PR 7)
-- [ ] "Back to your match" takes Play's place while a live match or lobby is on, asked again every
-      10 s while it shows on home (ADR 0053) (PR 4)
-- [ ] "Back to your rematch" takes Play's place while a rematch waits on this player (ADR 0070); a
-      match comes first (PR 4)
+- [x] "Back to your match" takes Play's place while a live match or lobby is on, asked again every
+      10 s while it shows on home (ADR 0053) (PR 4: it takes the chooser's and Play's place)
+- [x] "Back to your rematch" takes Play's place while a rematch waits on this player (ADR 0070); a
+      match comes first (PR 4: as above)
 - [ ] Builds without accounts: no account button, and Forget me in settings (ADR 0078) (PR 5)
 
 ## Links every build keeps (`src/app/route.ts`, `src/app/online-url.ts`)

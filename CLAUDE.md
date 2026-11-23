@@ -345,8 +345,8 @@ Each line is a rule; its ADR has the reasoning.
   The legend and settings are one info panel (`info-panel.css`, `.panel-close`). Escape only ever
   closes things.
 - Home by opponent (ADR 0055): Play remembers only bot games (`PlaySetup`, saved by the vs Bot
-  setup's Choose lineup) and opens that lineup in one tap; the opponent cards are data in
-  `HOME_CARDS` (Ranked and Casual join later as a 2 × 2 grid); every setup is the one
+  setup's Choose lineup) and opens that lineup in one tap; the opponents are data in
+  `PLAY_CHOICES`, the Play tab's chooser (Ranked and Casual join it later, ADR 0081); every setup is the one
   `rules-step.ts` screen, and its choices rewrite its own entry. A lineup's in-app Back without
   history goes to its setup. `?mode=bo3` links open the vs Bot setup; `?view=modes` opens home; a
   lineup URL's format is its own (none is Blind). The 16+ question comes first in the vs Friend

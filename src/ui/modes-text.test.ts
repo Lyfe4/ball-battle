@@ -3,6 +3,10 @@ import { BOT_LEVELS } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { BEST_OF, FORMATS, recordOutcome, startSeries, type Outcome } from '../sim/series.ts';
 import {
+  CHANGE_RULES,
+  CHOOSER_LABEL,
+  FRIEND_PLAY_LINE,
+  FRIEND_PLAY_SPOKEN,
   FRIEND_SETUP_NOTE,
   lengthChoiceOf,
   levelLine,
@@ -40,8 +44,15 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     );
   });
 
-  it('names each opponent card by its title alone: the title says who it plays', () => {
+  it('names each opponent by its title alone: the title says who it plays', () => {
     expect(OPPONENT_CARDS).toEqual({ bot: { name: 'vs Bot' }, friend: { name: 'vs Friend' } });
+    expect(CHOOSER_LABEL).toBe('Play against');
+    expect(CHANGE_RULES).toBe('Change rules');
+  });
+
+  it('says what Play starts against a friend: live, by a link', () => {
+    expect(FRIEND_PLAY_LINE).toBe('Live · send a friend a link');
+    expect(FRIEND_PLAY_SPOKEN).toBe('Play a friend live: send them a link');
   });
 
   it('says what a live friend match asks before it is sent', () => {
