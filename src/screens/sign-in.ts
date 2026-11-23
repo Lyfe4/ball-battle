@@ -4,10 +4,8 @@
 // `/api/v1/auth/google`, whose callback comes back here as `?view=signin&google=<result>`; the
 // result is read once and dropped from the address, so a reload doesn't repeat it.
 import { type AuthOptions, type GoogleResult, type SignInResponse } from '../api/accounts.ts';
-import type { FriendEntry } from '../api/friends.ts';
 import type { CurrentMatch } from '../api/live.ts';
 import type { PlayerResponse } from '../api/session.ts';
-import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import {
   hasAccount,
@@ -19,14 +17,12 @@ import {
 import { writeSignInParams } from '../app/online-url.ts';
 import { whoAmI } from '../app/who-am-i.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
-import { createFriendsSection } from '../ui/online/friends-section.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createAccountStep } from './account-step.ts';
 import { askToDelete } from './account-delete.ts';
 import { createCodeStep } from './sign-in-code.ts';
 import { offerSwitch } from './sign-in-switch.ts';
 import { inAMatchCard } from './current-match.ts';
-import { failureLine } from './online-failure-text.ts';
 import { onlineNotice } from './online-text.ts';
 import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './sign-in-text.ts';
 
@@ -49,17 +45,13 @@ export interface SignInHost {
   readonly cookies: () => string;
   /** A guest's Forget me, on the ways in: undefined when done. */
   readonly forget?: () => Promise<string | undefined>;
-  /** Challenge a friend (ADR 0079 PR (d)): the vs Friend setup, for them. */
-  readonly challenge?: (friend: FriendEntry) => void;
-  /** The friends changed on this screen: the inbox reads now. */
-  readonly friendsChanged?: () => void;
+  /** Signed in (and its username asked, once): the Friends tab (ADR 0081). */
+  readonly landed: () => void;
 }
 
 export interface SignInScreen {
   show(google: GoogleResult | undefined): void;
   setVisible(visible: boolean): void;
-  /** The friends' status from the inbox, for the Friends section if it shows. */
-  statuses(friends: readonly FriendEntry[]): void;
 }
 
 export function createSignIn(
@@ -100,25 +92,6 @@ export function createSignIn(
     },
   });
 
-  // Friends (ADR 0079, PR (c)): only in a build with accounts, so one without holds none of it.
-  const friends = ACCOUNTS_BUILD
-    ? createFriendsSection({
-        api,
-        line: (answer) =>
-          failureLine(failureKindOf(answer), answer.kind === 'error' ? answer.message : undefined),
-        copy: async (text) => {
-          try {
-            await navigator.clipboard.writeText(text);
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        ...(host.challenge === undefined ? {} : { challenge: host.challenge }),
-        ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
-      })
-    : undefined;
-
   const account = createAccountStep({
     show: (content) => {
       show(content);
@@ -132,8 +105,8 @@ export function createSignIn(
     failed: (answer, retry, line) => {
       failed(answer, retry, line);
     },
-    // Log out and Delete account are Profile's (ADR 0081): the signed-in card here offers neither.
-    ...(friends === undefined ? {} : { friends }),
+    // Signed in, the player lands on the Friends tab, Profile holds the rest (ADR 0081).
+    landed: host.landed,
   });
 
   /** Signed in: a sign-in just now asks for a username, once (ADR 0079). */
@@ -273,9 +246,6 @@ export function createSignIn(
       codes.reset();
       email = '';
       void open(google);
-    },
-    statuses(list) {
-      friends?.statuses(list);
     },
     setVisible(next) {
       visible = next;

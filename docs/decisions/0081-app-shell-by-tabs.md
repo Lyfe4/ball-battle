@@ -268,3 +268,23 @@ checklist.
   code. It stays with Copy where the friends list is (the Friends tab, PR 6).
 - **The sign-in screen** keeps its own screen and its signed-in card (the username and the Friends
   section until PR 6), without Log out and Delete account, which are Profile's now.
+
+## Addendum (2026-11-24): the Friends tab, as built (PR 6)
+
+- **Every online build** has it (`friends-tab.ts`). It always starts with "Play a friend with a
+  link" (Challenge with a link opens the send screen), shown at once, before any read.
+- **An account** sees the lists (`friends-section.ts`): Waiting for you (friend requests, ringed in
+  pink all the way round), Friends · N (status, Challenge, Remove asked in place), then "Your friend
+  code" with Copy, Add and the requests sent; the link card last, or first while there are no friends.
+  A friend's challenges join Waiting for you with the inbox's answer (PR 7).
+- **A guest or nobody** sees the link card, then "Sign in to keep friends" with what it unlocks and
+  Sign in. **Accounts off**: the link card, then "Friends lists are on the way", with no Sign in and
+  none of the lists' code in the bundle.
+- **"You're signed in" went.** A sign-in (and its username, asked once) lands on the Friends tab;
+  opening sign-in while signed in does too. `signedInCard` and the sign-in screen's Friends section
+  are gone; Profile holds the username, Log out and Delete account (PR 5).
+- **Reads:** `/me` (only where there may be a player) and `/me/friends` when the tab opens; never on
+  a timer. The inbox's statuses update the list while it shows, as before.
+- **Kept, not removed:** the "challenge this friend" path (`challengeFriend`, a friend sent with the
+  challenge) is how a friend row's Challenge works; production can't reach it (no accounts), but it
+  isn't dead code in the builds that have friends.

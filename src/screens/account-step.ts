@@ -8,7 +8,7 @@ import type { PlayerResponse } from '../api/session.ts';
 import type { ApiFailure, ApiResult } from '../app/api.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
 import { askToDelete } from './account-delete.ts';
-import { signedInCard, usernameCard, type AccountActions } from './account-text.ts';
+import { usernameCard, type AccountActions } from './account-text.ts';
 
 export interface AccountStepHost {
   readonly show: (content: NoticeContent) => void;
@@ -36,17 +36,17 @@ export interface AccountStepHost {
    */
   readonly logOut?: () => Promise<string | undefined>;
   readonly forget?: () => Promise<string | undefined>;
-  /** The Friends section (ADR 0079, PR (c)), shown under the signed-in card and read afresh. */
-  readonly friends?: { readonly element: HTMLElement; open(): Promise<void> };
   /**
-   * The signed-in view in place of the sign-in screen's card: Profile's (ADR 0081), given the
-   * username, Change username and the actions (Log out, Delete account) with the last problem.
+   * The signed-in view: Profile's card (ADR 0081), given the username, Change username and the
+   * actions (Log out, Delete account) with the last problem.
    */
   readonly card?: (
     username: string | null,
     change: () => void,
     actions: AccountActions | undefined,
   ) => NoticeContent;
+  /** Signed in, with nothing left to ask: the screen moves on instead of showing a card. */
+  readonly landed?: () => void;
 }
 
 export interface AccountStep {
@@ -77,15 +77,19 @@ export function createAccountStep(host: AccountStepHost): AccountStep {
             },
             ...(problem === undefined ? {} : { problem }),
           };
+    if (host.landed !== undefined) {
+      host.landed();
+      return;
+    }
     const change = () => {
       choose();
     };
-    if (host.card !== undefined) {
-      host.show(host.card(username, change, actions));
+    // Neither a card nor a move on: back where the player came from.
+    if (host.card === undefined) {
+      host.done();
       return;
     }
-    host.show(signedInCard(username, host.done, change, actions, host.friends?.element));
-    void host.friends?.open();
+    host.show(host.card(username, change, actions));
   }
 
   /** The username's field; a new visit starts empty, an error keeps what was typed. */

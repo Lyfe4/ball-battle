@@ -1,4 +1,5 @@
-// The Friends section's words (ADR 0079, PR (c)): pure, so every state is tested without a DOM.
+// The Friends tab's words (ADR 0079, PR (c); ADR 0081): pure, so every state is tested without a
+// DOM.
 import type { AddFriendResponse, FriendStatus, FriendsResponse, Invite } from '../api/friends.ts';
 import { challengeLine } from './online-text.ts';
 
@@ -8,10 +9,10 @@ export interface FriendGroup {
   readonly title: string;
 }
 
-/** Requests first (they wait on the player), then friends, then requests sent. */
+/** What waits on the player first, then friends, then the requests sent (ADR 0081). */
 export const FRIEND_GROUPS: readonly FriendGroup[] = [
-  { key: 'incoming', title: 'Requests' },
-  { key: 'friends', title: 'Your friends' },
+  { key: 'incoming', title: 'Waiting for you' },
+  { key: 'friends', title: 'Friends' },
   { key: 'outgoing', title: 'Sent' },
 ];
 
@@ -44,3 +45,28 @@ export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
 export function inviteLine(invite: Invite): string {
   return `${invite.from} challenges you · ${challengeLine(invite)} · live`;
 }
+
+/** The tab's way to play anyone, with or without an account (ADR 0081). */
+export const LINK_CARD = {
+  title: 'Play a friend with a link',
+  body: 'Send a link; they open it and you pick lineups together. No account needed.',
+  button: 'Challenge with a link',
+} as const;
+
+/** A guest's card: what signing in unlocks, with Sign in (never a wall: the link card leads). */
+export const SIGN_IN_CARD = {
+  title: 'Sign in to keep friends',
+  unlocks: [
+    'Your own friend code',
+    'See who’s online',
+    'Challenges that reach you anywhere in the game',
+  ],
+  button: 'Sign in',
+  note: 'Free. Your games so far stay yours.',
+} as const;
+
+/** A build with online play and no accounts (production today). */
+export const FRIENDS_SOON = {
+  title: 'Friends lists are on the way',
+  body: 'Soon you can add friends by a code and see who’s online. Until then, a link works for anyone.',
+} as const;

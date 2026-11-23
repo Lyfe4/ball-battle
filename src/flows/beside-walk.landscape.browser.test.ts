@@ -16,9 +16,7 @@ import type { FriendsResponse } from '../api/friends.ts';
 import { callApi } from '../app/api.ts';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
-import { signedInCard } from '../screens/account-text.ts';
 import { createFriendsSection } from '../ui/online/friends-section.ts';
-import { createNotice } from '../ui/notice.ts';
 import { button, frames, settle, visible } from './page-support.ts';
 import { tabLink } from './shell-routes-support.ts';
 
@@ -121,7 +119,7 @@ describe('beside screens from the iPhone and the screen walk', () => {
     expect(await coveredTiles(tiles, footer)).toStrictEqual([]);
   }, 120_000);
 
-  it('ends the account screen with Done rather than sticking it over the Friends section', async () => {
+  it('lays the Friends tab’s lists out beside with nothing over anything', async () => {
     const list: FriendsResponse = {
       code: '7KQ2M9XD',
       friends: [
@@ -129,7 +127,7 @@ describe('beside screens from the iPhone and the screen walk', () => {
         { id: 'f-2', name: 'Sam_R', status: 'offline' },
       ],
       incoming: [{ id: 'r-1', name: 'Jo_2' }],
-      outgoing: [],
+      outgoing: [{ id: 'o-1', name: 'Kim_7' }],
     };
     const send = () =>
       Promise.resolve(
@@ -139,49 +137,32 @@ describe('beside screens from the iPhone and the screen walk', () => {
       api: (method, path, body) => callApi(method, path, body, {}, send),
       line: () => 'offline',
       copy: () => Promise.resolve(true),
+      challenge: () => undefined,
     });
-    // The account screen as the page lays it out: the sign-in screen's stage and panel.
+    // The Friends tab as the page lays it out: its stage and panel.
     const stage = document.createElement('main');
     stage.className = 'stage';
-    stage.dataset['screen'] = 'signin';
+    stage.dataset['screen'] = 'friends';
     stage.toggleAttribute('data-setup', true);
     const hud = document.createElement('div');
     hud.className = 'hud';
-    const root = document.createElement('section');
-    hud.append(root);
+    hud.append(friends.element);
     stage.append(hud);
     document.body.replaceChildren(stage);
     window.scrollTo(0, 0);
-    const notice = createNotice(root, () => undefined);
-    const actions = { logOut: () => Promise.resolve(), deleteAccount: () => undefined };
-    notice.show(
-      signedInCard(
-        'Sam_1',
-        () => undefined,
-        () => undefined,
-        actions,
-        friends.element,
-      ),
-    );
     await friends.open();
     await frames(2);
 
-    const done = button('Done').closest('.screen-footer') ?? button('Done');
-    const field = root.querySelector('.friends-add-row') ?? root;
-    const parts = [...root.querySelectorAll('.notice-body > *, .friends > *')].filter(
-      (part) => part.getClientRects().length > 0 && !part.contains(done),
-    );
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    for (const y of [0, max / 2, max]) {
-      window.scrollTo(0, y);
-      await frames(2);
-      const under = parts.filter((part) => overlaps(box(part), box(done)));
-      expect(
-        under.map((part) => part.className),
-        `covered at ${String(y)}`,
-      ).toStrictEqual([]);
+    const parts = [
+      ...friends.element.querySelectorAll('.friends-row, .friends-add-row, .friends-code'),
+    ];
+    for (const [at, part] of parts.entries()) {
+      for (const other of parts.slice(at + 1)) {
+        expect(overlaps(box(part), box(other)), `${part.className} / ${other.className}`).toBe(
+          false,
+        );
+      }
     }
-    // Done comes after Add a friend, never over it.
-    expect(box(done).top).toBeGreaterThanOrEqual(box(field).bottom);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   });
 });

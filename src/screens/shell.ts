@@ -1,8 +1,7 @@
-// The shell (ADR 0081) wired to the page: the tab bar on the tab screens, and the Friends and Ranks
-// screens (placeholders until their own pull requests). Profile is the online mount's (profile.ts);
-// where a build has none, its route is home. main.ts hands over how to move.
+// The shell (ADR 0081) wired to the page: the tab bar on the tab screens, and the Ranks placeholder
+// until its own pull request. Profile and Friends are the online mount's (profile.ts,
+// friends-tab.ts); where a build has none, their routes are home. main.ts hands over how to move.
 import type { Moves } from '../app/moves.ts';
-import { writeSendParams } from '../app/online-url.ts';
 import {
   parseRoute,
   writeHomeParams,
@@ -38,13 +37,9 @@ function writeTab(params: URLSearchParams, tab: Tab): void {
 export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScreens {
   const screen = createShellPlaceholder(root, {
     back: host.backOrHome,
-    open: (way) => {
-      if (way === 'home') host.goHome();
-      else {
-        host.go((url) => {
-          writeSendParams(url, 'reveal', 3);
-        });
-      }
+    // Its one way on is Play.
+    open: () => {
+      host.goHome();
     },
   });
   const bar = createTabBar(
@@ -68,10 +63,10 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
   });
   return {
     handlers: {
-      friends: handler('friends'),
       ranks: handler('ranks'),
-      // Drawn by the online mount in a build with accounts, which replaces this; a build without
-      // never routes here (its URL opens home), so this is only the safe way out.
+      // Drawn by the online mount where the build has them, which replaces these; a build without
+      // never routes here (their URLs open home), so these are only the safe way out.
+      friends: { show: host.goHome },
       profile: { show: host.goHome },
     },
     setVisible(current) {

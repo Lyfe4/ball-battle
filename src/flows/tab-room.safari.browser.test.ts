@@ -28,7 +28,7 @@ describe('room for the tab bar on a phone', () => {
     ['Play', '', 'home', '#home'],
     ['Balls', '?view=manual', 'manual', '#manual'],
     ['the matchup chart', '?view=manual&tab=chart', 'manual', '#manual'],
-    ['Friends', '?view=friends', 'friends', '#shell-screen'],
+    ['Friends', '?view=friends', 'friends', '#online-friends'],
     ['Ranks', '?view=ranks', 'ranks', '#shell-screen'],
   ])('shows %s’s last item whole above the bar', async (_name, search, screen, root) => {
     if (screenOn() === undefined) await openAs({ online: true, accounts: true }, search);

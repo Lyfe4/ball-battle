@@ -11,7 +11,6 @@ import {
   openAs,
   placeholderTitle,
   pressPlaceholder,
-  screenOn,
 } from './shell-routes-support.ts';
 
 describe('the shell’s URLs with accounts (previews, staging)', () => {
@@ -30,24 +29,29 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
     button('Sign in').click();
     await onScreen('signin');
 
+    // Friends (PR 6): nobody on this device, so the link card first, then Sign in's card.
     await follow('?view=friends');
     await onScreen('friends');
-    expect(placeholderTitle()).toBe('Friends');
+    await until(
+      () => visible('#online-friends .friends-card-title').length === 2,
+      5_000,
+      'the Friends tab',
+    );
+    expect(visible('#online-friends .friends-card-title').map((t) => t.textContent)).toStrictEqual([
+      'Play a friend with a link',
+      'Sign in to keep friends',
+    ]);
     await follow('?view=ranks');
     await pressPlaceholder('Play');
     await expectHome();
   });
 
   it('keeps every older URL: Google’s return, a challenge, a start and a series', async () => {
+    // Google's return opens sign-in, which reads the result once and drops it from the address
+    // (sign-in.ts); signed in, the player lands on the Friends tab (ADR 0081).
     await follow(LINKS.google);
-    expect(screenOn()).toBe('signin');
-    // The result is read once and dropped from the address (sign-in.ts).
-    await until(
-      () => new URLSearchParams(location.search).get('google') === null,
-      5_000,
-      'Google’s result to be read',
-      false,
-    );
+    await onScreen('friends');
+    expect(new URLSearchParams(location.search).get('google')).toBeNull();
     await follow(LINKS.challenge);
     await onScreen('challenge');
     await follow(LINKS.start);

@@ -59,8 +59,8 @@ describe('adding a friend', () => {
       await friendsOf(one).getByText(`Request sent to ${jo}.`).waitFor();
       expect(await namesIn(one, 'outgoing')).toStrictEqual([jo]);
 
-      // The other phone opens its account screen afresh and finds the request waiting.
-      await two.goto(`${BASE}/?view=signin`);
+      // The other phone opens its Friends tab afresh and finds the request waiting.
+      await two.goto(`${BASE}/?view=friends`);
       await friendsOf(two)
         .getByRole('button', { name: `Accept ${sam}` })
         .click();
@@ -68,7 +68,7 @@ describe('adding a friend', () => {
       expect(await namesIn(two, 'friends')).toStrictEqual([sam]);
       expect(await namesIn(two, 'incoming')).toStrictEqual([]);
 
-      await one.goto(`${BASE}/?view=signin`);
+      await one.goto(`${BASE}/?view=friends`);
       await listed(one, 'friends', jo);
       expect(await namesIn(one, 'friends')).toStrictEqual([jo]);
       expect(await namesIn(one, 'outgoing')).toStrictEqual([]);

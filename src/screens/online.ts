@@ -18,7 +18,9 @@ import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
-import { writeSignInParams } from '../app/online-url.ts';
+import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
+import { writeShellParams } from '../app/route.ts';
+import { createFriendsTab } from './friends-tab.ts';
 import { createProfile } from './profile.ts';
 import { createSignIn } from './sign-in.ts';
 import { createPrimer } from './online-prime.ts';
@@ -57,6 +59,8 @@ export interface OnlineScreens {
   readonly signin: ScreenHandler<'signin'>;
   /** Profile (ADR 0081), in accounts builds; elsewhere the shell's route sends it home. */
   readonly profile?: ScreenHandler<'profile'>;
+  /** The Friends tab (ADR 0081): every online build. */
+  readonly friends: ScreenHandler<'friends'>;
   readonly play: OnlinePlay;
   /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
   readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
@@ -95,6 +99,7 @@ export function createOnlineScreens(
   const signInLoading = section('online-signin-loading', 'Sign in');
   const profileNotice = section('online-profile', 'Profile');
   const profileLoading = section('online-profile-loading', 'Profile');
+  const friendsRoot = section('online-friends', 'Friends');
   const exit = element('div', 'series-exit');
   exit.hidden = true;
   // Beside the offline screens: before the health bars, and the way out under them.
@@ -110,6 +115,7 @@ export function createOnlineScreens(
     signInLoading,
     profileNotice,
     profileLoading,
+    friendsRoot,
   ]) {
     hud.insertBefore(node, status);
   }
@@ -206,10 +212,12 @@ export function createOnlineScreens(
           cookies: () => document.cookie,
           // A guest's Forget me on the ways in; Log out and Delete account are Profile's (ADR 0081).
           forget: () => forgetMeHost(host.storage, startAfresh).forget(),
-          challenge: (friend) => {
-            challenges.challengeFriend(friend);
+          // Signed in, the player lands on the Friends tab (ADR 0081).
+          landed: () => {
+            host.go((url) => {
+              writeShellParams(url, 'friends');
+            });
           },
-          ...(host.friendsChanged === undefined ? {} : { friendsChanged: host.friendsChanged }),
         },
       )
     : undefined;
@@ -233,6 +241,26 @@ export function createOnlineScreens(
         },
       )
     : undefined;
+
+  const friendsTab = createFriendsTab(friendsRoot, {
+    storage: host.storage,
+    cookies: () => document.cookie,
+    back: () => {
+      host.navigation.back(home);
+    },
+    sendLink: () => {
+      host.go((url) => {
+        writeSendParams(url, 'reveal', 3);
+      });
+    },
+    signIn: () => {
+      host.go(writeSignInParams);
+    },
+    challenge: (friend) => {
+      challenges.challengeFriend(friend);
+    },
+    ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
+  });
 
   // Settings' Forget me, in an online build without accounts (no account screen there).
   const forgetMe = createForgetMe(forgetMeHost(host.storage, startAfresh));
@@ -275,17 +303,23 @@ export function createOnlineScreens(
             },
           },
         }),
+    friends: {
+      show: () => {
+        friendsTab.show();
+      },
+    },
     play,
     backToMatch,
     forgetMe,
     setVisible(screen) {
+      friendsTab.setVisible(screen === 'friends');
       signIn?.setVisible(screen === 'signin');
       profile?.setVisible(screen === 'profile');
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },
     friendStatuses(friends) {
-      signIn?.statuses(friends);
+      friendsTab.statuses(friends);
     },
     openInvite: (token) => challenges.openInvite(token),
     rematchShown: () => challenges.rematchShown(),

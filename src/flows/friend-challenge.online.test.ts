@@ -36,7 +36,7 @@ async function befriend(one: Page, two: Page, twoName: string, oneName: string):
   await one.getByLabel('Add a friend').fill(twoName);
   await friendsOf(one).getByRole('button', { name: 'Add', exact: true }).click();
   await friendsOf(one).getByText(`Request sent to ${twoName}.`).waitFor();
-  await two.goto(`${BASE}/?view=signin`);
+  await two.goto(`${BASE}/?view=friends`);
   await friendsOf(two)
     .getByRole('button', { name: `Accept ${oneName}` })
     .click();
@@ -62,7 +62,7 @@ describe('challenging a friend', () => {
       await two.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
 
       // The sender sees them online, and challenges them from the Friends section.
-      await one.goto(`${BASE}/?view=signin`);
+      await one.goto(`${BASE}/?view=friends`);
       const row = friendsOf(one).locator('.friends-row', { hasText: jo });
       await row.locator('.friends-status[data-status="online"]').waitFor();
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
@@ -98,7 +98,7 @@ describe('challenging a friend', () => {
       await two.goto(`${BASE}/?view=manual`);
       await two.getByRole('region', { name: 'Ball manual' }).waitFor();
 
-      await one.goto(`${BASE}/?view=signin`);
+      await one.goto(`${BASE}/?view=friends`);
       const row = friendsOf(one).locator('.friends-row', { hasText: jo });
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
       await sendChallenge(one, `Waiting for ${jo}`);
