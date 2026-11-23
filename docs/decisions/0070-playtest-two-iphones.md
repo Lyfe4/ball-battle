@@ -6,6 +6,7 @@
   0061 (the toss keeps time by speed, never by a jump), ADR 0064 (every control sounds, softly)
 - Builds on: ADR 0053, 0054 (the live clock and countdown), ADR 0063 (catching up gently)
 - Amended by: its addendum of 2026-11-23 (the one who asked hears the yes)
+- Amended by: ADR 0081 (the floating card also waits through a lineup pick)
 
 ## Context
 

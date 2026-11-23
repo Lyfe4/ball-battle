@@ -7,6 +7,7 @@
   lobby, the pick timer, the end of a live match)
 - Builds on: ADR 0054 (the chosen look, the whole countdown, no loading pages)
 - Amended by: ADR 0070 (a rematch reaches the other player anywhere in the game), ADR 0080 (lineups picked together after accepting)
+- Amended by: ADR 0081 (home becomes the Play tab; the opponent cards become its chooser, where Ranked and Casual join later)
 
 Mockups: `docs/images/ux/` (phone 390 × 664, desktop 1280 × 800), drawn with the game's own tokens
 and font from `docs/images/ux/src/` (`node docs/images/ux/src/render.mjs`). Screens as they are
