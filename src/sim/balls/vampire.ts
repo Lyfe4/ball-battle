@@ -38,7 +38,7 @@ export const vampire = defineBall<VampireState>({
   name: 'Vampire',
   description: 'Heals off its bumps; a hit from afar speeds it up.',
   color: '#a855f7',
-  ability: { name: 'Lifesteal', shownBy: { kind: 'healed' } },
+  ability: { name: 'Lifesteal', shownBy: { kind: 'healed' }, tipOn: 'self' },
   howItWorks: [
     `It heals ${percentOf(LIFESTEAL)} of what its bumps deal, rounded, never past full health.`,
     'Only bumps heal it: a ball it never touches feeds it nothing.',

@@ -40,7 +40,7 @@ export const boomerang = defineBall<BoomerangState>({
   name: 'Boomerang',
   description: 'Its boomerang hits going out and coming back.',
   color: '#2dd4bf',
-  ability: { name: 'Comes back', shownBy: { kind: 'projectileFired' } },
+  ability: { name: 'Comes back', shownBy: { kind: 'projectileFired' }, tipOn: 'self' },
   howItWorks: [
     `Every ${secondsOf(COOLDOWN_TICKS)} s it throws a boomerang at the nearest enemy for ${BOOMERANG_DAMAGE}. It turns back after ${secondsOf(TURN_TICKS)} s or at a wall.`,
     'It can hit going out and again on the way back, then comes home to be thrown again.',

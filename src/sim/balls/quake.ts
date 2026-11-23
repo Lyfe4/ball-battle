@@ -24,7 +24,7 @@ export const quake = defineBall<QuakeState>({
   name: 'Quake',
   description: 'Its wall hits send out small, wide shockwaves.',
   color: '#78716c',
-  ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' } },
+  ability: { name: 'Shockwave', shownBy: { kind: 'hook', hook: 'onWallHit' }, tipOn: 'self' },
   howItWorks: [
     `Every wall bounce sends out a wide shockwave where it hit: ${secondsOf(WARNING_TICKS)} s later, ${ZONE_DAMAGE} to any enemy near it.`,
     `Then no shockwave for ${secondsOf(COOLDOWN_TICKS)} s.`,

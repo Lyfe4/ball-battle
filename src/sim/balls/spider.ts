@@ -85,7 +85,7 @@ export const spider = defineBall<SpiderState>({
   name: 'Spider',
   description: 'Its webs on the walls slow and nip balls that bounce off.',
   color: '#d4d4d8',
-  ability: { name: 'Webs', shownBy: { kind: 'hookDamage', hook: 'onTick' } },
+  ability: { name: 'Webs', shownBy: { kind: 'hookDamage', hook: 'onTick' }, tipOn: 'struck' },
   howItWorks: [
     'Each wall it bounces off gets a web where it touched.',
     `A ball that bounces off a web takes ${WEB_NIP} damage and is slowed for ${WEB_SLOW_TICKS / TICK_RATE} s, and the web snaps.`,

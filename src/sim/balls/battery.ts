@@ -30,7 +30,7 @@ export const battery = defineBall<BatteryState>({
   name: 'Battery',
   description: 'Stores big strikes and blasts; its next bump lets them out.',
   color: '#2563eb',
-  ability: { name: 'Store', shownBy: { kind: 'hitReduced' } },
+  ability: { name: 'Store', shownBy: { kind: 'hitReduced' }, tipOn: 'self' },
   howItWorks: [
     `A strike, blast or burst of ${BIG_HIT} or more lands at ${percentOf(1 - STORE_SHARE)}: it stores the rest, up to ${CAPACITY}.`,
     'Its next bump adds everything stored. Bumps and shots are never stored.',

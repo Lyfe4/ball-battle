@@ -56,7 +56,7 @@ export const necromancer = defineBall<NecromancerState>({
   name: 'Necromancer',
   description: 'Keeps a skeleton out that bites and draws aimed shots.',
   color: '#4d7c0f',
-  ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' } },
+  ability: { name: 'Skeletons', shownBy: { kind: 'minionSpawned' }, tipOn: 'minion' },
   howItWorks: [
     `Every ${secondsOf(SUMMON_TICKS)} s, if its skull is gone, it raises a new one: one out at a time.`,
     `A skull bounces around and bites the first enemy it reaches for ${MINION_DAMAGE}.`,

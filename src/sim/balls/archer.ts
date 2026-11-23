@@ -76,7 +76,7 @@ export const archer = defineBall<ArcherState>({
   name: 'Archer',
   description: 'Leads an arrow every 1.8 s; frail up close.',
   color: '#22d3ee',
-  ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' } },
+  ability: { name: 'Arrows', shownBy: { kind: 'projectileFired' }, tipOn: 'self' },
   howItWorks: [
     `Every ${secondsOf(COOLDOWN_TICKS)} s it shoots an arrow at the nearest enemy for ${ARROW_DAMAGE}, aimed where that enemy is heading.`,
     'Its own bump is weak, so it wins from afar.',

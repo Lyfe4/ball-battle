@@ -33,7 +33,7 @@ export const speedster = defineBall<SpeedsterState>({
   name: 'Speedster',
   description: 'Wall bounces build speed and its next bump’s damage.',
   color: '#facc15',
-  ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' } },
+  ability: { name: 'Speed hit', shownBy: { kind: 'hookDamage', hook: 'onHitBall' }, tipOn: 'self' },
   howItWorks: [
     `Each wall bounce adds a stack (a corner adds two), up to ${MAX_STACKS}. Each stack makes it ${percentOf(SPEED_PER_STACK)} faster.`,
     `Its next bump spends them all: ${DAMAGE_PER_STACK} extra damage a stack, up to ${MAX_STACKS * DAMAGE_PER_STACK}, as a hit of its own that spikes never reflect.`,

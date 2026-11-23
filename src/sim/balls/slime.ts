@@ -34,7 +34,7 @@ export const slime = defineBall<SlimeState>({
   name: 'Slime',
   description: 'At half health it splits in two; finish both to win.',
   color: '#e8f580',
-  ability: { name: 'Split', shownBy: { kind: 'split' } },
+  ability: { name: 'Split', shownBy: { kind: 'split' }, tipOn: 'self' },
   howItWorks: [
     `The first hit that leaves it at ${percentOf(SPLIT_AT)} health or less splits it into two small slimes sharing what is left.`,
     `Each half is ${percentOf(HALF_SPEED - 1)} faster and bumps for ${percentOf(HALF_BUMP)}. Both must be knocked out.`,

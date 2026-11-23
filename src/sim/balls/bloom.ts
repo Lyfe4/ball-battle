@@ -34,7 +34,7 @@ export const bloom = defineBall<BloomState>({
   name: 'Bloom',
   description: 'Regrows once left alone for 2 s; any hit makes it wait again.',
   color: '#f472b6',
-  ability: { name: 'Regrowth', shownBy: { kind: 'healed' } },
+  ability: { name: 'Regrowth', shownBy: { kind: 'healed' }, tipOn: 'self' },
   howItWorks: [
     `Left alone for ${secondsOf(PAUSE_TICKS)} s, it opens and regrows ${HEAL_AMOUNT} health every ${secondsOf(HEAL_EVERY_TICKS)} s.`,
     'Every hit it takes, of any kind, closes it into a bud and starts the wait again.',

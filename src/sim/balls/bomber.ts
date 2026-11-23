@@ -30,7 +30,7 @@ export const bomber = defineBall<BomberState>({
   name: 'Bomber',
   description: 'Drops a big bomb now and then: it blows when touched.',
   color: '#f91fce',
-  ability: { name: 'Bombs', shownBy: { kind: 'zoneSpawned' } },
+  ability: { name: 'Bombs', shownBy: { kind: 'zoneSpawned' }, tipOn: 'zone' },
   howItWorks: [
     `Every ${secondsOf(DROP_TICKS)} s it drops a bomb that blows after ${secondsOf(FUSE_TICKS)} s, hitting enemies in the blast for ${BLAST_DAMAGE}.`,
     'An enemy that runs into an armed bomb sets it off at once.',

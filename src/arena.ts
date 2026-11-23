@@ -208,7 +208,7 @@ export function createArena(
     });
     // Due just after a knockout's slow-mo, or at once for a time-limit end.
     sticker.update(world, effects.stickerVisible(now));
-    tips.update(drawn, now);
+    tips.update(drawn, now, reduced);
     host.drawn(world, effects.resultVisible(now), effects.celebrationOver(now));
     host.frameTip.settle(world.match.status === 'finished' && effects.celebrationOver(now));
   }

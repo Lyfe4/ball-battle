@@ -70,6 +70,12 @@
   --color-on-sticker-favoured: var(--palette-green-700);
   --color-on-sticker-unfavoured: var(--palette-red-700);
   --color-on-sticker-muted: var(--palette-lilac-700);
+  /*
+   * A tip's own colour, worn by no ball (ADR 0036 addendum of 2026-11-23): the arena tip's dashed
+   * ring, its "i" tag and the caption's faint outline, with --color-on-tip on it.
+   */
+  --color-tip: var(--palette-cream-50);
+  --color-on-tip: var(--palette-ink-text);
   --color-health-track: var(--palette-plum-975);
   --color-health-fill: var(--palette-green-400);
   --color-health-ghost: rgba(255, 248, 238, 0.7);

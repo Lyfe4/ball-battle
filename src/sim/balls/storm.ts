@@ -51,7 +51,7 @@ export const storm = defineBall<StormState>({
   name: 'Storm',
   description: 'Calls a big lightning strike on its enemy, after a warning.',
   color: '#93c5fd',
-  ability: { name: 'Lightning', shownBy: { kind: 'zoneSpawned' } },
+  ability: { name: 'Lightning', shownBy: { kind: 'zoneSpawned' }, tipOn: 'zone' },
   howItWorks: [
     `Every ${secondsOf(COOLDOWN_TICKS)} s it marks a circle near its enemy. ${secondsOf(WARNING_TICKS)} s later lightning strikes it for ${ZONE_DAMAGE}.`,
     'A ball that gets out of the circle in time takes nothing.',

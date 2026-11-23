@@ -27,7 +27,7 @@ export const berserker = defineBall<BerserkerState>({
   name: 'Berserker',
   description: 'Every hit it takes builds rage; its next bump lets it out.',
   color: '#f97316',
-  ability: { name: 'Rage', shownBy: { kind: 'hook', hook: 'onHitBall' } },
+  ability: { name: 'Rage', shownBy: { kind: 'hook', hook: 'onHitBall' }, tipOn: 'self' },
   howItWorks: [
     `Every hit it takes stores rage, up to ${MAX_RAGE}: bumps, shots, poison and burns alike. Hits at the same moment store one; reflected spikes store none.`,
     `Its next bump lets it all out: ${RAGE_PER_HIT} extra damage per hit stored, up to ${RAGE_DAMAGE}. The hit it takes back in that bump starts the next.`,

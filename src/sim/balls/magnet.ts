@@ -55,7 +55,7 @@ export const magnet = defineBall<MagnetState>({
   name: 'Magnet',
   description: 'Pulls every 2 s, and at once when hit from range.',
   color: '#e11d48',
-  ability: { name: 'Pull', shownBy: { kind: 'hook', hook: 'onTick' } },
+  ability: { name: 'Pull', shownBy: { kind: 'hook', hook: 'onTick' }, tipOn: 'self' },
   howItWorks: [
     `Every ${secondsOf(PULL_PERIOD_TICKS)} s it pulls the nearest enemy toward it for ${secondsOf(PULL_TICKS)} s.`,
     `A shot, throw or minion that hits it starts a harder pull at once, for ${secondsOf(HIT_PULL_TICKS)} s; the next can start ${secondsOf(HIT_PULL_REST_TICKS)} s after it ends.`,

@@ -23,7 +23,7 @@ export const balloon = defineBall({
   name: 'Balloon',
   description: 'Floats: area hits do half; shots hit it harder.',
   color: '#ff6b6b',
-  ability: { name: 'Float', shownBy: { kind: 'hitReduced' } },
+  ability: { name: 'Float', shownBy: { kind: 'hitReduced' }, tipOn: 'self' },
   howItWorks: [
     `Fire, bombs, shockwaves and lightning land at ${percentOf(AREA_SHARE)}: they pass under it.`,
     `Every shot hits it for ${percentOf(SHOT_TIMES)}. Bumps land as they are.`,
