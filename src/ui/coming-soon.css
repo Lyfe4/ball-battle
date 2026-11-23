@@ -12,6 +12,11 @@
   text-align: start;
 }
 
+.soon-card-flat {
+  padding: 0;
+  background: none;
+}
+
 .soon-card-head {
   display: flex;
   align-items: center;

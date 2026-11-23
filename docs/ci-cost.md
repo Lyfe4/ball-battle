@@ -1,8 +1,9 @@
 # What CI costs, and going private later
 
-Measured 2026-11-23, to revisit near launch. The repository is public, so GitHub Actions minutes are
-free today. A private repository on GitHub Pro gets 3,000 Linux minutes a month, billed per job with
-each job rounded **up** to a whole minute.
+Measured 2026-11-23, to revisit near launch. The repository is public (still so on 2026-11-24:
+#148 recorded the cost and changed nothing), so GitHub Actions minutes are free today. A private
+repository on GitHub Pro gets 3,000 Linux minutes a month, billed per job with each job rounded
+**up** to a whole minute.
 
 ## Measured: 2026-11-11 21:11 to 2026-11-23 12:00 UTC (11.6 days)
 

@@ -3,6 +3,7 @@
 // and every online link keeps its screen.
 import { describe, expect, it } from 'vitest';
 import {
+  avatarsShown,
   expectHome,
   follow,
   LINKS,
@@ -26,6 +27,9 @@ describe('the shell’s URLs online without accounts (production with vs Friend 
     // Friends is a tab here; Ranks is not until accounts are on.
     expect(tabLabels()).toStrictEqual(['Play', 'Balls', 'Friends']);
     expect(document.title).toBe('Friends · BallBattle');
+    // No accounts, no avatar: not in the header, not on the rail (ADR 0081).
+    expect(document.querySelectorAll('.account-toggle')).toHaveLength(0);
+    expect(avatarsShown()).toHaveLength(0);
     // Its way on: challenging a friend with a link, which needs no account.
     button('Challenge with a link').click();
     await onScreen('send');

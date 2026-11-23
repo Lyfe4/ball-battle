@@ -50,12 +50,21 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
   } as unknown as InboxResponse['invites'][number];
 
   it('puts what waits first, then who is online, and says nothing when there is nothing', () => {
+    // One thing says it whole; more than one, each in a word, so a 390 px phone shows them all.
+    expect(statusLine({ friends: [], requests: 0, invites: [invite] })).toBe('1 challenge waiting');
+    expect(statusLine({ friends: [], requests: 2, invites: [] })).toBe('2 friend requests');
+    expect(statusLine({ friends: [friend('online')], requests: 0, invites: [] })).toBe(
+      '1 friend online',
+    );
     expect(
       statusLine({ friends: [friend('online'), friend('online')], requests: 0, invites: [invite] }),
-    ).toBe('1 challenge waiting · 2 friends online');
+    ).toBe('1 challenge · 2 online');
     expect(statusLine({ friends: [friend('online')], requests: 2, invites: [] })).toBe(
-      '2 friend requests · 1 friend online',
+      '2 requests · 1 online',
     );
+    expect(
+      statusLine({ friends: [friend('online'), friend('online')], requests: 1, invites: [invite] }),
+    ).toBe('1 challenge · 1 request · 2 online');
     // Never "0 friends online": in a match or offline is not online.
     expect(
       statusLine({ friends: [friend('in_a_match'), friend('offline')], requests: 0, invites: [] }),

@@ -77,6 +77,11 @@
   white-space: nowrap;
 }
 
+/* Its words in the page's text; its arrow in a link's colour, as every other link's (2026-11-24). */
+.home-status::after {
+  color: var(--color-focus);
+}
+
 .home-status[hidden] {
   display: none;
 }

@@ -178,6 +178,8 @@ const online = ONLINE_BUILD
   : offlineMount(() => {
       goHome('replace');
     });
+// The avatar on every tab screen and atop the rail (ADR 0081), in a build with accounts.
+if (online.avatars !== undefined) shell.holdAvatars(online.avatars);
 
 const router = createRouter(
   {

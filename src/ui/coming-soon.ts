@@ -14,8 +14,10 @@ export function createComingSoon(
   title: string,
   tiles: readonly SoonTile[],
   line?: string,
+  /** Inside a card already (Profile's): no card of its own, its edges on the card's. */
+  flat = false,
 ): HTMLElement {
-  const card = element('section', 'soon-card');
+  const card = element('section', flat ? 'soon-card soon-card-flat' : 'soon-card');
   card.setAttribute('aria-label', `${title}, coming soon`);
   const head = element('div', 'soon-card-head');
   head.append(

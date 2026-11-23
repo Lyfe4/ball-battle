@@ -1,8 +1,8 @@
 # 0081: The app shell by tabs
 
 - Status: Accepted (2026-11-23), approved by the owner as proposed (the shell proposal and its
-  mockups, reviewed 2026-11-23), with the requirements from the mockup review below. Not built yet:
-  the build plan below.
+  mockups, reviewed 2026-11-23), with the requirements from the mockup review below. Built
+  2026-11-24 by the build plan below (#149 to #160), then the addenda.
 - Date: 2026-11-23
 - Amends: ADR 0025 (§3 Back: a rule for tabs), ADR 0055 (home becomes the Play tab; the opponent
   cards become the Play chooser, and Ranked and Casual join it later instead of a 2 × 2 grid), ADR
@@ -238,9 +238,9 @@ checklist.
   in online builds; with one choice (no online play) it doesn't show. It starts on vs Bot every time
   the tab opens, and choosing adds no history step. The cards went (`PLAY_CHOICES` replaces
   `HOME_CARDS`; `writeOpponentPlayParams` and `writeChangeRulesParams` say where each leads).
-- **vs Friend**: Play says "Live · send a friend a link" and opens the send screen; Change rules
-  steps aside, as it would open the same screen. A held bot series shows as Resume series only with
-  vs Bot chosen.
+- **vs Friend**: Play says "Live · send a link" (shortened 2026-11-24) and opens the send screen;
+  Change rules steps aside, as it would open the same screen. A held bot series shows as Resume
+  series only with vs Bot chosen.
 - **The title row on top.** On a phone held upright the title row (with Sign in and the gear) sits
   above the court, as in the mockup: the panel's boxes are `display: contents` on home there, so the
   row can lead the column. Beside and on a desktop it stays at the top of the panel.
@@ -327,3 +327,19 @@ checklist.
   a way on: Play a friend now (the send screen). It reads nothing. The trophy road's drawing waits
   for the real thing.
 - The shell's placeholders are gone with it: every shell screen is real.
+
+## Addendum (2026-11-24): the avatar on every tab, and small fixes after the build
+
+- **The avatar on every tab screen**, as the decision above has it (PR 5 put it on Play's title row
+  only, so Profile was out of reach from Balls, Friends and Ranks). Two buttons show the one `/me`
+  answer (`createAvatars`): on a phone held upright, first in the header of whichever tab screen
+  shows (`data-tab-head`, placed by the shell and taken out on any other screen); beside and on a
+  desktop, atop the rail, with the header's hidden. Each is `display: none` where it isn't the
+  one, so a page has one avatar to tap and to read. A header keeps its Back. `/me` is asked again
+  on the next tab screen after Profile or sign-in, not only on Play. Builds without accounts have
+  neither (`tab-avatar.*.browser.test.ts`, `shell-routes-friend.browser.test.ts`).
+- **At 667 x 320** the rail holds the avatar and the four tabs with nothing scrolled
+  (`tab-rail.landscape-small.browser.test.ts`); a fifth tab still needs the 48 px tabs above.
+- **Small fixes:** the status strip's arrow wears the links' colour; Profile's stats sit flat in its
+  card (`soon-card-flat`) rather than a card in a card; vs Friend's Play line is shorter; the strip says one thing whole ("1 challenge waiting")
+  and several in short ("1 challenge · 1 request · 2 online"), so a phone shows them all.

@@ -51,7 +51,7 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
   });
 
   it('says what Play starts against a friend: live, by a link', () => {
-    expect(FRIEND_PLAY_LINE).toBe('Live · send a friend a link');
+    expect(FRIEND_PLAY_LINE).toBe('Live · send a link');
     expect(FRIEND_PLAY_SPOKEN).toBe('Play a friend live: send them a link');
   });
 
