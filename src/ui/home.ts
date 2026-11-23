@@ -174,6 +174,7 @@ export function createHome(
   // The title shares its row with the settings gear (ADR 0040): the top of the page on a phone,
   // the top of the panel beside the court.
   const head = element('div', 'home-head');
+  head.dataset['tabHead'] = 'play';
   head.append(title, createSettingsToggle());
   root.append(head, demo, pitch, status, playRow, more, strip, footer);
 

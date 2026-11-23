@@ -21,6 +21,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
       signin: toHome,
       friends: toHome,
     },
+    avatars: undefined,
     settings: {
       online: createForgetMe(
         forgetMeHost(browserStorage, () => {

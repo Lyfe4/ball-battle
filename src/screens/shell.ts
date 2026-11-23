@@ -28,6 +28,11 @@ export interface ShellScreens {
   setVisible(screen: Screen): void;
   /** What waits on the player: the Friends tab's badge (ADR 0081). */
   waiting(count: number): void;
+  /**
+   * The avatar (accounts builds, ADR 0081): `rail` tops the rail beside; `head` goes first in the
+   * header of whichever tab screen shows (`data-tab-head`), and leaves with the tab.
+   */
+  holdAvatars(avatars: { readonly head: HTMLElement; readonly rail: HTMLElement }): void;
 }
 
 /** A tab's URL, written over the current one. */
@@ -64,6 +69,15 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     },
   );
   document.body.append(bar.element);
+  let headAvatar: HTMLElement | undefined;
+  /** The header avatar into the tab's header, or out of the page where no tab shows. */
+  const placeAvatar = (tab: Tab['id'] | undefined): void => {
+    if (headAvatar === undefined) return;
+    const head = tab === undefined ? null : document.querySelector(`[data-tab-head="${tab}"]`);
+    if (head === null) headAvatar.remove();
+    else if (head.firstElementChild !== headAvatar) head.prepend(headAvatar);
+  };
+  let shown: Tab['id'] | undefined;
   return {
     handlers: {
       ranks: {
@@ -77,6 +91,11 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
       friends: { show: host.goHome },
       profile: { show: host.goHome },
     },
+    holdAvatars(avatars) {
+      bar.lead(avatars.rail);
+      headAvatar = avatars.head;
+      placeAvatar(shown);
+    },
     waiting(count) {
       bar.badge('friends', count, friendsTabLabel(count));
     },
@@ -84,7 +103,9 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
       ranks?.setVisible(current === 'ranks');
       // The bar follows the URL's screen key: the manual's index wears it, a ball's page doesn't.
       const route = parseRoute(new URLSearchParams(window.location.search), BALL_LOOKUP, false);
-      bar.show(route.screen === current ? tabOf(screenKeyOf(route)) : undefined);
+      shown = route.screen === current ? tabOf(screenKeyOf(route)) : undefined;
+      bar.show(shown);
+      placeAvatar(shown);
     },
   };
 }

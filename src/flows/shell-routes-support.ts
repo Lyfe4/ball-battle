@@ -99,3 +99,62 @@ export function tabLink(label: string): HTMLAnchorElement {
   if (link === undefined) throw new Error(`No tab "${label}"`);
   return link;
 }
+
+/** The avatars laid out on the page: each is `display: none` where it isn't the one (online.css). */
+export const avatarsShown = (): HTMLElement[] =>
+  visible('button.account-toggle').filter((node) => node.getClientRects().length > 0);
+
+const TAB_SCREENS = [
+  ['Play', 'home'],
+  ['Balls', 'manual'],
+  ['Friends', 'friends'],
+  ['Ranks', 'ranks'],
+] as const;
+
+/**
+ * On every tab screen of a build with accounts, reached by its tab: one avatar, at `place` (first
+ * in the header on a phone, atop the rail beside); it opens Profile, which has neither, and
+ * Profile's Back returns to that tab (ADR 0081). Ends back on Play.
+ */
+export async function avatarOnEveryTab(place: 'head' | 'rail'): Promise<void> {
+  await openAs({ online: true, accounts: true }, '');
+  for (const [label, screen] of TAB_SCREENS) {
+    if (label !== 'Play') tabLink(label).click();
+    await onScreen(screen);
+    await settle();
+    const shown = avatarsShown();
+    expect(shown, screen).toHaveLength(1);
+    const avatar = shown[0];
+    if (avatar === undefined) return;
+    expect(avatar.dataset['place'], screen).toBe(place);
+    expect(avatar.getAttribute('aria-label'), screen).toBe('Profile');
+    const box = avatar.getBoundingClientRect();
+    if (place === 'head') {
+      // First in this screen's own header, at the top left of the page.
+      const head = avatar.parentElement;
+      expect(head?.firstElementChild, screen).toBe(avatar);
+      expect(head?.closest('[hidden]'), screen).toBeNull();
+      expect(box.top, screen).toBeLessThan(80);
+      expect(box.left, screen).toBeLessThan(40);
+    } else {
+      // Atop the rail, above its first tab, wholly on screen.
+      const rail = tabBar();
+      expect(avatar.parentElement, screen).toBe(rail);
+      const first = rail?.querySelector('a')?.getBoundingClientRect();
+      expect(box.bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
+      expect(box.top, screen).toBeGreaterThanOrEqual(0);
+    }
+    avatar.click();
+    await onScreen('profile');
+    await settle();
+    // Profile is a screen of its own: no bar, no avatar.
+    expect(tabBar(), screen).toBeUndefined();
+    expect(avatarsShown(), screen).toHaveLength(0);
+    button('Back').click();
+    await onScreen(screen);
+    await settle();
+    expect(currentTab(), screen).toBe(label);
+  }
+  tabLink('Play').click();
+  await onScreen('home');
+}

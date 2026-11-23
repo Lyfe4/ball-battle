@@ -22,7 +22,7 @@ export interface RanksScreen {
 export function createRanks(root: HTMLElement, host: RanksHost): RanksScreen {
   root.setAttribute('aria-label', RANKS.title);
   root.classList.add('ranks-screen');
-  const header = createScreenHeader(RANKS.title, 'Back', host.back);
+  const header = createScreenHeader(RANKS.title, 'Back', host.back, { tab: 'ranks' });
   const body = element('div', 'ranks');
   const intro = element('p', 'ranks-intro', RANKS.intro);
   const cards = RANKS.cards.map((card) => createComingSoon(card.title, [], card.line));

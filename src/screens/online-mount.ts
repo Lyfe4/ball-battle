@@ -24,7 +24,11 @@ import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi } from '../app/api.ts';
 import { whoAmI } from '../app/who-am-i.ts';
-import { createAccountButton } from '../ui/online/account-button.ts';
+import { createAvatars, type Avatars } from '../ui/online/account-button.ts';
+import { TABS } from '../app/tabs.ts';
+
+/** The screens a tab opens (tabs.ts), where the avatar shows. */
+const TAB_SCREENS: ReadonlySet<string> = new Set(TABS.map((tab) => tab.screen));
 
 /** How often home asks again while it shows a way back to a live match. */
 const HOME_ASK_MS = 10_000;
@@ -35,6 +39,8 @@ export interface OnlineMount {
     'online' | 'challenge' | 'send' | 'start' | 'signin' | 'friends'
   > &
     Partial<Pick<ScreenHandlers, 'profile'>>;
+  /** The avatars (accounts builds), for the shell to place on the tab screens and the rail. */
+  readonly avatars: Pick<Avatars, 'head' | 'rail'> | undefined;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
   settle(world: WorldState): void;
@@ -181,31 +187,28 @@ export function mountOnline(context: MountContext): OnlineMount {
     storage: browserStorage,
   });
   const homeRoot = getElement('home', HTMLElement);
-  // The avatar, first on the Play tab's title row (ADR 0081): what `/me` says, read when home shows
-  // after a page load, Profile or sign-in, never polled. It opens Profile.
-  const account = ACCOUNTS_BUILD
-    ? createAccountButton(() => {
-        context.go((url) => {
-          writeShellParams(url, 'profile');
-        });
-      })
-    : undefined;
-  if (account !== undefined) {
-    homeRoot.querySelector('.home-head')?.prepend(account.element);
-  }
-  /** Read again on the next home: a sign-in, a log out or a new username may have changed it. */
+  // The avatar on every tab screen (ADR 0081), in the header on a phone and atop the rail beside:
+  // what `/me` says, read when a tab screen shows after a page load, Profile or sign-in, never
+  // polled. It opens Profile; the shell places it.
+  const openProfile = (): void => {
+    context.go((url) => {
+      writeShellParams(url, 'profile');
+    });
+  };
+  const avatars = ACCOUNTS_BUILD ? createAvatars(openProfile) : undefined;
+  /** Read again on the next tab screen: a sign-in, a log out or a new username may change it. */
   let whoStale = true;
   const askWho = async (): Promise<void> => {
-    if (account === undefined || !whoStale) return;
+    if (avatars === undefined || !whoStale) return;
     whoStale = false;
-    account.show({ kind: 'unknown' });
+    avatars.show({ kind: 'unknown' });
     const who = await whoAmI(browserStorage, document.cookie, () =>
       callApi<PlayerResponse>('GET', 'me'),
     );
-    // Not known (offline, failing): the face stays, and the next home asks again.
+    // Not known (offline, failing): the face stays, and the next tab screen asks again.
     if (who.kind === 'unknown') whoStale = true;
     else inboxWatch?.signedIn(who.kind === 'account');
-    account.show(who);
+    avatars.show(who);
   };
   // Who this is is asked once the page loads, on whichever screen it opens (2026-11-23: a page
   // opened on the manual never read the inbox, so a friend's challenge waited for home).
@@ -253,6 +256,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       friends: screens.friends,
       ...(screens.profile === undefined ? {} : { profile: screens.profile }),
     },
+    avatars,
     // With accounts, everything about the player is on the account screen; settings are this
     // device's alone. Without, Forget me stays in settings (ADR 0078).
     settings: ACCOUNTS_BUILD ? {} : { online: screens.forgetMe },
@@ -269,11 +273,12 @@ export function mountOnline(context: MountContext): OnlineMount {
     sides: () => screens.play.sides(),
     setVisible: (screen) => {
       if (screen === 'signin' || screen === 'profile') whoStale = true;
+      // Any tab screen may show the avatar, so any of them asks again once it is stale.
+      else if (TAB_SCREENS.has(screen)) void askWho();
       screens.setVisible(screen);
     },
     homeShown: () => {
       void askHome();
-      void askWho();
     },
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),

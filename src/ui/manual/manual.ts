@@ -35,7 +35,10 @@ export function createManual(
   root.replaceChildren();
   root.classList.add('manual');
   const roster = balls.map((ball) => ball.id);
-  const header = createScreenHeader('Ball manual', 'Back', actions.onBack, { legend: true });
+  const header = createScreenHeader('Ball manual', 'Back', actions.onBack, {
+    legend: true,
+    tab: 'balls',
+  });
 
   const index = element('section', 'manual-index');
   const grid = createBallGrid(balls, {

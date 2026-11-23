@@ -1,3 +1,4 @@
+import type { TabId } from '../app/tabs.ts';
 import { element } from './dom.ts';
 import { createSettingsToggle } from './settings-menu.ts';
 import { createSymbolLegend } from './symbol-legend.ts';
@@ -18,6 +19,11 @@ export interface ScreenHeaderOptions {
    * screen's ? and the gear beside it (round 1's pick), so a screen has one gear.
    */
   readonly settings?: boolean;
+  /**
+   * The tab this screen is, if it is one (ADR 0081): on a phone the shell puts the avatar first in
+   * its header while it shows as that tab (shell.ts).
+   */
+  readonly tab?: TabId;
 }
 
 /**
@@ -32,6 +38,7 @@ export function createScreenHeader(
   options: ScreenHeaderOptions = {},
 ): ScreenHeader {
   const header = element('header', 'screen-header');
+  if (options.tab !== undefined) header.dataset['tabHead'] = options.tab;
   const back = element('button', 'screen-back', '‹');
   back.type = 'button';
   back.dataset['sound'] = 'back';
