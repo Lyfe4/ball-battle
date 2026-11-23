@@ -17,7 +17,14 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
   it('opens each shell screen, and Back from one reached by a link puts Play in its place', async () => {
     await openAs({ online: true, accounts: true }, '?view=ranks');
     await onScreen('ranks');
+    // Ranks (PR 9): coming soon, plainly, with a way on.
     expect(placeholderTitle()).toBe('Ranks');
+    expect(visible('#shell-screen .soon-card-title').map((t) => t.textContent)).toStrictEqual([
+      'Trophy road',
+      'Friends',
+      'Everyone',
+    ]);
+    expect(visible('#shell-screen .soon-sticker')).toHaveLength(3);
     button('Back').click();
     await expectHome();
 
@@ -42,8 +49,8 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
       'Sign in to keep friends',
     ]);
     await follow('?view=ranks');
-    await pressPlaceholder('Play');
-    await expectHome();
+    await pressPlaceholder('Play a friend now');
+    await onScreen('send');
   });
 
   it('keeps every older URL: Google’s return, a challenge, a start and a series', async () => {

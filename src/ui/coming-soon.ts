@@ -6,11 +6,15 @@ export interface SoonTile {
 }
 
 /**
- * A card for something not built yet (ADR 0081): its title with a cream "Coming soon" sticker, and
- * tiles that show only a dash. One look for every such card: Profile's stats, the Ranks tab's
+ * A card for something not built yet (ADR 0081): its title with a cream "Coming soon" sticker, a
+ * line of what it will be, and tiles that show only a dash. One look for every such card: Profile's stats, the Ranks tab's
  * boards. It reads nothing; the words say plainly that it is coming.
  */
-export function createComingSoon(title: string, tiles: readonly SoonTile[]): HTMLElement {
+export function createComingSoon(
+  title: string,
+  tiles: readonly SoonTile[],
+  line?: string,
+): HTMLElement {
   const card = element('section', 'soon-card');
   card.setAttribute('aria-label', `${title}, coming soon`);
   const head = element('div', 'soon-card-head');
@@ -27,6 +31,8 @@ export function createComingSoon(title: string, tiles: readonly SoonTile[]): HTM
     item.append(element('dt', '', tile.label), value);
     list.append(item);
   }
-  card.append(head, list);
+  card.append(head);
+  if (line !== undefined) card.append(element('p', 'soon-card-line', line));
+  if (tiles.length > 0) card.append(list);
   return card;
 }

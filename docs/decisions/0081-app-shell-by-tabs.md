@@ -316,3 +316,14 @@ checklist.
   rematch opens the ADR 0080 lineups as before.
 - The buttons are one part (`series/end-buttons.ts`), each with what it does on a second line and
   its first line as its name.
+
+## Addendum (2026-11-24): the Ranks tab, as built (PR 9)
+
+- **Builds with accounts only** (previews and staging), as decided: `ranks.ts`, created only under
+  `ACCOUNTS_BUILD`, so production's bundle holds none of it, and its URL opens home there.
+- It says plainly what it is ("Win online matches to climb. Ranks open with ranked play; until
+  then, every match is for fun."), then three coming-soon cards in the one look Profile's stats use
+  (Trophy road, Friends, Everyone, each with a line of what it will be and the cream sticker), and
+  a way on: Play a friend now (the send screen). It reads nothing. The trophy road's drawing waits
+  for the real thing.
+- The shell's placeholders are gone with it: every shell screen is real.

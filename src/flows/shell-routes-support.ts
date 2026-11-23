@@ -54,7 +54,7 @@ export async function onScreen(screen: string): Promise<void> {
   await until(() => screenOn() === screen, 5_000, `the ${screen} screen`, false);
 }
 
-/** The shell placeholder's heading, if it shows. */
+/** The shell's own screen's heading (Ranks), if it shows. */
 export const placeholderTitle = (): string | undefined =>
   visible('#shell-screen h1')[0]?.textContent.trim();
 
@@ -65,7 +65,7 @@ export async function expectHome(): Promise<void> {
   expect(visible('#home').length).toBe(1);
 }
 
-/** Presses the shell placeholder's one way on. */
+/** Presses the shell's own screen's way on. */
 export async function pressPlaceholder(name: string): Promise<void> {
   button(name).click();
   await settle();
