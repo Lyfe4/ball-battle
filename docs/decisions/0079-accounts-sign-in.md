@@ -150,6 +150,14 @@ here) decodes the ID token.
   leaks nothing. If it matters later, the fix is to answer before Auth is called (send in the
   background) or to pad the fast path.
 - Deploy previews can test email codes but not Google.
+- **Before accounts are switched on in production** (`friend-switch.ts --accounts on`), in this
+  order, each its own pull request where it changes the repository:
+  - **Update the privacy policy** (`privacy.html`, ADR 0069) and its date: Log out and Delete
+    account now live on Profile (ADR 0081), and so does a guest's Forget me in a build with
+    accounts. "Deleting your data" says to use Forget me "in the game's settings" and that,
+    signed in, "the same button is Delete account": true only while accounts are off.
+  - Every setting in the list above, on production's project; `/health` reads `"accounts":"ok"`.
+  - UptimeRobot's keyword monitor for `"accounts":"ok"` (above).
 - Slice 1 (this and PR (b)) reaches production only together with friends.
 - **Staying signed in** (checked 2026-11-22). The session cookie lasts 400 days (Chrome's most),
   renewed at each hourly refresh; refresh tokens don't expire (no time-box on the Free plan), and

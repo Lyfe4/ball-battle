@@ -155,3 +155,11 @@ The Friends section
 ## New in the shell (nothing moved here; for the record)
 
 - [x] Ranks in builds with accounts only, plainly coming soon, with a way on (PR 9)
+- [x] The avatar on every tab screen: first in the header on a phone, atop the rail beside and on
+      a desktop; none without accounts (fix round after PR 9, `tab-avatar.*.browser.test.ts`)
+
+## Before accounts reach production
+
+- [ ] Update the privacy policy (`privacy.html`) and its date: Log out, Delete account and a
+      guest's Forget me are on Profile, not in settings (ADR 0079, "Before accounts are switched
+      on in production", which lists the rest)
