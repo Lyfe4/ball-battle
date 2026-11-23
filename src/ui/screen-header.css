@@ -185,3 +185,8 @@
 .symbol-legend-toggle[data-pressed] {
   filter: brightness(1.08);
 }
+
+/* A tab screen's header has no Back (ADR 0081 addendum of 2026-11-24). */
+.screen-back[hidden] {
+  display: none;
+}

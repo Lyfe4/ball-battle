@@ -167,8 +167,8 @@ describe('screenTitle', () => {
     expect(screenTitle('series', 5)).toBe('Best of 5 · BallBattle');
     expect(screenTitle('send')).toBe('vs Friend · BallBattle');
     expect(screenTitle('series', 5, undefined, true)).toBe('vs Bot · BallBattle');
-    expect(screenTitle('manual')).toBe('Ball manual · BallBattle');
-    expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Ball manual · BallBattle');
+    expect(screenTitle('manual')).toBe('Balls · BallBattle');
+    expect(screenTitle('manual', undefined, 'Frost')).toBe('Frost · Balls · BallBattle');
     expect(screenTitle('friends')).toBe('Friends · BallBattle');
     expect(screenTitle('profile')).toBe('Profile · BallBattle');
     expect(screenTitle('ranks')).toBe('Ranks · BallBattle');

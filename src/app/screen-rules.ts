@@ -122,7 +122,7 @@ const TITLES: Readonly<Record<Screen, string>> = {
   pick: 'Free play · BallBattle',
   match: 'Free play · BallBattle',
   series: 'Best of 3 · BallBattle',
-  manual: 'Ball manual · BallBattle',
+  manual: 'Balls · BallBattle',
   outdated: 'Link from another version · BallBattle',
   online: 'Online series · BallBattle',
   challenge: 'Challenge · BallBattle',
