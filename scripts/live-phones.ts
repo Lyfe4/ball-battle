@@ -141,8 +141,9 @@ async function confirmAge(page: Page): Promise<void> {
 }
 
 /**
- * The sender sends a live Reveal challenge from home's vs Friend (the 16+ question first, ADR
- * 0055), the friend accepts it, and both reach the match.
+ * The sender sends a live Reveal challenge from Play (the mode box's sheet: vs Friend, the length,
+ * Reveal; ADR 0081), answers the 16+ question (ADR 0055) and waits in the lobby; the friend opens
+ * the link and accepts; both pick their lineups together (ADR 0080) and reach the match.
  */
 export async function startMatch(
   base: string,
@@ -153,22 +154,28 @@ export async function startMatch(
 ): Promise<{ lobbyToMatchMs: number }> {
   await sender.page.goto(`${base}/`);
   await shot(sender.page, 'home-no-match');
-  await sender.page.locator('.home-chooser button[data-opponent="friend"]').click();
+  await sender.page.locator('.play-box').click();
+  const sheet = sender.page.getByRole('dialog', { name: 'What to play' });
+  await sheet.getByRole('button', { name: 'vs Friend' }).click();
+  await sheet.getByRole('button', { name: new RegExp(`^Best of ${String(bestOf)}`) }).click();
+  await sheet.getByRole('button', { name: /^Reveal,/ }).click();
+  await sheet.locator('.play-sheet-done').click();
   await sender.page.locator('.home-play-row .home-play').click();
   await confirmAge(sender.page);
-  await sender.page.getByRole('heading', { name: 'vs Friend' }).waitFor();
-  await sender.page.getByRole('button', { name: `Best of ${String(bestOf)}` }).click();
-  await sender.page.getByRole('button', { name: 'Choose lineup' }).click();
-  await lineup(sender.page, 'Send challenge', 0, bestOf);
   await sender.page.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   await shot(sender.page, 'lobby');
   const token = new URL(sender.page.url()).searchParams.get('challenge') ?? '';
   await friend.page.goto(`${base}/?challenge=${token}`);
-  await friend.page.getByRole('button', { name: 'Build your lineup' }).click();
+  await friend.page.getByRole('heading', { name: /challenges you$/ }).waitFor();
+  await friend.page.getByRole('button', { name: 'Accept' }).click();
   await confirmAge(friend.page);
-  await lineup(friend.page, 'Accept challenge', bestOf, bestOf);
   const accepted = Date.now();
-  await friend.page.waitForURL(/[?&]online=/);
+  for (const page of [friend.page, sender.page]) {
+    await page.waitForURL(/[?&]start=/, { timeout: 30_000 });
+  }
+  await lineup(friend.page, 'Lock in', bestOf, bestOf);
+  await lineup(sender.page, 'Lock in', 0, bestOf);
+  await friend.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
   await sender.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
   return { lobbyToMatchMs: Date.now() - accepted };
 }

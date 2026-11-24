@@ -28,6 +28,7 @@ import {
   rematchWatchFor,
   rematchWatchOf,
   WATCH_MS,
+  watchAskMs,
   type RematchWatch,
 } from '../app/rematch-watch.ts';
 import { decodeRematchView, type RematchView } from '../api/rematch.ts';
@@ -183,9 +184,12 @@ export function createRematchWatch(
       pace ??= createPokePace(pokes, WATCH_SAFETY_MS, readNow);
       // Before the last fight ends nothing can happen: the next ask is at its end.
       const opens = waiting && watch !== undefined ? watch.opensAt - serverNow() : 0;
-      const until =
-        opens > 0 ? opens : rematch?.deadline == null ? null : rematch.deadline - serverNow();
-      const ms = !askedOnce || again || arriving ? 0 : pace.delay(Math.max(ASK_MS, opens), until);
+      const until = rematch?.deadline == null ? null : rematch.deadline - serverNow();
+      const paced = pace;
+      const ms =
+        !askedOnce || again || arriving
+          ? 0
+          : watchAskMs(ASK_MS, opens, until, (today, left) => paced.delay(today, left));
       again = false;
       asking ??= window.setTimeout(() => {
         asking = undefined;

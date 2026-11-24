@@ -99,3 +99,20 @@ export function rematchWatchOf(storage: DeviceStorage, now: number): RematchWatc
   }
   return { id, you, they, format, bestOf, until, opensAt };
 }
+
+/**
+ * Ms until the rematch watch asks next (ADR 0082), for a watch already asked about once. Before
+ * the last fight ends (`opensInMs` > 0) nothing can happen, so it asks at that end, socket or not:
+ * a safety read meanwhile only spends calls (staging, 2026-11-24: one every 10 s through a fight).
+ * After it, `delay` paces it (`poke-pace.ts`: today's `todayMs` down; up, the safety read or just
+ * after the answer's or lineups' deadline, `untilMs` away).
+ */
+export function watchAskMs(
+  todayMs: number,
+  opensInMs: number,
+  untilMs: number | null,
+  delay: (todayMs: number, untilMs: number | null) => number,
+): number {
+  if (opensInMs > 0) return Math.max(todayMs, opensInMs);
+  return delay(todayMs, untilMs);
+}
