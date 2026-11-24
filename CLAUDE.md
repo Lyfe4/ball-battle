@@ -54,7 +54,11 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   only where `VITE_ONLINE=1` (previews, the main branch deploy, `build:online`) and served only
   where the functions have `BALLBATTLE_ONLINE=1`; production builds `VITE_ONLINE` from
   `BALLBATTLE_ONLINE`, the vs Friend switch (`node scripts/friend-switch.ts on|off|status`, ADR
-  0068). Never switch it on unless the user asks. `pnpm test:online`: two phones through live
+  0068). Never switch it on unless the user asks. The Realtime poke (ADR 0082) has three switches,
+  all off outside local and tests: `VITE_POKE` (the build), `BALLBATTLE_POKE` with
+  `SUPABASE_BROWSER_KEY` (the functions) and the database's flag (no deploy; production on needs
+  `--production`): `node scripts/poke-switch.ts status|on|off local|staging|production`.
+  `pnpm test:online`: two phones through live
   friend matches in Chromium (a whole match, a pick running out, Leave and forfeit, a disconnect),
   against `netlify dev`. After changing `src/server`, restart `netlify dev`: it can keep serving
   the old functions.

@@ -11,6 +11,7 @@ import { AuthError, signOut, signUpGuest } from '../auth.ts';
 import { deleteUser } from '../auth-admin.ts';
 import { expectAuth, newTicket } from '../auth-tickets.ts';
 import { clearedSessionCookie, readSession, sessionCookie } from '../cookie.ts';
+import { rotatePokeKey } from '../db/poke.ts';
 import { createProfile } from '../db/profiles.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
@@ -75,6 +76,8 @@ async function logout(...[request, context]: Parameters<RouteHandler>): Promise<
         throw error;
       });
     }
+    // The page's poke topic goes quiet with the session (ADR 0082): the next one is new.
+    if (player !== undefined) await rotatePokeKey(context.deps.sql, player.userId);
     await signOut(context.deps.config, (player?.tokens ?? tokens).access);
   }
   context.setCookie(clearedSessionCookie());

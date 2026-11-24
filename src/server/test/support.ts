@@ -16,7 +16,8 @@ export const TEST_SEED_KEYS = JSON.stringify({ test: Buffer.alloc(32, 7).toStrin
 /** Google's test client: never a real one (its calls are mocked, `google-support.ts`). */
 export const TEST_GOOGLE = { clientId: 'test-client.apps.googleusercontent.com', secret: 'shh' };
 
-export function testDeps(): Deps {
+/** The API's dependencies, with any extra settings (`BALLBATTLE_POKE`, ADR 0082) on top. */
+export function testDeps(extra: Readonly<Record<string, string>> = {}): Deps {
   const config = configOf({
     BALLBATTLE_ONLINE: '1',
     BALLBATTLE_ACCOUNTS: '1',
@@ -27,6 +28,7 @@ export function testDeps(): Deps {
     SUPABASE_PUBLISHABLE_KEY: need('TEST_SUPABASE_PUBLISHABLE_KEY'),
     SUPABASE_SECRET_KEY: need('TEST_SUPABASE_SECRET_KEY'),
     SEED_KEYS: TEST_SEED_KEYS,
+    ...extra,
   });
   if (config === undefined) throw new Error('unreachable');
   return { config, sql: databaseFor(config.databaseUrl) };

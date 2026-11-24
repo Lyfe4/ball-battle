@@ -203,3 +203,31 @@ challenge reaches the invitee, a decline the sender's lobby, the lobby heartbeat
 open and lock poke both, a draft nobody; a rematch's ask and answer poke both twice; only the
 database may call `game.poke`. Four were seen failing with the series trigger dropped and the
 `WHEN` guards removed.
+
+## Addendum (2026-11-24): GET /me/poke, the key's rotation and the switch, as built (PR 3)
+
+- **`GET /api/v1/me/poke`** (`routes/poke.ts`, `src/api/poke.ts`), any player with a session,
+  `private, no-store`, counted as a read: `{ url, key, topic }` (Realtime's socket for the
+  project, the browser key, `p:` and the player's key) only while the functions have
+  `BALLBATTLE_POKE=1` and the database's flag is on; otherwise `{ off: true }`, and the page polls
+  as it always has. The browser key comes from the functions' `SUPABASE_BROWSER_KEY`, required
+  once `BALLBATTLE_POKE=1` (a `ConfigError` names it): never the functions' own publishable key
+  and never in the bundle, so revoking or replacing it needs no build. A guest is answered too;
+  when a page asks is the page's choice (decision 6, PR 5 on).
+- **Rotation.** Log out (`DELETE /session`) gives the player a new key after the in-a-match check,
+  so a topic an old page or anyone else learned goes quiet. Forget me, Delete account and the
+  guest that Switch deletes take their key with their profile. Linking a guest keeps its user id
+  and its key.
+- **`scripts/poke-switch.ts status|on|off local|staging|production`** flips the flag through the
+  Supabase CLI's SQL (the Management API) or, for `local`, the stack's database; production on
+  needs `--production` as well. Off is never refused.
+
+Real use: a family iPad where one player logs out and another signs in gets a new topic, so the
+first player's pokes (only timings) no longer reach that device's page; a guest who taps Forget me
+mid-way leaves no topic behind. Two tabs share one key, as they share one session.
+
+Tests: `routes/poke.db.test.ts` (a guest's own topic, the browser key and the socket, `no-store`,
+no user id; off with the flag off; off without `BALLBATTLE_POKE`; 401 without a session; a new key
+after Log out, seen failing without the rotation; gone on Forget me and Delete account; on Switch
+the guest's key goes and the account answers with its own), `config.test.ts` (the switch needs
+online play and the browser key) and `poke-switch.test.ts`.

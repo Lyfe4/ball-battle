@@ -88,3 +88,20 @@ describe('the seed key map', () => {
     expect(parseSeedKeys(JSON.stringify({ k: key(1, 64) })).current.raw).toHaveLength(64);
   });
 });
+
+describe('the poke switch (ADR 0082)', () => {
+  const browser = { SUPABASE_BROWSER_KEY: 'sb_publishable_browser' };
+  it('is off unless BALLBATTLE_POKE is "1", and never without online play', () => {
+    expect(configOf({ ...ONLINE, ...browser })?.pokeKey).toBeUndefined();
+    expect(configOf({ ...ONLINE, ...browser, BALLBATTLE_POKE: 'true' })?.pokeKey).toBeUndefined();
+    expect(configOf({ ...ONLINE, ...browser, BALLBATTLE_POKE: '1' })?.pokeKey).toBe(
+      'sb_publishable_browser',
+    );
+    const offline = { ...ONLINE, ...browser, BALLBATTLE_ONLINE: undefined, BALLBATTLE_POKE: '1' };
+    expect(configOf(offline)?.pokeKey).toBeUndefined();
+  });
+
+  it('needs its own browser key when on, named and never shown', () => {
+    expect(() => configOf({ ...ONLINE, BALLBATTLE_POKE: '1' })).toThrow(/SUPABASE_BROWSER_KEY/);
+  });
+});
