@@ -165,3 +165,41 @@ applied first (staging: Migrate staging after the merge; production: the next Pu
 
 To undo: switch the Send Email hook off (Auth sends through its SMTP again) and the before-user-
 created hook off; revoke `browser-poke` to stop every socket.
+
+## Addendum (2026-11-24): the database side, as built (PR 2)
+
+`20261124120000_poke.sql`, expand only, with the flag off. Nothing listens yet.
+
+- **`profiles.poke_key`**: 32 hex characters from a v4 UUID (122 random bits, `gen_random_uuid()`,
+  which the API's role may call; `pgcrypto`'s `gen_random_bytes` would need a grant on the
+  `extensions` schema for 6 more bits). Unique. Rotated by setting it to its default (PR 3).
+- **`game.flags`**, one row `poke`, inserted off. The API's role may read it.
+- **`game.poke(player, event)`**: `SECURITY DEFINER`, callable by no API or page role; returns at
+  once with the flag off or no such player; otherwise `realtime.send('{}', event, 'p:' || key,
+false)` inside its own exception block, so a poke that can't be written never fails the game's
+  write (a lost poke is what the safety read is for). Realtime adds the message's own `id` to the
+  empty payload; nothing of the game's.
+- **Triggers**, each `AFTER ... FOR EACH ROW` with a `WHEN` guard on the columns a player reads:
+
+  | Table              | When                                                                                                                                 | Who, which event                        |
+  | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+  | `game.challenges`  | inserted with an invitee                                                                                                             | the invitee, `inbox`                    |
+  | `game.challenges`  | `series_id`, `start_id`, `cancelled_at`, `invitee_declined_at` or `invitee` changes (never `creator_seen_at`, the lobby's heartbeat) | the sender `match`, the invitee `inbox` |
+  | `game.friendships` | inserted, deleted, or answered (`accepted_at`, `declined_at`, `withdrawn_at`, `requested_by`)                                        | both, `inbox`                           |
+  | `game.starts`      | `opened_*`, `locked_*` or `series_id` changes (never a draft)                                                                        | both, `match`                           |
+  | `game.series`      | a live series' `version` changes (every change a player reads bumps it)                                                              | both, `match`                           |
+  | `game.rematches`   | inserted, or `agreed_at`, `declined_by`, `new_series_id` changes                                                                     | both, `match` and `inbox`               |
+
+  A start's insert is not poked: it always comes with the challenge's or rematch's own change.
+
+- **Realtime runs locally** (`supabase/config.toml`) and in CI's database and online jobs: its
+  service is what creates `realtime.send` and `realtime.messages` in the local database.
+
+Tests (`poke.db.test.ts`): one `match` to each player for a live pick and none for a plain read
+(the heartbeat); none when the change rolls back; none with the flag off; the topic is
+`p:` and 32 hex characters, never the user id, the payload only Realtime's id, not private;
+friends' request, answer and removal poke both inboxes and a no-op update pokes nobody; a friend's
+challenge reaches the invitee, a decline the sender's lobby, the lobby heartbeat nobody; a start's
+open and lock poke both, a draft nobody; a rematch's ask and answer poke both twice; only the
+database may call `game.poke`. Four were seen failing with the series trigger dropped and the
+`WHEN` guards removed.
