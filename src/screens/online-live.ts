@@ -58,7 +58,7 @@ export interface LiveDriver {
    * Ms until a live page asks about `view` again, its last read having taken `readMs`: four times a
    * second until the clock rests on a few answers (ADR 0061), then as live-ask.ts says.
    */
-  askEvery(view: SeriesView, readMs: number): number;
+  askEvery(view: SeriesView, readMs: number, poked?: boolean): number;
   /** The next read must come back in full: only that tells this page the server's time. */
   asksInFull(): boolean;
   /** Where `view` is now for a page that has watched `watched` rounds. */
@@ -143,7 +143,7 @@ export function createLiveDriver(lookup: DefinitionLookup, arena: LiveArena): Li
       if (sample !== undefined) clock = withSample(clock, sample);
     },
     now,
-    askEvery: (view, readMs) => warmUpAskMs(clock) ?? liveAskMs(view, now(), readMs),
+    askEvery: (view, readMs, poked) => warmUpAskMs(clock) ?? liveAskMs(view, now(), readMs, poked),
     asksInFull: () => asksInFull(clock, Date.now()),
     place: (view, watched) => livePlace(view, watched, now(), (round) => ticksOf(view, round)),
     stage(next, match, showing) {

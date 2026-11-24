@@ -396,3 +396,22 @@ Tests: `poke-pace.test.ts` (down and no hub: today's cadence; up: safety or just
 deadline, a passed deadline today's cadence; a `match` poke and each change of state read, an
 `inbox` poke doesn't; nothing heard and nothing wanted once stopped), `poke-hub.test.ts` (the
 linger keeps the socket for the next screen with no new ask; closes after it).
+
+## Addendum (2026-11-24): the live match on pokes, as built (PR 7)
+
+- **`live-ask.ts`**: with the socket up (`poked`), the 1 s reads while waiting on the other player
+  go; the heartbeat stays exactly as it was (every ~2 s, shortened after a slow read so two land at
+  most 3 s apart), and so does "away" after 6 s and the 30 s grace (ADR 0053 untouched). The other's
+  pick, a round settled on read or in the sweep, and a forfeit all bump the series' `version`, so
+  they arrive by `match` poke and read at once (`online-series-client.ts` `poke()`: now, or once
+  the read that is out is back). A pick that runs out is settled by the next heartbeat on either
+  phone, within 2 s, which pokes the other. The clock's warm-up reads (ADR 0061) are unchanged:
+  they are for the clock, not for waiting.
+- **`live-poke.ts`** wants the page's socket while an open live series shows (guests included,
+  decision 6), and lets it go when the series ends or the screen leaves; the end screen's own pace
+  (PR 6) then holds it.
+- **Online tests** (`live-match.online.test.ts`, every case twice, by poke and with
+  `**/realtime/**` blocked): the first pick, waited on for 6 s, is read on the heartbeat alone by
+  poke (at most four reads) and at least five times blocked; by poke it reaches the other phone
+  within 1.5 s. Then the whole match, a pick running out and Leave and forfeit, leaving mid-fight,
+  and the dropped connection (back in time, then gone for good) pass the same in both modes.

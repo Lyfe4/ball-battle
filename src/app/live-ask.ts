@@ -4,6 +4,10 @@
 // otherwise the read is the heartbeat alone, and a slower one does. Asking every second throughout
 // spent most reads on the heartbeat: during a fight, a countdown, the coin toss and the player's own
 // pick, nothing the other phone does changes what this one shows, save leaving.
+//
+// With the Realtime poke socket up (ADR 0082), the other player's move arrives by poke (a `match`
+// when the series' version moves, read at once), so the 1 s waiting reads go and only the
+// heartbeat is left, exactly as it was: every ~2 s, the other phone calling this one away after 6 s.
 import type { SeriesView } from '../api/series.ts';
 import { dueOf } from './online-series.ts';
 
@@ -35,9 +39,10 @@ export function waitsOnOther(view: SeriesView, at: number): boolean {
 /**
  * Ms until a live page asks again, the server's clock being `now` and its last read having taken
  * `readMs`: every second while it waits on the other player (looking one heartbeat ahead, so a pick
- * of theirs that opens meanwhile is asked about from the moment it opens), else the heartbeat.
+ * of theirs that opens meanwhile is asked about from the moment it opens), else the heartbeat. With
+ * the poke socket up (`poked`), always the heartbeat: the other's move comes by poke.
  */
-export function liveAskMs(view: SeriesView, now: number, readMs: number): number {
-  if (waitsOnOther(view, now + HEARTBEAT_ASK_MS)) return WAITING_ASK_MS;
+export function liveAskMs(view: SeriesView, now: number, readMs: number, poked = false): number {
+  if (!poked && waitsOnOther(view, now + HEARTBEAT_ASK_MS)) return WAITING_ASK_MS;
   return Math.min(HEARTBEAT_ASK_MS, Math.max(WAITING_ASK_MS, HEARTBEAT_GAP_MS - readMs));
 }
