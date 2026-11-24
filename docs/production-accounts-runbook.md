@@ -58,7 +58,7 @@ site variable into the build's environment, and the command's prefixes don't rem
 - [ ] Supabase → staging → Reports / Usage: Realtime messages and peak connections well inside
       the free quota (about 2M messages, 200 connections).
 - [ ] `main` is green and holds every change you want live (`gh run list --workflow ci.yml
-  --branch main --limit 1`).
+--branch main --limit 1`).
 - [ ] Today's production: `curl -s https://battle-ball.netlify.app/api/v1/health` (on 24 Nov 2026
       it read `"accounts":"off"` and had **no** `emailSends` key: `release` predates the mail
       watch, so the hooks migrations are not in production yet. Step 2 fixes that).
