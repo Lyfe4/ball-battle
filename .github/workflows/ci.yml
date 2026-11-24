@@ -121,9 +121,10 @@ jobs:
   online-flow:
     name: A friend challenge in Chromium
     runs-on: ubuntu-24.04
-    # The whole online suite takes about 16 min of tests (2026-11-23, 12 files of two-phone
-    # matches) plus about 2 min of setup: room to grow before a run is cut off.
-    timeout-minutes: 30
+    # The whole online suite took about 16 min of tests (2026-11-23, 12 files of two-phone
+    # matches) plus about 2 min of setup; the Realtime poke (ADR 0082) runs most flows twice, by
+    # poke and with the socket blocked: room to grow before a run is cut off.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

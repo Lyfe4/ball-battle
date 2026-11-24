@@ -8,6 +8,9 @@
 // lost). Where to listen comes from `GET /me/poke` when the socket first opens and again when a page
 // hidden long enough to close its socket shows again, so switching pokes off (the flag) or a new key
 // (Log out) reaches an open page without a reload; off, or the read failing, is down.
+//
+// The last reader letting go closes the socket only after LINGER_MS: moving from one online screen
+// to the next (the lobby to the lineups, a match to its end screen) keeps it, and its join.
 import type { PokeEvent, PokeOn, PokeResponse } from '../api/poke.ts';
 import {
   HIDDEN_CLOSE_MS,
@@ -40,7 +43,12 @@ export interface PokeHubOptions {
   readonly open: (options: PokeSocketOptions) => PokeSocket;
   readonly page: PokePage;
   readonly now?: () => number;
+  readonly setTimer?: (run: () => void, ms: number) => ReturnType<typeof setTimeout>;
+  readonly clearTimer?: (id: ReturnType<typeof setTimeout>) => void;
 }
+
+/** How long the socket stays open after the last reader let go, for the next screen to take. */
+export const LINGER_MS = 5_000;
 
 const sameConnection = (a: PokeOn, b: PokeOn): boolean =>
   a.url === b.url && a.key === b.key && a.topic === b.topic;
@@ -48,6 +56,14 @@ const sameConnection = (a: PokeOn, b: PokeOn): boolean =>
 export function createPokeHub(options: PokeHubOptions): PokeHub {
   const { ask, open, page } = options;
   const now = options.now ?? Date.now;
+  const setTimer = options.setTimer ?? ((run, ms) => setTimeout(run, ms));
+  const clearTimer =
+    options.clearTimer ??
+    ((id) => {
+      clearTimeout(id);
+    });
+  /** Closing, after the last reader let go: a reader wanting it again keeps it. */
+  let lingering: ReturnType<typeof setTimeout> | undefined;
   const listeners = new Set<PokeListener>();
   let wants = 0;
   let up = false;
@@ -115,7 +131,10 @@ export function createPokeHub(options: PokeHubOptions): PokeHub {
     },
     want() {
       wants += 1;
-      if (wants === 1) {
+      if (lingering !== undefined) {
+        clearTimer(lingering);
+        lingering = undefined;
+      } else if (wants === 1) {
         stopListening = page.listen({
           visibility: onVisibility,
           pageHide: () => undefined,
@@ -129,10 +148,13 @@ export function createPokeHub(options: PokeHubOptions): PokeHub {
         released = true;
         wants -= 1;
         if (wants > 0) return;
-        asked += 1;
-        stopListening?.();
-        stopListening = undefined;
-        closeSocket();
+        lingering = setTimer(() => {
+          lingering = undefined;
+          asked += 1;
+          stopListening?.();
+          stopListening = undefined;
+          closeSocket();
+        }, LINGER_MS);
       };
     },
     refresh() {

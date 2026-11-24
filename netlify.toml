@@ -7,6 +7,9 @@
 [build]
   command = "pnpm build"
   publish = "dist"
+  # Skips a build when a push changes only docs, Markdown, workflows or tests (build minutes, 300 a
+  # month); a retry or manual deploy of the same commit still builds (scripts/netlify-ignore.sh).
+  ignore = "bash scripts/netlify-ignore.sh"
 
 [build.environment]
   NODE_VERSION = "24"

@@ -100,3 +100,47 @@ export function watchReads(page: Page, path: string): number[] {
   });
   return times;
 }
+
+/** Each watched page's socket and API reads (`watchPage`). */
+const watched = new WeakMap<
+  Page,
+  { readonly socket: PokeWatch; readonly reads: { path: string; at: number }[] }
+>();
+
+/** Watches `page`'s poke socket and every API read it makes, from now on. */
+export function watchPage(page: Page): void {
+  const reads: { path: string; at: number }[] = [];
+  page.on('request', (request) => {
+    const { pathname } = new URL(request.url());
+    if (request.method() === 'GET' && pathname.startsWith('/api/v1/')) {
+      reads.push({ path: pathname, at: Date.now() });
+    }
+  });
+  watched.set(page, { socket: watchPokes(page), reads });
+}
+
+/** The poke socket of a page `watchPage` watches. */
+export function socketOf(page: Page): PokeWatch {
+  const found = watched.get(page);
+  if (found === undefined) throw new Error('This page is not watched (watchPage)');
+  return found.socket;
+}
+
+/** How many reads `page` made of a path starting `prefix`, from `from` to `to` (this clock). */
+export function readsBetween(page: Page, prefix: string, from: number, to = Date.now()): number {
+  const found = watched.get(page);
+  if (found === undefined) throw new Error('This page is not watched (watchPage)');
+  return found.reads.filter(
+    (read) => read.path.startsWith(prefix) && read.at >= from && read.at <= to,
+  ).length;
+}
+
+/**
+ * Over `ms` from now, how many times `page` read a path starting `prefix`: with the socket up a
+ * screen reads only on pokes and its safety read; blocked, on today's cadence.
+ */
+export async function readsOver(page: Page, prefix: string, ms: number): Promise<number> {
+  const from = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  return readsBetween(page, prefix, from);
+}

@@ -7,7 +7,7 @@ import { expect } from 'vitest';
 import { attemptWatchMs, LEAD_MS, roundWatchMs, TOSS_LEAD_MS } from '../api/live.ts';
 import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
 import { MAX_ATTEMPTS } from '../sim/series.ts';
-import { allowLocalRealtime } from './realtime-support.ts';
+import { allowLocalRealtime, blockRealtime, watchPage } from './realtime-support.ts';
 
 /**
  * The Play tab's way to a friend match (ADR 0081, Option B): the mode box's sheet, vs Friend and
@@ -32,16 +32,18 @@ export interface Phones {
   readonly contexts: BrowserContext[];
   /** Every console error on any phone (a CSP violation is one). */
   readonly errors: string[];
+  /** Each phone's Realtime socket is blocked (ADR 0082): its pages poll as before. */
+  readonly blocked?: boolean;
 }
 
 /** `engine` is Chromium (as CI runs it) unless 'webkit': one run in Safari's engine. */
-export async function openPhones(base: string, engine?: string): Promise<Phones> {
+export async function openPhones(base: string, engine?: string, blocked = false): Promise<Phones> {
   const health = await fetch(`${base}/api/v1/health`).catch(() => undefined);
   if (health?.ok !== true) {
     throw new Error(`No online server at ${base}: pnpm build:online, then netlify dev`);
   }
   const browser = await (engine === 'webkit' ? webkit : chromium).launch();
-  return { base, browser, contexts: [], errors: [] };
+  return { base, browser, contexts: [], errors: [], blocked };
 }
 
 export async function closePhones(phones: Phones): Promise<void> {
@@ -123,7 +125,9 @@ export async function phone(
   const context = await phones.browser.newContext({ viewport });
   phones.contexts.push(context);
   await allowLocalRealtime(context, phones.base);
+  if (phones.blocked === true) await blockRealtime(context);
   const page = await context.newPage();
+  watchPage(page);
   await page.addInitScript(LOADING_PROBE);
   await page.addInitScript(READY_PROBE);
   page.on('console', (message) => {

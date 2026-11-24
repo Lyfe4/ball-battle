@@ -25,12 +25,19 @@ import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 import { challengeUrl, copyLink, shareLink } from './online-share.ts';
+import { createPokePace, type PokePace } from '../app/poke-pace.ts';
+import { pokes } from '../app/pokes.ts';
 import { createStartLineup } from './start-lineup.ts';
 
 export type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 
 /** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
 const LOBBY_POLL_MS = 2_000;
+/**
+ * With the poke socket up (ADR 0082): an accept, a decline or the start arrive by poke, so the
+ * lobby asks only this often, its heartbeat (`creator_seen_at` must stay inside 60 s).
+ */
+export const LOBBY_SAFETY_MS = 20_000;
 
 export function createChallengeScreens(
   roots: {
@@ -47,6 +54,9 @@ export function createChallengeScreens(
   let token: string | undefined;
   /** The lobby's next ask, while the sender waits in it. */
   let lobby: number | undefined;
+  /** The lobby's pace on the poke while the sender waits; a poke during a read asks once more. */
+  let lobbyPace: PokePace | undefined;
+  let lobbyAgain = false;
 
   const home = () => {
     host.home();
@@ -96,6 +106,19 @@ export function createChallengeScreens(
   function stopLobby(): void {
     if (lobby !== undefined) window.clearTimeout(lobby);
     lobby = undefined;
+    // The socket lingers a few seconds (poke-hub.ts): the lobby asking again keeps it.
+    lobbyPace?.stop();
+    lobbyPace = undefined;
+  }
+
+  /** A poke, or the socket going up or down: the lobby asks now, or once its ask is back. */
+  function lobbyNow(): void {
+    if (lobby === undefined) lobbyAgain = true;
+    else {
+      window.clearTimeout(lobby);
+      lobby = undefined;
+      void loadCard(false);
+    }
   }
 
   /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
@@ -214,7 +237,13 @@ export function createChallengeScreens(
   function showCard(card: ChallengeInfo, focus: boolean): void {
     show('notice', cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent)), focus);
     if (card.live && card.status === 'yours' && visible) {
-      lobby = window.setTimeout(() => void loadCard(false), LOBBY_POLL_MS);
+      lobbyPace = createPokePace(pokes, LOBBY_SAFETY_MS, lobbyNow);
+      const ms = lobbyAgain ? 0 : lobbyPace.delay(LOBBY_POLL_MS);
+      lobbyAgain = false;
+      lobby = window.setTimeout(() => {
+        lobby = undefined;
+        void loadCard(false);
+      }, ms);
       host.lobbyWaits?.();
     }
   }

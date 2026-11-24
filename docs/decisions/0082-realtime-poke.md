@@ -356,3 +356,43 @@ again after a long hide and on a possible new player, a new topic reopens and of
 `inbox-poll.test.ts` (up: a read on each poke and move to up, then 120 s; down: today's timers at
 once; nothing to watch keeps no timer), `poke-socket.test.ts` (15 s), `security-headers.test.ts`,
 `legal-pages.test.ts`, `inbox.db.test.ts` (online until 150 s).
+
+## Addendum (2026-11-24): the lobby, start lineup, end screen and rematch watch, as built (PR 6)
+
+- **`src/app/poke-pace.ts`**: each screen keeps its own read and timer and asks the pace how long
+  to wait. Down: today's cadence exactly. Up: the screen's safety read or 500 ms after the next
+  deadline it knows (a lineup or a rematch running out, the last fight's end), whichever is first;
+  a deadline already passed falls back to today's cadence until a read settles it. A `match` poke,
+  and every change of the socket's state, reads at once (or right after a read that is out). The
+  screen wants the page's socket only while it paces: guests get one only in these flows.
+- **Safety reads**: the lobby every **20 s** (its heartbeat; `creator_seen_at` must stay inside
+  60 s), the start lineup, the end screen and the rematch watch every **10 s**. The proposal had
+  the lineup and end screen on pokes and deadlines alone; a lost poke there would hold a player
+  until the deadline (up to a minute), so a 10 s safety read costs about six calls a minute for a
+  bounded delay.
+- **The socket lingers 5 s** after the last reader lets it go (`LINGER_MS`, `poke-hub.ts`): moving
+  from the lobby to the lineups, or a match to its end screen, keeps the socket and its join, with
+  no new `/me/poke`.
+- **Online tests**, each twice, by poke and with `**/realtime/**` blocked: `friend-challenge`
+  (the card within 3 s by poke, else with the 30 s read; the sender's lobby reads at most once in 5
+  s by poke, at least twice blocked), `lineups-together` (no more than one lineup read in 5 s by
+  poke, four or more blocked; the other's lock within 3 s), `rematch-anywhere` (no more than one
+  read in 6 s while waiting to be asked by poke, two or more blocked; the ask within 3 s).
+- **`slime-live.online.test.ts` was fragile** (failed once on `main` after #164): ability hints
+  show one at a time, and a hint whose ball has left the court by its turn is given back. In that
+  run the Thorns' spikes took the first turn and the Slime lost before its own, so "Slime: Split"
+  never showed though the Slime split. The sender now starts with the Thorns' and Vampire's hints
+  seen, so round 1 has only the Slime's to show, the moment it splits.
+
+- **Netlify build minutes** (owner): Deploy Previews are off and only `main` and `release`
+  build; `netlify.toml`'s `ignore` (`scripts/netlify-ignore.sh`, `netlify-ignore.test.ts` on a
+  throwaway repository) skips a build whose push changes only docs, Markdown, workflows or tests,
+  and builds a retry of the same commit (an environment variable changed) and a first build.
+- **The rematch watch reads at once on arriving away** from the end screen (home, the manual):
+  with the socket up its next read would otherwise wait for the 10 s safety read, and home's "Back
+  to your rematch" came late (`friend-rematch.online.test.ts`).
+
+Tests: `poke-pace.test.ts` (down and no hub: today's cadence; up: safety or just after a
+deadline, a passed deadline today's cadence; a `match` poke and each change of state read, an
+`inbox` poke doesn't; nothing heard and nothing wanted once stopped), `poke-hub.test.ts` (the
+linger keeps the socket for the next screen with no new ask; closes after it).

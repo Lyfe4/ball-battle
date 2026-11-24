@@ -3,7 +3,7 @@
 import type { Browser, Page } from 'playwright';
 import postgres from 'postgres';
 import { PHONE } from './live-support.ts';
-import { allowLocalRealtime } from './realtime-support.ts';
+import { allowLocalRealtime, blockRealtime, watchPage } from './realtime-support.ts';
 
 /** The local Supabase's mail catcher (`supabase start`), where every code is sent. */
 const MAILPIT = 'http://127.0.0.1:54324';
@@ -73,17 +73,21 @@ export async function signInWith(page: Page, email: string, then = 'Friends'): P
 
 /**
  * A fresh phone (iPhone Safari's visible size) signed in to a new account named `username`, with
- * that username, left on its account screen. Its console errors go to `errors`.
+ * that username, left on its account screen. Its console errors go to `errors`. `blocked`: its
+ * Realtime socket never connects, so it polls as before (ADR 0082).
  */
 export async function signedInPhone(
   browser: Browser,
   base: string,
   username: string,
   errors: string[],
+  blocked = false,
 ): Promise<Page> {
   const context = await browser.newContext({ viewport: PHONE });
   await allowLocalRealtime(context, base);
+  if (blocked) await blockRealtime(context);
   const page = await context.newPage();
+  watchPage(page);
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());

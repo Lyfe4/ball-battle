@@ -4,7 +4,7 @@
 // hidden long enough for the socket to close (the flag switched off, a new key).
 import { describe, expect, it } from 'vitest';
 import type { PokeEvent, PokeResponse } from '../api/poke.ts';
-import { createPokeHub } from './poke-hub.ts';
+import { createPokeHub, LINGER_MS } from './poke-hub.ts';
 import { HIDDEN_CLOSE_MS, type PokePageEvents, type PokeSocketOptions } from './poke-socket.ts';
 
 const ON = {
@@ -19,7 +19,18 @@ function setup(answers: (PokeResponse | Error)[]) {
   let events: PokePageEvents | undefined;
   let asks = 0;
   const opened: { options: PokeSocketOptions; closed: boolean }[] = [];
+  const timers = new Map<number, () => void>();
+  let nextTimer = 0;
   const hub = createPokeHub({
+    setTimer: (run, ms) => {
+      expect(ms).toBe(LINGER_MS);
+      nextTimer += 1;
+      timers.set(nextTimer, run);
+      return nextTimer as unknown as ReturnType<typeof setTimeout>;
+    },
+    clearTimer: (id) => {
+      timers.delete(id as unknown as number);
+    },
     ask: () => {
       asks += 1;
       const answer = answers.shift() ?? { off: true };
@@ -55,6 +66,12 @@ function setup(answers: (PokeResponse | Error)[]) {
     settle,
     asks: () => asks,
     listening: () => events !== undefined,
+    /** LINGER_MS passes. */
+    linger() {
+      const due = [...timers.values()];
+      timers.clear();
+      for (const run of due) run();
+    },
     hide(ms: number) {
       hidden = true;
       events?.visibility();
@@ -87,6 +104,8 @@ describe('the poke hub', () => {
     first();
     expect(page.opened[0]?.closed).toBe(false);
     second();
+    expect(page.opened[0]?.closed).toBe(false);
+    page.linger();
     expect(page.opened[0]?.closed).toBe(true);
     expect(page.listening()).toBe(false);
   });
@@ -132,6 +151,7 @@ describe('the poke hub', () => {
     await page.settle();
     page.opened[0]?.options.onState(true);
     release();
+    page.linger();
     expect(states).toStrictEqual([true, false]);
   });
 
@@ -141,6 +161,7 @@ describe('the poke hub', () => {
     release();
     await page.settle();
     expect(page.opened).toHaveLength(0);
+    page.linger();
   });
 
   it('asks again after the page was hidden long enough to close the socket, and follows the answer', async () => {
@@ -184,5 +205,25 @@ describe('the poke hub', () => {
     await page.settle();
     expect(page.opened).toHaveLength(2);
     expect(page.opened[1]?.options.connection.topic).toBe(other.topic);
+  });
+
+  it('keeps the socket for the next screen that wants it within a few seconds, with no new ask', async () => {
+    const page = setup([ON, ON]);
+    const states: boolean[] = [];
+    page.hub.listen({ onState: (up) => states.push(up) });
+    const lobby = page.hub.want();
+    await page.settle();
+    page.opened[0]?.options.onState(true);
+    lobby();
+    const lineup = page.hub.want();
+    page.linger();
+    await page.settle();
+    expect(page.asks()).toBe(1);
+    expect(page.opened).toHaveLength(1);
+    expect(page.opened[0]?.closed).toBe(false);
+    expect(states).toStrictEqual([true]);
+    lineup();
+    page.linger();
+    expect(page.opened[0]?.closed).toBe(true);
   });
 });

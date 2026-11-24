@@ -7,7 +7,7 @@
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SeriesView } from '../api/series.ts';
-import { READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
+import { HINTS_SEEN_STORAGE_KEY, READY_CARD_STORAGE_KEY, TIPS_STORAGE_KEY } from '../app/tips.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { matchWorld, playToEnd } from '../sim/series-verify.ts';
 import { sideHealth } from '../sim/side.ts';
@@ -69,6 +69,16 @@ const PROBE = `
   new MutationObserver(look).observe(document, {
     subtree: true, childList: true, attributes: true, characterData: true,
   });
+`;
+
+/**
+ * The Thorns' and the Vampire's hints already seen on this device. Hints show one at a time, and a
+ * hint whose ball has left the court by its turn is given back (tips.ts): when the Thorns' spikes
+ * came first and the Slime lost before its turn, its hint never showed (CI, 2026-11-24, after
+ * #164). With the opponent's seen, round 1 has only the Slime's to show, the moment it splits.
+ */
+const OPPONENT_HINTS_SEEN = `
+  localStorage.setItem('${HINTS_SEEN_STORAGE_KEY}', 'thorns,vampire');
 `;
 
 /** Teaching off on this device: no hints, no What to watch cards (the settings' two switches). */
@@ -135,6 +145,7 @@ describe('the Slime in a live friend match', () => {
       const friend = await phone(phones);
       for (const page of [sender, friend]) await page.addInitScript(PROBE);
       await friend.addInitScript(TEACHING_OFF);
+      await sender.addInitScript(OPPONENT_HINTS_SEEN);
       const id = await startLiveMatch(BASE, sender, friend, 'reveal', {
         sender: ['slime', 'archer', 'sniper'],
         // The Slime's round is the only one it plays, and its seeds are the server's, so the
