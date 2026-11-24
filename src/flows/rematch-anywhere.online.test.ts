@@ -18,7 +18,7 @@ import {
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
-import { readsOver, socketOf } from './realtime-support.ts';
+import { quietFor, readsOver, socketOf } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const SOCKETS = [
@@ -58,13 +58,17 @@ describe.each(SOCKETS)(
         const friend = await phone(phones);
         const first = await startLiveMatch(BASE, sender, friend);
         await forfeit(friend);
+        const left = Date.now();
         await friend
           .getByRole('navigation', { name: 'Main' })
           .getByRole('link', { name: 'Balls' })
           .click();
         await friend.waitForURL(/view=manual/);
         // Waiting to be asked: by poke, the 10 s safety read at most; blocked, a read every 2 s.
+        // Counted once the manual's arrival read is in and 1 s has passed with none: a poke of
+        // the forfeit still on its way reads too (2 in 6 s on CI, 2026-11-24), and is no pace.
         await (blocked ? Promise.resolve() : socketOf(friend).waitUp());
+        await quietFor(friend, '/api/v1/series/', left, 1_000);
         const quiet = await readsOver(friend, '/api/v1/series/', 6_000);
         if (blocked) expect(quiet).toBeGreaterThanOrEqual(2);
         else expect(quiet).toBeLessThanOrEqual(1);
