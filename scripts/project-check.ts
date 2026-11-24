@@ -18,6 +18,8 @@
 //    mail watch), reading only: any the relay refused or never answered fails the check (the player
 //    was told "We sent a code" and none came); any whose answer nobody read before pg_net dropped
 //    it is a warning. Before the project has the migration it says so and checks nothing.
+// 6. Reports the database's size: the free plan holds 500 MB and nothing is pruned (ADR 0083,
+//    decision 8), so from 300 MB it warns (without failing) that it is time to prune or upgrade.
 // Any failure exits 1, so the workflow fails and GitHub emails you.
 import { fileURLToPath } from 'node:url';
 import { NEAR_MONTHLY } from '../src/server/routes/health.ts';
@@ -66,6 +68,25 @@ export function mailWarning({ sent, unseen }: MailOutcomes): string | undefined 
   return `${String(unseen)} of ${String(sent)} code emails in the last 24 h: their answer went (pg_net keeps 6 h) before the next send or /api/v1/health copied it`;
 }
 
+/** The database's size in bytes, as the free plan's 500 MB counts it. */
+export const DATABASE_SIZE_SQL = `select pg_database_size(current_database())::bigint as bytes`;
+
+/** Where the size starts to warn, of the free plan's 500 MB (ADR 0083, decision 8). */
+export const SIZE_WARN_MB = 300;
+export const FREE_PLAN_MB = 500;
+const MB = 1024 * 1024;
+
+/** The size line, and a warning from SIZE_WARN_MB on. */
+export function sizeReport(bytes: number): { readonly line: string; readonly warning?: string } {
+  const mb = Math.round(bytes / MB);
+  const line = `database ${String(mb)} MB of the free plan's ${String(FREE_PLAN_MB)} MB`;
+  if (mb < SIZE_WARN_MB) return { line };
+  return {
+    line,
+    warning: `the database is ${String(mb)} MB of the free plan's ${String(FREE_PLAN_MB)} MB: prune finished series' rounds and picks (final_setup replays them) or move to Supabase Pro before it fills`,
+  };
+}
+
 /** Whether the project has ADR 0082's Auth hook functions (its migration applied). */
 export const HOOKS_MIGRATED_SQL = `select to_regprocedure('game.expect_auth(text,text)') is not null as migrated`;
 
@@ -86,6 +107,11 @@ async function check(name: string): Promise<void> {
   const [first] = readQuery(ref, 'select 1 as ok');
   if (textOf(first, 'ok') !== '1') throw new Error('The database did not answer select 1');
   console.log(`${name}: the database answers`);
+
+  const [size] = readQuery(ref, DATABASE_SIZE_SQL);
+  const { line, warning: sizeWarning } = sizeReport(Number(textOf(size, 'bytes') ?? '0'));
+  console.log(`${name}: ${line}`);
+  if (sizeWarning !== undefined) console.log(`::warning::${name}: ${sizeWarning}`);
 
   const [codes] = readQuery(ref, MONTHLY_CODES_SQL);
   const sent = Number(textOf(codes, 'sent') ?? '0');
