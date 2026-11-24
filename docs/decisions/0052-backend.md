@@ -13,6 +13,10 @@
   ("Seeds"), no `packages/sim` workspace yet, and no worker pool ("Deliberately simple")
 - Amended by: ADR 0053 (live friend matches)
 - Amended by: ADR 0082 (the browser opens one Realtime socket; Auth gains hooks)
+- Amended by: ADR 0083 (ranked: the rating hidden under trophies, the board's sort, the season
+  reset, a pair cap for the 24-hour rule, nothing pruned)
+- Amended by: ADR 0084 (hosting: the legacy free plan until a trigger, then Pro in Sydney;
+  replaces decision 6's move to Personal)
 
 ## Context
 
@@ -370,6 +374,11 @@ Nothing seed-shaped is sent before its lock (ADR 0051).
   come from drafting well, not from solving the seed.
 
 ### Ranked PvP (slice 3, signed-in players only)
+
+> Amended by ADR 0083 (2026-11-25): players see trophies, never the rating (no "?"); the board
+> sorts by trophies, then `rating − 2·RD`; a new season moves the rating a quarter of the way to
+> 1500 with RD at least 150; at most 2 rated series per pair a day (1 on one network) instead of
+> one opponent per 24 hours. The rest below stands.
 
 - **Glicko-2**, updated after each series, the way Lichess does it, rather than in batched rating
   periods. It suits async play: few games, long gaps, and a rating deviation (RD) that says how

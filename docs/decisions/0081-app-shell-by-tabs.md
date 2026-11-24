@@ -8,6 +8,8 @@
   cards become the Play chooser, and Ranked and Casual join it later instead of a 2 × 2 grid), ADR
   0070 (the floating card also waits through a lineup pick), ADR 0079 (the account screen splits
   into Profile and the Friends tab; a friend's challenge card folds into a badge)
+- Amended by: ADR 0083 (ranked: the Ranks tab's cards become the league card, the Friends board
+  and the Everyone board; Ranked joins the Play sheet's Against row, for accounts with a username)
 - Builds on: ADR 0020 (every screen is a URL), ADR 0027 (no dead ends), ADR 0039 (the phone arena
   is the screen), ADR 0040 (one gear per screen), ADR 0067 (the beside layout), ADR 0078 (Forget me
   without accounts)

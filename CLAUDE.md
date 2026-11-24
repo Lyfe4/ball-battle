@@ -10,6 +10,9 @@ formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot leve
 online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080).
 Next: a Supabase Realtime "poke" in place of most polling (ADR 0082, `docs/realtime-poke-proposal.md`),
 built behind three switches that stay off outside local and tests.
+Ranked (ADR 0083, `docs/ranked-proposal.md`): trophies over a hidden Glicko-2, by turns first;
+groundwork only (rating maths, schema), nothing a player sees until accounts and pokes are on in
+production. Hosting stays on Netlify's legacy free plan until ADR 0084's triggers.
 The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
 "What to play" (who, length, format, the bot's level), remembered per opponent; Play goes straight
 in (first visit: Best of 3 · Reveal · vs Normal bot to its lineup; vs Friend in online builds sends
