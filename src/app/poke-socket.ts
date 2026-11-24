@@ -13,11 +13,11 @@ import { POKE_EVENTS, type PokeEvent, type PokeOn } from '../api/poke.ts';
 /** No join reply within this is a socket that can't be trusted. */
 export const JOIN_TIMEOUT_MS = 10_000;
 /**
- * A heartbeat this often, and none answered by the next is a dead socket. realtime-js's default:
- * whether Realtime counts heartbeats as billed messages is measured before this is shortened
- * (the proposal's risk 2).
+ * A heartbeat this often, and none answered by the next is a dead socket (noticed within about
+ * 30 s). Heartbeats are not billed as Realtime messages (staging's usage, ADR 0082 addendum), so
+ * the proposal's 15 s rather than realtime-js's 25 s.
  */
-export const HEARTBEAT_MS = 25_000;
+export const HEARTBEAT_MS = 15_000;
 /** Waits before each reconnect after a drop, the last repeated; a good join starts it again. */
 export const BACKOFF_MS: readonly number[] = [1_000, 2_000, 5_000, 10_000, 30_000];
 /** Hidden this long, the socket closes (a quick app switch keeps it); shown again, it reopens. */

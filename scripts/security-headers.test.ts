@@ -1,3 +1,4 @@
+import { LOCAL_REALTIME_ORIGIN, withLocalRealtime } from '../src/flows/realtime-policy.ts';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -82,5 +83,15 @@ describe('the Realtime poke’s sockets (ADR 0082)', () => {
       'Content-Security-Policy': '',
     });
     expect(toml).not.toContain('127.0.0.1');
+  });
+
+  it('gives netlify dev’s pages, in the online flows only, exactly pnpm preview’s policy (ADR 0082)', () => {
+    const served = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
+    expect(withLocalRealtime(served)).toBe(LOCAL_SECURITY_HEADERS['Content-Security-Policy']);
+    expect(LOCAL_REALTIME_ORIGIN).toBe(LOCAL_REALTIME);
+    expect(withLocalRealtime(withLocalRealtime(served))).toBe(withLocalRealtime(served));
+    expect(() => withLocalRealtime("default-src 'none'")).toThrow(/No connect-src/);
+    // netlify.toml, what netlify dev and every deploy serve, never names a local socket.
+    expect(toml).not.toContain('ws://');
   });
 });

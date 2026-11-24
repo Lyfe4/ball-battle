@@ -3,6 +3,7 @@
 import type { Browser, Page } from 'playwright';
 import postgres from 'postgres';
 import { PHONE } from './live-support.ts';
+import { allowLocalRealtime } from './realtime-support.ts';
 
 /** The local Supabase's mail catcher (`supabase start`), where every code is sent. */
 const MAILPIT = 'http://127.0.0.1:54324';
@@ -81,6 +82,7 @@ export async function signedInPhone(
   errors: string[],
 ): Promise<Page> {
   const context = await browser.newContext({ viewport: PHONE });
+  await allowLocalRealtime(context, base);
   const page = await context.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {

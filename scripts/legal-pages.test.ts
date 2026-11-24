@@ -105,11 +105,22 @@ describe('the privacy policy and terms', () => {
     expect(privacy.replace(/\s+/g, ' ')).toContain('how many friends are looked up and asked');
   });
 
-  it('name when an account was last active, its 75 s, and who a challenge went to (ADR 0079)', () => {
-    expect(ONLINE_MS).toBe(75_000);
+  it('name when an account was last active, its 150 s, and who a challenge went to (ADR 0079, 0082)', () => {
+    expect(ONLINE_MS).toBe(150_000);
     expect(privacy).toContain('When you were last active, as one time we overwrite');
-    expect(privacy.replace(/\s+/g, ' ')).toContain('in the last 75 seconds');
+    expect(privacy.replace(/\s+/g, ' ')).toContain(
+      `in the last ${String(ONLINE_MS / 1000)} seconds`,
+    );
     expect(privacy).toContain('Who a challenge was sent to, and whether they said no thanks');
+  });
+
+  it('name the update channel’s key and Realtime’s 3-day record of each signal (ADR 0082)', () => {
+    const text = privacy.replace(/\s+/g, ' ');
+    expect(text).toContain(
+      'A random key for your update channel, and a record of each update signal',
+    );
+    expect(text).toContain('through Supabase Realtime');
+    expect(text).toContain('for about 3 days');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {

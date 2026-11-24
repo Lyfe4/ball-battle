@@ -7,3 +7,7 @@ alter role game_api_v2 with password 'game_api_local';
 -- (Resend, its key in Vault) by hand.
 insert into game.mail_relay (kind, url, sender_name, sender_email)
 values ('mailpit', 'http://supabase_inbucket_ballbattle:8025/api/v1/send', 'BallBattle', 'codes@ballbattle.local');
+
+-- Local development and CI only: the Realtime poke (ADR 0082) is on, as the functions' .env has it
+-- (scripts/local-env.ts). Hosted projects flip theirs with scripts/poke-switch.ts.
+update game.flags set enabled = true, changed_at = now() where name = 'poke';

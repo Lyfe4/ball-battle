@@ -317,3 +317,42 @@ Tests: `mail-watch.db.test.ts` (a delivered code; a code the relay refused while
 and on-its-way; the 24-hour window and the 7-day drop; no page role may read it, the API only
 health's function; three seen failing with the copy switched off), `health.db.test.ts`
 (`emailSends`) and `supabase-tools.test.ts` (the check's wording).
+
+## Addendum (2026-11-24): the inbox on pokes, as built (PR 5)
+
+- **One socket per page** (`src/app/poke-hub.ts`, `pokes.ts`): readers `want()` it and `listen()`
+  for pokes and up/down; it opens with the first reader (asking `GET /me/poke` where to listen) and
+  closes with the last, so an idle guest opens none (decision 6). It asks again when a page hidden
+  long enough for its socket to close shows again, and when the inbox is told the player may have
+  changed (a sign-in, a switch): pokes switched off by the flag, or a new key after Log out, reach
+  an open page without a reload. A failed ask is off. Without `VITE_POKE`, `pokes` is undefined and
+  none of it is bundled.
+- **The inbox** (`inbox-poll.ts`, `inbox-watch.ts`) wants the socket while an account is signed
+  in. Up, an `inbox` poke reads at once and the only timer is a safety read every 120 s
+  (`INBOX_SAFETY_MS`), expecting or not; every move to up reads once. Down, the 30 s and 2 s
+  timers apply exactly as before, from the moment it goes down. A friendless account now hears its
+  first friend request at once (it had no timer before, and still has none down).
+- **`ONLINE_MS` 75 s → 150 s**, and `privacy.html` with it, which also names the update channel's
+  key and Realtime's 3-day record of each signal (`legal-pages.test.ts`).
+- **The socket heartbeats every 15 s** (the addendum above).
+- **`netlify dev`'s CSP and the local Realtime**: netlify.toml stays free of any local address
+  (`security-headers.test.ts`). The online flows' phones instead have each page's policy rewritten
+  on its way in (`src/flows/realtime-support.ts`, `realtime-policy.ts`) to exactly the policy
+  `pnpm preview` serves (`LOCAL_SECURITY_HEADERS`; the test checks they are equal). A page that a
+  Playwright route fulfils has no address, so Chromium's Local Network Access check counts it as
+  public and refuses a loopback socket: the flows grant `local-network-access` to their own origin.
+  Neither reaches anything but a test. Locally and in CI, pokes are on: `build:online` sets
+  `VITE_POKE`, `local-env.ts` writes `BALLBATTLE_POKE` and the stack's publishable key as the
+  browser key, and `supabase/seed.sql` turns the flag on.
+- **Online tests** (`inbox-poke.online.test.ts`): with the socket up, a stranger's friend request
+  and a friend's challenge each reach a phone on home within 3 s, read right after an `inbox` poke
+  and well inside the 120 s safety wait (seen failing with the flag off); with `**/realtime/**`
+  blocked (`routeWebSocket` closing every socket), both arrive on the 30 s reads and no socket is
+  ever up.
+
+Tests: `poke-hub.test.ts` (one socket for every reader, closed with the last; off and a failed ask
+stay down; pokes and up/down to each listener; an answer after everyone let go is dropped; asked
+again after a long hide and on a possible new player, a new topic reopens and off closes),
+`inbox-poll.test.ts` (up: a read on each poke and move to up, then 120 s; down: today's timers at
+once; nothing to watch keeps no timer), `poke-socket.test.ts` (15 s), `security-headers.test.ts`,
+`legal-pages.test.ts`, `inbox.db.test.ts` (online until 150 s).

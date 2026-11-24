@@ -122,6 +122,19 @@
           <dd class="legal-keep">With the match, as above.</dd>
         </div>
         <div>
+          <dt>A random key for your update channel, and a record of each update signal</dt>
+          <dd>
+            So your page hears at once when your match or friends change, instead of asking every
+            few seconds. While you're in an online match or waiting for one, and while you're signed
+            in with the game open, our database sends a signal with nothing in it but “match” or
+            “friends” to a channel named by the key, through Supabase Realtime. The key is random
+            and isn't your ID; a new one is made when you log out.
+          </dd>
+          <dd class="legal-keep">
+            The key, as above. Supabase keeps each signal's channel, kind and time for about 3 days.
+          </dd>
+        </div>
+        <div>
           <dt>Challenge links you send</dt>
           <dd>So your friend can join. Only a scrambled form of the link is stored.</dd>
           <dd class="legal-keep">
@@ -195,7 +208,7 @@
           <dt>When you were last active, as one time we overwrite</dt>
           <dd>
             So your friends see you as online, in a match or offline. Only accepted friends see it,
-            and only while you're signed in: online means you used the game in the last 75 seconds.
+            and only while you're signed in: online means you used the game in the last 150 seconds.
           </dd>
           <dd class="legal-keep">Until you delete your account.</dd>
         </div>

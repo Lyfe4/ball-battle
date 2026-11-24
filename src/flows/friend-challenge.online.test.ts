@@ -78,6 +78,8 @@ describe('challenging a friend', () => {
       await pickTogether([{ page: two }, { page: one }]);
       await expect.poll(() => card.isHidden()).toBe(true);
       expect(errors).toStrictEqual([]);
+      // Done: their pages stop asking, so the next test's server isn't still serving this match.
+      for (const page of [one, two]) await page.context().close();
     },
   );
 
@@ -111,6 +113,8 @@ describe('challenging a friend', () => {
       await card.getByRole('button', { name: 'Accept' }).click();
       await pickTogether([{ page: two }, { page: one }]);
       expect(errors).toStrictEqual([]);
+      // Done: their pages stop asking, so the next test's server isn't still serving this match.
+      for (const page of [one, two]) await page.context().close();
     },
   );
 });
