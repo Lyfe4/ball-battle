@@ -10,6 +10,7 @@ import type { Deps } from './http.ts';
 import { deleteInactiveGuests } from './inactive.ts';
 import { settleLiveSeries } from './live-service.ts';
 import { settleStarts } from './start-settle.ts';
+import { purgeReports } from './blocks.ts';
 import { purgeDeclines } from './db/friends.ts';
 import { purgeRateLimits } from './rate-limit.ts';
 
@@ -19,6 +20,7 @@ export async function sweep(deps: Deps): Promise<{
   live: number;
   windows: number;
   declines: number;
+  reports: number;
   inactive: number;
 }> {
   return {
@@ -30,6 +32,8 @@ export async function sweep(deps: Deps): Promise<{
     windows: await purgeRateLimits(deps.sql),
     // A declined friend request stops repeats for 30 days, then goes (ADR 0079).
     declines: await purgeDeclines(deps.sql),
+    // A reported name is kept 90 days for the owner to read (ADR 0079, 2026-11-25).
+    reports: await purgeReports(deps.sql),
     // Last: it calls Auth, and an Auth outage must not hold up the game's own settling.
     inactive: await deleteInactiveGuests(deps),
   };

@@ -27,6 +27,7 @@ const TABLES = [
   'mail_relay',
   'flags',
   'mail_sends',
+  'name_reports',
 ];
 
 describe('the game schema', () => {

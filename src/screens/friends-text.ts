@@ -2,6 +2,7 @@
 // DOM.
 import type {
   AddFriendResponse,
+  ReportReason,
   FriendStatus,
   FriendsResponse,
   InboxResponse,
@@ -11,7 +12,7 @@ import { challengeLine } from './online-text.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
 export interface FriendGroup {
-  readonly key: 'incoming' | 'friends' | 'outgoing';
+  readonly key: 'incoming' | 'friends' | 'outgoing' | 'blocked';
   readonly title: string;
 }
 
@@ -20,6 +21,7 @@ export const FRIEND_GROUPS: readonly FriendGroup[] = [
   { key: 'incoming', title: 'Waiting for you' },
   { key: 'friends', title: 'Friends' },
   { key: 'outgoing', title: 'Sent' },
+  { key: 'blocked', title: 'Blocked' },
 ];
 
 /** What the list says when it holds nobody. */
@@ -39,6 +41,23 @@ export function hasAnyone(list: FriendsResponse): boolean {
 
 /** Remove, asked in place: the row's question. */
 export const removeQuestion = (name: string) => `Remove ${name}?`;
+
+/** Block, asked in place under the row (2026-11-25): what it does, never what they are told. */
+export const blockQuestion = (name: string) =>
+  `Block ${name}? They can’t add or challenge you again.`;
+
+/** Report name, asked in place: why, in a tap. */
+export const reportQuestion = (name: string) => `Report the name ${name}? Why:`;
+
+export const REPORT_CHOICES: readonly { readonly reason: ReportReason; readonly text: string }[] = [
+  { reason: 'offensive', text: 'Rude or hurtful' },
+  { reason: 'impersonation', text: 'Pretends to be someone' },
+  { reason: 'other', text: 'Something else' },
+];
+
+/** What the list says after a block or a report. */
+export const BLOCKED_LINE = (name: string) => `${name} is blocked. Unblock them under Blocked.`;
+export const REPORTED_LINE = 'Thanks: we’ll look at that name. You won’t see it again.';
 
 /** A friend's status in words, beside its dot (PR (d)). */
 export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {

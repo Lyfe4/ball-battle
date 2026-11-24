@@ -70,8 +70,10 @@ export async function listFriends(deps: Deps, userId: string): Promise<FriendsRe
     // With each one's status (PR (d)), read in the one statement joined on accepted friendships.
     friends: await friendStatuses(deps.sql, userId),
     incoming: rows.filter((row) => !row.accepted && !row.mine && !row.declined).map(entry),
-    // Declined or not, a request the player sent reads as sent (ADR 0079): a "no" is never told.
+    // Declined or not, a request the player sent reads as sent (ADR 0079): a "no" is never told,
+    // nor a block (blocks.ts).
     outgoing: rows.filter((row) => !row.accepted && row.mine && !row.withdrawn).map(entry),
+    blocked: rows.filter((row) => row.blockedByMe).map(entry),
   };
 }
 
@@ -134,6 +136,14 @@ export async function addFriend(deps: Deps, me: string, to: string): Promise<Add
       row = await pairRow(db, low, high);
       if (row === undefined) throw new Error('A friendship row that clashed is gone');
     }
+    if (row.blockedBy === me) {
+      throw new ApiError(409, 'friend_blocked', 'You blocked this player: unblock them first');
+    }
+    // Blocked by them: it reads as sent, as a decline does, and never arrives (blocks.ts).
+    if (row.blockedBy !== null) {
+      await withdrawRow(db, row.id, false);
+      return 'requested';
+    }
     if (row.accepted) return 'friends';
     if (row.requestedBy !== me) {
       // They asked first (or asked and were declined, and `me` changed their mind): friends.
@@ -158,7 +168,10 @@ export async function addFriend(deps: Deps, me: string, to: string): Promise<Add
 export async function acceptFriend(deps: Deps, me: string, id: string): Promise<FriendsResponse> {
   await deps.sql.begin(async (db) => {
     const row = await ownRow(db, me, id);
-    if (row === undefined) throw new ApiError(404, 'not_found', 'That request is gone');
+    // Gone, or blocked either way: a block is undone only by Unblock.
+    if (row?.blockedBy !== null) {
+      throw new ApiError(404, 'not_found', 'That request is gone');
+    }
     if (row.accepted || row.requestedBy === me) return;
     await accept(db, me, row.low === me ? row.high : row.low, row.id);
   });
@@ -173,7 +186,10 @@ export async function removeFriend(deps: Deps, me: string, id: string): Promise<
   await deps.sql.begin(async (db) => {
     const row = await ownRow(db, me, id);
     if (row === undefined) return;
-    if (row.accepted) await deleteRow(db, row.id);
+    // A block is undone only by Unblock; blocked, cancelling hides the request and keeps the row.
+    if (row.blockedBy === me) return;
+    if (row.blockedBy !== null) await withdrawRow(db, row.id, true);
+    else if (row.accepted) await deleteRow(db, row.id);
     else if (row.requestedBy !== me) await declineRow(db, row.id);
     // A declined request stays until its 30 days are up, so cancelling it can't clear the way.
     else if (row.declinedRecently) await withdrawRow(db, row.id, true);

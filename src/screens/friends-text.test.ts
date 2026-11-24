@@ -11,7 +11,7 @@ import {
   waitingCount,
 } from './friends-text.ts';
 
-const EMPTY = { code: '7KQ2M9XD', friends: [], incoming: [], outgoing: [] };
+const EMPTY = { code: '7KQ2M9XD', friends: [], incoming: [], outgoing: [], blocked: [] };
 
 describe('the Friends section’s words', () => {
   it('says a request was sent, or that you are friends now', () => {

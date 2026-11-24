@@ -127,7 +127,7 @@ or lobby, which it would lose; then the device forgets every `ballbattle.*` key,
 `auth_google`, are `"accounts": "ok" | "misconfigured" | "off"` (with `accountsFailed` naming
 them), never a 503: a sign-in setting must not make the game look down to UptimeRobot or hold up
 the vs Friend switch or Publish. Confirm email off is still serious (a guest could take any
-address), so: `friend-switch.ts --accounts on` fails after its deploy unless `accounts` is `ok`,
+address), so: `friend-switch.ts on --accounts` fails after its deploy unless `accounts` is `ok`,
 and UptimeRobot gets a keyword monitor for `"accounts":"ok"` beside the one for
 `"emailCodes":"ok"` (production reads `off` until accounts ship; add the monitor then).
 
@@ -151,7 +151,7 @@ here) decodes the ID token.
   leaks nothing. If it matters later, the fix is to answer before Auth is called (send in the
   background) or to pad the fast path.
 - Deploy previews can test email codes but not Google.
-- **Before accounts are switched on in production** (`friend-switch.ts --accounts on`), in this
+- **Before accounts are switched on in production** (`friend-switch.ts on --accounts`), in this
   order, each its own pull request where it changes the repository:
   - **Update the privacy policy** (`privacy.html`, ADR 0069) and its date: Log out and Delete
     account now live on Profile (ADR 0081), and so does a guest's Forget me in a build with
@@ -392,3 +392,100 @@ exists. That delay feeling slow is the trigger for the Realtime poke in "Moving 
 hidden, back to idle after; a 30 s wait cut to 2 s without a read (both failed before).
 `friend-challenge.online.test.ts`: the friend's page opened on the manual gets the card and
 accepts (failed against the build of `main`: no card in 40 s); the friend on home as before.
+
+## Addendum (2026-11-25): blocking, reporting a name, a shared network's codes, the timing leak
+
+The four items left before accounts go live in production (this ADR's "Not built: a permanent
+block", "A report button is likely needed later" and "A known timing leak", and the per-network
+code limit's effect on phone carriers).
+
+**Blocking** (`blocks.ts`, `20261125090000_blocks_reports.sql`). From a friend's row, a request
+to you, or a friend's challenge: More, then Block, asked in place under the row (Keep first).
+Unblock is in the Friends tab's Blocked list, beside your code and Sent.
+
+- **A block is the pair's friendship row kept for good** as the blocked player's request, declined
+  by the blocker (`friendships.blocked_by`, checked: the row is then a declined request, never
+  accepted). So every rule that keeps a decline from its sender already holds, and the sweep never
+  drops it. To the blocked player it reads exactly as what they could already see: a request they
+  sent and nobody answered (sending again "sends" it), or a friend who removed them. Nothing
+  arrives: no request, no inbox count, no challenge (challenges need an accepted friend).
+- **It ends the friendship and calls off what waits**, in one transaction: the blocker's own
+  challenges to them are cancelled; theirs to the blocker read as No thanks (the answer any friend
+  may give).
+- **The blocker** can't send them a request (`409 friend_blocked`, "unblock them first"), nor
+  accept one by its id. **Unblock** deletes the row: a clean slate, as if they had never met, so a
+  request they "sent" while blocked never surfaces later.
+- Considered: a `game.blocks` table beside friendships. Every rule that reads friendships would
+  then need a second check, and a forgotten one is a leak; one column on the row the rules already
+  read keeps "a no is never told" in one place.
+- Not covered: a rematch right after a live match against someone you then block (a rematch needs
+  a match that just ended, which a blocked player can only get through a link you accepted), and a
+  live link shared outside the game.
+
+**Report this name** (`game.name_reports`). From the same More: Report name, then why in one tap
+(Rude or hurtful, Pretends to be someone, Something else).
+
+- **Stored:** reporter, reported, the username as it was, the reason, the time. Kept 90 days by
+  the sweep (`REPORT_DAYS`) and deleted with either account. The same name reported twice by one
+  player is one report. Counted first: 10 a day per account (`LIMITS.nameReports`).
+- **Hidden from the reporter** at once: `game.name_seen_by(viewer, ...)` shows them that player's
+  "Player 1234" wherever the friends list, requests, statuses and a friend's challenge show a
+  name, until the username changes. Other players still see it. Series and live-match names are
+  read elsewhere and still show it (a live match is with someone you chose to play).
+- **Reviewing:** `node scripts/reports.ts staging|production [--days n]`, read-only through the
+  Supabase CLI: most reported first, the reasons, the name now and the player's id; reporters only
+  counted. Clearing a name stays the SQL in "Usernames" above.
+- A player with no username can't be reported (`nothing_to_report`): "Player 1234" is the game's.
+
+**A shared network's email codes** (this ADR's table, changed). Behind a phone carrier's shared
+address (CGNAT) or a school's, many players are one network; at 10 codes an hour and 20 a day, one
+person asking again and again, or a class signing in, locked out everyone else there.
+
+| What                         | Before                  | Now                                          |
+| ---------------------------- | ----------------------- | -------------------------------------------- |
+| Codes from one network       | 10 an hour, 20 a day    | **20 an hour, 40 a day different addresses** |
+| All of us                    | 90 a day, 2,700 a month | the same, and **30 an hour**                 |
+| To one address, by one guest | 3 an hour, 5 a day; 5   | unchanged                                    |
+
+- **The network counts addresses, not codes:** only an address's first code in each window spends
+  it (`spendAll` now answers each bucket's count). Asking again for your own slow email costs the
+  network nothing; the address's own 3 an hour still applies.
+- **The trade-off.** One network can now take 40 of the day's 90 codes rather than 20, so two
+  abusive networks (not five) could use up a day's email codes for everyone. The new hourly cap
+  means no burst takes more than a third of a day, so later hours still have codes, and Google
+  sign-in is never capped. Bombing one inbox is still stopped by the per-address limits.
+  Considered and not taken: no per-network limit at all (one script empties the day), and
+  weighting by guest age (an attacker's guests can wait a day too, and it adds a read to every
+  send).
+
+**The timing leak** (closed). A guest's address with an account took two Auth calls where a new
+one took one, and a new device's new address makes a user, so how long "We sent a code" took said
+whether an address has an account. The Auth part of `POST /auth/email` (the ticket, the calls, any
+refusal) now answers no sooner than `CODE_ANSWER_FLOOR_MS`, 2.5 s, on every path. Two calls from
+Ohio to Sydney take about 1-1.5 s; a slower answer shows in the request log's `durationMs` for
+`auth.email`, to tune the floor. Our own limits answer before it (they say nothing about
+accounts), and the answer's words were already the same. Considered: answering first and sending
+in the background (work after a function's answer isn't guaranteed on Netlify, and a bad address
+could no longer be refused). A friend lookup's "No account has that username or friend code" stays:
+usernames are public in every match, and a typo must say so.
+
+Real use: a teen blocks a classmate who keeps challenging them; the classmate sees their request
+"sent" and nothing else. Twenty players on one carrier sign in at lunch; one whose email was slow
+taps Send again without costing the others. Someone timing `/auth/email` over a list of addresses
+sees 2.5 s for every one.
+
+Library behaviour relied on: Postgres checks a `CHECK` constraint per row on update (a block can't
+be half-written); `least`/`greatest` order `uuid` values bytewise, the same order as their
+lower-case text (`low < high` in TypeScript); Node's `setTimeout` waits at least its delay.
+
+Tests: `blocks.db.test.ts` (a friend gone to them and blocked to me; a re-sent request reads as
+sent and never arrives, past the 30 days and the sweep; a blocked request still reads as sent;
+challenges called off both ways and no new one; `friend_blocked` until Unblock, which only the
+blocker can do; a report stored once, hidden from the reporter alone, shown again on a new name,
+from a request and a challenge; a bad reason, no username, the day's limit; 90 days and account
+deletion; the re-send test seen failing with the block check off, the request-name test with
+`name_seen_by` off), `email-limits.db.test.ts` (20 players behind one address get codes and a
+re-send spends nothing, seen failing with codes counted; the hourly cap),
+`email-sign-in.db.test.ts` (four paths each at least the floor and within 250 ms of each other,
+seen failing without it), `friends-section.browser.test.ts` (More, Keep first, Block, Report,
+Unblock), `scripts/reports.test.ts`, `legal-pages.test.ts`, `inbox.db.test.ts`.

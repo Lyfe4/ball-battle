@@ -4,8 +4,9 @@
 // - `existing`: the address already has an account (Auth's `email_exists`), so the code is a
 //   sign-in to it, offered as "Switch to it?" once checked. Only then does the player learn it.
 // - `signin`: a device without a guest, after the 16+ question; the code signs in or makes one.
-// Every code is counted before Auth is asked (rate-limit.ts): per address, guest and network, then
-// everyone's caps under Resend Free's, which answer `email_busy` alike for every player.
+// Every code is counted before Auth is asked (rate-limit.ts): per address and guest, then per
+// network (each address once a window), then everyone's caps under Resend Free's, which answer
+// `email_busy` alike for every player.
 import { decodeSendCode, decodeVerifyCode, type SignInResponse } from '../api/accounts.ts';
 import { AuthError, type AuthSession } from './auth.ts';
 import { expectAuth, newTicket } from './auth-tickets.ts';
@@ -34,6 +35,21 @@ import {
 } from './sign-in.ts';
 
 type Path = 'link' | 'existing' | 'signin';
+
+/**
+ * The least time the Auth part of sending a code takes to answer (ADR 0079 addendum of
+ * 2026-11-25). A guest's address with an account takes two Auth calls (the email change refused,
+ * then the code) and a new device's new address makes a user: without a floor, how long "We sent
+ * a code" took would say whether the address has an account. Two calls from the functions' region
+ * to the database's take about 1-1.5 s, so 2.5 s hides them; a slower answer shows in the request
+ * log's `durationMs` for `auth.email`.
+ */
+export const CODE_ANSWER_FLOOR_MS = 2500;
+
+const waitUntil = (start: number, floorMs: number) =>
+  new Promise<void>((done) => {
+    setTimeout(done, Math.max(0, start + floorMs - performance.now()));
+  });
 
 /** A sending failure as the player reads it; Auth's own trouble is reported. */
 async function sendFailure(error: unknown, context: RouteContext): Promise<never> {
@@ -70,12 +86,21 @@ export async function sendCode(request: Request, context: RouteContext): Promise
     { subject: address, limit: LIMITS.codesToAddressDaily },
   ];
   if (guest !== undefined) own.push({ subject: guest.userId, limit: LIMITS.codesByGuest });
+  const counts = await spendAll(sql, own);
+  // The network counts addresses, not codes: only an address's first code in each window spends
+  // it, so one player asking again never crowds out the others behind a shared address.
   if (network !== undefined) {
-    own.push({ subject: network, limit: LIMITS.codesFromNetwork });
-    own.push({ subject: network, limit: LIMITS.codesFromNetworkDaily });
+    const first = (limit: Limit) => counts.get(limit.bucket) === 1;
+    const shared: { subject: string; limit: Limit }[] = [];
+    if (first(LIMITS.codesToAddress))
+      shared.push({ subject: network, limit: LIMITS.codesFromNetwork });
+    if (first(LIMITS.codesToAddressDaily)) {
+      shared.push({ subject: network, limit: LIMITS.codesFromNetworkDaily });
+    }
+    if (shared.length > 0) await spendAll(sql, shared);
   }
-  await spendAll(sql, own);
   await spendAll(sql, [
+    { subject: EVERYONE, limit: LIMITS.codesHourly },
     { subject: EVERYONE, limit: LIMITS.codesDaily },
     { subject: EVERYONE, limit: LIMITS.codesMonthly },
   ]);
@@ -83,6 +108,7 @@ export async function sendCode(request: Request, context: RouteContext): Promise
   // Auth's hooks send only what we expect (ADR 0082): one email to this address, and for a device
   // without a guest, perhaps a new user. A guest's refused email change sends nothing, so the
   // one email ticket is still there for the sign-in code that follows it.
+  const started = performance.now();
   const signUp = guest === undefined ? newTicket() : undefined;
   await expectAuth(sql, { email: body.email, ...(signUp === undefined ? {} : { signUp }) });
   let path: Path = 'signin';
@@ -96,6 +122,9 @@ export async function sendCode(request: Request, context: RouteContext): Promise
     }
   } catch (error) {
     await sendFailure(error, context);
+  } finally {
+    // Every path, sent or refused, answers no sooner than the floor.
+    await waitUntil(started, context.deps.codeFloorMs ?? CODE_ANSWER_FLOOR_MS);
   }
   context.setCookie(
     await sealCookie(config, EMAIL_COOKIE, {

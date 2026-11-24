@@ -121,6 +121,31 @@ describe('an address that already has an account', () => {
     expect(gone?.n).toBe(0);
   });
 
+  it('takes as long to answer as a new one: no sooner than the floor (the timing leak)', async () => {
+    // A short floor stands in for production's 2.5 s; the guest's known address takes two Auth
+    // calls and the new one one, and a new device's new address makes a user.
+    const floored: Deps = { ...deps, codeFloorMs: 700 };
+    const email = newEmail();
+    await accountWith(email);
+    const timed = async (browser: TestBrowser, to: string, adult?: true) => {
+      const start = performance.now();
+      const answer = await browser.call(authEmail, 'POST', '/api/v1/auth/email', {
+        email: to,
+        adult,
+      });
+      expect(answer.status).toBe(202);
+      return performance.now() - start;
+    };
+    const known = await timed((await newPlayer(deps)).browser.elsewhere(floored), email);
+    const fresh = await timed((await newPlayer(deps)).browser.elsewhere(floored), newEmail());
+    const device = await timed(new TestBrowser(floored, '198.51.100.90'), newEmail(), true);
+    const signIn = await timed(new TestBrowser(floored, '198.51.100.91'), email, true);
+    for (const ms of [known, fresh, device, signIn]) expect(ms).toBeGreaterThanOrEqual(690);
+    expect(
+      Math.max(known, fresh, device, signIn) - Math.min(known, fresh, device, signIn),
+    ).toBeLessThan(250);
+  });
+
   it('keeps the guest when the player stays', async () => {
     const email = newEmail();
     await accountWith(email);

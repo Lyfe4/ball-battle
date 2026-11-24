@@ -24,6 +24,8 @@ export interface Invite {
   /** The link's token: Accept opens its lineup. */
   readonly token: string;
   readonly from: string;
+  /** The friendship it comes through, for Block and Report name (ADR 0079, 2026-11-25). */
+  readonly friend?: string;
   readonly format: Format;
   readonly bestOf: BestOf;
 }
@@ -46,6 +48,25 @@ export interface FriendsResponse {
   readonly incoming: readonly FriendEntry[];
   /** Requests this account sent that aren't answered yet (a declined one still reads as sent). */
   readonly outgoing: readonly FriendEntry[];
+  /** Players this account blocked, each with Unblock (2026-11-25). */
+  readonly blocked: readonly FriendEntry[];
+}
+
+/** Why a name is reported: what the owner reads beside it. */
+export const REPORT_REASONS = ['offensive', 'impersonation', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/** POST /api/v1/friends/:id/report. */
+export interface ReportNameRequest {
+  readonly reason: ReportReason;
+}
+
+export function decodeReportName(body: unknown): ReportNameRequest | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const { reason } = body as Record<string, unknown>;
+  return REPORT_REASONS.find((known) => known === reason) === undefined
+    ? undefined
+    : { reason: reason as ReportReason };
 }
 
 /** POST /api/v1/friends: a request to a username or a friend code, as typed. */

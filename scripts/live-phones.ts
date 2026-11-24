@@ -151,7 +151,8 @@ export async function startMatch(
   sender: Phone,
   friend: Phone,
   shot: (page: Page, name: string) => Promise<void> = () => Promise.resolve(),
-): Promise<{ lobbyToMatchMs: number }> {
+  lobbyWaitMs = 0,
+): Promise<{ lobbyToMatchMs: number; moments: MatchMoments }> {
   await sender.page.goto(`${base}/`);
   await shot(sender.page, 'home-no-match');
   await sender.page.locator('.play-box').click();
@@ -164,6 +165,8 @@ export async function startMatch(
   await confirmAge(sender.page);
   await sender.page.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
   await shot(sender.page, 'lobby');
+  const lobby = Date.now();
+  if (lobbyWaitMs > 0) await sender.page.waitForTimeout(lobbyWaitMs);
   const token = new URL(sender.page.url()).searchParams.get('challenge') ?? '';
   await friend.page.goto(`${base}/?challenge=${token}`);
   await friend.page.getByRole('heading', { name: /challenges you$/ }).waitFor();
@@ -177,7 +180,15 @@ export async function startMatch(
   await lineup(sender.page, 'Lock in', 0, bestOf);
   await friend.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
   await sender.page.waitForURL(/[?&]online=/, { timeout: 30_000 });
-  return { lobbyToMatchMs: Date.now() - accepted };
+  const match = Date.now();
+  return { lobbyToMatchMs: match - accepted, moments: { lobby, accepted, match } };
+}
+
+/** When the sender reached the lobby, the friend accepted, and both phones reached the match. */
+export interface MatchMoments {
+  readonly lobby: number;
+  readonly accepted: number;
+  readonly match: number;
 }
 
 /** Picks on one page: `delay(n)` ms after its nth pick phase opens, or never (it runs out). */

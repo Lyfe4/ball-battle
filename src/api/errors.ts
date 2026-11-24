@@ -60,6 +60,10 @@ export const ERROR_CODES = [
   'friend_self',
   /** Too many friends or waiting requests, on either side. */
   'friend_limit',
+  /** A friend request to someone the player blocked: Unblock first. */
+  'friend_blocked',
+  /** A report of a player with no username ("Player 1234" is the game's own name). */
+  'nothing_to_report',
   /** The series names a ruleset whose frozen bundle this server doesn't have. */
   'ruleset_missing',
   'internal',

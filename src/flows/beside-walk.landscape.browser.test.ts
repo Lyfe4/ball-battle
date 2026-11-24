@@ -124,6 +124,7 @@ describe('beside screens from the iPhone and the screen walk', () => {
   it('lays the Friends tab’s lists out beside with nothing over anything', async () => {
     const list: FriendsResponse = {
       code: '7KQ2M9XD',
+      blocked: [],
       friends: [
         { id: 'f-1', name: 'Robin', status: 'online' },
         { id: 'f-2', name: 'Sam_R', status: 'offline' },

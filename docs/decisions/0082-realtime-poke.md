@@ -415,3 +415,47 @@ linger keeps the socket for the next screen with no new ask; closes after it).
   poke (at most four reads) and at least five times blocked; by poke it reaches the other phone
   within 1.5 s. Then the whole match, a pick running out and Leave and forfeit, leaving mid-fight,
   and the dropped connection (back in time, then gone for good) pass the same in both modes.
+
+## Addendum (2026-11-25): measured on staging (PR 8)
+
+`scripts/live-measure.ts` (now with `--lobby <s>`, `--end <s>` and each player's requests by
+phase) on staging with every PR merged, two Chromium phones at 390 × 664 on one PC, one live
+Reveal Best of 3 (picks after 3-12 s, the friend's first runs out), the sender 60 s in the lobby
+and both 120 s on the end screen. Pokes off is the database flag only (`poke-switch.ts off
+staging`), the same build: the page polls exactly as before PR 5.
+
+| Run       | Requests (both) | Lobby (sender) | Lineups (each) | Match (each, ~2 min) | End screen (each, 120 s) | Pick → other screen (ms) |
+| --------- | --------------- | -------------- | -------------- | -------------------- | ------------------------ | ------------------------ |
+| Pokes on  | 120 (62 / 58)   | 8              | 8 / 12         | 36 / 35              | 10 / 10                  | 2,116, 1,633, 1,466      |
+| Pokes on  | 144 (74 / 70)   | 8              | 7 / 10         | 49 / 48              | 10 / 10                  | 1,495, 1,597, 1,424      |
+| Pokes off | 266 (145 / 121) | 22             | 9 / 11         | 51 / 46              | 63 / 63                  | 1,638, 2,047, 3,011      |
+
+Every run: three fights started within 4 ms of each other, one `/me/poke` per phone (the 5 s
+linger carried the socket from lobby to lineup to match to end screen), series reads p50 640-660
+ms.
+
+**Against the promise.** The proposal estimated about 203 calls per player for one Best of 3
+cycle today and about 66 with pokes. Measured, per player, for the same cycle (no lobby wait, a
+minute on the end screen): **about 56 with pokes and about 90 without**. With pokes it meets the
+promise. The "today" figure was too high: adaptive polling (ADR 0053) and lineups picked together
+(ADR 0080) had already cut the lineup and match reads the proposal counted at 1 s. So a cycle saves
+about 38%; with this run's 60 s lobby and 120 s end screen, about 55% (266 to 120-144).
+
+**Where the calls still go.** The match is most of what is left, and pokes barely change it (35-49
+against 46-51 a player): the 2 s presence heartbeat stays (decision 5), and pokes only remove the
+1 s reads while waiting on the other player, which is a small share at this pick pace. The two
+pokes-on runs differ there only because run 1's reads were slower (p90 1.3 s against 0.9 s), which
+stretches each heartbeat's gap. Nothing fires twice: a pick's own player is poked too and reads
+once more, which is one spare read per pick, by design (a complete read is idempotent).
+
+**What would cut more** (not done; decisions for the owner): the heartbeat on the socket instead of
+a read (section 2.8, about 35 a player a match), and the end screen's and lineup's 10 s safety
+reads at 20 s (about 5 a player per 2 minutes). Neither is clearly wrong as it is.
+
+**The pooler.** Sampled every 15 s through the read-only SQL endpoint during the runs: at most 4
+backend connections for the API's role and at most 1 active at any sample, pokes on or off. Both
+phones read within milliseconds of a poke, which shows as two function instances at once, not as
+pressure on Supavisor at this size. Supavisor's own client count isn't visible over SQL; the
+dashboard's pooler graph is the place to watch it at launch.
+
+Staging's flag is back on.
