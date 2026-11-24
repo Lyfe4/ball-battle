@@ -12,6 +12,7 @@
 - Amends: ADR 0051 in three places, each said where it comes up: the bot's own seed is secret too
   ("Seeds"), no `packages/sim` workspace yet, and no worker pool ("Deliberately simple")
 - Amended by: ADR 0053 (live friend matches)
+- Amended by: ADR 0082 (the browser opens one Realtime socket; Auth gains hooks)
 
 ## Context
 

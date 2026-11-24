@@ -14,6 +14,7 @@
 - Amended by: ADR 0061 (the coin toss as a moment, and together online), ADR 0062 (teaching in live
   matches: What to watch during the countdown), ADR 0063 (smooth fights at any frame rate, and live
   fights that catch up gently)
+- Amended by: ADR 0082 (a Realtime poke in place of most polling)
 
 ## Context
 
