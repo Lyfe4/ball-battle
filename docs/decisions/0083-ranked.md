@@ -61,11 +61,16 @@ players, the Ranks tab, abuse and cost. The proposal answers those; the owner ch
 - **Inactivity:** before each update, φ' = √(φ² + σ²·d) on the Glicko-2 scale, d the whole days
   since `last_series_at`, capped at RD 350.
 - **Conservative skill** S = rating − 2·RD, stored; the board's tie-break and the matching key.
-- **Trophies:** target G = max(0, 2·(S − 800)). A win adds clamp(30 + (G − T)/8, 10, 60), a loss
-  takes clamp(30 − (G − T)/8, 0, 50), rounded to whole trophies.
+- **Trophies:** target G = max(0, 2·(S − 800)), read from the rating after the series. A win adds
+  clamp(30 + (G − T)/8, 0, 60), a loss takes clamp(30 − (G − T)/8, 0, 50), rounded to whole
+  trophies. The win's least is 0, not the proposal's 10 (decided while building PR 2): with 10, an
+  account fed wins by a friend climbed 10 a win for ever (3,381 trophies against a target of 1,772
+  after 200 fed wins); with 0 it stops about 240 above its target, and an honest player at their
+  level gets under 10 on about 0.2% of wins.
 - **Leagues and floors:** a gate every 400. Once a player reaches a league in a season, a loss never
   takes them below its gate (the floor is stored, so a reset that halves trophies sets it anew).
-  In Bronze, a loss below 100 trophies takes nothing, so a new player's first losses cost nothing.
+  In Bronze, a loss never takes a player below 100 and takes nothing under it, so a new player's
+  first losses cost nothing.
   A forfeit, a missed turn, Leave and `start_missed` are losses. A `void` series moves nothing.
 - **Code:** `src/server/rating/` (PR 2), never `src/sim`: it uses `Math.exp`, `Math.log` and
   `Math.sqrt` freely, since a rating is computed once, in one transaction, and stored.
