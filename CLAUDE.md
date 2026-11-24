@@ -132,9 +132,16 @@ monthly credits per production deploy, ADR 0052): publish a batch of merges with
 workflow (`gh workflow run publish.yml`), which fast-forwards `release` to a `main` commit whose CI
 passed, after applying its migrations to production (ADR 0068). Publish only when the user asks.
 Netlify builds only `main` (staging) and `release` (Deploy Previews are off to save build minutes,
-300 a month): don't wait for a preview. A push that changes only docs, Markdown, workflows or tests
-skips its build (`netlify.toml` `ignore`, `scripts/netlify-ignore.sh`); a retry of the same commit
-always builds. Merge related pull requests close together so staging builds fewer times.
+300 a month): don't wait for a preview. The ignore rule (`netlify.toml` `ignore`,
+`scripts/netlify-ignore.sh`) skips a build when nothing changed since the last built commit
+(`CACHED_COMMIT_REF`) outside `docs/`, `*.md`, `.github/`, `*.test.ts`, `src/flows/`,
+`src/server/test/`, `src/*-support.ts`, `src/*/fake-*.ts` and the rule itself (git pathspecs, `*`
+crosses `/`); it builds a first build, an unknown base and a retry or manual deploy of the same
+commit. `netlify-ignore.test.ts` fails if a page, function or build script imports an ignored file:
+name a new test-only helper `*-support.ts` or put it in `src/flows/`. Netlify lists a skip as a
+failed deploy, "Canceled build due to no content change" (its log: the ignore command "returned
+exit code 0"): that is a skip, not an error. Merge related pull requests close together so staging
+builds fewer times.
 
 ## Conventions
 
