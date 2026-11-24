@@ -84,13 +84,30 @@ export const LIMITS = {
   },
   /** Codes asked for by one guest. */
   codesByGuest: { bucket: 'code.guest', max: 5, windowSeconds: 3600, refusal: addressFull },
-  /** Codes sent from one network: a fifth of everyone's day, so one network can't empty it. */
-  codesFromNetwork: { bucket: 'code.network', max: 10, windowSeconds: 3600, refusal: networkCodes },
+  /**
+   * Addresses sent codes from one network (ADR 0079 addendum of 2026-11-25): each address counts
+   * once a window, so asking again for your own code never spends the network's. A phone
+   * carrier's shared address or a school is many players: 20 an hour fits a class, while one
+   * network may still take under half of everyone's day.
+   */
+  codesFromNetwork: { bucket: 'code.network', max: 20, windowSeconds: 3600, refusal: networkCodes },
   codesFromNetworkDaily: {
     bucket: 'code.network.day',
-    max: 20,
+    max: 40,
     windowSeconds: DAY,
     refusal: networkCodes,
+  },
+  /**
+   * Everyone's codes in an hour (2026-11-25): no burst, from one network or many, spends more
+   * than a third of the day, so the rest of the day still has codes.
+   */
+  codesHourly: {
+    bucket: 'code.all.hour',
+    max: 30,
+    windowSeconds: 3600,
+    refusal: (retry) =>
+      `Email codes are busy just now: continue with Google, or try again in ${waitWords(retry)}`,
+    answer: busy,
   },
   /** Everyone's codes in a day (UTC): Resend's 100 less a margin. */
   codesDaily: {
@@ -163,12 +180,13 @@ export const EVERYONE = 'all';
 
 /**
  * Counts one action under each of `spends` in one statement (one round trip), then refuses at the
- * first, in order, that is over. Every one is counted, refused or not, as `spend` does.
+ * first, in order, that is over. Every one is counted, refused or not, as `spend` does. Answers
+ * each bucket's count, this one included.
  */
 export async function spendAll(
   sql: Sql | TransactionSql,
   spends: readonly { readonly subject: string; readonly limit: Limit }[],
-): Promise<void> {
+): Promise<ReadonlyMap<string, number>> {
   const rows = await sql<
     { readonly bucket: string; readonly count: number; readonly retry: number }[]
   >`
@@ -200,6 +218,7 @@ export async function spendAll(
     const row = rows.find((candidate) => candidate.bucket === limit.bucket);
     if (row !== undefined) refuseOver(limit, row);
   }
+  return new Map(rows.map((row) => [row.bucket, row.count]));
 }
 
 /**

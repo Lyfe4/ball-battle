@@ -12,14 +12,14 @@ const LOCAL_DATABASE = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 /**
  * Forgets the local database's count of codes sent from this network. Every phone of a run is one
- * network to the server, and the suite sends more codes than the 10 an hour one network may ask
- * for (ADR 0079; the limit itself is tested in `email-limits.db.test.ts`). Local only, as the codes
+ * network to the server, and the suite sends codes to more addresses than the 20 an hour one
+ * network may ask for (ADR 0079; the limit itself is tested in `email-limits.db.test.ts`). Local only, as the codes
  * are: the mail catcher and this database are the local stack's.
  */
 async function forgetNetworkCodes(): Promise<void> {
   const sql = postgres(LOCAL_DATABASE, { max: 1, onnotice: () => undefined });
   try {
-    await sql`delete from game.rate_limits where bucket in ('code.network', 'code.network.day')`;
+    await sql`delete from game.rate_limits where bucket in ('code.network', 'code.network.day', 'code.all.hour')`;
   } finally {
     await sql.end();
   }

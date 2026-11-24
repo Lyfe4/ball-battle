@@ -19,6 +19,11 @@ export interface Deps {
    * moves it. Game rules never read it; they use database time.
    */
   readonly tokenClock?: () => Date;
+  /**
+   * The least time a code request's Auth part takes to answer (email-sign-in.ts), so its timing
+   * never tells whether an address has an account. Tests set 0, or a short floor to check it.
+   */
+  readonly codeFloorMs?: number;
 }
 
 export interface RouteContext {

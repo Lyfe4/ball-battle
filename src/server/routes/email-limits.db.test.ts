@@ -1,6 +1,6 @@
 // Email codes' limits (ADR 0079), counted before Auth is asked: everyone's caps under Resend
-// Free's answer `email_busy` alike for every player and address; one network gets a fifth of the
-// day; nobody signs in during a live match or lobby. The counts are set straight in the table
+// Free's answer `email_busy` alike for every player and address, a third of the day at most in an
+// hour; one network counts addresses, not codes, and gets under half of the day; nobody signs in during a live match or lobby. The counts are set straight in the table
 // rather than spent on real emails.
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
@@ -68,18 +68,35 @@ describe('everyone’s codes', () => {
 
   it('are not spent by a request one player’s own limit refused', async () => {
     const browser = new TestBrowser(deps, '198.51.100.62');
-    await spent(await ipSubject(deps.config, browser.ip), LIMITS.codesFromNetworkDaily, 20);
+    await spent(
+      await ipSubject(deps.config, browser.ip),
+      LIMITS.codesFromNetworkDaily,
+      LIMITS.codesFromNetworkDaily.max,
+    );
     await send(browser, newEmail(), true);
     const [row] = await admin<{ n: number }[]>`
       select count(*)::int as n from game.rate_limits where subject = ${EVERYONE}`;
     expect(row?.n).toBe(0);
   });
+
+  it('answer email_busy past the hour’s 30, then say when to try again', async () => {
+    await spent(EVERYONE, LIMITS.codesHourly, LIMITS.codesHourly.max);
+    const answer = await send(new TestBrowser(deps, '198.51.100.65'), newEmail(), true);
+    expect([answer.status, errorOf(answer.body)?.code]).toStrictEqual([503, 'email_busy']);
+    expect(errorOf(answer.body)?.message).toMatch(
+      /^Email codes are busy just now: .* try again in/,
+    );
+  });
 });
 
 describe('one network', () => {
-  it('is refused its 21st code of the day, with Google offered', async () => {
+  it('is refused its 41st address of the day, with Google offered', async () => {
     const browser = new TestBrowser(deps, '198.51.100.63');
-    await spent(await ipSubject(deps.config, browser.ip), LIMITS.codesFromNetworkDaily, 20);
+    await spent(
+      await ipSubject(deps.config, browser.ip),
+      LIMITS.codesFromNetworkDaily,
+      LIMITS.codesFromNetworkDaily.max,
+    );
     const email = newEmail();
     const answer = await send(browser, email, true);
     expect(answer.status).toBe(429);
@@ -89,6 +106,34 @@ describe('one network', () => {
     // Another network still gets its code.
     const elsewhere = new TestBrowser(deps, '198.51.100.64');
     expect((await send(elsewhere, newEmail(), true)).status).toBe(202);
+  });
+
+  it('fits a class behind one address, and asking again spends nothing of it (CGNAT)', async () => {
+    const ip = '198.51.100.66';
+    const network = await ipSubject(deps.config, ip);
+    // Twenty players behind a carrier's shared address each get a code within the hour.
+    for (let n = 0; n < LIMITS.codesFromNetwork.max; n += 1) {
+      expect((await send(new TestBrowser(deps, ip), newEmail(), true)).status).toBe(202);
+    }
+    const count = async (limit: Limit) =>
+      (
+        await admin<{ count: number }[]>`
+          select count from game.rate_limits where subject = ${network} and bucket = ${limit.bucket}`
+      )[0]?.count;
+    expect(await count(LIMITS.codesFromNetwork)).toBe(LIMITS.codesFromNetwork.max);
+    // One of them asks again (the email was slow): their code is sent, the network not spent.
+    const again = new TestBrowser(deps, ip);
+    const email = newEmail();
+    await spent(await emailSubject(deps.config, email), LIMITS.codesToAddress, 1);
+    await spent(await emailSubject(deps.config, email), LIMITS.codesToAddressDaily, 1);
+    expect((await send(again, email, true)).status).toBe(202);
+    expect(await count(LIMITS.codesFromNetwork)).toBe(LIMITS.codesFromNetwork.max);
+    // A new address past the hour's is refused, with Google offered.
+    const next = await send(new TestBrowser(deps, ip), newEmail(), true);
+    expect([next.status, errorOf(next.body)?.message]).toStrictEqual([
+      429,
+      expect.stringMatching(/^Lots of email sign-ins on this network.*continue with Google/),
+    ]);
   });
 });
 
