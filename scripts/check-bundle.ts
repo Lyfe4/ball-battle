@@ -32,14 +32,22 @@ export const ACCOUNTS_MARK =
   /\bauth\/(?:options|email|google|switch)\b|\bme\/(?:username|inbox)\b|["'`]friends\/|["'`](?:GET|POST|PUT|PATCH|DELETE)["'`]\s*,\s*["'`]friends["'`]/;
 
 /**
- * What is wrong with one bundled file: `online` says whether this build may call the API, and
- * `accounts` whether it may sign in.
+ * What only the Realtime poke's code contains (ADR 0082): its route, Realtime's socket path and
+ * the Phoenix join. A build without `VITE_POKE` (every one but local and tests, for now) holds none
+ * of it. Never a key: the browser key comes from GET /me/poke at run time.
+ */
+export const POKE_MARK = /\bme\/poke\b|realtime\/v1\/websocket|phx_join/;
+
+/**
+ * What is wrong with one bundled file: `online` says whether this build may call the API,
+ * `accounts` whether it may sign in, and `poke` whether it may open the poke's socket.
  */
 export function problemsIn(
   name: string,
   text: string,
   online: boolean,
   accounts = online,
+  poke = false,
 ): string[] {
   const problems = SECRET_MARKS.filter((mark) => mark.test(text)).map(
     (mark) => `${name} holds something shaped like a secret (${mark.source.slice(0, 20)}…)`,
@@ -49,6 +57,9 @@ export function problemsIn(
   }
   if (!accounts && ACCOUNTS_MARK.test(text)) {
     problems.push(`${name} holds sign-in code in a build without accounts (VITE_ACCOUNTS unset)`);
+  }
+  if (!poke && POKE_MARK.test(text)) {
+    problems.push(`${name} holds the poke's code in a build without it (VITE_POKE unset)`);
   }
   return problems;
 }
@@ -61,14 +72,14 @@ function filesIn(dir: string): string[] {
 
 /**
  * Checks dist/ and fails the process on any problem; `online` is whether it may call the API,
- * `accounts` whether it may sign in.
+ * `accounts` whether it may sign in, `poke` whether it may open the poke's socket.
  */
-export function reportDist(online: boolean, accounts = false): void {
+export function reportDist(online: boolean, accounts = false, poke = false): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
   const problems = filesIn(dist)
     .filter((file) => /\.(?:js|html|css|json|webmanifest)$/.test(file))
     .flatMap((file) =>
-      problemsIn(file.slice(dist.length + 1), readFileSync(file, 'utf8'), online, accounts),
+      problemsIn(file.slice(dist.length + 1), readFileSync(file, 'utf8'), online, accounts, poke),
     );
   if (problems.length > 0) {
     console.error(problems.join('\n'));
@@ -80,5 +91,9 @@ export function reportDist(online: boolean, accounts = false): void {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const online = process.env['VITE_ONLINE'] === '1';
-  reportDist(online, online && process.env['VITE_ACCOUNTS'] === '1');
+  reportDist(
+    online,
+    online && process.env['VITE_ACCOUNTS'] === '1',
+    online && process.env['VITE_POKE'] === '1',
+  );
 }

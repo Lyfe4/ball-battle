@@ -98,4 +98,19 @@ describe('the bundle check', () => {
       expect(problemsIn('main.js', text, true, false), text).toStrictEqual([]);
     }
   });
+
+  it('refuses the poke’s code in a build without VITE_POKE, online or not (ADR 0082)', () => {
+    const socket = [
+      'callApi("GET","me/poke")',
+      'new WebSocket(`${url}`); const u="wss://x.supabase.co/realtime/v1/websocket"',
+      'send(topic,"phx_join",{config:{}})',
+    ];
+    for (const text of socket) {
+      expect(problemsIn('a.js', text, true, true)).toStrictEqual([
+        "a.js holds the poke's code in a build without it (VITE_POKE unset)",
+      ]);
+      expect(problemsIn('a.js', text, true, true, true)).toStrictEqual([]);
+    }
+    expect(problemsIn('a.js', 'callApi("GET","me/inbox")', true, true)).toStrictEqual([]);
+  });
 });
