@@ -61,6 +61,13 @@ function quick<S extends Sql | TransactionSql>(sql: S): S {
   });
 }
 
+/**
+ * How long an idle connection stays open. `netlify dev` (local and CI's online job, never a deploy)
+ * runs each request in a fresh copy of the function, so nothing reuses its connection: kept 20 s,
+ * two phones' reads alone filled the local pooler's 100 clients (EMAXCONN, 500s; 2026-11-24).
+ */
+const IDLE_SECONDS = process.env['NETLIFY_DEV'] === 'true' ? 1 : 20;
+
 /** `onQuery` sees every query sent (tests count them); never its values. */
 export function databaseFor(url: string, onQuery?: () => void): Sql {
   return quick(
@@ -74,7 +81,7 @@ export function databaseFor(url: string, onQuery?: () => void): Sql {
           }),
       prepare: false,
       max: 1,
-      idle_timeout: 20,
+      idle_timeout: IDLE_SECONDS,
       connect_timeout: 10,
       // Our own log line covers each request; Postgres notices are not logged.
       onnotice: () => undefined,
