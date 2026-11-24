@@ -8,6 +8,7 @@
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AWAY_AFTER_MS, GRACE_MS } from '../api/live.ts';
+import { HEARTBEAT_ASK_MS, WAITING_ASK_MS } from '../app/live-ask.ts';
 import {
   closePhones,
   finished,
@@ -25,7 +26,7 @@ import {
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
-import { readsOver, socketOf } from './realtime-support.ts';
+import { readsBetween, socketOf, waitsOver } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const SOCKETS = [
@@ -40,12 +41,13 @@ const pickCard = (page: Page, kind: 'yours' | 'theirs') =>
 
 /**
  * The first pick of the match, watched: while one phone picks and the other waits, how often the
- * waiting phone reads over 6 s, then how long the pick takes to reach it. Returns both.
+ * waiting phone reads over 6 s and how long it waits between those reads (from an answer to the
+ * next ask), then how long the pick takes to reach it.
  */
 async function firstPick(
   sender: Page,
   friend: Page,
-): Promise<{ readonly reads: number; readonly reachedMs: number }> {
+): Promise<{ readonly reads: number; readonly waits: number[]; readonly reachedMs: number }> {
   const due = Date.now();
   let picker: Page | undefined;
   while (picker === undefined) {
@@ -56,11 +58,13 @@ async function firstPick(
   }
   const other = picker === sender ? friend : sender;
   await pickCard(other, 'theirs').waitFor();
-  const reads = await readsOver(other, '/api/v1/series/', 6_000);
+  const from = Date.now();
+  const waits = await waitsOver(other, '/api/v1/series/', 6_000);
+  const reads = readsBetween(other, '/api/v1/series/', from);
   const picked = Date.now();
   expect(await pickIfDue(picker)).toBe(true);
   await pickCard(other, 'yours').waitFor({ timeout: 10_000 });
-  return { reads, reachedMs: Date.now() - picked };
+  return { reads, waits, reachedMs: Date.now() - picked };
 }
 
 /** The other player away: the pick card's grace between fights, the line under a fight. */
@@ -90,10 +94,17 @@ describe.each(SOCKETS)('a live friend match, $socket', ({ blocked }) => {
       const series = await startLiveMatch(BASE, sender, friend);
 
       // The first pick: waiting on it, the heartbeat alone by poke (every 2 s), every second
-      // blocked; then it reaches the other phone by poke within 1.5 s.
+      // blocked; then it reaches the other phone by poke within 1.5 s. Blocked, the waits between
+      // reads are what the page chose (a count over 6 s also counts how long each read took: 4
+      // where 5 was wanted on a slow CI run, 2026-11-24).
       const first = await firstPick(sender, friend);
-      if (blocked) expect(first.reads).toBeGreaterThanOrEqual(5);
-      else {
+      if (blocked) {
+        const waits = [...first.waits].sort((a, b) => a - b);
+        expect(waits.length, `waits ${waits.join(', ')}`).toBeGreaterThanOrEqual(3);
+        expect(waits[Math.floor(waits.length / 2)], `waits ${waits.join(', ')}`).toBeLessThan(
+          (WAITING_ASK_MS + HEARTBEAT_ASK_MS) / 2,
+        );
+      } else {
         expect(socketOf(sender).up() && socketOf(friend).up()).toBe(true);
         expect(first.reads).toBeLessThanOrEqual(4);
         expect(first.reachedMs).toBeLessThan(PICK_BY_POKE_MS);

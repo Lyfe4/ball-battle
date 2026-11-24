@@ -30,7 +30,8 @@ function capFrames(beat: (n: number) => number, work: number[]): void {
     const due = queue;
     queue = [];
     const at = performance.now();
-    (globalThis as unknown as { __frame: number }).__frame = n;
+    (globalThis as unknown as { __frame: number; __frameAt: number }).__frame = n;
+    (globalThis as unknown as { __frameAt: number }).__frameAt = at;
     for (const callback of due) callback(at);
     work.push(performance.now() - at);
     n += 1;
@@ -43,15 +44,23 @@ function capFrames(beat: (n: number) => number, work: number[]): void {
   setTimeout(tick, beat(0));
 }
 
-/** Records the centre of every round ball drawn (its body's arc), by frame. */
+/**
+ * Records the centre of every round ball drawn (its body's arc), by frame, stamped with the frame's
+ * own time: the time the page was given and draws for. The clock at the arc itself would add the
+ * frame's work so far (up to 7 ms on a busy CI machine, 2026-11-24), which is the runner's noise,
+ * not the page's pacing.
+ */
 function recordBalls(): Drawn[] {
   const drawn: Drawn[] = [];
   const prototype = CanvasRenderingContext2D.prototype;
   const arc = Object.getOwnPropertyDescriptor(prototype, 'arc')?.value as typeof prototype.arc;
   prototype.arc = function (this, x, y, radius, ...rest) {
     if (radius === 50 && this.canvas.id === 'arena') {
-      const frame = (globalThis as unknown as { __frame: number }).__frame;
-      drawn.push({ frame, at: performance.now(), x, y });
+      const { __frame: frame, __frameAt: at } = globalThis as unknown as {
+        __frame: number;
+        __frameAt: number;
+      };
+      drawn.push({ frame, at, x, y });
     }
     arc.call(this, x, y, radius, ...rest);
   };

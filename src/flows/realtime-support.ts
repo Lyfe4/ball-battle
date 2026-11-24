@@ -101,21 +101,36 @@ export function watchReads(page: Page, path: string): number[] {
   return times;
 }
 
+/** One API read a watched page made: its path, when it went out and when its answer was in. */
+interface Read {
+  readonly path: string;
+  readonly at: number;
+  done?: number;
+}
+
 /** Each watched page's socket and API reads (`watchPage`). */
-const watched = new WeakMap<
-  Page,
-  { readonly socket: PokeWatch; readonly reads: { path: string; at: number }[] }
->();
+const watched = new WeakMap<Page, { readonly socket: PokeWatch; readonly reads: Read[] }>();
 
 /** Watches `page`'s poke socket and every API read it makes, from now on. */
 export function watchPage(page: Page): void {
-  const reads: { path: string; at: number }[] = [];
+  const reads: Read[] = [];
+  const out = new Map<object, Read>();
   page.on('request', (request) => {
     const { pathname } = new URL(request.url());
     if (request.method() === 'GET' && pathname.startsWith('/api/v1/')) {
-      reads.push({ path: pathname, at: Date.now() });
+      const read: Read = { path: pathname, at: Date.now() };
+      reads.push(read);
+      out.set(request, read);
     }
   });
+  const finish = (request: object) => {
+    const read = out.get(request);
+    if (read === undefined) return;
+    read.done = Date.now();
+    out.delete(request);
+  };
+  page.on('requestfinished', finish);
+  page.on('requestfailed', finish);
   watched.set(page, { socket: watchPokes(page), reads });
 }
 
@@ -143,4 +158,50 @@ export async function readsOver(page: Page, prefix: string, ms: number): Promise
   const from = Date.now();
   await new Promise((resolve) => setTimeout(resolve, ms));
   return readsBetween(page, prefix, from);
+}
+
+/**
+ * Waits until `page` has read a path starting `prefix` since `since` (this clock), then made no such
+ * read for `quietMs` with none out: the reads a screen makes on arriving (and on a poke still on its
+ * way) are over, so what follows is its steady pace.
+ */
+export async function quietFor(
+  page: Page,
+  prefix: string,
+  since: number,
+  quietMs: number,
+  timeoutMs = 15_000,
+): Promise<void> {
+  const found = watched.get(page);
+  if (found === undefined) throw new Error('This page is not watched (watchPage)');
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const ours = found.reads.filter((read) => read.path.startsWith(prefix) && read.at >= since);
+    const last = ours.at(-1);
+    const out = ours.some((read) => read.done === undefined);
+    if (last?.done !== undefined && !out && Date.now() - last.done >= quietMs) return;
+    if (Date.now() > deadline) {
+      throw new Error(`${prefix} reads never went quiet for ${String(quietMs)} ms`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}
+
+/**
+ * Over `ms` from now, how long `page` waited between one read of a path starting `prefix` and the
+ * next (from an answer to the next request), each wait: what the page chose, whatever a read took.
+ */
+export async function waitsOver(page: Page, prefix: string, ms: number): Promise<number[]> {
+  const found = watched.get(page);
+  if (found === undefined) throw new Error('This page is not watched (watchPage)');
+  const from = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  const ours = found.reads.filter((read) => read.path.startsWith(prefix));
+  const waits: number[] = [];
+  for (let i = 1; i < ours.length; i += 1) {
+    const [before, read] = [ours[i - 1], ours[i]];
+    if (before?.done === undefined || read === undefined || read.at < from) continue;
+    waits.push(read.at - before.done);
+  }
+  return waits;
 }
