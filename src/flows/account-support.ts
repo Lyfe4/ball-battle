@@ -102,3 +102,24 @@ export async function signedInPhone(
   await page.locator('.friends-code-value').waitFor();
   return page;
 }
+
+/** Makes two signed-in accounts friends through their Friends tabs: `one` asks, `two` accepts. */
+export async function befriend(
+  base: string,
+  one: Page,
+  two: Page,
+  twoName: string,
+  oneName: string,
+): Promise<void> {
+  const friendsOf = (page: Page) => page.locator('.friends');
+  await one.getByLabel('Add a friend').fill(twoName);
+  await friendsOf(one).getByRole('button', { name: 'Add', exact: true }).click();
+  await friendsOf(one).getByText(`Request sent to ${twoName}.`).waitFor();
+  await two.goto(`${base}/?view=friends`);
+  await friendsOf(two)
+    .getByRole('button', { name: `Accept ${oneName}` })
+    .click();
+  await friendsOf(two)
+    .locator('.friends-group[data-group="friends"] .friends-name', { hasText: oneName })
+    .waitFor();
+}

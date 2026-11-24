@@ -160,6 +160,17 @@ export function cardFor(
           quiet: { text: 'Cancel challenge', onClick: actions.cancel },
         };
       }
+      // By turns to a friend (ADR 0085): it waits in their Friends tab; no lobby to wait in.
+      if (info.invitee !== null) {
+        return {
+          title: info.declined ? `${info.invitee} said no thanks` : `Sent to ${info.invitee}`,
+          body: [
+            `${what} · take turns`,
+            `${info.invitee} has it in Friends. Once they accept, you take turns, up to a day each; “Your turn” shows on Play and Friends.`,
+          ],
+          buttons: [home, shareButton(actions)],
+        };
+      }
       return {
         title: 'Send this link to a friend',
         body: [what, 'It works once and lasts 7 days.', actions.url],

@@ -154,10 +154,11 @@ export async function buildLineup(
 ): Promise<void> {
   // Until the tray is full the button says how many more ("Pick 2 more").
   const button = page.locator('#online-lineup .screen-footer .hud-button-primary:visible');
-  const grid = page.locator('#online-lineup .ball-grid button');
+  // The visible step's grid: the challenge screens hold more than one (ADR 0085's by-turns lineup).
+  const grid = page.locator('#online-lineup .ball-grid button:visible');
   await button.waitFor();
   for (const ball of balls) {
-    await page.locator(`#online-lineup .ball-grid button[data-ball-id="${ball}"]`).click();
+    await page.locator(`#online-lineup .ball-grid button[data-ball-id="${ball}"]:visible`).click();
   }
   for (let index = 0; (await button.isDisabled()) && index < 12; index += 1) {
     await grid.nth(index).click();
