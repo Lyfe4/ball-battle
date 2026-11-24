@@ -37,6 +37,8 @@ export interface SeriesClient {
   forfeit(): Promise<void>;
   /** Asks again later, as the host says, or stops asking. */
   schedule(): void;
+  /** A Realtime poke (ADR 0082): read now, or once the read that is out is back. */
+  poke(): void;
 }
 
 export function createSeriesClient(host: SeriesClientHost): SeriesClient {
@@ -49,6 +51,9 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
   let etag: string | null = null;
   /** How long the last read took, from asking to its answer (0 before the first). */
   let readMs = 0;
+  /** A read is out; a poke meanwhile reads once more when it is back. */
+  let loading = false;
+  let again = false;
 
   function schedule(): void {
     if (timer !== undefined) window.clearTimeout(timer);
@@ -59,13 +64,21 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
 
   async function load(): Promise<void> {
     if (id === undefined) return;
+    if (timer !== undefined) window.clearTimeout(timer);
+    timer = undefined;
     const view = host.view();
     const headers: Record<string, string> =
       view?.id === id && etag !== null && host.conditional() ? { 'If-None-Match': etag } : {};
     const sent = performance.now();
+    loading = true;
     const answer = await callApi<unknown>('GET', `series/${id}`, undefined, headers);
+    loading = false;
     readMs = performance.now() - sent;
     take(answer);
+    if (again) {
+      again = false;
+      void load();
+    }
   }
 
   /** What a read answered. */
@@ -121,6 +134,11 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
       if (ended !== undefined) host.adopt(ended);
     },
     schedule,
+    poke() {
+      if (id === undefined) return;
+      if (loading) again = true;
+      else void load();
+    },
   };
 }
 

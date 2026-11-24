@@ -25,6 +25,7 @@ import { createSkeleton } from '../ui/skeleton.ts';
 import { liveFootLine } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
 import { createSeriesClient, sameView } from './online-series-client.ts';
+import { createLivePoke } from './live-poke.ts';
 import { createSeriesExtras } from './online-series-extras.ts';
 import { onlineNotice, type LoadStatus } from './online-text.ts';
 import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
@@ -89,11 +90,13 @@ export function createOnlinePlay(
       return reconnecting;
     },
     conditional: () => !isLive() || !live.asksInFull(),
-    nextAsk: (readMs) =>
-      visible && view !== undefined && status === 'ready'
-        ? nextAskOf(view, isLive(), (shown) => live.askEvery(shown, readMs))
-        : undefined,
+    nextAsk: (readMs) => {
+      if (!visible || view === undefined || status !== 'ready') return undefined;
+      const poked = livePoke.showing(isLive() && view.status === 'open');
+      return nextAskOf(view, isLive(), (shown) => live.askEvery(shown, readMs, poked));
+    },
   });
+  const livePoke = createLivePoke(client);
 
   const panel = createSeriesPanel(
     roots,

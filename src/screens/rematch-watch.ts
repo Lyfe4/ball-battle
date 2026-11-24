@@ -13,7 +13,13 @@
 // - a no, or the time running out, to the one who asked and to anyone who said yes, with OK.
 //
 // A hidden page doesn't ask, and asks at once when back. Every time is the server's.
+//
+// On the Realtime poke (ADR 0082, `poke-pace.ts`): with the socket up, the other's ask, answer and
+// lineup arrive by poke, so the watch reads on a poke, every SAFETY_MS and just after the next
+// deadline (the last fight's end, the answer's or the lineups'); down, every ASK_MS as before.
 import { callApi, failureKindOf } from '../app/api.ts';
+import { createPokePace, type PokePace } from '../app/poke-pace.ts';
+import { pokes } from '../app/pokes.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import { writeOnlineSeriesParams, writeStartParams } from '../app/online-url.ts';
 import {
@@ -40,6 +46,8 @@ import {
 
 /** How often a page away from the end screen asks while a rematch can still move. */
 export const ASK_MS = 2_000;
+/** With the poke socket up: a safety read this often, for a poke Realtime lost. */
+export const WATCH_SAFETY_MS = 10_000;
 /** The seconds on the notice are redrawn this often while it shows. */
 const DISPLAY_MS = 250;
 /** Kept a little past the server's deadline, for clocks and a slow last read. */
@@ -95,6 +103,11 @@ export function createRematchWatch(
   let busy = false;
   /** This watch has been asked about once: from then on, every ASK_MS (a failure too). */
   let askedOnce = false;
+  /** The reads' pace on the poke while the watch asks; a poke during a read asks once more after. */
+  let pace: PokePace | undefined;
+  let again = false;
+  /** Away from the rematch's own screens at the last schedule: arriving away asks at once. */
+  let wasAway = false;
 
   const serverNow = () => (rematch === undefined ? 0 : rematch.now + Date.now() - heardAt);
   const away = () => watch !== undefined && host.ownScreen() !== watch.id;
@@ -103,6 +116,8 @@ export function createRematchWatch(
     watch !== undefined && rematch !== undefined && rematchNotYet(rematch, watch.opensAt);
 
   function forget(): void {
+    pace?.stop();
+    pace = undefined;
     if (watch !== undefined) forgetRematchWatch(host.storage, watch.id);
     watch = undefined;
     rematch = undefined;
@@ -139,28 +154,43 @@ export function createRematchWatch(
     asking = undefined;
   }
 
+  /** A poke, or the socket going up or down: ask now, or once the request that is out is back. */
+  function readNow(): void {
+    if (busy) again = true;
+    else if (asking !== undefined) {
+      stopAsking();
+      void ask();
+    }
+  }
+
   /**
    * Asks again in ASK_MS (at once the first time) while away, visible, and something can still
    * happen. A timer already set is kept: the display tick redraws four times a second.
    */
   function schedule(): void {
     const waiting = notYet();
-    const wanted =
-      away() &&
-      !document.hidden &&
-      !busy &&
-      (rematch === undefined || rematchOpen(rematch) || waiting);
-    if (!wanted) stopAsking();
+    // Just left the end screen (home, the manual): ask at once, not after a safety wait.
+    const arriving = away() && !wasAway;
+    wasAway = away();
+    if (arriving) stopAsking();
+    const open = away() && (rematch === undefined || rematchOpen(rematch) || waiting);
+    if (!open) {
+      pace?.stop();
+      pace = undefined;
+    }
+    if (!open || document.hidden || busy) stopAsking();
     else {
+      pace ??= createPokePace(pokes, WATCH_SAFETY_MS, readNow);
       // Before the last fight ends nothing can happen: the next ask is at its end.
       const opens = waiting && watch !== undefined ? watch.opensAt - serverNow() : 0;
-      asking ??= window.setTimeout(
-        () => {
-          asking = undefined;
-          void ask();
-        },
-        askedOnce ? Math.max(ASK_MS, opens) : 0,
-      );
+      const until =
+        opens > 0 ? opens : rematch?.deadline == null ? null : rematch.deadline - serverNow();
+      const ms = !askedOnce || again || arriving ? 0 : pace.delay(Math.max(ASK_MS, opens), until);
+      again = false;
+      asking ??= window.setTimeout(() => {
+        asking = undefined;
+        void ask();
+      }, ms);
     }
   }
 

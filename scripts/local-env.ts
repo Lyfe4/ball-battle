@@ -25,5 +25,9 @@ const lines = [
   `SUPABASE_PUBLISHABLE_KEY=${status['PUBLISHABLE_KEY'] ?? ''}`,
   `SUPABASE_SECRET_KEY=${status['SECRET_KEY'] ?? ''}`,
   `SEED_KEYS=${JSON.stringify({ dev: randomBytes(32).toString('base64') })}`,
+  // The Realtime poke (ADR 0082), on locally and in tests: the local stack's one publishable key
+  // stands in for the browser's own (the database's flag is on in supabase/seed.sql).
+  'BALLBATTLE_POKE=1',
+  `SUPABASE_BROWSER_KEY=${status['PUBLISHABLE_KEY'] ?? ''}`,
 ];
 console.log(lines.join('\n'));

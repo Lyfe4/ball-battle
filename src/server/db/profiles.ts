@@ -35,7 +35,7 @@ export async function createProfile(sql: Db, userId: string): Promise<Profile> {
  * The player's profile, if they still have one, marking them seen (at most once a day, so reads
  * don't write on every request). The inactive-guest cleanup reads `last_seen_at`. An account is
  * also marked active at most every 30 s (`active_at`, ADR 0079 PR (d)): its friends see it online
- * for 75 s after. A guest never writes it.
+ * for 150 s after. A guest never writes it.
  */
 export async function profileOf(sql: Db, userId: string): Promise<Profile | undefined> {
   const [row] = await sql<

@@ -11,9 +11,13 @@
 //   doesn't come back for that challenge on this page; the challenge stays in Waiting for you.
 //
 // The link the sender shares still works without any of this: the card only saves a message.
+//
+// Signed in, it wants the page's poke socket (ADR 0082, `pokes.ts`): an `inbox` poke reads at once,
+// and while the socket is up the poll keeps only a 120 s safety read (inbox-poll.ts).
 import type { InboxResponse, Invite } from '../api/friends.ts';
 import { callApi, failureKindOf } from '../app/api.ts';
 import { createInboxPoll } from '../app/inbox-poll.ts';
+import { pokes } from '../app/pokes.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import { createRematchNotice } from '../ui/online/rematch-notice.ts';
 import { inviteLine } from './friends-text.ts';
@@ -167,11 +171,27 @@ export function createInboxWatch(
   document.addEventListener('visibilitychange', () => {
     poll.visibility();
   });
+  pokes?.listen({
+    onPoke: (event) => {
+      if (event === 'inbox') poll.poke();
+    },
+    onState: (up) => {
+      poll.socket(up);
+    },
+  });
+  /** Lets the poke socket go: set while signed in. */
+  let release: (() => void) | undefined;
 
   return {
     signedIn(account) {
-      if (account) poll.start();
-      else {
+      if (account) {
+        // Asked again after a sign-in or a switch: the player, and so the topic, may be new.
+        if (release === undefined) release = pokes?.want();
+        else pokes?.refresh();
+        poll.start();
+      } else {
+        release?.();
+        release = undefined;
         poll.stop();
         last = undefined;
         tell();

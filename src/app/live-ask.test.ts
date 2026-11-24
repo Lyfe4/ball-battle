@@ -90,4 +90,21 @@ describe('how often a live page asks', () => {
   it('keeps two heartbeats with quick reads well inside the time to be called away', () => {
     expect(HEARTBEAT_GAP_MS * 2).toBeLessThanOrEqual(AWAY_AFTER_MS);
   });
+
+  describe('with the poke socket up (ADR 0082)', () => {
+    it('drops the 1 s waiting reads: the other’s move arrives by poke, the heartbeat stays', () => {
+      expect(liveAskMs(seriesOf('b', {}), T, QUICK, true)).toBe(HEARTBEAT_ASK_MS);
+      expect(liveAskMs(seriesOf(null, { startedAt: null, opensAt: null }), T, QUICK, true)).toBe(
+        HEARTBEAT_ASK_MS,
+      );
+      expect(liveAskMs(seriesOf('a', {}), T, QUICK, true)).toBe(HEARTBEAT_ASK_MS);
+    });
+
+    it('keeps the heartbeat exactly as before, slow reads included', () => {
+      const own = seriesOf('a', {});
+      for (const readMs of [0, 500, 1_500, 3_300, 5_000]) {
+        expect(liveAskMs(seriesOf('b', {}), T, readMs, true)).toBe(liveAskMs(own, T, readMs));
+      }
+    });
+  });
 });

@@ -2,6 +2,9 @@
 // server's times (both screens fighting together, at 1x), home's "Back to your match", a pick that
 // runs out, Leave and forfeit (between fights and mid-fight), and a player whose connection drops:
 // back in time, then gone for good. Chromium only, against `netlify dev` (`pnpm test:online`).
+// Twice (ADR 0082): by Realtime poke, where the other's pick arrives by poke (under 1.5 s) and the
+// page waiting on it reads only on its 2 s heartbeat; and with the socket blocked, where it reads
+// every second as before. The heartbeat, and "away" after 6 s, are the same in both.
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AWAY_AFTER_MS, GRACE_MS } from '../api/live.ts';
@@ -22,15 +25,43 @@ import {
   startLiveMatch,
   type Phones,
 } from './live-support.ts';
+import { readsOver, socketOf } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
-let phones: Phones;
-beforeAll(async () => {
-  phones = await openPhones(BASE, process.env['ONLINE_ENGINE']);
-});
-afterAll(async () => {
-  await closePhones(phones);
-});
+const SOCKETS = [
+  { socket: 'by poke', blocked: false },
+  { socket: 'with the socket blocked', blocked: true },
+] as const;
+/** The other's pick on this phone, by poke: the pick's request, the poke and one read. */
+const PICK_BY_POKE_MS = 1_500;
+
+const pickCard = (page: Page, kind: 'yours' | 'theirs') =>
+  page.locator(`#online-series .pick-clock[data-kind="${kind}"]:visible`);
+
+/**
+ * The first pick of the match, watched: while one phone picks and the other waits, how often the
+ * waiting phone reads over 6 s, then how long the pick takes to reach it. Returns both.
+ */
+async function firstPick(
+  sender: Page,
+  friend: Page,
+): Promise<{ readonly reads: number; readonly reachedMs: number }> {
+  const due = Date.now();
+  let picker: Page | undefined;
+  while (picker === undefined) {
+    expect(Date.now() - due, 'no pick opened').toBeLessThan(30_000);
+    if (await pickCard(sender, 'yours').isVisible()) picker = sender;
+    else if (await pickCard(friend, 'yours').isVisible()) picker = friend;
+    else await sender.waitForTimeout(100);
+  }
+  const other = picker === sender ? friend : sender;
+  await pickCard(other, 'theirs').waitFor();
+  const reads = await readsOver(other, '/api/v1/series/', 6_000);
+  const picked = Date.now();
+  expect(await pickIfDue(picker)).toBe(true);
+  await pickCard(other, 'yours').waitFor({ timeout: 10_000 });
+  return { reads, reachedMs: Date.now() - picked };
+}
 
 /** The other player away: the pick card's grace between fights, the line under a fight. */
 const awayOf = (page: Page) =>
@@ -41,7 +72,15 @@ const awayOf = (page: Page) =>
 /** How long a dropped player's friend may wait to be told: away, the grace, then the fight's end. */
 const goneForGoodMs = (): number => AWAY_AFTER_MS + GRACE_MS + liveRoundBudgetMs();
 
-describe('a live friend match', () => {
+describe.each(SOCKETS)('a live friend match, $socket', ({ blocked }) => {
+  let phones: Phones;
+  beforeAll(async () => {
+    phones = await openPhones(BASE, process.env['ONLINE_ENGINE'], blocked);
+  });
+  afterAll(async () => {
+    await closePhones(phones);
+  });
+
   it(
     'is played to its end by two phones together, each seeing fair play',
     { timeout: 300_000 },
@@ -49,6 +88,17 @@ describe('a live friend match', () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
       const series = await startLiveMatch(BASE, sender, friend);
+
+      // The first pick: waiting on it, the heartbeat alone by poke (every 2 s), every second
+      // blocked; then it reaches the other phone by poke within 1.5 s.
+      const first = await firstPick(sender, friend);
+      if (blocked) expect(first.reads).toBeGreaterThanOrEqual(5);
+      else {
+        expect(socketOf(sender).up() && socketOf(friend).up()).toBe(true);
+        expect(first.reads).toBeLessThanOrEqual(4);
+        expect(first.reachedMs).toBeLessThan(PICK_BY_POKE_MS);
+      }
+      expect(socketOf(sender).up()).toBe(!blocked);
 
       // Home offers the way back while the match is on, in Play's place.
       await sender.goto(`${BASE}/`);

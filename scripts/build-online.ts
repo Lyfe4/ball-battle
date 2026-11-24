@@ -8,5 +8,7 @@ import { reportDist } from './check-bundle.ts';
 process.env['VITE_ONLINE'] = '1';
 // With accounts (ADR 0079), as deploy previews and the main branch deploy are built.
 process.env['VITE_ACCOUNTS'] = '1';
+// With the Realtime poke (ADR 0082), on locally and in tests.
+process.env['VITE_POKE'] = '1';
 await build({ logLevel: 'warn' });
-reportDist(true, true);
+reportDist(true, true, true);

@@ -90,13 +90,16 @@ describe('the inbox', () => {
     expect((await inbox(asker)).friends).toStrictEqual([]);
   });
 
-  it('says online from the friend’s own requests within 75 s, offline after', async () => {
+  it('says online from the friend’s own requests within 150 s, offline after (ADR 0082)', async () => {
     const me = await account();
     const friend = await account();
     await befriend(me, friend);
     await touch(friend);
     expect(await statuses(me)).toStrictEqual({ [friend.username]: 'online' });
-    await quiet(friend, 80);
+    // An idle friend's page reads every 120 s with the poke socket up: still online.
+    await quiet(friend, 140);
+    expect(await statuses(me)).toStrictEqual({ [friend.username]: 'online' });
+    await quiet(friend, 155);
     expect(await statuses(me)).toStrictEqual({ [friend.username]: 'offline' });
     // A request within 30 s of the last doesn't write; past it, it does.
     await quiet(friend, 40);
@@ -120,8 +123,8 @@ describe('the inbox', () => {
     await read(players.a, id);
     expect(Object.values(await statuses(me))).toStrictEqual(['in_a_match']);
     // Away past the grace period (the series not yet settled): not in a match.
-    await silence(admin, id, 'a', 120_000);
-    await quiet(players.a, 120);
+    await silence(admin, id, 'a', 160_000);
+    await quiet(players.a, 160);
     expect(Object.values(await statuses(me))).toStrictEqual(['offline']);
 
     const waiting = await account();

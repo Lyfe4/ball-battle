@@ -1,8 +1,9 @@
 // The inbox's wait (ADR 0079, PR (d)), with fake timers: a read at the start, one every 30 s while
 // visible and worth it, every 2 s while something is expected, none while hidden, one at once on
-// return, none after sign-out.
+// return, none after sign-out. With the poke socket up (ADR 0082): a read on each poke and on
+// every move to up, a safety read every 120 s, and today's timers again the moment it goes down.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInboxPoll, INBOX_EXPECTING_MS, INBOX_MS } from './inbox-poll.ts';
+import { createInboxPoll, INBOX_EXPECTING_MS, INBOX_MS, INBOX_SAFETY_MS } from './inbox-poll.ts';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -147,5 +148,63 @@ describe('the inbox poll', () => {
     expect(reads()).toBe(1);
     await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS);
     expect(reads()).toBe(2);
+  });
+
+  describe('with the poke socket (ADR 0082)', () => {
+    it('reads once on every move to up, then only every 120 s, expecting or not', async () => {
+      const { inbox, reads, expect: expectNow } = poll();
+      inbox.start();
+      await vi.advanceTimersByTimeAsync(0);
+      inbox.socket(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reads()).toBe(2);
+      expectNow(true);
+      await vi.advanceTimersByTimeAsync(INBOX_SAFETY_MS - 1);
+      expect(reads()).toBe(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(reads()).toBe(3);
+    });
+
+    it('reads on a poke, at once', async () => {
+      const { inbox, reads } = poll();
+      inbox.start();
+      inbox.socket(true);
+      await vi.advanceTimersByTimeAsync(0);
+      const before = reads();
+      inbox.poke();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reads()).toBe(before + 1);
+    });
+
+    it('goes back to today’s timers the moment it goes down, without reading at once', async () => {
+      const { inbox, reads, expect: expectNow } = poll();
+      inbox.start();
+      inbox.socket(true);
+      await vi.advanceTimersByTimeAsync(0);
+      const before = reads();
+      inbox.socket(false);
+      await vi.advanceTimersByTimeAsync(INBOX_MS - 1);
+      expect(reads()).toBe(before);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(reads()).toBe(before + 1);
+      inbox.socket(true);
+      await vi.advanceTimersByTimeAsync(0);
+      inbox.socket(false);
+      expectNow(true);
+      const quick = reads();
+      await vi.advanceTimersByTimeAsync(INBOX_EXPECTING_MS);
+      expect(reads()).toBe(quick + 1);
+    });
+
+    it('keeps no timer with nothing to watch, a poke still reads', async () => {
+      const { inbox, reads } = poll(() => false);
+      inbox.start();
+      inbox.socket(true);
+      await vi.advanceTimersByTimeAsync(INBOX_SAFETY_MS * 3);
+      expect(reads()).toBe(2);
+      inbox.poke();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reads()).toBe(3);
+    });
   });
 });

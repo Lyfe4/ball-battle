@@ -6,6 +6,7 @@
 // and reading a series. iPhone Safari's visible size, Chromium only, like the friend challenge.
 import { chromium, type Browser, type BrowserContext, type Page, type Route } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { allowLocalRealtime } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const PHONE = { width: 390, height: 664 };
@@ -76,6 +77,7 @@ afterAll(async () => {
 /** A fresh phone that already has a guest, and a friend's open challenge to accept. */
 async function phone(): Promise<Page> {
   context = await browser.newContext({ viewport: PHONE });
+  await allowLocalRealtime(context, BASE);
   await context.addInitScript(() => {
     localStorage.setItem('ballbattle.online.guest', '1');
   });

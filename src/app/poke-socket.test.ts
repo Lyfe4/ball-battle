@@ -305,3 +305,9 @@ describe('the page', () => {
     expect(FakeSocket.made).toHaveLength(0);
   });
 });
+
+describe('the heartbeat', () => {
+  it('is every 15 s: Realtime bills no heartbeat as a message (ADR 0082 addendum)', () => {
+    expect(HEARTBEAT_MS).toBe(15_000);
+  });
+});

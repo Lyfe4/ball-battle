@@ -8,8 +8,11 @@ import type { Sql, TransactionSql } from '../db.ts';
 
 type Db = Sql | TransactionSql;
 
-/** Online: a request of theirs within this long (the inbox asks every 30 s while visible). */
-export const ONLINE_MS = 75_000;
+/**
+ * Online: a request of theirs within this long. The inbox asks every 30 s while visible, or every
+ * 120 s with the poke socket up (ADR 0082), so a friend idle on an open page stays online.
+ */
+export const ONLINE_MS = 150_000;
 
 /**
  * Each accepted friend's status: in a match (a live series they are still heard from on, or a lobby

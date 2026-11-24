@@ -5,7 +5,13 @@
 // sequence (so a late answer never wins over a newer one): when the clock runs out the server
 // finishes a draft at random. Locked in, the screen waits for the other's, then goes into the
 // match. The page only counts down to the server's deadline; the server decides.
+//
+// On the Realtime poke (ADR 0082, `poke-pace.ts`): with the socket up, the other's open and lock
+// and the start being made arrive by poke, so the screen reads only on a poke, every SAFETY_MS and
+// just after the deadline; down, every second as before.
 import { callApi, type ApiFailure } from '../app/api.ts';
+import { createPokePace, type PokePace } from '../app/poke-pace.ts';
+import { pokes } from '../app/pokes.ts';
 import { secondsUntil } from '../app/live-play.ts';
 import { decodeStartView, type StartView } from '../api/start.ts';
 import type { Lineup } from '../sim/series.ts';
@@ -16,6 +22,8 @@ import { startLine, startMadeLine, startWaiting } from './start-text.ts';
 
 /** How often the screen asks while the lineups are being picked. */
 const ASK_MS = 1_000;
+/** With the poke socket up: a safety read this often, for a poke Realtime lost. */
+export const LINEUP_SAFETY_MS = 10_000;
 /** The seconds are redrawn this often. */
 const TICK_MS = 250;
 /** How long "Time ran out: … finished at random" shows on the way into the match. */
@@ -59,6 +67,10 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
   let shown: string | undefined;
   let asking: number | undefined;
   let ticking: number | undefined;
+  /** The reads' pace on the poke while a start shows; a read is out (`reading`), one more after. */
+  let pace: PokePace | undefined;
+  let reading = false;
+  let again = false;
   /** The start whose lineup step is open (opened once: later answers change only the line). */
   let opened: string | undefined;
   /** The start this page moved into its match (once). */
@@ -80,6 +92,9 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
     asking = undefined;
     ticking = undefined;
     shown = undefined;
+    pace?.stop();
+    pace = undefined;
+    again = false;
   }
 
   function take(next: StartView): void {
@@ -162,15 +177,37 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
     step.status(startLine(current, seconds));
   }
 
-  function ask(id: string): void {
-    asking = window.setTimeout(() => {
-      void read(id).then(() => {
-        // A failed ask keeps waiting: the next may answer.
-        if (shown !== id) return;
-        render(false);
-        if (shown === id) ask(id);
-      });
-    }, ASK_MS);
+  function ask(id: string, ms?: number): void {
+    const until = view?.id === id ? view.deadline - serverNow() : undefined;
+    asking = window.setTimeout(
+      () => {
+        asking = undefined;
+        reading = true;
+        void read(id).then(() => {
+          reading = false;
+          // A failed ask keeps waiting: the next may answer.
+          if (shown !== id) return;
+          render(false);
+          if (shown !== id) return;
+          const now = again;
+          again = false;
+          ask(id, now ? 0 : undefined);
+        });
+      },
+      ms ?? pace?.delay(ASK_MS, until) ?? ASK_MS,
+    );
+  }
+
+  /** A poke, or the socket going up or down: read now, or once the read that is out is back. */
+  function readNow(): void {
+    const id = shown;
+    if (id === undefined) return;
+    if (reading) {
+      again = true;
+      return;
+    }
+    if (asking !== undefined) window.clearTimeout(asking);
+    ask(id, 0);
   }
 
   function watch(id: string): void {
@@ -179,6 +216,7 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
     ticking = window.setInterval(() => {
       render(false);
     }, TICK_MS);
+    pace = createPokePace(pokes, LINEUP_SAFETY_MS, readNow);
     ask(id);
   }
 

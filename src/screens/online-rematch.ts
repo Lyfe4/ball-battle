@@ -2,7 +2,13 @@
 // second while one may be asked or is under way, asks or answers it, and moves both players on:
 // to the lineups picked together once both said yes (ADR 0080), into the new match once it started. The server's clock
 // decides; the page counts down from the time each answer carried.
+//
+// On the Realtime poke (ADR 0082, `poke-pace.ts`): with the socket up, the other's ask, answer and
+// lineup arrive by poke, so the end screen reads on a poke, every SAFETY_MS and just after the
+// current wait's deadline; down, every second as before.
 import { callApi, failureKindOf } from '../app/api.ts';
+import { createPokePace, type PokePace } from '../app/poke-pace.ts';
+import { pokes } from '../app/pokes.ts';
 import { writeStartParams } from '../app/online-url.ts';
 import { decodeRematchView, type RematchView } from '../api/rematch.ts';
 import type { SeriesView } from '../api/series.ts';
@@ -13,6 +19,8 @@ import { failureLine } from './online-failure-text.ts';
 
 /** How often the end screen asks while a rematch may be asked or is under way. */
 const ASK_MS = 1_000;
+/** With the poke socket up: a safety read this often, for a poke Realtime lost. */
+export const END_SAFETY_MS = 10_000;
 
 export interface RematchHost {
   /** Moves to the screen `write` describes, by the Back rules. */
@@ -52,6 +60,10 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
   let heardAt = 0;
   let failure: string | undefined;
   let timer: number | undefined;
+  /** The reads' pace on the poke while the end screen asks; a read is out, one more after. */
+  let pace: PokePace | undefined;
+  let reading = false;
+  let again = false;
   /** The series whose lineup or new match this page already moved to (once each). */
   let movedFor = '';
 
@@ -67,10 +79,30 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
     timer = undefined;
   }
 
+  /** Done asking (the screen went, or nothing more can move): the socket may go. */
+  function stopPace(): void {
+    stop();
+    pace?.stop();
+    pace = undefined;
+  }
+
   function schedule(): void {
     stop();
     if (visible && series !== undefined && (rematch === undefined || live())) {
-      timer = window.setTimeout(() => void ask(), ASK_MS);
+      pace ??= createPokePace(pokes, END_SAFETY_MS, readNow);
+      const until = rematch?.deadline == null ? null : rematch.deadline - serverNow();
+      const ms = again ? 0 : pace.delay(ASK_MS, until);
+      again = false;
+      timer = window.setTimeout(() => void ask(), ms);
+    } else stopPace();
+  }
+
+  /** A poke, or the socket going up or down: read now, or once the read that is out is back. */
+  function readNow(): void {
+    if (reading) again = true;
+    else if (timer !== undefined) {
+      stop();
+      void ask();
     }
   }
 
@@ -100,7 +132,9 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
   async function ask(): Promise<void> {
     const view = series;
     if (view === undefined) return;
+    reading = true;
     const answer = await callApi<unknown>('GET', `series/${view.id}/rematch`);
+    reading = false;
     if (series?.id !== view.id) return;
     const next = answer.ok ? decodeRematchView(answer.body) : undefined;
     if (next !== undefined) take(next);
@@ -134,8 +168,10 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
       series = next;
       visible = shown;
       if (!changed) return;
-      if (series !== undefined && visible) void ask();
-      else stop();
+      if (series !== undefined && visible) {
+        pace ??= createPokePace(pokes, END_SAFETY_MS, readNow);
+        void ask();
+      } else stopPace();
     },
     watching: () => (visible ? series?.id : undefined),
     choice: () =>

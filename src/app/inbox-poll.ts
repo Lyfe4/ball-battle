@@ -3,13 +3,19 @@
 // an invite), and every INBOX_EXPECTING_MS while something is expected (a rematch window, a lobby
 // waiting: `expecting`, 2026-11-23); never while hidden, and once at once when the page shows
 // again. Anything that changes the friends (a request sent or answered) pokes it. Only the wait
-// lives here: swapping the timer for a Supabase Realtime "poke" later (ADR 0053) means calling
-// `poke` on each message and keeping a slow safety read; the read and its answer stay as they are.
+// lives here.
+//
+// With the Realtime poke socket up (ADR 0082, `socket(true)`), the server's `inbox` pokes call
+// `poke` and the timer is only a safety read every INBOX_SAFETY_MS, expecting or not: news arrives
+// by poke. Every move to up reads once (pokes sent while down are lost); the moment it goes down,
+// the timers above apply again, exactly as without a socket.
 
 /** How often a visible page with friends reads the inbox. */
 export const INBOX_MS = 30_000;
 /** How often while something is expected: news should arrive at once, not in 30 s. */
 export const INBOX_EXPECTING_MS = 2_000;
+/** How often while the poke socket is up: a safety read, for a poke Realtime lost. */
+export const INBOX_SAFETY_MS = 120_000;
 
 export interface InboxPollHost {
   /** Reads the inbox and says whether there is anything to keep watching. */
@@ -33,6 +39,8 @@ export interface InboxPoll {
   visibility(): void;
   /** Something may be expected now: a slow wait is cut to INBOX_EXPECTING_MS, without a read. */
   quicken(): void;
+  /** The poke socket went up (read now, then the safety read) or down (today's timers again). */
+  socket(up: boolean): void;
 }
 
 export function createInboxPoll(host: InboxPollHost): InboxPoll {
@@ -45,6 +53,12 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
   let timer: number | undefined;
   /** When the timer runs, by `Date.now()`. */
   let due = 0;
+  /** The poke socket is up: pokes bring news, the timer is only a safety read. */
+  let up = false;
+
+  /** How long to wait after a read worth watching. */
+  const cadence = (): number =>
+    up ? INBOX_SAFETY_MS : host.expecting() ? INBOX_EXPECTING_MS : INBOX_MS;
 
   const clear = () => {
     if (timer !== undefined) host.clearTimer(timer);
@@ -72,9 +86,7 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
       void poke();
       return;
     }
-    const expecting = host.expecting();
-    if (isOn() && (watch || expecting) && !host.hidden())
-      wait(expecting ? INBOX_EXPECTING_MS : INBOX_MS);
+    if (isOn() && (watch || host.expecting()) && !host.hidden()) wait(cadence());
   }
 
   function wait(ms: number): void {
@@ -104,8 +116,19 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
       else void poke();
     },
     quicken() {
-      if (!on || busy || host.hidden() || !host.expecting()) return;
+      if (up || !on || busy || host.hidden() || !host.expecting()) return;
       if (timer === undefined || due > Date.now() + INBOX_EXPECTING_MS) wait(INBOX_EXPECTING_MS);
+    },
+    socket(next) {
+      if (up === next) return;
+      up = next;
+      if (up) {
+        void poke();
+        return;
+      }
+      // Down: a safety wait in progress is cut to today's, without a read at once.
+      if (!on || busy || host.hidden() || timer === undefined) return;
+      if (due > Date.now() + cadence()) wait(cadence());
     },
   };
 }

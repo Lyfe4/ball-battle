@@ -317,3 +317,101 @@ Tests: `mail-watch.db.test.ts` (a delivered code; a code the relay refused while
 and on-its-way; the 24-hour window and the 7-day drop; no page role may read it, the API only
 health's function; three seen failing with the copy switched off), `health.db.test.ts`
 (`emailSends`) and `supabase-tools.test.ts` (the check's wording).
+
+## Addendum (2026-11-24): the inbox on pokes, as built (PR 5)
+
+- **One socket per page** (`src/app/poke-hub.ts`, `pokes.ts`): readers `want()` it and `listen()`
+  for pokes and up/down; it opens with the first reader (asking `GET /me/poke` where to listen) and
+  closes with the last, so an idle guest opens none (decision 6). It asks again when a page hidden
+  long enough for its socket to close shows again, and when the inbox is told the player may have
+  changed (a sign-in, a switch): pokes switched off by the flag, or a new key after Log out, reach
+  an open page without a reload. A failed ask is off. Without `VITE_POKE`, `pokes` is undefined and
+  none of it is bundled.
+- **The inbox** (`inbox-poll.ts`, `inbox-watch.ts`) wants the socket while an account is signed
+  in. Up, an `inbox` poke reads at once and the only timer is a safety read every 120 s
+  (`INBOX_SAFETY_MS`), expecting or not; every move to up reads once. Down, the 30 s and 2 s
+  timers apply exactly as before, from the moment it goes down. A friendless account now hears its
+  first friend request at once (it had no timer before, and still has none down).
+- **`ONLINE_MS` 75 s → 150 s**, and `privacy.html` with it, which also names the update channel's
+  key and Realtime's 3-day record of each signal (`legal-pages.test.ts`).
+- **The socket heartbeats every 15 s** (the addendum above).
+- **`netlify dev`'s CSP and the local Realtime**: netlify.toml stays free of any local address
+  (`security-headers.test.ts`). The online flows' phones instead have each page's policy rewritten
+  on its way in (`src/flows/realtime-support.ts`, `realtime-policy.ts`) to exactly the policy
+  `pnpm preview` serves (`LOCAL_SECURITY_HEADERS`; the test checks they are equal). A page that a
+  Playwright route fulfils has no address, so Chromium's Local Network Access check counts it as
+  public and refuses a loopback socket: the flows grant `local-network-access` to their own origin.
+  Neither reaches anything but a test. Locally and in CI, pokes are on: `build:online` sets
+  `VITE_POKE`, `local-env.ts` writes `BALLBATTLE_POKE` and the stack's publishable key as the
+  browser key, and `supabase/seed.sql` turns the flag on.
+- **Online tests** (`inbox-poke.online.test.ts`): with the socket up, a stranger's friend request
+  and a friend's challenge each reach a phone on home within 3 s, read right after an `inbox` poke
+  and well inside the 120 s safety wait (seen failing with the flag off); with `**/realtime/**`
+  blocked (`routeWebSocket` closing every socket), both arrive on the 30 s reads and no socket is
+  ever up.
+
+Tests: `poke-hub.test.ts` (one socket for every reader, closed with the last; off and a failed ask
+stay down; pokes and up/down to each listener; an answer after everyone let go is dropped; asked
+again after a long hide and on a possible new player, a new topic reopens and off closes),
+`inbox-poll.test.ts` (up: a read on each poke and move to up, then 120 s; down: today's timers at
+once; nothing to watch keeps no timer), `poke-socket.test.ts` (15 s), `security-headers.test.ts`,
+`legal-pages.test.ts`, `inbox.db.test.ts` (online until 150 s).
+
+## Addendum (2026-11-24): the lobby, start lineup, end screen and rematch watch, as built (PR 6)
+
+- **`src/app/poke-pace.ts`**: each screen keeps its own read and timer and asks the pace how long
+  to wait. Down: today's cadence exactly. Up: the screen's safety read or 500 ms after the next
+  deadline it knows (a lineup or a rematch running out, the last fight's end), whichever is first;
+  a deadline already passed falls back to today's cadence until a read settles it. A `match` poke,
+  and every change of the socket's state, reads at once (or right after a read that is out). The
+  screen wants the page's socket only while it paces: guests get one only in these flows.
+- **Safety reads**: the lobby every **20 s** (its heartbeat; `creator_seen_at` must stay inside
+  60 s), the start lineup, the end screen and the rematch watch every **10 s**. The proposal had
+  the lineup and end screen on pokes and deadlines alone; a lost poke there would hold a player
+  until the deadline (up to a minute), so a 10 s safety read costs about six calls a minute for a
+  bounded delay.
+- **The socket lingers 5 s** after the last reader lets it go (`LINGER_MS`, `poke-hub.ts`): moving
+  from the lobby to the lineups, or a match to its end screen, keeps the socket and its join, with
+  no new `/me/poke`.
+- **Online tests**, each twice, by poke and with `**/realtime/**` blocked: `friend-challenge`
+  (the card within 3 s by poke, else with the 30 s read; the sender's lobby reads at most once in 5
+  s by poke, at least twice blocked), `lineups-together` (no more than one lineup read in 5 s by
+  poke, four or more blocked; the other's lock within 3 s), `rematch-anywhere` (no more than one
+  read in 6 s while waiting to be asked by poke, two or more blocked; the ask within 3 s).
+- **`slime-live.online.test.ts` was fragile** (failed once on `main` after #164): ability hints
+  show one at a time, and a hint whose ball has left the court by its turn is given back. In that
+  run the Thorns' spikes took the first turn and the Slime lost before its own, so "Slime: Split"
+  never showed though the Slime split. The sender now starts with the Thorns' and Vampire's hints
+  seen, so round 1 has only the Slime's to show, the moment it splits.
+
+- **Netlify build minutes** (owner): Deploy Previews are off and only `main` and `release`
+  build; `netlify.toml`'s `ignore` (`scripts/netlify-ignore.sh`, `netlify-ignore.test.ts` on a
+  throwaway repository) skips a build whose push changes only docs, Markdown, workflows or tests,
+  and builds a retry of the same commit (an environment variable changed) and a first build.
+- **The rematch watch reads at once on arriving away** from the end screen (home, the manual):
+  with the socket up its next read would otherwise wait for the 10 s safety read, and home's "Back
+  to your rematch" came late (`friend-rematch.online.test.ts`).
+
+Tests: `poke-pace.test.ts` (down and no hub: today's cadence; up: safety or just after a
+deadline, a passed deadline today's cadence; a `match` poke and each change of state read, an
+`inbox` poke doesn't; nothing heard and nothing wanted once stopped), `poke-hub.test.ts` (the
+linger keeps the socket for the next screen with no new ask; closes after it).
+
+## Addendum (2026-11-24): the live match on pokes, as built (PR 7)
+
+- **`live-ask.ts`**: with the socket up (`poked`), the 1 s reads while waiting on the other player
+  go; the heartbeat stays exactly as it was (every ~2 s, shortened after a slow read so two land at
+  most 3 s apart), and so does "away" after 6 s and the 30 s grace (ADR 0053 untouched). The other's
+  pick, a round settled on read or in the sweep, and a forfeit all bump the series' `version`, so
+  they arrive by `match` poke and read at once (`online-series-client.ts` `poke()`: now, or once
+  the read that is out is back). A pick that runs out is settled by the next heartbeat on either
+  phone, within 2 s, which pokes the other. The clock's warm-up reads (ADR 0061) are unchanged:
+  they are for the clock, not for waiting.
+- **`live-poke.ts`** wants the page's socket while an open live series shows (guests included,
+  decision 6), and lets it go when the series ends or the screen leaves; the end screen's own pace
+  (PR 6) then holds it.
+- **Online tests** (`live-match.online.test.ts`, every case twice, by poke and with
+  `**/realtime/**` blocked): the first pick, waited on for 6 s, is read on the heartbeat alone by
+  poke (at most four reads) and at least five times blocked; by poke it reaches the other phone
+  within 1.5 s. Then the whole match, a pick running out and Leave and forfeit, leaving mid-fight,
+  and the dropped connection (back in time, then gone for good) pass the same in both modes.
