@@ -7,6 +7,11 @@ import type { ChallengeInfo } from '../../api/challenges.ts';
 import { errorOf } from '../../api/errors.ts';
 import type { InboxResponse } from '../../api/friends.ts';
 import type { Answer } from '../test/client.ts';
+import {
+  befriend as befriendOf,
+  makeAccount as makeAccountOf,
+  newAccount,
+} from '../test/friends-support.ts';
 import { linkInfo, newLive, sendLive, silence, tokenOf } from '../test/live-support.ts';
 import { newPlayer, read, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
@@ -25,30 +30,9 @@ afterAll(async () => {
 
 const code = (answer: Answer) => [answer.status, errorOf(answer.body)?.code];
 
-let names = 0;
-/** Makes `player` an account with a username of its own; returns the username. */
-async function makeAccount(player: Player): Promise<string> {
-  names += 1;
-  const username = `i${String(Date.now() % 1e7)}x${String(names)}`.slice(0, 15);
-  await admin`
-    update game.profiles set account_at = now(), username = ${username}
-    where user_id = ${player.userId}`;
-  return username;
-}
-
-async function account(): Promise<Player & { username: string }> {
-  const player = await newPlayer(deps);
-  return { ...player, username: await makeAccount(player) };
-}
-
-/** Rows between two players: accepted friends, or a request from `a`. */
-async function befriend(a: Player, b: Player, accepted = true): Promise<string> {
-  const [low, high] = a.userId < b.userId ? [a.userId, b.userId] : [b.userId, a.userId];
-  const [row] = await admin<{ id: string }[]>`
-    insert into game.friendships (low, high, requested_by, accepted_at)
-    values (${low}, ${high}, ${a.userId}, ${accepted ? new Date() : null}) returning id`;
-  return row?.id ?? '';
-}
+const makeAccount = (player: Player) => makeAccountOf(admin, player);
+const account = () => newAccount(deps, admin);
+const befriend = (a: Player, b: Player, accepted = true) => befriendOf(admin, a, b, accepted);
 
 const inbox = async (player: Player): Promise<InboxResponse> => {
   const answer = await player.browser.call(meInbox, 'GET', '/api/v1/me/inbox');
