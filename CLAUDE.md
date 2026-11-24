@@ -8,6 +8,8 @@ Where it's heading (PvP best of 3 with blind lineups, soft counters, then a back
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
 online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080).
+Next: a Supabase Realtime "poke" in place of most polling (ADR 0082, `docs/realtime-poke-proposal.md`),
+built behind three switches that stay off outside local and tests.
 The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
 "What to play" (who, length, format, the bot's level), remembered per opponent; Play goes straight
 in (first visit: Best of 3 · Reveal · vs Normal bot to its lineup; vs Friend in online builds sends

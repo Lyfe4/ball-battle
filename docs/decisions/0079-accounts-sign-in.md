@@ -9,6 +9,7 @@
 - Builds on: `docs/accounts-and-friends-proposal.md` (approved in direction 2026-11-22, with its
   spike against Supabase Auth v2.197.0), changed as below
 - Amended by: ADR 0081 (the account screen becomes Profile and the Friends tab; a friend's challenge card folds into a badge)
+- Amended by: ADR 0082 (the inbox on pokes with a slow safety read; Auth hooks refuse what we didn't start)
 
 ## Context
 
