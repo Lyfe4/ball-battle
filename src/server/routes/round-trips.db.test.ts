@@ -1,9 +1,10 @@
 // What a move costs when the functions run far from the database (Netlify's Ohio region to a
 // database in Sydney: ~200 ms a round trip). A TCP proxy adds 100 ms each way between the API and
-// the local database; on a warm connection a series read must take about two round trips (the
-// session, then the series) and a pick about four (with the rate limit and the write), not the 8
-// and 15 of a transaction that read and wrote row by row. Queries go one at a time: the pooler
-// never answers two pipelined on one connection.
+// the local database; on a warm connection a series read must take one round trip (the session's
+// profile, the series, the heartbeat and the rate limit in one statement) and a pick two (that
+// statement, then the write), not the 8 and 15 of a transaction that read and wrote row by row
+// (cost proposal decision 4, 2026-11-25: they were two and four). Queries go one at a time: the
+// pooler never answers two pipelined on one connection.
 import { createServer, connect, type Server, type Socket } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { databaseFor } from '../db.ts';
@@ -85,7 +86,7 @@ async function measure(run: () => Promise<unknown>): Promise<{ ms: number; queri
 }
 
 describe('a move across an ocean', () => {
-  it('reads a series in two round trips, and locks a pick in four', async () => {
+  it('reads a series in one round trip, and locks a pick in two', async () => {
     const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
     /** A Reveal series and the side that shows first, as that player on the far API. */
     async function started() {
@@ -108,11 +109,11 @@ describe('a move across an ocean', () => {
 
     const { id, browser, pick } = await started();
     const reading = await measure(() => browser.call(seriesOne, 'GET', `/api/v1/series/${id}`));
-    expect(reading.queries).toBe(2);
-    expect(reading.ms).toBeLessThan(3 * ROUND_TRIP_MS);
+    expect(reading.queries).toBe(1);
+    expect(reading.ms).toBeLessThan(2 * ROUND_TRIP_MS);
 
     const picking = await measure(pick);
-    expect(picking.queries).toBe(4);
-    expect(picking.ms).toBeLessThan(5 * ROUND_TRIP_MS);
+    expect(picking.queries).toBe(2);
+    expect(picking.ms).toBeLessThan(3 * ROUND_TRIP_MS);
   });
 });
