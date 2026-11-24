@@ -14,6 +14,10 @@
 // 3. Deletes that guest again, whatever happened.
 // 4. Counts this month's email codes (ADR 0079): past 2,200 of the 2,700 we allow ourselves under
 //    Resend Free's 3,000, it fails, a slower second alarm beside /api/v1/health's `emailCodes`.
+// 5. Counts the last 24 hours' code emails the Send Email hook handed to the relay (ADR 0082, the
+//    mail watch), reading only: any the relay refused or never answered fails the check (the player
+//    was told "We sent a code" and none came); any whose answer nobody read before pg_net dropped
+//    it is a warning. Before the project has the migration it says so and checks nothing.
 // Any failure exits 1, so the workflow fails and GitHub emails you.
 import { fileURLToPath } from 'node:url';
 import { NEAR_MONTHLY } from '../src/server/routes/health.ts';
@@ -36,6 +40,30 @@ export const MONTHLY_CODES_SQL =
 export function codesProblem(sent: number): string | undefined {
   if (sent < NEAR_MONTHLY) return undefined;
   return `${String(sent)} email codes this month, near the ${String(LIMITS.codesMonthly.max)} cap under Resend's 3,000: switch email codes off (BALLBATTLE_EMAIL_CODES=off) or move to a paid plan`;
+}
+
+/** The last day's code emails, as counted by the mail watch's read-only function (ADR 0082). */
+export const MAIL_SQL = `select row_to_json(o)::text as outcomes from game.mail_outcomes(24) o`;
+
+/** Whether the project has the mail watch (its migration applied). */
+export const MAIL_MIGRATED_SQL = `select to_regprocedure('game.mail_outcomes(integer)') is not null as migrated`;
+
+interface MailOutcomes {
+  readonly sent: number;
+  readonly failed: number;
+  readonly unseen: number;
+}
+
+/** What refused code emails say; undefined when there were none. */
+export function mailProblem({ sent, failed }: MailOutcomes): string | undefined {
+  if (failed === 0) return undefined;
+  return `${String(failed)} of ${String(sent)} code emails in the last 24 h were refused or never answered by the relay: players were told a code was sent. Look at Resend's logs and the key in Vault (select status_code, content from net._http_response order by created desc)`;
+}
+
+/** What sends nobody saw answered say (a warning); undefined when there were none. */
+export function mailWarning({ sent, unseen }: MailOutcomes): string | undefined {
+  if (unseen === 0) return undefined;
+  return `${String(unseen)} of ${String(sent)} code emails in the last 24 h: their answer went (pg_net keeps 6 h) before the next send or /api/v1/health copied it`;
 }
 
 /** Whether the project has ADR 0082's Auth hook functions (its migration applied). */
@@ -64,6 +92,20 @@ async function check(name: string): Promise<void> {
   const codeProblem = codesProblem(sent);
   console.log(`${name}: ${String(sent)} email codes this month`);
 
+  const [watched] = readQuery(ref, MAIL_MIGRATED_SQL);
+  const [mail] = textOf(watched, 'migrated') === 'true' ? readQuery(ref, MAIL_SQL) : [];
+  const mailText = textOf(mail, 'outcomes');
+  const mailOutcomes = mailText === undefined ? undefined : (JSON.parse(mailText) as MailOutcomes);
+  if (mailOutcomes === undefined) {
+    console.log(`${name}: no mail watch yet (its migration isn't applied)`);
+  } else {
+    console.log(
+      `${name}: ${String(mailOutcomes.sent)} code emails in 24 h, ${String(mailOutcomes.failed)} refused, ${String(mailOutcomes.unseen)} unseen`,
+    );
+    const warning = mailWarning(mailOutcomes);
+    if (warning !== undefined) console.log(`::warning::${name}: ${warning}`);
+  }
+
   const secret = secretKeyOf(ref);
   const ip = madeUpIp(Math.random());
   const [hooks] = readQuery(ref, HOOKS_MIGRATED_SQL);
@@ -81,7 +123,10 @@ async function check(name: string): Promise<void> {
   if (!signUp.ok || id === undefined) {
     throw new Error(`A guest sign-up answered ${String(signUp.status)} (anonymous sign-ins off?)`);
   }
-  const problems: string[] = codeProblem === undefined ? [] : [codeProblem];
+  const mailFailed = mailOutcomes === undefined ? undefined : mailProblem(mailOutcomes);
+  const problems: string[] = [codeProblem, mailFailed].filter(
+    (problem): problem is string => problem !== undefined,
+  );
   try {
     // The id is Auth's own uuid; checked anyway before it goes into SQL.
     if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error('Auth answered an id that is not a uuid');

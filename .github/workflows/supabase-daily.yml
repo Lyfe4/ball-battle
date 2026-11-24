@@ -2,7 +2,8 @@ name: Supabase daily check
 
 # Every day, for staging and production (ADR 0068): keeps each free Supabase project awake (Supabase
 # pauses one after 7 days without activity) and checks that Auth still counts each player's own IP
-# (one forwarded guest sign-up, then deleted). A failure fails the run, and GitHub emails whoever
+# (one forwarded guest sign-up, then deleted), and that the mail relay accepted every code email of
+# the last 24 hours (ADR 0082, the mail watch; read-only). A failure fails the run, and GitHub emails whoever
 # last changed this schedule. Run it by hand from the Actions tab or `gh workflow run
 # supabase-daily.yml`.
 #

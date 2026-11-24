@@ -44,6 +44,15 @@ export interface HealthResponse {
    */
   readonly accounts: 'ok' | 'misconfigured' | 'off';
   readonly accountsFailed: readonly AccountsCheck[];
+  /**
+   * The code emails handed to the relay in the last 24 hours (ADR 0082, the mail watch): `failing`
+   * when the relay refused or never answered one (the player was told "We sent a code"), `unseen`
+   * when an answer went before anyone read it, `unknown` when they couldn't be counted. Never
+   * changes the status: an uptime monitor's keyword check reads it.
+   */
+  readonly emailSends: EmailSends;
 }
 
 export type EmailCodes = 'ok' | 'near' | 'full' | 'off';
+
+export type EmailSends = 'ok' | 'failing' | 'unseen' | 'unknown';

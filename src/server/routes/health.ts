@@ -5,8 +5,16 @@
 // files are wrong says so here before any player meets it. A failed check answers 503 naming the
 // check (`database`, `ruleset`, `auth_anonymous_sign_ins`, ...); what went wrong is in the log line
 // only (stage and kind, failure.ts). Sign-in's settings (ADR 0079) are `accounts`, apart, and stay
-// 200: a sign-in setting never makes the game look down.
-import type { AccountsCheck, EmailCodes, HealthCheck, HealthResponse } from '../../api/health.ts';
+// 200: a sign-in setting never makes the game look down. So are the last day's code emails
+// (`emailSends`, ADR 0082's mail watch), whose relay answers this read also copies before pg_net
+// drops them.
+import type {
+  AccountsCheck,
+  EmailCodes,
+  EmailSends,
+  HealthCheck,
+  HealthResponse,
+} from '../../api/health.ts';
 import type { Config } from '../config.ts';
 import { createAuthHealth, isAccountCheck } from '../auth-health.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
@@ -45,13 +53,42 @@ export function emailCodesOf(
   return 'ok';
 }
 
+/** The last day's code emails, as /health says it (ADR 0082, the mail watch). */
+export function emailSendsOf(
+  sends: { readonly failed: number; readonly unseen: number } | undefined,
+): EmailSends {
+  if (sends === undefined) return 'unknown';
+  if (sends.failed > 0) return 'failing';
+  return sends.unseen > 0 ? 'unseen' : 'ok';
+}
+
+/**
+ * Copies pg_net's answers to code emails before it drops them (6 hours) and counts the last day:
+ * after the database's own check, on the same connection. Failing, it says `unknown` and never
+ * makes the database look down (a deploy ahead of its migration, for a minute).
+ */
+async function watchMail(
+  { deps, noteFailure }: RouteContext,
+  database: unknown,
+): Promise<{ readonly failed: number; readonly unseen: number } | undefined> {
+  if (database === undefined) return undefined;
+  try {
+    const [row] = await deps.sql<{ readonly failed: number; readonly unseen: number }[]>`
+      select failed, unseen from game.mail_watch()`;
+    return row;
+  } catch (error) {
+    noteFailure(error, 'database');
+    return undefined;
+  }
+}
+
 export const health: RouteHandler = async (request, context) => {
   if (request.method !== 'GET') {
     throw new ApiError(405, 'method_not_allowed', 'Use GET', { Allow: 'GET' });
   }
   await spendHealth(context);
   const { deps, noteFailure } = context;
-  const [database, ruleset, auth] = await Promise.all([
+  const [{ row: database, mail }, ruleset, auth] = await Promise.all([
     // One query (one connection never runs two at once): up, and everyone's codes so far.
     deps.sql<{ readonly ok: number; readonly day: number; readonly month: number }[]>`
       select 1 as ok,
@@ -61,10 +98,10 @@ export const health: RouteHandler = async (request, context) => {
         coalesce((select count from game.rate_limits where subject = ${EVERYONE}
           and bucket = ${LIMITS.codesMonthly.bucket}
           and window_start = date_trunc('month', now(), 'UTC')), 0) as month`.then(
-      ([row]) => row,
+      async ([row]) => ({ row, mail: await watchMail(context, row) }),
       (error: unknown) => {
         noteFailure(error, 'database');
-        return undefined;
+        return { row: undefined, mail: undefined };
       },
     ),
     rulesetSim(CURRENT_RULESET).then(
@@ -94,6 +131,7 @@ export const health: RouteHandler = async (request, context) => {
     emailCodes: emailCodesOf(deps.config, database ?? { day: 0, month: 0 }),
     accounts: !deps.config.accounts ? 'off' : accountsFailed.length > 0 ? 'misconfigured' : 'ok',
     accountsFailed,
+    emailSends: emailSendsOf(mail),
   };
   return json(failed.length === 0 ? 200 : 503, body);
 };
