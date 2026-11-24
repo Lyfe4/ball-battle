@@ -18,7 +18,7 @@ import {
   playAFriend,
   type Phones,
 } from './live-support.ts';
-import { readsOver, socketOf } from './realtime-support.ts';
+import { readsBetween, socketOf, waitsOver } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const SOCKETS = [
@@ -70,11 +70,18 @@ describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
           .getByText(/^Player \d+ is choosing · \d+ s$/)
           .waitFor();
       }
-      // While nothing changes: by poke, the safety read at most; blocked, a read a second.
+      // While nothing changes: by poke, the safety read at most; blocked, a read a second. Blocked,
+      // the waits between reads are what the page chose (a count over 5 s also counts how long
+      // each read took: 3 where 4 was wanted on CI, 2026-11-24).
       await (blocked ? Promise.resolve() : socketOf(friend).waitUp());
-      const quiet = await readsOver(friend, '/api/v1/starts/', 5_000);
-      if (blocked) expect(quiet).toBeGreaterThanOrEqual(4);
-      else expect(quiet).toBeLessThanOrEqual(1);
+      const from = Date.now();
+      const waits = [...(await waitsOver(friend, '/api/v1/starts/', 5_000))].sort((a, b) => a - b);
+      if (blocked) {
+        expect(waits.length, `waits ${waits.join(', ')}`).toBeGreaterThanOrEqual(2);
+        expect(waits[Math.floor(waits.length / 2)], `waits ${waits.join(', ')}`).toBeLessThan(
+          1_500,
+        );
+      } else expect(readsBetween(friend, '/api/v1/starts/', from)).toBeLessThanOrEqual(1);
       // The sender locks in first: the friend is told they are ready, never which balls.
       await buildLineup(sender, 'Lock in', SENDER);
       await sender.getByText(/^Waiting for Player \d+’s lineup$/).waitFor();

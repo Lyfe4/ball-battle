@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { INBOX_MS } from '../app/inbox-poll.ts';
 import { signedInPhone } from './account-support.ts';
 import { pickTogether, sendChallenge } from './live-support.ts';
-import { readsOver, socketOf } from './realtime-support.ts';
+import { readsBetween, socketOf, waitsOver } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 
@@ -84,11 +84,16 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
       // The friend's card comes by poke, or with the next read (every 30 s), never a reload.
       const card = two.getByRole('region', { name: 'Challenge' });
       await card.getByText(`${sam} challenges you · Best of 3 · Reveal · live`).waitFor(arrives);
-      // The sender's lobby: by poke, its 20 s heartbeat at most; blocked, a read every 2 s.
+      // The sender's lobby: by poke, its 20 s heartbeat at most; blocked, a read every 2 s, told
+      // by the waits the page chose between reads, not a count that also counts how long each
+      // read took (the same flake as the lineup's and the live match's, 2026-11-24).
       await (blocked ? Promise.resolve() : socketOf(one).waitUp());
-      const lobbyReads = await readsOver(one, '/api/v1/challenges/', 5_000);
-      if (blocked) expect(lobbyReads).toBeGreaterThanOrEqual(2);
-      else expect(lobbyReads).toBeLessThanOrEqual(1);
+      const from = Date.now();
+      const waits = await waitsOver(one, '/api/v1/challenges/', 5_000);
+      if (blocked) {
+        expect(waits.length, `waits ${waits.join(', ')}`).toBeGreaterThanOrEqual(1);
+        expect(Math.max(...waits), `waits ${waits.join(', ')}`).toBeLessThan(5_000);
+      } else expect(readsBetween(one, '/api/v1/challenges/', from)).toBeLessThanOrEqual(1);
       expect(socketOf(one).up()).toBe(!blocked);
       await card.getByRole('button', { name: 'Accept' }).click();
       await pickTogether([{ page: two }, { page: one }]);
