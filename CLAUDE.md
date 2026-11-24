@@ -172,7 +172,8 @@ Each line is a rule; its ADR has the reasoning.
   `20261124120000_poke.sql`): a row trigger with a `WHEN` guard on the columns they read calls
   `game.poke(player, 'inbox' | 'match')`; never a send from a function, never on a no-op (the
   heartbeat), and a test that the change pokes once and a no-op not at all (`poke.db.test.ts`).
-- Every route authenticates through `sessionOf` and starts with `guard` (method and CSRF). Routes
+- Every route authenticates through `sessionOf` (or `sessionWith`, whose first statement reads the
+  profile itself: the series read and pick, one round trip) and starts with `guard` (method and CSRF). Routes
   are thin; rules live in services, SQL in `src/server/db/`. Times in rules are the database's
   `now()`. What a player may see of a series is decided by `viewOf` alone.
 - Database tests (`*.db.test.ts`) call handlers through `TestBrowser`; two requests at once use

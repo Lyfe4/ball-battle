@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { localVersions, migrationGap } from './migrate.ts';
 import {
   codesProblem,
+  sizeReport,
   forwardingProblem,
   madeUpIp,
   mailProblem,
@@ -76,6 +77,7 @@ describe('migrations', () => {
       'b402e619043dd5acc1cbe863b27608d94d625fca14213388cbb63b4695d91467',
     '20261125090000_blocks_reports.sql':
       '1c0afb20dfe999c6426afd316bba5f0604acfab8baab137d38722ba1b3b22c38',
+    '20261125150000_ranked.sql': '22acb3647d09024db649651c26f20ab2c15220ff41f828db1210ad0637a2a86c',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));
@@ -110,5 +112,18 @@ describe('the daily check of the code emails the relay refused (ADR 0082, the ma
   it('warns, without failing, about sends whose answer nobody read in time', () => {
     expect(mailWarning({ sent: 40, failed: 0, unseen: 0 })).toBeUndefined();
     expect(mailWarning({ sent: 40, failed: 0, unseen: 3 })).toMatch(/^3 of 40 code emails/);
+  });
+});
+
+describe('the daily check of the database’s size (ADR 0083, decision 8)', () => {
+  it('reports the size every day and warns, without failing, from 300 MB of the 500', () => {
+    const mb = 1024 * 1024;
+    expect(sizeReport(12 * mb)).toStrictEqual({
+      line: "database 12 MB of the free plan's 500 MB",
+    });
+    expect(sizeReport(299 * mb).warning).toBeUndefined();
+    expect(sizeReport(300 * mb).warning).toMatch(
+      /^the database is 300 MB of the free plan's 500 MB/,
+    );
   });
 });

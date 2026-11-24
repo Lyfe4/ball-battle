@@ -17,14 +17,14 @@ import { NOW_HEADER } from '../../api/live.ts';
 import { decodeRematchRequest } from '../../api/rematch.ts';
 import { decodePickRequest, type SeriesView } from '../../api/series.ts';
 import { listFor } from '../db/series-list.ts';
-import { loadSeries } from '../db/series-record.ts';
+import { loadSeriesAs } from '../db/series-record.ts';
 import { settleExpired } from '../db/series.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, refuseOver, spend } from '../rate-limit.ts';
 import { moveRematch, rematchOf } from '../rematch.ts';
 import { leaveSeries, lockPick, readSeries, type Served } from '../series-service.ts';
-import { sessionOf } from '../session.ts';
+import { sessionOf, sessionWith } from '../session.ts';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ONE = new RegExp(`^/api/v1/series/(${UUID})$`);
@@ -65,10 +65,12 @@ export const seriesOne: RouteHandler = async (request, context) => {
     guard(request, ['POST']);
     const pick = decodePickRequest(await jsonBody(request));
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
-    const player = await sessionOf(request, context);
-    const loaded = await loadSeries(context.deps.sql, picks, player.userId);
-    await spend(context.deps.sql, player.userId, LIMITS.moves);
-    const answer = await lockPick(context.deps, picks, player.userId, pick, loaded);
+    // The session, the series, the heartbeat and the move's rate-limit count: one statement.
+    const { session: player, read } = await sessionWith(request, context, (userId) =>
+      loadSeriesAs(context.deps.sql, picks, userId, LIMITS.moves),
+    );
+    if (read.series?.spent !== undefined) refuseOver(LIMITS.moves, read.series.spent);
+    const answer = await lockPick(context.deps, picks, player.userId, pick, read.series);
     return json(200, answer.view, headersOf(answer));
   }
   const rematch = REMATCH.exec(path)?.[1];
@@ -95,9 +97,11 @@ export const seriesOne: RouteHandler = async (request, context) => {
   const id = ONE.exec(path)?.[1];
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
-  const player = await sessionOf(request, context);
-  // The read, the reader's heartbeat and their rate-limit count: one statement.
-  const loaded = await loadSeries(context.deps.sql, id, player.userId, LIMITS.reads);
+  // The session, the read, the reader's heartbeat and their rate-limit count: one statement.
+  const { session: player, read } = await sessionWith(request, context, (userId) =>
+    loadSeriesAs(context.deps.sql, id, userId, LIMITS.reads),
+  );
+  const loaded = read.series;
   if (loaded?.spent !== undefined) refuseOver(LIMITS.reads, loaded.spent);
   const answer = await readSeries(context.deps, id, player.userId, loaded);
   const headers = headersOf(answer);

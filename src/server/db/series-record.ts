@@ -2,12 +2,14 @@
 // costs ~200 ms): the row with its picks, rounds and seeds as JSON aggregates, and for a live series
 // (ADR 0053) its clock: the database's `now()`, when each player was last heard from and each
 // round's fight times. A live series' read is its reader's heartbeat, written in the same
-// statement. Every change is written by `writeSeries` (series-write.ts).
+// statement, and reads the reader's profile too (`sessionWith`), so a warm read is one round trip
+// (cost proposal, decision 4). Every change is written by `writeSeries` (series-write.ts).
 import type { SeriesStatus, Turn } from '../../api/series.ts';
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { EndReason, FightTime } from '../live.ts';
 import type { Limit } from '../rate-limit.ts';
+import { markSeen, type Profile } from './profiles.ts';
 import type { SeedRow } from '../view.ts';
 import type { SeriesRow } from './series.ts';
 
@@ -39,7 +41,8 @@ export interface LoadedSeries extends SeriesRow {
 }
 
 interface Raw {
-  readonly id: string;
+  /** Null when there is no such series (the row is the reader's alone). */
+  readonly id: string | null;
   readonly ruleset: number;
   readonly format: LoadedSeries['format'];
   readonly best_of: LoadedSeries['bestOf'];
@@ -73,6 +76,10 @@ interface Raw {
   readonly seen_b: Date | null;
   readonly spent_count: number | null;
   readonly spent_retry: number | null;
+  readonly me_found: boolean;
+  readonly me_name: string | null;
+  readonly me_username: string | null;
+  readonly me_account: boolean | null;
 }
 
 const msOf = (date: Date | null): number | null => (date === null ? null : date.getTime());
@@ -88,13 +95,30 @@ export async function loadSeries(
   reader?: string,
   limit?: Limit,
 ): Promise<LoadedSeries | undefined> {
+  return (await loadSeriesAs(db, id, reader, limit)).series;
+}
+
+/**
+ * `loadSeries`, with the reader's profile from the same statement (undefined when they have none,
+ * and then nothing is counted or written for them), marked seen as `profileOf` marks it: the
+ * session and the series in one round trip (`sessionWith`).
+ */
+export async function loadSeriesAs(
+  db: Db,
+  id: string,
+  reader?: string,
+  limit?: Limit,
+): Promise<{ readonly profile: Profile | undefined; readonly series: LoadedSeries | undefined }> {
   const window = limit === undefined ? null : `${String(limit.windowSeconds)} seconds`;
   const [raw] = await db<Raw[]>`
-    with counted as (
+    with seen as (${markSeen(db, reader ?? null)}), me as (
+      select coalesce(username, display_name) as name, username, account_at is not null as account
+      from game.profiles where user_id = ${reader ?? null}::uuid
+    ), counted as (
       insert into game.rate_limits (subject, bucket, window_start, count)
       select ${reader ?? null}::text, ${limit?.bucket ?? null}::text,
         date_bin(${window}::interval, now(), timestamptz '2000-01-01'), 1
-      where ${window}::text is not null and ${reader ?? null}::text is not null
+      where ${window}::text is not null and exists (select 1 from me)
       on conflict (subject, bucket, window_start)
         do update set count = game.rate_limits.count + 1
       returning count,
@@ -104,7 +128,7 @@ export async function loadSeries(
       select s.id, case when s.player_a = ${reader ?? null}::uuid then 'a' else 'b' end, now()
       from game.series s
       where s.id = ${id} and s.live and s.status = 'open'
-        and ${reader ?? null}::uuid in (s.player_a, s.player_b)
+        and ${reader ?? null}::uuid in (s.player_a, s.player_b) and exists (select 1 from me)
       on conflict (series_id, side) do update set seen_at = excluded.seen_at
       returning side, seen_at
     )
@@ -115,6 +139,8 @@ export async function loadSeries(
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
       s.live, now() as now, s.created_at, s.started_at, s.turn_opens_at, s.end_reason,
       (select count from counted) as spent_count, (select retry from counted) as spent_retry,
+      exists (select 1 from me) as me_found, (select name from me) as me_name,
+      (select username from me) as me_username, (select account from me) as me_account,
       coalesce((select seen_at from beat where side = 'a'),
         (select seen_at from game.presence x where x.series_id = s.id and x.side = 'a')) as seen_a,
       coalesce((select seen_at from beat where side = 'b'),
@@ -137,18 +163,31 @@ export async function loadSeries(
           'seed', x.seed)
           order by x.purpose = 'toss' desc, x.purpose, x.idx)
         from game.series_seeds x where x.series_id = s.id), '[]') as seeds
-    from game.series s
+    from (select) as one
+    left join game.series s on s.id = ${id}
     left join game.profiles pa on pa.user_id = s.player_a
-    left join game.profiles pb on pb.user_id = s.player_b
-    where s.id = ${id}`;
-  if (raw === undefined) return undefined;
+    left join game.profiles pb on pb.user_id = s.player_b`;
+  const profile =
+    raw?.me_found === true && reader !== undefined
+      ? {
+          userId: reader,
+          name: raw.me_name ?? '',
+          username: raw.me_username,
+          account: raw.me_account === true,
+        }
+      : undefined;
+  if (raw?.id == null) return { profile, series: undefined };
+  return { profile, series: seriesOf(raw, raw.id) };
+}
+
+function seriesOf(raw: Raw, id: string): LoadedSeries {
   const spent =
     raw.spent_count === null
       ? {}
       : { spent: { count: raw.spent_count, retry: raw.spent_retry ?? 1 } };
   return {
     ...spent,
-    id: raw.id,
+    id,
     ruleset: raw.ruleset,
     format: raw.format,
     bestOf: raw.best_of,

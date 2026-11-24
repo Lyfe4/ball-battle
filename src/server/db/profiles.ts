@@ -32,24 +32,28 @@ export async function createProfile(sql: Db, userId: string): Promise<Profile> {
 }
 
 /**
- * The player's profile, if they still have one, marking them seen (at most once a day, so reads
- * don't write on every request). The inactive-guest cleanup reads `last_seen_at`. An account is
- * also marked active at most every 30 s (`active_at`, ADR 0079 PR (d)): its friends see it online
- * for 150 s after. A guest never writes it.
+ * Marks `userId` seen (at most once a day, so reads don't write on every request): the
+ * inactive-guest cleanup reads `last_seen_at`. An account is also marked active at most every 30 s
+ * (`active_at`, ADR 0079 PR (d)): its friends see it online for 150 s after. A guest never writes
+ * it. A part of a statement (`profileOf`, and the series read that is also the session's).
  */
-export async function profileOf(sql: Db, userId: string): Promise<Profile | undefined> {
-  const [row] = await sql<
-    { readonly name: string; readonly username: string | null; readonly account: boolean }[]
-  >`
-    with seen as (
+export function markSeen(sql: Db, userId: string | null) {
+  return sql`
       update game.profiles
       set last_seen_at = case when last_seen_at < now() - interval '1 day' then now()
           else last_seen_at end,
         active_at = case when account_at is not null then now() else active_at end
-      where user_id = ${userId} and (last_seen_at < now() - interval '1 day'
+      where user_id = ${userId}::uuid and (last_seen_at < now() - interval '1 day'
         or (account_at is not null
-          and (active_at is null or active_at < now() - interval '30 seconds')))
-    )
+          and (active_at is null or active_at < now() - interval '30 seconds')))`;
+}
+
+/** The player's profile, if they still have one, marking them seen (`markSeen`). */
+export async function profileOf(sql: Db, userId: string): Promise<Profile | undefined> {
+  const [row] = await sql<
+    { readonly name: string; readonly username: string | null; readonly account: boolean }[]
+  >`
+    with seen as (${markSeen(sql, userId)})
     select coalesce(username, display_name) as name, username, account_at is not null as account
     from game.profiles where user_id = ${userId}`;
   return row === undefined

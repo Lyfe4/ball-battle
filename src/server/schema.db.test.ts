@@ -28,6 +28,11 @@ const TABLES = [
   'flags',
   'mail_sends',
   'name_reports',
+  'seasons',
+  'ratings',
+  'rating_changes',
+  'queue_entries',
+  'season_rewards',
 ];
 
 describe('the game schema', () => {
