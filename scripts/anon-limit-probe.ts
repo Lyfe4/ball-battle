@@ -15,6 +15,8 @@
 //    project's limit): this spends your own IP's allowance, as Netlify's would be spent.
 // 2. Then signs up 3 times with a made-up forwarded IP. Accepted means Auth counts the forwarded
 //    IP, so every player has their own allowance. Refused means forwarding is off.
+// With ADR 0082's before-user-created hook on, Auth refuses every sign-up here (none carries a
+// ticket): switch the hook off for the probe, or expect 403s rather than the limit's 429s.
 // Every guest it makes is deleted again; a delete that fails is reported. Your own IP stays spent
 // for up to an hour.
 //

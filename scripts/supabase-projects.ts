@@ -70,6 +70,16 @@ export function readQuery(ref: string, sql: string): readonly Row[] {
   ) as readonly Row[];
 }
 
+/**
+ * Rows of a query that writes to the project's database: only the daily check's one-minute sign-up
+ * ticket (ADR 0082). Never a migration: those go through the workflows (ADR 0068).
+ */
+export function writeQuery(ref: string, sql: string): readonly Row[] {
+  return JSON.parse(
+    supabase(['db', 'query', `--remote=${ref}`, '--yes', '--output-format', 'json', sql]),
+  ) as readonly Row[];
+}
+
 /** One column of a row as text, or undefined when it is null or missing. */
 export function textOf(row: Row | undefined, column: string): string | undefined {
   const value = row?.[column];

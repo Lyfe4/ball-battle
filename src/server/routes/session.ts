@@ -9,6 +9,7 @@
 import { decodeCreateGuest } from '../../api/session.ts';
 import { AuthError, signOut, signUpGuest } from '../auth.ts';
 import { deleteUser } from '../auth-admin.ts';
+import { expectAuth, newTicket } from '../auth-tickets.ts';
 import { clearedSessionCookie, readSession, sessionCookie } from '../cookie.ts';
 import { createProfile } from '../db/profiles.ts';
 import { guard, jsonBody } from '../guard.ts';
@@ -36,7 +37,9 @@ async function createGuest(...[request, context]: Parameters<RouteHandler>): Pro
     await spend(sql, subject, LIMITS.guests);
     await spend(sql, subject, LIMITS.guestsDaily);
   }
-  const guest = await signUpGuest(config, context.ip).catch(async (error: unknown) => {
+  const ticket = newTicket();
+  await expectAuth(sql, { signUp: ticket });
+  const guest = await signUpGuest(config, context.ip, ticket).catch(async (error: unknown) => {
     // Auth's own anonymous sign-in limit (ADR 0052 section 11): the player gets a clear answer,
     // and we hear about it, since it may be every player's limit at once.
     if (error instanceof AuthError && error.status === 429) {

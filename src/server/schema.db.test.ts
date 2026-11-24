@@ -23,6 +23,8 @@ const TABLES = [
   'rematches',
   'friendships',
   'starts',
+  'auth_tickets',
+  'mail_relay',
 ];
 
 describe('the game schema', () => {

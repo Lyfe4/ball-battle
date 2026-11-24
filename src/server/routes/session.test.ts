@@ -12,7 +12,8 @@ const config = configOf({
   SUPABASE_SECRET_KEY: 'sb_secret_x',
   SEED_KEYS: JSON.stringify({ k: Buffer.alloc(32).toString('base64') }),
 });
-const deps = { config, sql: {} } as unknown as Deps;
+// The database is asked only for the sign-up's ticket (ADR 0082), which this fake accepts.
+const deps = { config, sql: () => Promise.resolve([]) } as unknown as Deps;
 
 afterEach(() => {
   vi.unstubAllGlobals();
