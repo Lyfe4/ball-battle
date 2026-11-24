@@ -40,6 +40,13 @@ export interface Config {
   readonly currentSeedKey: SeedKeyEntry;
   /** Sentry's DSN, when errors are reported (PII off). */
   readonly sentryDsn: string | undefined;
+  /**
+   * The Realtime poke's browser key (ADR 0082): `SUPABASE_BROWSER_KEY`, a publishable key of its
+   * own, handed to a player's page by GET /me/poke while `BALLBATTLE_POKE=1` (only with online play
+   * on); undefined means pokes are off. Never the functions' own publishable key: this one can be
+   * revoked alone, which closes every socket.
+   */
+  readonly pokeKey: string | undefined;
 }
 
 /** A Google OAuth client (ADR 0079): never sent to a page but its id, in the redirect. */
@@ -134,5 +141,7 @@ function settingsOf(env: Readonly<Record<string, string | undefined>>, online: b
     seedKeys: keys,
     currentSeedKey: current,
     sentryDsn: dsn === undefined || dsn === '' ? undefined : dsn,
+    pokeKey:
+      online && env['BALLBATTLE_POKE'] === '1' ? required(env, 'SUPABASE_BROWSER_KEY') : undefined,
   };
 }
