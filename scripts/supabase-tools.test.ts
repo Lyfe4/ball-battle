@@ -4,7 +4,13 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { localVersions, migrationGap } from './migrate.ts';
-import { codesProblem, forwardingProblem, madeUpIp } from './project-check.ts';
+import {
+  codesProblem,
+  forwardingProblem,
+  madeUpIp,
+  mailProblem,
+  mailWarning,
+} from './project-check.ts';
 import { projectRefOf } from './supabase-projects.ts';
 
 describe('the daily check', () => {
@@ -66,6 +72,8 @@ describe('migrations', () => {
     '20261124090000_auth_hooks.sql':
       '9aadf9db0800033f53d201a5ec0b1ab60e251deb41c1e6d59c4e1dc6588b2847',
     '20261124120000_poke.sql': '46855fef8a7db41bfdf965c7f8750abe5e8cc34b806b2aa81d899f1a57ca00f2',
+    '20261124190000_mail_watch.sql':
+      'b402e619043dd5acc1cbe863b27608d94d625fca14213388cbb63b4695d91467',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));
@@ -85,5 +93,20 @@ describe('the daily check of this month’s email codes (ADR 0079)', () => {
     expect(codesProblem(0)).toBeUndefined();
     expect(codesProblem(2199)).toBeUndefined();
     expect(codesProblem(2200)).toMatch(/^2200 email codes this month, near the 2700 cap/);
+  });
+});
+
+describe('the daily check of the code emails the relay refused (ADR 0082, the mail watch)', () => {
+  it('fails on any refused or unanswered send in the last day, naming where to look', () => {
+    expect(mailProblem({ sent: 0, failed: 0, unseen: 0 })).toBeUndefined();
+    expect(mailProblem({ sent: 40, failed: 0, unseen: 3 })).toBeUndefined();
+    expect(mailProblem({ sent: 40, failed: 2, unseen: 0 })).toMatch(
+      /^2 of 40 code emails in the last 24 h were refused or never answered by the relay/,
+    );
+  });
+
+  it('warns, without failing, about sends whose answer nobody read in time', () => {
+    expect(mailWarning({ sent: 40, failed: 0, unseen: 0 })).toBeUndefined();
+    expect(mailWarning({ sent: 40, failed: 0, unseen: 3 })).toMatch(/^3 of 40 code emails/);
   });
 });

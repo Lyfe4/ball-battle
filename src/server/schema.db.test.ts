@@ -26,6 +26,7 @@ const TABLES = [
   'auth_tickets',
   'mail_relay',
   'flags',
+  'mail_sends',
 ];
 
 describe('the game schema', () => {

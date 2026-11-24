@@ -278,3 +278,42 @@ closing the channel, known pokes only and only on its topic, a flood coalesced, 
 `pagehide` and `pageshow`, `close()` for good, nothing opened while hidden; five seen failing
 with the heartbeat check, the coalescing, the hidden close and the `pagehide` close switched off),
 `check-bundle.test.ts` and `security-headers.test.ts`.
+
+## Addendum (2026-11-24): the owner's measurements, and the mail watch
+
+**Heartbeats are not billed as Realtime messages** (owner, from Supabase's usage page: staging's
+24 November shows about 200 messages, matching the pokes sent, not the ~900 socket heartbeats of
+that day's testing). So the proposal's risk 2 is closed and the socket heartbeats every **15 s**,
+as the proposal planned (PR 5 changes `poke-socket.ts`): a dead socket is noticed within about
+30 s instead of 50 s.
+
+**Netlify is the legacy free plan** (owner): 125k function calls a month, not credits. The
+ceiling in the Context above is therefore 125k, not about 60k; the proposal's section 3 already
+reads against 125k (Mix P to about 55 daily players with pokes, Mix F to about 25). Build minutes
+(300 a month) are now the tighter budget during development: one push per pull request.
+
+**The mail watch** (`20261124190000_mail_watch.sql`). With the Send Email hook on, a code email
+Resend refuses is silent: pg_net posts after Auth has answered, so the player reads "We sent a
+code" and nothing comes, and pg_net keeps its answer in `net._http_response` for only 6 hours
+(`pg_net.ttl`, checked on staging), with no URL to tell our sends from any other.
+
+- The hook now notes each send's pg_net request id in `game.mail_sends`: an id, a time and, once
+  copied, the answer's HTTP status. No address, no code, no player; kept 7 days. Not personal
+  data, so `privacy.html` is unchanged.
+- Answers are copied before pg_net drops them by the next send and by `/api/v1/health`
+  (`game.mail_watch()`, the API's role), which an uptime monitor reads every few minutes.
+- `game.mail_outcomes(hours)` counts the last day's sends, those refused or never answered (a
+  status outside 2xx, a timeout, a connection error) and those whose answer went before anyone
+  copied it (`unseen`; a send under 2 minutes old with no answer is on its way, in neither). It only
+  reads, so the daily check calls it through the read-only SQL endpoint on both projects.
+- **Alerts:** the daily check (`project-check.ts`, `supabase-daily.yml`) fails on any refused send
+  in the last 24 h, so GitHub emails you; `unseen` is a warning on the run. `/api/v1/health` adds
+  `emailSends` (`ok`, `failing`, `unseen`, `unknown`), never changing its status: an UptimeRobot
+  keyword monitor for `"emailSends":"ok"` on a deploy's health alerts within minutes (staging's, and
+  production's when accounts ship). A deploy ahead of the migration says `unknown`, never `down`.
+
+Tests: `mail-watch.db.test.ts` (a delivered code; a code the relay refused while Auth answered
+200; a refusal kept after pg_net drops it, copied by the next send and by health's read; unseen
+and on-its-way; the 24-hour window and the 7-day drop; no page role may read it, the API only
+health's function; three seen failing with the copy switched off), `health.db.test.ts`
+(`emailSends`) and `supabase-tools.test.ts` (the check's wording).

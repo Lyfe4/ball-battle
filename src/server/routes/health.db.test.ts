@@ -9,6 +9,7 @@ const deps = testDeps();
 const admin = adminSql();
 beforeAll(async () => {
   await admin`delete from game.rate_limits`;
+  await admin`delete from game.mail_sends`;
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -37,7 +38,27 @@ describe('GET /api/v1/health', () => {
       emailCodes: 'ok',
       accounts: 'ok',
       accountsFailed: [],
+      emailSends: 'ok',
     });
+  });
+
+  it('says a code email the relay refused today, and stays 200 (ADR 0082, the mail watch)', async () => {
+    const handler = endpoint(
+      'health',
+      health,
+      () => deps,
+      () => undefined,
+    );
+    const sends = async () => {
+      const response = await handler(new Request('http://localhost/api/v1/health'));
+      return [response.status, ((await response.json()) as { emailSends: string }).emailSends];
+    };
+    await admin`insert into game.mail_sends (request_id, sent_at) values (-11, now() - interval '7 hours')`;
+    expect(await sends()).toStrictEqual([200, 'unseen']);
+    await admin`insert into game.mail_sends (request_id, answered, status_code) values (-12, true, 401)`;
+    expect(await sends()).toStrictEqual([200, 'failing']);
+    await admin`delete from game.mail_sends`;
+    expect(await sends()).toStrictEqual([200, 'ok']);
   });
 
   it('names a sign-in setting that is wrong in `accounts`, and stays 200 (ADR 0079)', async () => {
