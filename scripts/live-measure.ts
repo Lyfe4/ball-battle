@@ -2,6 +2,7 @@
 // at 390 x 664 on this one machine, so one clock) play a match and this prints what it measured as
 // JSON. Not a test: the page carries no instrumentation, so everything is read from outside it.
 //   node scripts/live-measure.ts <base url> <bo3|bo5|disconnect> [--slow] [--shots <dir>]
+//     [--lobby <s>] [--end <s>]
 // bo3/bo5: the lobby, a whole match with picks after 3-12 s, the same each run so runs compare (the
 // friend lets their first pick run out), how far apart the two screens start each fight (when each page's countdown card lifts),
 // how long a pick takes to reach the other screen (the first read there with the new version),
@@ -18,6 +19,24 @@ const shotsAt = rest.indexOf('--shots');
 const shots = shotsAt >= 0 ? rest[shotsAt + 1] : undefined;
 if (shots !== undefined) mkdirSync(shots, { recursive: true });
 const bestOf = mode === 'bo5' ? 5 : 3;
+/** --lobby <s>: the sender waits this long in the lobby; --end <s>: both stay on the end screen. */
+const secondsAfter = (flag: string) => {
+  const at = rest.indexOf(flag);
+  return at >= 0 ? Number(rest[at + 1]) * 1000 : 0;
+};
+const lobbyWaitMs = secondsAfter('--lobby');
+const endWaitMs = secondsAfter('--end');
+
+/** Each player's requests in each phase: home and lobby, lineups, the match, the end screen. */
+function byPhase(phone: Phone, edges: readonly number[]) {
+  const names = ['lobby', 'lineup', 'match', 'end'] as const;
+  const counts = { lobby: 0, lineup: 0, match: 0, end: 0 };
+  for (const r of phone.requests) {
+    const index = edges.findIndex((edge) => r.at < edge);
+    counts[names[index === -1 ? 3 : Math.min(index, 3)] ?? 'end'] += 1;
+  }
+  return counts;
+}
 
 const shot = async (page: Page, name: string) => {
   if (shots !== undefined) await page.screenshot({ path: `${shots}/${name}.png` });
@@ -52,7 +71,14 @@ try {
   const begun = Date.now();
   const sender = await phone(browser, 'sender');
   const friend = await phone(browser, 'friend', { slow });
-  const { lobbyToMatchMs } = await startMatch(base, bestOf, sender, friend, shot);
+  const { lobbyToMatchMs, moments } = await startMatch(
+    base,
+    bestOf,
+    sender,
+    friend,
+    shot,
+    lobbyWaitMs,
+  );
   if (mode === 'disconnect') {
     await sender.page.waitForTimeout(5_000);
     await friend.context.setOffline(true);
@@ -109,7 +135,10 @@ try {
         await shot(friend.page, 'auto-pick');
       })(),
     ]);
+    const resultAt = Date.now();
     await shot(sender.page, 'result');
+    if (endWaitMs > 0) await sender.page.waitForTimeout(endWaitMs);
+    const edges = [moments.accepted, moments.match, resultAt];
     const [a, b] = [await sender.starts(), await friend.starts()];
     const gaps = a.flatMap((at) => {
       const near = b.reduce(
@@ -151,6 +180,14 @@ try {
             sender: sender.requests.length,
             friend: friend.requests.length,
             total: sender.requests.length + friend.requests.length,
+          },
+          phases: {
+            lobbySeconds: Math.round((moments.accepted - moments.lobby) / 1000),
+            lineupSeconds: Math.round((moments.match - moments.accepted) / 1000),
+            matchSeconds: Math.round((resultAt - moments.match) / 1000),
+            endSeconds: Math.round(endWaitMs / 1000),
+            sender: byPhase(sender, edges),
+            friend: byPhase(friend, edges),
           },
           byRoute,
           seriesReadMs: { p50: pct(reads, 0.5), p90: pct(reads, 0.9), max: pct(reads, 1) },

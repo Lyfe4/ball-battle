@@ -127,7 +127,7 @@ or lobby, which it would lose; then the device forgets every `ballbattle.*` key,
 `auth_google`, are `"accounts": "ok" | "misconfigured" | "off"` (with `accountsFailed` naming
 them), never a 503: a sign-in setting must not make the game look down to UptimeRobot or hold up
 the vs Friend switch or Publish. Confirm email off is still serious (a guest could take any
-address), so: `friend-switch.ts --accounts on` fails after its deploy unless `accounts` is `ok`,
+address), so: `friend-switch.ts on --accounts` fails after its deploy unless `accounts` is `ok`,
 and UptimeRobot gets a keyword monitor for `"accounts":"ok"` beside the one for
 `"emailCodes":"ok"` (production reads `off` until accounts ship; add the monitor then).
 
@@ -151,7 +151,7 @@ here) decodes the ID token.
   leaks nothing. If it matters later, the fix is to answer before Auth is called (send in the
   background) or to pad the fast path.
 - Deploy previews can test email codes but not Google.
-- **Before accounts are switched on in production** (`friend-switch.ts --accounts on`), in this
+- **Before accounts are switched on in production** (`friend-switch.ts on --accounts`), in this
   order, each its own pull request where it changes the repository:
   - **Update the privacy policy** (`privacy.html`, ADR 0069) and its date: Log out and Delete
     account now live on Profile (ADR 0081), and so does a guest's Forget me in a build with

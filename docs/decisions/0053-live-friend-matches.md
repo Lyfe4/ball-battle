@@ -491,6 +491,20 @@ PC; the same pick timings every run: 3-12 s a pick, the friend's first runs out)
   before), cleared it 1.7 s after the player came back (2.7 s) and showed the forfeit at 36.1 s
   (35.6 s). `pnpm test:online` passes (both disconnect flows, live sync, the coin toss, a rematch).
 
+### On Realtime pokes (2026-11-25, ADR 0082)
+
+The same script on staging, now also counting each phase: the sender 60 s in the lobby and both 120
+s on the end screen. Pokes off is the database's flag alone, on the same build.
+
+| Run       | Fights | Requests (both) | Series reads a minute | Pick → other screen (ms) | Fight start gap (ms) |
+| --------- | ------ | --------------- | --------------------- | ------------------------ | -------------------- |
+| Pokes on  | 3      | 120             | 11.2                  | 2,116, 1,633, 1,466      | 4, 0, 0              |
+| Pokes on  | 3      | 144             | 15.9                  | 1,495, 1,597, 1,424      | 0, 0, 0              |
+| Pokes off | 3      | 266             | 16.6                  | 1,638, 2,047, 3,011      | 0, 0, 0              |
+
+The match itself costs about the same either way (the heartbeat stays); the lobby (8 reads against 22) and the end screen (10 a player against 63 in 2 minutes) are where pokes save. ADR 0082 has the
+phases.
+
 ## Consequences
 
 - Friend matches become something two people do together; play by turns is kept for later.
