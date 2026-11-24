@@ -26,8 +26,16 @@ function memory(entries: Record<string, string> = {}): SignInHost['storage'] {
   return () => store;
 }
 
-/** The screen over a fake API whose `/me` says `me` (a status and body). */
-function screen(me: [number, unknown], storage = memory(), cookies = '__Host-bb_player=1') {
+/**
+ * The screen over a fake API whose `/me` says `me` (a status and body); `held` answers a path with
+ * a response that comes when the test says.
+ */
+function screen(
+  me: [number, unknown],
+  storage = memory(),
+  cookies = '__Host-bb_player=1',
+  held: Record<string, Promise<Response>> = {},
+) {
   const notice = document.createElement('section');
   const loading = document.createElement('div');
   document.body.replaceChildren(notice, loading);
@@ -38,6 +46,8 @@ function screen(me: [number, unknown], storage = memory(), cookies = '__Host-bb_
     if (path === 'auth/options')
       return Promise.resolve(json(200, { google: false, emailCodes: true }));
     if (path === 'me') return Promise.resolve(json(...me));
+    const answer = held[path];
+    if (answer !== undefined) return answer;
     return Promise.resolve(json(404, { error: { code: 'not_found', message: 'no' } }));
   };
   const deleted: string[] = [];
@@ -102,5 +112,33 @@ describe('the account screen', () => {
     expect(asked).toStrictEqual(['auth/options']);
     expect(notice.textContent).toContain('16');
     expect(quiet(notice)).toStrictEqual([]);
+  });
+
+  it('holds Email me a code busy from the tap until the code is sent, and sends it once', async () => {
+    // The server answers no sooner than 2.5 s (CODE_ANSWER_FLOOR_MS): the button shows it is
+    // working at once, and a second tap or Enter meanwhile sends nothing more.
+    let answer: (response: Response) => void = () => undefined;
+    const sent = new Promise<Response>((resolve) => {
+      answer = resolve;
+    });
+    const guest = { name: 'Player 4821', account: false, username: null };
+    const { notice, asked } = screen([200, guest], memory(), undefined, { 'auth/email': sent });
+    await until(() => heading(notice) === 'Sign in', 'the ways in');
+    const field = notice.querySelector('input');
+    const button = [...notice.querySelectorAll('button')].find(
+      (node) => node.textContent === 'Email me a code',
+    );
+    if (field === null || button === undefined) throw new Error('No email field or button');
+    field.value = 'sam@example.com';
+    field.dispatchEvent(new Event('input'));
+    button.click();
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    button.click();
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await until(() => button.dataset['busy'] === 'shown', 'the busy ball');
+    expect(asked.filter((path) => path === 'auth/email')).toHaveLength(1);
+    answer(json(202, {}));
+    await until(() => heading(notice) === 'Check your email', 'the code step');
+    expect(asked.filter((path) => path === 'auth/email')).toHaveLength(1);
   });
 });
