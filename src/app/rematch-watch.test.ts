@@ -8,6 +8,7 @@ import {
   rematchWatchFor,
   rematchWatchOf,
   WATCH_MS,
+  watchAskMs,
   type RematchWatch,
 } from './rematch-watch.ts';
 
@@ -74,5 +75,21 @@ describe('the match a rematch may follow', () => {
   it('reads a watch kept before it knew when the rematch opens as open at once', () => {
     memory.set('ballbattle.online.rematch', JSON.stringify({ ...watch, opensAt: undefined }));
     expect(rematchWatchOf(storage, T)?.opensAt).toBe(0);
+  });
+});
+
+describe('when the rematch watch asks next (ADR 0082)', () => {
+  const paced = (_today: number, until: number | null) => (until === null ? 10_000 : until + 500);
+
+  it('waits for the last fight to end, socket up or not: nothing can happen before', () => {
+    expect(watchAskMs(2_000, 45_000, null, paced)).toBe(45_000);
+    expect(watchAskMs(2_000, 45_000, 45_000, paced)).toBe(45_000);
+    expect(watchAskMs(2_000, 500, null, paced)).toBe(2_000);
+  });
+
+  it('is paced by the poke once a rematch can move', () => {
+    expect(watchAskMs(2_000, 0, null, paced)).toBe(10_000);
+    expect(watchAskMs(2_000, -300, 4_000, paced)).toBe(4_500);
+    expect(watchAskMs(2_000, 0, null, (today) => today)).toBe(2_000);
   });
 });
