@@ -231,3 +231,50 @@ no user id; off with the flag off; off without `BALLBATTLE_POKE`; 401 without a 
 after Log out, seen failing without the rotation; gone on Forget me and Delete account; on Switch
 the guest's key goes and the account answers with its own), `config.test.ts` (the switch needs
 online play and the browser key) and `poke-switch.test.ts`.
+
+## Addendum (2026-11-24): the socket client, the build switch and the CSP, as built (PR 4)
+
+Nothing imports the socket yet: no screen listens, and every build's bundle is as before.
+
+- **`src/app/poke-socket.ts`**, our own Phoenix 1.0.0 JSON client (decision 3), about 250 lines
+  with no DOM types (the page comes in through `PokePage`; `poke-page.ts` is the browser's). It
+  opens `url?apikey=<browser key>&vsn=1.0.0`, joins `realtime:<topic>` as a public channel
+  (`private: false`, no self-broadcast, no Presence), and is **up** only once the join is
+  answered `ok`; `onState` says each change. It is **down** on a refused or unanswered join
+  (10 s), a heartbeat not answered by the next one, `phx_error`/`phx_close`, an error or a close,
+  and then retries after 1, 2, 5, 10, then every 30 s, back to 1 s after a good join. A broadcast
+  of `inbox` or `match` on its topic is handed on, at most one of each a second (a flood, forged or
+  not, is one read a second and the last one is never lost); anything else is ignored. Hidden for
+  10 s it closes (a quick app switch keeps it), shown it reopens; `pagehide` closes it (an open
+  socket can keep a page out of the back/forward cache), `pageshow` reopens it; nothing opens
+  while hidden. It never reads: the screens read on a poke and on every move from down to up
+  (PR 5 on).
+- **Heartbeat 25 s** (realtime-js's default), not the proposal's 15 s, until staging's measurement
+  says whether heartbeats are billed messages (the proposal's risk 2). A dead socket is then
+  noticed within about 50 s; while it looks up, the screens' safety reads still run.
+- **`VITE_POKE`** (`POKE_BUILD`, `src/app/poke-build.ts`): only with online play, and unset in
+  every Netlify context for now (previews and staging included: the owner's rule for this run),
+  so `netlify.toml` builds nothing new. `scripts/check-bundle.ts` refuses the poke's route,
+  Realtime's socket path or a Phoenix join in a build without it.
+- **CSP**: `connect-src 'self' wss://<staging>.supabase.co wss://<production>.supabase.co` in
+  `netlify.toml` and `scripts/security-headers.ts` (a test keeps them equal and checks the refs
+  against `supabase-projects.ts`); `pnpm preview` alone adds the local stack's
+  `ws://127.0.0.1:54321` (`LOCAL_SECURITY_HEADERS`), and the test checks `netlify.toml` never holds
+  a local address. **`netlify dev` serves `netlify.toml`'s headers, so a page there can't reach
+  the local Realtime under the CSP**: PR 5's online tests need a way round that (a dev-only header
+  rule, or testing the socket under `pnpm preview`), decided there.
+- **Checked in Chromium, Firefox and WebKit** (a scratch Playwright run, not a CI test: the browser
+  jobs have no Supabase): the real socket under `pnpm preview`'s CSP joined the local Realtime,
+  received `match` and `inbox` from `game.poke()` about 10 ms after the write, ignored a broadcast
+  to another topic, logged no CSP or console error, and closed cleanly.
+- **Found doing it:** Realtime starts a project's database replication only when its first client
+  connects; messages written before that are not broadcast. Locally that is the first socket
+  after `supabase start`. Hosted projects may do the same after an idle spell, so the first pokes
+  after a quiet hour can be lost: the read on every move to up, and the safety reads, cover it.
+
+Tests: `poke-socket.test.ts` (fake WebSocket and timers: the join and its URL, up only on `ok`, a
+refused and an unanswered join, a missed heartbeat, the backoff sequence and its reset, Realtime
+closing the channel, known pokes only and only on its topic, a flood coalesced, hidden and shown,
+`pagehide` and `pageshow`, `close()` for good, nothing opened while hidden; five seen failing
+with the heartbeat check, the coalescing, the hidden close and the `pagehide` close switched off),
+`check-bundle.test.ts` and `security-headers.test.ts`.

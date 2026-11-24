@@ -12,11 +12,12 @@
   NODE_VERSION = "24"
 
 # Security headers. Keep in step with scripts/security-headers.ts (a test checks it), which
-# `vite preview` serves so the CSP can be verified against a production build locally.
+# `vite preview` serves so the CSP can be verified against a production build locally. connect-src
+# names staging's and production's Realtime sockets for the poke (ADR 0082); never a local one.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; manifest-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; require-trusted-types-for 'script'"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; manifest-src 'self'; connect-src 'self' wss://fcmzgitzaaabcmbzxxcg.supabase.co wss://wtqmptuhonbtjwxjwtwl.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; require-trusted-types-for 'script'"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"

@@ -1,6 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PATH_HEADERS, SECURITY_HEADERS } from './security-headers.ts';
+import {
+  LOCAL_REALTIME,
+  LOCAL_SECURITY_HEADERS,
+  PATH_HEADERS,
+  REALTIME_ORIGINS,
+  SECURITY_HEADERS,
+} from './security-headers.ts';
+import { PROJECTS } from './supabase-projects.ts';
 
 const toml = readFileSync(new URL('../netlify.toml', import.meta.url), 'utf8');
 
@@ -43,5 +50,37 @@ describe('netlify.toml', () => {
     expect(toml).toMatch(/^\s*command = "pnpm build"$/m);
     expect(toml).toMatch(/^\s*publish = "dist"$/m);
     expect(toml).toMatch(/^\s*NODE_VERSION = "24"$/m);
+  });
+});
+
+describe('the Realtime poke’s sockets (ADR 0082)', () => {
+  const connectOf = (headers: Readonly<Record<string, string>>): string[] =>
+    (headers['Content-Security-Policy'] ?? '')
+      .split('; ')
+      .find((directive) => directive.startsWith('connect-src '))
+      ?.split(' ')
+      .slice(1) ?? [];
+
+  it('lets the page reach staging’s and production’s Realtime, over wss only', () => {
+    expect(REALTIME_ORIGINS).toStrictEqual(
+      [PROJECTS.staging, PROJECTS.production].map((ref) => `wss://${ref}.supabase.co`),
+    );
+    expect(connectOf(SECURITY_HEADERS)).toStrictEqual(["'self'", ...REALTIME_ORIGINS]);
+  });
+
+  it('adds the local stack’s Realtime for pnpm preview alone, and nothing else', () => {
+    expect(connectOf(LOCAL_SECURITY_HEADERS)).toStrictEqual([
+      "'self'",
+      ...REALTIME_ORIGINS,
+      LOCAL_REALTIME,
+    ]);
+    const rest = (headers: Readonly<Record<string, string>>) =>
+      headers['Content-Security-Policy']?.replace(/connect-src [^;]*/, '');
+    expect(rest(LOCAL_SECURITY_HEADERS)).toBe(rest(SECURITY_HEADERS));
+    expect({ ...LOCAL_SECURITY_HEADERS, 'Content-Security-Policy': '' }).toStrictEqual({
+      ...SECURITY_HEADERS,
+      'Content-Security-Policy': '',
+    });
+    expect(toml).not.toContain('127.0.0.1');
   });
 });

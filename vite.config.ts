@@ -3,7 +3,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { normalizePath, type Plugin } from 'vite';
 import { configDefaults, defineConfig, type TestProjectInlineConfiguration } from 'vitest/config';
 import type { BrowserCommand } from 'vitest/node';
-import { SECURITY_HEADERS } from './scripts/security-headers.ts';
+import { LOCAL_SECURITY_HEADERS } from './scripts/security-headers.ts';
 
 /** Before every browser test file: no series saved by another file's flow (ADR 0042). */
 const BROWSER_SETUP = 'src/flows/browser-setup.ts';
@@ -108,11 +108,12 @@ export default defineConfig({
   },
   preview: {
     // `pnpm build && pnpm preview` serves dist/ with the production security headers (the same
-    // set netlify.toml sets), so the CSP can be checked locally. The dev server has none: Vite's
-    // HMR client injects inline styles that a strict CSP would block.
+    // set netlify.toml sets, plus the local stack's Realtime for the poke, ADR 0082), so the CSP
+    // can be checked locally. The dev server has none: Vite's HMR client injects inline styles
+    // that a strict CSP would block.
     port: 4199,
     strictPort: true,
-    headers: { ...SECURITY_HEADERS },
+    headers: { ...LOCAL_SECURITY_HEADERS },
   },
   test: {
     environment: 'node',
