@@ -2,7 +2,8 @@
 // dash, a friend added by what was typed, a request accepted and one declined, a friend removed
 // only after Remove is asked in place (Keep first), a refusal said under the field, and the
 // sections in the tab's order: Waiting for you, Friends, your code and Add, then the link card; the
-// link card first while there are no friends (requirement 5).
+// link card first while there are no friends (requirement 5); More's Block and Report name, each
+// asked in place, and Unblock from the Blocked list (2026-11-25).
 import { describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendsResponse } from '../../api/friends.ts';
@@ -14,6 +15,7 @@ const json = (status: number, body: unknown) =>
 
 const START: FriendsResponse = {
   code: '7KQ2M9XD',
+  blocked: [],
   friends: [{ id: 'f-1', name: 'Robin', status: 'in_a_match' }],
   incoming: [
     { id: 'r-1', name: 'Sam_R' },
@@ -53,6 +55,26 @@ function section(start: FriendsResponse = START) {
         incoming: list.incoming.filter((entry) => entry !== row),
         friends: row === undefined ? list.friends : [...list.friends, row],
       };
+    }
+    const blocked = /^friends\/(.+)\/(block|unblock|report)$/.exec(path);
+    if (blocked !== null) {
+      const [, id, action] = blocked;
+      const keep = (entry: { id: string }) => entry.id !== id;
+      const row = [...list.friends, ...list.incoming].find((entry) => !keep(entry));
+      if (action === 'block' && row !== undefined) {
+        list = {
+          ...list,
+          friends: list.friends.filter(keep),
+          incoming: list.incoming.filter(keep),
+          blocked: [...list.blocked, { id: row.id, name: row.name }],
+        };
+      } else if (action === 'unblock') {
+        list = { ...list, blocked: list.blocked.filter(keep) };
+      } else if (action === 'report') {
+        const hide = (entry: { id: string; name: string }) =>
+          entry.id === id ? { ...entry, name: 'Player 7' } : entry;
+        list = { ...list, friends: list.friends.map(hide), incoming: list.incoming.map(hide) };
+      }
     }
     const gone = /^friends\/([^/]+)$/.exec(path);
     if (method === 'DELETE' && gone !== null) {
@@ -199,9 +221,50 @@ describe('the Friends section', () => {
     await none.friends.open();
     expect(order(none.root)).toStrictEqual(['link', 'incoming', 'code and Add']);
     // Nobody at all: the code card says so.
-    const nobody = section({ code: START.code, friends: [], incoming: [], outgoing: [] });
+    const nobody = section({
+      code: START.code,
+      friends: [],
+      incoming: [],
+      outgoing: [],
+      blocked: [],
+    });
     await nobody.friends.open();
     expect(order(nobody.root)).toStrictEqual(['link', 'code and Add']);
     expect(nobody.root.querySelector('.friends-empty')?.hasAttribute('hidden')).toBe(false);
+  });
+});
+
+describe('More on a row (2026-11-25)', () => {
+  it('blocks and reports, each asked in place with Keep first, and unblocks', async () => {
+    const { friends, sent, root } = section();
+    await friends.open();
+    named(root, 'More for Robin')?.click();
+    expect(named(root, 'More for Robin')?.getAttribute('aria-expanded')).toBe('true');
+    // Keep closes it, back on More, having sent nothing.
+    named(root, 'Keep Robin')?.click();
+    expect(root.querySelector('.friends-ask')).toBeNull();
+    expect(document.activeElement).toBe(named(root, 'More for Robin'));
+    named(root, 'More for Robin')?.click();
+    named(root, 'Block Robin')?.click();
+    expect(root.querySelector('.friends-ask-question')?.textContent).toBe(
+      'Block Robin? They can’t add or challenge you again.',
+    );
+    expect(sent.filter((line) => line.includes('block'))).toStrictEqual([]);
+    named(root, 'Block Robin')?.click();
+    await until(() => group(root, 'blocked').length === 1, 'the Blocked list');
+    expect(sent).toContain('POST friends/f-1/block');
+    expect(group(root, 'friends')).toStrictEqual([]);
+    expect(root.querySelector('.friends-note')?.textContent).toBe(
+      'Robin is blocked. Unblock them under Blocked.',
+    );
+    // A request's name, reported with a reason in a tap, is hidden from then on.
+    named(root, 'More for Sam_R')?.click();
+    named(root, 'Report Sam_R’s name')?.click();
+    named(root, 'Report Sam_R’s name: Rude or hurtful')?.click();
+    await until(() => group(root, 'incoming').includes('Player 7'), 'the name hidden');
+    expect(sent).toContain('POST friends/r-1/report {"reason":"offensive"}');
+    named(root, 'Unblock Robin')?.click();
+    await until(() => group(root, 'blocked').length === 0, 'Robin unblocked');
+    expect(sent).toContain('POST friends/f-1/unblock');
   });
 });

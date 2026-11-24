@@ -20,7 +20,7 @@ export const ONLINE_MS = 150_000;
  */
 export async function friendStatuses(db: Db, userId: string): Promise<FriendEntry[]> {
   return db<{ readonly id: string; readonly name: string; readonly status: FriendStatus }[]>`
-    select f.id, coalesce(o.username, o.display_name) as name,
+    select f.id, game.name_seen_by(${userId}, o.user_id, o.username, o.display_name) as name,
       case
         when exists (
           select 1 from game.series s
@@ -52,6 +52,8 @@ export interface InviteRow {
   readonly creator: string;
   readonly requestId: string;
   readonly from: string;
+  /** The friendship it comes through: what Block and Report name. */
+  readonly friend: string | null;
   readonly format: Format;
   readonly bestOf: BestOf;
 }
@@ -59,7 +61,11 @@ export interface InviteRow {
 export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
   return db<InviteRow[]>`
     select c.creator, c.request_id::text as "requestId",
-      coalesce(p.username, p.display_name) as "from", c.format, c.best_of as "bestOf"
+      game.name_seen_by(${userId}, p.user_id, p.username, p.display_name) as "from",
+      (select f.id from game.friendships f
+        where f.low = least(c.creator, ${userId}::uuid) and f.high = greatest(c.creator, ${userId}::uuid)
+      ) as friend,
+      c.format, c.best_of as "bestOf"
     from game.challenges c
     join game.profiles p on p.user_id = c.creator
     where c.invitee = ${userId} and c.live and c.series_id is null and c.start_id is null

@@ -1,6 +1,8 @@
 // The Friends tab's lists (ADR 0079, PR (c); ADR 0081): what waits on you (friend requests, Accept
 // and Decline), your friends (their status, Challenge, Remove asked in place), then your friend
-// code with Copy, a field to add a friend by username or code, and the requests you sent (Cancel).
+// code with Copy, a field to add a friend by username or code, the requests you sent (Cancel) and
+// who you blocked (Unblock). A friend, a request to you and a friend's challenge have More: Report
+// name and Block, asked in place (friends-more.ts).
 // The tab's "Play a friend with a link" card comes last, or first while there are no friends yet.
 // Every change answers with the whole list, drawn again. The field takes the notice's field look;
 // every button that waits on the server is busy through busyOnClick.
@@ -13,15 +15,19 @@ import {
 } from '../../api/friends.ts';
 import type { ApiFailure, ApiResult } from '../../app/api.ts';
 import { busyOnClick } from '../busy-button.ts';
+import { addField } from './friends-add-field.ts';
+import { rowMore, type RowAsk } from './friends-more.ts';
 import { element } from '../dom.ts';
 import { challengeLine } from '../../screens/online-text.ts';
 import {
   addedLine,
+  BLOCKED_LINE,
   challengesYou,
   FRIEND_GROUPS,
   hasAnyone,
   NO_FRIENDS,
   removeQuestion,
+  REPORTED_LINE,
   STATUS_WORDS,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
@@ -73,24 +79,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
 
   // Adding: the notice's field look, its own Add button, and one line for what happened.
-  const field = element('div', 'notice-field friends-add');
-  const label = element('label', 'notice-field-label', 'Add a friend');
-  const input = element('input', 'notice-field-input');
-  input.id = 'friends-add-input';
-  input.type = 'text';
-  input.autocomplete = 'off';
-  input.spellcheck = false;
-  input.autocapitalize = 'off';
-  input.setAttribute('autocorrect', 'off');
-  input.placeholder = 'Username or friend code';
-  label.htmlFor = input.id;
-  const add = element('button', 'hud-button friends-add-button', 'Add');
-  add.type = 'button';
-  const said = element('p', 'friends-said');
-  said.setAttribute('role', 'status');
-  const row = element('div', 'friends-add-row');
-  row.append(input, add);
-  field.append(label, row, said);
+  const { field, input, add, said } = addField();
 
   // Waiting for you, then your friends; your code and Add in a card of their own, with what you sent.
   const lists = element('div', 'friends-lists');
@@ -107,12 +96,15 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   const problemBox = element('div', 'friends-problem-box');
   problemBox.append(problem, retry);
   problemBox.hidden = true;
-  root.append(problemBox, lists, addCard);
+  // What a block or a report just did, said where the list is.
+  const note = element('p', 'friends-note');
+  note.setAttribute('role', 'status');
+  root.append(problemBox, note, lists, addCard);
   root.hidden = true;
 
   let code = '';
-  /** The row whose Remove is being asked, by friendship id. */
-  let asking: string | undefined;
+  /** The row asking a question (Remove, More, Block, Report), by its key (friendship id or invite). */
+  let asking: { readonly key: string; readonly ask: 'remove' | RowAsk } | undefined;
   let list: FriendsResponse | undefined;
   let invites: readonly Invite[] = [];
 
@@ -133,6 +125,8 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     item.append(who, actions);
     const change = (method: 'POST' | 'DELETE', path: string) => () =>
       send(host.api<FriendsResponse>(method, path));
+    const ask = asking?.key === friend.id ? asking.ask : undefined;
+    const more = withMore(item, friend.id, friend.id, friend.name);
     if (group.key === 'incoming') {
       const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
       accept.type = 'button';
@@ -140,12 +134,16 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       busyOnClick(accept, change('POST', `friends/${friend.id}/accept`));
       const decline = textButton('Decline', `Decline ${friend.name}`);
       busyOnClick(decline, change('DELETE', `friends/${friend.id}`));
-      actions.append(accept, decline);
+      actions.append(accept, decline, more);
     } else if (group.key === 'outgoing') {
       const cancel = textButton('Cancel', `Cancel your request to ${friend.name}`);
       busyOnClick(cancel, change('DELETE', `friends/${friend.id}`));
       actions.append(element('span', 'friends-waiting', 'Waiting'), cancel);
-    } else if (asking === friend.id) {
+    } else if (group.key === 'blocked') {
+      const unblock = textButton('Unblock', `Unblock ${friend.name}`);
+      busyOnClick(unblock, change('POST', `friends/${friend.id}/unblock`));
+      actions.append(unblock);
+    } else if (ask === 'remove') {
       // Removing is asked once, in place: Keep first, so a stray tap keeps the friend.
       name.textContent = removeQuestion(friend.name);
       const keep = textButton('Keep', `Keep ${friend.name}`);
@@ -153,9 +151,9 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
         asking = undefined;
         draw();
       });
-      const remove = textButton('Remove', `Remove ${friend.name}`);
-      busyOnClick(remove, change('DELETE', `friends/${friend.id}`));
-      actions.append(keep, remove);
+      const removing = textButton('Remove', `Remove ${friend.name}`);
+      busyOnClick(removing, change('DELETE', `friends/${friend.id}`));
+      actions.append(keep, removing);
     } else {
       // Its status: a dot and words (PR (d)), for accepted friends only.
       const status = friend.status ?? 'offline';
@@ -174,12 +172,35 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       }
       const remove = textButton('Remove', `Remove ${friend.name}`);
       remove.addEventListener('click', () => {
-        asking = friend.id;
+        asking = { key: friend.id, ask: 'remove' };
         draw();
       });
-      actions.append(remove);
+      actions.append(remove, more);
     }
     return item;
+  }
+
+  /**
+   * More for a row, keyed by `key`, acting on friendship `id`: its button, and under the row the
+   * question it is asking, if any.
+   */
+  function withMore(item: HTMLElement, key: string, id: string, name: string): HTMLElement {
+    const ask = asking?.key === key ? asking.ask : undefined;
+    item.dataset['key'] = key;
+    const posted = (path: string, line: string, body?: unknown) =>
+      send(host.api<FriendsResponse>('POST', `friends/${id}/${path}`, body)).then((done) => {
+        if (done !== undefined) note.textContent = line;
+      });
+    return rowMore(item, name, ask === 'remove' ? undefined : ask, {
+      ask: (next) => {
+        asking = next === undefined ? undefined : { key, ask: next };
+        draw();
+        if (next === undefined)
+          lists.querySelector<HTMLElement>(`[data-key="${key}"] .friends-more`)?.focus();
+      },
+      block: () => posted('block', BLOCKED_LINE(name)),
+      report: (reason) => posted('report', REPORTED_LINE, { reason }),
+    });
   }
 
   /** A friend's challenge: who and what, Accept and No thanks. */
@@ -192,6 +213,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       element('span', 'friends-status friends-challenge-what', challengeLine(invite)),
     );
     const actions = element('span', 'friends-actions');
+    item.append(who, actions);
     const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
     accept.type = 'button';
     accept.setAttribute('aria-label', `Accept ${invite.from}’s challenge`);
@@ -202,7 +224,9 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       if (why !== undefined) say(why, true);
     });
     actions.append(accept, decline);
-    item.append(who, actions);
+    if (invite.friend !== undefined) {
+      actions.append(withMore(item, `invite:${invite.token}`, invite.friend, invite.from));
+    }
     return item;
   }
 
@@ -225,12 +249,13 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       (group) => now[group.key].length > 0 || (group.key === 'incoming' && invites.length > 0),
     );
     // What waits on you and your friends lead; what you sent sits with your code (ADR 0081).
-    lists.replaceChildren(...groups.filter((group) => group.key !== 'outgoing').map(box));
+    const withCode = (group: FriendGroup) => group.key === 'outgoing' || group.key === 'blocked';
+    lists.replaceChildren(...groups.filter((group) => !withCode(group)).map(box));
     // A friend's challenges come first in Waiting for you: they wait on a clock.
     lists
       .querySelector('.friends-group[data-group="incoming"] .friends-list')
       ?.prepend(...invites.map(challengeRow));
-    sent.replaceChildren(...groups.filter((group) => group.key === 'outgoing').map(box));
+    sent.replaceChildren(...groups.filter(withCode).map(box));
     empty.hidden = hasAnyone(now);
     // With no friends yet, playing by a link comes first; with friends, last.
     const link = host.link;
@@ -281,6 +306,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   async function open(): Promise<void> {
     asking = undefined;
+    note.textContent = '';
     say('');
     copy.textContent = 'Copy';
     const answer = await host.api<FriendsResponse>('GET', 'friends');

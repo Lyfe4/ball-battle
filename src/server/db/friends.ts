@@ -19,14 +19,17 @@ export interface FriendRow {
   readonly declined: boolean;
   /** The player cancelled their request after it was declined: hidden from them, still kept. */
   readonly withdrawn: boolean;
+  /** The player blocked the other (never told to the other). */
+  readonly blockedByMe: boolean;
 }
 
 /** Every friendship and request of `userId`, by name. */
 export async function friendRows(db: Db, userId: string): Promise<FriendRow[]> {
   return db<FriendRow[]>`
-    select f.id, coalesce(p.username, p.display_name) as name,
+    select f.id, game.name_seen_by(${userId}, p.user_id, p.username, p.display_name) as name,
       f.accepted_at is not null as accepted, f.requested_by = ${userId} as mine,
-      f.declined_at is not null as declined, f.withdrawn_at is not null as withdrawn
+      f.declined_at is not null as declined, f.withdrawn_at is not null as withdrawn,
+      coalesce(f.blocked_by = ${userId}, false) as "blockedByMe"
     from game.friendships f
     join game.profiles p on p.user_id = case when f.low = ${userId} then f.high else f.low end
     where ${userId} in (f.low, f.high)
@@ -75,13 +78,15 @@ export interface PairRow {
   /** Declined within DECLINE_DAYS: the sender may not send it again yet. */
   readonly declinedRecently: boolean;
   readonly declined: boolean;
+  /** Who blocked the other, if either did: the row is then a declined request for good. */
+  readonly blockedBy: string | null;
   readonly low: string;
   readonly high: string;
 }
 
 const PAIR_COLUMNS = (db: Db) => db`
   id, low, high, requested_by as "requestedBy", accepted_at is not null as accepted,
-  declined_at is not null as declined,
+  declined_at is not null as declined, blocked_by as "blockedBy",
   coalesce(declined_at > now() - make_interval(days => ${DECLINE_DAYS}), false)
     as "declinedRecently"`;
 
@@ -161,10 +166,11 @@ export async function friendCounts(db: Db, userId: string): Promise<FriendCounts
   return row ?? { friends: 0, outgoing: 0, incoming: 0 };
 }
 
-/** Drops declines older than DECLINE_DAYS (the sweep): the sender may ask again. */
+/** Drops declines older than DECLINE_DAYS (the sweep): the sender may ask again. Never a block. */
 export async function purgeDeclines(sql: Sql): Promise<number> {
   const rows = await sql`
     delete from game.friendships
-    where declined_at <= now() - make_interval(days => ${DECLINE_DAYS}) returning 1`;
+    where declined_at <= now() - make_interval(days => ${DECLINE_DAYS}) and blocked_by is null
+    returning 1`;
   return rows.length;
 }

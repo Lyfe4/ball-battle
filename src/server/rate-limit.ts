@@ -142,7 +142,17 @@ export const LIMITS = {
     windowSeconds: DAY,
     refusal: (retry) => `That’s today’s friend requests: try again in ${waitWords(retry)}`,
   },
-  /** Accepting, declining, cancelling and removing by one account. */
+  /**
+   * Names reported by one account in a day (UTC, ADR 0079, 2026-11-25): enough for a bad day, not
+   * for flooding the owner's list.
+   */
+  nameReports: {
+    bucket: 'name.report',
+    max: 10,
+    windowSeconds: DAY,
+    refusal: (retry) => `That’s today’s reports: try again in ${waitWords(retry)}`,
+  },
+  /** Accepting, declining, cancelling, removing, blocking and unblocking by one account. */
   friendChanges: { bucket: 'friend.change', max: 120, windowSeconds: 3600 },
   /** A Google sign-in's state, used once (ADR 0079): a copied cookie can't finish it again. */
   googleState: { bucket: 'google.state', max: 1, windowSeconds: 600 },

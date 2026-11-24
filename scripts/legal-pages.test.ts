@@ -7,6 +7,7 @@ import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
 import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
+import { REPORT_DAYS } from '../src/server/blocks.ts';
 import { DECLINE_DAYS } from '../src/server/db/friends.ts';
 import { ONLINE_MS } from '../src/server/db/inbox.ts';
 import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
@@ -134,5 +135,14 @@ describe('the privacy policy and terms', () => {
     expect(terms).toContain('within a minute of its start');
     expect(GRACE_MS).toBe(30_000);
     expect(terms).toContain('about half a minute');
+  });
+
+  it('names blocks and reported names, and how long a report is kept (ADR 0079, 2026-11-25)', () => {
+    expect(privacy).toContain('<dt>Who you blocked</dt>');
+    expect(privacy).toContain('Until you unblock them');
+    expect(privacy).toContain('<dt>A username you report, why, and when</dt>');
+    expect(REPORT_DAYS).toBe(90);
+    expect(privacy).toContain(`${String(REPORT_DAYS)} days, then deleted`);
+    expect(privacy).toContain('how many names are reported');
   });
 });

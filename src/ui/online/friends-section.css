@@ -141,6 +141,12 @@
   gap: var(--space-small);
 }
 
+/* Sent, then Blocked, under your code: each its own group. */
+.friends-sent {
+  display: grid;
+  gap: var(--space-gap);
+}
+
 .friends-group-title {
   margin: 0;
   color: var(--color-text-muted);
@@ -158,6 +164,7 @@
 
 .friends-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-small);
@@ -194,6 +201,41 @@
 
 .friends-waiting,
 .friends-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/*
+ * More's question (2026-11-25), under the row across its width: the question, then Keep first and
+ * the actions, wrapping on a phone rather than squeezing the name.
+ */
+.friends-ask {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-small) var(--space-gap);
+}
+
+.friends-ask-question {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--font-size-small);
+}
+
+.friends-block,
+.friends-report {
+  flex: none;
+  min-height: var(--tap-target);
+  padding-inline: var(--space-gap);
+}
+
+.friends-note:empty {
+  display: none;
+}
+
+.friends-note {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);

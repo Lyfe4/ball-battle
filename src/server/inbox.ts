@@ -17,6 +17,7 @@ export async function inboxOf(deps: Deps, userId: string): Promise<InboxResponse
     invites.push({
       token: await tokenFor(deps.config, row.creator, row.requestId),
       from: row.from,
+      ...(row.friend === null ? {} : { friend: row.friend }),
       format: row.format,
       bestOf: row.bestOf,
     });
