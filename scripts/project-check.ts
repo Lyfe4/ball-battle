@@ -8,6 +8,9 @@
 //    `signUpGuest` does, with the secret key and a made-up player IP in `Sb-Forwarded-For`, and reads
 //    the IP Auth recorded on that guest's session. With forwarding on it is the made-up one; off, it
 //    is this machine's, and every new player would share our functions' one allowance.
+//    Once the project has ADR 0082's Auth hooks, a sign-up needs a one-minute ticket, written first
+//    as `signUpGuest`'s route does; and a sign-up without one should be refused, which is said (a
+//    warning, not a failure, until the hooks are switched on in the dashboard).
 // 3. Deletes that guest again, whatever happened.
 // 4. Counts this month's email codes (ADR 0079): past 2,200 of the 2,700 we allow ourselves under
 //    Resend Free's 3,000, it fails, a slower second alarm beside /api/v1/health's `emailCodes`.
@@ -15,7 +18,8 @@
 import { fileURLToPath } from 'node:url';
 import { NEAR_MONTHLY } from '../src/server/routes/health.ts';
 import { EVERYONE, LIMITS } from '../src/server/rate-limit.ts';
-import { projectRefOf, readQuery, secretKeyOf, textOf } from './supabase-projects.ts';
+import { newTicket } from '../src/server/auth-tickets.ts';
+import { projectRefOf, readQuery, secretKeyOf, textOf, writeQuery } from './supabase-projects.ts';
 
 /** A documentation address (RFC 5737, TEST-NET-2): never a real player's. */
 export function madeUpIp(random: number): string {
@@ -33,6 +37,9 @@ export function codesProblem(sent: number): string | undefined {
   if (sent < NEAR_MONTHLY) return undefined;
   return `${String(sent)} email codes this month, near the ${String(LIMITS.codesMonthly.max)} cap under Resend's 3,000: switch email codes off (BALLBATTLE_EMAIL_CODES=off) or move to a paid plan`;
 }
+
+/** Whether the project has ADR 0082's Auth hook functions (its migration applied). */
+export const HOOKS_MIGRATED_SQL = `select to_regprocedure('game.expect_auth(text,text)') is not null as migrated`;
 
 /** What the recorded session IP says about forwarding; undefined when it works. */
 export function forwardingProblem(sent: string, recorded: string | undefined): string | undefined {
@@ -59,10 +66,14 @@ async function check(name: string): Promise<void> {
 
   const secret = secretKeyOf(ref);
   const ip = madeUpIp(Math.random());
+  const [hooks] = readQuery(ref, HOOKS_MIGRATED_SQL);
+  const ticket = textOf(hooks, 'migrated') === 'true' ? newTicket() : undefined;
+  // A base64url ticket of our own making: safe inside the quotes.
+  if (ticket !== undefined) writeQuery(ref, `select game.expect_auth('signup', '${ticket}')`);
   const signUp = await fetch(`${url}/auth/v1/signup`, {
     method: 'POST',
     headers: { apikey: secret, 'Content-Type': 'application/json', 'Sb-Forwarded-For': ip },
-    body: '{}',
+    body: JSON.stringify(ticket === undefined ? {} : { data: { bb_ticket: ticket } }),
     signal: AbortSignal.timeout(15_000),
   });
   const body = (await signUp.json().catch(() => ({}))) as { user?: { id?: string } };
@@ -93,7 +104,34 @@ async function check(name: string): Promise<void> {
   });
   if (deleted.ok) console.log(`${name}: the test guest is deleted`);
   else problems.push(`Deleting the test guest ${id} answered ${String(deleted.status)}`);
+  if (ticket !== undefined) await checkHooks(url, secret);
   if (problems.length > 0) throw new Error(problems.join('; '));
+}
+
+/**
+ * Says whether Auth refuses a sign-up we didn't start (ADR 0082's before-user-created hook). Off,
+ * the user it made is deleted again and Actions shows a warning; it fails nothing until the hooks
+ * are required (before the publishable key reaches a page).
+ */
+async function checkHooks(url: string, secret: string): Promise<void> {
+  const straight = await fetch(`${url}/auth/v1/signup`, {
+    method: 'POST',
+    headers: { apikey: secret, 'Content-Type': 'application/json' },
+    body: '{}',
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = (await straight.json().catch(() => ({}))) as { user?: { id?: string } };
+  const id = body.user?.id;
+  if (!straight.ok || id === undefined) {
+    console.log('Auth refuses a sign-up without our ticket (its hooks are on)');
+    return;
+  }
+  console.log('::warning::Auth made a user without our ticket: switch its hooks on (ADR 0082)');
+  await fetch(`${url}/auth/v1/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: { apikey: secret },
+    signal: AbortSignal.timeout(15_000),
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

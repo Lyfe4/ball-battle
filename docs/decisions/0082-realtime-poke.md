@@ -98,3 +98,70 @@ a week's soak on staging and production on when the owner says (8).
 - Two modes to keep working: the socket-down mode runs in CI with `**/realtime/**` blocked.
 - `realtime.messages` rows (topic, event, time) are kept about 3 days by Supabase; the privacy
   policy names them in the PR that first sends one to a page.
+
+## Addendum (2026-11-24): the Auth hooks, as built (PR 1)
+
+Both hooks are Postgres functions (`20261124090000_auth_hooks.sql`), so they run beside the data
+they check, from every path, with no server of ours in the way and nothing to stand up in tests.
+
+- **Tickets.** Just before each Auth call that may make a user or send an email, the function
+  writes a ticket with `game.expect_auth(kind, ticket)` (one statement; `auth-tickets.ts`): a
+  sign-up ticket (128 random bits, carried to Auth as `data.bb_ticket` in the new user's metadata)
+  and an email ticket (a SHA-256 of the lower-cased address: no address is kept). Each works once,
+  for 60 s; expired ones go with the next one written. `signUpGuest` and a new device's `/otp`
+  carry a sign-up ticket; every code request writes one email ticket (a guest's email change that
+  Auth refuses as `email_exists` sends nothing, so the same ticket serves the sign-in code after
+  it).
+- **Before a user is created** (`public.ballbattle_before_user_created`): a ticket, used once, or
+  `provider = google` (Auth has checked Google's ID token against our client: someone who gets
+  their own Google token and calls Auth directly makes only their own Google account). Anything
+  else is `403`. The owner's dashboard "Add user" is refused too.
+- **Before an email is sent** (`public.ballbattle_send_email`): only a sign-up or sign-in code
+  (`signup`, `magiclink`) to the user's address, or a guest's first address (`email_change` for a
+  user with none); never a reset, invite or reauthentication; and only with that address's ticket.
+- **The hook sends the email itself.** With a Send Email hook on, Auth sends nothing of its own,
+  so the hook renders the code email (the same words as `supabase/templates/code.html`, which stays
+  as Auth's fallback should a hook be switched off) and hands it to `pg_net`, which posts it after
+  commit: to Resend's API in a hosted project (its key in Vault), to Mailpit locally
+  (`supabase/seed.sql`), as the one row of `game.mail_relay` says. Set by hand in each hosted
+  project, never by a migration, so local values can't reach one.
+- **Changed from today:** Resend refusing an email (a bad key, a domain problem) no longer reaches
+  the player as `email_busy`: `pg_net` sends after Auth has answered, so the page says "We sent a
+  code" and none comes. Its answers are in `net._http_response` (kept 6 hours). Watch it after
+  switching the hooks on; if this bites, the daily check can count failures there.
+- **The daily check** (`project-check.ts`) writes a ticket for its test guest once the project has
+  the migration (else it signs up as before), and says whether Auth refuses a sign-up without one:
+  a warning while the hooks are off, never a failure until they are required.
+- **Not built here:** the dedicated browser key. It is made in the dashboard (steps below) and
+  reaches the page through `GET /me/poke` in PR 3, from the functions' `SUPABASE_BROWSER_KEY`, so
+  the bundle never holds a key and a key is revoked or replaced without a build.
+
+Tests (`auth-hooks.db.test.ts`, against the local stack with both hooks on): an `/otp` straight to
+Auth, for a new address or an existing account, is refused and sends nothing; a code the game asked
+for still arrives (and every email sign-in test still passes through the hook); a ticket works once
+and not after its minute; a sign-up without our ticket is refused with either key, with one it
+works once; Google passes; a reset or invite is refused even with a ticket; only Auth may run the
+hooks. Five of them were seen failing with the ticket check switched off.
+
+### Switching the hooks on in a hosted project (owner, dashboard)
+
+Staging first; production only before the key reaches a production page. The migration must be
+applied first (staging: Migrate staging after the merge; production: the next Publish).
+
+1. **Resend:** create an API key with sending access for `play.calvinrdevelopment.com`.
+2. **Supabase → Integrations → Vault → Add new secret:** name `resend_api_key`, value that key.
+3. **SQL Editor**, with the sender address from Authentication → Emails → SMTP Settings:
+   `insert into game.mail_relay (kind, url, sender_name, sender_email, key_name) values ('resend',
+'https://api.resend.com/emails', 'BallBattle', '<sender address>', 'resend_api_key');`
+4. **Authentication → Auth Hooks → Add hook → Before User Created:** Postgres, schema `public`,
+   function `ballbattle_before_user_created`, enabled.
+5. **Add hook → Send Email:** Postgres, schema `public`, function `ballbattle_send_email`, enabled.
+6. **Check:** sign in with an email code on the staging site (the code arrives); in the SQL Editor,
+   `select status_code, created from net._http_response order by created desc limit 5` shows 200;
+   `node scripts/project-check.ts staging` says Auth refuses a sign-up without our ticket.
+7. **The browser key:** Project Settings → API Keys → Publishable keys → create one named
+   `browser-poke`. Put it in Netlify as `SUPABASE_BROWSER_KEY`, scoped to Functions, for the
+   deploy-preview and branch-deploy contexts only (PR 3 reads it).
+
+To undo: switch the Send Email hook off (Auth sends through its SMTP again) and the before-user-
+created hook off; revoke `browser-poke` to stop every socket.

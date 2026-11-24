@@ -8,6 +8,7 @@
 // everyone's caps under Resend Free's, which answer `email_busy` alike for every player.
 import { decodeSendCode, decodeVerifyCode, type SignInResponse } from '../api/accounts.ts';
 import { AuthError, type AuthSession } from './auth.ts';
+import { expectAuth, newTicket } from './auth-tickets.ts';
 import { requestEmailChange, sendSignInCode, verifyCode } from './auth-sign-in.ts';
 import { jsonBody } from './guard.ts';
 import { ApiError, type RouteContext } from './http.ts';
@@ -79,14 +80,19 @@ export async function sendCode(request: Request, context: RouteContext): Promise
     { subject: EVERYONE, limit: LIMITS.codesMonthly },
   ]);
 
+  // Auth's hooks send only what we expect (ADR 0082): one email to this address, and for a device
+  // without a guest, perhaps a new user. A guest's refused email change sends nothing, so the
+  // one email ticket is still there for the sign-in code that follows it.
+  const signUp = guest === undefined ? newTicket() : undefined;
+  await expectAuth(sql, { email: body.email, ...(signUp === undefined ? {} : { signUp }) });
   let path: Path = 'signin';
   try {
     if (guest === undefined) {
-      await sendSignInCode(config, context.ip, body.email, true);
+      await sendSignInCode(config, context.ip, body.email, signUp);
     } else {
       const change = await requestEmailChange(config, context.ip, guest.tokens.access, body.email);
       path = change === 'sent' ? 'link' : 'existing';
-      if (path === 'existing') await sendSignInCode(config, context.ip, body.email, false);
+      if (path === 'existing') await sendSignInCode(config, context.ip, body.email, undefined);
     }
   } catch (error) {
     await sendFailure(error, context);

@@ -6,6 +6,7 @@
 // code is `403 otp_expired`; `/otp` with `create_user:false` for an unknown address is
 // `422 otp_disabled`.
 import { AUTH_TIMEOUT_MS, fetchAuth, refusalOf, tokenCall, type AuthSession } from './auth.ts';
+import { ticketData } from './auth-tickets.ts';
 import type { Config } from './config.ts';
 
 function headersOf(
@@ -43,19 +44,23 @@ export async function requestEmailChange(
 }
 
 /**
- * Asks Auth to send a sign-in code to `email`: to its account, or (with `create`) to a new one,
- * made once the code is checked.
+ * Asks Auth to send a sign-in code to `email`: to its account, or (with a sign-up ticket) to a new
+ * one, made once the code is checked.
  */
 export async function sendSignInCode(
   config: Config,
   ip: string | undefined,
   email: string,
-  create: boolean,
+  signUp: string | undefined,
 ): Promise<void> {
   const response = await fetchAuth(`${config.supabaseUrl}/auth/v1/otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headersOf(config, ip) },
-    body: JSON.stringify({ email, create_user: create }),
+    body: JSON.stringify(
+      signUp === undefined
+        ? { email, create_user: false }
+        : { email, create_user: true, data: ticketData(signUp) },
+    ),
     signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
   });
   if (!response.ok) {

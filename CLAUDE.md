@@ -208,6 +208,10 @@ Each line is a rule; its ADR has the reasoning.
   visible, with friends; never while hidden); keep the read complete so a Realtime poke can
   replace the timer. Status comes from one statement joined on accepted friendships; a friend's
   challenge reuses the rematch's floating card, never over a fight.
+- Auth makes a user or sends an email only for a ticket written just before (ADR 0082): its hooks
+  (`20261124090000_auth_hooks.sql`) refuse anything else, and the Send Email hook delivers the code
+  itself (`game.mail_relay`). A new Auth call that signs up or sends a code writes its ticket with
+  `expectAuth` (`auth-tickets.ts`).
 - Email codes are counted before Auth is called (`LIMITS.codes*`, `spendAll`): the player's own
   limits first, then everyone's caps (90 a day, 2,700 a month), which answer `email_busy` alike.
   An email answer never says whether an address has an account.

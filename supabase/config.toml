@@ -298,9 +298,18 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# [auth.hook.before_user_created]
-# enabled = true
-# uri = "pg-functions://postgres/auth/before-user-created-hook"
+# Auth refuses what the game didn't start (ADR 0082): a sign-up without our ticket, an email to an
+# address without one. With the Send Email hook on, the hook sends every code itself (here to
+# Mailpit, through game.mail_relay set in seed.sql), so the email templates above are only
+# Auth's fallback should a hook be switched off. Staging and production switch them on in the
+# dashboard (Authentication > Auth Hooks), once their relay row and key are set.
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/ballbattle_before_user_created"
+
+[auth.hook.send_email]
+enabled = true
+uri = "pg-functions://postgres/public/ballbattle_send_email"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]

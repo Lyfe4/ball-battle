@@ -14,16 +14,22 @@ const config = {
 const session = { access_token: 'a', refresh_token: 'r', user: { id: 'u1' } };
 
 /** Signs up a guest against a fake Auth and answers the headers it received. */
-async function headersOfSignUp(clientIp: string | undefined): Promise<Headers> {
-  let sent: Headers | undefined;
+async function signUp(clientIp: string | undefined): Promise<{ headers: Headers; body: unknown }> {
+  let sent: { headers: Headers; body: unknown } | undefined;
   vi.stubGlobal('fetch', (_input: string | URL, init?: RequestInit) => {
-    sent = new Headers(init?.headers);
+    sent = {
+      headers: new Headers(init?.headers),
+      body: JSON.parse(init?.body as string) as unknown,
+    };
     return Promise.resolve(Response.json(session));
   });
-  await signUpGuest(config, clientIp);
+  await signUpGuest(config, clientIp, 'ticket-1');
   if (sent === undefined) throw new Error('Auth was never called');
   return sent;
 }
+
+const headersOfSignUp = async (clientIp: string | undefined): Promise<Headers> =>
+  (await signUp(clientIp)).headers;
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -41,5 +47,9 @@ describe('signUpGuest', () => {
     const headers = await headersOfSignUp(undefined);
     expect(headers.get('Sb-Forwarded-For')).toBeNull();
     expect(headers.get('apikey')).toBe('sb_secret_x');
+  });
+
+  it('carries its ticket for the before-user-created hook (ADR 0082)', async () => {
+    expect((await signUp(undefined)).body).toEqual({ data: { bb_ticket: 'ticket-1' } });
   });
 });

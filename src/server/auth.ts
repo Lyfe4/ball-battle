@@ -5,6 +5,7 @@
 // secret is refused: staging and production must use asymmetric signing keys (the default for new
 // projects).
 import { createRemoteJWKSet, errors, jwtVerify } from 'jose';
+import { ticketData } from './auth-tickets.ts';
 import type { Config } from './config.ts';
 import type { SessionTokens } from './cookie.ts';
 
@@ -148,11 +149,16 @@ export async function tokenCall(
  * from `Sb-Forwarded-For` on a request made with a secret key, and only once the project's "IP
  * Address Forwarding" is on; until then the header is ignored, as before.
  */
-export function signUpGuest(config: Config, clientIp: string | undefined): Promise<AuthSession> {
+export function signUpGuest(
+  config: Config,
+  clientIp: string | undefined,
+  ticket: string,
+): Promise<AuthSession> {
   return tokenCall(
     config,
     'signup',
-    {},
+    // Auth's before-user-created hook refuses a sign-up without our ticket (ADR 0082).
+    { data: ticketData(ticket) },
     {
       apikey: config.supabaseSecretKey,
       ...(clientIp === undefined ? {} : { 'Sb-Forwarded-For': clientIp }),
