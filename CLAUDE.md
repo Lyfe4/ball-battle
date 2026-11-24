@@ -7,7 +7,8 @@ code quality matters as much as features.
 Where it's heading (PvP best of 3 with blind lineups, soft counters, then a backend):
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
-online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080).
+online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080);
+play by turns with a friend on previews and staging only, for the two-phone playtest (ADR 0085).
 Next: a Supabase Realtime "poke" in place of most polling (ADR 0082, `docs/realtime-poke-proposal.md`),
 built behind three switches that stay off outside local and tests.
 Ranked (ADR 0083, `docs/ranked-proposal.md`): trophies over a hidden Glicko-2, by turns first;
@@ -60,7 +61,10 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   0068). Never switch it on unless the user asks. The Realtime poke (ADR 0082) has three switches,
   all off outside local and tests: `VITE_POKE` (the build), `BALLBATTLE_POKE` with
   `SUPABASE_BROWSER_KEY` (the functions) and the database's flag (no deploy; production on needs
-  `--production`): `node scripts/poke-switch.ts status|on|off local|staging|production`.
+  `--production`): `node scripts/poke-switch.ts status|on|off local|staging|production`. Play by
+  turns with a friend (ADR 0085) has two: `VITE_TURNS` (`netlify.toml`: previews and the main branch
+  deploy; production's command blanks it) and `BALLBATTLE_TURNS` (the functions, dashboard: the
+  deploy-preview and branch-deploy contexts). Never on in production.
   `pnpm test:online`: two phones through live
   friend matches in Chromium (a whole match, a pick running out, Leave and forfeit, a disconnect),
   against `netlify dev`. After changing `src/server`, restart `netlify dev`: it can keep serving
@@ -258,7 +262,8 @@ Each line is a rule; its ADR has the reasoning.
   refused. The page starts each fight with a timer for its server time (`online-live.ts`), plays
   it at 1x, and shows nothing of a round before its `ends_at`.
 - One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
-  Live is Reveal and Showdown only. Play by turns stays in the code and its tests, hidden.
+  Live is Reveal and Showdown only. Play by turns is offered only where `TURNS_BUILD` (ADR 0085): a
+  Play row on the vs Friend setup, the lineup in place, "Your turn" from the inbox.
 - A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): a floating card on
   any screen but over a fight, Accept straight to the lineup, the asker told of a no.
 - A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2

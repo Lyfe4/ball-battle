@@ -7,6 +7,7 @@ import type {
   FriendsResponse,
   InboxResponse,
   Invite,
+  TurnWaiting,
 } from '../api/friends.ts';
 import { challengeLine } from './online-text.ts';
 
@@ -68,7 +69,7 @@ export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
 
 /** A friend's live challenge on the floating card: who, and what is played. */
 export function inviteLine(invite: Invite): string {
-  return `${invite.from} challenges you · ${challengeLine(invite)} · live`;
+  return `${invite.from} challenges you · ${challengeLine(invite)} · ${invite.live ? 'live' : 'take turns'}`;
 }
 
 /** The tab's way to play anyone, with or without an account (ADR 0081). */
@@ -103,11 +104,20 @@ const counted = (count: number, one: string, many: string) =>
  * The Play tab's status strip (ADR 0081): what waits on the player first, then who is online;
  * nothing at all when there is nothing to say (never "0 friends online"). One thing is said whole
  * ("1 challenge waiting"); more than one, each in short ("1 challenge · 2 online"), so a phone's
- * strip shows every part rather than cutting the last (2026-11-24).
+ * strip shows every part rather than cutting the last (2026-11-24). A series by turns waiting on
+ * the player's pick comes first (ADR 0085): "Your turn vs Sam".
  */
 export function statusLine(inbox: InboxResponse): string | undefined {
   const online = inbox.friends.filter((friend) => friend.status === 'online').length;
+  const turns = inbox.turns.length;
+  const one = inbox.turns[0];
   const parts = [
+    one !== undefined
+      ? {
+          long: turns > 1 ? `Your turn in ${String(turns)} series` : turnName(one),
+          short: turns > 1 ? `${String(turns)} turns` : turnName(one),
+        }
+      : undefined,
     inbox.invites.length > 0
       ? {
           long: `${counted(inbox.invites.length, 'challenge', 'challenges')} waiting`,
@@ -132,9 +142,9 @@ export function statusLine(inbox: InboxResponse): string | undefined {
   return parts.map((part) => part.short).join(' · ');
 }
 
-/** What waits on the player, for the Friends tab's badge: challenges and friend requests. */
+/** What waits on the player, for the Friends tab's badge: turns, challenges and friend requests. */
 export function waitingCount(inbox: InboxResponse): number {
-  return inbox.invites.length + inbox.requests;
+  return inbox.turns.length + inbox.invites.length + inbox.requests;
 }
 
 /** The Friends tab's accessible name, with what waits in it (ADR 0081). */
@@ -144,3 +154,7 @@ export function friendsTabLabel(waiting: number): string {
 
 /** A friend's challenge in Waiting for you: who asks. */
 export const challengesYou = (name: string) => `${name} challenges you`;
+
+/** A series by turns waiting on the player's pick (ADR 0085): "Your turn vs Sam". */
+export const turnName = (turn: Pick<TurnWaiting, 'opponent'>): string =>
+  turn.opponent === null ? 'Your turn' : `Your turn vs ${turn.opponent}`;

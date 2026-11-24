@@ -92,7 +92,8 @@ export function createOnlinePlay(
     conditional: () => !isLive() || !live.asksInFull(),
     nextAsk: (readMs) => {
       if (!visible || view === undefined || status !== 'ready') return undefined;
-      const poked = livePoke.showing(isLive() && view.status === 'open');
+      // Live or by turns (ADR 0085): the other's move arrives by poke while the series is open.
+      const poked = livePoke.showing(view.status === 'open');
       return nextAskOf(view, isLive(), (shown) => live.askEvery(shown, readMs, poked));
     },
   });

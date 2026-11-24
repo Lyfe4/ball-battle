@@ -7,8 +7,9 @@
 [build]
   command = "pnpm build"
   publish = "dist"
-  # Skips a build when a push changes only docs, Markdown, workflows or tests (build minutes, 300 a
-  # month); a retry or manual deploy of the same commit still builds (scripts/netlify-ignore.sh).
+  # Skips a build when a push changes only docs, Markdown, workflows, tests or test-only support code
+  # (build minutes, 300 a month); a retry or manual deploy of the same commit still builds
+  # (scripts/netlify-ignore.sh, its exact rule in CLAUDE.md).
   ignore = "bash scripts/netlify-ignore.sh"
 
 [build.environment]
@@ -62,16 +63,21 @@
 # production context in Netlify's dashboard (or `node scripts/friend-switch.ts on|off`), builds the
 # client with or without online play, and the functions read the same variable. One variable, one
 # redeploy, so the page and the API are never switched apart. Unset is off.
+# Play by turns to a friend (ADR 0085, the two-phone playtest): VITE_TURNS on previews and staging
+# (the functions read BALLBATTLE_TURNS, set for those contexts in the dashboard); production's
+# command blanks it, so no dashboard value switches it on there.
 [context.production]
-  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" VITE_ACCOUNTS=\"${BALLBATTLE_ACCOUNTS:-}\" pnpm build"
+  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" VITE_ACCOUNTS=\"${BALLBATTLE_ACCOUNTS:-}\" VITE_TURNS= pnpm build"
 
 [context.deploy-preview.environment]
   VITE_ONLINE = "1"
   VITE_ACCOUNTS = "1"
+  VITE_TURNS = "1"
 
 [context.branch-deploy.environment]
   VITE_ONLINE = "1"
   VITE_ACCOUNTS = "1"
+  VITE_TURNS = "1"
 
 # `netlify dev`: an online build (`pnpm build:online`) and the functions on one origin,
 # http://localhost:8888, against a local Supabase (`pnpm exec supabase start`) and the settings in

@@ -10,5 +10,7 @@ process.env['VITE_ONLINE'] = '1';
 process.env['VITE_ACCOUNTS'] = '1';
 // With the Realtime poke (ADR 0082), on locally and in tests.
 process.env['VITE_POKE'] = '1';
+// With play by turns to a friend (ADR 0085), as previews and staging are built.
+process.env['VITE_TURNS'] = '1';
 await build({ logLevel: 'warn' });
-reportDist(true, true, true);
+reportDist(true, true, true, true);

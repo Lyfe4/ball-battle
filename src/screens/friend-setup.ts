@@ -1,11 +1,13 @@
 // The vs Friend setup (ADR 0055): the same screen as vs Bot's, with the live formats (Reveal and
 // Showdown, ADR 0053) and a note on what a live match asks, then Send challenge: no lineup yet, both
-// pick theirs together once the friend accepts (ADR 0080). Each choice rewrites its own entry, so
-// Back from the lobby finds the setup as it was left.
+// pick theirs together once the friend accepts (ADR 0080). Where the build offers it (ADR 0085,
+// previews and staging), a Play row picks Live or By turns; by turns goes on to its lineup. Each
+// choice rewrites its own entry, so Back from the lobby finds the setup as it was left.
 import { SETUP_FORMATS } from '../app/modes.ts';
+import { TURNS_BUILD } from '../app/turns-build.ts';
 import { writeSendParams } from '../app/online-url.ts';
 import type { SetupChoices } from '../ui/series/rules-step.ts';
-import { FRIEND_SETUP_NOTE, OPPONENT_CARDS } from '../ui/modes-text.ts';
+import { FRIEND_SETUP_NOTE, OPPONENT_CARDS, TURNS_SETUP_NOTE } from '../ui/modes-text.ts';
 import { createRulesStep, type RulesStep } from '../ui/series/rules-step.ts';
 
 export interface FriendSetupHost {
@@ -13,7 +15,10 @@ export interface FriendSetupHost {
   back(): void;
   /** Rewrites this entry's URL without showing it again (a choice on the setup). */
   rewrite(write: (params: URLSearchParams) => void): void;
-  /** Sends the challenge with these choices: a request, the button busy until the lobby shows. */
+  /**
+   * Sends the challenge with these choices: a request, the button busy until the lobby shows. By
+   * turns (`chosen.turns`), the lineup comes first.
+   */
   send(chosen: SetupChoices): Promise<unknown>;
 }
 
@@ -25,6 +30,8 @@ export function createFriendSetup(host: FriendSetupHost): RulesStep {
       levels: false,
       note: FRIEND_SETUP_NOTE,
       next: 'Send challenge',
+      // Its name only in this build's bundle (check-bundle.ts, TURNS_MARK).
+      ...(TURNS_BUILD ? { turns: { label: 'By turns', note: TURNS_SETUP_NOTE } } : {}),
     },
     {
       onBack: () => {

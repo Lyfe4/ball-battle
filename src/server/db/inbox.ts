@@ -47,7 +47,10 @@ export async function friendStatuses(db: Db, userId: string): Promise<FriendEntr
     order by lower(coalesce(o.username, o.display_name)), f.created_at`;
 }
 
-/** A live challenge sent to the player, still waiting on its sender's lobby, not declined. */
+/**
+ * A challenge sent to the player, not declined: live, while its sender's lobby waits; by turns
+ * (ADR 0085), until it is accepted or expires.
+ */
 export interface InviteRow {
   readonly creator: string;
   readonly requestId: string;
@@ -56,6 +59,7 @@ export interface InviteRow {
   readonly friend: string | null;
   readonly format: Format;
   readonly bestOf: BestOf;
+  readonly live: boolean;
 }
 
 export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
@@ -65,14 +69,39 @@ export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
       (select f.id from game.friendships f
         where f.low = least(c.creator, ${userId}::uuid) and f.high = greatest(c.creator, ${userId}::uuid)
       ) as friend,
-      c.format, c.best_of as "bestOf"
+      c.format, c.best_of as "bestOf", c.live
     from game.challenges c
     join game.profiles p on p.user_id = c.creator
-    where c.invitee = ${userId} and c.live and c.series_id is null and c.start_id is null
+    where c.invitee = ${userId} and c.series_id is null and c.start_id is null
       and c.cancelled_at is null
       and c.invitee_declined_at is null and c.expires_at > now()
-      and c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})
+      and (not c.live or c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
     order by c.created_at desc`;
+}
+
+/** A series by turns waiting on the player's pick (ADR 0085). */
+export interface TurnRow {
+  readonly seriesId: string;
+  readonly opponent: string | null;
+  readonly deadline: Date;
+}
+
+/**
+ * Series by turns where it is the player's turn, the soonest deadline first. Run after
+ * `settleExpired` for the player, so a turn that ran out reads as the forfeit it is (the sweep runs
+ * only in production, where by turns is off).
+ */
+export async function turnsFor(db: Db, userId: string): Promise<TurnRow[]> {
+  return db<TurnRow[]>`
+    select s.id as "seriesId", s.turn_deadline as deadline,
+      game.name_seen_by(${userId}, p.user_id, p.username, p.display_name) as opponent
+    from game.series s
+    left join game.profiles p
+      on p.user_id = case when s.player_a = ${userId} then s.player_b else s.player_a end
+    where s.status = 'open' and not s.live and s.turn_deadline is not null
+      and ${userId} in (s.player_a, s.player_b)
+      and (s.turn = 'both' or s.turn = case when s.player_a = ${userId} then 'a' else 'b' end)
+    order by s.turn_deadline`;
 }
 
 /** Requests waiting for the player's answer. */

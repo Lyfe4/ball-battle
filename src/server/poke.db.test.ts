@@ -5,7 +5,15 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Sql } from './db.ts';
 import { startedLive } from './test/live-support.ts';
-import { dueSides, leftOf, newPlayer, pick, read, type Player } from './test/series-support.ts';
+import {
+  dueSides,
+  leftOf,
+  newPlayer,
+  newSeries,
+  pick,
+  read,
+  type Player,
+} from './test/series-support.ts';
 import { adminSql, testDeps } from './test/support.ts';
 
 const deps = testDeps();
@@ -191,6 +199,32 @@ describe('a rematch', () => {
     expect(await pokedBy(both, ask)).toStrictEqual([each, each]);
     const no = () => admin`update game.rematches set declined_by = 'b' where series_id = ${id}`;
     expect(await pokedBy(both, no)).toStrictEqual([each, each]);
+  });
+});
+
+describe('a series by turns (ADR 0085)', () => {
+  it('pokes both players’ match and inbox when made and on a move; nobody on a read', async () => {
+    const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
+    const both = [players.a, players.b];
+    let id = '';
+    const made = async () => {
+      id = await newSeries(deps, players, 'reveal');
+    };
+    const each = ['match', 'inbox'];
+    expect(await pokedBy(both, made)).toStrictEqual([each, each]);
+    const seen = await read(players.a, id);
+    const side = dueSides(seen)[0] ?? 'a';
+    const move = async () => {
+      const answer = await pick(players[side], id, 0, leftOf(seen, side)[0] ?? 'archer');
+      if (answer.status !== 200) throw new Error(`The pick answered ${String(answer.status)}`);
+    };
+    expect(await pokedBy(both, move)).toStrictEqual([each, each]);
+    expect(
+      await pokedBy(both, async () => {
+        await read(players.a, id);
+        await read(players.b, id);
+      }),
+    ).toStrictEqual([[], []]);
   });
 });
 

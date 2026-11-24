@@ -39,6 +39,12 @@ export const ACCOUNTS_MARK =
 export const POKE_MARK = /\bme\/poke\b|realtime\/v1\/websocket|phx_join/;
 
 /**
+ * What only play by turns' choice contains (ADR 0085): its name on the vs Friend setup. A build
+ * without `VITE_TURNS` (production) offers nothing by turns, so it holds none of it.
+ */
+export const TURNS_MARK = /\bBy turns\b/;
+
+/**
  * What is wrong with one bundled file: `online` says whether this build may call the API,
  * `accounts` whether it may sign in, and `poke` whether it may open the poke's socket.
  */
@@ -48,6 +54,7 @@ export function problemsIn(
   online: boolean,
   accounts = online,
   poke = false,
+  turns = false,
 ): string[] {
   const problems = SECRET_MARKS.filter((mark) => mark.test(text)).map(
     (mark) => `${name} holds something shaped like a secret (${mark.source.slice(0, 20)}…)`,
@@ -60,6 +67,9 @@ export function problemsIn(
   }
   if (!poke && POKE_MARK.test(text)) {
     problems.push(`${name} holds the poke's code in a build without it (VITE_POKE unset)`);
+  }
+  if (!turns && TURNS_MARK.test(text)) {
+    problems.push(`${name} offers play by turns in a build without it (VITE_TURNS unset)`);
   }
   return problems;
 }
@@ -74,12 +84,19 @@ function filesIn(dir: string): string[] {
  * Checks dist/ and fails the process on any problem; `online` is whether it may call the API,
  * `accounts` whether it may sign in, `poke` whether it may open the poke's socket.
  */
-export function reportDist(online: boolean, accounts = false, poke = false): void {
+export function reportDist(online: boolean, accounts = false, poke = false, turns = false): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
   const problems = filesIn(dist)
     .filter((file) => /\.(?:js|html|css|json|webmanifest)$/.test(file))
     .flatMap((file) =>
-      problemsIn(file.slice(dist.length + 1), readFileSync(file, 'utf8'), online, accounts, poke),
+      problemsIn(
+        file.slice(dist.length + 1),
+        readFileSync(file, 'utf8'),
+        online,
+        accounts,
+        poke,
+        turns,
+      ),
     );
   if (problems.length > 0) {
     console.error(problems.join('\n'));
@@ -95,5 +112,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     online,
     online && process.env['VITE_ACCOUNTS'] === '1',
     online && process.env['VITE_POKE'] === '1',
+    online && process.env['VITE_TURNS'] === '1',
   );
 }

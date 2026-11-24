@@ -138,7 +138,7 @@ describe('challenging a friend', () => {
     const { invites } = await inbox(friend);
     // With the friendship it came through, for Block and Report name (2026-11-25).
     expect(invites).toStrictEqual([
-      { token, from: me.username, friend: id, format: 'reveal', bestOf: 3 },
+      { token, from: me.username, friend: id, format: 'reveal', bestOf: 3, live: true },
     ]);
     const lobby = (await linkInfo(me, token)).body as ChallengeInfo;
     expect([lobby.invitee, lobby.declined]).toStrictEqual([friend.username, false]);

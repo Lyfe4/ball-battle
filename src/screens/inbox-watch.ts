@@ -27,8 +27,11 @@ import { failureLine } from './online-failure-text.ts';
 export const INVITE_FOLD_MS = 20_000;
 
 export interface InboxWatchHost {
-  /** Accept: the challenge's lineup, read first (its button stays busy until then). */
-  open(token: string): Promise<void>;
+  /**
+   * Accept: the challenge's lineup, read first (its button stays busy until then). By turns
+   * (`live` false, ADR 0085), its card's screen, which opens its lineup.
+   */
+  open(token: string, live: boolean): Promise<void>;
   /** Whether a challenge may pop up now: not over a fight or a lineup pick (`invitesMayShow`). */
   calm(): boolean;
   /** The inbox as it stands here (undefined: signed out, nothing to show). */
@@ -70,8 +73,9 @@ export function createInboxWatch(
 
   const open = (): readonly Invite[] =>
     last === undefined ? [] : last.invites.filter((one) => !answered.has(one.token));
-  /** The newest challenge that may still pop up. */
-  const popping = (): Invite | undefined => open().find((one) => !folded.has(one.token));
+  /** The newest live challenge that may still pop up; one by turns waits in the lists (ADR 0085). */
+  const popping = (): Invite | undefined =>
+    open().find((one) => one.live && !folded.has(one.token));
 
   function tell(): void {
     host.inbox(last === undefined ? undefined : { ...last, invites: open() });
@@ -128,8 +132,9 @@ export function createInboxWatch(
   }
 
   async function accept(token: string): Promise<void> {
+    const live = last?.invites.find((one) => one.token === token)?.live !== false;
     answered.add(token);
-    await host.open(token);
+    await host.open(token, live);
     tell();
     render();
   }
@@ -156,7 +161,12 @@ export function createInboxWatch(
     last = inbox;
     tell();
     render();
-    return inbox.friends.length > 0 || inbox.requests > 0 || inbox.invites.length > 0;
+    return (
+      inbox.friends.length > 0 ||
+      inbox.requests > 0 ||
+      inbox.invites.length > 0 ||
+      inbox.turns.length > 0
+    );
   }
 
   const poll = createInboxPoll({

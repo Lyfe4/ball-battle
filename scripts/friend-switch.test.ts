@@ -19,7 +19,7 @@ function section(name: string): string {
 describe('the vs Friend switch', () => {
   it('builds production’s client from BALLBATTLE_ONLINE, unset meaning off', () => {
     expect(section('context.production')).toContain(
-      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" VITE_ACCOUNTS=\\"${BALLBATTLE_ACCOUNTS:-}\\" pnpm build"',
+      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" VITE_ACCOUNTS=\\"${BALLBATTLE_ACCOUNTS:-}\\" VITE_TURNS= pnpm build"',
     );
   });
 
@@ -38,6 +38,13 @@ describe('the vs Friend switch', () => {
     expect(section('context.deploy-preview.environment')).toContain('VITE_ACCOUNTS = "1"');
     expect(section('context.branch-deploy.environment')).toContain('VITE_ACCOUNTS = "1"');
     expect(section('build.environment')).not.toContain('ACCOUNTS');
+  });
+
+  it('builds play by turns on previews and the main branch deploy, never production (ADR 0085)', () => {
+    expect(section('context.deploy-preview.environment')).toContain('VITE_TURNS = "1"');
+    expect(section('context.branch-deploy.environment')).toContain('VITE_TURNS = "1"');
+    expect(section('context.production')).toContain(' VITE_TURNS= pnpm build"');
+    expect(section('build.environment')).not.toContain('TURNS');
   });
 
   it('means the same to the functions: only "1" is on', () => {

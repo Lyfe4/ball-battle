@@ -1,0 +1,74 @@
+// The rows that lead Waiting for you on the Friends tab (ADR 0081): a series by turns waiting on
+// your pick ("Your turn", ADR 0085, with Play), then a friend's challenge (who and what, Accept and
+// No thanks, and More). Each row keeps the friends list's own look (`.friends-row`).
+import type { Invite, TurnWaiting } from '../../api/friends.ts';
+import { timeLeft } from '../../app/online-series.ts';
+import { challengesYou, turnName } from '../../screens/friends-text.ts';
+import { challengeLine } from '../../screens/online-text.ts';
+import { busyOnClick } from '../busy-button.ts';
+import { element } from '../dom.ts';
+
+export interface WaitingRowsHost {
+  /** A friend's challenge: Accept (its lineup) and No thanks (the line that says why not). */
+  readonly accept: ((token: string) => Promise<void>) | undefined;
+  readonly decline: ((token: string) => Promise<string | undefined>) | undefined;
+  /** A series by turns: Play opens it (ADR 0085). */
+  readonly play: ((seriesId: string) => Promise<void>) | undefined;
+  /** A failure's line under the list. */
+  readonly say: (line: string) => void;
+  /** The row's More (Report name, Block), keyed `key`, for the friendship `friend`. */
+  readonly more: (item: HTMLElement, key: string, friend: string, name: string) => HTMLElement;
+}
+
+function textButton(text: string, label: string): HTMLButtonElement {
+  const button = element('button', 'text-link friends-action', text);
+  button.type = 'button';
+  button.setAttribute('aria-label', label);
+  return button;
+}
+
+function rowWith(name: string, what: string): { item: HTMLElement; actions: HTMLElement } {
+  const item = element('li', 'friends-row');
+  const who = element('span', 'friends-who');
+  who.append(
+    element('span', 'friends-name', name),
+    element('span', 'friends-status friends-challenge-what', what),
+  );
+  const actions = element('span', 'friends-actions');
+  item.append(who, actions);
+  return { item, actions };
+}
+
+/** A series by turns waiting on your pick: who against, the time left, and Play. */
+export function turnRow(turn: TurnWaiting, now: number, host: WaitingRowsHost): HTMLElement {
+  const name = turnName(turn);
+  const { item, actions } = rowWith(name, timeLeft(turn.deadline, now) ?? '');
+  item.dataset['turn'] = turn.seriesId;
+  const play = element('button', 'hud-button hud-button-primary friends-accept', 'Play');
+  play.type = 'button';
+  play.setAttribute('aria-label', `Play: ${name}`);
+  // Into the series once it is read: busy until then (online-prime.ts).
+  busyOnClick(play, () => host.play?.(turn.seriesId));
+  actions.append(play);
+  return item;
+}
+
+/** A friend's challenge: who and what, Accept and No thanks, and More. */
+export function challengeRow(invite: Invite, host: WaitingRowsHost): HTMLElement {
+  const { item, actions } = rowWith(challengesYou(invite.from), challengeLine(invite));
+  item.dataset['invite'] = invite.token;
+  const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
+  accept.type = 'button';
+  accept.setAttribute('aria-label', `Accept ${invite.from}’s challenge`);
+  busyOnClick(accept, () => host.accept?.(invite.token));
+  const decline = textButton('No thanks', `No thanks to ${invite.from}’s challenge`);
+  busyOnClick(decline, async () => {
+    const why = await host.decline?.(invite.token);
+    if (why !== undefined) host.say(why);
+  });
+  actions.append(accept, decline);
+  if (invite.friend !== undefined) {
+    actions.append(host.more(item, `invite:${invite.token}`, invite.friend, invite.from));
+  }
+  return item;
+}

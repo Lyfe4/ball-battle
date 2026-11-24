@@ -104,7 +104,8 @@ export async function createChallenge(
   if (request.live && !LIVE_FORMATS.includes(request.format)) {
     throw new ApiError(400, 'bad_request', 'Live matches are Reveal or Showdown');
   }
-  if (request.friend !== undefined && !request.live) {
+  // By turns to a friend only where the playtest switch is on (ADR 0085).
+  if (request.friend !== undefined && !request.live && !deps.config.turns) {
     throw new ApiError(400, 'bad_request', 'A challenge to a friend is live');
   }
   const friend = request.friend;

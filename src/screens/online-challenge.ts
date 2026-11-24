@@ -4,7 +4,8 @@
 // their lineups together on one screen (`?start=`, start-lineup.ts), the same screen a rematch uses.
 // The guest is made here after the 16+ confirmation, asked once per device at the start of either
 // flow (Play against a friend or opening the vs Friend setup, or Accept on a friend's card); never on
-// load. Every state has a way on (ADR 0027).
+// load. Every state has a way on (ADR 0027). By turns (ADR 0085), each player's lineup goes with
+// the challenge they send or accept, picked here in place, Back returning to the setup or the card.
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { rememberGuest } from '../app/online-device.ts';
@@ -14,30 +15,22 @@ import {
   writeStartParams,
 } from '../app/online-url.ts';
 import type { Accepted, ChallengeInfo } from '../api/challenges.ts';
-import type { BestOf, Format } from '../sim/series.ts';
+import type { BestOf, Format, Lineup } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createLineupStep } from '../ui/series/lineup-step.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
+import { createChallengeLobby } from './challenge-lobby.ts';
 import { createSender } from './challenge-send.ts';
 import { createFriendSetup } from './friend-setup.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
 import { challengeUrl, copyLink, shareLink } from './online-share.ts';
-import { createPokePace, type PokePace } from '../app/poke-pace.ts';
-import { pokes } from '../app/pokes.ts';
 import { createStartLineup } from './start-lineup.ts';
+import { createTurnsLineup } from './turns-lineup.ts';
 
 export type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
-
-/** How often a sender's lobby asks whether the friend has accepted: the lobby's heartbeat. */
-const LOBBY_POLL_MS = 2_000;
-/**
- * With the poke socket up (ADR 0082): an accept, a decline or the start arrive by poke, so the
- * lobby asks only this often, its heartbeat (`creator_seen_at` must stay inside 60 s).
- */
-export const LOBBY_SAFETY_MS = 20_000;
 
 export function createChallengeScreens(
   roots: {
@@ -52,11 +45,8 @@ export function createChallengeScreens(
   let visible = false;
   let info: ChallengeInfo | undefined;
   let token: string | undefined;
-  /** The lobby's next ask, while the sender waits in it. */
-  let lobby: number | undefined;
-  /** The lobby's pace on the poke while the sender waits; a poke during a read asks once more. */
-  let lobbyPace: PokePace | undefined;
-  let lobbyAgain = false;
+  /** The lobby asking again while the sender waits in it. */
+  const lobby = createChallengeLobby(() => loadCard(false));
 
   const home = () => {
     host.home();
@@ -83,8 +73,20 @@ export function createChallengeScreens(
     // Lock in is a request: the button shows it is working.
     onDone: (own) => start.lock(own),
   });
+  const turnsLineup = createTurnsLineup(balls, {
+    show: () => {
+      show('turns');
+    },
+    back: (toSetup) => {
+      if (toSetup) show('setup');
+      else if (info === undefined) back();
+      else showCard(info, true);
+    },
+    send: (chosen, own) => sender.sendTurns(chosen, own),
+    accept: (own) => accept('replace', own),
+  });
   roots.lineup.classList.add('series-setup');
-  roots.lineup.replaceChildren(setup.element, lineup.element);
+  roots.lineup.replaceChildren(setup.element, lineup.element, turnsLineup.element);
 
   const start = createStartLineup(lineup, {
     showLineup: () => {
@@ -103,35 +105,18 @@ export function createChallengeScreens(
     },
   });
 
-  function stopLobby(): void {
-    if (lobby !== undefined) window.clearTimeout(lobby);
-    lobby = undefined;
-    // The socket lingers a few seconds (poke-hub.ts): the lobby asking again keeps it.
-    lobbyPace?.stop();
-    lobbyPace = undefined;
-  }
-
-  /** A poke, or the socket going up or down: the lobby asks now, or once its ask is back. */
-  function lobbyNow(): void {
-    if (lobby === undefined) lobbyAgain = true;
-    else {
-      window.clearTimeout(lobby);
-      lobby = undefined;
-      void loadCard(false);
-    }
-  }
-
   /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
   function show(
-    part: 'notice' | 'setup' | 'lineup' | 'loading',
+    part: 'notice' | 'setup' | 'lineup' | 'turns' | 'loading',
     content?: NoticeContent,
     focus = true,
   ): void {
-    stopLobby();
+    lobby.stop();
     roots.notice.hidden = !visible || part !== 'notice';
-    roots.lineup.hidden = !visible || (part !== 'lineup' && part !== 'setup');
+    roots.lineup.hidden = !visible || (part !== 'lineup' && part !== 'setup' && part !== 'turns');
     setup.element.hidden = part !== 'setup';
     lineup.element.hidden = part !== 'lineup';
+    turnsLineup.element.hidden = part !== 'turns';
     roots.loading.hidden = !visible || part !== 'loading';
     if (content !== undefined) notice.show(content, focus);
   }
@@ -182,13 +167,24 @@ export function createChallengeScreens(
       token = next;
       info = card;
     },
+    lineupFirst: (chosen) => {
+      turnsLineup.send(chosen);
+    },
   });
 
-  /** Accepts the link on screen: into the lineups picked together (`how`: from the inbox, go). */
-  async function accept(how: 'replace' | 'go' = 'replace'): Promise<void> {
+  /**
+   * Accepts the link on screen: into the lineups picked together (`how`: from the inbox, go). By
+   * turns, its lineup first, then `own` goes with the accept, straight into the series.
+   */
+  async function accept(how: 'replace' | 'go' = 'replace', own?: Lineup): Promise<void> {
     const current = token;
-    if (current === undefined || askFirst(() => accept(how))) return;
-    const answer = await callApi<Accepted>('POST', `challenges/${current}/accept`, {});
+    if (current === undefined || askFirst(() => accept(how, own))) return;
+    if (own === undefined && info?.live === false) {
+      turnsLineup.accept(info);
+      return;
+    }
+    const body = own === undefined ? {} : { lineup: own };
+    const answer = await callApi<Accepted>('POST', `challenges/${current}/accept`, body);
     if (!answer.ok) {
       if (answer.kind === 'error' && answer.code !== undefined && CARD_SAYS.has(answer.code)) {
         // Taken, expired, the sender's own or gone: the card says so with a way on.
@@ -199,7 +195,7 @@ export function createChallengeScreens(
         } else await loadCard();
         return;
       }
-      failed(answer, () => accept(how));
+      failed(answer, () => accept(how, own));
       return;
     }
     rememberGuest(host.storage, true);
@@ -219,6 +215,7 @@ export function createChallengeScreens(
       return;
     }
     info = answer.body;
+    if (turnsLineup.onCard(info)) return accept();
     // The sender's live link was accepted: straight to the lineups (or the match), in its place.
     if (info.live && info.own && info.status === 'yours') {
       if (info.seriesId !== null) {
@@ -237,13 +234,7 @@ export function createChallengeScreens(
   function showCard(card: ChallengeInfo, focus: boolean): void {
     show('notice', cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent)), focus);
     if (card.live && card.status === 'yours' && visible) {
-      lobbyPace = createPokePace(pokes, LOBBY_SAFETY_MS, lobbyNow);
-      const ms = lobbyAgain ? 0 : lobbyPace.delay(LOBBY_POLL_MS);
-      lobbyAgain = false;
-      lobby = window.setTimeout(() => {
-        lobby = undefined;
-        void loadCard(false);
-      }, ms);
+      lobby.next();
       host.lobbyWaits?.();
     }
   }
@@ -251,7 +242,7 @@ export function createChallengeScreens(
   /** The sender stops waiting: the link stops, and they go home (or on, if it was accepted). */
   async function cancel(): Promise<void> {
     if (token === undefined) return;
-    stopLobby();
+    lobby.stop();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
     const card = answer.ok ? answer.body : undefined;
     if (card?.seriesId != null) await intoSeries(card.seriesId);
@@ -295,8 +286,8 @@ export function createChallengeScreens(
     },
     resumed() {
       // Back from a share sheet or another app: the lobby asks at once.
-      if (visible && lobby !== undefined) {
-        stopLobby();
+      if (visible && lobby.waiting()) {
+        lobby.stop();
         void loadCard(false);
       }
     },
@@ -312,17 +303,23 @@ export function createChallengeScreens(
       } else {
         showCard(info, true);
         // A card seen before is asked again (it may have been taken); a lobby asks on its own.
-        if (lobby === undefined) void loadCard(false);
+        if (!lobby.waiting()) void loadCard(false);
       }
     },
     showStart(id) {
       start.open(id);
     },
     rematchShown: () => start.rematchOf(),
-    async openInvite(next) {
+    openInvite(next, live = true) {
       token = next;
       info = undefined;
-      await accept('go');
+      if (live) return accept('go');
+      // By turns (ADR 0085): its card's screen, which opens the lineup once the card is read.
+      turnsLineup.openOnCard();
+      host.go((url) => {
+        writeChallengeParams(url, next);
+      });
+      return Promise.resolve();
     },
     challengeFriend(friend) {
       sender.invite(friend);

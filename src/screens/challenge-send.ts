@@ -1,13 +1,15 @@
 // Sending a live friend challenge (ADR 0052, 0080): from the vs Friend setup's Send challenge, or
 // straight from the Play tab's Play against a friend (ADR 0081 addendum, Option B), whose rules are
 // set already so it has no rules step. No lineup is sent (ADR 0080): the lobby with the link to
-// share comes next. Kept apart from the challenge screens (online-challenge.ts), which show what
-// this sends them to.
+// share comes next. By turns (ADR 0085, where the build offers it), the setup's Send challenge
+// opens the lineup first and the challenge goes with it. Kept apart from the challenge screens
+// (online-challenge.ts), which show what this sends them to.
 import { callApi, type ApiFailure } from '../app/api.ts';
 import { saveFriendSetup, type FriendSetup } from '../app/modes.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import { writeChallengeParams, writeSendParams } from '../app/online-url.ts';
 import type { ChallengeInfo, ChallengeLink } from '../api/challenges.ts';
+import type { Lineup } from '../sim/series.ts';
 import type { SetupChoices } from '../ui/series/rules-step.ts';
 
 /** Where a challenge is sent from (see `send`). */
@@ -23,11 +25,15 @@ export interface SenderHost {
   failed(answer: ApiFailure, retry: () => Promise<unknown>): void;
   /** The link is made and its card read (if it could be): the lobby shows next. */
   sent(token: string, info: ChallengeInfo | undefined): void;
+  /** By turns (ADR 0085): the lineup to send with it, on this screen. */
+  lineupFirst(chosen: SetupChoices): void;
 }
 
 export interface Sender {
-  /** The vs Friend setup's Send challenge. */
+  /** The vs Friend setup's Send challenge (by turns, its lineup first). */
   send(chosen: SetupChoices): Promise<void>;
+  /** A challenge by turns with its sender's lineup (ADR 0085). */
+  sendTurns(chosen: SetupChoices, lineup: Lineup): Promise<void>;
   /** The Play tab's Play against a friend: no rules step. */
   playFriend(setup: FriendSetup): Promise<void>;
   /** The friend the next challenge is for (a friend row's Challenge), or none. */
@@ -57,19 +63,20 @@ export function createSender(host: SenderHost): Sender {
    * screen); or the send screen Play opened for the 16+ question (the lobby in its place, so Back
    * from the lobby is home, never a rules step).
    */
-  async function send(chosen: SetupChoices, via: Via): Promise<void> {
-    if (host.askFirst(() => send(chosen, via === 'play' ? 'gate' : via))) return;
-    // Live (ADR 0053): both players in the match until it ends.
+  async function send(chosen: SetupChoices, via: Via, lineup?: Lineup): Promise<void> {
+    if (host.askFirst(() => send(chosen, via === 'play' ? 'gate' : via, lineup))) return;
+    // Live (ADR 0053): both players in the match until it ends. By turns, with the lineup.
     const body = {
       format: chosen.format,
       bestOf: chosen.bestOf,
       requestId,
-      live: true,
+      live: lineup === undefined,
+      ...(lineup === undefined ? {} : { lineup }),
       ...(inviting === undefined ? {} : { friend: inviting.id }),
     };
     const answer = await callApi<ChallengeLink>('POST', 'challenges', body);
     if (!answer.ok) {
-      const retry = () => send(chosen, via === 'play' ? 'gate' : via);
+      const retry = () => send(chosen, via === 'play' ? 'gate' : via, lineup);
       // Home has no room for it: the send screen says what failed, with Try again there.
       if (via === 'play') {
         leave(() => {
@@ -96,7 +103,12 @@ export function createSender(host: SenderHost): Sender {
   }
 
   return {
-    send: (chosen) => send(chosen, 'setup'),
+    send(chosen) {
+      if (chosen.turns !== true) return send(chosen, 'setup');
+      host.lineupFirst(chosen);
+      return Promise.resolve();
+    },
+    sendTurns: (chosen, lineup) => send(chosen, 'setup', lineup),
     async playFriend(setup) {
       const chosen: SetupChoices = { ...setup, level: '' };
       // With a guest, sent from home: Play stays busy until the lobby can show.
