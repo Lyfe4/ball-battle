@@ -74,7 +74,9 @@ describe('the tab bar', () => {
       // A lineup is a task (ADR 0087 addendum of 2026-11-26): no bar on a phone, the rail on a PC.
       ['?mode=bo3&fmt=reveal&step=lineup', 'task'],
       [LINKS.start, 'task'],
-      [LINKS.online, 'fight'],
+      // An online series the server refuses here: its notice in the fight's place, a task (a PC
+      // keeps the rail; the arena never took over).
+      [LINKS.online, 'task'],
     ];
     for (const [search, kind] of bare) {
       await follow(search);

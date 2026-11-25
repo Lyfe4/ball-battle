@@ -324,3 +324,13 @@ desktop only (beside, the frame is too narrow for two), `frame.css`:
   are what its button agrees to, so they stay in one reading line.
 - Motion: the waiting ball's loop moved onto `--motion-swing` / `--ease-swing`; `notice.css` left
   the literal allow-list.
+
+## Addendum (2026-11-26): a notice on a fight's screen is a task
+
+The staging walk's fix list (item 10): the `online` screen key was always a fight, so a notice
+there ("Nothing here" for a series that is gone, a failure with Try again, offline) had no rail on a
+PC. `shellOf(screen, tabs, notice)` makes a fight's screen a task while it shows a notice in its
+fight's place (`noticeShown()` from the online series' screen, read on every layout): the arena never
+took over. Loading stays a fight (its skeleton is the fight's, so nothing comes and goes when the
+series arrives); a notice that turns into the series (Try again) is the change of mode into the
+fight. `tabs.test.ts` and `tab-bar.browser.test.ts`.

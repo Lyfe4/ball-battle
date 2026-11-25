@@ -34,6 +34,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
     playing: () => false,
     roundOnArena: () => false,
     phase: () => undefined,
+    noticeShown: () => false,
     sides: () => undefined,
     setVisible: () => undefined,
     homeShown: () => undefined,

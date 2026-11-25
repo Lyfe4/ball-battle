@@ -74,7 +74,10 @@ const KINDS: Readonly<Record<ScreenKey, ShellKind>> = {
  * the rail leaves only when the arena takes over). A tab's screen in a build without that tab never
  * shows (its URL opens Play), so it counts as a task.
  */
-export function shellOf(screen: ScreenKey, tabs: readonly Tab[] = TABS): ShellKind {
+export function shellOf(screen: ScreenKey, tabs: readonly Tab[] = TABS, notice = false): ShellKind {
   const kind = KINDS[screen];
+  // A fight's screen showing a notice in its fight's place (an online series that is gone, a
+  // failure with Try again) is a task: the arena never took over, so a PC keeps its rail.
+  if (kind === 'fight' && notice) return 'task';
   return kind === 'tab' && tabOf(screen, tabs) === undefined ? 'task' : kind;
 }
