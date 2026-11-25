@@ -48,7 +48,8 @@
     />
   </head>
   <body>
-    <main class="stage" id="stage">
+    <!-- Drawn invisible until the first screen is laid out (first-paint.ts, ADR 0087). -->
+    <main class="stage" id="stage" data-booting>
       <div class="arena-container" id="arena-container">
         <canvas id="arena" role="img" aria-label="Battle arena" tabindex="-1"></canvas>
       </div>
@@ -73,6 +74,10 @@
         <p class="frame-tip" id="frame-tip" role="status" hidden></p>
       </section>
     </main>
+    <!-- Shown only if the script never shows the stage (layout.css, --boot-safety). -->
+    <p class="boot-fallback" id="boot-fallback" role="status">
+      BallBattle is still starting. If nothing shows, <a class="text-link" href="">reload</a>
+    </p>
     <!-- A new version is deployed: Reload, at a calm moment only (ADR 0066). -->
     <div class="floating-notice update-notice" id="update-notice" role="status" hidden></div>
     <script type="module" src="/src/main.ts"></script>

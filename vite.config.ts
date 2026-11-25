@@ -3,6 +3,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { normalizePath, type Plugin } from 'vite';
 import { configDefaults, defineConfig, type TestProjectInlineConfiguration } from 'vitest/config';
 import type { BrowserCommand } from 'vitest/node';
+import { fontPreload } from './scripts/font-preload.ts';
 import { LOCAL_SECURITY_HEADERS } from './scripts/security-headers.ts';
 
 /** Before every browser test file: no series saved by another file's flow (ADR 0042). */
@@ -88,6 +89,8 @@ function phoneProject(
 }
 
 export default defineConfig({
+  // The game's one font file preloaded in the built page (ADR 0087).
+  plugins: [fontPreload],
   build: {
     target: 'es2023',
     // The game, and the privacy policy and terms as pages of their own (ADR 0069): plain HTML that

@@ -170,6 +170,12 @@
   --motion-slow: 320ms;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-in: cubic-bezier(0.3, 0, 1, 1);
+  /*
+   * The first paint (ADR 0087): the stage shows once its first screen is laid out (first-paint.ts),
+   * in about 1.1 s on Slow 4G. Past this, the stylesheet shows it anyway with a line to reload, so a
+   * script that never ran can't leave a blank page; long enough not to flash on a slow phone.
+   */
+  --boot-safety: 3s;
 }
 
 /* Beside (a phone turned sideways, ADR 0067): the rail along the left. */

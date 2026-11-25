@@ -1,6 +1,7 @@
 import './style.css';
 import { screenKeyOf } from './app/history-rules.ts';
 import { createMoves } from './app/moves.ts';
+import { showWhenLaidOut } from './app/first-paint.ts';
 import { createNavigation } from './app/navigation.ts';
 import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
@@ -351,3 +352,5 @@ navigation.onChange(showCurrentRoute);
 // Something is on the arena from the first frame: the link's match (its URL corrected if an id was
 // invalid), or a match behind a setup screen, which keeps its own URL; home puts on its demo.
 router.show(initialRoute);
+// The first screen is laid out: the stage shows in one frame, in the font (ADR 0087).
+showWhenLaidOut(window, stage, arena.fit);

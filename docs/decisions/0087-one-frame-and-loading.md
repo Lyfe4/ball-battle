@@ -198,3 +198,32 @@ Four batches, one staging build each. "P n" is this record's pull request n, "S 
   is stored on the device.
 - The rail costs 176 px on a setup at 1280; the setup's two columns still get 1040 px, more than
   ADR 0031's 64rem.
+
+## Addendum (2026-11-25): the first paint, as built (Batch 1, PR 3)
+
+- **The font**: the Latin subset only (`scripts/font-preload.ts` finds its hashed name in the
+  bundle and writes `<link rel="preload" as="font" type="font/woff2" crossorigin>` into
+  `index.html`; the build fails if there isn't exactly one). Latin Extended and Vietnamese load
+  only for a character in their range, as before.
+- **The stage** is `data-booting` in `index.html` and drawn **transparent** (`opacity: 0`), not
+  hidden: a screen focuses its first control as it opens (Play on arrival), and a hidden element
+  can't take focus. It shows (`src/app/first-paint.ts`) in the animation frame after the router
+  has laid out the first screen and the font is ready, waiting at most `FONT_WAIT_MS` (1 s) for the
+  font. The canvas is sized from its container's layout when the arena is made and again just
+  before the stage shows (`fitCanvasToContainer`'s `fit`), so it is never drawn at 300 × 150.
+- **The safety** is the stylesheet's own: `--boot-safety` (3 s) shows the stage and a centred line
+  ("BallBattle is still starting. If nothing shows, reload ›") if the script never shows it. 3 s,
+  not 1.5: the stylesheet's clock starts at about 0.6 s on Slow 4G and the stage shows at about
+  1.3 s, so 1.5 s would flash the line on any slower link. The HUD box stays in `index.html`
+  (screens find their parts there); while it is transparent nobody sees it move.
+- **Measured** (local `pnpm preview`, Chromium, first visits): CLS 0.50 → 0 on Balls at 390 × 664,
+  0.25 → 0 on Play and Friends at 1920 × 1080, 0.06 → 0 at 812 × 375; 0 on all nine loads,
+  unthrottled and Slow 4G. On Slow 4G the first contentful paint moves from 1.10 s (the fallback
+  font over a boot box first painted at 0.56 s, the font swapping at 1.47 s) to 1.32 s (the whole
+  screen once, in its font): the preloaded font now shares the link with the script.
+- **Tests**: `first-paint.{safari,full,landscape}.browser.test.ts` (`first-paint-flow.ts`): the
+  stage shows once and the reload line is gone; the font was ready when it showed; the canvas's
+  box and backing store match its container's layout; no landmark moves in the 30 frames after;
+  in Chromium the layout shift after the stage shows is ≤ 0.02 (measured 0 in 10 local runs of
+  every screen and size). Shifts are counted from the stage showing because the dev server injects
+  the stylesheet by script (production's is in the head, so nothing paints before).
