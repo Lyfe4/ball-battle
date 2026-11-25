@@ -1,12 +1,13 @@
 // The live match on the Realtime poke (ADR 0082, PR 7): the page's socket is wanted while an open
 // live series shows. A `match` poke (the other's pick, a round settled, a forfeit) reads at once,
-// and with the socket up the 1 s waiting reads go, the 2 s heartbeat staying (live-ask.ts).
+// and with the socket up the 1 s waiting reads go, the 2 s heartbeat staying (live-ask.ts). A
+// series by turns wants it too while open (ADR 0085): the other's turn reads the moment it lands.
 import { HEARTBEAT_ASK_MS } from '../app/live-ask.ts';
 import { createPokePace, type PokePace } from '../app/poke-pace.ts';
 import { pokes } from '../app/pokes.ts';
 
 export interface LivePoke {
-  /** Whether an open live series shows (wanting the socket); answers whether pokes are up. */
+  /** Whether an open series shows (wanting the socket); answers whether pokes are up. */
   showing(on: boolean): boolean;
 }
 

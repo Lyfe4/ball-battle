@@ -19,7 +19,7 @@ export interface FriendEntry {
   readonly status?: FriendStatus;
 }
 
-/** A live challenge a friend sent this account, waiting in their lobby (PR (d)). */
+/** A challenge a friend sent this account: live, waiting in their lobby (PR (d)); or by turns. */
 export interface Invite {
   /** The link's token: Accept opens its lineup. */
   readonly token: string;
@@ -28,6 +28,18 @@ export interface Invite {
   readonly friend?: string;
   readonly format: Format;
   readonly bestOf: BestOf;
+  /** Played live (ADR 0053); else by turns (ADR 0085): Accept builds a lineup first. */
+  readonly live: boolean;
+}
+
+/** A series by turns waiting on this account's pick (ADR 0085): "Your turn". */
+export interface TurnWaiting {
+  /** The series: `?online=<id>`. */
+  readonly seriesId: string;
+  /** The other player's name; null when they have been deleted. */
+  readonly opponent: string | null;
+  /** ISO 8601: the turn runs out then, and the series is forfeit (24 h a turn). */
+  readonly deadline: string;
 }
 
 /** GET /api/v1/me/inbox: read every 30 s while the page is visible and the account has friends. */
@@ -37,6 +49,8 @@ export interface InboxResponse {
   /** Requests waiting for this account's answer. */
   readonly requests: number;
   readonly invites: readonly Invite[];
+  /** Series by turns where it is this account's turn, the soonest deadline first (ADR 0085). */
+  readonly turns: readonly TurnWaiting[];
 }
 
 /** GET /api/v1/friends, and the answer to every change. */

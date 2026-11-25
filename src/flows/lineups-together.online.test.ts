@@ -26,7 +26,7 @@ const SOCKETS = [
   { socket: 'with the socket blocked', blocked: true },
 ] as const;
 
-const statusOf = (page: Page) => page.locator('#online-lineup .lineup-status');
+const statusOf = (page: Page) => page.locator('#online-lineup .lineup-step:visible .lineup-status');
 const SENDER = ['storm', 'quake', 'ghost'] as const;
 
 /** The sender sends a link from vs Friend; the friend opens it and accepts: both on the lineups. */
@@ -89,18 +89,22 @@ describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
         .getByText(/^Player \d+ is ready · \d+ s$/)
         .waitFor({ timeout: blocked ? 5_000 : 3_000 });
       expect(socketOf(friend).up()).toBe(!blocked);
-      const shown = await friend.locator('#online-lineup .lineup-tray').innerText();
+      const shown = await friend
+        .locator('#online-lineup .lineup-step:visible .lineup-tray')
+        .innerText();
       expect(shown).not.toMatch(/Storm|Quake|Ghost/);
       // Back holds the lineups: home leads back to them, the draft kept.
-      await friend.locator('#online-lineup .ball-grid button[data-ball-id="spartan"]').click();
       await friend
-        .locator('#online-lineup .lineup-step')
+        .locator('#online-lineup .lineup-step:visible .ball-grid button[data-ball-id="spartan"]')
+        .click();
+      await friend
+        .locator('#online-lineup .lineup-step:visible')
         .getByRole('button', { name: 'Back' })
         .click();
       await friend.getByRole('button', { name: /^Back to your lineup/ }).click({ timeout: 15_000 });
       await friend.waitForURL(/[?&]start=/);
       await expect
-        .poll(() => friend.locator('#online-lineup .lineup-tray').innerText())
+        .poll(() => friend.locator('#online-lineup .lineup-step:visible .lineup-tray').innerText())
         .toMatch(/Spartan/);
       await buildLineup(friend, 'Lock in', ['titan', 'venom']);
       for (const page of [sender, friend]) {
@@ -122,7 +126,9 @@ describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
       await agreed(sender, friend);
       await buildLineup(sender, 'Lock in', SENDER);
       // The friend picks one ball and lets the clock run out.
-      await friend.locator('#online-lineup .ball-grid button[data-ball-id="spartan"]').click();
+      await friend
+        .locator('#online-lineup .lineup-step:visible .ball-grid button[data-ball-id="spartan"]')
+        .click();
       const told = { timeout: startLineupMs(3) + 20_000 };
       await friend.getByText('Time ran out: your lineup was finished at random.').waitFor(told);
       await sender

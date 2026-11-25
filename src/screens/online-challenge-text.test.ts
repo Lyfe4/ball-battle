@@ -80,3 +80,26 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
     expect(lobby.link?.copy).toBeUndefined();
   });
 });
+
+describe('a challenge by turns sent to a friend (ADR 0085)', () => {
+  const sent = (over: Partial<ChallengeInfo> = {}) =>
+    cardFor(info({ status: 'yours', own: true, live: false, invitee: 'Jo', ...over }), actions);
+
+  it('says it reached them and how it goes, with Home; the link stays to share', () => {
+    const card = sent();
+    expect(card.title).toBe('Sent to Jo');
+    expect(card.body).toStrictEqual([
+      'Best of 3 · Reveal · take turns',
+      'Jo has it in Friends. Once they accept, you take turns, up to a day each; “Your turn” shows on Play and Friends.',
+    ]);
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Home', 'Share link']);
+  });
+
+  it('says when they said no thanks', () => {
+    expect(sent({ declined: true }).title).toBe('Jo said no thanks');
+  });
+
+  it('keeps the link card for one sent to nobody in particular', () => {
+    expect(sent({ invitee: null }).title).toBe('Send this link to a friend');
+  });
+});

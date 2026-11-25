@@ -50,6 +50,10 @@ export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }
 /** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
 export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; once they accept, you both pick your lineups.`;
 
+/** What play by turns asks, said on the vs Friend setup where it is offered (ADR 0085). */
+export const TURNS_SETUP_NOTE =
+  'Pick your lineup now. Once they accept with theirs, you take turns, up to a day each; a turn left too long loses the series.';
+
 /** Play against a friend (ADR 0081): a live match sent by a link, on the sheet's rules. */
 export function friendPlaySpoken(setup: FriendSetup): string {
   return `${PLAY_LABEL} a friend live, ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}: send them a link`;

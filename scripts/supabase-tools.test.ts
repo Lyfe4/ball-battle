@@ -78,6 +78,8 @@ describe('migrations', () => {
     '20261125090000_blocks_reports.sql':
       '1c0afb20dfe999c6426afd316bba5f0604acfab8baab137d38722ba1b3b22c38',
     '20261125150000_ranked.sql': '22acb3647d09024db649651c26f20ab2c15220ff41f828db1210ad0637a2a86c',
+    '20261125200000_poke_turns.sql':
+      'e052f04e7026cd2969a118c49924f2533c7f56099fcf6c5f9d88714bd20d8f1f',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));

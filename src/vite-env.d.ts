@@ -9,4 +9,6 @@ interface ImportMetaEnv {
   readonly VITE_ACCOUNTS?: string;
   /** "1" in builds with the Realtime poke (ADR 0082): local and tests only, for now. */
   readonly VITE_POKE?: string;
+  /** "1" in builds offering play by turns (ADR 0085): previews and staging, never production. */
+  readonly VITE_TURNS?: string;
 }

@@ -10,10 +10,9 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
-import type { FriendEntry, Invite } from '../api/friends.ts';
-import type { CurrentMatch } from '../api/live.ts';
+import type { InboxResponse } from '../api/friends.ts';
 import type { SeriesView } from '../api/series.ts';
-import { currentMatch, writeMatchParams } from './current-match.ts';
+import { currentMatch, writeMatchParams, type MatchPlace } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { logOut } from './log-out.ts';
@@ -72,9 +71,9 @@ export interface OnlineScreens {
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
   /** The inbox's friends and open challenges, for the Friends tab's lists (ADR 0081). */
-  friendStatuses(friends: readonly FriendEntry[], invites: readonly Invite[]): void;
+  friendStatuses(inbox: InboxResponse | undefined): void;
   /** A friend's challenge accepted from the floating card: its lineups, read first. */
-  openInvite(token: string): Promise<void>;
+  openInvite(token: string, live: boolean): Promise<void>;
   /** The Play tab's Play against a friend: straight to the link to share (ADR 0081 addendum). */
   playFriend(setup: FriendSetup): Promise<void>;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
@@ -132,7 +131,7 @@ export function createOnlineScreens(
   };
   // Moving into a series reads it first, so its screen shows complete (ADR 0054).
   const primer = createPrimer();
-  const toMatch = async (match: CurrentMatch): Promise<void> => {
+  const toMatch = async (match: MatchPlace): Promise<void> => {
     if (match.kind === 'series') await primer.series(match.id);
     host.go((url) => {
       writeMatchParams(url, match);
@@ -270,6 +269,7 @@ export function createOnlineScreens(
     ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
     ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
     ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
+    openSeries: (id) => toMatch({ kind: 'series', id }),
   });
 
   // Settings' Forget me, in an online build without accounts (no account screen there).
@@ -328,11 +328,11 @@ export function createOnlineScreens(
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },
-    friendStatuses(friends, invites) {
-      friendsTab.statuses(friends);
-      friendsTab.invites(invites);
+    friendStatuses(inbox) {
+      friendsTab.statuses(inbox?.friends ?? []);
+      friendsTab.invites(inbox?.invites ?? [], inbox?.turns ?? []);
     },
-    openInvite: (token) => challenges.openInvite(token),
+    openInvite: (token, live) => challenges.openInvite(token, live),
     playFriend: (setup) => challenges.playFriend(setup),
     rematchShown: () => challenges.rematchShown(),
   };

@@ -23,6 +23,11 @@ export interface Config {
    * email code. Only with online play on; off, every `/api/v1/auth/*` route answers `accounts_off`.
    */
   readonly accounts: boolean;
+  /**
+   * Whether play by turns may be sent to a friend (`BALLBATTLE_TURNS`, ADR 0085): the two-phone
+   * playtest ADR 0083 asks for, on previews and staging only. Off, a challenge to a friend is live.
+   */
+  readonly turns: boolean;
   /** Whether email codes are sent (`BALLBATTLE_EMAIL_CODES=off` stops them; Google goes on). */
   readonly emailCodes: boolean;
   /** Google's OAuth client, where Google sign-in is offered (its redirect URIs are exact). */
@@ -132,6 +137,7 @@ function settingsOf(env: Readonly<Record<string, string | undefined>>, online: b
   return {
     online,
     accounts: online && env['BALLBATTLE_ACCOUNTS'] === '1',
+    turns: online && env['BALLBATTLE_TURNS'] === '1',
     emailCodes: env['BALLBATTLE_EMAIL_CODES']?.trim().toLowerCase() !== 'off',
     google: googleId === '' ? undefined : { clientId: googleId, clientSecret: googleSecret },
     databaseUrl: required(env, 'DATABASE_URL'),

@@ -113,4 +113,13 @@ describe('the bundle check', () => {
     }
     expect(problemsIn('a.js', 'callApi("GET","me/inbox")', true, true)).toStrictEqual([]);
   });
+
+  it('refuses play by turns in a build without VITE_TURNS (ADR 0085)', () => {
+    const text = 'segmented(root,"pace","Play",[{value:"live",text:"Live"},{text:"By turns"}])';
+    expect(problemsIn('a.js', text, true, true, true)).toStrictEqual([
+      'a.js offers play by turns in a build without it (VITE_TURNS unset)',
+    ]);
+    expect(problemsIn('a.js', text, true, true, true, true)).toStrictEqual([]);
+    expect(problemsIn('a.js', 'you take turns, up to a day each', true)).toStrictEqual([]);
+  });
 });

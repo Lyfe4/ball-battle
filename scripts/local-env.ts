@@ -20,6 +20,8 @@ const lines = [
   // Accounts (ADR 0079), as on previews; Google needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
   // added by hand (a local test client), and email codes land in the mail catcher.
   'BALLBATTLE_ACCOUNTS=1',
+  // Play by turns to a friend (ADR 0085), as on previews and staging.
+  'BALLBATTLE_TURNS=1',
   `DATABASE_URL=${apiDatabaseUrl(status['DB_URL'] ?? '')}`,
   `SUPABASE_URL=${status['API_URL'] ?? ''}`,
   `SUPABASE_PUBLISHABLE_KEY=${status['PUBLISHABLE_KEY'] ?? ''}`,

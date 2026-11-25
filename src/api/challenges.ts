@@ -17,7 +17,8 @@ export interface CreateChallenge {
   readonly live: boolean;
   /**
    * The accepted friend it is for (a friendship's id, ADR 0079 PR (d)): it reaches their inbox
-   * while the lobby waits. Live only; the link still works for anyone.
+   * while the lobby waits (by turns, until it is accepted or expires: only where the playtest
+   * switch is on, ADR 0085). The link still works for anyone.
    */
   readonly friend?: string;
 }

@@ -15,16 +15,17 @@ const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
 const INBOX: InboxResponse = {
   friends: [{ id: 'f-1', name: 'Sam_R', status: 'online' }],
   requests: 0,
-  invites: [{ token: TOKEN, from: 'Sam_R', format: 'reveal', bestOf: 3 }],
+  invites: [{ token: TOKEN, from: 'Sam_R', format: 'reveal', bestOf: 3, live: true }],
+  turns: [],
 };
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function watch(busy = false, foldMs = INVITE_FOLD_MS) {
+function watch(busy = false, foldMs = INVITE_FOLD_MS, first = INBOX) {
   const sent: string[] = [];
-  let inbox = INBOX;
+  let inbox = first;
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const path = new URL(url, location.href).pathname;
@@ -48,8 +49,8 @@ function watch(busy = false, foldMs = INVITE_FOLD_MS) {
     root,
     BALL_LOOKUP,
     {
-      open: (token) => {
-        went.push(token);
+      open: (token, live) => {
+        went.push(live ? token : `${token} by turns`);
         return Promise.resolve();
       },
       calm: () => calm,
@@ -147,6 +148,18 @@ describe('a friend’s challenge on the floating card', () => {
     await inboxWatch.accept(TOKEN);
     expect(went).toStrictEqual([TOKEN]);
     expect(badge.at(-1)).toBe(0);
+  });
+
+  it('never pops up for a challenge by turns: counted, and Accept opens it by turns (ADR 0085)', async () => {
+    const byTurns = { ...INBOX, invites: INBOX.invites.map((one) => ({ ...one, live: false })) };
+    const { inboxWatch, root, sent, went, badge } = watch(false, INVITE_FOLD_MS, byTurns);
+    inboxWatch.signedIn(true);
+    await until(() => sent.length === 1 && badge.length > 0, 'the read');
+    inboxWatch.refresh();
+    expect(root.hidden || !root.isConnected).toBe(true);
+    expect(badge.at(-1)).toBe(1);
+    await inboxWatch.accept(TOKEN);
+    expect(went).toStrictEqual([`${TOKEN} by turns`]);
   });
 
   it('No thanks tells the server, and the card goes', async () => {

@@ -66,10 +66,16 @@ export async function insertSeriesWithSeeds(
 /**
  * Settles every turn by turns that ran out (ADR 0052: 24 hours by database time): the side due
  * forfeits the series; when both were due (Showdown's round 1) nobody wins. `id` limits it to one
- * series. A live series never forfeits for time (its pick is made at random, live-service.ts).
+ * series, `player` to one player's (the inbox, ADR 0085). A live series never forfeits for time
+ * (its pick is made at random, live-service.ts).
  */
-export async function settleExpired(db: Db, id?: string): Promise<number> {
-  const only = id === undefined ? db`` : db`and id = ${id}`;
+export async function settleExpired(db: Db, id?: string, player?: string): Promise<number> {
+  const only =
+    id !== undefined
+      ? db`and id = ${id}`
+      : player !== undefined
+        ? db`and ${player} in (player_a, player_b)`
+        : db``;
   const rows = await db`
     update game.series set
       status = 'forfeit',

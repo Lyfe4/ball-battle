@@ -53,6 +53,15 @@ describe('the accounts settings (ADR 0079)', () => {
     expect(configOf(offline)?.accounts).toBe(false);
   });
 
+  it('let play by turns go to a friend only where switched on, with online play (ADR 0085)', () => {
+    expect(configOf(ONLINE)?.turns).toBe(false);
+    expect(configOf({ ...ONLINE, BALLBATTLE_TURNS: 'true' })?.turns).toBe(false);
+    expect(configOf({ ...ONLINE, BALLBATTLE_TURNS: '1' })?.turns).toBe(true);
+    expect(
+      configOf({ ...ONLINE, BALLBATTLE_ONLINE: undefined, BALLBATTLE_TURNS: '1' })?.turns,
+    ).toBe(false);
+  });
+
   it('send email codes unless switched off', () => {
     expect(configOf(ONLINE)?.emailCodes).toBe(true);
     expect(configOf({ ...ONLINE, BALLBATTLE_EMAIL_CODES: 'OFF' })?.emailCodes).toBe(false);

@@ -16,8 +16,14 @@ export async function currentMatch(): Promise<CurrentMatch | null | undefined> {
   return answer.ok ? (answer.body?.match ?? null) : undefined;
 }
 
+/** Where a match is: a series or a start by id, a lobby by its link. */
+export type MatchPlace =
+  | { readonly kind: 'series'; readonly id: string }
+  | { readonly kind: 'start'; readonly id: string }
+  | { readonly kind: 'lobby'; readonly token: string };
+
 /** The URL of a current match: its series, its lineups, or the sender's lobby (their link's card). */
-export function writeMatchParams(params: URLSearchParams, match: CurrentMatch): void {
+export function writeMatchParams(params: URLSearchParams, match: MatchPlace): void {
   if (match.kind === 'series') writeOnlineSeriesParams(params, match.id);
   else if (match.kind === 'start') writeStartParams(params, match.id);
   else writeChallengeParams(params, match.token);

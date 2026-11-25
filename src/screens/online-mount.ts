@@ -122,13 +122,13 @@ export function mountOnline(context: MountContext): OnlineMount {
   let lobbyWaiting = 0;
   const inboxWatch = ACCOUNTS_BUILD
     ? createInboxWatch(inboxRoot, BALL_LOOKUP, {
-        open: (token) => screens.openInvite(token),
+        open: (token, live) => screens.openInvite(token, live),
         calm: () => calm,
         // A rematch window or a lobby waiting: news is expected, read every 2 s (2026-11-23).
         expecting: () => rematchWatch.active() || lobbyWaiting > Date.now(),
         // One answer, three views (ADR 0081): the Friends tab's lists, its badge, Play's strip.
         inbox: (answer) => {
-          screens.friendStatuses(answer?.friends ?? [], answer?.invites ?? []);
+          screens.friendStatuses(answer);
           context.waiting(answer);
         },
       })

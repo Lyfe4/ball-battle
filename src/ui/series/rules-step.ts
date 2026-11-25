@@ -13,6 +13,8 @@ export interface SetupChoices {
   readonly bestOf: BestOf;
   readonly format: Format;
   readonly level: string;
+  /** Against a friend where the build offers it: played by turns, not live (ADR 0085). */
+  readonly turns?: boolean;
 }
 
 export interface RulesStep {
@@ -32,6 +34,11 @@ export interface RulesOptions {
   readonly note?: string;
   /** What the main button says (else Choose lineup): vs Friend sends the challenge from here. */
   readonly next?: string;
+  /**
+   * Where play by turns is offered (ADR 0085, previews and staging): a "Play" row, Live or By turns,
+   * and what by turns says in place of `note`; by turns goes on to its lineup (Choose lineup).
+   */
+  readonly turns?: { readonly label: string; readonly note: string };
 }
 
 export interface RulesActions {
@@ -122,9 +129,27 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
   );
   levelRoot.hidden = !options.levels;
 
+  const paceRoot = element('div', 'rules-pace segmented-rows');
+  const pace = createSegmented(
+    paceRoot,
+    `${id}-pace`,
+    'Play',
+    [
+      { value: 'live', text: 'Live' },
+      { value: 'turns', text: options.turns?.label ?? '' },
+    ],
+    'live',
+    (chosen) => {
+      choose({ turns: chosen === 'turns' });
+    },
+  );
+  paceRoot.hidden = options.turns === undefined;
+
   const body = element('div', 'rules-body');
-  body.append(lengthGroup, formatGroup, levelRoot);
-  if (options.note !== undefined) body.append(element('p', 'rules-note', options.note));
+  body.append(paceRoot, lengthGroup, formatGroup, levelRoot);
+  const note = element('p', 'rules-note', options.note ?? '');
+  note.hidden = options.note === undefined && options.turns === undefined;
+  body.append(note);
 
   const next = element('button', 'hud-button hud-button-primary', options.next ?? 'Choose lineup');
   next.type = 'button';
@@ -142,6 +167,11 @@ export function createRulesStep(options: RulesOptions, actions: RulesActions): R
     }
     levelRoot.hidden = !options.levels || !botChooses(choices.format);
     levels.select(choices.level);
+    const turns = choices.turns === true ? options.turns : undefined;
+    const byTurns = turns !== undefined;
+    pace.select(byTurns ? 'turns' : 'live');
+    setText(note, turns?.note ?? options.note ?? '');
+    setText(next, byTurns ? 'Choose lineup' : (options.next ?? 'Choose lineup'));
   }
 
   return {
