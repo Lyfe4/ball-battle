@@ -107,6 +107,51 @@
   color: var(--color-unfavoured);
 }
 
+/* A sheet row (ADR 0086): an action as a raised row, left aligned, one tap target tall. */
+.sheet-row {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-gap);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* The danger zone: apart, under a rule, its rows in the danger look. */
+.sheet-danger {
+  display: grid;
+  gap: var(--space-small);
+  padding-top: var(--space-gap);
+  border-top: 1px solid var(--color-raised);
+}
+
+.danger-row {
+  background: var(--color-band-edged);
+  color: var(--color-unfavoured);
+}
+
+:where(:root:not([data-input='pointer'])) .sheet-row:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .sheet-row:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.sheet-row[data-pressed] {
+  filter: brightness(1.08);
+}
+
 /* Beside and on a desktop: a panel in the middle that fades and scales in. */
 @media (min-aspect-ratio: 5/4) {
   .sheet {

@@ -1,9 +1,9 @@
-// The Friends tab's lists (ADR 0079, PR (c); ADR 0081): what waits on you (friend requests, Accept
-// and Decline), your friends (their status, Challenge, Remove asked in place), then your friend
-// code with Copy, a field to add a friend by username or code, the requests you sent (Cancel) and
-// who you blocked (Unblock). A friend, a request to you and a friend's challenge have More: Report
-// name and Block, asked in place (friends-more.ts). Waiting for you leads with a series by turns
-// waiting on your pick and friends' challenges (waiting-rows.ts).
+// The Friends tab's lists (ADR 0079, PR (c); ADR 0081, 0086): what waits on you (friend requests,
+// Decline and Accept), your friends, then your friend code with Copy, a field to add a friend by
+// username or code, the requests you sent and who you blocked. Each person is a row (their disc,
+// name and status, one inline action only where it can succeed) that opens their sheet
+// (friend-sheet.ts): Challenge, Remove, Report name and Block, Cancel request, Unblock. Waiting for
+// you leads with a series by turns waiting on your pick and friends' challenges (waiting-rows.ts).
 // The order never changes after a read (ADR 0087): Waiting for you (when something waits), your
 // friends (or, with none, the empty state in their place), your code and Add, then the tab's "Play
 // a friend with a link" card, always last. The code card and the link card are in the first frame;
@@ -30,18 +30,15 @@ import {
   skeletonRows,
   skeletonShown,
 } from './friends-loading.ts';
-import { rowMore, type RowAsk } from './friends-more.ts';
+import { createFriendSheet, personDisc } from './friend-sheet.ts';
 import { challengeRow, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
 import { element } from '../dom.ts';
 import {
   addedLine,
-  BLOCKED_LINE,
   FRIEND_GROUPS,
   FRIENDS_FAILED_TITLE,
   NO_FRIENDS,
-  removeQuestion,
-  REPORTED_LINE,
-  STATUS_WORDS,
+  personStatus,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
 
@@ -117,13 +114,44 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   if (host.link !== undefined) root.append(host.link);
 
   let code = '';
-  /** The row asking a question (Remove, More, Block, Report), by its key (friendship id or invite). */
-  let asking: { readonly key: string; readonly ask: 'remove' | RowAsk } | undefined;
   let list: FriendsResponse | undefined;
   /** The friends as the inbox last said (names and status): rows at once, before `/friends`. */
   let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
   let turns: readonly TurnWaiting[] = [];
+
+  /** A change's answer drawn, true when it was made (the friend sheet's actions). */
+  const made = (method: 'POST' | 'DELETE', path: string, body?: unknown) => () =>
+    send(host.api<FriendsResponse>(method, path, body)).then((done) => done !== undefined);
+  const sheet = createFriendSheet({
+    ...(host.challenge === undefined ? {} : { challenge: host.challenge }),
+    remove: (id) => made('DELETE', `friends/${id}`)(),
+    block: (id) => made('POST', `friends/${id}/block`)(),
+    report: (id, reason) => made('POST', `friends/${id}/report`, { reason })(),
+    accept: (id) => made('POST', `friends/${id}/accept`)(),
+    decline: (id) => made('DELETE', `friends/${id}`)(),
+    unblock: (id) => made('POST', `friends/${id}/unblock`)(),
+    said: (line) => {
+      note.textContent = line;
+    },
+  });
+  root.append(sheet.element);
+
+  /** Waits on you in a lobby: a friend's live challenge to you is open (not "In a match"). */
+  const waitsOnYou = (friend: FriendEntry) => invites.some((invite) => invite.friend === friend.id);
+
+  /** Opens the sheet of the person behind friendship `id`, wherever they are listed. */
+  function openPerson(id: string): void {
+    const now = list ?? inboxList(inboxFriends);
+    for (const group of FRIEND_GROUPS) {
+      const person = now[group.key].find((entry) => entry.id === id);
+      if (person !== undefined) {
+        sheet.open(person, group.key === 'friends' ? 'friend' : group.key, waitsOnYou(person));
+        return;
+      }
+    }
+  }
+
   const rows: WaitingRowsHost = {
     accept: host.acceptInvite,
     decline: host.declineInvite,
@@ -131,7 +159,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     say: (line) => {
       say(line, true);
     },
-    more: (item, key, friend, name) => withMore(item, key, friend, name),
+    person: openPerson,
   };
 
   function say(text: string, error = false): void {
@@ -140,93 +168,52 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     input.setAttribute('aria-invalid', String(error));
   }
 
+  /**
+   * A person's row (ADR 0086): their disc, name and what they are; the row opens their sheet (its
+   * chevron). One inline action at most, only where it can succeed: Challenge for a friend online; a
+   * request to you keeps Decline and Accept side by side.
+   */
   function rowOf(group: FriendGroup, friend: FriendEntry): HTMLElement {
     const item = element('li', 'friends-row');
     item.dataset['friend'] = friend.id;
-    const name = element('span', 'friends-name', friend.name);
-    // The name, and under it a friend's status: the actions keep the row's right.
-    const who = element('span', 'friends-who');
-    who.append(name);
+    const kind = group.key === 'friends' ? 'friend' : group.key;
+    const waiting = kind === 'friend' && waitsOnYou(friend);
+    const open = element('button', 'friends-who friends-open');
+    open.type = 'button';
+    open.setAttribute('aria-label', `${friend.name}: ${personStatus(friend, kind, waiting)}`);
+    const status = element('span', 'friends-status', personStatus(friend, kind, waiting));
+    // A dot only on a friend's status line (ADR 0086), in its status's colour.
+    if (kind === 'friend')
+      status.dataset['status'] = waiting ? 'waiting' : (friend.status ?? 'offline');
+    const words = element('span', 'friends-words');
+    words.append(element('span', 'friends-name', friend.name), status);
+    open.append(personDisc(friend, 'row'), words);
+    open.addEventListener('click', () => {
+      sheet.open(friend, kind, waiting);
+    });
     const actions = element('span', 'friends-actions');
-    item.append(who, actions);
-    const change = (method: 'POST' | 'DELETE', path: string) => () =>
-      send(host.api<FriendsResponse>(method, path));
-    const ask = asking?.key === friend.id ? asking.ask : undefined;
-    const more = withMore(item, friend.id, friend.id, friend.name);
-    if (group.key === 'incoming') {
+    item.append(open, actions);
+    if (kind === 'incoming') {
+      const decline = element('button', 'hud-button friends-decline', 'Decline');
+      decline.type = 'button';
+      decline.setAttribute('aria-label', `Decline ${friend.name}`);
+      busyOnClick(decline, made('DELETE', `friends/${friend.id}`));
       const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
       accept.type = 'button';
       accept.setAttribute('aria-label', `Accept ${friend.name}`);
-      busyOnClick(accept, change('POST', `friends/${friend.id}/accept`));
-      const decline = textButton('Decline', `Decline ${friend.name}`);
-      busyOnClick(decline, change('DELETE', `friends/${friend.id}`));
-      actions.append(accept, decline, more);
-    } else if (group.key === 'outgoing') {
-      const cancel = textButton('Cancel', `Cancel your request to ${friend.name}`);
-      busyOnClick(cancel, change('DELETE', `friends/${friend.id}`));
-      actions.append(element('span', 'friends-waiting', 'Waiting'), cancel);
-    } else if (group.key === 'blocked') {
-      const unblock = textButton('Unblock', `Unblock ${friend.name}`);
-      busyOnClick(unblock, change('POST', `friends/${friend.id}/unblock`));
-      actions.append(unblock);
-    } else if (ask === 'remove') {
-      // Removing is asked once, in place: Keep first, so a stray tap keeps the friend.
-      name.textContent = removeQuestion(friend.name);
-      const keep = textButton('Keep', `Keep ${friend.name}`);
-      keep.addEventListener('click', () => {
-        asking = undefined;
-        draw();
-      });
-      const removing = textButton('Remove', `Remove ${friend.name}`);
-      busyOnClick(removing, change('DELETE', `friends/${friend.id}`));
-      actions.append(keep, removing);
-    } else {
-      // Its status: a dot and words (PR (d)), for accepted friends only.
-      const status = friend.status ?? 'offline';
-      const state = element('span', 'friends-status', STATUS_WORDS[status]);
-      state.dataset['status'] = status;
-      name.after(state);
+      busyOnClick(accept, made('POST', `friends/${friend.id}/accept`));
+      actions.append(decline, accept);
+    } else if (kind === 'friend' && friend.status === 'online' && host.challenge !== undefined) {
       const challenge = host.challenge;
-      if (challenge !== undefined) {
-        const send = element('button', 'hud-button friends-challenge', 'Challenge');
-        send.type = 'button';
-        send.setAttribute('aria-label', `Challenge ${friend.name}`);
-        send.addEventListener('click', () => {
-          challenge(friend);
-        });
-        actions.append(send);
-      }
-      const remove = textButton('Remove', `Remove ${friend.name}`);
-      remove.addEventListener('click', () => {
-        asking = { key: friend.id, ask: 'remove' };
-        draw();
+      const send = element('button', 'hud-button friends-challenge', 'Challenge');
+      send.type = 'button';
+      send.setAttribute('aria-label', `Challenge ${friend.name}`);
+      send.addEventListener('click', () => {
+        challenge(friend);
       });
-      actions.append(remove, more);
+      actions.append(send);
     }
     return item;
-  }
-
-  /**
-   * More for a row, keyed by `key`, acting on friendship `id`: its button, and under the row the
-   * question it is asking, if any.
-   */
-  function withMore(item: HTMLElement, key: string, id: string, name: string): HTMLElement {
-    const ask = asking?.key === key ? asking.ask : undefined;
-    item.dataset['key'] = key;
-    const posted = (path: string, line: string, body?: unknown) =>
-      send(host.api<FriendsResponse>('POST', `friends/${id}/${path}`, body)).then((done) => {
-        if (done !== undefined) note.textContent = line;
-      });
-    return rowMore(item, name, ask === 'remove' ? undefined : ask, {
-      ask: (next) => {
-        asking = next === undefined ? undefined : { key, ask: next };
-        draw();
-        if (next === undefined)
-          lists.querySelector<HTMLElement>(`[data-key="${key}"] .friends-more`)?.focus();
-      },
-      block: () => posted('block', BLOCKED_LINE(name)),
-      report: (reason) => posted('report', REPORTED_LINE, { reason }),
-    });
   }
 
   function draw(): void {
@@ -287,7 +274,6 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       say(host.line(answer), true);
       return undefined;
     }
-    asking = undefined;
     if (answer.body !== undefined) list = answer.body;
     draw();
     host.changed?.();
@@ -320,7 +306,6 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   });
 
   async function open(): Promise<void> {
-    asking = undefined;
     note.textContent = '';
     say('');
     copy.textContent = 'Copy';
@@ -350,7 +335,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       if (JSON.stringify([next, nextTurns]) === JSON.stringify([invites, turns])) return;
       invites = next;
       turns = nextTurns;
-      if (root.isConnected && asking === undefined) draw();
+      if (root.isConnected) draw();
     },
     statuses(friends) {
       // Before `/friends` answers, the inbox's friends are the rows (ADR 0087 rule 6).
@@ -363,8 +348,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       const before = JSON.stringify(list.friends);
       if (before === JSON.stringify(friends)) return;
       list = { ...list, friends };
-      // Never under a question being asked: Remove's stays until it is answered.
-      if (asking === undefined) draw();
+      draw();
     },
   };
 }

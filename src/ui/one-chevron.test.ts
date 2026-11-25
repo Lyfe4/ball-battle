@@ -34,6 +34,8 @@ describe('one chevron', () => {
       // control's own mark, not a link's arrow (2026-11-24).
       'ui/manual/manual.css',
       'ui/match-story.css',
+      // A person's row on the Friends tab: it opens their sheet (ADR 0086), the row's own mark.
+      'ui/online/friends-section.css',
       'ui/quick-setup.css',
     ]);
     const button = readFileSync(join(SRC, 'ui/button.css'), 'utf8');

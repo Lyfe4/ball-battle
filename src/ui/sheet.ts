@@ -82,13 +82,15 @@ export function createSheet(options: SheetOptions): Sheet {
   let answer: ((confirmed: boolean) => void) | undefined;
   let titleBefore = options.title;
 
+  /** Answers the confirm step that is asking, if one is, and brings the content back. */
   function settle(confirmed: boolean): void {
     const resolve = answer;
+    if (resolve === undefined) return;
     answer = undefined;
     setHidden(confirmView, true);
     setHidden(content, false);
     title.textContent = titleBefore;
-    resolve?.(confirmed);
+    resolve(confirmed);
   }
 
   cancelButton.addEventListener('click', () => {
