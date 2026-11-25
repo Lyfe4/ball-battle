@@ -1,10 +1,10 @@
 import { botChooses, SETUP_FORMATS, type Opponent, type PlayChoice } from '../app/modes.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { BEST_OF } from '../sim/series.ts';
-import { createCloseButton } from './close-button.ts';
 import { element } from './dom.ts';
 import { FORMAT_HINTS, lengthChoiceOf, OPPONENT_CARDS, SHEET_WORDS } from './modes-text.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
+import { createSheet } from './sheet.ts';
 import { FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
 
 export interface PlaySheet {
@@ -27,21 +27,20 @@ export interface PlaySheetActions {
  * from the bottom on a phone held upright and a panel in the middle beside and on a desktop. Who
  * (only where a build offers more than the bot), the length, the format (each opponent's own, in
  * one order) and, against the bot where it makes choices, its level: each the shared segmented
- * choice (ADR 0054), applied as it is tapped, so nothing needs a Done. One close, the shared × last
- * in its head (ADR 0086); Escape, a tap outside and Back close it too. Focus goes to its title as
- * it opens, and the dialog keeps it inside while it is open.
+ * choice (ADR 0054), applied as it is tapped, so nothing needs a Done. Built on the sheet (sheet.ts):
+ * one close, the shared × last in its head; Escape, a tap outside and Back (home.ts) close it too;
+ * focus goes to its title as it opens, and the dialog keeps it inside while it is open.
  */
 export function createPlaySheet(
   opponents: readonly Opponent[],
   actions: PlaySheetActions,
 ): PlaySheet {
-  const dialog = element('dialog', 'play-sheet');
-  const title = element('h2', 'play-sheet-title', SHEET_WORDS.title);
-  title.id = 'play-sheet-title';
-  // Focus lands on the title as it opens (never a ring: tabindex -1), so a screen reader hears the
-  // dialog's name and Tab reaches the first choice (ADR 0086).
-  title.tabIndex = -1;
-  dialog.setAttribute('aria-labelledby', title.id);
+  const sheet = createSheet({
+    id: 'play-sheet-title',
+    title: SHEET_WORDS.title,
+    name: 'play-sheet',
+    onClosed: actions.onClosed,
+  });
 
   let choice: PlayChoice | undefined;
   const rules = () => (choice?.opponent === 'friend' ? choice.friend : choice?.bot);
@@ -51,14 +50,6 @@ export function createPlaySheet(
     render();
     actions.onChange(next);
   }
-
-  const head = element('div', 'play-sheet-head');
-  head.append(
-    title,
-    createCloseButton(() => {
-      dialog.close();
-    }),
-  );
 
   const group = (name: string) => element('div', `play-sheet-group segmented-rows ${name}`);
   const againstRoot = group('play-sheet-against');
@@ -134,9 +125,7 @@ export function createPlaySheet(
 
   const groups = element('div', 'play-sheet-groups');
   groups.append(againstRoot, lengthRoot, formatRoot, levelRoot);
-  const body = element('div', 'play-sheet-body');
-  body.append(head, groups);
-  dialog.append(body);
+  sheet.content.append(groups);
 
   function render(): void {
     const current = rules();
@@ -148,24 +137,15 @@ export function createPlaySheet(
     levelRoot.hidden = choice.opponent !== 'bot' || !botChooses(choice.bot.format);
   }
 
-  // A tap on the backdrop lands on the dialog itself: its body fills the box, so it is outside.
-  dialog.addEventListener('click', (event) => {
-    if (event.target === dialog) dialog.close();
-  });
-  dialog.addEventListener('close', () => {
-    actions.onClosed();
-  });
-
   return {
-    element: dialog,
+    element: sheet.element,
     open(next) {
       choice = next;
       render();
-      if (!dialog.open) dialog.showModal();
-      title.focus();
+      sheet.open();
     },
-    close() {
-      if (dialog.open) dialog.close();
+    close: () => {
+      sheet.close();
     },
   };
 }

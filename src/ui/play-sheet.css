@@ -1,55 +1,8 @@
 /*
- * "What to play" (ADR 0081 addendum, Option B): a modal dialog. On a phone held upright, a sheet
- * along the bottom, its one close the × in its head (ADR 0086); beside and on a desktop, a panel in the
- * middle with the choices in two columns. Taller than the screen, it scrolls inside itself. The
- * page behind is dimmed, and a tap on it closes the sheet (play-sheet.ts).
+ * "What to play" (ADR 0081 addendum, Option B) on the sheet (sheet.css): its choices, one under
+ * another on a phone held upright; beside and on a desktop, who and the length beside the format
+ * and the level, in two columns.
  */
-.play-sheet {
-  position: fixed;
-  inset: auto 0 0;
-  width: 100%;
-  max-width: var(--sheet-narrow);
-  max-height: calc(100dvh - var(--space-gutter));
-  margin: 0 auto;
-  padding: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border: 0;
-  border-radius: var(--radius-large) var(--radius-large) 0 0;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.play-sheet::backdrop {
-  background: color-mix(in srgb, var(--color-page) 70%, transparent);
-}
-
-.play-sheet-body {
-  display: grid;
-  gap: var(--space-gap);
-  padding: var(--space-gap) max(var(--space-gutter), env(safe-area-inset-right))
-    calc(var(--space-gutter) + env(safe-area-inset-bottom))
-    max(var(--space-gutter), env(safe-area-inset-left));
-}
-
-.play-sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-small);
-}
-
-.play-sheet-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-/* Focused by script as the sheet opens, for screen readers: never drawn (play-sheet.ts). */
-.play-sheet-title:focus {
-  outline: none;
-}
-
 .play-sheet-groups {
   display: grid;
   gap: var(--space-gap);
@@ -63,21 +16,7 @@
   padding: 6px 4px;
 }
 
-/* Beside and on a desktop: a panel in the middle, who and the length beside the format and level. */
 @media (min-aspect-ratio: 5/4) {
-  .play-sheet {
-    inset: 0;
-    width: calc(100% - 2 * var(--space-gutter));
-    max-width: 44rem;
-    max-height: calc(100dvh - var(--space-small) * 2);
-    margin: auto;
-    border-radius: var(--radius-large);
-  }
-
-  .play-sheet-body {
-    padding: var(--space-gap) var(--space-gutter);
-  }
-
   .play-sheet-groups {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-flow: column;
