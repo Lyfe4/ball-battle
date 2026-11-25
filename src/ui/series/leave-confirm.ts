@@ -23,7 +23,12 @@ export interface LeaveConfirm {
  */
 export function createLeaveConfirm(onLeave: () => unknown, ask = true): LeaveConfirm {
   const root = element('div', 'leave-confirm');
-  const link = element('button', 'text-link series-leave', ask ? 'Leave series' : 'Home');
+  // Leave series is an action (a button); Home, in its other form, only goes somewhere (a link, ›).
+  const link = element(
+    'button',
+    `${ask ? 'hud-button' : 'text-link'} series-leave`,
+    ask ? 'Leave series' : 'Home',
+  );
   link.type = 'button';
 
   const row = element('div', 'leave-confirm-row');

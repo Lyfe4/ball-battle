@@ -95,16 +95,17 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
 }
 
 describe('Profile', () => {
-  it('shows an account by its username, the stats to come, and its actions', async () => {
+  it('shows an account by its username, its actions as rows and Delete account apart', async () => {
     const { asked, done } = profile([200, { name: 'robin_b', account: true, username: 'robin_b' }]);
     await titled('robin_b');
     expect(texts('.notice-text')[0]).toBe('@robin_b · Opponents see you as robin_b.');
-    expect(texts('.soon-card-title')).toStrictEqual(['Your stats']);
-    expect(texts('.soon-sticker')).toStrictEqual(['Coming soon']);
-    expect(texts('.soon-card-tile dt')).toStrictEqual(['Online wins', 'Matches', 'Favourite ball']);
-    expect(texts('.notice-more button')).toStrictEqual(['Log out', 'Delete account']);
+    // No stats card (ADR 0087), no primary for the name: rows, then the danger zone.
+    expect(texts('.soon-card-title')).toStrictEqual([]);
+    expect(texts('.notice .hud-button-primary')).toStrictEqual([]);
+    expect(texts('.notice-more button')).toStrictEqual(['Change username', 'Log out']);
+    expect(texts('.notice-danger .danger-row')).toStrictEqual(['Delete account']);
     expect(texts('.profile-legal a')).toStrictEqual(['Privacy', 'Terms']);
-    // One read of `/me`, and nothing for the stats.
+    // One read of `/me`.
     expect(asked).toStrictEqual(['GET me']);
 
     // Asked once, Keep first; a failed try says why (here the fake says offline).
@@ -131,7 +132,7 @@ describe('Profile', () => {
     const { done } = profile([200, { name: 'Player 4821', account: false }]);
     await titled('Guest');
     expect(texts('.notice-text')).toContain('Playing on this device.');
-    expect(texts('.notice-more button')).toStrictEqual(['Forget me on this device']);
+    expect(texts('.notice-danger .danger-row')).toStrictEqual(['Forget me on this device']);
     press('Sign in');
     expect(done).toStrictEqual(['sign in']);
     press('Forget me on this device');
@@ -142,7 +143,7 @@ describe('Profile', () => {
     const { asked } = profile([500, {}], '');
     await titled('Guest');
     expect(asked).toStrictEqual([]);
-    expect(texts('.notice-more button')).toStrictEqual([]);
+    expect(texts('.notice-danger button')).toStrictEqual([]);
   });
 
   it('claims nothing when the server can’t say, and Try again asks again', async () => {

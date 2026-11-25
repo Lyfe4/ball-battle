@@ -111,7 +111,7 @@ function buildMenu(): Menu {
     host?.tips.setReadyCards(!host.tips.readyCards());
     render();
   });
-  const again = element('button', 'text-link settings-again', 'Show all tips again');
+  const again = element('button', 'hud-button settings-again', 'Show all tips again');
   again.type = 'button';
   again.addEventListener('click', () => {
     host?.tips.reset();

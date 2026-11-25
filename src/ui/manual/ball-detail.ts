@@ -53,7 +53,7 @@ export function createBallDetail(
   const description = element('p', 'ball-detail-description');
   const trait = element('span', 'ball-detail-trait');
   // Its ability as it sounds in a fight (ADR 0064): offered while sound is on.
-  const hear = element('button', 'text-link ball-detail-hear', 'Hear it');
+  const hear = element('button', 'hud-button ball-detail-hear', 'Hear it');
   hear.type = 'button';
   // What it plays is the ball's own sounds: never a tap in front of them.
   hear.dataset['sound'] = 'own';

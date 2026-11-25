@@ -23,7 +23,7 @@ function linkBox(link: NonNullable<NoticeContent['link']>): HTMLElement {
   box.append(url);
   const copy = link.copy;
   if (copy !== undefined) {
-    const button = element('button', 'text-link notice-link-copy', 'Copy');
+    const button = element('button', 'hud-button notice-link-copy', 'Copy');
     button.type = 'button';
     button.setAttribute('aria-label', 'Copy link');
     button.addEventListener('click', () => {
@@ -185,7 +185,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       if (content.link !== undefined) rest.push(linkBox(content.link));
       if (content.note !== undefined) rest.push(element('p', 'notice-text', content.note));
       if (content.quiet !== undefined) {
-        const quiet = element('button', 'text-link notice-quiet', content.quiet.text);
+        const quiet = element('button', 'hud-button notice-quiet', content.quiet.text);
         quiet.type = 'button';
         quiet.setAttribute('aria-label', content.quiet.label ?? content.quiet.text);
         busyOnClick(quiet, content.quiet.onClick);
@@ -194,13 +194,24 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       if (content.more !== undefined && content.more.length > 0) {
         const more = element('div', 'notice-more');
         for (const spec of content.more) {
-          const action = element('button', 'text-link notice-quiet', spec.text);
+          const action = element('button', 'sheet-row notice-quiet', spec.text);
           action.type = 'button';
           action.setAttribute('aria-label', spec.label ?? spec.text);
           busyOnClick(action, spec.onClick);
           more.append(action);
         }
         rest.push(more);
+      }
+      if (content.danger !== undefined && content.danger.length > 0) {
+        const zone = element('div', 'sheet-danger notice-danger');
+        for (const spec of content.danger) {
+          const action = element('button', 'sheet-row danger-row', spec.text);
+          action.type = 'button';
+          action.setAttribute('aria-label', spec.label ?? spec.text);
+          busyOnClick(action, spec.onClick);
+          zone.append(action);
+        }
+        rest.push(zone);
       }
       after.replaceChildren(...rest);
       after.hidden = rest.length === 0;

@@ -90,7 +90,7 @@ function screen(
 
 const heading = (root: HTMLElement) => root.querySelector('.screen-title')?.textContent ?? '';
 const quiet = (root: HTMLElement) =>
-  [...root.querySelectorAll('.notice-more .notice-quiet')].map((node) => node.textContent);
+  [...root.querySelectorAll('.notice-danger .danger-row')].map((node) => node.textContent);
 const until = async (check: () => boolean, what: string) => {
   const end = Date.now() + 3000;
   while (!check()) {

@@ -83,19 +83,14 @@ export interface FriendsSection {
   challenges(invites: readonly Invite[], turns?: readonly TurnWaiting[]): void;
 }
 
-function textButton(text: string, label: string): HTMLButtonElement {
-  const button = element('button', 'text-link friends-action', text);
-  button.type = 'button';
-  button.setAttribute('aria-label', label);
-  return button;
-}
-
 export function createFriendsSection(host: FriendsHost): FriendsSection {
   const root = element('div', 'friends');
 
   const codeRow = element('p', 'friends-code');
   const codeText = element('strong', 'friends-code-value');
-  const copy = textButton('Copy', 'Copy your friend code');
+  const copy = element('button', 'hud-button friends-copy', 'Copy');
+  copy.type = 'button';
+  copy.setAttribute('aria-label', 'Copy your friend code');
   codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
 
   // Adding: the notice's field look, its own Add button, and one line for what happened.
