@@ -346,7 +346,8 @@ Each line is a rule; its ADR has the reasoning.
 
 **UI**
 
-- The quality bar (ADR 0086, 0087; the plan's batches 2-4 build what isn't true yet), a rule a line:
+- The quality bar (ADR 0086, 0087; batches 1-3 are built, batch 4, the strip, the banner and screen
+  motion, isn't yet), a rule a line:
   - New UI gets a mockup in the game's real styles first (a throwaway page under `pnpm dev`), at
     390 × 664 and one beside or desktop view.
   - An action is a button or a sheet row; a text link only navigates and keeps its "›" (never on
@@ -362,7 +363,9 @@ Each line is a rule; its ADR has the reasoning.
   - Every state is designed: empty, loading (a sized skeleton, only after 150 ms), error (one
     failure card with Try again), offline, the other person gone; a refusal in the game's words.
   - One frame: the lead slot, title, `?` and gear (always last) sit on the same pixels on every
-    non-fight screen at a size (`frame-anchors`).
+    non-fight screen at a size (`frame-anchors`). Every such screen opens with `createScreenHeader`
+    and sits in the frame (`frame.css`) in a column kind (list, reading, wide, grid); the shell
+    is `shellOf` (tab, browse, task, fight); a sheet is `sheet.ts`, with its confirm step.
   - Nothing jumps: no load or screen change moves the header or the content's left edge, no
     scrollbar shifts a page, and a first visit's layout shifts stay ≤ 0.02 (`first-paint`).
   - Static content first, in its final place; sections never reorder after a read (an empty state

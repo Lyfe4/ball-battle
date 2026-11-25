@@ -227,3 +227,55 @@ Four batches, one staging build each. "P n" is this record's pull request n, "S 
   in Chromium the layout shift after the stage shows is ≤ 0.02 (measured 0 in 10 local runs of
   every screen and size). Shifts are counted from the stage showing because the dev server injects
   the stylesheet by script (production's is in the head, so nothing paints before).
+
+## Addendum (2026-11-26): the frame, loading and Friends, as built (Batches 2 and 3)
+
+Built overnight as #192-#203 (Batch 1's last PR, then plan PRs 6-16). What the record above left
+open, and what changed in the building:
+
+- **The header row** (`screen-header.ts`): the lead slot is a `.screen-lead` box always one tap
+  target wide (Back, the avatar placed there by the shell on a tab screen, or nothing); the title
+  is one line with an ellipsis; then `?`, then the gear. Play's row is the same row at every size
+  ("BallBattle" at the title's size): one frame means one title size. The series bar's tools also
+  put the gear after the `?`.
+- **The rail's mark** is the favicon's Brawler (`/favicon.svg`) with the word on a desktop,
+  `aria-hidden` (the page's title names the game), level with the header row (`--frame-top`).
+  One avatar button now, in the lead slot.
+- **The shell** (`shellOf` in `tabs.ts`, `body[data-shell]`): a ball's page lights Balls even from
+  a link; Profile and tasks keep the last tab shown lit. The `online` screen key is always a fight,
+  so a "series gone" notice there has no rail on a PC (left as is).
+- **The frame** (`src/ui/frame.css`) applies beside and on a desktop to every screen where nothing
+  fights; on a phone the stage's padding already is the frame. Columns, from the frame's left edge:
+  list `--col-list` 36rem (Friends, Ranks), reading `--col-reading` 40rem (sign-in, Profile,
+  notices), wide `--col-wide` 64rem (a ball, the setups), grid across the frame (Balls; the chart in
+  the same frame). The list's main + aside layout waits for a later pass. Notices lost their
+  floating card on a desktop.
+- **The legal pages** run no script, so they have no rail or gear; their frame keeps the rail's
+  room so the title lands on the game's pixels, and the other page's link sits where the gear is.
+- **The panel keeps its top** beside and on a desktop in every phase. On a desktop the ability
+  caption now floats under the panel (no room above a top-aligned panel).
+- **Play on a desktop**: the header row is placed across the frame's top; the court takes the
+  height under it and the panel 22-38rem of the width (1280 × 800: court 661 px; 1920 × 1080: 956).
+- **Measured anchors** (Chromium): 390 × 664 lead 16,16 / title 72 / gear 330; 812 × 375 lead
+  92,16 / title 148 / gear 737; 1920 × 1080 lead 321,32 / title 377 / gear 1717, on every screen
+  including Play and the legal pages. `frame-anchors` passed 21 of 21 (seven projects, three
+  engines) before the batch merged.
+- **Tabs** (`view-tabs.ts`) keep focus when switching views; one name size is 12 px / 700 /
+  −0.02em in the grid, the lineup's tray and the pick rows.
+- **The sheet** (`sheet.ts`) animates by CSS alone (`@starting-style`, `allow-discrete`), so
+  `close()` stays synchronous; a browser without them shows and closes at once. Its confirm step
+  puts focus on Cancel. The danger look is `.danger-button` / `.danger-row` (red words on
+  `--color-band-edged`) in `sheet.css`.
+- **One `/me`** (`who-source.ts`) and **the visit cache** (`visit-cache.ts`, a module in memory
+  with a generation, so an answer asked before a sign-in is never kept after it). Log out and
+  Forget me reload the page; a sign-in clears it.
+- **Friends**: one order (the link card always last); a device that remembers an account draws the
+  account layout at once; the inbox's friends are the rows before `/friends` answers; skeleton
+  rows (three by default) only after 150 ms; one failure card. Waiting for you's buttons sit under
+  the name. Sent and Blocked stay listed under the code card; each row opens its own small sheet.
+- **Controls**: `text-links.test.ts` names every `text-link` button with where it goes; one
+  exception (the ready card's "Don't show these again", on the court) waits for the card's redraw.
+- **Motion**: `--motion-press` (80 ms) for a button's press; `layout.css`, `button.css`,
+  `manual.css` and `quick-setup.css` left the literal allow-list.
+- **Batch 4** (the strip, the banner, screen motion, the server's crossed challenge, the lobby,
+  Your games) is not started: the owner reviews its server and migration work first.
