@@ -121,21 +121,29 @@ async function checkStory(where: string, prefix: RegExp): Promise<void> {
   expect(story.querySelectorAll('ol.match-story-moments > li').length, where).toBeGreaterThan(0);
 }
 
-/** Where each setup screen's header sits on the page: they must all match. */
-const headerTops = new Map<string, number>();
+/**
+ * Where each setup screen's header sits on the page, by its shell: a frame screen's (the setups, a
+ * lineup, the manual) on the frame's top, a fight's (Reveal's round-1 pick, from its coin toss) where
+ * the arena puts it. On a PC the two differ by design: the rail leaves when the arena takes over
+ * (ADR 0087 addendum of 2026-11-26).
+ */
+const headerTops = new Map<string, { readonly fight: boolean; readonly top: number }>();
 
 /** Records the visible screen header's top, from the top of the page. */
 function noteHeaderTop(where: string): void {
   const headers = visible('.screen-header');
   expect(headers, where).toHaveLength(1);
   const top = headers[0]?.getBoundingClientRect().top;
-  if (top !== undefined) headerTops.set(where, Math.round(top + window.scrollY));
+  const fight = document.body.dataset['shell'] === 'fight';
+  if (top !== undefined) headerTops.set(where, { fight, top: Math.round(top + window.scrollY) });
 }
 
-/** Every setup screen's header starts in the same place: top-anchored, never centred. */
+/** Every setup screen's header starts in the same place as its kind's: top-anchored, never centred. */
 function checkHeaderTops(): void {
-  const first = [...headerTops.values()][0];
-  const off = [...headerTops].filter(([, top]) => Math.abs(top - (first ?? top)) > 1);
+  const off = [...headerTops].filter(([, { fight, top }]) => {
+    const first = [...headerTops.values()].find((one) => one.fight === fight);
+    return Math.abs(top - (first?.top ?? top)) > 1;
+  });
   expect({ off, screens: headerTops.size }).toStrictEqual({ off: [], screens: headerTops.size });
 }
 
