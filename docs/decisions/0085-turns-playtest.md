@@ -8,6 +8,7 @@
   tab, the one setup screen), ADR 0082 (pokes)
 - Serves: ADR 0083, build plan step 4: "a real two-phone playtest of play by turns (24 h turns, the
   inbox, 'Your turn') before ranked builds on it"
+- Amended by: ADR 0086 (by turns starts from the friend sheet's Take turns; "Your games" and ended rows now)
 
 ## Context
 

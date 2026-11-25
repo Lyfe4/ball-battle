@@ -7,6 +7,7 @@
 - Builds on: ADR 0053, 0054 (the live clock and countdown), ADR 0063 (catching up gently)
 - Amended by: its addendum of 2026-11-23 (the one who asked hears the yes)
 - Amended by: ADR 0081 (the floating card also waits through a lineup pick)
+- Amended by: ADR 0086 (the floating card becomes the one incoming banner, at the top on a phone)
 
 ## Context
 

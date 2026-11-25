@@ -5,6 +5,7 @@
 - Amends: ADR 0020 (§1 desktop adapts, §2 the paused match beside setup screens)
 - Amended by: ADR 0032 (the Sticker Pop restyle: a calm platform, a playful arena), ADR 0067 (the
   beside layout named: any landscape screen below the desktop width)
+- Amended by: ADR 0087 (the frame: at most 90rem with each screen's own columns by kind; notices and Profile stop floating)
 
 ## Context
 

@@ -8,6 +8,7 @@
 - Amended by: ADR 0044 (the panel keeps off the court, has a compact form, makes the match wait
   when it must cover it, returns focus on a tap outside, and shares the legend's look)
 - Amended by: ADR 0064 (sound: a Sound row beside Speed)
+- Amended by: ADR 0086 (settings closes with the shared ×, not "Close ›"), ADR 0087 (the gear is always last in the header, after any `?`)
 
 ## Context
 

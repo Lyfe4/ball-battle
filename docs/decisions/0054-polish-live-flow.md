@@ -6,6 +6,7 @@
   is 6 s with "Get ready" before the 3-2-1; buttons that move to another screen wait for it), ADR
   0038 (one look per state: the chosen option)
 - Amended by: ADR 0061 (the coin toss as a moment, and together online)
+- Amended by: ADR 0087 (sized skeletons for lists, one calm reveal, one failure card; the first paint is the real frame)
 
 ## Context
 

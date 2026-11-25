@@ -10,6 +10,7 @@
   spike against Supabase Auth v2.197.0), changed as below
 - Amended by: ADR 0081 (the account screen becomes Profile and the Friends tab; a friend's challenge card folds into a badge)
 - Amended by: ADR 0082 (the inbox on pokes with a slow safety read; Auth hooks refuse what we didn't start)
+- Amended by: ADR 0086 (the addendum of 2026-11-25: a friend's or a request's More, Report and Block move into the person's sheet, one level deep and confirmed)
 
 ## Context
 

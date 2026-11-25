@@ -15,6 +15,7 @@
   without accounts)
 - Parity checklist: `docs/app-shell-checklist.md` (everything home and the account screen do
   today; each build pull request ticks off what it moves)
+- Amended by: ADR 0086 (Play loses the strip; one incoming banner; a row opens the friend's sheet; What to play has the × only; focus rings for the keyboard only), ADR 0087 (the rail on every screen but a fight; the bar on browse screens; the avatar in the lead slot; one ball-name size; the Friends order fixed; Profile's stats card dropped; Play under the header row)
 
 ## Context
 
