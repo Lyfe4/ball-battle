@@ -268,8 +268,8 @@ export function createOnlineScreens(
     signIn: () => {
       host.go(writeSignInParams);
     },
-    challenge: (friend) => {
-      challenges.challengeFriend(friend);
+    challenge: (friend, turns) => {
+      challenges.challengeFriend(friend, turns);
     },
     ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
     ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),

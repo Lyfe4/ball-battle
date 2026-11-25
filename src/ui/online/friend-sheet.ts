@@ -21,6 +21,8 @@ import {
 export interface FriendSheetHost {
   /** Challenge · live: the vs Friend setup, the challenge going to this friend. */
   readonly challenge?: (friend: FriendEntry) => void;
+  /** Take turns (ADR 0085, where the build has it): by turns, its lineup first; any time. */
+  readonly turns?: (friend: FriendEntry) => void;
   /** Each change to a friendship; resolves true when it was made (the tab redrew). */
   readonly remove: (id: string) => Promise<boolean>;
   readonly block: (id: string) => Promise<boolean>;
@@ -147,6 +149,17 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
           challenge(person);
         });
         actions.append(live);
+      }
+      const turns = host.turns;
+      if (turns !== undefined) {
+        const take = element('button', 'hud-button', SHEET_LINES.turns);
+        take.type = 'button';
+        take.setAttribute('aria-label', `Take turns with ${person.name}`);
+        take.addEventListener('click', () => {
+          sheet.close();
+          turns(person);
+        });
+        actions.append(take);
       }
       const remove = row(SHEET_LINES.remove, `Remove ${person.name}`);
       remove.addEventListener('click', () => {

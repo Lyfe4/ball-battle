@@ -36,8 +36,13 @@ export interface Sender {
   sendTurns(chosen: SetupChoices, lineup: Lineup): Promise<void>;
   /** The Play tab's Play against a friend: no rules step. */
   playFriend(setup: FriendSetup): Promise<void>;
-  /** The friend the next challenge is for (a friend row's Challenge), or none. */
-  invite(friend: { readonly id: string; readonly name: string } | undefined): void;
+  /**
+   * The friend the next challenge is for (a friend row's Challenge), or none; `turns` when it is
+   * Take turns from their sheet (ADR 0085): the send screen goes straight on to the lineup.
+   */
+  invite(friend: { readonly id: string; readonly name: string } | undefined, turns?: boolean): void;
+  /** Whether the send screen goes straight on to the lineup by turns: true once, then false. */
+  turnsFirst(): boolean;
   /** What Play left for the send screen to show (the 16+ question, or why it failed), once. */
   takeLeft(): (() => void) | undefined;
 }
@@ -48,6 +53,7 @@ export function createSender(host: SenderHost): Sender {
   /** The friend the challenge being sent is for (ADR 0079 PR (d)), if any. */
   let inviting: { readonly id: string; readonly name: string } | undefined;
   let left: (() => void) | undefined;
+  let straightToLineup = false;
 
   /** Play's own step on the send screen, in place of its rules step. */
   function leave(show: () => void, chosen: SetupChoices): void {
@@ -121,8 +127,14 @@ export function createSender(host: SenderHost): Sender {
         if (!host.askFirst(() => send(chosen, 'gate'))) void send(chosen, 'gate');
       }, chosen);
     },
-    invite(friend) {
+    invite(friend, turns = false) {
       inviting = friend;
+      straightToLineup = turns;
+    },
+    turnsFirst() {
+      const first = straightToLineup;
+      straightToLineup = false;
+      return first;
     },
     takeLeft() {
       const show = left;

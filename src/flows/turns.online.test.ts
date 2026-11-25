@@ -47,7 +47,7 @@ async function whoseTurn(pages: readonly Page[], ms: number): Promise<Page> {
 
 describe('play by turns with a friend', () => {
   it(
-    'is sent from the friend row, accepted from Friends, and each turn reaches the other',
+    'is sent from the friend’s sheet, accepted from Friends, and each turn reaches the other',
     { timeout: 180_000 },
     async () => {
       const stem = crypto.randomUUID().slice(0, 6);
@@ -59,15 +59,14 @@ describe('play by turns with a friend', () => {
       await two.goto(BASE);
       await socketOf(two).waitUp();
 
-      // Challenge → vs Friend setup → By turns → the lineup → Send challenge.
+      // Jo's sheet → Take turns → the lineup in place → Send challenge (ADR 0085, 0086). The vs
+      // Friend setup's Play row stays for links (friend-setup).
       await one.goto(`${BASE}/?view=friends`);
       await friendsOf(one)
         .locator('.friends-row', { hasText: jo })
-        .getByRole('button', { name: `Challenge ${jo}` })
+        .locator('.friends-open')
         .click();
-      await one.getByRole('heading', { name: 'vs Friend' }).waitFor();
-      await one.getByRole('button', { name: 'By turns' }).click();
-      await one.getByRole('button', { name: 'Choose lineup' }).click();
+      await one.getByRole('button', { name: `Take turns with ${jo}` }).click();
       await buildLineup(one, 'Send challenge');
       await one.getByRole('heading', { name: `Sent to ${jo}` }).waitFor();
 

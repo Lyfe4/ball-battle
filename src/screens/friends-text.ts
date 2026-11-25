@@ -81,6 +81,7 @@ export const reportTitle = (name: string) => `Report the name ${name}?`;
 /** The person's sheet's words (friend-sheet.ts). */
 export const SHEET_LINES = {
   challenge: 'Challenge · live',
+  turns: 'Take turns',
   remove: 'Remove friend',
   report: 'Report name',
   block: 'Block',

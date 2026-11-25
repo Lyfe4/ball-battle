@@ -5,6 +5,7 @@
 // reads `/me` (only where there may be a player) and `/me/friends` when it opens; never on a timer.
 import type { FriendEntry, Invite, TurnWaiting } from '../api/friends.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
+import { TURNS_BUILD } from '../app/turns-build.ts';
 import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
 import { hasAccount, type DeviceStorage } from '../app/online-device.ts';
 import type { WhoAmI } from '../app/who-am-i.ts';
@@ -27,8 +28,11 @@ export interface FriendsTabHost {
   readonly sendLink: () => void;
   /** Sign in: its own screen. */
   readonly signIn: () => void;
-  /** Challenge a friend from their row: the send screen, for them. */
-  readonly challenge: (friend: FriendEntry) => void;
+  /**
+   * Challenge a friend: the send screen, for them; `turns` (Take turns in their sheet, where
+   * TURNS_BUILD, ADR 0085) goes by turns straight to its lineup.
+   */
+  readonly challenge: (friend: FriendEntry, turns?: boolean) => void;
   /** The friends changed here: the inbox reads now. */
   readonly changed?: () => void;
   /** Accept and No thanks on a friend's challenge (the inbox's, ADR 0081). */
@@ -91,7 +95,17 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
             return false;
           }
         },
-        challenge: host.challenge,
+        challenge: (friend) => {
+          host.challenge(friend);
+        },
+        // Take turns only where the build plays by turns (ADR 0085).
+        ...(TURNS_BUILD
+          ? {
+              takeTurns: (friend: FriendEntry) => {
+                host.challenge(friend, true);
+              },
+            }
+          : {}),
         ...(host.changed === undefined ? {} : { changed: host.changed }),
         ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
         ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
