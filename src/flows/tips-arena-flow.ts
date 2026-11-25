@@ -16,7 +16,7 @@ import { ARENA_SIZE } from '../sim/constants.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { frames, until, visible } from './page-support.ts';
 
-export type TipPlace = 'under-speed' | 'in-panel' | 'top-of-panel';
+export type TipPlace = 'under-speed' | 'in-panel' | 'under-panel';
 
 const box = (node: Element | null | undefined): DOMRect => {
   if (node === null || node === undefined) throw new Error('Missing part');
@@ -146,9 +146,12 @@ export async function runTipsArenaFlow(place: TipPlace): Promise<void> {
     expect({
       besideCourt: cap.left >= arena.right - 1,
       onScreen: cap.top >= 0 && cap.bottom <= window.innerHeight,
-      inPanel: cap.top >= hud.top - cap.height - 24 && cap.bottom <= hud.bottom + 1,
-      aboveFirstRow: place === 'top-of-panel' ? cap.bottom <= firstRow.top : true,
-    }).toStrictEqual({ besideCourt: true, onScreen: true, inPanel: true, aboveFirstRow: true });
+      inPanel:
+        place === 'under-panel'
+          ? cap.top >= hud.bottom - 1 && cap.top <= hud.bottom + 24
+          : cap.top >= hud.top - 1 && cap.bottom <= hud.bottom + 1,
+      belowFirstRow: cap.top >= firstRow.bottom,
+    }).toStrictEqual({ besideCourt: true, onScreen: true, inPanel: true, belowFirstRow: true });
   }
   window.localStorage.removeItem(SPEED_STORAGE_KEY);
   window.localStorage.removeItem(TIPS_STORAGE_KEY);

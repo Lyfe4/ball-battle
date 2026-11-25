@@ -12,7 +12,7 @@ import {
 } from '../app/route.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import { screenKeyOf } from '../app/history-rules.ts';
-import { tabOf, TABS, type Tab } from '../app/tabs.ts';
+import { shellOf, tabOf, TABS, type Tab } from '../app/tabs.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createTabBar } from '../ui/tab-bar.ts';
 import { friendsTabLabel } from './friends-text.ts';
@@ -29,10 +29,10 @@ export interface ShellScreens {
   /** What waits on the player: the Friends tab's badge (ADR 0081). */
   waiting(count: number): void;
   /**
-   * The avatar (accounts builds, ADR 0081): `rail` tops the rail beside; `head` goes first in the
-   * header of whichever tab screen shows (`data-tab-head`), and leaves with the tab.
+   * The avatar (accounts builds, ADR 0081, 0087): in the lead slot of whichever tab screen shows
+   * (`data-tab-head`), at every size, and leaves with the tab.
    */
-  holdAvatars(avatars: { readonly head: HTMLElement; readonly rail: HTMLElement }): void;
+  holdAvatars(avatars: { readonly head: HTMLElement }): void;
 }
 
 /** A tab's URL, written over the current one. */
@@ -70,7 +70,7 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
   );
   document.body.append(bar.element);
   let headAvatar: HTMLElement | undefined;
-  /** The header avatar into the tab's header, or out of the page where no tab shows. */
+  /** The avatar into the tab's lead slot, or out of the page where no tab shows. */
   const placeAvatar = (tab: Tab['id'] | undefined): void => {
     if (headAvatar === undefined) return;
     const head = tab === undefined ? null : document.querySelector(`[data-tab-head="${tab}"]`);
@@ -78,6 +78,8 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     else if (head.firstElementChild !== headAvatar) head.prepend(headAvatar);
   };
   let shown: Tab['id'] | undefined;
+  /** The last tab shown: a screen browsed or tasked to from it keeps it lit (ADR 0087). */
+  let opener: Tab['id'] | undefined;
   return {
     handlers: {
       ranks: {
@@ -92,7 +94,6 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
       profile: { show: host.goHome },
     },
     holdAvatars(avatars) {
-      bar.lead(avatars.rail);
       headAvatar = avatars.head;
       placeAvatar(shown);
     },
@@ -101,10 +102,15 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     },
     setVisible(current) {
       ranks?.setVisible(current === 'ranks');
-      // The bar follows the URL's screen key: the manual's index wears it, a ball's page doesn't.
+      // The shell follows the URL's screen key: the manual's index is a tab, a ball's page is
+      // browsed to from it (its tab lit even from a link), a setup is a task, a lineup a fight.
       const route = parseRoute(new URLSearchParams(window.location.search), BALL_LOOKUP, false);
-      shown = route.screen === current ? tabOf(screenKeyOf(route)) : undefined;
-      bar.show(shown);
+      const key = route.screen === current ? screenKeyOf(route) : undefined;
+      const kind = key === undefined ? 'fight' : shellOf(key);
+      shown = key === undefined ? undefined : tabOf(key);
+      if (shown !== undefined) opener = shown;
+      else if (key === 'manual-entry') opener = 'balls';
+      bar.show(kind, kind === 'fight' ? undefined : opener);
       placeAvatar(shown);
     },
   };

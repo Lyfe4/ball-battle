@@ -25,14 +25,6 @@
   margin-top: var(--space-small);
 }
 
-.home-title {
-  margin: 0;
-  font-size: var(--font-size-display);
-  font-weight: var(--font-weight-display);
-  letter-spacing: var(--letter-spacing-display);
-  line-height: 1.1;
-}
-
 .home-pitch {
   display: none;
   margin: 0;
@@ -346,10 +338,6 @@
     gap: clamp(var(--space-gap), 2.2vh, 24px);
   }
 
-  .home-title {
-    font-size: clamp(var(--font-size-hero), 7vh, 5rem);
-  }
-
   .home-pitch {
     font-size: clamp(var(--font-size-lead), 2.4vh, 1.375rem);
   }
@@ -381,17 +369,4 @@
   .home-link {
     font-size: clamp(1rem, 2vh, 1.125rem);
   }
-}
-
-/* The avatar (accounts builds), the title and the settings gear (ADR 0040, 0081), on one row. */
-.home-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-small);
-}
-
-.home-head .home-title {
-  flex: 1 1 auto;
-  min-width: 0;
 }

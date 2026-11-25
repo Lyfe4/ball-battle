@@ -40,8 +40,8 @@ export interface OnlineMount {
     'online' | 'challenge' | 'send' | 'start' | 'signin' | 'friends'
   > &
     Partial<Pick<ScreenHandlers, 'profile'>>;
-  /** The avatars (accounts builds), for the shell to place on the tab screens and the rail. */
-  readonly avatars: Pick<Avatars, 'head' | 'rail'> | undefined;
+  /** The avatar (accounts builds), for the shell to place in the tab screens' lead slot. */
+  readonly avatars: Pick<Avatars, 'head'> | undefined;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
   settle(world: WorldState): void;

@@ -48,7 +48,17 @@ interface Shift {
   readonly value: number;
   readonly startTime: number;
   readonly hadRecentInput: boolean;
+  readonly sources: readonly { readonly node?: Node | null }[];
 }
+
+/**
+ * The dev server's own unstyled paint: it injects the stylesheet by script, so the page can paint
+ * once with the browser's default 8 px body margin, and when the stylesheet lands in the same frame
+ * the stage shows (a fast load, the font preloaded), that margin going is stamped as a shift of the
+ * body alone at the stage's first frame. Production's stylesheet is in the head: no such paint.
+ */
+const unstyledBody = (shift: Shift): boolean =>
+  shift.sources.length > 0 && shift.sources.every((source) => source.node?.nodeName === 'BODY');
 
 /** The frame's layout shifts so far (buffered from its start), where the browser reports them. */
 function shiftsOf(framed: Framed): Promise<readonly Shift[] | undefined> {
@@ -144,7 +154,9 @@ export async function checkFirstPaint(search: string, where: string): Promise<vo
 
   const shifts = await shiftsOf(framed);
   if (shifts !== undefined) {
-    const after = shifts.filter((one) => one.startTime >= shownAt && !one.hadRecentInput);
+    const after = shifts.filter(
+      (one) => one.startTime >= shownAt && !one.hadRecentInput && !unstyledBody(one),
+    );
     const sum = after.reduce((total, one) => total + one.value, 0);
     expect(sum, `${where}: layout shift after the stage showed`).toBeLessThanOrEqual(
       FIRST_PAINT_CLS,

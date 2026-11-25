@@ -1,0 +1,54 @@
+/*
+ * Tabs between views of one screen (view-tabs.ts, ADR 0087): words on the page, the view on show in
+ * full colour over one underline in the primary's yellow; never the chosen-option look (choice.css),
+ * which is for picking a value. Each tab is a full tap target.
+ */
+.view-tabs {
+  display: flex;
+  gap: var(--space-gap);
+  border-bottom: 1px solid var(--color-raised);
+}
+
+.view-tab {
+  position: relative;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-small);
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.view-tab[aria-selected='true'] {
+  color: var(--color-text);
+}
+
+.view-tab[aria-selected='true']::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-accent);
+  content: '';
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .view-tab:hover {
+    color: var(--color-text);
+  }
+}
+
+.view-tab[data-pressed] {
+  color: var(--color-text);
+}
+
+:where(:root:not([data-input='pointer'])) .view-tab:focus-visible {
+  border-radius: var(--radius);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

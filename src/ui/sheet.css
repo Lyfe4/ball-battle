@@ -1,0 +1,144 @@
+/*
+ * The sheet (sheet.ts, ADR 0086, 0087): a modal dialog. On a phone held upright, along the bottom;
+ * beside and on a desktop, a panel in the middle. Taller than the screen, it scrolls inside itself.
+ * The page behind is dimmed, and a tap on it closes the sheet. Its head is the header row's
+ * geometry: the title, then the × last, one tap target tall.
+ *
+ * It enters on the motion tokens: rising from the bottom on a phone, fading and scaling from 0.98
+ * beside and on a desktop, over --motion-base; it leaves over --motion-quick. Where the browser
+ * can't animate a dialog's open and close (`@starting-style`, `allow-discrete`), it simply shows
+ * and goes. Reduced motion fades only.
+ */
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: var(--sheet-narrow);
+  max-height: calc(100dvh - var(--space-gutter));
+  margin: 0 auto;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: var(--radius-large) var(--radius-large) 0 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  opacity: 0;
+  transform: translateY(var(--space-gutter));
+  transition:
+    opacity var(--motion-quick) var(--ease-in),
+    transform var(--motion-quick) var(--ease-in),
+    overlay var(--motion-quick) var(--ease-in) allow-discrete,
+    display var(--motion-quick) var(--ease-in) allow-discrete;
+}
+
+.sheet[open] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out),
+    overlay var(--motion-base) var(--ease-out) allow-discrete,
+    display var(--motion-base) var(--ease-out) allow-discrete;
+}
+
+@starting-style {
+  .sheet[open] {
+    opacity: 0;
+    transform: translateY(var(--space-gutter));
+  }
+}
+
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--color-page) 70%, transparent);
+}
+
+.sheet-body {
+  display: grid;
+  gap: var(--space-gap);
+  padding: var(--space-gap) max(var(--space-gutter), env(safe-area-inset-right))
+    calc(var(--space-gutter) + env(safe-area-inset-bottom))
+    max(var(--space-gutter), env(safe-area-inset-left));
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+  min-height: var(--head-height);
+}
+
+.sheet-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+/* Focused by script as the sheet opens, for screen readers: never drawn (sheet.ts). */
+.sheet-title:focus {
+  outline: none;
+}
+
+.sheet-content[hidden],
+.sheet-confirm[hidden] {
+  display: none;
+}
+
+/* The confirm step: what the action does, then the action apart in the danger look, and Cancel. */
+.sheet-confirm {
+  display: grid;
+  gap: var(--space-gap);
+}
+
+.sheet-confirm-text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.sheet-confirm-actions {
+  display: grid;
+  gap: var(--space-small);
+}
+
+/* The destructive action (ADR 0086): red words on the red tint, never the yellow primary. */
+.danger-button {
+  background: var(--color-band-edged);
+  color: var(--color-unfavoured);
+}
+
+/* Beside and on a desktop: a panel in the middle that fades and scales in. */
+@media (min-aspect-ratio: 5/4) {
+  .sheet {
+    inset: 0;
+    width: calc(100% - 2 * var(--space-gutter));
+    max-width: 44rem;
+    max-height: calc(100dvh - var(--space-small) * 2);
+    margin: auto;
+    border-radius: var(--radius-large);
+    transform: scale(0.98);
+  }
+
+  @starting-style {
+    .sheet[open] {
+      transform: scale(0.98);
+    }
+  }
+
+  .sheet-body {
+    padding: var(--space-gap) var(--space-gutter);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet[open] {
+    transform: none;
+  }
+
+  @starting-style {
+    .sheet[open] {
+      transform: none;
+    }
+  }
+}

@@ -46,12 +46,13 @@
   }
 }
 
-/* A desktop: at the top of the panel, nearer the fight, floating so it never moves the panel. */
+/*
+ * A desktop: under the panel, beside the court, floating so it never moves the panel. The panel's
+ * top is the court's (ADR 0087), so there is no room above it.
+ */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .arena-caption {
     position: absolute;
-    top: auto;
-    bottom: calc(100% + var(--space-gap));
   }
 }
 

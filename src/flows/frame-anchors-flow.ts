@@ -1,0 +1,166 @@
+// One frame (ADR 0087): every screen where nothing fights has the same header row, and at one size
+// its parts sit on the same pixels on every screen. The flow opens each such screen in turn (the tab
+// screens, a ball's page, the chart, Profile, sign-in, each setup, Free play, the older-link notice)
+// in a build with accounts and online play (the API refuses everything: no screen waits on a
+// server), and reads the header row's boxes.
+//
+// On every screen: the row's first part is the lead slot, one tap target wide (Back, the avatar, or
+// nothing); the title follows it after one gap, one line in the title's size; the gear is the
+// row's last control, after any `?`; the content under the row starts at the row's left edge.
+// Across screens at one size: the lead slot's box, the title's left and top, the gear's box and the
+// row's top differ by no more than half a pixel, and the page's width doesn't change (a scrollbar
+// coming and going).
+import { expect } from 'vitest';
+import { settle, until, visible } from './page-support.ts';
+import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
+
+/** Half a pixel: a box placed by the same rules lands on the same pixel. */
+const SAME = 0.5;
+
+/** Every screen where nothing fights, by the URL a player reaches it with, and its screen key. */
+export const FRAME_SCREENS: readonly (readonly [name: string, search: string, screen: string])[] = [
+  ['Play', '', 'home'],
+  ['Balls', '?view=manual', 'manual'],
+  ['the matchup chart', '?view=manual&tab=chart', 'manual'],
+  ['a ball', '?view=manual&ball=vampire', 'manual'],
+  ['Friends', '?view=friends', 'friends'],
+  ['Ranks', '?view=ranks', 'ranks'],
+  ['Profile', '?view=profile', 'profile'],
+  ['sign-in', '?view=signin', 'signin'],
+  ['the vs Bot setup', '?mode=bo3', 'series'],
+  ['the vs Friend setup', '?view=send&fmt=reveal&mode=bo3', 'send'],
+  ['Free play', '?view=pick', 'pick'],
+  ['an older link', '?a=brawler&b=vampire&seed=7&v=1', 'outdated'],
+];
+
+interface Anchors {
+  readonly top: number;
+  /** The page's width inside any scrollbar: it never changes between screens. */
+  readonly width: number;
+  readonly lead: DOMRect;
+  readonly title: DOMRect;
+  readonly gear: DOMRect;
+}
+
+/** The header row on show: the one laid out on the page. */
+function shownHeader(where: string): HTMLElement {
+  const heads = visible('.screen-header').filter((node) => node.getClientRects().length > 0);
+  expect(heads, `${where}: one header row`).toHaveLength(1);
+  const head = heads[0];
+  if (head === undefined) throw new Error(`${where}: no header row`);
+  return head;
+}
+
+const laidOut = (node: Element): node is HTMLElement =>
+  node instanceof HTMLElement && node.getClientRects().length > 0 && !node.hidden;
+
+/** The first part laid out after `node` in its parent (the legend's panel is under the row). */
+function nextLaidOut(node: Element): HTMLElement | undefined {
+  for (let next = node.nextElementSibling; next !== null; next = next.nextElementSibling) {
+    if (laidOut(next)) return next;
+  }
+  return undefined;
+}
+
+/** Checks the row's parts on one screen and returns where they sit. */
+export function headerAnchors(where: string, content: 'check' | 'skip' = 'check'): Anchors {
+  const head = shownHeader(where);
+  const headBox = head.getBoundingClientRect();
+  const parts = [...head.children].filter(laidOut);
+  const lead = parts[0];
+  expect(lead?.classList.contains('screen-lead'), `${where}: the lead slot comes first`).toBe(true);
+  const title = head.querySelector('.screen-title');
+  if (lead === undefined || title === null) throw new Error(`${where}: no lead slot or title`);
+  const leadBox = lead.getBoundingClientRect();
+  const titleBox = title.getBoundingClientRect();
+  expect(leadBox.width, `${where}: the lead slot is one tap target wide`).toBe(44);
+  expect(parts[1], `${where}: the title follows the lead slot`).toBe(title);
+  const gap = Number.parseFloat(getComputedStyle(head).columnGap);
+  expect(
+    Math.abs(titleBox.left - leadBox.right - gap),
+    `${where}: one gap after the lead`,
+  ).toBeLessThanOrEqual(SAME);
+  expect(getComputedStyle(title).fontSize, `${where}: the title's size`).toBe('22px');
+  expect(getComputedStyle(title).whiteSpace, `${where}: the title is one line`).toBe('nowrap');
+  // The row's controls (the legend's panel opens under it): the gear is the last.
+  const controls = parts.filter((node) => node.matches('button'));
+  const gear = controls.at(-1);
+  expect(gear?.classList.contains('settings-toggle'), `${where}: the gear is last`).toBe(true);
+  if (gear === undefined) throw new Error(`${where}: no gear`);
+  // The content starts where the row does: at the frame's left edge, never a column centred. On
+  // Play that is the court where it stands left of the panel (a desktop).
+  const court = document.querySelector('.stage[data-home] .arena-container');
+  const lefts = [nextLaidOut(head), court !== null && laidOut(court) ? court : undefined]
+    .filter((node) => node !== undefined)
+    .map((node) => node.getBoundingClientRect().left);
+  if (content === 'check' && lefts.length > 0) {
+    expect(
+      Math.abs(Math.min(...lefts) - headBox.left),
+      `${where}: the content starts at the row's left edge`,
+    ).toBeLessThanOrEqual(SAME);
+  }
+  return {
+    top: headBox.top,
+    width: document.documentElement.clientWidth,
+    lead: leadBox,
+    title: titleBox,
+    gear: gear.getBoundingClientRect(),
+  };
+}
+
+const box = (rect: DOMRect): string =>
+  `${rect.x.toFixed(1)},${rect.y.toFixed(1)} ${rect.width.toFixed(1)}x${rect.height.toFixed(1)}`;
+
+function expectSameBox(a: DOMRect, b: DOMRect, what: string): void {
+  const off = Math.max(
+    Math.abs(a.x - b.x),
+    Math.abs(a.y - b.y),
+    Math.abs(a.width - b.width),
+    Math.abs(a.height - b.height),
+  );
+  expect(off, `${what}: ${box(a)} against ${box(b)}`).toBeLessThanOrEqual(SAME);
+}
+
+const near = (a: number, b: number, what: string): void => {
+  expect(Math.abs(a - b), `${what}: ${a.toFixed(1)} against ${b.toFixed(1)}`).toBeLessThanOrEqual(
+    SAME,
+  );
+};
+
+export interface FrameChecks {
+  /**
+   * Where Play's header row is held to the frame: `frame`, all of it (a phone, a desktop: the row
+   * runs across the frame's top); `gear`, its gear alone (beside, where the row tops the panel next
+   * to the court, ADR 0067, and only the gear keeps to the frame's right edge); `none` until Play's
+   * desktop layout joins the frame (plan PR 9).
+   */
+  readonly play: 'frame' | 'gear' | 'none';
+}
+
+/** Opens every frame screen and checks its header row, and that none of it moves between them. */
+export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
+  await openAs({ online: true, accounts: true }, '');
+  await onScreen('home');
+  const seen: { readonly name: string; readonly screen: string; readonly anchors: Anchors }[] = [];
+  for (const [name, search, screen] of FRAME_SCREENS) {
+    if (search !== '') await follow(search);
+    await until(() => screenOn() === screen, 5_000, name, false);
+    await settle();
+    const content = screen === 'home' && checks.play !== 'frame' ? 'skip' : 'check';
+    seen.push({ name, screen, anchors: headerAnchors(name, content) });
+  }
+  const whole = seen.filter((one) => one.screen !== 'home' || checks.play === 'frame');
+  const first = whole[0];
+  if (first === undefined) throw new Error('No screen to compare');
+  for (const { name, screen, anchors } of seen) {
+    if (screen === 'home' && checks.play === 'none') continue;
+    const than = `${name} than ${first.name}`;
+    expect(anchors.width, `the page's width on ${than}`).toBe(first.anchors.width);
+    expectSameBox(anchors.gear, first.anchors.gear, `the gear on ${than}`);
+    if (screen === 'home' && checks.play === 'gear') continue;
+    near(anchors.top, first.anchors.top, `the row's top on ${than}`);
+    expectSameBox(anchors.lead, first.anchors.lead, `the lead slot on ${than}`);
+    near(anchors.title.left, first.anchors.title.left, `the title's left on ${than}`);
+    near(anchors.title.top, first.anchors.title.top, `the title's top on ${than}`);
+  }
+}

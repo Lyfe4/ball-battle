@@ -3,19 +3,37 @@
 // tab is a link to its screen's URL, so it works as a link does (a new tab, a long press); a plain
 // tap moves by the Back rules instead of loading the page. The current tab is marked for screen
 // readers (`aria-current="page"`). Each tab holds a badge slot, empty until something waits there.
-// It shows on the tab screens alone: `body[data-tabs]` makes room for it (tab-bar.css).
-import type { Tab, TabId } from '../app/tabs.ts';
+// Where it shows is the shell's kind (`shellOf`, ADR 0087): `body[data-shell]` says which, and
+// tab-bar.css shows it and makes room for it by kind and layout.
+import type { ShellKind, Tab, TabId } from '../app/tabs.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
 import { shapeIcon } from './icons.ts';
 
 export interface TabBar {
   readonly element: HTMLElement;
-  /** The tab on show, or none: the bar hides (a fight, a setup, any screen that isn't a tab). */
-  show(current: TabId | undefined): void;
-  /** Puts `element` atop the tabs (the avatar, ADR 0081; shown on the rail only, online.css). */
-  lead(element: HTMLElement): void;
+  /**
+   * Lays the bar out for a screen of `kind` with `lit` marked as the current tab (a browse or task
+   * screen keeps its opener's tab lit). It leaves the page for a fight; on a phone held upright a
+   * task hides it too (tab-bar.css).
+   */
+  show(kind: ShellKind, lit: TabId | undefined): void;
   /** What waits in `id` (its badge, none at zero) and the tab's accessible name with it. */
   badge(id: TabId, count: number, label: string): void;
+}
+
+/**
+ * The game's mark atop the rail (ADR 0087): a ball, and the word on a desktop, where the avatar
+ * once sat (it is in each header's lead slot now). The tab bar on a phone leaves it out
+ * (tab-bar.css). Decoration: the page's title already names the game.
+ */
+function railMark(): HTMLElement {
+  const mark = element('div', 'tab-bar-mark');
+  mark.setAttribute('aria-hidden', 'true');
+  const ball = element('img', 'tab-bar-mark-ball');
+  ball.src = '/favicon.svg';
+  ball.alt = '';
+  mark.append(ball, element('span', 'tab-bar-mark-word', 'BallBattle'));
+  return mark;
 }
 
 function icon(id: TabId): SVGSVGElement {
@@ -54,19 +72,16 @@ export function createTabBar(
     list.append(item);
     return { tab, link, badge };
   });
-  nav.append(list);
+  nav.append(railMark(), list);
   return {
     element: nav,
-    show(current) {
-      setHidden(nav, current === undefined);
-      document.body.toggleAttribute('data-tabs', current !== undefined);
+    show(kind, lit) {
+      setHidden(nav, kind === 'fight');
+      if (document.body.dataset['shell'] !== kind) document.body.dataset['shell'] = kind;
       for (const { tab, link } of links) {
-        if (tab.id === current) setAttr(link, 'aria-current', 'page');
+        if (tab.id === lit) setAttr(link, 'aria-current', 'page');
         else if (link.hasAttribute('aria-current')) link.removeAttribute('aria-current');
       }
-    },
-    lead(first) {
-      nav.prepend(first);
     },
     badge(id, count, label) {
       const found = links.find(({ tab }) => tab.id === id);

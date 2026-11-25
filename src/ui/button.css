@@ -16,9 +16,9 @@
   font-weight: 700;
   cursor: pointer;
   transition:
-    transform 80ms ease-out,
-    box-shadow 80ms ease-out,
-    filter 120ms ease-out;
+    transform var(--motion-press) var(--ease-out),
+    box-shadow var(--motion-press) var(--ease-out),
+    filter var(--motion-quick) var(--ease-out);
 }
 
 /* A button with what it does under its word: "Rematch" over "Same friend, new lineups". */

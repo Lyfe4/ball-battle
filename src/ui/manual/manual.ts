@@ -3,7 +3,7 @@ import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { element, setText } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
-import { createSegmented } from '../segmented.ts';
+import { createViewTabs } from '../view-tabs.ts';
 import { createMatchupSpectrum } from './matchup-spectrum.ts';
 import { createBallDetail } from './ball-detail.ts';
 
@@ -50,24 +50,23 @@ export function createManual(
       actions.onOpen(id);
     },
   });
-  const tabRoot = element('div', 'manual-tabs');
-  const tabs = createSegmented<boolean>(
-    tabRoot,
-    'manual-tab',
-    'Show',
-    [
-      { value: false, text: 'Balls' },
-      { value: true, text: 'Matchup chart' },
-    ],
-    false,
-    (chart) => {
-      actions.onTab(chart);
-    },
-  );
   const chart = createMatchupSpectrum(balls, (id) => {
     actions.onOpen(id);
   });
-  index.append(tabRoot, grid.element, chart.element);
+  // Two views of one screen: tabs, never the chosen-option look (ADR 0087).
+  const tabs = createViewTabs<boolean>(
+    'manual-view',
+    'Show',
+    [
+      { value: false, text: 'Balls', panel: grid.element },
+      { value: true, text: 'Matchup chart', panel: chart.element },
+    ],
+    false,
+    (showChart) => {
+      actions.onTab(showChart);
+    },
+  );
+  index.append(tabs.element, grid.element, chart.element);
 
   const entry = element('section', 'manual-entry');
   const steps = element('div', 'manual-steps');
@@ -121,7 +120,9 @@ export function createManual(
       } else {
         grid.update({ pressed: [] });
       }
-      header.focus();
+      // A new page is announced from its heading; switching the view with its tabs keeps focus on
+      // the tabs, so the arrows go on working (ADR 0087).
+      if (!tabs.element.contains(document.activeElement)) header.focus();
     },
   };
 }

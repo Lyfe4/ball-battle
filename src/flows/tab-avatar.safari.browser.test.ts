@@ -5,6 +5,6 @@ import { avatarOnEveryTab } from './shell-routes-support.ts';
 
 describe('the avatar on a phone', () => {
   it('shows first in every tab screen’s header, and Profile’s Back returns to that tab', async () => {
-    await avatarOnEveryTab('head');
+    await avatarOnEveryTab();
   });
 });

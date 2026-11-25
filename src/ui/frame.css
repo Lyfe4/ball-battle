@@ -1,0 +1,142 @@
+/*
+ * The page frame (ADR 0087): every screen where nothing fights, but Play (whose court and panel sit
+ * under the header row by their own rules, home.css), is one frame: the header row at
+ * `--frame-top`, then the content from the frame's left edge, the frame at most `--frame-max` wide
+ * and centred in what the rail leaves. The header row spans the frame, so its lead slot, title and
+ * gear sit on the same pixels on every such screen at a size (frame-anchors-flow.ts); each screen's
+ * content takes its own columns inside it, never a phone column centred (ADR 0031):
+ *
+ * - list (Friends, Ranks, Profile): a main column of `--sheet-narrow`;
+ * - grid (Balls and the matchup chart): across the frame, one width for both;
+ * - wide (a ball's page, the setups, Free play): the screen's own columns, up to `--sheet-width`;
+ * - reading (sign-in, notices): a reading line of 40rem.
+ *
+ * On a phone held upright the frame is the page's column already (the stage's padding is the
+ * frame's gutter and top); these rules are for beside and the desktop, and the screens' content
+ * starts at the frame's left edge at every size.
+ */
+@media (min-aspect-ratio: 5/4) {
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) {
+    --stage-left: calc(var(--rail-room) + var(--frame-gutter));
+
+    align-items: flex-start;
+    padding-top: var(--frame-top);
+    padding-right: max(var(--frame-gutter), env(safe-area-inset-right));
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .hud {
+    width: 100%;
+    max-width: var(--frame-max);
+    max-height: none;
+    margin: 0 auto;
+    overflow: visible;
+  }
+
+  /* Each screen's root fills the frame, from its left edge, at the top (no floating card). */
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    :is(.manual, .notice, .friends-screen, .ranks-screen, .rules-step, .quick-setup) {
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+  }
+}
+
+/* The columns, beside and on a desktop: each screen's content under the header row that spans. */
+@media (min-aspect-ratio: 5/4) {
+  /* list (Friends, Ranks) and reading (sign-in, Profile, notices): one column from the left edge. */
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    :is(.friends-screen, .ranks-screen)
+    > :not(.screen-header) {
+    width: 100%;
+    max-width: var(--col-list);
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .notice > :not(.screen-header),
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-legal {
+    width: 100%;
+    max-width: var(--col-reading);
+  }
+
+  /* A notice is a page to read, not a card floating mid-screen (it sat off-centre in Firefox). */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .notice {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  /* wide: a ball's page and the setups keep their own columns, up to the sheet's width. */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .manual-entry,
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .rules-step
+    > :not(.screen-header) {
+    width: 100%;
+    max-width: var(--col-wide);
+  }
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* The setup's Choose lineup under its left column, measured from the column, not the frame. */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .rules-step > .screen-footer {
+    width: calc((var(--col-wide) - var(--space-columns)) / 2);
+  }
+}
+
+/*
+ * Play on a desktop (ADR 0087, amending ADR 0081): the header row (the avatar, BallBattle, the gear)
+ * runs across the frame's top, where every screen's sits, and the court and the panel sit under it
+ * inside the frame, the panel's top level with the court's; the court is the hero (the old 75 px
+ * title is gone). The court takes the height left under the row; the panel takes what is left of
+ * the frame's width beside it, between 22rem and 38rem (at 1280 x 800 the court keeps 668 px).
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  body[data-shell='tab'] .stage[data-home] {
+    /* What the frame leaves at each side once centred in the room the rail leaves (frame.css). */
+    --frame-extra: max(
+      0px,
+      (100% - var(--rail-room) - 2 * var(--frame-gutter) - var(--frame-max)) / 2
+    );
+    --frame-left: calc(var(--rail-room) + var(--frame-gutter) + var(--frame-extra));
+    --frame-right: calc(var(--frame-gutter) + var(--frame-extra));
+    --home-top: calc(var(--frame-top) + var(--head-height) + var(--press-depth) + var(--space-gap));
+
+    position: relative;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: 100dvh;
+    padding: var(--home-top) var(--frame-right) var(--frame-gutter) var(--frame-left);
+  }
+
+  body[data-shell='tab'] .stage[data-home] .home-head {
+    position: absolute;
+    top: var(--frame-top);
+    right: var(--frame-right);
+    left: var(--frame-left);
+  }
+
+  /* At the top of its room, so a court narrower than the room is high (its top the panel's). */
+  body[data-shell='tab'] .stage[data-home] .arena-container {
+    flex: 0 1 auto;
+    place-items: start;
+    width: auto;
+    height: 100%;
+  }
+
+  /* Static, so the header row places itself against the stage (the panel is the tip caption's
+     box mid-fight, frame-tip.css; Play shows none). */
+  body[data-shell='tab'] .stage[data-home] .hud {
+    position: static;
+    flex: none;
+    width: clamp(
+      22rem,
+      100% - (100dvh - var(--home-top) - var(--frame-gutter)) - var(--space-gap),
+      38rem
+    );
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+  }
+}

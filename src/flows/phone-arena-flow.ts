@@ -62,7 +62,7 @@ async function checkCourt(where: string): Promise<void> {
   });
 }
 
-/** Mid-fight: the court, both health bars and the speed control fit on screen, unscrolled. */
+/** Mid-fight: the court, both health bars and the speed control fit on screen, unscrolled, no bar. */
 function checkFits(where: string): void {
   const parts = [
     document.getElementById('arena'),
@@ -77,6 +77,9 @@ function checkFits(where: string): void {
   // the health bars rightly make way, and a slow browser can get there mid-check.
   if (!fighting()) return;
   expect(shown, where).toBe(4);
+  // A fight takes the phone: no tab bar under the court (ADR 0039, 0087).
+  const bar = visible('nav.tab-bar').filter((node) => node.getClientRects().length > 0);
+  expect(bar, `${where}: no tab bar in a fight`).toHaveLength(0);
   expect({ where, outside: outside.length, scrollY: window.scrollY }).toStrictEqual({
     where,
     outside: 0,

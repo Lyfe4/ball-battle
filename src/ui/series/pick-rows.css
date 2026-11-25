@@ -143,7 +143,11 @@
   min-width: 0;
 }
 
+/* A ball's name on a pick row: the one name size (ball-grid.css, ADR 0087). */
 .pick-row-name {
+  font-size: var(--font-size-tiny);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
@@ -229,7 +233,6 @@
 .pick-rows-wide .pick-row-name {
   max-width: 100%;
   overflow: hidden;
-  font-size: var(--font-size-tiny);
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow-wrap: normal;
@@ -253,7 +256,6 @@
     gap: var(--space-small);
   }
 
-  .pick-rows-wide .pick-row-name,
   .pick-rows-wide .pick-head-label {
     font-size: var(--font-size-small);
   }

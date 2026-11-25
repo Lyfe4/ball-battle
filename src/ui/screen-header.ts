@@ -22,16 +22,27 @@ export interface ScreenHeaderOptions {
    */
   readonly settings?: boolean;
   /**
-   * The tab this screen is, if it is one (ADR 0081): on a phone the shell puts the avatar first in
-   * its header while it shows as that tab (shell.ts), and it has no Back (addendum of 2026-11-24):
+   * The tab this screen is, if it is one (ADR 0081): the shell puts the avatar in its lead slot
+   * while it shows as that tab (shell.ts, ADR 0087), and it has no Back (addendum of 2026-11-24):
    * the tab bar and the browser's Back lead away. `setBack` shows it on a screen opened from it.
    */
   readonly tab?: TabId;
 }
 
 /**
- * The top of a screen: a Back button, the screen's heading, the settings gear and, where the
- * screen shows symbols, the legend's `?`. The heading takes focus when the screen opens (tabindex
+ * The lead slot of a header row: one tap target wide whether it holds Back, the avatar (a tab
+ * screen's, `data-tab-head`, placed by the shell) or nothing.
+ */
+export function createLeadSlot(tab?: TabId): HTMLElement {
+  const lead = element('div', 'screen-lead');
+  if (tab !== undefined) lead.dataset['tabHead'] = tab;
+  return lead;
+}
+
+/**
+ * The header row of a screen where nothing fights (ADR 0087): the lead slot (Back, or the avatar
+ * on a tab screen), the heading, the legend's `?` where the screen shows symbols, then the gear,
+ * always last. The heading takes focus when the screen opens (tabindex
  * -1: focusable by script, not in the tab order).
  */
 export function createScreenHeader(
@@ -41,22 +52,26 @@ export function createScreenHeader(
   options: ScreenHeaderOptions = {},
 ): ScreenHeader {
   const header = element('header', 'screen-header');
-  if (options.tab !== undefined) header.dataset['tabHead'] = options.tab;
+  // The lead slot (ADR 0087): always one tap target wide, so the title starts at the same place on
+  // every screen. Back where the screen has one; on a tab screen the shell puts the avatar here
+  // (shell.ts), and a build without accounts leaves it empty.
+  const lead = createLeadSlot(options.tab);
   const back = element('button', 'screen-back', '‹');
   back.type = 'button';
   back.dataset['sound'] = 'back';
   back.setAttribute('aria-label', backLabel);
   back.addEventListener('click', onBack);
   back.hidden = options.tab !== undefined;
+  lead.append(back);
   const heading = element('h1', 'screen-title', title);
   heading.tabIndex = -1;
-  // Settings (ADR 0040) at the top right of every screen, just before the ? where there is one.
-  header.append(back, heading);
+  header.append(lead, heading);
+  // The tools: the ? where the screen shows symbols, then the gear, always last (ADR 0087, amending
+  // ADR 0040), so it never moves between screens. The legend opens under the row.
+  const legend = options.legend === true ? createSymbolLegend() : undefined;
+  if (legend !== undefined) header.append(legend.toggle);
   if (options.settings !== false) header.append(createSettingsToggle());
-  if (options.legend === true) {
-    const legend = createSymbolLegend();
-    header.append(legend.toggle, legend.panel);
-  }
+  if (legend !== undefined) header.append(legend.panel);
   return {
     element: header,
     focus: () => {

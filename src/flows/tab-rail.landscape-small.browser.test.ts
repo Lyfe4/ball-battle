@@ -1,17 +1,24 @@
 // The tab rail on a small phone turned sideways (667 x 320, ADR 0081): all four tabs fit down the
-// left with nothing cut or scrolled, and no tab screen scrolls sideways beside it.
+// left with nothing cut or scrolled, and no tab, browse or task screen scrolls sideways beside it
+// (ADR 0087); a fight has no rail.
 import { describe, expect, it } from 'vitest';
 import { settle } from './page-support.ts';
 import { follow, onScreen, openAs, tabBar, tabLabels } from './shell-routes-support.ts';
 
 describe('the tab rail at 667 x 320', () => {
-  it('fits every tab, and every tab screen fits beside it', async () => {
+  it('fits every tab, every screen but a fight fits beside it, and a fight has none', async () => {
     await openAs({ online: true, accounts: true }, '');
     for (const [search, screen] of [
       ['', 'home'],
       ['?view=manual', 'manual'],
       ['?view=friends', 'friends'],
       ['?view=ranks', 'ranks'],
+      // Browsed to and tasks keep the rail beside (ADR 0087).
+      ['?view=manual&ball=vampire', 'manual'],
+      ['?view=profile', 'profile'],
+      ['?view=signin', 'signin'],
+      ['?mode=bo3', 'series'],
+      ['?view=pick', 'pick'],
     ] as const) {
       if (search !== '') await follow(search);
       await onScreen(screen);
@@ -35,5 +42,9 @@ describe('the tab rail at 667 x 320', () => {
         .map((node) => node.getBoundingClientRect().left);
       for (const left of content) expect(left, screen).toBeGreaterThanOrEqual(box.right);
     }
+    // A fight takes the screen: no rail by a lineup (ADR 0039, 0067).
+    await follow('?mode=bo3&fmt=reveal&step=lineup');
+    await settle();
+    expect(tabBar(), 'the lineup').toBeUndefined();
   });
 });

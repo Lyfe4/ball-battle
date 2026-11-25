@@ -12,6 +12,7 @@
 @import './ui/button.css';
 @import './ui/busy-button.css';
 @import './ui/segmented.css';
+@import './ui/view-tabs.css';
 @import './ui/choice.css';
 @import './ui/close-button.css';
 @import './ui/info-panel.css';
@@ -21,6 +22,7 @@
 @import './ui/screen-header.css';
 @import './ui/quick-setup.css';
 @import './ui/home.css';
+@import './ui/sheet.css';
 @import './ui/play-sheet.css';
 @import './ui/manual/manual.css';
 @import './ui/manual/matchup-spectrum.css';
@@ -50,3 +52,4 @@
 @import './ui/tab-bar.css';
 @import './ui/coming-soon.css';
 @import './ui/online/rematch-notice.css';
+@import './ui/frame.css';

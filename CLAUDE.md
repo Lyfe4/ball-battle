@@ -415,7 +415,7 @@ Each line is a rule; its ADR has the reasoning.
   flow, on a device without a guest. While a series is held (`held()`), home's Play is Resume
   series and New series forgets it (`forget()`).
 - Settings (ADR 0040, 0044, 0081): one menu (`settings-menu.ts`) behind exactly one gear per
-  screen, at the top right before any `?`, in one form and width on every screen (no compact form;
+  screen, at the top right and last in the header row, after any `?` (ADR 0087), in one form and width on every screen (no compact form;
   nothing around it makes a layer, `settings-one-look`). It floats by its gear, never moves the
   layout, closes on the gear, Close, Escape or a tap outside (focus back on the gear), keeps off
   the court where it can (else the arena holds an offline match until it closes; a live match

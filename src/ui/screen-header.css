@@ -1,9 +1,30 @@
-/* The top of a setup screen: Back and the heading, and the footer that keeps its main action in reach. */
+/*
+ * The header row (ADR 0087): the lead slot (Back or the avatar), the title, then the tools, the gear
+ * last; one row of `--head-height` whatever it holds, so the title and gear sit on the same pixels
+ * on every screen at a size. The legend opens on a row of its own under it. And the footer that
+ * keeps a setup's main action in reach.
+ */
 .screen-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-small);
+  gap: 0 var(--space-gap);
+  min-height: var(--head-height);
+}
+
+.screen-lead {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--head-height);
+  /* The row's controls stand on their slab (`--press-depth` under each); the slot does the same, so
+     Back, the avatar and the gear share one line. */
+  margin-bottom: var(--press-depth);
+}
+
+.screen-lead > * {
+  margin-bottom: 0;
 }
 
 .screen-back {
@@ -23,10 +44,16 @@
   cursor: pointer;
 }
 
+/* One line, cut with an ellipsis rather than wrapping the row taller (a long ball name). */
 .screen-title {
   flex: 1;
-  margin: 0;
+  min-width: 0;
+  margin: 0 0 var(--press-depth);
+  overflow: hidden;
   font-size: 1.375rem;
+  line-height: var(--head-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: var(--font-weight-display);
   letter-spacing: var(--letter-spacing-display);
 }

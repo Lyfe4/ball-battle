@@ -16,7 +16,7 @@
   gap: 4px;
   min-width: 0;
   min-height: var(--tap-target);
-  padding: var(--space-small) 2px 6px;
+  padding: var(--space-small) 0 6px;
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -29,18 +29,18 @@
   cursor: default;
 }
 
+/*
+ * One size for every ball name (ADR 0087, amending ADR 0081 requirement 2): 12 px, bold, a touch
+ * tight, so the longest (Necromancer) fits a 320 px phone's tile on one line and no name reads a
+ * size smaller than its neighbours. The lineup's tray and the pick rows use the same.
+ */
 .ball-tile-name {
   max-width: 100%;
-  overflow-wrap: anywhere;
-  font-size: var(--font-size-small);
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-/* Bricolage runs wider than the system font: a long name also tightens a little to stay on one line. */
-.ball-tile-name[data-long] {
   font-size: var(--font-size-tiny);
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .ball-tile-note {

@@ -45,12 +45,6 @@ export interface BallGridOptions {
 }
 
 /**
- * Names longer than this many letters can overflow a 4-column phone tile at the normal size: a
- * nine-letter name with wide letters ('Boomerang') does, so nine already counts as long.
- */
-const LONG_NAME = 8;
-
-/**
  * Every ball as a tile: the real drawing, large, and the name, no description (the manual
  * holds that), so the whole roster fits on a phone screen without scrolling or clipping. Tiles are
  * buttons in a group with roving focus: arrows, Home and End move, Enter or Space picks, Tab leaves
@@ -76,8 +70,6 @@ export function createBallGrid(
     mark.setAttribute('aria-hidden', 'true');
     const note = element('span', 'ball-tile-note');
     const name = element('span', 'ball-tile-name', ball.name);
-    // A long name ("Necromancer") takes the smaller size, so it fits a phone tile unbroken.
-    if (ball.name.length > LONG_NAME) name.dataset['long'] = '';
     tile.append(mark, icon, name, note);
     tile.addEventListener('click', () => {
       if (tile.getAttribute('aria-disabled') === 'true') return;

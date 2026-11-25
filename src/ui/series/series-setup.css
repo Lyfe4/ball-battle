@@ -130,11 +130,13 @@
   font-weight: 700;
 }
 
+/* A ball's name in the tray: the one name size (ball-grid.css, ADR 0087). */
 .lineup-tray-name {
   max-width: 100%;
-  overflow-wrap: anywhere;
-  font-size: var(--font-size-small);
-  font-weight: 600;
+  font-size: var(--font-size-tiny);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .lineup-tray-empty .lineup-tray-name {
@@ -161,10 +163,6 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.lineup-tray-compact .lineup-tray-empty .lineup-tray-name {
-  font-size: var(--font-size-tiny);
 }
 
 /*
