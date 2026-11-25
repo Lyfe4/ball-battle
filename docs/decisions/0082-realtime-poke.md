@@ -305,7 +305,9 @@ code" and nothing comes, and pg_net keeps its answer in `net._http_response` for
 - `game.mail_outcomes(hours)` counts the last day's sends, those refused or never answered (a
   status outside 2xx, a timeout, a connection error) and those whose answer went before anyone
   copied it (`unseen`; a send under 2 minutes old with no answer is on its way, in neither). It only
-  reads, so the daily check calls it through the read-only SQL endpoint on both projects.
+  reads, so the daily check calls it through the read-only SQL endpoint on both projects, as
+  `supabase_read_only_user`, which is granted execute on it alone (`20261125210000_mail_watch_read_only.sql`:
+  the first daily check after the watch failed without it).
 - **Alerts:** the daily check (`project-check.ts`, `supabase-daily.yml`) fails on any refused send
   in the last 24 h, so GitHub emails you; `unseen` is a warning on the run. `/api/v1/health` adds
   `emailSends` (`ok`, `failing`, `unseen`, `unknown`), never changing its status: an UptimeRobot

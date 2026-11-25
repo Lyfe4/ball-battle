@@ -128,6 +128,16 @@ describe('the mail watch', () => {
     expect(left.map((row) => Number(row.request_id))).toStrictEqual([-3]);
   });
 
+  it('is counted by the daily check’s read-only role, and nothing else that role can’t read', async () => {
+    // `supabase db query --read-only` runs as supabase_read_only_user (pg_read_all_data): reading
+    // the tables isn't enough, the function needs its own execute (the 2026-11-25 daily check
+    // failed with "permission denied for function mail_outcomes"). Not mail_watch: it writes.
+    const [rights] = await admin<{ outcomes: boolean; watch: boolean }[]>`select
+        has_function_privilege('supabase_read_only_user', 'game.mail_outcomes(integer)', 'execute') as outcomes,
+        has_function_privilege('supabase_read_only_user', 'game.mail_watch()', 'execute') as watch`;
+    expect(rights).toStrictEqual({ outcomes: true, watch: false });
+  });
+
   it('is read by no page role, and only health’s read by the API', async () => {
     const [rights] = await admin<
       { api_watch: boolean; api_outcomes: boolean; anon: boolean; table: boolean }[]
