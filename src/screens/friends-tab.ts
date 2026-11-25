@@ -4,11 +4,11 @@
 // in unlocks, with Sign in, never a wall; with accounts off, that friends lists are on the way. It
 // reads `/me` (only where there may be a player) and `/me/friends` when it opens; never on a timer.
 import type { FriendEntry, Invite, TurnWaiting } from '../api/friends.ts';
-import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
-import { whoAmI } from '../app/who-am-i.ts';
+import type { WhoAmI } from '../app/who-am-i.ts';
+import type { WhoSource } from '../app/who-source.ts';
 import { busyOnClick } from '../ui/busy-button.ts';
 import { element } from '../ui/dom.ts';
 import { createFriendsSection } from '../ui/online/friends-section.ts';
@@ -17,6 +17,8 @@ import { FRIENDS_SOON, LINK_CARD, SIGN_IN_CARD } from './friends-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
 export interface FriendsTabHost {
+  /** Who this device plays as: one `/me` shared with the avatar, kept for the visit (ADR 0087). */
+  readonly who: WhoSource;
   readonly storage: DeviceStorage;
   readonly cookies: () => string;
   /** In-app Back: Play, as the tab Back rule says (ADR 0081). */
@@ -139,14 +141,23 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
       );
       return;
     }
-    // The link card at once: it never waits on the server.
-    body.replaceChildren(link);
-    const who = await whoAmI(host.storage, host.cookies(), () => api<PlayerResponse>('GET', 'me'));
-    if (who.kind === 'account') {
-      body.replaceChildren(friends.element);
-      await friends.open();
-    } else if (who.kind === 'unknown') body.replaceChildren(link, unknownCard());
-    else body.replaceChildren(link, signInCard());
+    // What this visit already knows shows at once (an account's friends from the visit cache), and
+    // the link card never waits on the server; then `/me`, shared with the avatar, says who.
+    const shown = (who: WhoAmI | undefined): void => {
+      if (who?.kind === 'account') {
+        if (friends.element.parentElement !== body) body.replaceChildren(friends.element);
+      } else if (who?.kind === 'unknown') body.replaceChildren(link, unknownCard());
+      else if (who?.kind === 'none' || who?.kind === 'guest')
+        body.replaceChildren(link, signInCard());
+      else body.replaceChildren(link);
+    };
+    const known = host.who.known();
+    shown(known);
+    if (known?.kind === 'account') void friends.open();
+    const who = await host.who.ask();
+    if (who.kind === known?.kind) return;
+    shown(who);
+    if (who.kind === 'account') await friends.open();
   }
 
   return {

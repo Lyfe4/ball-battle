@@ -16,6 +16,7 @@ import {
   type TurnWaiting,
 } from '../../api/friends.ts';
 import type { ApiFailure, ApiResult } from '../../app/api.ts';
+import { visitCache, type VisitKey } from '../../app/visit-cache.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { addField } from './friends-add-field.ts';
 import { rowMore, type RowAsk } from './friends-more.ts';
@@ -32,6 +33,9 @@ import {
   STATUS_WORDS,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
+
+/** The Friends tab's last list this visit (visit-cache.ts). */
+const FRIENDS_SEEN: VisitKey<FriendsResponse> = { name: 'friends' };
 
 export interface FriendsHost {
   readonly api: <T>(
@@ -221,6 +225,8 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   function draw(): void {
     if (list === undefined) return;
+    // Kept for the visit: the tab opened again shows it at once while it reads (ADR 0087).
+    visitCache.write(FRIENDS_SEEN, list);
     code = list.code;
     codeText.textContent = shownFriendCode(code);
     const now = list;
@@ -303,7 +309,16 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     note.textContent = '';
     say('');
     copy.textContent = 'Copy';
+    // What this visit read shows at once, and the read refreshes it in place.
+    // Never another player's: a sign-in or a switch clears the cache, and with it this list.
+    list = visitCache.read(FRIENDS_SEEN);
+    if (list !== undefined) {
+      draw();
+      root.hidden = false;
+    }
     const answer = await host.api<FriendsResponse>('GET', 'friends');
+    // A failed refresh under what this visit already showed keeps it (the inbox keeps it current).
+    if (!answer.ok && list !== undefined && !root.hidden && problemBox.hidden) return;
     if (!answer.ok) {
       problem.textContent = host.line(answer);
       problemBox.hidden = false;

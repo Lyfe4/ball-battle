@@ -2,10 +2,9 @@
 // actions, which it shares with the sign-in screen (account-step.ts): the username, Log out and
 // Delete account; for a guest, what signing in unlocks, Sign in and Forget me. It reads `/me` once
 // when it opens (who-am-i.ts) and nothing else; the stats card reads nothing.
-import type { PlayerResponse } from '../api/session.ts';
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
-import { whoAmI } from '../app/who-am-i.ts';
+import type { WhoSource } from '../app/who-source.ts';
 import { createComingSoon } from '../ui/coming-soon.ts';
 import { element } from '../ui/dom.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
@@ -16,6 +15,8 @@ import { onlineNotice } from './online-text.ts';
 import { accountProfile, guestProfile, PROFILE_STATS, unknownProfile } from './profile-text.ts';
 
 export interface ProfileHost {
+  /** Who this device plays as: one `/me` shared with the avatar, kept for the visit (ADR 0087). */
+  readonly who: WhoSource;
   readonly storage: DeviceStorage;
   /** In-app Back: the previous screen, else Play. */
   readonly back: () => void;
@@ -105,8 +106,11 @@ export function createProfile(
   });
 
   async function open(): Promise<void> {
-    loading();
-    const who = await whoAmI(host.storage, host.cookies(), () => api<PlayerResponse>('GET', 'me'));
+    // An account this visit already knows shows at once, then refreshes in place (ADR 0087).
+    const known = host.who.known();
+    if (known?.kind === 'account') account.show(known.username);
+    else loading();
+    const who = await host.who.ask();
     switch (who.kind) {
       case 'account':
         account.show(who.username);

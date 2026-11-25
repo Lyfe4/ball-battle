@@ -5,7 +5,6 @@
 // result is read once and dropped from the address, so a reload doesn't repeat it.
 import { type AuthOptions, type GoogleResult, type SignInResponse } from '../api/accounts.ts';
 import type { CurrentMatch } from '../api/live.ts';
-import type { PlayerResponse } from '../api/session.ts';
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import {
   hasAccount,
@@ -15,7 +14,8 @@ import {
   type DeviceStorage,
 } from '../app/online-device.ts';
 import { writeSignInParams } from '../app/online-url.ts';
-import { whoAmI } from '../app/who-am-i.ts';
+import { visitCache } from '../app/visit-cache.ts';
+import type { WhoSource } from '../app/who-source.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createAccountStep } from './account-step.ts';
@@ -29,6 +29,8 @@ import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './s
 const GOOGLE_START = '/api/v1/auth/google';
 
 export interface SignInHost {
+  /** Who this device plays as: one `/me` shared with the avatar, kept for the visit (ADR 0087). */
+  readonly who: WhoSource;
   readonly storage: DeviceStorage;
   /** In-app Back: the previous screen, else home. */
   readonly back: () => void;
@@ -111,6 +113,8 @@ export function createSignIn(
 
   /** Signed in: a sign-in just now asks for a username, once (ADR 0079). */
   function done(justSignedIn = true): void {
+    // A new player: nothing read this visit for the last one shows again (ADR 0087).
+    if (justSignedIn) visitCache.clear();
     rememberAccount(host.storage, true);
     void account.open(justSignedIn);
   }
@@ -224,9 +228,7 @@ export function createSignIn(
       // Signed in as the server says: Safari clears the device's keys after 7 days without a
       // visit while the session cookie stays (ADR 0079 addendum of 2026-11-22). Not known
       // (offline, failing): the device's keys decide, as before.
-      const who = await whoAmI(host.storage, host.cookies(), () =>
-        api<PlayerResponse>('GET', 'me'),
-      );
+      const who = await host.who.ask();
       if (who.kind === 'account') done(false);
       else start();
       return;

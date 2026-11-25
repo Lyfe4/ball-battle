@@ -59,11 +59,19 @@ describe('adding a friend', () => {
       await friendsOf(one).getByText(`Request sent to ${jo}.`).waitFor();
       expect(await namesIn(one, 'outgoing')).toStrictEqual([jo]);
 
-      // The other phone opens its Friends tab afresh and finds the request waiting.
+      // The other phone opens its Friends tab afresh and finds the request waiting. The avatar and
+      // the tab ask who this is at once: one `/me` between them (ADR 0087).
+      const asked: string[] = [];
+      const countMe = (request: { url: () => string }) => {
+        if (new URL(request.url()).pathname === '/api/v1/me') asked.push(request.url());
+      };
+      two.on('request', countMe);
       await two.goto(`${BASE}/?view=friends`);
-      await friendsOf(two)
-        .getByRole('button', { name: `Accept ${sam}` })
-        .click();
+      const accept = friendsOf(two).getByRole('button', { name: `Accept ${sam}` });
+      await accept.waitFor();
+      two.off('request', countMe);
+      expect(asked, 'one /me for the avatar and the Friends tab').toHaveLength(1);
+      await accept.click();
       await listed(two, 'friends', sam);
       expect(await namesIn(two, 'friends')).toStrictEqual([sam]);
       expect(await namesIn(two, 'incoming')).toStrictEqual([]);
