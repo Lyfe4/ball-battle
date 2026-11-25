@@ -218,3 +218,14 @@ jobs:
           else
             pnpm exec vitest run --project "browsers* ($ENGINE)"               --project "!browsers-touch ($ENGINE)" --project "!browsers-safari ($ENGINE)"
           fi
+
+      # The font downloads once on a first visit to every page (ADR 0087), in this engine, as
+      # production serves the build: WebKit included, which the dev server can't show
+      # (scripts/font-once.ts). Once per engine, with the rest.
+      - name: The font once, as production serves it
+        if: matrix.part == 'rest'
+        env:
+          ENGINE: ${{ matrix.browser }}
+        run: |
+          pnpm exec vite build
+          node scripts/font-once.ts "$ENGINE"
