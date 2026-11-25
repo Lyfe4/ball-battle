@@ -39,7 +39,8 @@ import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 import { installFrameMeter } from './ui/frame-meter.ts';
 import { createFrameTip } from './ui/frame-tip.ts';
 
-// Sound waits for the first tap (sound.ts); a finger's tap shows on what it presses (press.ts).
+// Sound waits for the first tap (sound.ts); a finger's tap shows on what it presses, and never as
+// a focus ring (press.ts).
 installSound(storage);
 installPressFeedback();
 const stage = getElement('stage', HTMLElement);

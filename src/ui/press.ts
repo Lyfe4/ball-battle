@@ -9,6 +9,10 @@
 // shows for at least PRESS_SHOWN_MS, so a quick tap is seen, and always goes: at the end of the
 // press, or at once when the browser takes the touch for a scroll (pointercancel). A mouse keeps its
 // own hover and `:active`.
+//
+// A press also says the page is in a pointer's hands (input-modality.ts, ADR 0086): focus rings show
+// for the keyboard only, so a tap never leaves a ring on what a script focused after it.
+import { installInputModality } from '../app/input-modality.ts';
 
 /** What a finger presses: the controls of every screen. */
 export const PRESSABLE = 'button, a[href], summary, [role="button"], [role="switch"], [role="tab"]';
@@ -28,6 +32,7 @@ export function pressableAt(target: EventTarget | null): HTMLElement | undefined
 }
 
 export function installPressFeedback(doc: Document = document): void {
+  installInputModality(doc);
   let pressed: HTMLElement | undefined;
   let litAt = 0;
   let lighting: number | undefined;

@@ -140,8 +140,8 @@
   box-shadow: none;
 }
 
-.screen-back:focus-visible,
-.symbol-legend-toggle:focus-visible {
+:where(:root:not([data-input='pointer'])) .screen-back:focus-visible,
+:where(:root:not([data-input='pointer'])) .symbol-legend-toggle:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 

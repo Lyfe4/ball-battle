@@ -26,7 +26,10 @@
 }
 
 .settings-volume:focus-visible {
-  border-radius: 999px;
   outline: none;
+}
+
+:where(:root:not([data-input='pointer'])) .settings-volume:focus-visible {
+  border-radius: 999px;
   box-shadow: var(--focus-ring);
 }

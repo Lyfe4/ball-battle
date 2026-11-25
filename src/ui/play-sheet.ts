@@ -8,7 +8,7 @@ import { FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
 
 export interface PlaySheet {
   readonly element: HTMLDialogElement;
-  /** Opens on `choice`, focus on what is chosen first. */
+  /** Opens on `choice`, focus on its title. */
   open(choice: PlayChoice): void;
   /** Closes it, if open (leaving the Play tab). */
   close(): void;
@@ -36,6 +36,9 @@ export function createPlaySheet(
   const dialog = element('dialog', 'play-sheet');
   const title = element('h2', 'play-sheet-title', SHEET_WORDS.title);
   title.id = 'play-sheet-title';
+  // Focus lands on the title as it opens (never a ring: tabindex -1), so a screen reader hears the
+  // dialog's name and Tab reaches the first choice (ADR 0086).
+  title.tabIndex = -1;
   dialog.setAttribute('aria-labelledby', title.id);
 
   let choice: PlayChoice | undefined;
@@ -166,10 +169,7 @@ export function createPlaySheet(
       choice = next;
       render();
       if (!dialog.open) dialog.showModal();
-      // Into the sheet, onto what is chosen first: a screen reader hears the group and the choice.
-      dialog
-        .querySelector<HTMLElement>('[role="group"]:not([hidden]) [aria-pressed="true"]')
-        ?.focus();
+      title.focus();
     },
     close() {
       if (dialog.open) dialog.close();

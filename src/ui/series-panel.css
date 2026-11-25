@@ -33,7 +33,7 @@
   color: var(--color-text-muted);
 }
 
-.series-leave:focus-visible {
+:where(:root:not([data-input='pointer'])) .series-leave:focus-visible {
   color: var(--color-focus);
 }
 

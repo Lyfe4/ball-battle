@@ -57,11 +57,11 @@
 }
 
 /* The focus halo goes round the button and its slab, so the slab stays put while focused. */
-.hud-button:focus-visible {
+:where(:root:not([data-input='pointer'])) .hud-button:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 
-.hud-button-primary:focus-visible {
+:where(:root:not([data-input='pointer'])) .hud-button-primary:focus-visible {
   box-shadow: var(--shadow-accent-slab), var(--focus-ring);
 }
 

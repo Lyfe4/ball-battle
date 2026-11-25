@@ -105,7 +105,7 @@
 }
 
 /* Keyboard focus rings the whole row, as the row is what the button picks. */
-.pick-row:has(.pick-row-pick:focus-visible) {
+:where(:root:not([data-input='pointer'])) .pick-row:has(.pick-row-pick:focus-visible) {
   box-shadow: var(--focus-ring);
 }
 

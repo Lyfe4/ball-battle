@@ -93,7 +93,7 @@
   box-shadow: none;
 }
 
-.ready-fight:focus-visible {
+:where(:root:not([data-input='pointer'])) .ready-fight:focus-visible {
   box-shadow:
     0 var(--press-depth) 0 var(--color-accent-2-slab),
     var(--focus-ring);

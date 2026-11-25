@@ -88,7 +88,7 @@
   display: none;
 }
 
-.account-toggle:focus-visible {
+:where(:root:not([data-input='pointer'])) .account-toggle:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 
