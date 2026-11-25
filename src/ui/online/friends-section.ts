@@ -37,6 +37,7 @@ import {
   addedLine,
   FRIEND_GROUPS,
   FRIENDS_FAILED_TITLE,
+  friendsTitle,
   NO_FRIENDS,
   personStatus,
   type FriendGroup,
@@ -234,8 +235,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     const box = (group: FriendGroup) => {
       const shown = element('section', 'friends-group');
       shown.dataset['group'] = group.key;
-      const count = group.key === 'friends' ? ` · ${String(now.friends.length)}` : '';
-      const title = element('h2', 'friends-group-title', `${group.title}${count}`);
+      const title = element(
+        'h2',
+        'friends-group-title',
+        group.key === 'friends' ? friendsTitle(group.title, now.friends) : group.title,
+      );
       const items = element('ul', 'friends-list');
       items.append(...now[group.key].map((friend) => rowOf(group, friend)));
       shown.append(title, items);

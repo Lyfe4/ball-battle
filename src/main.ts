@@ -177,7 +177,7 @@ const online = ONLINE_BUILD
       redraw: () => {
         arena.redraw();
       },
-      waiting: inboxViews(shell, home),
+      waiting: inboxViews(shell),
     })
   : offlineMount(() => {
       goHome('replace');

@@ -106,6 +106,13 @@ function checkPlayShows(): void {
   // The box saying what Play starts sits right above it, whole on screen too.
   const box = visible('.play-box')[0]?.getBoundingClientRect();
   expect(box !== undefined && box.top >= 0 && box.bottom <= play.top).toBe(true);
+  // Nothing social on Play (ADR 0086): no strip, and the demo court keeps its room, at least
+  // 180 px tall on a phone held upright, 390 x 664 included.
+  expect(document.querySelector('.home-status')).toBeNull();
+  if (upright) {
+    const court = document.getElementById('arena')?.getBoundingClientRect();
+    expect(Math.round(court?.height ?? 0)).toBeGreaterThanOrEqual(180);
+  }
 }
 
 /** Play: the remembered series' lineup in one tap; the level changed there is Play's next time. */

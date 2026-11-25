@@ -127,6 +127,15 @@ const group = (root: HTMLElement, key: string) =>
   );
 
 describe('the Friends section', () => {
+  it('says who is online in the friends’ title, the one place it is said (ADR 0086)', async () => {
+    const online = { id: 'f-2', name: 'Jo', status: 'online' as const };
+    const { friends, root } = section({ ...START, friends: [...START.friends, online] });
+    await friends.open();
+    expect(root.querySelector('.friends-group[data-group="friends"] h2')?.textContent).toBe(
+      'Friends · 2 · 1 online',
+    );
+  });
+
   it('shows the code, adds by what was typed, accepts and declines requests', async () => {
     const { friends, sent, root } = section();
     await friends.open();

@@ -11,7 +11,7 @@ import {
   inviteLine,
   liveUnavailable,
   STATUS_WORDS,
-  statusLine,
+  friendsTitle,
   waitingCount,
 } from './friends-text.ts';
 
@@ -63,59 +63,17 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
     deadline: '2026-11-26T10:00:00.000Z',
   });
 
-  it('says whose turn it is first: one by name, more by count (ADR 0085)', () => {
-    const none = { friends: [friend('online')], requests: 0, invites: [] };
-    expect(statusLine({ ...none, turns: [turn('Sam')] })).toBe('Your turn vs Sam · 1 online');
-    expect(statusLine({ ...none, friends: [], turns: [turn('Sam')] })).toBe('Your turn vs Sam');
-    expect(statusLine({ ...none, friends: [], turns: [turn(null)] })).toBe('Your turn');
-    expect(statusLine({ ...none, friends: [], turns: [turn('Sam'), turn('Jo')] })).toBe(
-      'Your turn in 2 series',
-    );
-    expect(statusLine({ ...none, invites: [invite], turns: [turn('Sam'), turn('Jo')] })).toBe(
-      '2 turns · 1 challenge · 1 online',
-    );
-    expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(2);
+  it('counts what waits for the badge: turns, challenges and requests (ADR 0085)', () => {
+    const none = { friends: [friend('online')], requests: 1, invites: [] };
+    expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(3);
   });
 
-  it('puts what waits first, then who is online, and says nothing when there is nothing', () => {
-    // One thing says it whole; more than one, each in a word, so a 390 px phone shows them all.
-    expect(statusLine({ friends: [], requests: 0, invites: [invite], turns: [] })).toBe(
-      '1 challenge waiting',
+  it('says who is online in the friends list’s title, never "0 online" (ADR 0086)', () => {
+    expect(friendsTitle('Friends', [])).toBe('Friends · 0');
+    expect(friendsTitle('Friends', [friend('online'), friend('offline')])).toBe(
+      'Friends · 2 · 1 online',
     );
-    expect(statusLine({ friends: [], requests: 2, invites: [], turns: [] })).toBe(
-      '2 friend requests',
-    );
-    expect(statusLine({ friends: [friend('online')], requests: 0, invites: [], turns: [] })).toBe(
-      '1 friend online',
-    );
-    expect(
-      statusLine({
-        friends: [friend('online'), friend('online')],
-        requests: 0,
-        invites: [invite],
-        turns: [],
-      }),
-    ).toBe('1 challenge · 2 online');
-    expect(statusLine({ friends: [friend('online')], requests: 2, invites: [], turns: [] })).toBe(
-      '2 requests · 1 online',
-    );
-    expect(
-      statusLine({
-        friends: [friend('online'), friend('online')],
-        requests: 1,
-        invites: [invite],
-        turns: [],
-      }),
-    ).toBe('1 challenge · 1 request · 2 online');
-    // Never "0 friends online": in a match or offline is not online.
-    expect(
-      statusLine({
-        friends: [friend('in_a_match'), friend('offline')],
-        requests: 0,
-        invites: [],
-        turns: [],
-      }),
-    ).toBeUndefined();
+    expect(friendsTitle('Friends', [friend('in_a_match'), friend('offline')])).toBe('Friends · 2');
   });
 
   it('counts what waits on the player for the badge, and names it', () => {

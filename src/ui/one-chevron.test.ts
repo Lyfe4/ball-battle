@@ -50,9 +50,4 @@ describe('one chevron', () => {
     );
     expect(typed).toStrictEqual(['ui/manual/manual.ts']);
   });
-
-  it('is the status strip’s arrow: the strip is a text link', () => {
-    const home = readFileSync(join(SRC, 'ui/home.ts'), 'utf8');
-    expect(home).toContain("element('button', 'text-link home-status')");
-  });
 });

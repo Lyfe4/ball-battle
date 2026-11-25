@@ -20,7 +20,6 @@ function files(dir: string): { path: string; text: string }[] {
 
 /** Each text-link button, by its other class, and where it goes. */
 const NAVIGATING: Readonly<Record<string, string>> = {
-  'home-status': 'the Friends tab (the status strip, until social PR 7 removes it)',
   'play-box': 'opens What to play (a box drawn as a link, ADR 0081 addendum)',
   'home-link': 'Free play’s setup',
   'skeleton-home': 'home, from a screen still loading',
