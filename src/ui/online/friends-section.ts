@@ -223,8 +223,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     // Kept for the visit: the tab opened again shows it at once while it reads (ADR 0087).
     if (list !== undefined) visitCache.write(FRIENDS_SEEN, list);
     code = now.code;
-    codeText.textContent = code === '' ? '' : shownFriendCode(code);
+    // Before the list answers, a placeholder of the code's shape keeps its line (unread, unseen).
+    codeText.textContent = code === '' ? '0000-0000' : shownFriendCode(code);
     codeText.toggleAttribute('data-loading', code === '');
+    codeText.toggleAttribute('aria-hidden', code === '');
     const box = (group: FriendGroup) => {
       const shown = element('section', 'friends-group');
       shown.dataset['group'] = group.key;

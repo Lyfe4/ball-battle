@@ -98,13 +98,11 @@
   letter-spacing: 0.08em;
 }
 
-/* The code before the list answers: its place kept (eight characters wide), quietly. */
+/* The code before the list answers: its shape in the same line, unseen (friends-section.ts). */
 .friends-code-value[data-loading] {
-  display: inline-block;
-  width: 9ch;
-  height: 1em;
   border-radius: var(--radius);
   background: var(--color-raised);
+  color: transparent;
 }
 
 /*
