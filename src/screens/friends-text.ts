@@ -28,6 +28,9 @@ export const FRIEND_GROUPS: readonly FriendGroup[] = [
 /** What the list says when it holds nobody. */
 export const NO_FRIENDS = 'No friends yet. Share your code, or add theirs.';
 
+/** The friends list's failure card (ADR 0087): its section, named as on the guest's card. */
+export const FRIENDS_FAILED_TITLE = 'Your friends';
+
 /** The line under Add after a request: sent, or friends at once. */
 export function addedLine(answer: AddFriendResponse): string {
   return answer.outcome === 'friends'

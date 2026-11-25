@@ -6,14 +6,14 @@
 import type { FriendEntry, Invite, TurnWaiting } from '../api/friends.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
-import type { DeviceStorage } from '../app/online-device.ts';
+import { hasAccount, type DeviceStorage } from '../app/online-device.ts';
 import type { WhoAmI } from '../app/who-am-i.ts';
 import type { WhoSource } from '../app/who-source.ts';
-import { busyOnClick } from '../ui/busy-button.ts';
 import { element } from '../ui/dom.ts';
+import { failureCard } from '../ui/online/friends-loading.ts';
 import { createFriendsSection } from '../ui/online/friends-section.ts';
 import { createScreenHeader } from '../ui/screen-header.ts';
-import { FRIENDS_SOON, LINK_CARD, SIGN_IN_CARD } from './friends-text.ts';
+import { FRIENDS_FAILED_TITLE, FRIENDS_SOON, LINK_CARD, SIGN_IN_CARD } from './friends-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
 export interface FriendsTabHost {
@@ -115,17 +115,13 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     );
   }
 
-  /** `/me` didn't answer: the link card still works, and Try again asks again. */
+  /**
+   * `/me` didn't answer: the one failure card (ADR 0087), offline said as offline, and Try again
+   * asks again; the link card still works.
+   */
   function unknownCard(): HTMLElement {
-    const retry = element('button', 'hud-button', 'Try again');
-    retry.type = 'button';
-    busyOnClick(retry, open);
-    return card(
-      'friends-unknown-card',
-      'Your friends',
-      element('p', 'friends-card-text', 'We couldn’t reach the server to see who you are.'),
-      retry,
-    );
+    const kind = navigator.onLine ? 'error' : 'offline';
+    return failureCard(FRIENDS_FAILED_TITLE, failureLine(kind), open);
   }
 
   let visible = false;
@@ -151,7 +147,11 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
         body.replaceChildren(link, signInCard());
       else body.replaceChildren(link);
     };
-    const known = host.who.known();
+    // A device that remembers an account draws the account's layout at once: its parts don't move
+    // when `/me` agrees (the device's keys are a cache; `/me` still decides).
+    const known =
+      host.who.known() ??
+      (hasAccount(host.storage) ? ({ kind: 'account', username: null } as const) : undefined);
     shown(known);
     if (known?.kind === 'account') void friends.open();
     const who = await host.who.ask();

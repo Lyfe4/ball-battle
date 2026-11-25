@@ -4,7 +4,11 @@
 // who you blocked (Unblock). A friend, a request to you and a friend's challenge have More: Report
 // name and Block, asked in place (friends-more.ts). Waiting for you leads with a series by turns
 // waiting on your pick and friends' challenges (waiting-rows.ts).
-// The tab's "Play a friend with a link" card comes last, or first while there are no friends yet.
+// The order never changes after a read (ADR 0087): Waiting for you (when something waits), your
+// friends (or, with none, the empty state in their place), your code and Add, then the tab's "Play
+// a friend with a link" card, always last. The code card and the link card are in the first frame;
+// rows come from the inbox at once where it has answered, else sized skeleton rows after 150 ms
+// (friends-loading.ts), and a failed read is one card in the list's place.
 // Every change answers with the whole list, drawn again. The field takes the notice's field look;
 // every button that waits on the server is busy through busyOnClick.
 import {
@@ -19,6 +23,13 @@ import type { ApiFailure, ApiResult } from '../../app/api.ts';
 import { visitCache, type VisitKey } from '../../app/visit-cache.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { addField } from './friends-add-field.ts';
+import {
+  DEFAULT_SKELETON_ROWS,
+  failureCard,
+  inboxList,
+  skeletonRows,
+  skeletonShown,
+} from './friends-loading.ts';
 import { rowMore, type RowAsk } from './friends-more.ts';
 import { challengeRow, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
 import { element } from '../dom.ts';
@@ -26,7 +37,7 @@ import {
   addedLine,
   BLOCKED_LINE,
   FRIEND_GROUPS,
-  hasAnyone,
+  FRIENDS_FAILED_TITLE,
   NO_FRIENDS,
   removeQuestion,
   REPORTED_LINE,
@@ -51,7 +62,7 @@ export interface FriendsHost {
   readonly challenge?: (friend: FriendEntry) => void;
   /** The friends changed here (a request sent or answered): the inbox reads now. */
   readonly changed?: () => void;
-  /** The tab's link card, placed first with no friends yet, else last (ADR 0081). */
+  /** The tab's link card, always last (ADR 0087). */
   readonly link?: HTMLElement;
   /** A friend's challenge in Waiting for you: Accept (its lineup) and No thanks (ADR 0081). */
   readonly acceptInvite?: (token: string) => Promise<void>;
@@ -97,25 +108,20 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   addCard.setAttribute('aria-labelledby', 'friends-add-title');
   const addTitle = element('h2', 'friends-card-title', 'Your friend code');
   addTitle.id = 'friends-add-title';
-  const empty = element('p', 'friends-empty', NO_FRIENDS);
   const sent = element('div', 'friends-sent');
-  addCard.append(addTitle, empty, codeRow, field, sent);
-  const problem = element('p', 'friends-problem');
-  problem.setAttribute('role', 'alert');
-  const retry = textButton('Try again', 'Try again');
-  const problemBox = element('div', 'friends-problem-box');
-  problemBox.append(problem, retry);
-  problemBox.hidden = true;
+  addCard.append(addTitle, codeRow, field, sent);
   // What a block or a report just did, said where the list is.
   const note = element('p', 'friends-note');
   note.setAttribute('role', 'status');
-  root.append(problemBox, note, lists, addCard);
-  root.hidden = true;
+  root.append(note, lists, addCard);
+  if (host.link !== undefined) root.append(host.link);
 
   let code = '';
   /** The row asking a question (Remove, More, Block, Report), by its key (friendship id or invite). */
   let asking: { readonly key: string; readonly ask: 'remove' | RowAsk } | undefined;
   let list: FriendsResponse | undefined;
+  /** The friends as the inbox last said (names and status): rows at once, before `/friends`. */
+  let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
   let turns: readonly TurnWaiting[] = [];
   const rows: WaitingRowsHost = {
@@ -224,12 +230,14 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   }
 
   function draw(): void {
-    if (list === undefined) return;
+    // Before `/friends` answers, the friends the inbox named, else skeleton rows.
+    const now = list ?? inboxList(inboxFriends);
+    const fade = skeletonShown(lists);
     // Kept for the visit: the tab opened again shows it at once while it reads (ADR 0087).
-    visitCache.write(FRIENDS_SEEN, list);
-    code = list.code;
-    codeText.textContent = shownFriendCode(code);
-    const now = list;
+    if (list !== undefined) visitCache.write(FRIENDS_SEEN, list);
+    code = now.code;
+    codeText.textContent = code === '' ? '' : shownFriendCode(code);
+    codeText.toggleAttribute('data-loading', code === '');
     const box = (group: FriendGroup) => {
       const shown = element('section', 'friends-group');
       shown.dataset['group'] = group.key;
@@ -238,10 +246,19 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       const items = element('ul', 'friends-list');
       items.append(...now[group.key].map((friend) => rowOf(group, friend)));
       shown.append(title, items);
+      if (group.key !== 'friends') return shown;
+      // Your friends always sit here: rows, skeleton rows while unknown, or the empty state.
+      if (list === undefined && inboxFriends === undefined) {
+        title.textContent = group.title;
+        items.replaceWith(skeletonRows(DEFAULT_SKELETON_ROWS));
+      } else if (now.friends.length === 0) {
+        items.replaceWith(element('p', 'friends-empty', NO_FRIENDS));
+      }
       return shown;
     };
     const groups = FRIEND_GROUPS.filter(
       (group) =>
+        group.key === 'friends' ||
         now[group.key].length > 0 ||
         (group.key === 'incoming' && invites.length + turns.length > 0),
     );
@@ -256,13 +273,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
         ...invites.map((invite) => challengeRow(invite, rows)),
       );
     sent.replaceChildren(...groups.filter(withCode).map(box));
-    empty.hidden = hasAnyone(now);
-    // With no friends yet, playing by a link comes first; with friends, last.
-    const link = host.link;
-    if (link !== undefined) {
-      if (now.friends.length === 0) root.prepend(link);
-      else root.append(link);
-    }
+    addCard.hidden = false;
+    // The link card last, taken back from the guest's layout if it lent it (friends-tab.ts).
+    if (host.link !== undefined && root.lastElementChild !== host.link) root.append(host.link);
+    // One calm reveal where skeleton rows were seen (ADR 0087 rule 4).
+    lists.toggleAttribute('data-reveal', fade && list !== undefined);
   }
 
   /** A change's answer: the list drawn again, or why not under the field. */
@@ -312,29 +327,21 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     // What this visit read shows at once, and the read refreshes it in place.
     // Never another player's: a sign-in or a switch clears the cache, and with it this list.
     list = visitCache.read(FRIENDS_SEEN);
-    if (list !== undefined) {
-      draw();
-      root.hidden = false;
-    }
+    // In the first frame either way: what is known, or the skeleton's place.
+    draw();
     const answer = await host.api<FriendsResponse>('GET', 'friends');
     // A failed refresh under what this visit already showed keeps it (the inbox keeps it current).
-    if (!answer.ok && list !== undefined && !root.hidden && problemBox.hidden) return;
+    if (!answer.ok && list !== undefined) return;
     if (!answer.ok) {
-      problem.textContent = host.line(answer);
-      problemBox.hidden = false;
-      root.hidden = false;
+      // One failure card in the list's place; the link card stays (ADR 0087 rule 7).
+      lists.removeAttribute('data-reveal');
+      lists.replaceChildren(failureCard(FRIENDS_FAILED_TITLE, host.line(answer), open));
       addCard.hidden = true;
-      lists.replaceChildren();
-      if (host.link !== undefined) root.append(host.link);
       return;
     }
-    problemBox.hidden = true;
-    addCard.hidden = false;
     list = answer.body;
     draw();
-    root.hidden = false;
   }
-  busyOnClick(retry, open);
 
   return {
     element: root,
@@ -343,10 +350,16 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       if (JSON.stringify([next, nextTurns]) === JSON.stringify([invites, turns])) return;
       invites = next;
       turns = nextTurns;
-      if (list !== undefined && !root.hidden && asking === undefined) draw();
+      if (root.isConnected && asking === undefined) draw();
     },
     statuses(friends) {
-      if (list === undefined || root.hidden) return;
+      // Before `/friends` answers, the inbox's friends are the rows (ADR 0087 rule 6).
+      if (list === undefined) {
+        const before = JSON.stringify(inboxFriends);
+        inboxFriends = friends;
+        if (before !== JSON.stringify(friends) && root.isConnected) draw();
+        return;
+      }
       const before = JSON.stringify(list.friends);
       if (before === JSON.stringify(friends)) return;
       list = { ...list, friends };

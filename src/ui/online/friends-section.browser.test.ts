@@ -1,13 +1,15 @@
 // The Friends tab's lists (ADR 0079, PR (c); ADR 0081) over a fake API: the code shown with a
 // dash, a friend added by what was typed, a request accepted and one declined, a friend removed
 // only after Remove is asked in place (Keep first), a refusal said under the field, and the
-// sections in the tab's order: Waiting for you, Friends, your code and Add, then the link card; the
-// link card first while there are no friends (requirement 5); More's Block and Report name, each
+// sections in one order: Waiting for you, Friends (or the empty state), your code and Add, then the
+// link card, always last (ADR 0087); the inbox's rows at once, skeleton rows after 150 ms, one
+// failure card; More's Block and Report name, each
 // asked in place, and Unblock from the Blocked list (2026-11-25).
 import { describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendsResponse } from '../../api/friends.ts';
 import { callApi, type ApiFailure } from '../../app/api.ts';
+import { visitCache } from '../../app/visit-cache.ts';
 import { createFriendsSection } from './friends-section.ts';
 
 const json = (status: number, body: unknown) =>
@@ -26,6 +28,8 @@ const START: FriendsResponse = {
 
 /** The section over an API that keeps a list and answers each change with it. */
 function section(start: FriendsResponse = START) {
+  // Each section a fresh visit: nothing kept from the last test.
+  visitCache.clear();
   let list: FriendsResponse = start;
   const sent: string[] = [];
   const send = (input: string, init: RequestInit) => {
@@ -193,7 +197,7 @@ describe('the Friends section', () => {
     await until(() => changes() === 1, 'the inbox poked');
   });
 
-  it('puts the sections in the tab’s order, the link card first with no friends yet', async () => {
+  it('keeps one order, the link card last, the empty state in the friends’ place', async () => {
     /** The parts of the section as they come, by what each is. */
     const order = (root: HTMLElement) =>
       [...root.querySelectorAll('.friends-group, .friends-add-card, .link-card-stand-in')].map(
@@ -217,10 +221,14 @@ describe('the Friends section', () => {
       'link',
     ]);
 
+    // No friends (ADR 0087, amending ADR 0081 requirement 5): the same order, the empty state in
+    // the friends' place, the link card still last.
     const none = section({ ...START, friends: [] });
     await none.friends.open();
-    expect(order(none.root)).toStrictEqual(['link', 'incoming', 'code and Add']);
-    // Nobody at all: the code card says so.
+    expect(order(none.root)).toStrictEqual(['incoming', 'friends', 'code and Add', 'link']);
+    expect(
+      none.root.querySelector('.friends-group[data-group="friends"] .friends-empty')?.textContent,
+    ).toMatch(/^No friends yet/);
     const nobody = section({
       code: START.code,
       friends: [],
@@ -229,8 +237,7 @@ describe('the Friends section', () => {
       blocked: [],
     });
     await nobody.friends.open();
-    expect(order(nobody.root)).toStrictEqual(['link', 'code and Add']);
-    expect(nobody.root.querySelector('.friends-empty')?.hasAttribute('hidden')).toBe(false);
+    expect(order(nobody.root)).toStrictEqual(['friends', 'code and Add', 'link']);
   });
 });
 

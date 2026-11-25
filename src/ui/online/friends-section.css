@@ -88,8 +88,7 @@
 }
 
 .friends-code[hidden],
-.friends-add[hidden],
-.friends-problem-box[hidden] {
+.friends-add[hidden] {
   display: none;
 }
 
@@ -97,6 +96,48 @@
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.08em;
+}
+
+/* The code before the list answers: its place kept (eight characters wide), quietly. */
+.friends-code-value[data-loading] {
+  display: inline-block;
+  width: 9ch;
+  height: 1em;
+  border-radius: var(--radius);
+  background: var(--color-raised);
+}
+
+/*
+ * Skeleton rows while the list is read (ADR 0087): each exactly a row's height (a tap target and the
+ * row's padding), in the skeleton's calm look; hidden until the read has taken 150 ms
+ * (friends-loading.ts). What replaces them fades in once.
+ */
+.friends-skeleton[hidden] {
+  display: none;
+}
+
+.friends-skeleton-row {
+  height: calc(var(--tap-target) + 2 * var(--space-small));
+  border-radius: var(--radius);
+  background: var(--color-raised);
+}
+
+.friends-lists[data-reveal] {
+  animation-name: friends-reveal;
+  animation-duration: var(--motion-base);
+  animation-timing-function: var(--ease-out);
+}
+
+@keyframes friends-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .friends-lists[data-reveal] {
+    animation-name: none;
+  }
 }
 
 .friends-add-row {
@@ -124,10 +165,6 @@
 .friends-said[data-error] {
   color: var(--color-unfavoured);
   font-weight: 700;
-}
-
-.friends-problem {
-  margin: 0;
 }
 
 /* Requests, Sent and Your friends: apart by space, so each heading sits with its own rows. */
