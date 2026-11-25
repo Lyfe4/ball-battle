@@ -194,8 +194,9 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       if (content.more !== undefined && content.more.length > 0) {
         const more = element('div', 'notice-more');
         for (const spec of content.more) {
-          const action = element('button', 'sheet-row notice-quiet', spec.text);
+          const action = element('button', 'sheet-row', spec.text);
           action.type = 'button';
+          if (spec.opens === true) action.dataset['opens'] = '';
           action.setAttribute('aria-label', spec.label ?? spec.text);
           busyOnClick(action, spec.onClick);
           more.append(action);

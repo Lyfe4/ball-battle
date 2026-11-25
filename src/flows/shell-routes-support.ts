@@ -11,22 +11,30 @@ export interface Build {
   readonly accounts: boolean;
 }
 
-/** Loads the page as `build` at `search`. Once per file: main.ts runs once. */
-export async function openAs(build: Build, search: string): Promise<void> {
+/** A test's own API answers, by path ("/api/v1/me"); any other path is refused. */
+export type Answers = Readonly<Record<string, unknown>>;
+
+/**
+ * Loads the page as `build` at `search`, the API answering from `answers` where it has one. Once
+ * per file: main.ts runs once.
+ */
+export async function openAs(build: Build, search: string, answers: Answers = {}): Promise<void> {
   vi.stubEnv('VITE_ONLINE', build.online ? '1' : '');
   vi.stubEnv('VITE_ACCOUNTS', build.accounts ? '1' : '');
   const real = window.fetch.bind(window);
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
     if (!url.pathname.startsWith('/api/')) return real(input, init);
-    // Sign-in's options, so Google's return is read; everything else is refused.
+    // Sign-in's options, so Google's return is read, and the test's own; everything else refused.
+    const answer = answers[url.pathname];
     const options = url.pathname === '/api/v1/auth/options';
+    const ok = options || answer !== undefined;
     const body = options
       ? { google: true, emailCodes: true }
-      : { error: { code: 'not_found', message: 'No server in this test' } };
+      : (answer ?? { error: { code: 'not_found', message: 'No server in this test' } });
     return Promise.resolve(
       new Response(JSON.stringify(body), {
-        status: options ? 200 : 404,
+        status: ok ? 200 : 404,
         headers: { 'Content-Type': 'application/json' },
       }),
     );

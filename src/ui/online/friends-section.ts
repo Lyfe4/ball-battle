@@ -88,7 +88,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   const codeRow = element('p', 'friends-code');
   const codeText = element('strong', 'friends-code-value');
-  const copy = element('button', 'hud-button friends-copy', 'Copy');
+  const copy = element('button', 'hud-button hud-button-compact friends-copy', 'Copy');
   copy.type = 'button';
   copy.setAttribute('aria-label', 'Copy your friend code');
   codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);

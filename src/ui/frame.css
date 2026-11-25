@@ -269,6 +269,7 @@
 
   body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .notice-danger {
     grid-area: 2 / 2 / span 3;
+    margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }

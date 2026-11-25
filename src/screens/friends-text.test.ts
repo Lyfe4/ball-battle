@@ -140,9 +140,11 @@ describe('the person’s sheet’s words (ADR 0086)', () => {
   it('says why Challenge · live can’t be taken, and the way that works', () => {
     const jo = (status: 'online' | 'offline' | 'in_a_match') => ({ name: 'Jo', status });
     expect(liveUnavailable(jo('online'), false, true)).toBeUndefined();
-    expect(liveUnavailable(jo('offline'), false, true)).toBe('Jo is offline · Take turns instead');
+    expect(liveUnavailable(jo('offline'), false, true)).toBe(
+      'Jo is offline · Play by turns instead',
+    );
     expect(liveUnavailable(jo('in_a_match'), false, true)).toBe(
-      'Jo is in a match · Take turns instead',
+      'Jo is in a match · Play by turns instead',
     );
     // Where the build doesn't play by turns: wait for them.
     expect(liveUnavailable(jo('offline'), false, false)).toBe(

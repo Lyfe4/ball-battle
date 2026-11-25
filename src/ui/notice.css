@@ -224,25 +224,40 @@
 }
 
 /*
- * The account's own actions as rows at the card's end (Profile's Change username and Log out, ADR
- * 0087), one under another the width of the line, in the sheet's row look with its padding (the
- * quiet button's none left their words touching their edges); a rule above sets them apart from
- * the card's own business. The danger zone's rows (sheet.css) are as wide.
+ * The account's own actions as rows (Profile's Change username and Log out, ADR 0087): full-width
+ * rows one under another (button.css), a group's space below who you are. No divider: the one rule
+ * on the card is the danger group's, across the column.
  */
 .notice-more {
   display: grid;
-  gap: var(--space-small);
+  gap: var(--stack-gap);
   justify-self: stretch;
-  padding-top: var(--space-gap);
-  border-top: 1px solid var(--color-raised);
+  margin-top: calc(var(--space-group) - var(--space-gap));
 }
 
-.notice-more > .sheet-row {
-  padding: 0 var(--space-gap);
+/*
+ * Who you are on Profile (profile.ts): your disc, your @username and what opponents see, beside it;
+ * the title above is your name.
+ */
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
 }
 
-.notice-danger {
-  justify-self: stretch;
+.profile-identity-lines {
+  display: grid;
+  gap: 2px;
+}
+
+.profile-handle {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Privacy · Terms at the column's left edge, under the card they belong to, never centred. */
+.profile-legal {
+  justify-content: flex-start;
 }
 
 .notice[data-sticker] .notice-after {

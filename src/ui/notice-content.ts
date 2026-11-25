@@ -10,6 +10,8 @@ export interface NoticeButton {
   readonly label?: string;
   /** The request resolves to the button's new words ("Link copied"). */
   readonly relabel?: boolean;
+  /** As a row, it opens something (a step, a field): its "›" (button.css). */
+  readonly opens?: boolean;
 }
 
 /**

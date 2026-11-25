@@ -1,5 +1,5 @@
 // A friend's sheet (friend-sheet.ts, ADR 0085, 0086): Challenge · live always, unavailable with one
-// line on why when the friend can't take it (ADR 0086 as changed 2026-11-26), Take turns where the
+// line on why when the friend can't take it (ADR 0086 as changed 2026-11-26), Play by turns where the
 // build plays by turns (any time: the other plays their turn later), and the status of a friend
 // waiting on you in their lobby said as "Waiting for you".
 import { afterEach, describe, expect, it } from 'vitest';
@@ -52,14 +52,14 @@ describe('a friend’s sheet', () => {
     live.focus();
     expect(document.activeElement).toBe(live);
     const why = document.getElementById(live.getAttribute('aria-describedby') ?? '');
-    expect(why?.textContent).toBe('Robin is offline · Take turns instead');
+    expect(why?.textContent).toBe('Robin is offline · Play by turns instead');
     expect(why?.previousElementSibling).toBe(live);
     live.click();
     expect(asked).toStrictEqual([]);
     expect(sheet.element.open).toBe(true);
     // The way that works is the one primary.
     expect(live.classList.contains('hud-button-primary')).toBe(false);
-    const take = button('Take turns with Robin');
+    const take = button('Play by turns with Robin');
     expect(take?.classList.contains('hud-button-primary')).toBe(true);
     take?.click();
     expect(turns).toStrictEqual(['Robin']);
@@ -68,8 +68,10 @@ describe('a friend’s sheet', () => {
     sheet.open(robin('online'), 'friend');
     expect(button('Challenge Robin live')?.hasAttribute('aria-disabled')).toBe(false);
     expect(button('Challenge Robin live')?.classList.contains('hud-button-primary')).toBe(true);
-    expect(button('Take turns with Robin')?.classList.contains('hud-button-primary')).toBe(false);
-    expect(sheet.element.querySelector('.friend-sheet-why')).toBeNull();
+    expect(button('Play by turns with Robin')?.classList.contains('hud-button-primary')).toBe(
+      false,
+    );
+    expect(sheet.element.querySelector('#friend-sheet-why')).toBeNull();
     button('Challenge Robin live')?.click();
     expect(asked).toStrictEqual(['live Robin']);
   });
@@ -90,15 +92,15 @@ describe('a friend’s sheet', () => {
     const { sheet } = sheetWith({});
     sheet.open(robin('in_a_match'), 'friend');
     expect(button('Challenge Robin live')?.getAttribute('aria-disabled')).toBe('true');
-    expect(sheet.element.querySelector('.friend-sheet-why')?.textContent).toBe(
+    expect(sheet.element.querySelector('#friend-sheet-why')?.textContent).toBe(
       'Robin is in a match · Try again after it',
     );
   });
 
-  it('has no Take turns where the build doesn’t play by turns', () => {
+  it('has no Play by turns where the build doesn’t play by turns', () => {
     const { sheet } = sheetWith({});
     sheet.open(robin('online'), 'friend');
-    expect(button('Take turns with Robin')).toBeNull();
+    expect(button('Play by turns with Robin')).toBeNull();
   });
 
   it('says “Waiting for you” for a friend waiting on you in their lobby', () => {
@@ -107,7 +109,7 @@ describe('a friend’s sheet', () => {
     const status = sheet.element.querySelector('.friend-sheet-person .friends-status');
     expect(status?.textContent).toBe('Waiting for you');
     expect(status?.getAttribute('data-status')).toBe('waiting');
-    expect(sheet.element.querySelector('.friend-sheet-why')?.textContent).toBe(
+    expect(sheet.element.querySelector('#friend-sheet-why')?.textContent).toBe(
       'Robin is waiting for you · Accept in Waiting for you',
     );
   });

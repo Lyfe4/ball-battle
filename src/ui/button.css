@@ -1,13 +1,24 @@
 /*
- * Buttons: the shared button and its primary variant. Chunky (ADR 0032): each sits on a slab of
- * --press-depth and a press pushes it down into it. The slab is part of the button's height, so a
- * press never moves anything around it.
+ * Buttons and rows: the one system for every control that acts (2026-11-26, tokens.css).
+ *
+ * - A button is --button-height tall with --button-pad either side of its label, so a label never
+ *   touches its edge. Chunky (ADR 0032): it sits on a slab of --press-depth and a press pushes it
+ *   down into it; the slab is part of its height, so a press never moves anything around it.
+ * - It fills its row in a row of equal choices (`flex: 1`); a screen's or sheet's main action takes
+ *   the whole width (`.hud-button-main`); a button beside what it acts on sizes to its label and is
+ *   --button-height-compact tall, its tap target still --tap-target (`.hud-button-compact`).
+ * - Stacked actions are one --stack-gap apart (`.action-stack`).
+ * - A row (`.sheet-row`) is an action in a list: full width, its label left, as tall as a button,
+ *   a "›" at its end only when it opens something (`data-opens`).
+ * - The danger group (`.sheet-danger`): the same rows in the danger look, set apart by
+ *   --space-group and a divider that spans the column. The danger button is its confirm's action.
  */
 
 .hud-button {
   flex: 1;
-  min-height: var(--tap-target);
+  min-height: var(--button-height);
   margin-bottom: var(--press-depth);
+  padding: 0 var(--button-pad);
   border-radius: var(--radius);
   background: var(--color-raised);
   box-shadow: var(--shadow-slab);
@@ -107,6 +118,105 @@
 .text-link::after {
   content: '\a0›';
   content: '\a0›' / '';
+}
+
+/* The main action of a screen or a sheet: the whole width. */
+.hud-button-main {
+  width: 100%;
+}
+
+/*
+ * Beside what it acts on (Copy beside the code): as wide as its label, compact; its tap target
+ * reaches --tap-target above and below, unseen.
+ */
+.hud-button-compact {
+  position: relative;
+  flex: none;
+  min-height: var(--button-height-compact);
+}
+
+.hud-button-compact::before {
+  position: absolute;
+  inset: calc((var(--button-height-compact) - var(--tap-target)) / 2) 0;
+  content: '';
+}
+
+/* Actions one under another, one gap apart. */
+.action-stack {
+  display: grid;
+  gap: var(--stack-gap);
+}
+
+/* A line under an action saying what it is for, or why it can't be taken now. */
+.action-hint {
+  margin: calc(var(--space-small) - var(--stack-gap)) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
+/* The destructive action (ADR 0086): red words on the red tint, never the yellow primary. */
+.danger-button {
+  background: var(--color-band-edged);
+  color: var(--color-unfavoured);
+}
+
+/* A row: an action in a list, full width, its label left, as tall as a button. */
+.sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+  width: 100%;
+  min-height: var(--button-height);
+  padding: 0 var(--button-pad);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* A row that opens something (a step, a form) says so at its end; no other row has a "›". */
+.sheet-row[data-opens]::after {
+  color: var(--color-text-muted);
+  font-family: var(--font-family-symbol);
+  font-size: 1.25rem;
+  content: '›' / '';
+}
+
+:where(:root:not([data-input='pointer'])) .sheet-row:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Pointed at or pressed by a finger (press.ts): the same look. */
+@media (hover: hover) {
+  .sheet-row:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.sheet-row[data-pressed] {
+  filter: brightness(1.08);
+}
+
+/* The danger group: apart (--space-group and a divider across the column), its rows in red. */
+.sheet-danger {
+  display: grid;
+  gap: var(--stack-gap);
+  justify-self: stretch;
+  margin-top: calc(var(--space-group) - var(--stack-gap));
+  padding-top: var(--space-group);
+  border-top: 1px solid var(--color-raised);
+}
+
+.danger-row {
+  background: var(--color-band-edged);
+  color: var(--color-unfavoured);
 }
 
 /* Disabled: flat on the page, with no slab to press into, in muted text. */

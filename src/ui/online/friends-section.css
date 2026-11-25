@@ -87,8 +87,8 @@
 .friends-code {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-small);
+  align-items: center;
+  gap: var(--space-small) var(--space-gap);
   margin: 0;
   color: var(--color-text-muted);
 }
@@ -368,29 +368,32 @@
   font-size: 1.75rem;
 }
 
+/*
+ * The person's head: their disc, then their @username and status on one line (their name is the
+ * sheet's title above), set apart from the actions by a group's space.
+ */
 .friend-sheet-person {
   display: flex;
   align-items: center;
   gap: var(--space-gap);
+  margin-bottom: calc(var(--space-group) - var(--stack-gap));
 }
 
-.friend-sheet-person .friends-status {
+.friend-sheet-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-gap);
   margin: 0;
   font-size: 1rem;
 }
 
-.friend-sheet-actions,
-.friend-sheet-report {
-  display: grid;
-  gap: var(--space-small);
+.friend-sheet-handle {
+  font-weight: 700;
 }
 
-/* Why Challenge · live can't be taken now, and what works: one quiet line under it. */
-.friend-sheet-why {
-  margin: 0 0 var(--space-small);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  text-align: center;
+.friend-sheet-who .friends-status {
+  margin: 0;
 }
 
 .friend-sheet-also {

@@ -10,6 +10,7 @@ import type {
   TurnWaiting,
 } from '../api/friends.ts';
 import { challengeLine } from './online-text.ts';
+import { TURN_HOURS } from '../api/series.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
 export interface FriendGroup {
@@ -81,7 +82,9 @@ export const reportTitle = (name: string) => `Report the name ${name}?`;
 /** The person's sheet's words (friend-sheet.ts). */
 export const SHEET_LINES = {
   challenge: 'Challenge · live',
-  turns: 'Take turns',
+  turns: 'Play by turns',
+  /** Under Play by turns: what it asks of the two of them (the server's turn, ADR 0085). */
+  turnsHint: `No need to be online together · up to ${String(TURN_HOURS)} h a move`,
   remove: 'Remove friend',
   report: 'Report name',
   block: 'Block',
@@ -122,9 +125,17 @@ export function liveUnavailable(
   if (waiting) return `${person.name} is waiting for you · Accept in Waiting for you`;
   if (person.status === 'online') return undefined;
   if (person.status === 'in_a_match') {
-    return `${person.name} is in a match · ${turns ? 'Take turns instead' : 'Try again after it'}`;
+    return `${person.name} is in a match · ${turns ? 'Play by turns instead' : 'Try again after it'}`;
   }
-  return `${person.name} is offline · ${turns ? 'Take turns instead' : 'Try again when they’re online'}`;
+  return `${person.name} is offline · ${turns ? 'Play by turns instead' : 'Try again when they’re online'}`;
+}
+
+/**
+ * A person's @username for their sheet's head, or nothing for a name the server made up ("Player
+ * 1234": no username chosen yet, ADR 0079).
+ */
+export function handleOf(name: string): string | undefined {
+  return /^Player \d+$/.test(name) ? undefined : `@${name}`;
 }
 
 /** A friend's status in words, beside its dot (PR (d)). */

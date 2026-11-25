@@ -85,6 +85,16 @@
   display: none;
 }
 
+/*
+ * What the sheet holds, one part under another one gap apart (a person's head, their actions, the
+ * danger group; button.css sets the groups further apart). With no layout of its own the parts
+ * touched: the avatar sat on the first button (the 2026-11-26 staging check).
+ */
+.sheet-content {
+  display: grid;
+  gap: var(--stack-gap);
+}
+
 /* The confirm step: what the action does, then the action apart in the danger look, and Cancel. */
 .sheet-confirm {
   display: grid;
@@ -98,59 +108,10 @@
 
 .sheet-confirm-actions {
   display: grid;
-  gap: var(--space-small);
+  gap: var(--stack-gap);
 }
 
-/* The destructive action (ADR 0086): red words on the red tint, never the yellow primary. */
-.danger-button {
-  background: var(--color-band-edged);
-  color: var(--color-unfavoured);
-}
-
-/* A sheet row (ADR 0086): an action as a raised row, left aligned, one tap target tall. */
-.sheet-row {
-  display: flex;
-  align-items: center;
-  min-height: var(--tap-target);
-  padding: 0 var(--space-gap);
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--color-raised);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 700;
-  text-align: start;
-  cursor: pointer;
-}
-
-/* The danger zone: apart, under a rule, its rows in the danger look. */
-.sheet-danger {
-  display: grid;
-  gap: var(--space-small);
-  padding-top: var(--space-gap);
-  border-top: 1px solid var(--color-raised);
-}
-
-.danger-row {
-  background: var(--color-band-edged);
-  color: var(--color-unfavoured);
-}
-
-:where(:root:not([data-input='pointer'])) .sheet-row:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
-/* Pointed at or pressed by a finger (press.ts): the same look. */
-@media (hover: hover) {
-  .sheet-row:hover {
-    filter: brightness(1.08);
-  }
-}
-
-.sheet-row[data-pressed] {
-  filter: brightness(1.08);
-}
+/* The danger button, the row and the danger group are the shared controls' (button.css). */
 
 /* Beside and on a desktop: a panel in the middle that fades and scales in. */
 @media (min-aspect-ratio: 5/4) {

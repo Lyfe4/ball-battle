@@ -334,3 +334,28 @@ fight's place (`noticeShown()` from the online series' screen, read on every lay
 took over. Loading stays a fight (its skeleton is the fight's, so nothing comes and goes when the
 series arrives); a notice that turns into the series (Try again) is the change of mode into the
 fight. `tabs.test.ts` and `tab-bar.browser.test.ts`.
+
+## Addendum (2026-11-26): one button and row system
+
+After the owner's staging check (labels touching their edges, an avatar on the first button,
+Copy stretched ~300 px, a danger group barely apart). In `tokens.css` and one place, `button.css`:
+a button is `--button-height` (48 px) with `--button-pad` (16 px) either side of its label; a
+compact one (`.hud-button-compact`, 40 px, its unseen reach still `--tap-target`) sizes to its
+label beside what it acts on; a screen's or sheet's main action is full width
+(`.hud-button-main`); stacked actions are `--stack-gap` apart (`.action-stack`), with a quiet line
+under one where it needs it (`.action-hint`); a row (`.sheet-row`) is full width, label left, as
+tall as a button, with "›" only when it opens something (`data-opens`); the danger group
+(`.sheet-danger`) is those rows in red, `--space-group` apart under a divider across the column.
+`.sheet-content` lays its parts out one gap apart (it had no layout, so they touched).
+
+The friend sheet: the name as its title, then a head block (the disc, @username and status on one
+line), the main actions, Remove friend as a row, the danger group; "Take turns" is "Play by turns"
+with "No need to be online together · up to 24 h a move" under it (`TURN_HOURS`, now in
+`src/api/series.ts`, shared with the server). The request, sent and blocked sheets take the same
+order. Profile: the username as its title, an identity block (72 px disc, @username, what opponents
+see), the account's rows, the danger group; Privacy · Terms at the column's left edge.
+
+`controls-look` (five browser projects signed in with friends, two as a guest) fails when a
+button or row is under one tap target, its label within 12 px of its side, or two controls (or a
+control and a person's disc) closer than the stack gap; on the code before this it found 35 such
+breaks (the disc on the first button, 8 px gaps, "Hear it" 6 px from its edge).
