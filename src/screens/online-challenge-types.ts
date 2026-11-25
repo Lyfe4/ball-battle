@@ -51,7 +51,7 @@ export interface ChallengeScreens {
    */
   challengeFriend(friend: { readonly id: string; readonly name: string }, turns?: boolean): void;
   /**
-   * A friend's challenge accepted from the floating card (PR (d)): accepted at once, then straight
+   * A friend's challenge accepted from the incoming banner (PR (d)): accepted at once, then straight
    * to the lineups picked together (or its card, if it was taken or stopped meanwhile). By turns
    * (`live` false, ADR 0085), its card's screen, which opens its lineup once read.
    */

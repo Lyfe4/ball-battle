@@ -1,0 +1,183 @@
+/*
+ * One incoming banner (incoming-banner.ts, ADR 0086): a friend's live challenge or a rematch. On a
+ * phone held upright it sits at the top, over the header row only: the page makes room under that
+ * row while it shows (`--incoming-height`), so it never covers Play, the court or the tab bar (on
+ * Play the demo court gives way). Beside and on a desktop it sits at the bottom right, never over
+ * the rail. It rises in on the motion tokens; with reduced motion it only fades.
+ */
+.incoming-banner {
+  position: fixed;
+  top: max(var(--space-gutter), env(safe-area-inset-top));
+  right: max(var(--space-gutter), env(safe-area-inset-right));
+  left: max(var(--space-gutter), env(safe-area-inset-left));
+  z-index: 16;
+  display: grid;
+  gap: var(--space-gap);
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: var(--space-gap) var(--space-gap) calc(var(--space-gap) + 4px);
+  overflow: hidden;
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-slab);
+  color: var(--color-text);
+  transition:
+    opacity var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out),
+    display var(--motion-base) allow-discrete;
+}
+
+.incoming-banner[hidden] {
+  display: none;
+}
+
+@starting-style {
+  .incoming-banner {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* Who, what and the ×, on one row: the × in the head's top right, as every overlay's (ADR 0086). */
+.incoming-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-gap);
+}
+
+.incoming-words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.incoming-title,
+.incoming-line,
+.incoming-failure {
+  margin: 0;
+  line-height: 1.3;
+}
+
+.incoming-title {
+  font-weight: 800;
+}
+
+.incoming-line,
+.incoming-failure {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.incoming-failure[hidden],
+.incoming-later[hidden] {
+  display: none;
+}
+
+/* The answers side by side, No thanks then Accept (the primary last, under the thumb). */
+.incoming-actions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--stack-gap);
+}
+
+.incoming-actions > [hidden] {
+  display: none;
+}
+
+/* The time it waits, a thin bar at its foot that drains from the right. */
+.incoming-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: var(--color-raised);
+}
+
+.incoming-bar[hidden] {
+  display: none;
+}
+
+.incoming-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-favoured);
+  transform-origin: left;
+}
+
+.incoming-banner[data-urgent] .incoming-bar-fill {
+  background: var(--color-accent-2);
+}
+
+/* A phone held upright: the page makes room under the header row, so the banner covers only it. */
+@media not all and (min-aspect-ratio: 5/4) {
+  body[data-incoming] .stage .screen-header {
+    margin-block-end: max(0px, calc(var(--incoming-height, 0px) - var(--tap-target)));
+  }
+}
+
+/* Beside and on a desktop: the bottom right corner, clear of the rail. */
+@media (min-aspect-ratio: 5/4) {
+  .incoming-banner {
+    top: auto;
+    bottom: max(var(--space-gutter), env(safe-area-inset-bottom));
+    left: auto;
+    width: min(24rem, calc(100vw - var(--tab-rail-width) - 2 * var(--space-gutter)));
+    margin: 0;
+  }
+
+  @starting-style {
+    .incoming-banner {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  /*
+   * Play beside (a phone turned sideways): the panel is Play's whole height, so the corner would
+   * cover Play; the banner sits over the demo court's foot instead, by the rail, never over it.
+   */
+  body:has(.stage[data-home]) .incoming-banner {
+    right: auto;
+    left: calc(var(--tab-rail-width) + env(safe-area-inset-left) + var(--space-gutter));
+  }
+}
+
+/* A desktop has room in the corner under Play's column: back to the bottom right. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  body:has(.stage[data-home]) .incoming-banner {
+    right: max(var(--space-gutter), env(safe-area-inset-right));
+    left: auto;
+  }
+}
+
+/* The Friends tab's badge as a banner lands in it: one pulse. */
+.tab-bar-badge[data-pulse] {
+  animation: badge-pulse var(--motion-slow) var(--ease-out);
+}
+
+@keyframes badge-pulse {
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .incoming-banner {
+    transition:
+      opacity var(--motion-quick) var(--ease-out),
+      display var(--motion-quick) allow-discrete;
+  }
+
+  @starting-style {
+    .incoming-banner {
+      transform: none;
+    }
+  }
+
+  .tab-bar-badge[data-pulse] {
+    animation: none;
+  }
+}

@@ -127,6 +127,20 @@ const group = (root: HTMLElement, key: string) =>
   );
 
 describe('the Friends section', () => {
+  it('lights a challenge that arrives while it shows, in the banner’s place (ADR 0086)', async () => {
+    const { friends, root } = section();
+    await friends.open();
+    const invite = (token: string) =>
+      ({ token, from: 'Robin', friend: 'f-1', format: 'reveal', bestOf: 3, live: true }) as const;
+    // What waited before is the baseline; only what arrives now lights.
+    friends.challenges([invite('old')]);
+    friends.challenges([invite('old'), invite('new')]);
+    const lit = [...root.querySelectorAll<HTMLElement>('.friends-row[data-invite]')].map(
+      (row) => `${row.dataset['invite'] ?? ''} ${String(row.hasAttribute('data-lit'))}`,
+    );
+    expect(lit).toStrictEqual(['old false', 'new true']);
+  });
+
   it('says who is online in the friends’ title, the one place it is said (ADR 0086)', async () => {
     const online = { id: 'f-2', name: 'Jo', status: 'online' as const };
     const { friends, root } = section({ ...START, friends: [...START.friends, online] });

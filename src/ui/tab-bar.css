@@ -128,8 +128,7 @@
     padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + var(--space-gutter));
   }
 
-  body:is([data-shell='tab'], [data-shell='browse']):is([data-update], [data-rematch-notice])
-    .stage {
+  body:is([data-shell='tab'], [data-shell='browse'])[data-update] .stage {
     padding-bottom: calc(
       var(--tab-bar-height) + env(safe-area-inset-bottom) + var(--space-gutter) + 5rem
     );

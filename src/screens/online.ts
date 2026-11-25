@@ -75,7 +75,7 @@ export interface OnlineScreens {
   setVisible(screen: string): void;
   /** The inbox's friends and open challenges, for the Friends tab's lists (ADR 0081). */
   friendStatuses(inbox: InboxResponse | undefined): void;
-  /** A friend's challenge accepted from the floating card: its lineups, read first. */
+  /** A friend's challenge accepted from the incoming banner: its lineups, read first. */
   openInvite(token: string, live: boolean): Promise<void>;
   /** The Play tab's Play against a friend: straight to the link to share (ADR 0081 addendum). */
   playFriend(setup: FriendSetup): Promise<void>;

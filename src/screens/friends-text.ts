@@ -6,10 +6,8 @@ import type {
   FriendStatus,
   FriendsResponse,
   InboxResponse,
-  Invite,
   TurnWaiting,
 } from '../api/friends.ts';
-import { challengeLine } from './online-text.ts';
 import { TURN_HOURS } from '../api/series.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
@@ -144,11 +142,6 @@ export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
   in_a_match: 'In a match',
   offline: 'Offline',
 };
-
-/** A friend's live challenge on the floating card: who, and what is played. */
-export function inviteLine(invite: Invite): string {
-  return `${invite.from} challenges you · ${challengeLine(invite)} · ${invite.live ? 'live' : 'take turns'}`;
-}
 
 /** The tab's way to play anyone, with or without an account (ADR 0081). */
 export const LINK_CARD = {

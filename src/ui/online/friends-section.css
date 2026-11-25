@@ -437,6 +437,14 @@
  * What waits on you (a request, a friend's challenge): its buttons side by side under the name
  * (ADR 0086), each half the row, so the name keeps the row's width.
  */
+/*
+ * A friend's challenge that arrived while Friends showed (ADR 0086): no banner here, its row lights
+ * in the banner's ring instead, and keeps it while it waits.
+ */
+.friends-row[data-lit] {
+  box-shadow: inset 0 0 0 2px var(--color-accent-2);
+}
+
 .friends-row:has(.friends-decline) {
   flex-wrap: wrap;
 }

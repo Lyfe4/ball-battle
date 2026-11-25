@@ -1,7 +1,7 @@
 // Play by turns with a friend through the real page (ADR 0085): two phones signed in to accounts
 // that are friends. The sender challenges from the friend's row, chooses By turns on the vs Friend
 // setup, picks a lineup and sends; the card says it reached the friend. The friend finds it in
-// Friends' Waiting for you (never a floating card), accepts with a lineup and is in the series.
+// Friends' Waiting for you (never a banner), accepts with a lineup and is in the series.
 // Whoever's turn it is sees the Friends tab's badge and "Your turn vs …" in Waiting for you (Play
 // shows nothing social, ADR 0086), plays a turn from there, and the turn reaches the other phone by
 // poke. `netlify dev` serving an online build

@@ -123,6 +123,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
   let turns: readonly TurnWaiting[] = [];
+  /** Heard of the challenges once: from then on, one arriving while Friends shows lights its row. */
+  let heard = false;
+  /** Challenges that arrived while Friends showed: no banner there, their rows light (ADR 0086). */
+  const lit = new Set<string>();
 
   /** A change's answer drawn, true when it was made (the friend sheet's actions). */
   const made = (method: 'POST' | 'DELETE', path: string, body?: unknown) => () =>
@@ -263,12 +267,14 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     const withCode = (group: FriendGroup) => group.key === 'outgoing' || group.key === 'blocked';
     lists.replaceChildren(...groups.filter((group) => !withCode(group)).map(box));
     // A turn and a friend's challenges come first in Waiting for you: they wait on a clock.
-    lists
-      .querySelector('.friends-group[data-group="incoming"] .friends-list')
-      ?.prepend(
-        ...turns.map((turn) => turnRow(turn, Date.now(), rows)),
-        ...invites.map((invite) => challengeRow(invite, rows)),
-      );
+    lists.querySelector('.friends-group[data-group="incoming"] .friends-list')?.prepend(
+      ...turns.map((turn) => turnRow(turn, Date.now(), rows)),
+      ...invites.map((invite) => {
+        const row = challengeRow(invite, rows);
+        row.toggleAttribute('data-lit', lit.has(invite.token));
+        return row;
+      }),
+    );
     sent.replaceChildren(...groups.filter(withCode).map(box));
     addCard.hidden = false;
     // The link card last, taken back from the guest's layout if it lent it (friends-tab.ts).
@@ -343,6 +349,13 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     open,
     challenges(next, nextTurns = []) {
       if (JSON.stringify([next, nextTurns]) === JSON.stringify([invites, turns])) return;
+      // A live challenge arriving while Friends shows: its row lights instead of a banner.
+      const showing = root.getClientRects().length > 0;
+      for (const one of next) {
+        const known = invites.some((was) => was.token === one.token);
+        if (heard && showing && one.live && !known) lit.add(one.token);
+      }
+      heard = true;
       invites = next;
       turns = nextTurns;
       if (root.isConnected) draw();

@@ -26,7 +26,7 @@ const SOCKETS = [
   { socket: 'with the socket blocked', blocked: true },
 ] as const;
 
-const noticeOf = (page: Page) => page.locator('.rematch-notice');
+const noticeOf = (page: Page) => page.locator('.incoming-banner[aria-label="Rematch"]');
 
 /** `page` leaves the live match on screen (Leave and forfeit) and lands on home. */
 async function forfeit(page: Page): Promise<void> {
@@ -76,7 +76,7 @@ describe.each(SOCKETS)(
         await rematchButton(sender).click();
         const asked = noticeOf(friend);
         await asked
-          .locator('.pick-clock', { hasText: /^Player \d+ wants a rematch\s*\d+ s/ })
+          .locator('.incoming-title', { hasText: /^Player \d+ wants a rematch$/ })
           .waitFor({ timeout: blocked ? 10_000 : 3_000 });
         expect(socketOf(friend).up()).toBe(!blocked);
         expect(await asked.getByRole('button', { name: 'No thanks' }).isVisible()).toBe(true);

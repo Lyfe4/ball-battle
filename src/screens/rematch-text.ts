@@ -73,9 +73,7 @@ export type RematchNotice =
   | { readonly kind: 'asked'; readonly clock: PickClock }
   | { readonly kind: 'agreed'; readonly clock: PickClock }
   | { readonly kind: 'started'; readonly seriesId: string }
-  | { readonly kind: 'ended'; readonly line: string }
-  /** A friend's live challenge (ADR 0079 PR (d)): its line, with Accept and No thanks. */
-  | { readonly kind: 'invite'; readonly line: string };
+  | { readonly kind: 'ended'; readonly line: string };
 
 export function rematchNoticeOf(
   rematch: RematchView,

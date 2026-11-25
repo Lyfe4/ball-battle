@@ -42,6 +42,8 @@ export interface OnlineRematch {
   clock(): PickClock | undefined;
   /** Why there is no rematch, or a failure; undefined otherwise. */
   note(): string | undefined;
+  /** The end screen of series `id` said why its rematch ended (`note`): news already told. */
+  told(id: string): boolean;
   /** Rematch: ask, or say yes. */
   yes(): Promise<void>;
   /** No thanks. */
@@ -55,6 +57,8 @@ const ended = (view: SeriesView | undefined): view is SeriesView =>
 export function createOnlineRematch(host: RematchHost): OnlineRematch {
   let series: SeriesView | undefined;
   let visible = false;
+  /** Series whose end screen showed why their rematch ended (ADR 0086: never said again on Home). */
+  const endingsTold = new Set<string>();
   let rematch: RematchView | undefined;
   /** When `rematch` was answered, by this device's clock: the server's time moves on from it. */
   let heardAt = 0;
@@ -188,8 +192,10 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
         rematch === undefined
           ? undefined
           : rematchEnding(rematch, series.you, seatsOf(series).they);
+      if (ending !== undefined && visible) endingsTold.add(series.id);
       return ending ?? failure;
     },
+    told: (id) => endingsTold.has(id),
     yes: () => move('yes'),
     no: () => move('no'),
   };

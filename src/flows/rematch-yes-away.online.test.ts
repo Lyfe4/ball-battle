@@ -2,7 +2,7 @@
 // home, and the friend accepted, built a lineup and waited, while the owner's phone showed nothing
 // and offered no way back). Two phones: a live match ends (a forfeit, the quickest end that offers
 // a rematch), the winner asks and goes home, the friend accepts from home and builds a lineup; the
-// asker gets the floating card (the friend accepted, the seconds left to choose a lineup) and home
+// asker gets the incoming banner (the friend accepted, the seconds left to choose a lineup) and home
 // shows the way back; the card's button goes to the lineup and both land in the same new match.
 // Chromium, against `netlify dev` (`pnpm test:online`).
 import type { Page } from 'playwright';
@@ -26,7 +26,7 @@ afterAll(async () => {
   await closePhones(phones);
 });
 
-const cardOf = (page: Page) => page.locator('.rematch-notice[aria-label="Rematch"]');
+const cardOf = (page: Page) => page.locator('.incoming-banner[aria-label="Rematch"]');
 
 /** `page` leaves the live match on screen (Leave and forfeit) and lands on home. */
 async function forfeit(page: Page): Promise<void> {
@@ -68,7 +68,7 @@ describe('a rematch asked, then the asker goes home', () => {
       // The asker, home all along: the card says the friend accepted, with the seconds to choose.
       const told = cardOf(asker);
       await told
-        .locator('.pick-clock', { hasText: /^Player \d+ accepted\s*\d+ s/ })
+        .locator('.incoming-title', { hasText: /^Player \d+ accepted$/ })
         .waitFor({ timeout: 10_000 });
       expect(new URL(asker.url()).searchParams.has('start')).toBe(false);
       // Home's way back now leads to the lineup too.

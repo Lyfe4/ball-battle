@@ -8,7 +8,6 @@ import {
   addedLine,
   friendsTabLabel,
   hasAnyone,
-  inviteLine,
   liveUnavailable,
   STATUS_WORDS,
   friendsTitle,
@@ -33,13 +32,6 @@ describe('the Friends section’s words', () => {
   });
 
   it('names a friend’s challenge and every status in words', () => {
-    const challenge = { token: 't', from: 'Sam_R', format: 'showdown', bestOf: 5 } as const;
-    expect(inviteLine({ ...challenge, live: true })).toBe(
-      'Sam_R challenges you · Best of 5 · Showdown · live',
-    );
-    expect(inviteLine({ ...challenge, live: false })).toBe(
-      'Sam_R challenges you · Best of 5 · Showdown · take turns',
-    );
     expect(Object.values(STATUS_WORDS)).toStrictEqual(['Online', 'In a match', 'Offline']);
   });
 });

@@ -1,7 +1,7 @@
 // Challenging a friend through the real page (ADR 0079, PR (d)): two phones signed in to accounts
 // that are friends. The friend sits on home; the sender sees them online, taps Challenge on the
 // Friends section, picks the setup and a lineup, and waits in the lobby, which names the friend.
-// The friend's inbox poll brings the rematch's floating card ("Sam_… challenges you"); Accept goes
+// The friend's inbox poll brings the incoming banner ("Sam_… challenges you"); Accept goes
 // straight to the lineup, and a live match starts on both phones. `netlify dev` serving an online
 // build with accounts; iPhone Safari's visible size, Chromium only. Twice (ADR 0082): by Realtime
 // poke, where the card comes within seconds and the lobby reads only on its 20 s heartbeat; and
@@ -81,9 +81,10 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
       await (blocked ? Promise.resolve() : socketOf(two).waitUp());
       await sendChallenge(one, `Waiting for ${jo}`);
 
-      // The friend's card comes by poke, or with the next read (every 30 s), never a reload.
+      // The friend's banner (ADR 0086) comes by poke, or with the next read (every 30 s), never a reload.
       const card = two.getByRole('region', { name: 'Challenge' });
-      await card.getByText(`${sam} challenges you · Best of 3 · Reveal · live`).waitFor(arrives);
+      await card.getByText(`${sam} challenges you`, { exact: true }).waitFor(arrives);
+      await card.getByText('Best of 3 · Reveal · live', { exact: true }).waitFor();
       // The sender's lobby: by poke, its 20 s heartbeat at most; blocked, a read every 2 s, told
       // by the waits the page chose between reads, not a count that also counts how long each
       // read took (the same flake as the lineup's and the live match's, 2026-11-24).
@@ -128,7 +129,8 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
       await sendChallenge(one, `Waiting for ${jo}`);
 
       const card = two.getByRole('region', { name: 'Challenge' });
-      await card.getByText(`${sam} challenges you · Best of 3 · Reveal · live`).waitFor(arrives);
+      await card.getByText(`${sam} challenges you`, { exact: true }).waitFor(arrives);
+      await card.getByText('Best of 3 · Reveal · live', { exact: true }).waitFor();
       expect(new URL(two.url()).searchParams.get('view')).toBe('manual');
       await card.getByRole('button', { name: 'Accept' }).click();
       await pickTogether([{ page: two }, { page: one }]);
