@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { devFontUrlOf, fontPreloadOf } from './font-preload.ts';
+import { devFontUrlOf, fontPreloadOf, preloadsFont } from './font-preload.ts';
 
 describe('the font preload', () => {
   it('names the Latin subset only, in CORS mode', () => {
@@ -37,5 +37,15 @@ describe('the font in dev', () => {
     expect(devFontUrlOf('C:/game', 'C:/store/f/files/a.woff2')).toBe(
       '/@fs/C:/store/f/files/a.woff2',
     );
+  });
+});
+
+describe('the pages that preload it', () => {
+  it('are the game and the legal pages, which draw in the font with no script', () => {
+    expect(['/index.html', '/privacy.html', '/terms.html'].every(preloadsFont)).toBe(true);
+  });
+
+  it('are not the dev-only pages', () => {
+    expect(['/styleguide.html', '/brand.html', '/sounds.html'].some(preloadsFont)).toBe(false);
   });
 });

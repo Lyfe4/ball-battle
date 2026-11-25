@@ -67,7 +67,23 @@ export function fontPreloadOf(files: readonly string[]): PreloadTag {
   return preloadTag(`/${found[0] ?? ''}`);
 }
 
-/** Adds the font's preload to the game's page (not the legal pages), in a build and in dev. */
+/**
+ * The pages that get the preload: the game's, and the legal pages (privacy, terms), which draw in the
+ * same font with no script (so no hidden boot): without the preload their title re-flowed as the
+ * font landed after the first paint (ADR 0087; the staging walk of 2026-11-26).
+ */
+const PRELOADED_PAGES: ReadonlySet<string> = new Set([
+  '/index.html',
+  '/privacy.html',
+  '/terms.html',
+]);
+
+/** Whether the page at `path` (as Vite names it, from the root) preloads the font. */
+export function preloadsFont(path: string): boolean {
+  return PRELOADED_PAGES.has(path);
+}
+
+/** Adds the font's preload to the game's page and the legal pages, in a build and in dev. */
 export function fontPreload(): Plugin {
   let root = '';
   return {
@@ -78,7 +94,7 @@ export function fontPreload(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(_html, context) {
-        if (context.path !== '/index.html') return undefined;
+        if (!preloadsFont(context.path)) return undefined;
         if (context.bundle !== undefined) {
           return [{ ...fontPreloadOf(Object.keys(context.bundle)), injectTo: 'head' }];
         }
