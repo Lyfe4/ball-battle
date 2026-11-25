@@ -1,7 +1,8 @@
 // The Play tab's mode box and its sheet (ADR 0081 addendum, Option B), at 390 x 664 in the build
 // production has with vs Friend on (online, accounts off). The box says exactly what Play starts;
-// tapping it opens "What to play", a modal dialog: focus moves in and comes back to the box, and
-// Escape, a tap outside, the top Done and the full-width Done each close it. Choices apply at once
+// tapping it opens "What to play", a modal dialog: focus moves onto its title and comes back to the
+// box, and its one close (the × last in its head), Escape, a tap outside and Back each close it
+// (ADR 0086); nothing in it says Done. Choices apply at once
 // and are remembered per opponent. Play against the bot goes to its lineup; against a friend it
 // goes straight to the share link, with no rules step, after the 16+ question on a device without
 // a guest. Every test ends on the entry it started from: no history left behind.
@@ -9,6 +10,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
+import { checkOneClose } from './look-checks.ts';
 import { back, settle, until, visible } from './page-support.ts';
 import { follow, LINKS, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
@@ -234,24 +236,30 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     await userEvent.click(choice('vs Friend'));
     expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Showdown' });
 
-    // The full-width Done at the bottom, in thumb reach.
-    const done = visible('.play-sheet-done')[0];
-    if (done === undefined) throw new Error('No bottom Done');
-    const doneBox = done.getBoundingClientRect();
-    const sheetBox = dialog.getBoundingClientRect();
-    expect(doneBox.bottom).toBeGreaterThan(window.innerHeight - 100);
-    expect(doneBox.width).toBeGreaterThan(sheetBox.width - 48);
-    await userEvent.click(done);
-    await expectClosed('the bottom Done');
-    // And the top Done.
-    await openSheet();
-    const top = visible('.play-sheet-close')[0];
-    if (top === undefined) throw new Error('No top Done');
-    await userEvent.click(top);
-    await expectClosed('the top Done');
+    // One close, the ×, last in the sheet's head, named Close; no Done anywhere.
+    const close = checkOneClose('What to play', dialog);
+    expect(close.parentElement?.lastElementChild).toBe(close);
+    expect(close.parentElement?.classList.contains('play-sheet-head')).toBe(true);
+    expect(close.getAttribute('aria-label')).toBe('Close');
+    expect(
+      [...dialog.querySelectorAll('button')].filter((node) => node.textContent.includes('Done')),
+    ).toStrictEqual([]);
+    await userEvent.click(close);
+    await expectClosed('the ×');
 
-    // Choosing added no history step, and the choice outlives the tab: it is read again on open.
+    // Choosing added no history step; Back closes the sheet (and Forward comes back to Play).
     expect(location.search).toBe('');
+    await openSheet();
+    await back();
+    await until(() => !sheet().open, 2_000, 'the sheet to close (Back)', false);
+    const returned = new Promise((resolve) => {
+      window.addEventListener('popstate', resolve, { once: true });
+    });
+    history.forward();
+    await returned;
+    await onScreen('home');
+
+    // The choice outlives the tab: it is read again on open.
     expect(window.localStorage.getItem(PLAY_OPPONENT_STORAGE_KEY)).toBe('friend');
     expect(play().getAttribute('aria-label')).toBe(
       'Play a friend live, Best of 3, Showdown: send them a link',

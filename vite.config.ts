@@ -5,6 +5,7 @@ import { configDefaults, defineConfig, type TestProjectInlineConfiguration } fro
 import type { BrowserCommand } from 'vitest/node';
 import { fontPreload } from './scripts/font-preload.ts';
 import { LOCAL_SECURITY_HEADERS } from './scripts/security-headers.ts';
+import { firstVisitCounter, firstVisitRequests } from './scripts/first-visit.ts';
 
 /** Before every browser test file: no series saved by another file's flow (ADR 0042). */
 const BROWSER_SETUP = 'src/flows/browser-setup.ts';
@@ -70,7 +71,7 @@ function phoneProject(
 ): TestProjectInlineConfiguration {
   return {
     extends: true,
-    plugins: [fixedSeeds],
+    plugins: [fixedSeeds, firstVisitCounter],
     test: {
       name,
       include: [`src/**/*.${suffix}.browser.test.ts`, ...also],
@@ -81,7 +82,7 @@ function phoneProject(
         screenshotFailures: false,
         viewport: { width, height },
         instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
-        commands: { tap, pressAt },
+        commands: { tap, pressAt, firstVisitRequests },
       },
       setupFiles: [BROWSER_SETUP],
     },
@@ -90,7 +91,7 @@ function phoneProject(
 
 export default defineConfig({
   // The game's one font file preloaded in the built page (ADR 0087).
-  plugins: [fontPreload],
+  plugins: [fontPreload()],
   build: {
     target: 'es2023',
     // The game, and the privacy policy and terms as pages of their own (ADR 0069): plain HTML that

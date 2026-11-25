@@ -133,7 +133,7 @@ export function createHomeController(
       waiting = reducedMotion.matches;
       home.setWaiting(waiting);
       startDemo();
-      home.focus();
+      home.arrive();
     },
     isWaiting: () => waiting,
     drawn(resultShown) {

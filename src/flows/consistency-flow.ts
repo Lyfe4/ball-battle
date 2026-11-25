@@ -67,7 +67,7 @@ async function checkLegend(where: string): Promise<void> {
   expect(legendOpen(toggle), where).toBe(false);
   expect(panel()?.hidden, where).toBe(true);
 
-  // The legend's own Close, at its end: closed, and focus back on the ?.
+  // The legend's own ×, last in its head: closed, and focus back on the ?.
   await click(toggle);
   const close = panel()?.querySelector<HTMLElement>('.symbol-legend-close');
   expect(close, where).toBeTruthy();

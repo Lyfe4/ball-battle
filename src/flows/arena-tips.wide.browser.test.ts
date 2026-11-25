@@ -111,7 +111,7 @@ describe('tips in the arena', () => {
     [...document.querySelectorAll<HTMLElement>('#settings-panel [role="switch"]')]
       .find((node) => node.textContent.includes('What to watch cards'))
       ?.click();
-    button('Close settings').click();
+    button('Close').click();
     visible('.ball-tile')
       .find((tile) => tile.dataset['ballId'] === 'storm')
       ?.click();

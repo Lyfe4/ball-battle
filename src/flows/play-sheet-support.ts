@@ -32,11 +32,11 @@ export async function sheetChoice(name: string): Promise<void> {
   await click(found);
 }
 
-/** Closes the sheet with its full-width Done: focus back on the box. */
+/** Closes the sheet with its ×: focus back on the box. */
 export async function closeSheet(): Promise<void> {
-  const done = visible('.play-sheet-done')[0];
-  if (done === undefined) throw new Error('No Done');
-  await click(done);
+  const close = visible('dialog.play-sheet .close-button')[0];
+  if (close === undefined) throw new Error('No ×');
+  await click(close);
   await settle();
   expect(document.activeElement).toBe(visible('.play-box')[0]);
 }

@@ -67,19 +67,6 @@
 }
 
 /* The title, and on its row the note that the match waits (only while the menu covers the court). */
-.settings-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-small);
-}
-
-.settings-title {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: var(--font-weight-display);
-  letter-spacing: var(--letter-spacing-display);
-}
 
 .settings-speed {
   justify-content: flex-start;
@@ -167,6 +154,7 @@
 
 /* Only while the menu covers the court: the match waits for it (ADR 0044). */
 .settings-paused {
+  flex: 1;
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
@@ -177,17 +165,15 @@
   display: none;
 }
 
-/* "Show all tips again" and Close share the last row. */
+/* "Show all tips again" on the last row (the × is in the head, ADR 0086). */
 .settings-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 0 var(--space-gap);
 }
 
-.settings-again,
-.settings-close {
+.settings-again {
   min-height: var(--tap-target);
 }
 

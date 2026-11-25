@@ -1,3 +1,4 @@
+import { createCloseButton } from './close-button.ts';
 import { element } from './dom.ts';
 import { SYMBOL_KEYS, SYMBOLS } from './symbols.ts';
 
@@ -24,7 +25,7 @@ let legends = 0;
 /**
  * The symbol legend: a `?` button in a screen's header that opens a short list of what each mark
  * means, so a screen can show symbols instead of sentences. A disclosure (aria-expanded), closed
- * by default, opening in place under the ?; the ?, the Close at its end and Escape each close it
+ * by default, opening in place under the ?; the ?, the × in its head and Escape each close it
  * and return focus to the ?.
  */
 export function createSymbolLegend(): SymbolLegend {
@@ -38,8 +39,10 @@ export function createSymbolLegend(): SymbolLegend {
 
   const panel = element('section', 'info-panel symbol-legend');
   panel.id = id;
-  panel.setAttribute('aria-label', 'Symbols');
   panel.hidden = true;
+  const title = element('h2', 'info-panel-title symbol-legend-title', 'Symbols');
+  title.id = `${id}-title`;
+  panel.setAttribute('aria-labelledby', title.id);
   const list = element('ul', 'symbol-legend-list');
   list.append(
     ...SYMBOL_KEYS.map((key) => {
@@ -53,16 +56,15 @@ export function createSymbolLegend(): SymbolLegend {
       return item;
     }),
   );
-  // Its own way out at its end (ADR 0038), so it closes even when the ? has scrolled out of view.
-  const close = element('button', 'text-link panel-close symbol-legend-close', 'Close');
-  close.type = 'button';
-  close.dataset['sound'] = 'back';
-  close.setAttribute('aria-label', 'Close the legend');
-  close.addEventListener('click', () => {
+  // Its own way out (ADR 0038), the one close every overlay has: the × last in its head (ADR 0086).
+  const close = createCloseButton(() => {
     open(false);
     toggle.focus();
   });
-  panel.append(list, element('p', 'symbol-legend-note', 'Favoured is never certain.'), close);
+  close.classList.add('symbol-legend-close');
+  const head = element('div', 'info-panel-head');
+  head.append(title, close);
+  panel.append(head, list, element('p', 'symbol-legend-note', 'Favoured is never certain.'));
 
   // While open, Escape closes it wherever focus is, and focus returns to the ?.
   const onKey = (event: KeyboardEvent) => {

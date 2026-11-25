@@ -4,7 +4,7 @@ import { BEST_OF, type BestOf, type Format, type Lineup } from '../../sim/series
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { busyOnClick } from '../busy-button.ts';
-import { element, setHidden, setText } from '../dom.ts';
+import { element, setAttr, setHidden, setText } from '../dom.ts';
 import {
   completeLineup,
   draftCount,
@@ -169,7 +169,10 @@ export function createLineupStep(
       ),
     });
     const complete = completeLineup(draft, size) !== undefined;
-    done.disabled = !complete;
+    // Not `disabled`: a disabled button leaves the tab order, so Tab from the grid ran off the page
+    // before the lineup was full. `aria-disabled` keeps it reachable, saying how many are left;
+    // the click does nothing until the lineup is complete (busyOnClick's handler).
+    setAttr(done, 'aria-disabled', complete ? 'false' : 'true');
     setText(
       done,
       complete

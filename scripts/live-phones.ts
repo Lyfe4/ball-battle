@@ -160,7 +160,7 @@ export async function startMatch(
   await sheet.getByRole('button', { name: 'vs Friend' }).click();
   await sheet.getByRole('button', { name: new RegExp(`^Best of ${String(bestOf)}`) }).click();
   await sheet.getByRole('button', { name: /^Reveal,/ }).click();
-  await sheet.locator('.play-sheet-done').click();
+  await sheet.getByRole('button', { name: 'Close', exact: true }).click();
   await sender.page.locator('.home-play-row .home-play').click();
   await confirmAge(sender.page);
   await sender.page.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();

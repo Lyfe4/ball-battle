@@ -80,14 +80,13 @@ export function boxSpoken(choice: PlayChoice): string {
   return `${SHEET_WORDS.title}: ${boxWho(choice)}, ${live}${bestOfName(bestOf)}, ${FORMAT_SHORT[format]}`;
 }
 
-/** The sheet's heading, its groups' names and its way out. */
+/** The sheet's heading and its groups' names (its way out is the shared ×, close-button.ts). */
 export const SHEET_WORDS = {
   title: 'What to play',
   against: 'Against',
   length: 'Length',
   format: 'Format',
   level: 'Bot',
-  done: 'Done',
 } as const;
 
 /** Each format in a few words, under its name in the sheet (the setup's cards say it whole). */

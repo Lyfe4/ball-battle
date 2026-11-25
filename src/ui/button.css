@@ -42,16 +42,16 @@
 
 /* Pointed at or pressed by a finger (press.ts): the same look. A press also pushes it down. */
 @media (hover: hover) {
-  .hud-button:not(:disabled):hover {
+  .hud-button:not(:disabled, [aria-disabled='true']):hover {
     filter: brightness(1.08);
   }
 }
 
-.hud-button:not(:disabled)[data-pressed] {
+.hud-button:not(:disabled, [aria-disabled='true'])[data-pressed] {
   filter: brightness(1.08);
 }
 
-.hud-button:not(:disabled):is(:active, [data-pressed]) {
+.hud-button:not(:disabled, [aria-disabled='true']):is(:active, [data-pressed]) {
   transform: translateY(var(--press-depth));
   box-shadow: none;
 }
@@ -110,7 +110,7 @@
 }
 
 /* Disabled: flat on the page, with no slab to press into, in muted text. */
-.hud-button:disabled {
+.hud-button:is(:disabled, [aria-disabled='true']) {
   background: var(--color-raised);
   box-shadow: none;
   color: var(--color-text-muted);
