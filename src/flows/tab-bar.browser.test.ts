@@ -71,8 +71,9 @@ describe('the tab bar', () => {
       // A match link made before versions: the older-link notice, a task.
       ['?a=storm&b=frost&seed=4', 'task'],
       [`?a=storm&b=frost&seed=4&v=${String(RULESET_VERSION)}`, 'fight'],
-      ['?mode=bo3&fmt=reveal&step=lineup', 'fight'],
-      [LINKS.start, 'fight'],
+      // A lineup is a task (ADR 0087 addendum of 2026-11-26): no bar on a phone, the rail on a PC.
+      ['?mode=bo3&fmt=reveal&step=lineup', 'task'],
+      [LINKS.start, 'task'],
       [LINKS.online, 'fight'],
     ];
     for (const [search, kind] of bare) {
