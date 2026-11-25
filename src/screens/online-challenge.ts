@@ -234,14 +234,14 @@ export function createChallengeScreens(
   }
 
   /** The sender stops waiting: the link stops, and they go home (or on, if it was accepted). */
-  async function cancel(): Promise<void> {
+  async function cancel(then?: 'friend'): Promise<void> {
     if (token === undefined) return;
     lobby.stop();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
     const card = answer.ok ? answer.body : undefined;
     if (card?.seriesId != null) await intoSeries(card.seriesId);
     else if (card?.startId != null) await intoStart(card.startId);
-    else host.home();
+    else (then === 'friend' ? host.friend : home)();
   }
 
   function cardActions() {
@@ -264,7 +264,7 @@ export function createChallengeScreens(
       url: challengeUrl(current),
       canShare: typeof navigator.share === 'function',
       copy: () => copyLink(current),
-      cancel: () => cancel(),
+      cancel: (then?: 'friend') => cancel(then),
       unblock: async (pair: string) => {
         const done = await callApi<unknown>('POST', `friends/${pair}/unblock`, {});
         await (done.ok ? loadCard() : failed(done, () => loadCard()));

@@ -4,6 +4,7 @@
 // already taken, the 16+ confirmation). A friend's card and the lobby add parts of their own
 // (ADR 0055): a sticker, chips, a waiting ball, steps, the link in a quiet box and a quiet action.
 import { busyOnClick } from './busy-button.ts';
+import { personDisc } from './online/friend-sheet.ts';
 import { element } from './dom.ts';
 import { createScreenHeader } from './screen-header.ts';
 import type { NoticeContent, NoticeField } from './notice-content.ts';
@@ -34,6 +35,32 @@ function linkBox(link: NonNullable<NoticeContent['link']>): HTMLElement {
     box.append(button);
   }
   return box;
+}
+
+/** Whether a folded link was opened: kept while the lobby redraws every few seconds. */
+let foldOpen = false;
+
+/** The link's box, or folded under its words with Share inside (a friend's lobby, ADR 0086). */
+function linkPart(link: NonNullable<NoticeContent['link']>): HTMLElement {
+  if (link.fold === undefined) return linkBox(link);
+  const fold = element('details', 'notice-fold');
+  fold.open = foldOpen;
+  fold.addEventListener('toggle', () => {
+    foldOpen = fold.open;
+  });
+  fold.append(element('summary', 'notice-fold-summary', link.fold), linkBox(link));
+  const share = link.share;
+  if (share !== undefined) {
+    const button = element('button', 'hud-button notice-fold-share', share.text);
+    button.type = 'button';
+    button.setAttribute('aria-label', share.label ?? share.text);
+    busyOnClick(button, async () => {
+      const said = await share.onClick();
+      if (share.relabel === true && typeof said === 'string') button.textContent = said;
+    });
+    fold.append(button);
+  }
+  return fold;
 }
 
 const FIELD_INPUT: Readonly<
@@ -120,7 +147,13 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       }
       if (content.waiting !== undefined) {
         const waiting = element('div', 'notice-waiting');
-        const ball = element('span', 'notice-waiting-ball');
+        const who = content.waiting.who;
+        // Waiting for someone by name: their disc, pulsing gently (ADR 0086); else the ball.
+        const ball =
+          who === undefined
+            ? element('span', 'notice-waiting-ball')
+            : personDisc({ id: '', name: who }, 'row');
+        ball.classList.add(who === undefined ? 'notice-waiting-mark' : 'notice-waiting-disc');
         ball.setAttribute('aria-hidden', 'true');
         waiting.append(
           ball,
@@ -182,7 +215,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       );
       footer.hidden = content.buttons.length === 0;
       const rest: HTMLElement[] = [];
-      if (content.link !== undefined) rest.push(linkBox(content.link));
+      if (content.link !== undefined) rest.push(linkPart(content.link));
       if (content.note !== undefined) rest.push(element('p', 'notice-text', content.note));
       if (content.quiet !== undefined) {
         const quiet = element('button', 'hud-button notice-quiet', content.quiet.text);

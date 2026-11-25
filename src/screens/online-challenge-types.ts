@@ -16,7 +16,7 @@ export interface ChallengeHost {
   back(toParent: () => void): void;
   home(): void;
   /** The vs Friend setup, where challenges are sent from (ADR 0055). */
-  friend(): void;
+  readonly friend: () => void;
   readonly storage: DeviceStorage;
   /** Reads series `id` so its screen shows complete on arrival (ADR 0054). */
   primeSeries(id: string): Promise<void>;

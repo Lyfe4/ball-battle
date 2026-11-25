@@ -1,5 +1,7 @@
 // A challenge's card in each state, the 16+ confirmation, and sharing a link (ADR 0052).
 import type { ChallengeInfo } from '../api/challenges.ts';
+import { startLineupMs } from '../api/start.ts';
+import type { BestOf } from '../sim/series.ts';
 import type { ErrorCode } from '../api/errors.ts';
 import { GRACE_MS, PICK_SECONDS } from '../api/live.ts';
 import { bestOfName, FORMAT_SHORT } from '../ui/series-text.ts';
@@ -27,8 +29,11 @@ export interface CardActions {
   readonly sendOwn: () => void;
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
-  /** The sender stops waiting in a live lobby (ADR 0053). */
-  readonly cancel: () => Promise<unknown>;
+  /**
+   * The sender stops waiting in a live lobby (ADR 0053), then Home, or the vs Friend setup to
+   * challenge someone else (`'friend'`, after a No thanks, ADR 0086).
+   */
+  readonly cancel: (then?: 'friend') => Promise<unknown>;
   /** The viewer blocked the sender (ADR 0086): Unblock that pair, then the card again. */
   readonly unblock: (pair: string) => Promise<unknown>;
 }
@@ -150,32 +155,18 @@ export function cardFor(
         };
       }
       if (info.live) {
-        // The lobby (ADR 0055): one main button, Share; the link to read in a quiet box with
-        // Copy; the stay rule; Cancel as a quiet link.
-        const share = actions.canShare;
-        // Sent to a friend (ADR 0079 PR (d)): their name, and whether they said No thanks; the
-        // link still works for anyone.
-        const friend = info.invitee;
-        const waiting =
-          friend === null
-            ? 'Waiting for your friend'
-            : info.declined
-              ? `${friend} said no thanks`
-              : `Waiting for ${friend}`;
-        const told =
-          friend === null
-            ? ''
-            : info.declined
-              ? 'The link still works for anyone you send it to. '
-              : `${friend} has it in the game too. `;
+        // Sent to a friend (ADR 0079 PR (d), ADR 0086): the friend lobby.
+        if (info.invitee !== null) return friendLobby(info, info.invitee, actions);
+        // A link to anyone (ADR 0055): one main button, Share; the link to read in a quiet box
+        // with Copy; the stay rule; Cancel challenge, the quiet button.
         return {
           title: 'Your challenge',
-          waiting: { title: waiting, line: `${what} · live` },
+          waiting: { title: 'Waiting for your friend', line: `${what} · live` },
           body: [],
           buttons: [shareButton(actions)],
-          link: share ? { url: actions.url, copy: actions.copy } : { url: actions.url },
-          note: `${told}Once they accept, you both pick your lineups. ${STAY_STEP}`,
-          quiet: { text: 'Cancel challenge', onClick: actions.cancel },
+          link: actions.canShare ? { url: actions.url, copy: actions.copy } : { url: actions.url },
+          note: `Once they accept, you both pick your lineups. ${STAY_STEP}`,
+          quiet: { text: 'Cancel challenge', onClick: () => actions.cancel() },
         };
       }
       // By turns to a friend (ADR 0085): it waits in their Friends tab; no lobby to wait in.
@@ -234,6 +225,45 @@ export function cardFor(
     default:
       return { title: 'This challenge has expired', body: [what], buttons: [own, home] };
   }
+}
+
+/** What comes once a friend accepts: "You both pick lineups, 60 s" (the server's own clock). */
+export const nextLine = (bestOf: BestOf): string =>
+  `Once they accept, you both pick lineups, ${String(startLineupMs(bestOf) / 1000)} s. ${STAY_STEP}`;
+
+/**
+ * The friend lobby (ADR 0086): "Challenge sent", a card with the friend's disc and "Waiting for Jo"
+ * pulsing gently, the rules, one line on what comes next, Cancel challenge, and the link folded
+ * under "Also send a link". Their No thanks leads with Challenge someone else and Home.
+ */
+function friendLobby(info: ChallengeInfo, friend: string, actions: CardActions): NoticeContent {
+  const what = `${challengeLine(info)} · live`;
+  const link = {
+    url: actions.url,
+    fold: 'Also send a link',
+    share: shareButton(actions),
+    ...(actions.canShare ? { copy: actions.copy } : {}),
+  };
+  if (info.declined) {
+    return {
+      title: `${friend} said no thanks`,
+      body: [what, 'The link still works for anyone you send it to.'],
+      buttons: [
+        { text: 'Challenge someone else', onClick: () => actions.cancel('friend') },
+        { text: 'Home', onClick: actions.home },
+      ],
+      link,
+    };
+  }
+  return {
+    title: 'Challenge sent',
+    waiting: { title: `Waiting for ${friend}`, line: what, who: friend },
+    body: [],
+    buttons: [],
+    note: nextLine(info.bestOf),
+    link,
+    quiet: { text: 'Cancel challenge', onClick: () => actions.cancel() },
+  };
 }
 
 function shareButton(actions: CardActions) {

@@ -141,3 +141,43 @@ describe('the challenge lifecycle’s words (ADR 0086)', () => {
     ).toStrictEqual(['One live match at a time.']);
   });
 });
+
+describe('the friend lobby (ADR 0086)', () => {
+  const lobby = (over: Partial<ChallengeInfo> = {}) =>
+    cardFor(info({ status: 'yours', own: true, invitee: 'Jo', ...over }), actions);
+
+  it('says Challenge sent, waits for Jo by name, says what comes next, the link folded', () => {
+    const card = lobby();
+    expect(card.title).toBe('Challenge sent');
+    expect(card.waiting).toStrictEqual({
+      title: 'Waiting for Jo',
+      line: 'Best of 3 · Reveal · live',
+      who: 'Jo',
+    });
+    expect(card.note).toMatch(/^Once they accept, you both pick lineups, 60 s\./);
+    expect(lobby({ bestOf: 5 }).note).toMatch(/pick lineups, 75 s\./);
+    expect(card.buttons).toStrictEqual([]);
+    expect(card.quiet?.text).toBe('Cancel challenge');
+    expect([card.link?.fold, card.link?.share?.text]).toStrictEqual([
+      'Also send a link',
+      'Share link',
+    ]);
+  });
+
+  it('after a No thanks leads with Challenge someone else and Home', () => {
+    const card = lobby({ declined: true });
+    expect(card.title).toBe('Jo said no thanks');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual([
+      'Challenge someone else',
+      'Home',
+    ]);
+    expect(card.link?.fold).toBe('Also send a link');
+  });
+
+  it('keeps Copy link first in a lobby for a link to anyone', () => {
+    const card = lobby({ invitee: null });
+    expect(card.title).toBe('Your challenge');
+    expect(card.buttons[0]?.text).toBe('Share link');
+    expect(card.link?.fold).toBeUndefined();
+  });
+});
