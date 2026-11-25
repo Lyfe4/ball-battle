@@ -63,7 +63,7 @@ function nextLaidOut(node: Element): HTMLElement | undefined {
 }
 
 /** Checks the row's parts on one screen and returns where they sit. */
-export function headerAnchors(where: string): Anchors {
+export function headerAnchors(where: string, content: 'check' | 'skip' = 'check'): Anchors {
   const head = shownHeader(where);
   const headBox = head.getBoundingClientRect();
   const parts = [...head.children].filter(laidOut);
@@ -87,11 +87,15 @@ export function headerAnchors(where: string): Anchors {
   const gear = controls.at(-1);
   expect(gear?.classList.contains('settings-toggle'), `${where}: the gear is last`).toBe(true);
   if (gear === undefined) throw new Error(`${where}: no gear`);
-  // The content starts where the row does: at the frame's left edge, never a column centred.
-  const content = nextLaidOut(head);
-  if (content !== undefined) {
+  // The content starts where the row does: at the frame's left edge, never a column centred. On
+  // Play that is the court where it stands left of the panel (a desktop).
+  const court = document.querySelector('.stage[data-home] .arena-container');
+  const lefts = [nextLaidOut(head), court !== null && laidOut(court) ? court : undefined]
+    .filter((node) => node !== undefined)
+    .map((node) => node.getBoundingClientRect().left);
+  if (content === 'check' && lefts.length > 0) {
     expect(
-      Math.abs(content.getBoundingClientRect().left - headBox.left),
+      Math.abs(Math.min(...lefts) - headBox.left),
       `${where}: the content starts at the row's left edge`,
     ).toBeLessThanOrEqual(SAME);
   }
@@ -142,7 +146,8 @@ export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
     if (search !== '') await follow(search);
     await until(() => screenOn() === screen, 5_000, name, false);
     await settle();
-    seen.push({ name, screen, anchors: headerAnchors(name) });
+    const content = screen === 'home' && checks.play !== 'frame' ? 'skip' : 'check';
+    seen.push({ name, screen, anchors: headerAnchors(name, content) });
   }
   const whole = seen.filter((one) => one.screen !== 'home' || checks.play === 'frame');
   const first = whole[0];

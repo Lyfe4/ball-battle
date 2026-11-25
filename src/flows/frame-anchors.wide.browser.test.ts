@@ -5,6 +5,6 @@ import { checkFrameAnchors } from './frame-anchors-flow.ts';
 
 describe('one frame', () => {
   it('gives every screen where nothing fights the same header row', async () => {
-    await checkFrameAnchors({ play: 'none' });
+    await checkFrameAnchors({ play: 'frame' });
   });
 });

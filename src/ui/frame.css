@@ -84,3 +84,59 @@
     width: calc((var(--col-wide) - var(--space-columns)) / 2);
   }
 }
+
+/*
+ * Play on a desktop (ADR 0087, amending ADR 0081): the header row (the avatar, BallBattle, the gear)
+ * runs across the frame's top, where every screen's sits, and the court and the panel sit under it
+ * inside the frame, the panel's top level with the court's; the court is the hero (the old 75 px
+ * title is gone). The court takes the height left under the row; the panel takes what is left of
+ * the frame's width beside it, between 22rem and 38rem (at 1280 x 800 the court keeps 668 px).
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  body[data-shell='tab'] .stage[data-home] {
+    /* What the frame leaves at each side once centred in the room the rail leaves (frame.css). */
+    --frame-extra: max(
+      0px,
+      (100% - var(--rail-room) - 2 * var(--frame-gutter) - var(--frame-max)) / 2
+    );
+    --frame-left: calc(var(--rail-room) + var(--frame-gutter) + var(--frame-extra));
+    --frame-right: calc(var(--frame-gutter) + var(--frame-extra));
+    --home-top: calc(var(--frame-top) + var(--head-height) + var(--press-depth) + var(--space-gap));
+
+    position: relative;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: 100dvh;
+    padding: var(--home-top) var(--frame-right) var(--frame-gutter) var(--frame-left);
+  }
+
+  body[data-shell='tab'] .stage[data-home] .home-head {
+    position: absolute;
+    top: var(--frame-top);
+    right: var(--frame-right);
+    left: var(--frame-left);
+  }
+
+  /* At the top of its room, so a court narrower than the room is high (its top the panel's). */
+  body[data-shell='tab'] .stage[data-home] .arena-container {
+    flex: 0 1 auto;
+    place-items: start;
+    width: auto;
+    height: 100%;
+  }
+
+  /* Static, so the header row places itself against the stage (the panel is the tip caption's
+     box mid-fight, frame-tip.css; Play shows none). */
+  body[data-shell='tab'] .stage[data-home] .hud {
+    position: static;
+    flex: none;
+    width: clamp(
+      22rem,
+      100% - (100dvh - var(--home-top) - var(--frame-gutter)) - var(--space-gap),
+      38rem
+    );
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+  }
+}
