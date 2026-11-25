@@ -55,7 +55,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .settings-panel {
-    animation: settings-open 120ms ease-out;
+    animation: settings-open var(--motion-quick) var(--ease-out);
   }
 }
 

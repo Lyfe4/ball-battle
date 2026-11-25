@@ -21,6 +21,17 @@ canvas {
   display: block;
 }
 
+/*
+ * Classic scrollbars (a mouse on Windows, or "always show" elsewhere) reserve their gutter, so a
+ * screen that grows taller than the window never shifts the page sideways (ADR 0087). Overlay
+ * scrollbars (phones, macOS's default) reserve nothing, so phones lose no width.
+ */
+@media (min-aspect-ratio: 5/4) and (pointer: fine) {
+  :root {
+    scrollbar-gutter: stable;
+  }
+}
+
 /* Controls are told apart by fill, never by a line (tokens.css): no browser default border. */
 button {
   border: 0;

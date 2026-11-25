@@ -21,6 +21,8 @@ const ALLOWED = new Set([
   `${BESIDE} and (prefers-reduced-motion: no-preference)`,
   // Not layouts: how the player points and whether things move.
   '(hover: hover)',
+  // Classic scrollbars reserve their gutter beside and on a desktop with a mouse (base.css).
+  `${BESIDE} and (pointer: fine)`,
   '(prefers-reduced-motion: reduce)',
   '(prefers-reduced-motion: no-preference)',
 ]);
