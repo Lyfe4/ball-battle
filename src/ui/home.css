@@ -166,12 +166,19 @@
   text-align: start;
 }
 
+/*
+ * The chevron every link draws, in its own column. In the display family at this size it reads as
+ * a clipped ")" (the 2026-11-26 staging walk), so it keeps the system font, as Back's chevron and a
+ * person row's do.
+ */
 .play-box::after {
   grid-column: 3;
   grid-row: 1 / span 2;
   color: var(--color-focus);
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-family: var(--font-family-symbol);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .play-box-icon {

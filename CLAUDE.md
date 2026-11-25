@@ -352,6 +352,9 @@ Each line is a rule; its ADR has the reasoning.
     390 × 664 and one beside or desktop view.
   - An action is a button or a sheet row; a text link only navigates and keeps its "›" (never on
     Close, Cancel, Copy or Remove).
+  - One button and row system (`button.css`, its tokens): 48 px buttons with 16 px padding, compact
+    40 px beside what they act on, the main action full width, one stack gap, full-width rows ("›"
+    only when they open something), the danger group apart; `controls-look` checks every screen.
   - One place per piece of information: the same news never shows twice at once.
   - No doubled controls: one close per overlay (the shared × last in its head, `close-button.ts`;
     tap outside, Escape and Back as well), one primary per card.

@@ -18,7 +18,20 @@ export interface AccountProfile {
   readonly problem?: string;
 }
 
-/** An account's Profile: its name and @username, its actions as rows, then the danger zone. */
+/**
+ * The identity block's lines under the disc (profile.ts draws them): the @username and what
+ * opponents see, or, before a username is chosen, what they see until then.
+ */
+export function identityLines(username: string | null): readonly string[] {
+  return username === null
+    ? ['Opponents see you as “Player” and a number until you choose a username.']
+    : [`@${username}`, `Opponents see you as ${username}.`];
+}
+
+/**
+ * An account's Profile: its name as the title, the identity block (the screen draws it from
+ * `identityLines`), its actions as rows, then the danger zone.
+ */
 export function accountProfile(profile: AccountProfile): NoticeContent {
   // Rows (ADR 0087): changing the name is not the screen's primary, Log out a row; Delete account
   // apart in the danger zone. The stats card is gone until it has one real number.
@@ -26,6 +39,7 @@ export function accountProfile(profile: AccountProfile): NoticeContent {
     {
       text: profile.username === null ? 'Choose a username' : 'Change username',
       onClick: profile.change,
+      opens: true,
     },
   ];
   if (profile.logOut !== undefined) more.push({ text: 'Log out', onClick: profile.logOut });
@@ -35,11 +49,7 @@ export function accountProfile(profile: AccountProfile): NoticeContent {
       : [{ text: 'Delete account', onClick: profile.deleteAccount }];
   return {
     title: profile.username ?? 'Your profile',
-    body: [
-      profile.username === null
-        ? 'Opponents see you as “Player” and a number until you choose a username.'
-        : `@${profile.username} · Opponents see you as ${profile.username}.`,
-    ],
+    body: [],
     buttons: [],
     more,
     danger,

@@ -279,3 +279,83 @@ open, and what changed in the building:
   `manual.css` and `quick-setup.css` left the literal allow-list.
 - **Batch 4** (the strip, the banner, screen motion, the server's crossed challenge, the lobby,
   Your games) is not started: the owner reviews its server and migration work first.
+
+## Addendum (2026-11-26): a lineup keeps the rail on a PC
+
+The owner's change after the staging walk (its fix list, item 2: setup → lineup moved the header
+from 321,32 to 441,64 at 1920 × 1080 and the rail left, between two screens of one task).
+
+- **A lineup is a task, not a fight**: a bot series' lineup (`series-lineup`) and a start's lineup
+  (`start`) move from `fight` to `task` in `shellOf`. Beside and on a desktop the rail stays and the
+  lineup sits in the frame (`frame.css`), its header row on the frame's pixels, laid out as Free
+  play's picker (the tray on the left, the grid across the rest). The rail leaves only once the arena
+  takes over: the coin toss, the match, rounds, between rounds, the end, live rooms.
+- **On a phone nothing changes**: a task has no bar (ADR 0039), so a lineup has none, as before.
+- The table above now reads:
+
+| Kind   | Screens                                                                                       | Phone upright              | Beside and desktop       |
+| ------ | --------------------------------------------------------------------------------------------- | -------------------------- | ------------------------ |
+| tab    | Play, Balls (and its chart), Friends, Ranks                                                   | bar                        | rail, its tab lit        |
+| browse | a ball's page, Profile, Sent / Blocked lists                                                  | bar (the opener's tab lit) | rail                     |
+| task   | setups, a lineup (a series' or a start's), sign-in, the challenge card, lobby, notices, legal | no bar                     | rail                     |
+| fight  | coin toss, match, series rounds and end, live rooms                                           | no bar                     | no rail (ADR 0039, 0067) |
+
+- **Tests**: `tabs.test.ts` (the table); `frame-anchors` compares the lineup with every other frame
+  screen at every size (setup → lineup keeps the header); `tab-rail.landscape-small` keeps the rail by
+  the lineup and finds none from the coin toss; `phone-arena` checks a phone's lineup has no bar.
+- Invites still never show over a lineup: `invitesMayShow` reads the screen, not its shell.
+
+## Addendum (2026-11-26): the asides, as built
+
+The staging walk's fix list (item 4): lists and reading screens were one column on a desktop. On a
+desktop only (beside, the frame is too narrow for two), `frame.css`:
+
+- **Friends** (list, main `1fr` + aside `--col-aside`): the people in the main column (Waiting for
+  you, then the friends, tiled two across where the room allows); the ways to find more people in
+  the aside (the friend code card with Add, Sent and Blocked, then the link card). A guest's Friends
+  keeps the split: the card in the friends' place (Sign in to keep friends, or the failure card)
+  in the main column, the link card where an account's sits. `friends-section.ts` wraps the two
+  (`.friends-main`, `.friends-aside`, one column on a phone in today's order).
+- **Ranks** (list): the boards in the main column; the intro and Play a friend now in the aside.
+- **Profile** (reading, 40rem + aside): who you are and the account's rows in the reading line; the
+  danger zone in the aside, apart from them. Its rows (Change username, Log out) are now full-width
+  sheet rows with their padding on every size (they were inline buttons with none).
+- **Sign-in and the notices** have no aside: everything on them is the task, and sign-in's words
+  are what its button agrees to, so they stay in one reading line.
+- Motion: the waiting ball's loop moved onto `--motion-swing` / `--ease-swing`; `notice.css` left
+  the literal allow-list.
+
+## Addendum (2026-11-26): a notice on a fight's screen is a task
+
+The staging walk's fix list (item 10): the `online` screen key was always a fight, so a notice
+there ("Nothing here" for a series that is gone, a failure with Try again, offline) had no rail on a
+PC. `shellOf(screen, tabs, notice)` makes a fight's screen a task while it shows a notice in its
+fight's place (`noticeShown()` from the online series' screen, read on every layout): the arena never
+took over. Loading stays a fight (its skeleton is the fight's, so nothing comes and goes when the
+series arrives); a notice that turns into the series (Try again) is the change of mode into the
+fight. `tabs.test.ts` and `tab-bar.browser.test.ts`.
+
+## Addendum (2026-11-26): one button and row system
+
+After the owner's staging check (labels touching their edges, an avatar on the first button,
+Copy stretched ~300 px, a danger group barely apart). In `tokens.css` and one place, `button.css`:
+a button is `--button-height` (48 px) with `--button-pad` (16 px) either side of its label; a
+compact one (`.hud-button-compact`, 40 px, its unseen reach still `--tap-target`) sizes to its
+label beside what it acts on; a screen's or sheet's main action is full width
+(`.hud-button-main`); stacked actions are `--stack-gap` apart (`.action-stack`), with a quiet line
+under one where it needs it (`.action-hint`); a row (`.sheet-row`) is full width, label left, as
+tall as a button, with "›" only when it opens something (`data-opens`); the danger group
+(`.sheet-danger`) is those rows in red, `--space-group` apart under a divider across the column.
+`.sheet-content` lays its parts out one gap apart (it had no layout, so they touched).
+
+The friend sheet: the name as its title, then a head block (the disc, @username and status on one
+line), the main actions, Remove friend as a row, the danger group; "Take turns" is "Play by turns"
+with "No need to be online together · up to 24 h a move" under it (`TURN_HOURS`, now in
+`src/api/series.ts`, shared with the server). The request, sent and blocked sheets take the same
+order. Profile: the username as its title, an identity block (72 px disc, @username, what opponents
+see), the account's rows, the danger group; Privacy · Terms at the column's left edge.
+
+`controls-look` (five browser projects signed in with friends, two as a guest) fails when a
+button or row is under one tap target, its label within 12 px of its side, or two controls (or a
+control and a person's disc) closer than the stack gap; on the code before this it found 35 such
+breaks (the disc on the first button, 8 px gaps, "Hear it" 6 px from its edge).

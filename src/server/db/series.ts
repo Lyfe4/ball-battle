@@ -8,8 +8,8 @@ import type { SeedRow } from '../view.ts';
 
 type Db = Sql | TransactionSql;
 
-/** How long a player has for each turn. */
-export const TURN_HOURS = 24;
+/** How long a player has for each turn: shared with the page's words (src/api/series.ts). */
+export { TURN_HOURS } from '../../api/series.ts';
 
 export interface SeriesRow {
   readonly id: string;

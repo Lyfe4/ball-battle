@@ -183,7 +183,8 @@
   /* Above what scrolls under it: a chosen option's check badge (choice.css, z-index 2) stuck out. */
   z-index: 3;
   display: flex;
-  gap: var(--space-small);
+  /* Its actions one stack gap apart, as every pair of controls (button.css). */
+  gap: var(--stack-gap);
   padding-block: var(--space-small) var(--space-gutter);
   background: var(--color-page);
 }

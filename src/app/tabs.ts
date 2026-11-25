@@ -40,8 +40,11 @@ export function tabOf(screen: ScreenKey, tabs: readonly Tab[] = TABS): TabId | u
 
 /**
  * What the shell is around a screen (ADR 0087): a tab screen; a screen browsed to from one (a
- * ball's page, Profile); a task that needs the room (a setup, sign-in, a challenge, a notice); or a
- * fight, where the arena takes over (a lineup, a match, a series, a live room, a start's lineup).
+ * ball's page, Profile); a task that needs the room (a setup, sign-in, a challenge, a notice, a
+ * lineup: a bot series' or a start's); or a fight, where the arena takes over (a match, a series
+ * from its coin toss to its end, a live room). A lineup is a task, not a fight (ADR 0087 addendum of
+ * 2026-11-26): on a PC the rail stays until the arena takes over; on a phone it has no bar either
+ * way (ADR 0039).
  */
 export type ShellKind = 'tab' | 'browse' | 'task' | 'fight';
 
@@ -58,11 +61,11 @@ const KINDS: Readonly<Record<ScreenKey, ShellKind>> = {
   challenge: 'task',
   signin: 'task',
   outdated: 'task',
+  'series-lineup': 'task',
+  start: 'task',
   match: 'fight',
-  'series-lineup': 'fight',
   series: 'fight',
   online: 'fight',
-  start: 'fight',
 };
 
 /**
@@ -71,7 +74,10 @@ const KINDS: Readonly<Record<ScreenKey, ShellKind>> = {
  * the rail leaves only when the arena takes over). A tab's screen in a build without that tab never
  * shows (its URL opens Play), so it counts as a task.
  */
-export function shellOf(screen: ScreenKey, tabs: readonly Tab[] = TABS): ShellKind {
+export function shellOf(screen: ScreenKey, tabs: readonly Tab[] = TABS, notice = false): ShellKind {
   const kind = KINDS[screen];
+  // A fight's screen showing a notice in its fight's place (an online series that is gone, a
+  // failure with Try again) is a task: the arena never took over, so a PC keeps its rail.
+  if (kind === 'fight' && notice) return 'task';
   return kind === 'tab' && tabOf(screen, tabs) === undefined ? 'task' : kind;
 }

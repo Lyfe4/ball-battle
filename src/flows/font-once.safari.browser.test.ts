@@ -7,7 +7,9 @@
 // as production serves it: a built page fetched the font once in WebKit against a logging server
 // (no cache headers, `no-cache`, and netlify.toml's `immutable`, the font held back 0 or 1.5 s;
 // 2026-11-25). The dev server injects the stylesheet by script, after the preload has settled, and
-// answers with `Vary: Origin`, and there WebKit fetches the font a second time.
+// answers with `Vary: Origin`, and there WebKit fetches the font a second time. WebKit is counted
+// against the built pages as production serves them instead (scripts/font-once.ts, in CI's browser
+// jobs), the legal pages too.
 import { describe, expect, it } from 'vitest';
 import { commands, server } from 'vitest/browser';
 

@@ -59,14 +59,14 @@ describe('play by turns with a friend', () => {
       await two.goto(BASE);
       await socketOf(two).waitUp();
 
-      // Jo's sheet → Take turns → the lineup in place → Send challenge (ADR 0085, 0086). The vs
+      // Jo's sheet → Play by turns → the lineup in place → Send challenge (ADR 0085, 0086). The vs
       // Friend setup's Play row stays for links (friend-setup).
       await one.goto(`${BASE}/?view=friends`);
       await friendsOf(one)
         .locator('.friends-row', { hasText: jo })
         .locator('.friends-open')
         .click();
-      await one.getByRole('button', { name: `Take turns with ${jo}` }).click();
+      await one.getByRole('button', { name: `Play by turns with ${jo}` }).click();
       await buildLineup(one, 'Send challenge');
       await one.getByRole('heading', { name: `Sent to ${jo}` }).waitFor();
 

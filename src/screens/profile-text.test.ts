@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accountProfile, guestProfile, unknownProfile } from './profile-text.ts';
+import { accountProfile, identityLines, guestProfile, unknownProfile } from './profile-text.ts';
 
 const nothing = () => undefined;
 const words = (buttons: readonly { text: string }[] | undefined) => buttons?.map((b) => b.text);
@@ -13,7 +13,11 @@ describe('Profile’s words (ADR 0081, 0087)', () => {
       deleteAccount: nothing,
     });
     expect(card.title).toBe('robin_b');
-    expect(card.body).toStrictEqual(['@robin_b · Opponents see you as robin_b.']);
+    // Who you are is the identity block's, drawn by the screen from these lines.
+    expect(card.body).toStrictEqual([]);
+    expect(identityLines('robin_b')).toStrictEqual(['@robin_b', 'Opponents see you as robin_b.']);
+    // Change username opens its field: its row says so ("›"); Log out doesn't.
+    expect(card.more?.map((one) => one.opens === true)).toStrictEqual([true, false]);
     // No stats card until it has one real number, and no yellow primary for the name (ADR 0087).
     expect(card.part).toBeUndefined();
     expect(card.buttons).toStrictEqual([]);
@@ -24,6 +28,9 @@ describe('Profile’s words (ADR 0081, 0087)', () => {
   it('asks an account without a username to choose one, and says why the last action failed', () => {
     const card = accountProfile({ username: null, change: nothing, problem: 'You’re offline' });
     expect(card.title).toBe('Your profile');
+    expect(identityLines(null)).toStrictEqual([
+      'Opponents see you as “Player” and a number until you choose a username.',
+    ]);
     expect(words(card.more)).toStrictEqual(['Choose a username']);
     expect(card.danger).toStrictEqual([]);
     expect(card.note).toBe('You’re offline');

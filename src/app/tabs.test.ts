@@ -19,11 +19,11 @@ const SCREENS: Readonly<Record<ScreenKey, ShellKind>> = {
   challenge: 'task',
   signin: 'task',
   outdated: 'task',
+  'series-lineup': 'task',
+  start: 'task',
   match: 'fight',
-  'series-lineup': 'fight',
   series: 'fight',
   online: 'fight',
-  start: 'fight',
 };
 
 describe('the shell’s tabs (ADR 0081)', () => {
@@ -43,6 +43,15 @@ describe('the shell’s tabs (ADR 0081)', () => {
     }
     expect(tabOf('manual', all)).toBe('balls');
     expect(tabOf('home', all)).toBe('play');
+  });
+
+  it('makes a fight’s screen a task while it shows a notice instead of its fight', () => {
+    const all = tabsFor(true, true);
+    expect(shellOf('online', all, true)).toBe('task');
+    expect(shellOf('online', all, false)).toBe('fight');
+    // Only a fight changes: a notice on a tab or a task is that screen's own.
+    expect(shellOf('home', all, true)).toBe('tab');
+    expect(shellOf('signin', all, true)).toBe('task');
   });
 
   it('keeps a tab’s screen bare in a build without that tab', () => {

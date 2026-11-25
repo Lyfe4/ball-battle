@@ -11,7 +11,7 @@ import { createSkeleton } from '../ui/skeleton.ts';
 import { askToDelete } from './account-delete.ts';
 import { createAccountStep } from './account-step.ts';
 import { onlineNotice } from './online-text.ts';
-import { accountProfile, guestProfile, unknownProfile } from './profile-text.ts';
+import { accountProfile, guestProfile, identityLines, unknownProfile } from './profile-text.ts';
 
 export interface ProfileHost {
   /** Who this device plays as: one `/me` shared with the avatar, kept for the visit (ADR 0087). */
@@ -33,6 +33,21 @@ export interface ProfileHost {
 export interface ProfileScreen {
   show(): void;
   setVisible(visible: boolean): void;
+}
+
+/** Who you are, under the title (your name): your disc, your @username, what opponents see. */
+function identityBlock(username: string | null): HTMLElement {
+  const block = element('div', 'profile-identity');
+  const disc = element('span', 'friends-disc friends-disc-sheet', (username ?? 'P').slice(0, 1));
+  disc.setAttribute('aria-hidden', 'true');
+  const lines = element('div', 'profile-identity-lines');
+  const [first, ...rest] = identityLines(username);
+  if (username !== null && first !== undefined) lines.append(element('p', 'profile-handle', first));
+  for (const line of username === null ? [first ?? ''] : rest) {
+    lines.append(element('p', 'notice-text', line));
+  }
+  block.append(disc, lines);
+  return block;
 }
 
 export function createProfile(
@@ -83,8 +98,9 @@ export function createProfile(
     failed,
     logOut: host.logOut,
     forget: host.forget,
-    card: (username, change, actions) =>
-      accountProfile({
+    card: (username, change, actions) => ({
+      part: identityBlock(username),
+      ...accountProfile({
         username,
         change,
         ...(actions === undefined
@@ -95,6 +111,7 @@ export function createProfile(
               ...(actions.problem === undefined ? {} : { problem: actions.problem }),
             }),
       }),
+    }),
   });
 
   async function open(): Promise<void> {

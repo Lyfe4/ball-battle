@@ -224,17 +224,40 @@
 }
 
 /*
- * More quiet actions on a row of their own at the card's end (ADR 0079 addendum of 2026-11-22):
- * the account's Log out and Delete account, a guest's Forget me. A rule above them sets them apart
- * from the card's own business.
+ * The account's own actions as rows (Profile's Change username and Log out, ADR 0087): full-width
+ * rows one under another (button.css), a group's space below who you are. No divider: the one rule
+ * on the card is the danger group's, across the column.
  */
 .notice-more {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-columns);
+  display: grid;
+  gap: var(--stack-gap);
   justify-self: stretch;
-  padding-top: var(--space-small);
-  border-top: 1px solid var(--color-raised);
+  margin-top: calc(var(--space-group) - var(--space-gap));
+}
+
+/*
+ * Who you are on Profile (profile.ts): your disc, your @username and what opponents see, beside it;
+ * the title above is your name.
+ */
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+}
+
+.profile-identity-lines {
+  display: grid;
+  gap: 2px;
+}
+
+.profile-handle {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Privacy · Terms at the column's left edge, under the card they belong to, never centred. */
+.profile-legal {
+  justify-content: flex-start;
 }
 
 .notice[data-sticker] .notice-after {
@@ -243,11 +266,11 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .notice-waiting-ball::before {
-    animation: notice-bounce 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+    animation: notice-bounce var(--motion-swing) var(--ease-swing) infinite alternate;
   }
 
   .notice-waiting-ball::after {
-    animation: notice-shadow 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+    animation: notice-shadow var(--motion-swing) var(--ease-swing) infinite alternate;
   }
 }
 

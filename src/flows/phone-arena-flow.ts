@@ -139,6 +139,12 @@ export async function runPhoneArenaFlow(): Promise<void> {
   history.replaceState(null, '', start);
   await import('../main.ts');
   await settle();
+  // The lineup is a task (ADR 0087 addendum of 2026-11-26): on a PC it keeps the rail, but a phone
+  // held upright shows no bar by it, as by a fight (ADR 0039), so the tray and grid keep the room.
+  expect(
+    visible('nav.tab-bar').filter((node) => node.getClientRects().length > 0),
+    'no bar by the lineup',
+  ).toStrictEqual([]);
 
   // A Showdown on Hard, as the bug was found: the ready moment and rounds 1 and 2 mid-fight.
   button('Reveal lineups').click();

@@ -128,6 +128,17 @@
   --space-sheet: clamp(24px, 6vh, 64px);
   --space-columns: 32px;
   --tap-target: 44px;
+  /*
+   * Buttons and rows (button.css, 2026-11-26): one height for a button or a row, a compact one for
+   * a button beside what it acts on (Copy beside the code; its tap target still --tap-target), the
+   * padding that keeps a label off its edges, one gap between stacked actions, and the space that
+   * sets a group apart (the danger group, a sheet's head from its actions).
+   */
+  --button-height: 48px;
+  --button-height-compact: 40px;
+  --button-pad: 16px;
+  --stack-gap: var(--space-gap);
+  --space-group: 24px;
   --font-size-small: 0.875rem;
   --font-size-tiny: 0.75rem;
   --font-size-display: 2.25rem;
@@ -177,6 +188,13 @@
   --motion-slow: 320ms;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-in: cubic-bezier(0.3, 0, 1, 1);
+  /*
+   * A loop that swings to and fro while something waits (a notice's waiting ball): one swing, and
+   * a curve that eases both ends the same, so `alternate` turns with no jolt. Still, under reduced
+   * motion (each rule's own query).
+   */
+  --motion-swing: 900ms;
+  --ease-swing: cubic-bezier(0.5, 0, 0.5, 1);
   /*
    * The first paint (ADR 0087): the stage shows once its first screen is laid out (first-paint.ts),
    * in about 1.1 s on Slow 4G. Past this, the stylesheet shows it anyway with a line to reload, so a

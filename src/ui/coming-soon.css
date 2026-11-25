@@ -81,6 +81,11 @@
   margin-top: var(--space-gap);
 }
 
+/* The boards stand in the one column with the intro and the button (frame.css: the main column). */
+.ranks-boards {
+  display: contents;
+}
+
 .ranks-intro {
   margin: 0;
   color: var(--color-text-muted);

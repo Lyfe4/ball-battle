@@ -31,12 +31,6 @@ const ALLOWED: Readonly<Record<string, readonly string[]>> = {
     'cubic-bezier(0.5, 0, 0.5, 1)',
   ],
   'ui/hud.css': ['0.3s', '300ms', '450ms', 'ease-out'],
-  'ui/notice.css': [
-    '900ms',
-    '900ms',
-    'cubic-bezier(0.5, 0, 0.5, 1)',
-    'cubic-bezier(0.5, 0, 0.5, 1)',
-  ],
   'ui/series/leave-confirm.css': ['160ms', 'ease-out'],
   'ui/skeleton.css': ['1.6s', 'ease-in-out'],
 };

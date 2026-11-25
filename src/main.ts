@@ -322,7 +322,7 @@ function showControls(): void {
   home.setVisible(screen === 'home');
   manual.setVisible(screen === 'manual');
   outdated.setVisible(screen === 'outdated');
-  shell.setVisible(screen);
+  shell.setVisible(screen, screen === 'online' && online.noticeShown());
   quick.setVisible(screen === 'pick' || screen === 'match' ? screen : 'other');
   seriesSetup.setVisible(screen === 'series' && setup);
   // Between series rounds and at the end the arena, health and speed make way for the round

@@ -98,7 +98,12 @@ describe('Profile', () => {
   it('shows an account by its username, its actions as rows and Delete account apart', async () => {
     const { asked, done } = profile([200, { name: 'robin_b', account: true, username: 'robin_b' }]);
     await titled('robin_b');
-    expect(texts('.notice-text')[0]).toBe('@robin_b · Opponents see you as robin_b.');
+    // The identity block under the title: the disc, the @username, what opponents see.
+    expect(texts('.profile-identity .friends-disc')).toStrictEqual(['r']);
+    expect(texts('.profile-handle')).toStrictEqual(['@robin_b']);
+    expect(texts('.profile-identity .notice-text')).toStrictEqual([
+      'Opponents see you as robin_b.',
+    ]);
     // No stats card (ADR 0087), no primary for the name: rows, then the danger zone.
     expect(texts('.soon-card-title')).toStrictEqual([]);
     expect(texts('.notice .hud-button-primary')).toStrictEqual([]);

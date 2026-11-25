@@ -29,7 +29,11 @@ export function createRanks(root: HTMLElement, host: RanksHost): RanksScreen {
   const play = element('button', 'hud-button hud-button-primary', RANKS.button);
   play.type = 'button';
   play.addEventListener('click', host.playFriend);
-  body.append(intro, ...cards, play);
+  // The boards in one box: on a desktop they fill the main column beside the intro and its button
+  // (frame.css, ADR 0087); on a phone they stand between them, as one column.
+  const boards = element('div', 'ranks-boards');
+  boards.append(...cards);
+  body.append(intro, boards, play);
   root.replaceChildren(header.element, body);
   return {
     setVisible(visible) {

@@ -88,7 +88,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   const codeRow = element('p', 'friends-code');
   const codeText = element('strong', 'friends-code-value');
-  const copy = element('button', 'hud-button friends-copy', 'Copy');
+  const copy = element('button', 'hud-button hud-button-compact friends-copy', 'Copy');
   copy.type = 'button';
   copy.setAttribute('aria-label', 'Copy your friend code');
   codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
@@ -107,8 +107,14 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   // What a block or a report just did, said where the list is.
   const note = element('p', 'friends-note');
   note.setAttribute('role', 'status');
-  root.append(note, lists, addCard);
-  if (host.link !== undefined) root.append(host.link);
+  // The list in the main column; your code and the link card in the aside beside it on a desktop
+  // (frame.css, ADR 0087). On a phone the two are one column, in this order.
+  const main = element('div', 'friends-main');
+  main.append(note, lists);
+  const aside = element('div', 'friends-aside');
+  aside.append(addCard);
+  if (host.link !== undefined) aside.append(host.link);
+  root.append(main, aside);
 
   let code = '';
   let list: FriendsResponse | undefined;
@@ -262,7 +268,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     sent.replaceChildren(...groups.filter(withCode).map(box));
     addCard.hidden = false;
     // The link card last, taken back from the guest's layout if it lent it (friends-tab.ts).
-    if (host.link !== undefined && root.lastElementChild !== host.link) root.append(host.link);
+    if (host.link !== undefined && aside.lastElementChild !== host.link) aside.append(host.link);
     // One calm reveal where skeleton rows were seen (ADR 0087 rule 4).
     lists.toggleAttribute('data-reveal', fade && list !== undefined);
   }

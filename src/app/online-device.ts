@@ -7,7 +7,8 @@
 const PREFIX = 'ballbattle.';
 const GUEST = 'ballbattle.online.guest';
 /** The device is signed in to an account (ADR 0079), not a guest: what settings offer. */
-const ACCOUNT = 'ballbattle.online.account';
+export const ACCOUNT_STORAGE_KEY = 'ballbattle.online.account';
+const ACCOUNT = ACCOUNT_STORAGE_KEY;
 const WATCHED = 'ballbattle.online.watched';
 /** Series remembered for watching; older entries are dropped first. */
 const MOST_WATCHED = 30;

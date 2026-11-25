@@ -71,9 +71,12 @@ describe('the tab bar', () => {
       // A match link made before versions: the older-link notice, a task.
       ['?a=storm&b=frost&seed=4', 'task'],
       [`?a=storm&b=frost&seed=4&v=${String(RULESET_VERSION)}`, 'fight'],
-      ['?mode=bo3&fmt=reveal&step=lineup', 'fight'],
-      [LINKS.start, 'fight'],
-      [LINKS.online, 'fight'],
+      // A lineup is a task (ADR 0087 addendum of 2026-11-26): no bar on a phone, the rail on a PC.
+      ['?mode=bo3&fmt=reveal&step=lineup', 'task'],
+      [LINKS.start, 'task'],
+      // An online series the server refuses here: its notice in the fight's place, a task (a PC
+      // keeps the rail; the arena never took over).
+      [LINKS.online, 'task'],
     ];
     for (const [search, kind] of bare) {
       await follow(search);

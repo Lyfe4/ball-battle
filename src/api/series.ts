@@ -5,6 +5,12 @@
 import type { BestOf, Format, PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
 import type { LiveView } from './live.ts';
 
+/**
+ * How long a player has for each turn of a series by turns (ADR 0085): the server's deadline and the
+ * words that promise it ("up to 24 h a move") read this one number.
+ */
+export const TURN_HOURS = 24;
+
 /** What a seed is for: a round's seed (index 0-4) or Reveal's toss. */
 export type SeedPurpose = 'round' | 'toss' | 'lineup' | 'bot';
 

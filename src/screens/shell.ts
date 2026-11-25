@@ -24,8 +24,11 @@ export type ShellScreensHost = Pick<Moves, 'go' | 'goHome' | 'backOrHome'>;
 
 export interface ShellScreens {
   readonly handlers: { readonly [S in ShellView]: ScreenHandler<S> };
-  /** Lays the shell out for the screen on show: Ranks, and the bar on a tab screen. */
-  setVisible(screen: Screen): void;
+  /**
+   * Lays the shell out for the screen on show: Ranks, and the bar on a tab screen. `notice` when a
+   * fight's screen shows a notice in its fight's place (`shellOf`).
+   */
+  setVisible(screen: Screen, notice?: boolean): void;
   /** What waits on the player: the Friends tab's badge (ADR 0081). */
   waiting(count: number): void;
   /**
@@ -100,13 +103,13 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
     waiting(count) {
       bar.badge('friends', count, friendsTabLabel(count));
     },
-    setVisible(current) {
+    setVisible(current, notice = false) {
       ranks?.setVisible(current === 'ranks');
       // The shell follows the URL's screen key: the manual's index is a tab, a ball's page is
       // browsed to from it (its tab lit even from a link), a setup is a task, a lineup a fight.
       const route = parseRoute(new URLSearchParams(window.location.search), BALL_LOOKUP, false);
       const key = route.screen === current ? screenKeyOf(route) : undefined;
-      const kind = key === undefined ? 'fight' : shellOf(key);
+      const kind = key === undefined ? 'fight' : shellOf(key, TABS, notice);
       shown = key === undefined ? undefined : tabOf(key);
       if (shown !== undefined) opener = shown;
       else if (key === 'manual-entry') opener = 'balls';
