@@ -9,13 +9,17 @@ import { LIVE_FORMATS } from '../api/live.ts';
 import type { Config } from './config.ts';
 import type { TransactionSql } from './db.ts';
 import {
+  blockedBy,
   challengeByHash,
   insertChallenge,
+  lobbyWaitingFor,
   lockPlayer,
+  lockPlayers,
   markAccepted,
   markStarted,
   openChallengesOf,
   openSeriesOf,
+  startBetween,
 } from './db/challenges.ts';
 import { cancelLobby, liveNowOf, lobbySeen } from './db/live.ts';
 import { inviteeOf } from './friend-challenge.ts';
@@ -157,6 +161,10 @@ export async function challengeInfo(
   let found = await challengeByHash(deps.sql, await hashOf(token));
   if (found === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
   const own = viewer !== undefined && viewer === found.creator;
+  // The viewer blocked its sender (ADR 0086): their card says so, with Unblock. The sender is never
+  // told anything (a block reads as nothing to them).
+  const blocked =
+    viewer === undefined || own ? undefined : await blockedBy(deps.sql, viewer, found.creator);
   if (own && found.live && !found.accepted && !found.stopped) {
     await lobbySeen(deps.sql, found.id);
     // A friend may have accepted between the read and the heartbeat: the lobby moves on at once.
@@ -188,6 +196,7 @@ export async function challengeInfo(
     // Who it was sent to is the sender's alone to see.
     invitee: own ? found.inviteeName : null,
     declined: own && found.declined,
+    blocked: blocked ?? null,
   };
 }
 
@@ -198,6 +207,11 @@ export async function challengeInfo(
  *
  * `lineup` is a series by turns': with the challenger's lineup in hand too, the series starts at
  * once. A live link takes none.
+ *
+ * Crossed challenges merge (ADR 0086): accepting a live link from the friend the acceptor's own
+ * lobby waits for cancels that lobby in the same transaction, and both players' locks are taken in
+ * one order, so two crossed Accepts at once make one pair of lineups: the second finds the first's.
+ * A player who blocked the sender can't take their link (the sender is told nothing).
  */
 export async function acceptChallenge(
   deps: Deps,
@@ -207,8 +221,11 @@ export async function acceptChallenge(
 ): Promise<Accepted> {
   const hash = await hashOf(token);
   return deps.sql.begin(async (db) => {
-    // The acceptor first, then the link: one live match per player, on any host.
-    await lockPlayer(db, acceptor);
+    const seen = await challengeByHash(db, hash);
+    if (seen === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
+    // Both players, in one order, then the link: one live match per player on any host, and two
+    // players accepting each other's challenge at once wait in turn (never a deadlock).
+    await lockPlayers(db, [acceptor, seen.creator]);
     const found = await challengeByHash(db, hash, true);
     if (found === undefined) throw new ApiError(404, 'not_found', 'No such challenge');
     if (found.accepted) {
@@ -220,7 +237,13 @@ export async function acceptChallenge(
     if (found.creator === acceptor) {
       throw new ApiError(409, 'own_challenge', 'This is your own link: send it to a friend');
     }
+    if ((await blockedBy(db, acceptor, found.creator)) !== undefined) {
+      throw new ApiError(403, 'friend_blocked', 'You blocked this player: unblock them first');
+    }
     if (found.stopped) {
+      // Crossed, both accepting at once: the other's Accept merged the two into these lineups.
+      const together = found.live ? await startBetween(db, acceptor, found.creator) : undefined;
+      if (together !== undefined) return { seriesId: null, startId: together };
       throw new ApiError(410, 'challenge_stopped', 'Your friend stopped waiting for this match');
     }
     if (found.expired) throw new ApiError(410, 'challenge_expired', 'This challenge has expired');
@@ -228,6 +251,10 @@ export async function acceptChallenge(
       if (lineup !== undefined) {
         throw new ApiError(400, 'bad_request', 'A live challenge is accepted without a lineup');
       }
+      // Crossed challenges merge: the acceptor's own lobby waiting for this sender goes (its
+      // trigger pokes both: the sender's inbox loses it, the acceptor's lobby moves on).
+      const crossed = await lobbyWaitingFor(db, acceptor, found.creator);
+      if (crossed !== undefined) await cancelLobby(db, crossed, acceptor);
       await checkNotLive(db, deps.config, acceptor);
       const startId = await openStart(db, {
         players: { a: found.creator, b: acceptor },

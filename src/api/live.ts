@@ -100,6 +100,8 @@ export type CurrentMatch =
       readonly token: string;
       readonly format: Format;
       readonly bestOf: 3 | 5;
+      /** The friend it waits for (ADR 0079 PR (d)), by name; null for a link to anyone. */
+      readonly invitee: string | null;
     }
   /** Lineups being picked together (ADR 0080). */
   | {

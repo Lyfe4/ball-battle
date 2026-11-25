@@ -55,6 +55,11 @@ export interface ChallengeInfo {
   readonly invitee: string | null;
   /** To its sender: that friend said No thanks. */
   readonly declined: boolean;
+  /**
+   * To a viewer who blocked its sender (ADR 0086): that pair's id, for Unblock; else null. The
+   * sender is never told.
+   */
+  readonly blocked: string | null;
 }
 
 /**

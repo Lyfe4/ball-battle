@@ -18,6 +18,8 @@ import { createOnlineScreens } from './online.ts';
 import type { InboxResponse } from '../api/friends.ts';
 import { invitesMayShow, isFighting, type ScreenMoment } from '../app/screen-rules.ts';
 import { createInboxWatch } from './inbox-watch.ts';
+import { leftLine, takeLeft } from '../app/left-match.ts';
+import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
 import { createRematchWatch, type RematchHomeBack } from './rematch-watch.ts';
 import { createHomeBack } from '../ui/online/back-to-match.ts';
 import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
@@ -256,6 +258,16 @@ export function mountOnline(context: MountContext): OnlineMount {
       homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
     }
   };
+  const leftRoot = document.createElement('div');
+  document.body.append(leftRoot);
+  const leftNews = createIncomingBanner(leftRoot, 'Match', {
+    accept: () => Promise.resolve(),
+    decline: () => Promise.resolve(),
+    dismiss: () => {
+      leftNews.show(undefined);
+    },
+    later: () => undefined,
+  });
   // A live fight's line, where the speed toggle sits (it makes way: live fights are 1x only).
   const liveLine = document.createElement('p');
   liveLine.className = 'live-line';
@@ -301,6 +313,11 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     homeShown: () => {
       void askHome();
+      // Just left a live match: said once, on the banner's look, with OK (ADR 0086).
+      const they = takeLeft();
+      if (they !== undefined) {
+        leftNews.show({ who: they, title: leftLine(they), line: '', answers: 'ok' });
+      }
     },
     playFriend: (setup) => screens.playFriend(setup),
     isLive: () => screens.play.isLive(),

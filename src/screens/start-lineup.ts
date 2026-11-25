@@ -39,7 +39,7 @@ export interface StartLineupHost {
   intoSeries(id: string): Promise<void>;
   home(): void;
   /** A failure, as the challenge screens show one (with Try again). */
-  failed(answer: ApiFailure, retry: () => Promise<unknown>): void;
+  failed(answer: ApiFailure, retry: () => Promise<unknown>): Promise<void>;
 }
 
 export interface StartLineup {
@@ -252,7 +252,7 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
       if (shown !== id) return;
       if (failure === undefined) watch(id);
       else {
-        host.failed(failure, async () => {
+        void host.failed(failure, async () => {
           open(id);
           await Promise.resolve();
         });
@@ -266,7 +266,7 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
     seq += 1;
     const answer = await callApi<unknown>('POST', `starts/${id}`, { lineup, lock: true, seq });
     if (!answer.ok) {
-      host.failed(answer, () => lock(lineup));
+      void host.failed(answer, () => lock(lineup));
       return;
     }
     const next = decodeStartView(answer.body);

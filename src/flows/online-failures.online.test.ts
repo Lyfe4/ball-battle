@@ -168,6 +168,70 @@ describe('accepting a challenge on a phone', () => {
     });
   }
 
+  it('with a lobby of one’s own says whose, and "Cancel that and accept this" accepts (ADR 0086)', async () => {
+    const page = await phone();
+    await lineupReady(page);
+    const accept = await routeAccept(page, (route) =>
+      json(route, 409, {
+        error: { code: 'in_a_match', message: 'Your lobby is waiting: finish it first' },
+      }),
+    );
+    const LOBBY = 'BBBBBBBBBBBBBBBBBBBBBB';
+    await page.route('**/api/v1/me/match', (route) =>
+      json(route, 200, {
+        match: { kind: 'lobby', token: LOBBY, format: 'reveal', bestOf: 3, invitee: 'Jo' },
+      }),
+    );
+    const cancelled: string[] = [];
+    await page.route(`**/api/v1/challenges/${LOBBY}/cancel`, (route) => {
+      cancelled.push(LOBBY);
+      accept.recover();
+      return json(route, 200, { status: 'stopped' });
+    });
+    await page.getByRole('button', { name: 'Accept' }).click();
+    await page.getByRole('heading', { name: 'You already challenged Jo' }).waitFor();
+    // Never the server's sentence.
+    await expect(page.getByText('finish it first').count()).resolves.toBe(0);
+    await page.getByRole('button', { name: 'Cancel that and accept this' }).click();
+    await page.waitForURL(new RegExp(`[?&]start=${START}`));
+    expect(cancelled).toStrictEqual([LOBBY]);
+  });
+
+  it('from a player the viewer blocked says so, with Unblock, then the challenge (ADR 0086)', async () => {
+    const page = await phone();
+    let blocked: string | null = 'pair-1';
+    await page.route(`**/api/v1/challenges/${TOKEN}`, (route) =>
+      json(route, 200, {
+        format: 'reveal',
+        bestOf: 3,
+        from: 'Player 1234',
+        status: 'open',
+        seriesId: null,
+        startId: null,
+        live: true,
+        own: false,
+        invitee: null,
+        declined: false,
+        blocked,
+      }),
+    );
+    await page.route('**/api/v1/friends/pair-1/unblock', (route) => {
+      blocked = null;
+      return json(route, 200, {
+        code: '7KQ2M9XD',
+        friends: [],
+        incoming: [],
+        outgoing: [],
+        blocked: [],
+      });
+    });
+    await page.goto(`${BASE}/?challenge=${TOKEN}`);
+    await page.getByRole('heading', { name: 'You blocked Player 1234' }).waitFor();
+    await expect(page.getByRole('button', { name: 'Accept' }).count()).resolves.toBe(0);
+    await page.getByRole('button', { name: 'Unblock' }).click();
+    await page.getByRole('button', { name: 'Accept' }).waitFor();
+  });
+
   it('offline says "You’re offline" without sending, and Try again accepts once back', async () => {
     const page = await phone();
     await lineupReady(page);

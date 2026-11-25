@@ -9,7 +9,9 @@ describe('home’s way back to a live match', () => {
   });
 
   it('says a lobby is still waiting for the friend', () => {
-    expect(backWords({ kind: 'lobby', token: 't', format: 'showdown', bestOf: 5 })).toMatchObject({
+    expect(
+      backWords({ kind: 'lobby', token: 't', format: 'showdown', bestOf: 5, invitee: null }),
+    ).toMatchObject({
       label: 'Back to your lobby',
       meta: 'Waiting for your friend · Best of 5 · Showdown',
     });

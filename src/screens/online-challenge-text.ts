@@ -29,6 +29,8 @@ export interface CardActions {
   readonly share: () => Promise<string>;
   /** The sender stops waiting in a live lobby (ADR 0053). */
   readonly cancel: () => Promise<unknown>;
+  /** The viewer blocked the sender (ADR 0086): Unblock that pair, then the card again. */
+  readonly unblock: (pair: string) => Promise<unknown>;
 }
 
 /** Refusals of an accept that the link's own card explains; any other shows its message. */
@@ -80,6 +82,22 @@ export function cardFor(
   }
   const what = challengeLine(info);
   const from = info.from ?? 'A deleted player';
+  // The viewer blocked its sender (ADR 0086): said, with Unblock and Not now; Accept is refused on
+  // the server meanwhile. The sender is never told. (A server from before the field: not blocked.)
+  const pair = info.blocked;
+  if (info.status === 'open' && typeof pair === 'string') {
+    return {
+      title: `You blocked ${from}`,
+      body: [what, 'Unblock them to play this challenge. They weren’t told.'],
+      buttons: [
+        {
+          text: 'Unblock',
+          onClick: () => actions.unblock(pair),
+        },
+      ],
+      quiet: { text: 'Not now', onClick: actions.home },
+    };
+  }
   switch (info.status) {
     case 'open':
       // Live (ADR 0055): who, as a sticker; the facts as chips; how it goes in three steps.

@@ -2,7 +2,9 @@
 // moved costs a 304), locking a pick, Leave and forfeit, and asking again on a timer. The screen
 // decides what each answer means for what it shows; this module only talks to the server.
 import { callApi, failureKindOf, type ApiResult, type FailureKind } from '../app/api.ts';
+import { noteLeft } from '../app/left-match.ts';
 import type { ClockSample } from '../app/live-clock.ts';
+import { seatsOf } from '../app/online-series.ts';
 import type { SeriesView } from '../api/series.ts';
 import { decodeSeriesView } from '../api/series-view-decode.ts';
 
@@ -131,7 +133,10 @@ export function createSeriesClient(host: SeriesClientHost): SeriesClient {
       const left = await callApi<unknown>('POST', `series/${id}/forfeit`, {});
       // The lost match as the server now has it: its end, and the rematch it offers, are known here.
       const ended = left.ok ? decodeSeriesView(left.body) : undefined;
-      if (ended !== undefined) host.adopt(ended);
+      if (ended === undefined) return;
+      host.adopt(ended);
+      // Home then says it once: "You left: Jo wins" (ADR 0086).
+      noteLeft(seatsOf(ended).they);
     },
     schedule,
     poke() {

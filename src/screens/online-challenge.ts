@@ -98,9 +98,7 @@ export function createChallengeScreens(
     },
     intoSeries: (id) => intoSeries(id),
     home,
-    failed: (answer, retry) => {
-      failed(answer, retry);
-    },
+    failed: (answer, retry) => failed(answer, retry),
   });
 
   /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
@@ -158,9 +156,7 @@ export function createChallengeScreens(
       host.replaceWith(write);
     },
     askFirst: (then) => askFirst(then),
-    failed: (answer, retry) => {
-      failed(answer, retry);
-    },
+    failed: (answer, retry, move) => failed(answer, retry, move),
     sent: (next, card) => {
       token = next;
       info = card;
@@ -193,7 +189,7 @@ export function createChallengeScreens(
         } else await loadCard();
         return;
       }
-      failed(answer, () => accept(how, own));
+      await failed(answer, () => accept(how, own));
       return;
     }
     rememberGuest(host.storage, true);
@@ -209,7 +205,7 @@ export function createChallengeScreens(
     if (!answer.ok || answer.body === undefined) {
       if (!answer.ok && answer.kind === 'error' && answer.status === 404) {
         show('notice', cardFor(undefined, cardActions()));
-      } else if (!answer.ok) failed(answer, () => loadCard());
+      } else if (!answer.ok) await failed(answer, () => loadCard());
       return;
     }
     info = answer.body;
@@ -269,6 +265,10 @@ export function createChallengeScreens(
       canShare: typeof navigator.share === 'function',
       copy: () => copyLink(current),
       cancel: () => cancel(),
+      unblock: async (pair: string) => {
+        const done = await callApi<unknown>('POST', `friends/${pair}/unblock`, {});
+        await (done.ok ? loadCard() : failed(done, () => loadCard()));
+      },
     };
   }
 
