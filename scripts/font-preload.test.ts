@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fontPreloadOf } from './font-preload.ts';
+import { devFontUrlOf, fontPreloadOf } from './font-preload.ts';
 
 describe('the font preload', () => {
   it('names the Latin subset only, in CORS mode', () => {
@@ -23,5 +23,19 @@ describe('the font preload', () => {
 
   it('fails the build when the font is not in the bundle', () => {
     expect(() => fontPreloadOf(['assets/main-Bel_uBwl.js'])).toThrow(/found 0/);
+  });
+});
+
+describe('the font in dev', () => {
+  it('is named by its path from the root, as the stylesheet names it', () => {
+    expect(devFontUrlOf('C:/game', 'C:/game/node_modules/.pnpm/f/files/a.woff2')).toBe(
+      '/node_modules/.pnpm/f/files/a.woff2',
+    );
+  });
+
+  it('is under /@fs/ outside the root', () => {
+    expect(devFontUrlOf('C:/game', 'C:/store/f/files/a.woff2')).toBe(
+      '/@fs/C:/store/f/files/a.woff2',
+    );
   });
 });
