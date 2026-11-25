@@ -1,8 +1,8 @@
 // The tab rail on a small phone turned sideways (667 x 320, ADR 0081): all four tabs fit down the
 // left with nothing cut or scrolled, and no tab, browse or task screen scrolls sideways beside it
-// (ADR 0087); a fight has no rail.
+// (ADR 0087); a lineup is a task and keeps it; a fight has none.
 import { describe, expect, it } from 'vitest';
-import { settle } from './page-support.ts';
+import { button, settle } from './page-support.ts';
 import { follow, onScreen, openAs, tabBar, tabLabels } from './shell-routes-support.ts';
 
 describe('the tab rail at 667 x 320', () => {
@@ -19,6 +19,8 @@ describe('the tab rail at 667 x 320', () => {
       ['?view=signin', 'signin'],
       ['?mode=bo3', 'series'],
       ['?view=pick', 'pick'],
+      // A lineup is a task (ADR 0087 addendum of 2026-11-26): the rail stays until the arena.
+      ['?mode=bo3&fmt=reveal&step=lineup&la=storm,venom,quake', 'series'],
     ] as const) {
       if (search !== '') await follow(search);
       await onScreen(screen);
@@ -42,9 +44,9 @@ describe('the tab rail at 667 x 320', () => {
         .map((node) => node.getBoundingClientRect().left);
       for (const left of content) expect(left, screen).toBeGreaterThanOrEqual(box.right);
     }
-    // A fight takes the screen: no rail by a lineup (ADR 0039, 0067).
-    await follow('?mode=bo3&fmt=reveal&step=lineup');
+    // The arena takes the screen from the coin toss on: no rail (ADR 0039, 0067).
+    button('Reveal lineups').click();
     await settle();
-    expect(tabBar(), 'the lineup').toBeUndefined();
+    expect(tabBar(), 'the coin toss').toBeUndefined();
   });
 });

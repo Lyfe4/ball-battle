@@ -50,12 +50,16 @@ export function createSeriesScreens(
   host: SeriesScreensHost,
 ): SeriesScreens {
   const { navigation } = host;
+  // A setup moves between its steps without the router: the screen's layout follows the new URL
+  // (its shell: the rules and the lineup are tasks, Reveal's round-1 answer a fight, ADR 0087).
   const setup = createSeriesSetup(roots.setup, balls, {
     move: (write) => {
       navigation.go(write);
+      host.layoutChanged();
     },
     replace: (write) => {
       navigation.replace(write);
+      host.layoutChanged();
     },
     back: (toParent) => {
       navigation.back(toParent);

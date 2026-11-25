@@ -279,3 +279,28 @@ open, and what changed in the building:
   `manual.css` and `quick-setup.css` left the literal allow-list.
 - **Batch 4** (the strip, the banner, screen motion, the server's crossed challenge, the lobby,
   Your games) is not started: the owner reviews its server and migration work first.
+
+## Addendum (2026-11-26): a lineup keeps the rail on a PC
+
+The owner's change after the staging walk (its fix list, item 2: setup → lineup moved the header
+from 321,32 to 441,64 at 1920 × 1080 and the rail left, between two screens of one task).
+
+- **A lineup is a task, not a fight**: a bot series' lineup (`series-lineup`) and a start's lineup
+  (`start`) move from `fight` to `task` in `shellOf`. Beside and on a desktop the rail stays and the
+  lineup sits in the frame (`frame.css`), its header row on the frame's pixels, laid out as Free
+  play's picker (the tray on the left, the grid across the rest). The rail leaves only once the arena
+  takes over: the coin toss, the match, rounds, between rounds, the end, live rooms.
+- **On a phone nothing changes**: a task has no bar (ADR 0039), so a lineup has none, as before.
+- The table above now reads:
+
+| Kind   | Screens                                                                                       | Phone upright              | Beside and desktop       |
+| ------ | --------------------------------------------------------------------------------------------- | -------------------------- | ------------------------ |
+| tab    | Play, Balls (and its chart), Friends, Ranks                                                   | bar                        | rail, its tab lit        |
+| browse | a ball's page, Profile, Sent / Blocked lists                                                  | bar (the opener's tab lit) | rail                     |
+| task   | setups, a lineup (a series' or a start's), sign-in, the challenge card, lobby, notices, legal | no bar                     | rail                     |
+| fight  | coin toss, match, series rounds and end, live rooms                                           | no bar                     | no rail (ADR 0039, 0067) |
+
+- **Tests**: `tabs.test.ts` (the table); `frame-anchors` compares the lineup with every other frame
+  screen at every size (setup → lineup keeps the header); `tab-rail.landscape-small` keeps the rail by
+  the lineup and finds none from the coin toss; `phone-arena` checks a phone's lineup has no bar.
+- Invites still never show over a lineup: `invitesMayShow` reads the screen, not its shell.

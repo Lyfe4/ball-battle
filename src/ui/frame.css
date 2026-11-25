@@ -8,7 +8,7 @@
  *
  * - list (Friends, Ranks, Profile): a main column of `--sheet-narrow`;
  * - grid (Balls and the matchup chart): across the frame, one width for both;
- * - wide (a ball's page, the setups, Free play): the screen's own columns, up to `--sheet-width`;
+ * - wide (a ball's page, the setups, Free play, a lineup): the screen's own columns;
  * - reading (sign-in, notices): a reading line of 40rem.
  *
  * On a phone held upright the frame is the page's column already (the stage's padding is the
@@ -35,7 +35,7 @@
   /* Each screen's root fills the frame, from its left edge, at the top (no floating card). */
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    :is(.manual, .notice, .friends-screen, .ranks-screen, .rules-step, .quick-setup) {
+    :is(.manual, .notice, .friends-screen, .ranks-screen, .rules-step, .quick-setup, .lineup-step) {
     justify-self: stretch;
     width: 100%;
     max-width: none;

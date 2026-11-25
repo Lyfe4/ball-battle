@@ -19,11 +19,11 @@ const SCREENS: Readonly<Record<ScreenKey, ShellKind>> = {
   challenge: 'task',
   signin: 'task',
   outdated: 'task',
+  'series-lineup': 'task',
+  start: 'task',
   match: 'fight',
-  'series-lineup': 'fight',
   series: 'fight',
   online: 'fight',
-  start: 'fight',
 };
 
 describe('the shell’s tabs (ADR 0081)', () => {
