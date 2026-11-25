@@ -8,7 +8,8 @@
  *
  * - list (Friends, Ranks, Profile): a main column of `--sheet-narrow`;
  * - grid (Balls and the matchup chart): across the frame, one width for both;
- * - wide (a ball's page, the setups, Free play, a lineup): the screen's own columns;
+ * - wide (a ball's page, the setups, Free play, a lineup): the screen's own columns (a ball's page
+ *   across the whole frame);
  * - reading (sign-in, notices): a reading line of 40rem.
  *
  * On a phone held upright the frame is the page's column already (the stage's padding is the
@@ -67,14 +68,23 @@
     background: none;
   }
 
-  /* wide: a ball's page and the setups keep their own columns, up to the sheet's width. */
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .manual-entry,
+  /* wide: the setups keep their own columns, up to the sheet's width. */
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
     .rules-step
     > :not(.screen-header) {
     width: 100%;
     max-width: var(--col-wide);
+  }
+
+  /*
+   * A ball's page takes the frame: its profile keeps the setup's width and Strong vs and Weak vs
+   * share the rest, so no third of the frame sits empty under the gear (2026-11-26 staging walk).
+   * At 1280 x 800 the frame is about the old 64rem anyway.
+   */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .manual-entry {
+    width: 100%;
+    max-width: none;
   }
 }
 
