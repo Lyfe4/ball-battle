@@ -1,26 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type { ScreenKey } from './history-rules.ts';
-import { tabOf, tabsFor } from './tabs.ts';
+import { shellOf, tabOf, tabsFor, type ShellKind } from './tabs.ts';
 
-/** Every screen key there is, so a new one must say whether it wears the bar. */
-const SCREENS: Readonly<Record<ScreenKey, boolean>> = {
-  home: true,
-  manual: true,
-  friends: true,
-  ranks: true,
-  'manual-entry': false,
-  pick: false,
-  match: false,
-  'series-rules': false,
-  'series-lineup': false,
-  series: false,
-  outdated: false,
-  online: false,
-  challenge: false,
-  send: false,
-  start: false,
-  signin: false,
-  profile: false,
+/**
+ * Every screen key there is and its shell (ADR 0087), so a new one must say: the bar on a phone for
+ * a tab or browse screen, the rail beside and on a desktop for all but a fight.
+ */
+const SCREENS: Readonly<Record<ScreenKey, ShellKind>> = {
+  home: 'tab',
+  manual: 'tab',
+  friends: 'tab',
+  ranks: 'tab',
+  'manual-entry': 'browse',
+  profile: 'browse',
+  pick: 'task',
+  'series-rules': 'task',
+  send: 'task',
+  challenge: 'task',
+  signin: 'task',
+  outdated: 'task',
+  match: 'fight',
+  'series-lineup': 'fight',
+  series: 'fight',
+  online: 'fight',
+  start: 'fight',
 };
 
 describe('the shell’s tabs (ADR 0081)', () => {
@@ -32,10 +35,11 @@ describe('the shell’s tabs (ADR 0081)', () => {
     expect(labels(true, true)).toStrictEqual(['Play', 'Balls', 'Friends', 'Ranks']);
   });
 
-  it('wears the bar on the tab screens alone: never a fight, a setup, a lineup or a live room', () => {
+  it('gives every screen its shell: tab, browse, task or fight', () => {
     const all = tabsFor(true, true);
-    for (const [screen, wears] of Object.entries(SCREENS)) {
-      expect(tabOf(screen as ScreenKey, all) !== undefined, screen).toBe(wears);
+    for (const [screen, kind] of Object.entries(SCREENS)) {
+      expect(tabOf(screen as ScreenKey, all) !== undefined, screen).toBe(kind === 'tab');
+      expect(shellOf(screen as ScreenKey, all), screen).toBe(kind);
     }
     expect(tabOf('manual', all)).toBe('balls');
     expect(tabOf('home', all)).toBe('play');
@@ -44,5 +48,6 @@ describe('the shell’s tabs (ADR 0081)', () => {
   it('keeps a tab’s screen bare in a build without that tab', () => {
     expect(tabOf('friends', tabsFor(false, false))).toBeUndefined();
     expect(tabOf('ranks', tabsFor(true, false))).toBeUndefined();
+    expect(shellOf('ranks', tabsFor(true, false))).toBe('task');
   });
 });

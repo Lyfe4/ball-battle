@@ -1,8 +1,8 @@
 /*
  * The shell's tab bar (ADR 0081, tab-bar.ts): along the bottom of a phone held upright, a rail down
- * the left beside (any landscape screen), the words beside the icons on a desktop. It shows on the
- * tab screens alone (`body[data-tabs]`), and the stage makes room for it there, so nothing on a
- * tab screen is ever under it: the page's end clears the bar and the phone's home bar, and the
+ * the left beside (any landscape screen), the words beside the icons on a desktop. Where it shows
+ * is the shell's kind (`body[data-shell]`, ADR 0087): the bar on a tab or browse screen, the rail
+ * on every screen but a fight; the stage makes room for it there, so nothing is ever under it: the page's end clears the bar and the phone's home bar, and the
  * panel beside the court keeps its room (`--stage-left`, layout.css).
  */
 .tab-bar {
@@ -115,19 +115,27 @@
   display: none;
 }
 
-/* A phone held upright: the page's end, and a floating card, clear the bar and the home bar. */
+/*
+ * A phone held upright: the bar on a tab or browse screen (ADR 0087), never on a task, which needs the
+ * room or the keyboard; the page's end, and a floating card, clear it and the home bar.
+ */
 @media not all and (min-aspect-ratio: 5/4) {
-  body[data-tabs] .stage {
+  body[data-shell='task'] .tab-bar {
+    display: none;
+  }
+
+  body:is([data-shell='tab'], [data-shell='browse']) .stage {
     padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + var(--space-gutter));
   }
 
-  body[data-tabs]:is([data-update], [data-rematch-notice]) .stage {
+  body:is([data-shell='tab'], [data-shell='browse']):is([data-update], [data-rematch-notice])
+    .stage {
     padding-bottom: calc(
       var(--tab-bar-height) + env(safe-area-inset-bottom) + var(--space-gutter) + 5rem
     );
   }
 
-  body[data-tabs] .floating-notice {
+  body:is([data-shell='tab'], [data-shell='browse']) .floating-notice {
     bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + var(--space-small));
   }
 }
@@ -165,11 +173,11 @@
     top: 2px;
   }
 
-  body[data-tabs] .stage {
+  body[data-shell]:not([data-shell='fight']) .stage {
     --stage-left: calc(var(--tab-rail-width) + env(safe-area-inset-left) + var(--space-gutter));
   }
 
-  body[data-tabs] .floating-notice {
+  body[data-shell]:not([data-shell='fight']) .floating-notice {
     left: calc(var(--tab-rail-width) + env(safe-area-inset-left) + var(--space-gutter));
   }
 
@@ -179,7 +187,7 @@
    * it keeps full height wherever the room allows (812 x 375) and shrinks a little rather than
    * spilling the panel off a 667 x 320 phone whose home holds Sign in and two cards.
    */
-  body[data-tabs] .stage[data-home] .arena-container {
+  body[data-shell='tab'] .stage[data-home] .arena-container {
     flex: 0 1
       calc(
         100svh - max(var(--space-gutter), env(safe-area-inset-top)) -
@@ -189,7 +197,7 @@
     height: auto;
   }
 
-  body[data-tabs] .stage[data-home] .hud {
+  body[data-shell='tab'] .stage[data-home] .hud {
     flex: none;
     min-width: min-content;
   }
@@ -237,18 +245,18 @@
     margin-inline-start: auto;
   }
 
-  body[data-tabs] .stage {
+  body[data-shell]:not([data-shell='fight']) .stage {
     --stage-left: calc(
       var(--tab-rail-width-wide) + env(safe-area-inset-left) + var(--space-gutter)
     );
   }
 
-  body[data-tabs] .floating-notice {
+  body[data-shell]:not([data-shell='fight']) .floating-notice {
     left: auto;
   }
 
   /* Home's column at its desktop width (home.css), less the rail; the demo court gives way. */
-  body[data-tabs] .stage[data-home] .hud {
+  body[data-shell='tab'] .stage[data-home] .hud {
     width: clamp(
       var(--panel-width-wide),
       100vw - 100dvh - 4rem - var(--tab-rail-width-wide),

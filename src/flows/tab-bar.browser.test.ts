@@ -1,8 +1,10 @@
 // The shell's tab bar (ADR 0081) through the real page, in a build with accounts (all four tabs):
-// on the tab screens alone, never over a fight, a setup, a lineup or a live room; real links with
+// on the tab screens and the screens browsed to from them, never over a task or a fight on a phone
+// (ADR 0087); real links with
 // the tab on show marked for screen readers; a tap, a key and Back as the rules say.
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { settle, until } from './page-support.ts';
 import {
   currentTab,
@@ -52,29 +54,36 @@ describe('the tab bar', () => {
     expect(currentTab()).toBe('Play');
   });
 
-  it('never shows over a fight, a setup, a lineup, a ball’s page or a live room', async () => {
-    const bare = [
-      '?view=manual&ball=vampire',
-      '?view=pick&a=storm&b=frost',
-      '?a=storm&b=frost&seed=4',
-      '?mode=bo3',
-      '?mode=bo3&fmt=reveal&step=lineup',
-      '?view=profile',
-      '?view=signin',
-      LINKS.send,
-      LINKS.challenge,
-      LINKS.start,
-      LINKS.online,
+  it('shows on a screen browsed to, never on a task or a fight (a phone held upright)', async () => {
+    // Browsed to from a tab (ADR 0087): the bar stays, the opener's tab lit.
+    await follow('?view=manual&ball=vampire');
+    expect(currentTab(), 'a ball').toBe('Balls');
+    expect(document.body.dataset['shell']).toBe('browse');
+    await follow('?view=profile');
+    expect(tabBar(), 'Profile').toBeDefined();
+    // Tasks and fights take the whole phone.
+    const bare: readonly (readonly [string, string])[] = [
+      ['?view=pick&a=storm&b=frost', 'task'],
+      ['?mode=bo3', 'task'],
+      ['?view=signin', 'task'],
+      [LINKS.send, 'task'],
+      [LINKS.challenge, 'task'],
+      // A match link made before versions: the older-link notice, a task.
+      ['?a=storm&b=frost&seed=4', 'task'],
+      [`?a=storm&b=frost&seed=4&v=${String(RULESET_VERSION)}`, 'fight'],
+      ['?mode=bo3&fmt=reveal&step=lineup', 'fight'],
+      [LINKS.start, 'fight'],
+      [LINKS.online, 'fight'],
     ];
-    for (const search of bare) {
+    for (const [search, kind] of bare) {
       await follow(search);
       await settle();
       expect(tabBar(), search).toBeUndefined();
-      expect(document.body.hasAttribute('data-tabs'), search).toBe(false);
+      expect(document.body.dataset['shell'], search).toBe(kind);
     }
     // And back on a tab screen, it returns.
     await follow('?view=manual&tab=chart');
     expect(currentTab()).toBe('Balls');
-    expect(document.body.hasAttribute('data-tabs')).toBe(true);
+    expect(document.body.dataset['shell']).toBe('tab');
   });
 });

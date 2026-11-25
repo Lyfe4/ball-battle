@@ -80,8 +80,9 @@ export const LINKS = {
   google: '?view=signin&google=signed_in',
 } as const;
 
-/** The tab bar, if it shows. */
-export const tabBar = (): HTMLElement | undefined => visible('nav.tab-bar')[0];
+/** The tab bar, if it is laid out (a task on a phone hides it by its stylesheet). */
+export const tabBar = (): HTMLElement | undefined =>
+  visible('nav.tab-bar').find((node) => node.getClientRects().length > 0);
 
 /** The tabs' words, in order, as the bar shows them (none when it is hidden). */
 export const tabLabels = (): string[] =>
@@ -144,8 +145,8 @@ export async function avatarOnEveryTab(): Promise<void> {
     avatar.click();
     await onScreen('profile');
     await settle();
-    // Profile is a screen of its own: no bar, no avatar.
-    expect(tabBar(), screen).toBeUndefined();
+    // Profile is browsed to (ADR 0087): the bar or rail stays with the opener's tab lit; no avatar.
+    expect(currentTab(), screen).toBe(label);
     expect(avatarsShown(), screen).toHaveLength(0);
     button('Back').click();
     await onScreen(screen);
