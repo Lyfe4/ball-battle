@@ -129,7 +129,7 @@ describe('the Friends section loading (ADR 0087)', () => {
     expect(card?.getAttribute('role')).toBe('alert');
     expect(card?.querySelector('.friends-card-title')?.textContent).toBe('Your friends');
     expect(card?.querySelector('.friends-card-text')?.textContent).not.toBe('');
-    expect(page.root.lastElementChild).toBe(page.link);
+    expect(page.root.querySelector('.friends-aside')?.lastElementChild).toBe(page.link);
     const again = [...(card?.querySelectorAll('button') ?? [])].find(
       (button) => button.textContent === 'Try again',
     );

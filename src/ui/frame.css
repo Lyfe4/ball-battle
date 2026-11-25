@@ -150,3 +150,126 @@
     overflow: visible;
   }
 }
+
+/*
+ * The aside (ADR 0087, built 2026-11-26), on a desktop only: beside, the frame is too narrow for two
+ * columns and each screen keeps its one. What goes where:
+ *
+ * - Friends (list): the people in the main column (Waiting for you, then your friends, tiled two
+ *   across where the room allows); the ways to find more people in the aside (your friend code card
+ *   with Add, Sent and Blocked, then the link card). A guest's Friends keeps that split: what stands
+ *   in the friends' place (Sign in to keep friends, or the failure card) in the main column, the link
+ *   card in the aside, where an account's sits.
+ * - Ranks (list): the three boards in the main column; the aside says what ranks are and offers the
+ *   one thing to do until they open (the intro and Play a friend now).
+ * - Profile (reading): who you are and your account's rows in the reading line; the danger zone in
+ *   the aside, apart from them (the quality bar: destructive actions sit apart).
+ * - Sign-in and the notices (reading) have no aside: everything on them is the task itself, and the
+ *   sign-in's words are what its button agrees to, so they stay together in one reading line.
+ */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    :is(.friends-screen, .ranks-screen)
+    > :not(.screen-header) {
+    max-width: none;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    :is(.friends, .friends-tab:not(:has(> .friends)), .ranks) {
+    grid-template-columns: minmax(0, 1fr) var(--col-aside);
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .friends-main,
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .friends-aside {
+    display: grid;
+    gap: var(--space-gap);
+    align-content: start;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .friends-aside {
+    grid-column: 2;
+  }
+
+  /* People tiled: two across in the main column at 1920 x 1080, one at 1280 x 800. */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .friends-main .friends-list {
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    column-gap: var(--space-gap);
+  }
+
+  /* A guest's: the card in the friends' place in the main column, the link card in the aside. */
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .friends-tab:not(:has(> .friends))
+    > * {
+    grid-area: 1 / 1;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .friends-tab:not(:has(> .friends))
+    > .friends-link-card {
+    grid-area: 1 / 2;
+  }
+
+  /*
+   * Ranks: the boards down the main column, the intro and its one action in the aside. The boards
+   * span every row, the last of which is flexible, so they never stretch the aside's rows apart.
+   */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks {
+    grid-template-rows: auto auto 1fr;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks-boards {
+    display: grid;
+    grid-area: 1 / 1 / -1 / 2;
+    gap: var(--space-gap);
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks > .ranks-intro {
+    grid-area: 1 / 2;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks > .hud-button {
+    grid-area: 2 / 2;
+  }
+
+  /* Profile: the reading line, the danger zone in the aside; the header row spans the frame. */
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card.notice {
+    grid-template-columns: minmax(0, var(--col-reading)) var(--col-aside) minmax(0, 1fr);
+    column-gap: var(--space-columns);
+    align-items: start;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card.notice
+    > :not(.screen-header),
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card
+    .notice-after
+    > * {
+    grid-column: 1;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .screen-header {
+    grid-column: 1 / -1;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card
+    .notice-after:not([hidden]) {
+    display: contents;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .notice-danger {
+    grid-area: 2 / 2 / span 3;
+    padding-top: 0;
+    border-top: 0;
+  }
+}

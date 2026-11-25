@@ -304,3 +304,23 @@ from 321,32 to 441,64 at 1920 × 1080 and the rail left, between two screens of 
   screen at every size (setup → lineup keeps the header); `tab-rail.landscape-small` keeps the rail by
   the lineup and finds none from the coin toss; `phone-arena` checks a phone's lineup has no bar.
 - Invites still never show over a lineup: `invitesMayShow` reads the screen, not its shell.
+
+## Addendum (2026-11-26): the asides, as built
+
+The staging walk's fix list (item 4): lists and reading screens were one column on a desktop. On a
+desktop only (beside, the frame is too narrow for two), `frame.css`:
+
+- **Friends** (list, main `1fr` + aside `--col-aside`): the people in the main column (Waiting for
+  you, then the friends, tiled two across where the room allows); the ways to find more people in
+  the aside (the friend code card with Add, Sent and Blocked, then the link card). A guest's Friends
+  keeps the split: the card in the friends' place (Sign in to keep friends, or the failure card)
+  in the main column, the link card where an account's sits. `friends-section.ts` wraps the two
+  (`.friends-main`, `.friends-aside`, one column on a phone in today's order).
+- **Ranks** (list): the boards in the main column; the intro and Play a friend now in the aside.
+- **Profile** (reading, 40rem + aside): who you are and the account's rows in the reading line; the
+  danger zone in the aside, apart from them. Its rows (Change username, Log out) are now full-width
+  sheet rows with their padding on every size (they were inline buttons with none).
+- **Sign-in and the notices** have no aside: everything on them is the task, and sign-in's words
+  are what its button agrees to, so they stay in one reading line.
+- Motion: the waiting ball's loop moved onto `--motion-swing` / `--ease-swing`; `notice.css` left
+  the literal allow-list.

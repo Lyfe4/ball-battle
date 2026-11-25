@@ -224,17 +224,25 @@
 }
 
 /*
- * More quiet actions on a row of their own at the card's end (ADR 0079 addendum of 2026-11-22):
- * the account's Log out and Delete account, a guest's Forget me. A rule above them sets them apart
- * from the card's own business.
+ * The account's own actions as rows at the card's end (Profile's Change username and Log out, ADR
+ * 0087), one under another the width of the line, in the sheet's row look with its padding (the
+ * quiet button's none left their words touching their edges); a rule above sets them apart from
+ * the card's own business. The danger zone's rows (sheet.css) are as wide.
  */
 .notice-more {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-columns);
+  display: grid;
+  gap: var(--space-small);
   justify-self: stretch;
-  padding-top: var(--space-small);
+  padding-top: var(--space-gap);
   border-top: 1px solid var(--color-raised);
+}
+
+.notice-more > .sheet-row {
+  padding: 0 var(--space-gap);
+}
+
+.notice-danger {
+  justify-self: stretch;
 }
 
 .notice[data-sticker] .notice-after {
@@ -243,11 +251,11 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .notice-waiting-ball::before {
-    animation: notice-bounce 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+    animation: notice-bounce var(--motion-swing) var(--ease-swing) infinite alternate;
   }
 
   .notice-waiting-ball::after {
-    animation: notice-shadow 900ms cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+    animation: notice-shadow var(--motion-swing) var(--ease-swing) infinite alternate;
   }
 }
 

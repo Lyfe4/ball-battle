@@ -178,6 +178,13 @@
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-in: cubic-bezier(0.3, 0, 1, 1);
   /*
+   * A loop that swings to and fro while something waits (a notice's waiting ball): one swing, and
+   * a curve that eases both ends the same, so `alternate` turns with no jolt. Still, under reduced
+   * motion (each rule's own query).
+   */
+  --motion-swing: 900ms;
+  --ease-swing: cubic-bezier(0.5, 0, 0.5, 1);
+  /*
    * The first paint (ADR 0087): the stage shows once its first screen is laid out (first-paint.ts),
    * in about 1.1 s on Slow 4G. Past this, the stylesheet shows it anyway with a line to reload, so a
    * script that never ran can't leave a blank page; long enough not to flash on a slow phone.

@@ -9,6 +9,12 @@
   gap: var(--space-gap);
 }
 
+/* The main column and the aside (frame.css lays them side by side on a desktop): one column here. */
+.friends-main,
+.friends-aside {
+  display: contents;
+}
+
 .friends-tab {
   margin-top: var(--space-gap);
 }
