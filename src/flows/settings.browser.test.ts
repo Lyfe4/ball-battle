@@ -71,7 +71,7 @@ describe('settings', () => {
       [...(panel()?.querySelectorAll('.settings-foot button') ?? [])].map(
         (node) => node.textContent,
       ),
-    ).toStrictEqual(['Show all tips again', 'Close']);
+    ).toStrictEqual(['Show all tips again']);
     switchNamed('Ability hints')?.click();
     switchNamed('What to watch cards')?.click();
     expect(both()).toStrictEqual(['false', 'false']);
@@ -88,7 +88,7 @@ describe('settings', () => {
     panel()?.querySelector<HTMLElement>('[aria-label="2 times speed"]')?.click();
     expect(loadSpeed(storage)).toBe(2);
     expect(pressed('#hud-speed', 2)).toBe('true');
-    button('Close settings').click();
+    button('Close').click();
 
     // The Fight! card's "Don't show these again" is the menu's cards switch.
     button('Don’t show these again').click();
@@ -101,6 +101,6 @@ describe('settings', () => {
     expect(pressed('#settings-panel', 1)).toBe('true');
     expect(checked('What to watch cards')).toBe('false');
     expect(loadSpeed(storage)).toBe(1);
-    button('Close settings').click();
+    button('Close').click();
   }, 60_000);
 });

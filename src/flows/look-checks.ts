@@ -62,9 +62,33 @@ export function checkStoryLook(where: string, story: Element): void {
 /** The legend's and the settings' panel looks seen in this run: they must all be one look. */
 const panelLooks = new Map<string, Look>();
 
-/** Records an open panel's look (the legend or settings) and its Close link's. */
+/**
+ * One close per overlay (ADR 0086): an open dialog or panel shows exactly one way out, the shared ×
+ * (close-button.ts), and no other control says Close or Done. Returns the ×.
+ */
+export function checkOneClose(where: string, overlay: HTMLElement | null): HTMLElement {
+  const shown = [...(overlay?.querySelectorAll<HTMLElement>('button, a') ?? [])].filter(
+    (node) => node.getClientRects().length > 0 && node.closest('[hidden]') === null,
+  );
+  const closes = shown.filter(
+    (node) =>
+      node.classList.contains('close-button') ||
+      /^(close|done)(?![a-z])/i.test(
+        (node.getAttribute('aria-label') ?? node.textContent).replace(/[›‹]/g, '').trim(),
+      ),
+  );
+  const named = closes.map((node) =>
+    node.classList.contains('close-button') ? 'the shared ×' : node.textContent.trim(),
+  );
+  expect({ where, closes: named }).toStrictEqual({ where, closes: ['the shared ×'] });
+  const close = closes[0];
+  if (close === undefined) throw new Error(`${where}: no close`);
+  return close;
+}
+
+/** Records an open panel's look (the legend or settings) and its ×'s. */
 export function notePanelLook(where: string, panel: HTMLElement | null): void {
-  const close = panel?.querySelector('.panel-close');
+  const close = panel === null ? undefined : checkOneClose(where, panel);
   const box = panel?.getBoundingClientRect();
   const closeBox = close?.getBoundingClientRect();
   const inset = Number.parseFloat(panel === null ? '0' : getComputedStyle(panel).paddingRight);
@@ -76,21 +100,16 @@ export function notePanelLook(where: string, panel: HTMLElement | null): void {
         value,
       ]),
     ),
-    // Close sits at the panel's end, on its right padding: the end of its content, so a panel
-    // capped to scroll inside (a short phone, large text) is measured as scrolled to the end.
-    'close at the end': String(
-      box !== undefined &&
-        closeBox !== undefined &&
-        panel !== null &&
-        Math.abs(box.right - inset - closeBox.right) <= 1 &&
-        Math.abs(
-          box.top +
-            panel.clientTop +
-            panel.scrollHeight -
-            panel.scrollTop -
-            Number.parseFloat(getComputedStyle(panel).paddingBottom) -
-            closeBox.bottom,
-        ) <= 1,
+    // The × is last in the panel's head, its target reaching into the padding by the same
+    // amount on every panel (close-button.css).
+    'close last in the head': String(
+      close?.parentElement === panel?.firstElementChild &&
+        close?.parentElement?.lastElementChild === close,
+    ),
+    'close past the padding': String(
+      box === undefined || closeBox === undefined
+        ? undefined
+        : Math.round((closeBox.right - (box.right - inset)) * 10) / 10,
     ),
   });
 }

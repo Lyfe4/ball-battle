@@ -77,7 +77,6 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
       length: 'Length',
       format: 'Format',
       level: 'Bot',
-      done: 'Done',
     });
     expect(FORMAT_HINTS).toStrictEqual({
       reveal: 'take turns',

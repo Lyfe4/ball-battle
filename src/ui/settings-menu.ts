@@ -11,6 +11,7 @@
 // device by the code it calls.
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
 import type { Tips } from '../app/tips.ts';
+import { createCloseButton } from './close-button.ts';
 import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import type { Box } from './tooltip-place.ts';
@@ -97,7 +98,7 @@ function buildMenu(): Menu {
   panel.id = PANEL_ID;
   panel.setAttribute('aria-labelledby', `${PANEL_ID}-title`);
   panel.hidden = true;
-  const title = element('h2', 'settings-title', 'Settings');
+  const title = element('h2', 'info-panel-title settings-title', 'Settings');
   title.id = `${PANEL_ID}-title`;
 
   const speedRow = element('div', 'settings-speed');
@@ -133,21 +134,18 @@ function buildMenu(): Menu {
 
   const paused = element('p', 'settings-paused', 'The match waits');
   paused.hidden = true;
-  const close = element('button', 'text-link panel-close settings-close', 'Close');
-  close.type = 'button';
-  close.dataset['sound'] = 'back';
-  close.setAttribute('aria-label', 'Close settings');
-  close.addEventListener('click', () => {
+  // The one close, last in the head (ADR 0086): the menu still fits whole above its gear on a phone
+  // mid-fight (390 x 664), as its target reaches into the padding and the head keeps its height.
+  const close = createCloseButton(() => {
     closeMenu(true);
   });
+  close.classList.add('settings-close');
   const foot = element('div', 'settings-foot');
-  // Show all tips again and Close share the last row: the whole menu then fits above its gear on a
-  // phone mid-fight (390 x 664), never over the gear that closes it, nor scrolling (2026-11-24).
-  foot.append(again, close);
+  foot.append(again);
   // The note that the match waits shares the title's row, so every row sits where it does on any
   // other screen, and it shows even when the menu scrolls inside itself.
-  const top = element('div', 'settings-top');
-  top.append(title, paused);
+  const top = element('div', 'info-panel-head settings-top');
+  top.append(title, paused, close);
   panel.append(top, playGroup, tipsGroup, foot);
   if (host?.sound !== undefined) speedRow.after(host.sound.element);
   if (host?.online !== undefined) foot.before(host.online.element);

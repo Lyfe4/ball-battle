@@ -1,6 +1,7 @@
 import { botChooses, SETUP_FORMATS, type Opponent, type PlayChoice } from '../app/modes.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { BEST_OF } from '../sim/series.ts';
+import { createCloseButton } from './close-button.ts';
 import { element } from './dom.ts';
 import { FORMAT_HINTS, lengthChoiceOf, OPPONENT_CARDS, SHEET_WORDS } from './modes-text.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
@@ -26,8 +27,9 @@ export interface PlaySheetActions {
  * from the bottom on a phone held upright and a panel in the middle beside and on a desktop. Who
  * (only where a build offers more than the bot), the length, the format (each opponent's own, in
  * one order) and, against the bot where it makes choices, its level: each the shared segmented
- * choice (ADR 0054), applied as it is tapped. Escape, a tap outside, and Done at the top or the
- * full-width one at the bottom close it; the dialog keeps focus inside while it is open.
+ * choice (ADR 0054), applied as it is tapped, so nothing needs a Done. One close, the shared × last
+ * in its head (ADR 0086); Escape, a tap outside and Back close it too. Focus goes to its title as
+ * it opens, and the dialog keeps it inside while it is open.
  */
 export function createPlaySheet(
   opponents: readonly Opponent[],
@@ -50,22 +52,13 @@ export function createPlaySheet(
     actions.onChange(next);
   }
 
-  const done = (where: string) => {
-    const button = element('button', where, SHEET_WORDS.done);
-    button.type = 'button';
-    button.dataset['sound'] = 'back';
-    button.addEventListener('click', () => {
-      dialog.close();
-    });
-    return button;
-  };
-  // The top Done is a shortcut for a finger at the top: keyboards and screen readers meet one Done,
-  // the full-width one at the end (and Escape).
-  const shortcut = done('text-link play-sheet-close');
-  shortcut.tabIndex = -1;
-  shortcut.setAttribute('aria-hidden', 'true');
   const head = element('div', 'play-sheet-head');
-  head.append(title, shortcut);
+  head.append(
+    title,
+    createCloseButton(() => {
+      dialog.close();
+    }),
+  );
 
   const group = (name: string) => element('div', `play-sheet-group segmented-rows ${name}`);
   const againstRoot = group('play-sheet-against');
@@ -142,7 +135,7 @@ export function createPlaySheet(
   const groups = element('div', 'play-sheet-groups');
   groups.append(againstRoot, lengthRoot, formatRoot, levelRoot);
   const body = element('div', 'play-sheet-body');
-  body.append(head, groups, done('hud-button play-sheet-done'));
+  body.append(head, groups);
   dialog.append(body);
 
   function render(): void {

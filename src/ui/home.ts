@@ -49,8 +49,11 @@ export interface Home {
    * held, Resume series with its format and score, and New series.
    */
   setPlay(choice: PlayChoice, held: SeriesState | undefined): void;
-  /** Moves focus to Play (or Resume series): the one obvious first action. */
-  focus(): void;
+  /**
+   * Arriving on the tab (a visit, a tab, Back): the sheet closes if it was open, and focus moves to
+   * Play (or Resume series), the one obvious first action.
+   */
+  arrive(): void;
   /** The status strip's line, or nothing: it hides (ADR 0081, never "0 friends online"). */
   setStatus(line: string | undefined): void;
 }
@@ -219,7 +222,9 @@ export function createHome(
       held = nextHeld;
       showPlay();
     },
-    focus() {
+    arrive() {
+      // Back with the sheet open closes it (ADR 0086), as leaving the tab does.
+      sheet.close();
       // For the keyboard: no ring until a key is pressed (input-modality.ts, ADR 0086).
       play.focus();
     },

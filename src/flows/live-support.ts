@@ -11,14 +11,14 @@ import { allowLocalRealtime, blockRealtime, watchPage } from './realtime-support
 
 /**
  * The Play tab's way to a friend match (ADR 0081, Option B): the mode box's sheet, vs Friend and
- * `format`, Done, then Play: straight to the link (the 16+ question first on a new device).
+ * `format`, its ×, then Play: straight to the link (the 16+ question first on a new device).
  */
 export async function playAFriend(page: Page, format = 'Reveal'): Promise<void> {
   await page.locator('.play-box').click();
   const sheet = page.getByRole('dialog', { name: 'What to play' });
   await sheet.getByRole('button', { name: 'vs Friend' }).click();
   await sheet.getByRole('button', { name: new RegExp(`^${format},`) }).click();
-  await sheet.locator('.play-sheet-done').click();
+  await sheet.getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.home-play-row .home-play').click();
 }
 

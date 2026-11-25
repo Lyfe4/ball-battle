@@ -1,7 +1,8 @@
 /*
  * The info panel (ADR 0044): one look for the symbol legend (inline under its ?) and the settings
  * menu (floating by its gear). A raised fill on one slab, the large radius, the gap as padding, the
- * small type, and the same quiet Close link at its end. Where each sits is up to its own sheet.
+ * small type, and one head: its title, then the shared × last (close-button.ts, ADR 0086). Where
+ * each sits is up to its own sheet.
  */
 .info-panel {
   padding: var(--space-gap);
@@ -13,9 +14,16 @@
   text-align: left;
 }
 
-/* Close, at the panel's end: a quiet link, a full tap target, on the right. */
-.panel-close {
-  display: block;
-  min-height: var(--tap-target);
-  margin-left: auto;
+/* The head: the title, anything the panel says beside it, then the ×. */
+.info-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.info-panel-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
 }

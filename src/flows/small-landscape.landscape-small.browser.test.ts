@@ -113,7 +113,7 @@ describe('the smallest phone turned sideways', () => {
     const headings = [...(panel?.querySelectorAll('.settings-heading') ?? [])];
     expect(headings.length).toBeGreaterThan(0);
     for (const heading of headings) expect(look(heading)).not.toBe(look(rows[0]));
-    await click(button('Close settings'));
+    await click(button('Close'));
     await settle();
 
     // Free play's picker: the page scrolls, not a box beside an empty court, and every name keeps
