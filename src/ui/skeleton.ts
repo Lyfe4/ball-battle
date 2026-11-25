@@ -17,9 +17,37 @@ const block = (shape: string) => {
   return node;
 };
 
+/**
+ * The content that takes a seen skeleton's place fades in once (ADR 0087: one reveal, on the motion
+ * tokens; none with reduced motion, skeleton.css): the skeleton's siblings that show as it hides.
+ */
+function revealAfter(root: HTMLElement): void {
+  let seen = false;
+  new MutationObserver(() => {
+    const shown = !root.hidden && root.getClientRects().length > 0;
+    if (seen && !shown) {
+      for (const next of root.parentElement?.children ?? []) {
+        if (next === root || !(next instanceof HTMLElement) || next.hidden) continue;
+        next.setAttribute('data-revealed', '');
+        next.addEventListener(
+          'animationend',
+          () => {
+            next.removeAttribute('data-revealed');
+          },
+          {
+            once: true,
+          },
+        );
+      }
+    }
+    seen = shown;
+  }).observe(root, { attributes: true, attributeFilter: ['hidden'] });
+}
+
 /** Draws the `kind` screen's placeholder into `root`; `onWayOut` is its Back or Home. */
 export function createSkeleton(root: HTMLElement, kind: SkeletonKind, onWayOut: () => void): void {
   root.classList.add('skeleton', `skeleton-${kind}`);
+  revealAfter(root);
   root.setAttribute('aria-busy', 'true');
   const status = element('p', 'visually-hidden', 'Loading…');
   status.setAttribute('role', 'status');

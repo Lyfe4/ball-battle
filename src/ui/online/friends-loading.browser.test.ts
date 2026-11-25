@@ -111,8 +111,13 @@ describe('the Friends section loading (ADR 0087)', () => {
     expect(skeleton()?.hidden).toBe(false);
     expect(skeleton()?.children).toHaveLength(3);
     expect(page.root.querySelector('.friends-add-card')?.hasAttribute('hidden')).toBe(false);
+    // How many friends is unknown: the cards under the list wait unseen in their place (beside on a
+    // desktop they never move, so they show), and show with the rows (ADR 0087).
+    const beside = window.matchMedia('(min-width: 64rem) and (min-aspect-ratio: 5/4)').matches;
+    expect(getComputedStyle(page.link).visibility).toBe(beside ? 'visible' : 'hidden');
     page.answer(json(200, TWO));
     await opened;
+    expect(getComputedStyle(page.link).visibility).toBe('visible');
     expect(skeleton()).toBeNull();
     expect(group(page.root, 'friends')).toStrictEqual(['Robin', 'Kai']);
     expect(page.root.querySelector('.friends-lists')?.hasAttribute('data-reveal')).toBe(true);
@@ -130,6 +135,7 @@ describe('the Friends section loading (ADR 0087)', () => {
     expect(card?.querySelector('.friends-card-title')?.textContent).toBe('Your friends');
     expect(card?.querySelector('.friends-card-text')?.textContent).not.toBe('');
     expect(page.root.querySelector('.friends-aside')?.lastElementChild).toBe(page.link);
+    expect(getComputedStyle(page.link).visibility).toBe('visible');
     const again = [...(card?.querySelectorAll('button') ?? [])].find(
       (button) => button.textContent === 'Try again',
     );

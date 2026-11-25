@@ -42,6 +42,22 @@ function rowWith(
   return { item, actions };
 }
 
+/**
+ * The challenges lit on Friends (ADR 0086) once `next` replaces `before`: with Friends `showing`, a
+ * live challenge that wasn't there before arrived now and lights. Unset (never heard of yet): what
+ * waits then is no arrival.
+ */
+export function litAfter(
+  lit: ReadonlySet<string> | undefined,
+  before: readonly Invite[],
+  next: readonly Invite[],
+  showing: boolean,
+): ReadonlySet<string> {
+  if (lit === undefined || !showing) return lit ?? new Set();
+  const arrived = next.filter((one) => one.live && !before.some((was) => was.token === one.token));
+  return new Set([...lit, ...arrived.map((one) => one.token)]);
+}
+
 /** A series by turns waiting on your pick: who against, the time left, and Play. */
 export function turnRow(turn: TurnWaiting, now: number, host: WaitingRowsHost): HTMLElement {
   const name = turnName(turn);

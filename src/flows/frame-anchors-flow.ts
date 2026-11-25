@@ -141,6 +141,39 @@ export interface FrameChecks {
   readonly play: 'frame' | 'gear' | 'none';
 }
 
+/**
+ * A browse move mid-transition (ADR 0087, PR 19): Balls → a ball's page rises and fades, but the
+ * header row's lead slot and title stay on their pixels every frame, and nothing animates the row
+ * or the rail (their View Transition parts are still, screen-motion.css).
+ */
+async function checkMidTransition(): Promise<void> {
+  await follow('?view=manual');
+  await onScreen('manual');
+  const head = shownHeader('Balls');
+  const lead = head.querySelector('.screen-lead')?.getBoundingClientRect();
+  const still = (part: string) => /\((screen-head|rail)\)/.test(part);
+  const moved: string[] = [];
+  history.pushState(null, '', `${location.pathname}?view=manual&ball=vampire`);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+  for (let frame = 0; frame < 20; frame += 1) {
+    await new Promise((done) => requestAnimationFrame(done));
+    for (const animation of document.getAnimations()) {
+      const effect = animation.effect as KeyframeEffect | null;
+      const target = effect?.target;
+      const pseudo = effect?.pseudoElement ?? '';
+      if (still(pseudo) || target?.closest('.screen-header, .tab-bar') != null) {
+        moved.push(`frame ${String(frame)}: ${pseudo || (target?.className ?? '')}`);
+      }
+    }
+    const now = visible('.stage .screen-header .screen-lead')[0]?.getBoundingClientRect();
+    if (lead !== undefined && now !== undefined && Math.abs(now.left - lead.left) > 1) {
+      moved.push(`frame ${String(frame)}: the lead slot at ${String(now.left)}`);
+    }
+  }
+  await onScreen('manual');
+  expect(moved, 'the header row and rail mid-transition').toStrictEqual([]);
+}
+
 /** Opens every frame screen and checks its header row, and that none of it moves between them. */
 export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
   await openAs({ online: true, accounts: true }, '');
@@ -167,4 +200,5 @@ export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
     near(anchors.title.left, first.anchors.title.left, `the title's left on ${than}`);
     near(anchors.title.top, first.anchors.title.top, `the title's top on ${than}`);
   }
+  await checkMidTransition();
 }

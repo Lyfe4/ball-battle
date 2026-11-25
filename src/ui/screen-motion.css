@@ -1,0 +1,71 @@
+/*
+ * Screen motion (ADR 0087, PR 19; screen-motion.ts): calm, on the motion tokens alone. A screen
+ * browsed to rises 8 px and fades in over --motion-base; Back to its tab fades over
+ * --motion-quick. The rail and the header row are named, so a View Transition leaves them where
+ * they are: they never animate. Reduced motion: a fade, never a move.
+ */
+.tab-bar {
+  view-transition-name: rail;
+}
+
+::view-transition-group(rail),
+::view-transition-group(screen-head) {
+  animation: none;
+}
+
+::view-transition-old(rail),
+::view-transition-old(screen-head) {
+  display: none;
+}
+
+::view-transition-new(rail),
+::view-transition-new(screen-head) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  animation: screen-out var(--motion-quick) var(--ease-in) both;
+}
+
+::view-transition-new(root) {
+  animation: screen-rise var(--motion-base) var(--ease-out) both;
+}
+
+:root[data-motion='back']::view-transition-new(root) {
+  animation: screen-in var(--motion-quick) var(--ease-out) both;
+}
+
+/* Without View Transitions: the new screen's content under its header (never the header itself). */
+:root[data-motion-css='rise'] .stage .hud > section:not([hidden]) > :not(.screen-header) {
+  animation: screen-rise var(--motion-base) var(--ease-out) both;
+}
+
+:root[data-motion-css='back'] .stage .hud > section:not([hidden]) > :not(.screen-header) {
+  animation: screen-in var(--motion-quick) var(--ease-out) both;
+}
+
+@keyframes screen-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes screen-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root),
+  :root[data-motion-css] .stage .hud > section:not([hidden]) > :not(.screen-header) {
+    animation: screen-in var(--motion-quick) var(--ease-out) both;
+  }
+}

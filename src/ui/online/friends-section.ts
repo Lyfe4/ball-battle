@@ -21,6 +21,8 @@ import {
 } from '../../api/friends.ts';
 import type { ApiFailure, ApiResult } from '../../app/api.ts';
 import { visitCache, type VisitKey } from '../../app/visit-cache.ts';
+import { createRowMotion } from './row-motion.ts';
+import { litAfter } from './waiting-rows.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { addField } from './friends-add-field.ts';
 import {
@@ -123,10 +125,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
   let turns: readonly TurnWaiting[] = [];
-  /** Heard of the challenges once: from then on, one arriving while Friends shows lights its row. */
-  let heard = false;
-  /** Challenges that arrived while Friends showed: no banner there, their rows light (ADR 0086). */
-  const lit = new Set<string>();
+  /**
+   * Challenges that arrived while Friends showed: no banner there, their rows light (ADR 0086).
+   * Unset until the challenges are first heard of: what waited then is no arrival.
+   */
+  let lit: ReadonlySet<string> | undefined;
 
   /** A change's answer drawn, true when it was made (the friend sheet's actions). */
   const made = (method: 'POST' | 'DELETE', path: string, body?: unknown) => () =>
@@ -225,7 +228,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     return item;
   }
 
+  const rowMotion = createRowMotion(root);
+
   function draw(): void {
+    const settle = rowMotion.before();
     // Before `/friends` answers, the friends the inbox named, else skeleton rows.
     const now = list ?? inboxList(inboxFriends);
     const fade = skeletonShown(lists);
@@ -271,7 +277,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       ...turns.map((turn) => turnRow(turn, Date.now(), rows)),
       ...invites.map((invite) => {
         const row = challengeRow(invite, rows);
-        row.toggleAttribute('data-lit', lit.has(invite.token));
+        row.toggleAttribute('data-lit', lit?.has(invite.token) === true);
         return row;
       }),
     );
@@ -281,6 +287,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     if (host.link !== undefined && aside.lastElementChild !== host.link) aside.append(host.link);
     // One calm reveal where skeleton rows were seen (ADR 0087 rule 4).
     lists.toggleAttribute('data-reveal', fade && list !== undefined);
+    // How many friends is unknown (no inbox, no list this visit): the cards under the list wait,
+    // unseen in their place, so a count other than the skeleton's never moves them (ADR 0087).
+    root.toggleAttribute('data-count-unknown', list === undefined && inboxFriends === undefined);
+    settle(list !== undefined || inboxFriends !== undefined);
   }
 
   /** A change's answer: the list drawn again, or why not under the field. */
@@ -336,6 +346,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     if (!answer.ok) {
       // One failure card in the list's place; the link card stays (ADR 0087 rule 7).
       lists.removeAttribute('data-reveal');
+      root.removeAttribute('data-count-unknown');
       lists.replaceChildren(failureCard(FRIENDS_FAILED_TITLE, host.line(answer), open));
       addCard.hidden = true;
       return;
@@ -350,12 +361,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     challenges(next, nextTurns = []) {
       if (JSON.stringify([next, nextTurns]) === JSON.stringify([invites, turns])) return;
       // A live challenge arriving while Friends shows: its row lights instead of a banner.
-      const showing = root.getClientRects().length > 0;
-      for (const one of next) {
-        const known = invites.some((was) => was.token === one.token);
-        if (heard && showing && one.live && !known) lit.add(one.token);
-      }
-      heard = true;
+      lit = litAfter(lit, invites, next, root.getClientRects().length > 0);
       invites = next;
       turns = nextTurns;
       if (root.isConnected) draw();

@@ -19,6 +19,22 @@
   margin-top: var(--space-gap);
 }
 
+/*
+ * Before anything says how many friends there are (a first visit, before the inbox or the list):
+ * the cards under the list wait unseen in their place, and show with the rows, so a count other
+ * than the skeleton's three never moves them (ADR 0087). On a desktop they sit beside the list
+ * and never move, so they show at once.
+ */
+.friends[data-count-unknown] .friends-aside > * {
+  visibility: hidden;
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .friends[data-count-unknown] .friends-aside > * {
+    visibility: visible;
+  }
+}
+
 .friends-card,
 .friends-lists > .friends-group {
   display: grid;
@@ -124,6 +140,19 @@
   height: calc(var(--tap-target) + 2 * var(--space-small));
   border-radius: var(--radius);
   background: var(--color-raised);
+}
+
+/* Rows in and out of a redraw (row-motion.ts, ADR 0087): in over --motion-base; out, a still copy. */
+.friends-row[data-row-in] {
+  animation: friends-reveal var(--motion-base) var(--ease-out);
+}
+
+.friends-row-ghost {
+  position: fixed;
+  z-index: 1;
+  margin: 0;
+  pointer-events: none;
+  list-style: none;
 }
 
 .friends-lists[data-reveal] {

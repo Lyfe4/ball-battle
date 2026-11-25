@@ -23,9 +23,6 @@ const NAVIGATING: Readonly<Record<string, string>> = {
   'play-box': 'opens What to play (a box drawn as a link, ADR 0081 addendum)',
   'home-link': 'Free play’s setup',
   'skeleton-home': 'home, from a screen still loading',
-  // Not a way to go: on the court's ready card, where a button's height would cost the court room
-  // at 667 x 320; left for the motion and banner batch, which redraws the card (ADR 0086).
-  'ready-never': 'switches the cards off (the one action left a text link, on the court)',
 };
 
 describe('a text link only navigates', () => {

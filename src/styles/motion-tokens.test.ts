@@ -2,9 +2,8 @@
 // its duration and easing from tokens.css (--motion-quick, --motion-base, --motion-slow, --ease-out,
 // --ease-in), so the platform screens move alike and a restyle changes one file. The arena's own
 // moments (the tips, the ready card and its 3-2-1, the Winner sticker, the toss, the pick clock) are
-// energy by design (ADR 0032) and keep their literals. Today's other literals are listed below; the
-// list only shrinks (a literal it names that is gone fails too, so the list stays true) and is
-// empty once screen motion is built (ADR 0087, the plan's PR 19).
+// energy by design (ADR 0032) and keep their literals. Nowhere else has one: the list of allowed
+// literals emptied with screen motion (ADR 0087, the plan's PR 19).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,18 +21,8 @@ const EXEMPT = new Set([
   'ui/series/pick-clock.css',
 ]);
 
-/** Today's literals outside the arena, per file, sorted: to be moved onto tokens, never added to. */
-const ALLOWED: Readonly<Record<string, readonly string[]>> = {
-  'ui/busy-button.css': [
-    '560ms',
-    '560ms',
-    'cubic-bezier(0.5, 0, 0.5, 1)',
-    'cubic-bezier(0.5, 0, 0.5, 1)',
-  ],
-  'ui/hud.css': ['0.3s', '300ms', '450ms', 'ease-out'],
-  'ui/series/leave-confirm.css': ['160ms', 'ease-out'],
-  'ui/skeleton.css': ['1.6s', 'ease-in-out'],
-};
+/** Literals outside the arena, per file: none since screen motion (ADR 0087, PR 19); never added to. */
+const ALLOWED: Readonly<Record<string, readonly string[]>> = {};
 
 /** The game's stylesheets (not the dev pages: the style guide, the brand page, the test flows). */
 function sheets(dir: string): { path: string; text: string }[] {

@@ -36,7 +36,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .leave-confirm-row {
-    animation: leave-confirm-in 160ms ease-out both;
+    animation: leave-confirm-in var(--motion-quick) var(--ease-out) both;
   }
 }
 

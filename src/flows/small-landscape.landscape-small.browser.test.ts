@@ -62,6 +62,18 @@ describe('the smallest phone turned sideways', () => {
       across: c.left >= court.left && c.right <= court.right,
       clipped: card === undefined ? ['no card'] : tooWide(card),
     }).toStrictEqual({ inside: true, across: true, clipped: [] });
+    // Hide tips is a compact secondary beside Fight! (ADR 0086), on one row inside the card. The
+    // sticker is tilted, so the row is read from the layout's own boxes, not the drawn ones.
+    const hide = button('Hide tips');
+    const fight = button('Fight!');
+    const middle = (node: HTMLElement) => node.offsetTop + node.offsetHeight / 2;
+    expect({
+      row: Math.abs(middle(hide) - middle(fight)) < 2,
+      apart: fight.offsetLeft - (hide.offsetLeft + hide.offsetWidth) >= 12,
+      inside:
+        hide.getBoundingClientRect().left >= c.left &&
+        fight.getBoundingClientRect().right <= c.right,
+    }).toStrictEqual({ row: true, apart: true, inside: true });
 
     // The caption and its ring appear together (its title in the ball's colour, the ring in the
     // tip's cream), the caption's ball drawn beside its title, and the caption whole on screen,
