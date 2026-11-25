@@ -1,6 +1,7 @@
 # 0085: Play by turns with a friend, on previews and staging, for the two-phone playtest
 
-- Status: Accepted (2026-11-25)
+- Status: Accepted (2026-11-25); built (#185), checked on staging with two browser contexts;
+  playtest checklist in `docs/turns-playtest.md`
 - Date: 2026-11-25
 - Builds on: ADR 0052 (play by turns: 24 h turns, forfeit on time), ADR 0053 (live is Reveal and
   Showdown; by turns hidden), ADR 0079 (friends, the inbox), ADR 0081 (the Play tab, the Friends
