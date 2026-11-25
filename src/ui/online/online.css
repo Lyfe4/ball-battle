@@ -45,8 +45,7 @@
 }
 
 /*
- * The avatar (account-button.ts, ADR 0081): the first control in a tab screen's header on a phone,
- * atop the rail beside; the gear's round button with the account's initial in sun yellow once signed in, and a plain face
+ * The avatar (account-button.ts, ADR 0081, 0087): in a tab screen's lead slot at every size; the gear's round button with the account's initial in sun yellow once signed in, and a plain face
  * for a guest, nobody, or while `/me` can't say. It opens Profile.
  */
 .account-toggle {
@@ -101,29 +100,4 @@
 
 .account-toggle[data-pressed] {
   filter: brightness(1.08);
-}
-
-/*
- * Two places, one at a time: a phone held upright has it in the tab screen's header (the bottom bar
- * has no room); beside, it tops the rail, so the header leaves it out.
- */
-.tab-bar > .account-toggle {
-  display: none;
-}
-
-@media (min-aspect-ratio: 5/4) {
-  .account-toggle[data-place='head'] {
-    display: none;
-  }
-
-  .tab-bar > .account-toggle {
-    display: grid;
-    margin: 0 auto var(--space-small);
-  }
-}
-
-@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  .tab-bar > .account-toggle {
-    margin-inline-start: var(--space-small);
-  }
 }

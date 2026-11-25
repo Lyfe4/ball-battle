@@ -20,6 +20,24 @@
   display: none;
 }
 
+/* The game's mark atop the rail (ADR 0087): none in the phone's bar, a ball beside, the word too
+   on a desktop. */
+.tab-bar-mark {
+  display: none;
+}
+
+.tab-bar-mark-ball {
+  width: 32px;
+  height: 32px;
+}
+
+.tab-bar-mark-word {
+  display: none;
+  font-size: var(--font-size-lead);
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--letter-spacing-display);
+}
+
 .tab-bar-list {
   display: grid;
   grid-auto-columns: 1fr;
@@ -120,9 +138,17 @@
     top: 0;
     right: auto;
     width: calc(var(--tab-rail-width) + env(safe-area-inset-left));
-    padding: var(--space-small) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* The mark's row level with the header row (`--frame-top`, ADR 0087). */
+    padding: var(--frame-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
     border-radius: 0 var(--radius-large) var(--radius-large) 0;
     overflow-y: auto;
+  }
+
+  .tab-bar-mark {
+    display: grid;
+    place-items: center;
+    height: var(--head-height);
+    margin-bottom: var(--space-small);
   }
 
   .tab-bar-list {
@@ -173,8 +199,19 @@
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .tab-bar {
     width: calc(var(--tab-rail-width-wide) + env(safe-area-inset-left));
-    padding: var(--space-gutter) var(--space-small) 0
+    padding: var(--frame-top) var(--space-small) 0
       calc(var(--space-small) + env(safe-area-inset-left));
+  }
+
+  .tab-bar-mark {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: var(--space-gap);
+    padding: 0 var(--space-small);
+  }
+
+  .tab-bar-mark-word {
+    display: inline;
   }
 
   .tab-bar-tab {

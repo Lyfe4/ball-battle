@@ -112,11 +112,12 @@ const TAB_SCREENS = [
 ] as const;
 
 /**
- * On every tab screen of a build with accounts, reached by its tab: one avatar, at `place` (first
- * in the header on a phone, atop the rail beside); it opens Profile, which has neither, and
- * Profile's Back returns to that tab (ADR 0081). Ends back on Play.
+ * On every tab screen of a build with accounts, reached by its tab: one avatar, in the header row's
+ * lead slot at every size (ADR 0087), and where the rail shows, the game's mark atop it in the
+ * avatar's old place; the avatar opens Profile, which has none, and Profile's Back returns to that
+ * tab (ADR 0081). Ends back on Play.
  */
-export async function avatarOnEveryTab(place: 'head' | 'rail'): Promise<void> {
+export async function avatarOnEveryTab(): Promise<void> {
   await openAs({ online: true, accounts: true }, '');
   for (const [label, screen] of TAB_SCREENS) {
     if (label !== 'Play') tabLink(label).click();
@@ -126,23 +127,19 @@ export async function avatarOnEveryTab(place: 'head' | 'rail'): Promise<void> {
     expect(shown, screen).toHaveLength(1);
     const avatar = shown[0];
     if (avatar === undefined) return;
-    expect(avatar.dataset['place'], screen).toBe(place);
     expect(avatar.getAttribute('aria-label'), screen).toBe('Profile');
-    const box = avatar.getBoundingClientRect();
-    if (place === 'head') {
-      // First in this screen's own header, at the top left of the page.
-      const head = avatar.parentElement;
-      expect(head?.firstElementChild, screen).toBe(avatar);
-      expect(head?.closest('[hidden]'), screen).toBeNull();
-      expect(box.top, screen).toBeLessThan(80);
-      expect(box.left, screen).toBeLessThan(40);
-    } else {
-      // Atop the rail, above its first tab, wholly on screen.
-      const rail = tabBar();
-      expect(avatar.parentElement, screen).toBe(rail);
+    // In this screen's own lead slot, first in its header row.
+    const lead = avatar.parentElement;
+    expect(lead?.classList.contains('screen-lead'), screen).toBe(true);
+    expect(lead?.parentElement?.firstElementChild, screen).toBe(lead);
+    expect(lead?.closest('[hidden]'), screen).toBeNull();
+    const rail = tabBar();
+    const mark = rail?.querySelector('.tab-bar-mark');
+    if (mark instanceof HTMLElement && mark.getClientRects().length > 0) {
+      // The rail (beside, a desktop): the mark tops it, above its first tab.
       const first = rail?.querySelector('a')?.getBoundingClientRect();
-      expect(box.bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
-      expect(box.top, screen).toBeGreaterThanOrEqual(0);
+      expect(mark.getBoundingClientRect().bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
+      expect(rail?.querySelector('.account-toggle'), screen).toBeNull();
     }
     avatar.click();
     await onScreen('profile');

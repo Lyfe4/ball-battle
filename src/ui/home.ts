@@ -1,4 +1,3 @@
-import { createSettingsToggle } from './settings-menu.ts';
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
@@ -7,6 +6,7 @@ import type { Opponent, PlayChoice } from '../app/modes.ts';
 import { busyOnClick } from './busy-button.ts';
 import { shapeIcon } from './icons.ts';
 import { createPlaySheet } from './play-sheet.ts';
+import { createScreenHeader } from './screen-header.ts';
 import {
   boxRules,
   boxSpoken,
@@ -85,7 +85,6 @@ export function createHome(
   watch.addEventListener('click', actions.onWatch);
   demo.append(demoLine, watch);
 
-  const title = element('h1', 'home-title', 'BallBattle');
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
   // What waits on the player and who is online, from the inbox (ADR 0081): a link to the Friends
@@ -175,11 +174,11 @@ export function createHome(
   const footer = element('p', 'home-footer');
   footer.append(page('Privacy', '/privacy.html'), page('Terms', '/terms.html'));
 
-  // The title shares its row with the settings gear (ADR 0040): the top of the page on a phone,
-  // the top of the panel beside the court.
-  const head = element('div', 'home-head');
-  head.dataset['tabHead'] = 'play';
-  head.append(title, createSettingsToggle());
+  // The header row every screen has (ADR 0087): the avatar's slot, the title, the gear last. The
+  // top of the page on a phone, the top of the panel beside the court. Play is the root of the tabs,
+  // so it has no Back (ADR 0081).
+  const head = createScreenHeader('BallBattle', 'Back', () => undefined, { tab: 'play' }).element;
+  head.classList.add('home-head');
   root.append(head, demo, pitch, status, playRow, more, strip, footer, sheet.element);
 
   /** The box and Play as the choice and the held series say. */

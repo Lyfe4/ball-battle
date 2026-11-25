@@ -57,7 +57,8 @@ export function createSeriesBar(track?: TrackControl): SeriesBar {
   const about = element('p', 'series-bar-about');
   const legend = createSymbolLegend();
   const tools = element('div', 'series-bar-tools');
-  tools.append(createSettingsToggle(), legend.toggle);
+  // The gear last, after the ? (ADR 0087), as in every header row.
+  tools.append(legend.toggle, createSettingsToggle());
   bar.append(about);
 
   // The score line: a disclosure for the full track. Only a series panel with a track has one.

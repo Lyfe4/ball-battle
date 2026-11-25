@@ -1,6 +1,5 @@
-// The avatar (ADR 0081, replacing ADR 0079's account button): on every tab screen, first in its
-// header on a phone and at the top of the rail beside (two buttons, one per place, each hidden where
-// it isn't the one; online.css). A round button with the account's initial once signed in, else a plain face. It opens Profile, where
+// The avatar (ADR 0081, replacing ADR 0079's account button): on every tab screen, in its header's
+// lead slot at every size (ADR 0087; the rail's top holds the game's mark). A round button with the account's initial once signed in, else a plain face. It opens Profile, where
 // the username, Log out and Delete account live, or Sign in and Forget me for a guest. What it shows
 // is what `/me` said (who-am-i.ts); while that isn't known (asking, offline, failing) it is the
 // plain face that claims nothing, so a signed-in player is never told to sign in.
@@ -27,13 +26,11 @@ function faceIcon(): SVGSVGElement {
   return svg;
 }
 
-/** Where the avatar sits: first in a tab screen's header (a phone), or atop the rail (beside). */
-export type AvatarPlace = 'head' | 'rail';
-
-export function createAccountButton(place: AvatarPlace, open: () => void): AccountButton {
+/** The avatar button: the lead slot of whichever tab screen shows (shell.ts). */
+export function createAccountButton(open: () => void): AccountButton {
   const button = element('button', 'account-toggle');
   button.type = 'button';
-  button.dataset['place'] = place;
+  button.dataset['place'] = 'head';
   const face = element('span', 'account-toggle-face');
   face.setAttribute('aria-hidden', 'true');
   button.append(face, faceIcon());
@@ -49,22 +46,18 @@ export function createAccountButton(place: AvatarPlace, open: () => void): Accou
   };
 }
 
-/** The avatar in both its places, showing the same answer. */
+/** The avatar, showing what `/me` said. */
 export interface Avatars {
   readonly head: HTMLElement;
-  readonly rail: HTMLElement;
   show(who: WhoAmI): void;
 }
 
 export function createAvatars(open: () => void): Avatars {
-  const head = createAccountButton('head', open);
-  const rail = createAccountButton('rail', open);
+  const head = createAccountButton(open);
   return {
     head: head.element,
-    rail: rail.element,
-    show(who) {
+    show: (who) => {
       head.show(who);
-      rail.show(who);
     },
   };
 }
