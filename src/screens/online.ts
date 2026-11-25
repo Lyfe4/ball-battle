@@ -23,6 +23,7 @@ import { writeShellParams } from '../app/route.ts';
 import { createFriendsTab } from './friends-tab.ts';
 import { createProfile } from './profile.ts';
 import { createSignIn } from './sign-in.ts';
+import type { WhoSource } from '../app/who-source.ts';
 import { createPrimer } from './online-prime.ts';
 
 export interface OnlineHost {
@@ -43,6 +44,8 @@ export interface OnlineHost {
   layoutChanged(): void;
   redraw(): void;
   readonly storage: DeviceStorage;
+  /** Who this device plays as (who-source.ts): one `/me` for the avatar and the screens. */
+  readonly who: WhoSource;
   /** A live series ended on this device: a rematch of it reaches the player anywhere. */
   readonly ended?: (view: SeriesView) => void;
   /** The friends changed on the account screen: the inbox reads now (ADR 0079 PR (d)). */
@@ -194,6 +197,8 @@ export function createOnlineScreens(
   const startAfresh = () => {
     window.location.assign('/');
   };
+  // Who the player is, for the screens that ask: the device and the one `/me` (ADR 0087).
+  const player = { storage: host.storage, who: host.who };
   // The account screen exists only in a build with accounts (ADR 0079): production with vs Friend
   // on and accounts off holds none of its code (`scripts/check-bundle.ts`), and its route is home
   // there (`parseOnlineRoute`).
@@ -201,7 +206,7 @@ export function createOnlineScreens(
     ? createSignIn(
         { notice: signInNotice, loading: signInLoading },
         {
-          storage: host.storage,
+          ...player,
           back: () => {
             host.navigation.back(home);
           },
@@ -232,7 +237,7 @@ export function createOnlineScreens(
     ? createProfile(
         { notice: profileNotice, loading: profileLoading },
         {
-          storage: host.storage,
+          ...player,
           back: () => {
             host.navigation.back(home);
           },
@@ -248,7 +253,7 @@ export function createOnlineScreens(
     : undefined;
 
   const friendsTab = createFriendsTab(friendsRoot, {
-    storage: host.storage,
+    ...player,
     cookies: () => document.cookie,
     back: () => {
       host.navigation.back(home);
@@ -263,8 +268,8 @@ export function createOnlineScreens(
     signIn: () => {
       host.go(writeSignInParams);
     },
-    challenge: (friend) => {
-      challenges.challengeFriend(friend);
+    challenge: (friend, turns) => {
+      challenges.challengeFriend(friend, turns);
     },
     ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
     ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),

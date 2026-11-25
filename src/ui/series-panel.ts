@@ -161,7 +161,7 @@ export function createSeriesPanel(
   // Online: why it waits, or how it ended.
   const note = element('p', 'series-note');
   buttons.append(next, rematch, decline, newSeries, home);
-  const share = button('Copy link', 'text-link series-share', () => {
+  const share = button('Copy link', 'hud-button series-share', () => {
     void copyLink();
   });
   // Leaving forgets the series (ADR 0042), so it is asked once, in place. Online it doesn't.

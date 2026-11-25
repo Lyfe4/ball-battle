@@ -67,7 +67,7 @@ export function chooseCard(card: ChooseCard): NoticeContent {
     'Keep your games, and play as you on any device.',
   ];
   const more =
-    card.forgetMe === undefined ? {} : { more: [{ text: 'Forget me', onClick: card.forgetMe }] };
+    card.forgetMe === undefined ? {} : { danger: [{ text: 'Forget me', onClick: card.forgetMe }] };
   if (!card.emailCodes) {
     return {
       title: 'Sign in',

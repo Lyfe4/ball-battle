@@ -133,7 +133,7 @@ export function createHome(
   play.append(playLabel, playMeta);
   busyOnClick(play, () => (choice === undefined ? undefined : actions.onPlay(choice)));
   // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
-  const fresh = element('button', 'text-link home-new-series', 'New series');
+  const fresh = element('button', 'hud-button home-new-series', 'New series');
   fresh.type = 'button';
   fresh.addEventListener('click', actions.onNewSeries);
   // The box and Play are one row: "Back to your match" takes their place (online-mount.ts).

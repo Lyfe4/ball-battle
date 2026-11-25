@@ -90,8 +90,8 @@ describe('a guest’s Forget me on the account screen (ADR 0079 addendum of 2026
         cancel: none,
         forgetMe: none,
       });
-      expect(guest.more?.map((action) => action.text)).toStrictEqual(['Forget me']);
-      expect(choose(true, emailCodes).more).toBeUndefined();
+      expect(guest.danger?.map((action) => action.text)).toStrictEqual(['Forget me']);
+      expect(choose(true, emailCodes).danger).toBeUndefined();
     }
   });
 });

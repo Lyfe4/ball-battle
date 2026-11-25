@@ -25,6 +25,8 @@ import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { callApi } from '../app/api.ts';
 import { whoAmI } from '../app/who-am-i.ts';
+import { visitCache } from '../app/visit-cache.ts';
+import { createWhoSource } from '../app/who-source.ts';
 import { createAvatars, type Avatars } from '../ui/online/account-button.ts';
 import { TABS } from '../app/tabs.ts';
 
@@ -133,7 +135,13 @@ export function mountOnline(context: MountContext): OnlineMount {
         },
       })
     : undefined;
+  // One `/me` for the avatar and the screens, kept for the visit (ADR 0087).
+  const whoSource = createWhoSource(
+    () => whoAmI(browserStorage, document.cookie, () => callApi<PlayerResponse>('GET', 'me')),
+    visitCache,
+  );
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
+    who: whoSource,
     ended: (view) => {
       rematchWatch.ended(view);
       inboxWatch?.quicken();
@@ -207,9 +215,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     if (avatars === undefined || !whoStale) return;
     whoStale = false;
     avatars.show({ kind: 'unknown' });
-    const who = await whoAmI(browserStorage, document.cookie, () =>
-      callApi<PlayerResponse>('GET', 'me'),
-    );
+    const who = await whoSource.ask();
     // Not known (offline, failing): the face stays, and the next tab screen asks again.
     if (who.kind === 'unknown') whoStale = true;
     else inboxWatch?.signedIn(who.kind === 'account');

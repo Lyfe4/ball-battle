@@ -55,11 +55,13 @@ export interface NoticeContent {
   readonly links?: readonly { readonly text: string; readonly href: string }[];
   /** One paragraph after the link box. */
   readonly note?: string;
-  /** A quiet action, as a text link, last: Cancel challenge, Not now. */
+  /** A quiet action, a secondary button, last: Cancel challenge, Not now (ADR 0086). */
   readonly quiet?: NoticeButton;
-  /**
-   * More quiet actions after it, on a row of their own at the card's end: the account screen's Log
-   * out and Delete account, a guest's Forget me (ADR 0079 addendum of 2026-11-22).
-   */
+  /** Actions as rows at the card's end (ADR 0086): Profile's Change username and Log out. */
   readonly more?: readonly NoticeButton[];
+  /**
+   * Destructive actions, apart under a rule in the danger look, each confirmed by what it opens
+   * (ADR 0086): Delete account, Forget me.
+   */
+  readonly danger?: readonly NoticeButton[];
 }

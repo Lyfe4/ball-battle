@@ -1,10 +1,8 @@
-// What Profile says (ADR 0081): who the player is, a stats card marked "Coming soon", then the
-// account's own actions, or for a guest what signing in unlocks. Pure, so every state is tested
-// without a DOM; the stats card and the legal links are parts the screen draws itself.
+// What Profile says (ADR 0081, 0087): who the player is, then the account's own actions as rows and,
+// apart, the danger zone; for a guest, what signing in unlocks. The stats card is gone until it has
+// one real number (ADR 0087). Pure, so every state is tested without a DOM; the legal links are a
+// part the screen draws itself.
 import type { NoticeButton, NoticeContent } from '../ui/notice-content.ts';
-
-/** The stats Profile will show once the server keeps them; until then, dashes. */
-export const PROFILE_STATS = ['Online wins', 'Matches', 'Favourite ball'] as const;
 
 /** What signing in unlocks, said on a guest's Profile and Friends tab. */
 export const SIGN_IN_UNLOCKS =
@@ -12,7 +10,6 @@ export const SIGN_IN_UNLOCKS =
 
 export interface AccountProfile {
   readonly username: string | null;
-  readonly stats: object;
   readonly change: () => void;
   /** Log out and Delete account; absent where the screen offers neither. */
   readonly logOut?: () => Promise<unknown>;
@@ -21,13 +18,21 @@ export interface AccountProfile {
   readonly problem?: string;
 }
 
-/** An account's Profile: its name and @username, the stats to come, then its actions. */
+/** An account's Profile: its name and @username, its actions as rows, then the danger zone. */
 export function accountProfile(profile: AccountProfile): NoticeContent {
-  const more: NoticeButton[] = [];
+  // Rows (ADR 0087): changing the name is not the screen's primary, Log out a row; Delete account
+  // apart in the danger zone. The stats card is gone until it has one real number.
+  const more: NoticeButton[] = [
+    {
+      text: profile.username === null ? 'Choose a username' : 'Change username',
+      onClick: profile.change,
+    },
+  ];
   if (profile.logOut !== undefined) more.push({ text: 'Log out', onClick: profile.logOut });
-  if (profile.deleteAccount !== undefined) {
-    more.push({ text: 'Delete account', onClick: profile.deleteAccount });
-  }
+  const danger: NoticeButton[] =
+    profile.deleteAccount === undefined
+      ? []
+      : [{ text: 'Delete account', onClick: profile.deleteAccount }];
   return {
     title: profile.username ?? 'Your profile',
     body: [
@@ -35,20 +40,14 @@ export function accountProfile(profile: AccountProfile): NoticeContent {
         ? 'Opponents see you as “Player” and a number until you choose a username.'
         : `@${profile.username} · Opponents see you as ${profile.username}.`,
     ],
-    part: profile.stats,
-    buttons: [
-      {
-        text: profile.username === null ? 'Choose a username' : 'Change username',
-        onClick: profile.change,
-      },
-    ],
+    buttons: [],
     more,
+    danger,
     ...(profile.problem === undefined ? {} : { note: profile.problem }),
   };
 }
 
 export interface GuestProfile {
-  readonly stats: object;
   readonly signIn: () => void;
   /** A guest on this device can be forgotten; nobody has nothing to forget. */
   readonly forgetMe?: () => void;
@@ -59,11 +58,10 @@ export function guestProfile(profile: GuestProfile): NoticeContent {
   return {
     title: 'Guest',
     body: ['Playing on this device.', SIGN_IN_UNLOCKS],
-    part: profile.stats,
     buttons: [{ text: 'Sign in', onClick: profile.signIn }],
     ...(profile.forgetMe === undefined
       ? {}
-      : { more: [{ text: 'Forget me on this device', onClick: profile.forgetMe }] }),
+      : { danger: [{ text: 'Forget me on this device', onClick: profile.forgetMe }] }),
   };
 }
 

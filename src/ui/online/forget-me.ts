@@ -28,7 +28,7 @@ export function createForgetMe(host: ForgetMeHost): ForgetMe {
   const heading = element('p', 'settings-heading', 'Online');
   heading.id = 'settings-online-title';
   const line = element('p', 'settings-online-line', 'This device plays online as a guest.');
-  const start = element('button', 'text-link settings-forget', 'Forget me');
+  const start = element('button', 'hud-button danger-button settings-forget', 'Forget me');
   start.type = 'button';
   const confirm = element('div', 'settings-forget-confirm');
   const question = element(

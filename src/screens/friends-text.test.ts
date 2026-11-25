@@ -2,6 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import type { InboxResponse } from '../api/friends.ts';
 import {
+  BLOCK_STEP,
+  personStatus,
+  REMOVE_STEP,
   addedLine,
   friendsTabLabel,
   hasAnyone,
@@ -121,5 +124,26 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
     expect(waitingCount({ friends: [], requests: 0, invites: [], turns: [] })).toBe(0);
     expect(friendsTabLabel(2)).toBe('Friends, 2 waiting');
     expect(friendsTabLabel(0)).toBe('Friends');
+  });
+});
+
+describe('the person’s sheet’s words (ADR 0086)', () => {
+  it('says a friend’s status, and “Waiting for you” for one waiting in their lobby', () => {
+    expect(personStatus({ status: 'in_a_match' }, 'friend')).toBe('In a match');
+    expect(personStatus({ status: 'in_a_match' }, 'friend', true)).toBe('Waiting for you');
+    expect(personStatus({}, 'friend')).toBe('Offline');
+    expect(personStatus({}, 'incoming')).toBe('Wants to be friends');
+    expect(personStatus({}, 'outgoing')).toBe('Request sent');
+  });
+
+  it('confirms Remove and Block with what they do, never what the other is told', () => {
+    expect(REMOVE_STEP('Jo')).toStrictEqual({
+      title: 'Remove Jo?',
+      text: 'You stop being friends. Jo isn’t told, and you can add them again later.',
+      action: 'Remove Jo',
+    });
+    expect(BLOCK_STEP('Jo').title).toBe('Block Jo?');
+    expect(BLOCK_STEP('Jo').text).toContain('can’t add or challenge you');
+    expect(BLOCK_STEP('Jo').action).toBe('Block Jo');
   });
 });

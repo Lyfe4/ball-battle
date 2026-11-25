@@ -99,8 +99,8 @@ describe('a tap on a touch phone', () => {
     expect(lookOf(send, 'filter').look).toBe('none');
   });
 
-  it('turns Leave series pink, as a mouse pointing at it does', async () => {
-    const leave = control('text-link series-leave', 'Leave series');
+  it('turns a text link (the series’ Home) pink, as a mouse pointing at it does', async () => {
+    const leave = control('text-link series-leave', 'Home');
     const section = document.createElement('section');
     section.className = 'series';
     section.append(leave);

@@ -28,6 +28,9 @@ export const FRIEND_GROUPS: readonly FriendGroup[] = [
 /** What the list says when it holds nobody. */
 export const NO_FRIENDS = 'No friends yet. Share your code, or add theirs.';
 
+/** The friends list's failure card (ADR 0087): its section, named as on the guest's card. */
+export const FRIENDS_FAILED_TITLE = 'Your friends';
+
 /** The line under Add after a request: sent, or friends at once. */
 export function addedLine(answer: AddFriendResponse): string {
   return answer.outcome === 'friends'
@@ -41,15 +44,6 @@ export function hasAnyone(list: FriendsResponse): boolean {
 }
 
 /** Remove, asked in place: the row's question. */
-export const removeQuestion = (name: string) => `Remove ${name}?`;
-
-/** Block, asked in place under the row (2026-11-25): what it does, never what they are told. */
-export const blockQuestion = (name: string) =>
-  `Block ${name}? They can’t add or challenge you again.`;
-
-/** Report name, asked in place: why, in a tap. */
-export const reportQuestion = (name: string) => `Report the name ${name}? Why:`;
-
 export const REPORT_CHOICES: readonly { readonly reason: ReportReason; readonly text: string }[] = [
   { reason: 'offensive', text: 'Rude or hurtful' },
   { reason: 'impersonation', text: 'Pretends to be someone' },
@@ -59,6 +53,61 @@ export const REPORT_CHOICES: readonly { readonly reason: ReportReason; readonly 
 /** What the list says after a block or a report. */
 export const BLOCKED_LINE = (name: string) => `${name} is blocked. Unblock them under Blocked.`;
 export const REPORTED_LINE = 'Thanks: we’ll look at that name. You won’t see it again.';
+
+/** A confirm step's words (sheet.ts): a title, what it does, the action. */
+export interface StepWords {
+  readonly title: string;
+  readonly text: string;
+  readonly action: string;
+}
+
+/** Remove, confirmed in the friend's sheet (ADR 0086): what it does, and that it can be undone. */
+export const REMOVE_STEP = (name: string): StepWords => ({
+  title: `Remove ${name}?`,
+  text: `You stop being friends. ${name} isn’t told, and you can add them again later.`,
+  action: `Remove ${name}`,
+});
+
+/** Block, confirmed in the person's sheet (ADR 0086): what it does, never what they are told. */
+export const BLOCK_STEP = (name: string): StepWords => ({
+  title: `Block ${name}?`,
+  text: `${name} is removed from your friends and can’t add or challenge you. They aren’t told; unblock them under Blocked.`,
+  action: `Block ${name}`,
+});
+
+/** Report name's title in the sheet: why, in a tap. */
+export const reportTitle = (name: string) => `Report the name ${name}?`;
+
+/** The person's sheet's words (friend-sheet.ts). */
+export const SHEET_LINES = {
+  challenge: 'Challenge · live',
+  turns: 'Take turns',
+  remove: 'Remove friend',
+  report: 'Report name',
+  block: 'Block',
+  sendReport: 'Send report',
+  cancelRequest: 'Cancel request',
+  alsoBlock: (name: string) => `Also block ${name}`,
+  removed: (name: string) => `${name} is no longer your friend.`,
+  blocked: BLOCKED_LINE,
+  reported: REPORTED_LINE,
+} as const;
+
+/**
+ * What a person's row and sheet say of them: a friend's status (one who waits on you in their lobby
+ * is "Waiting for you", never "In a match"), or what kind of request they are.
+ */
+export function personStatus(
+  person: { readonly status?: FriendStatus },
+  kind: 'friend' | 'incoming' | 'outgoing' | 'blocked',
+  waiting = false,
+): string {
+  if (kind === 'incoming') return 'Wants to be friends';
+  if (kind === 'outgoing') return 'Request sent';
+  if (kind === 'blocked') return 'Blocked: can’t add or challenge you';
+  if (waiting) return 'Waiting for you';
+  return STATUS_WORDS[person.status ?? 'offline'];
+}
 
 /** A friend's status in words, beside its dot (PR (d)). */
 export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {

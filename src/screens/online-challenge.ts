@@ -30,8 +30,6 @@ import { challengeUrl, copyLink, shareLink } from './online-share.ts';
 import { createStartLineup } from './start-lineup.ts';
 import { createTurnsLineup } from './turns-lineup.ts';
 
-export type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
-
 export function createChallengeScreens(
   roots: {
     readonly notice: HTMLElement;
@@ -321,8 +319,8 @@ export function createChallengeScreens(
       });
       return Promise.resolve();
     },
-    challengeFriend(friend) {
-      sender.invite(friend);
+    challengeFriend(friend, turns) {
+      sender.invite(friend, turns);
       host.friend();
     },
     async playFriend(setup) {
@@ -343,6 +341,8 @@ export function createChallengeScreens(
       const open = () => {
         show('setup');
         setup.open({ format, bestOf, level: '' });
+        // Take turns from a friend's sheet: the setup's own By turns path, straight to its lineup.
+        if (sender.turnsFirst()) void sender.send({ format, bestOf, level: '', turns: true });
       };
       if (!askFirst(open)) open();
     },

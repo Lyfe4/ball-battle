@@ -1,21 +1,21 @@
-// Profile (ADR 0081, accounts builds): who the player is, the stats to come, and the account's own
+// Profile (ADR 0081, 0087, accounts builds): who the player is and the account's own
 // actions, which it shares with the sign-in screen (account-step.ts): the username, Log out and
 // Delete account; for a guest, what signing in unlocks, Sign in and Forget me. It reads `/me` once
-// when it opens (who-am-i.ts) and nothing else; the stats card reads nothing.
-import type { PlayerResponse } from '../api/session.ts';
+// when it opens (who-source.ts, shared with the avatar) and nothing else.
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
-import { whoAmI } from '../app/who-am-i.ts';
-import { createComingSoon } from '../ui/coming-soon.ts';
+import type { WhoSource } from '../app/who-source.ts';
 import { element } from '../ui/dom.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { askToDelete } from './account-delete.ts';
 import { createAccountStep } from './account-step.ts';
 import { onlineNotice } from './online-text.ts';
-import { accountProfile, guestProfile, PROFILE_STATS, unknownProfile } from './profile-text.ts';
+import { accountProfile, guestProfile, unknownProfile } from './profile-text.ts';
 
 export interface ProfileHost {
+  /** Who this device plays as: one `/me` shared with the avatar, kept for the visit (ADR 0087). */
+  readonly who: WhoSource;
   readonly storage: DeviceStorage;
   /** In-app Back: the previous screen, else Play. */
   readonly back: () => void;
@@ -53,12 +53,6 @@ export function createProfile(
   roots.notice.append(card, legal);
   const notice = createNotice(card, host.back);
   createSkeleton(roots.loading, 'card', host.back);
-  const stats = createComingSoon(
-    'Your stats',
-    PROFILE_STATS.map((label) => ({ label })),
-    undefined,
-    true,
-  );
   const api = <T>(method: 'GET' | 'PUT', path: string, body?: unknown) =>
     callApi<T>(method, path, body, {}, host.send);
 
@@ -92,7 +86,6 @@ export function createProfile(
     card: (username, change, actions) =>
       accountProfile({
         username,
-        stats,
         change,
         ...(actions === undefined
           ? {}
@@ -105,14 +98,18 @@ export function createProfile(
   });
 
   async function open(): Promise<void> {
-    loading();
-    const who = await whoAmI(host.storage, host.cookies(), () => api<PlayerResponse>('GET', 'me'));
+    // An account this visit already knows shows at once, then refreshes in place (ADR 0087).
+    const known = host.who.known();
+    if (known?.kind === 'account') account.show(known.username);
+    else loading();
+    const who = await host.who.ask();
     switch (who.kind) {
       case 'account':
         account.show(who.username);
         return;
       case 'unknown':
-        show(unknownProfile(open));
+        // The one failure card's words (ADR 0087): offline said as offline.
+        show(navigator.onLine ? unknownProfile(open) : onlineNotice('offline', open, host.home));
         return;
       default:
         showGuest();
@@ -125,9 +122,7 @@ export function createProfile(
           askToDelete(show, false, host.forget, showGuest);
         }
       : undefined;
-    show(
-      guestProfile({ stats, signIn: host.signIn, ...(forgetMe === undefined ? {} : { forgetMe }) }),
-    );
+    show(guestProfile({ signIn: host.signIn, ...(forgetMe === undefined ? {} : { forgetMe }) }));
   }
 
   return {

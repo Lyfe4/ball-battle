@@ -1,13 +1,15 @@
 // The Friends tab's lists (ADR 0079, PR (c); ADR 0081) over a fake API: the code shown with a
 // dash, a friend added by what was typed, a request accepted and one declined, a friend removed
 // only after Remove is asked in place (Keep first), a refusal said under the field, and the
-// sections in the tab's order: Waiting for you, Friends, your code and Add, then the link card; the
-// link card first while there are no friends (requirement 5); More's Block and Report name, each
-// asked in place, and Unblock from the Blocked list (2026-11-25).
+// sections in one order: Waiting for you, Friends (or the empty state), your code and Add, then the
+// link card, always last (ADR 0087); the inbox's rows at once, skeleton rows after 150 ms, one
+// failure card; More's Block and Report name, each
+// and the person's sheet (ADR 0086): Remove and Block confirmed, Report with a reason, Unblock.
 import { describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendsResponse } from '../../api/friends.ts';
 import { callApi, type ApiFailure } from '../../app/api.ts';
+import { visitCache } from '../../app/visit-cache.ts';
 import { createFriendsSection } from './friends-section.ts';
 
 const json = (status: number, body: unknown) =>
@@ -26,6 +28,8 @@ const START: FriendsResponse = {
 
 /** The section over an API that keeps a list and answers each change with it. */
 function section(start: FriendsResponse = START) {
+  // Each section a fresh visit: nothing kept from the last test.
+  visitCache.clear();
   let list: FriendsResponse = start;
   const sent: string[] = [];
   const send = (input: string, init: RequestInit) => {
@@ -150,20 +154,30 @@ describe('the Friends section', () => {
     expect(sent).toContain('DELETE friends/r-2');
   });
 
-  it('asks before removing a friend, Keep first, and says a refusal under the field', async () => {
+  it('opens a friend’s sheet from the row, confirms Remove (Cancel first), says a refusal', async () => {
     const { friends, sent, root } = section();
     await friends.open();
+    // The row: one inline action where it can succeed (Robin is in a match: none), no Remove.
+    expect(named(root, 'Remove Robin')).toBeNull();
+    expect(named(root, 'Challenge Robin')).toBeNull();
+    root.querySelector<HTMLButtonElement>('[data-friend="f-1"] .friends-open')?.click();
+    const sheet = root.querySelector('dialog.friend-sheet');
+    if (!(sheet instanceof HTMLDialogElement)) throw new Error('No sheet');
+    expect(sheet.open).toBe(true);
+    expect(sheet.querySelector('.sheet-title')?.textContent).toBe('Robin');
     named(root, 'Remove Robin')?.click();
-    expect(root.querySelector('[data-friend="f-1"] .friends-name')?.textContent).toBe(
-      'Remove Robin?',
-    );
-    const actions = [...root.querySelectorAll('[data-friend="f-1"] button')].map(
-      (button) => button.textContent,
-    );
-    expect(actions).toStrictEqual(['Keep', 'Remove']);
+    expect(sheet.querySelector('.sheet-title')?.textContent).toBe('Remove Robin?');
+    expect(document.activeElement?.textContent).toBe('Cancel');
     expect(sent.filter((line) => line.startsWith('DELETE'))).toStrictEqual([]);
+    (document.activeElement as HTMLButtonElement).click();
+    expect(sheet.querySelector('.sheet-title')?.textContent).toBe('Robin');
     named(root, 'Remove Robin')?.click();
+    sheet.querySelector<HTMLButtonElement>('.sheet-confirm-action')?.click();
     await until(() => group(root, 'friends').length === 0, 'Robin removed');
+    expect(sheet.open).toBe(false);
+    expect(root.querySelector('.friends-note')?.textContent).toBe(
+      'Robin is no longer your friend.',
+    );
 
     const input = root.querySelector<HTMLInputElement>('#friends-add-input');
     if (input === null) throw new Error('No field');
@@ -193,7 +207,7 @@ describe('the Friends section', () => {
     await until(() => changes() === 1, 'the inbox poked');
   });
 
-  it('puts the sections in the tab’s order, the link card first with no friends yet', async () => {
+  it('keeps one order, the link card last, the empty state in the friends’ place', async () => {
     /** The parts of the section as they come, by what each is. */
     const order = (root: HTMLElement) =>
       [...root.querySelectorAll('.friends-group, .friends-add-card, .link-card-stand-in')].map(
@@ -217,10 +231,14 @@ describe('the Friends section', () => {
       'link',
     ]);
 
+    // No friends (ADR 0087, amending ADR 0081 requirement 5): the same order, the empty state in
+    // the friends' place, the link card still last.
     const none = section({ ...START, friends: [] });
     await none.friends.open();
-    expect(order(none.root)).toStrictEqual(['link', 'incoming', 'code and Add']);
-    // Nobody at all: the code card says so.
+    expect(order(none.root)).toStrictEqual(['incoming', 'friends', 'code and Add', 'link']);
+    expect(
+      none.root.querySelector('.friends-group[data-group="friends"] .friends-empty')?.textContent,
+    ).toMatch(/^No friends yet/);
     const nobody = section({
       code: START.code,
       friends: [],
@@ -229,42 +247,55 @@ describe('the Friends section', () => {
       blocked: [],
     });
     await nobody.friends.open();
-    expect(order(nobody.root)).toStrictEqual(['link', 'code and Add']);
-    expect(nobody.root.querySelector('.friends-empty')?.hasAttribute('hidden')).toBe(false);
+    expect(order(nobody.root)).toStrictEqual(['friends', 'code and Add', 'link']);
   });
 });
 
-describe('More on a row (2026-11-25)', () => {
-  it('blocks and reports, each asked in place with Keep first, and unblocks', async () => {
-    const { friends, sent, root } = section();
+describe('the person’s sheet (ADR 0086)', () => {
+  it('blocks (confirmed), reports with a reason and Also block, cancels a request and unblocks', async () => {
+    const { friends, sent, root } = section({ ...START, outgoing: [{ id: 'o-2', name: 'Kim' }] });
     await friends.open();
-    named(root, 'More for Robin')?.click();
-    expect(named(root, 'More for Robin')?.getAttribute('aria-expanded')).toBe('true');
-    // Keep closes it, back on More, having sent nothing.
-    named(root, 'Keep Robin')?.click();
-    expect(root.querySelector('.friends-ask')).toBeNull();
-    expect(document.activeElement).toBe(named(root, 'More for Robin'));
-    named(root, 'More for Robin')?.click();
-    named(root, 'Block Robin')?.click();
-    expect(root.querySelector('.friends-ask-question')?.textContent).toBe(
-      'Block Robin? They can’t add or challenge you again.',
-    );
-    expect(sent.filter((line) => line.includes('block'))).toStrictEqual([]);
-    named(root, 'Block Robin')?.click();
+    const sheet = () => root.querySelector<HTMLDialogElement>('dialog.friend-sheet');
+    const openRow = (id: string) => {
+      root.querySelector<HTMLButtonElement>(`[data-friend="${id}"] .friends-open`)?.click();
+    };
+    // Block, apart in the danger look, confirmed with what it does; Cancel first.
+    openRow('f-1');
+    const block = named(root, 'Block Robin');
+    expect(block?.classList.contains('danger-row')).toBe(true);
+    block?.click();
+    expect(sheet()?.textContent).toContain('can’t add or challenge you');
+    expect(document.activeElement?.textContent).toBe('Cancel');
+    sheet()?.querySelector<HTMLButtonElement>('.sheet-confirm-action')?.click();
     await until(() => group(root, 'blocked').length === 1, 'the Blocked list');
     expect(sent).toContain('POST friends/f-1/block');
-    expect(group(root, 'friends')).toStrictEqual([]);
     expect(root.querySelector('.friends-note')?.textContent).toBe(
       'Robin is blocked. Unblock them under Blocked.',
     );
-    // A request's name, reported with a reason in a tap, is hidden from then on.
-    named(root, 'More for Sam_R')?.click();
+    // A request's name, reported with a reason, Also block ticked: both sent.
+    openRow('r-1');
     named(root, 'Report Sam_R’s name')?.click();
-    named(root, 'Report Sam_R’s name: Rude or hurtful')?.click();
-    await until(() => group(root, 'incoming').includes('Player 7'), 'the name hidden');
+    const reasons = [...(sheet()?.querySelectorAll('[role="radio"]') ?? [])];
+    expect(reasons.map((reason) => reason.textContent)).toStrictEqual([
+      'Rude or hurtful',
+      'Pretends to be someone',
+      'Something else',
+    ]);
+    (reasons[0] as HTMLButtonElement).click();
+    const also = sheet()?.querySelector<HTMLInputElement>('.friend-sheet-also-box');
+    if (also === null || also === undefined) throw new Error('No Also block');
+    also.checked = true;
+    sheet()?.querySelector<HTMLButtonElement>('.danger-button')?.click();
+    await until(() => sent.includes('POST friends/r-1/block'), 'the block after the report');
     expect(sent).toContain('POST friends/r-1/report {"reason":"offensive"}');
+    // A request you sent: Cancel request, from its sheet.
+    openRow('o-2');
+    named(root, 'Cancel your request to Kim')?.click();
+    await until(() => group(root, 'outgoing').length === 0, 'the request cancelled');
+    // Blocked: Unblock, from their sheet.
+    openRow('f-1');
     named(root, 'Unblock Robin')?.click();
-    await until(() => group(root, 'blocked').length === 0, 'Robin unblocked');
+    await until(() => group(root, 'blocked').every((name) => name !== 'Robin'), 'Robin unblocked');
     expect(sent).toContain('POST friends/f-1/unblock');
   });
 });
