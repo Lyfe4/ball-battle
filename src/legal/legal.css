@@ -1,8 +1,6 @@
 /*
  * The privacy policy and terms (privacy.html, terms.html; ADR 0069): reading pages in the game's own
- * look, with no script. Phone first: one column with a chunky way back to the game at the top. On a
- * desktop the way back and the other page sit in a column of their own beside the text, which keeps
- * a readable line length rather than stretching.
+ * look, with no script, in the game's page frame (below).
  */
 @import '@fontsource-variable/bricolage-grotesque';
 @import '../styles/tokens.css';
@@ -15,32 +13,50 @@ body {
   min-height: 100%;
 }
 
+/*
+ * In the page frame (ADR 0087): the header row at the frame's top, Back in the lead slot, the title
+ * one gap after it on one line, the other page's link where the gear sits on the game's screens;
+ * the text under it in a reading line from the frame's left edge. Beside and on a desktop the frame
+ * keeps the room the game's rail takes, so the title sits on the same pixels as the game's (there
+ * is no rail here: the pages run no script).
+ */
 .legal {
-  --legal-measure: 40rem;
-  max-width: var(--legal-measure);
-  margin: 0 auto;
-  padding: max(var(--space-gutter), env(safe-area-inset-top))
-    max(var(--space-gutter), env(safe-area-inset-right))
+  --legal-measure: var(--col-reading);
+  --frame-extra: max(
+    0px,
+    (100% - var(--rail-room) - 2 * var(--frame-gutter) - var(--frame-max)) / 2
+  );
+
+  display: grid;
+  grid-template-columns: var(--tap-target) minmax(0, 1fr) auto;
+  align-content: start;
+  column-gap: var(--space-gap);
+  padding: var(--frame-top)
+    calc(max(var(--frame-gutter), env(safe-area-inset-right)) + var(--frame-extra))
     max(var(--space-sheet), env(safe-area-inset-bottom))
-    max(var(--space-gutter), env(safe-area-inset-left));
+    calc(
+      max(var(--frame-gutter), env(safe-area-inset-left)) + var(--rail-room) + var(--frame-extra)
+    );
   line-height: 1.55;
 }
 
-.legal-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-gap);
-  margin-bottom: var(--space-sheet);
+.legal > * {
+  grid-column: 1 / -1;
+  max-width: var(--legal-measure);
 }
 
-/* The way back to the game: the chunky raised look of a Back button, with its name. */
+.legal-nav {
+  display: contents;
+}
+
+/* Back, in the lead slot: the game's Back button, the game's name its accessible name. */
 .legal-back {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap-target);
-  padding: 0 var(--space-gap);
+  display: inline-grid;
+  grid-row: 1;
+  grid-column: 1;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
   margin-bottom: var(--press-depth);
   border-radius: var(--radius);
   background: var(--color-raised);
@@ -48,6 +64,15 @@ body {
   color: var(--color-text);
   font-weight: 700;
   text-decoration: none;
+}
+
+.legal-back-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .legal-back:active {
@@ -61,16 +86,25 @@ body {
 
 .legal-nav .text-link {
   display: inline-flex;
+  grid-row: 1;
+  grid-column: 3;
   align-items: center;
   min-height: var(--tap-target);
+  margin-bottom: var(--press-depth);
 }
 
 .legal-title {
-  margin: 0;
-  font-size: var(--font-size-display);
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 0;
+  margin: 0 0 var(--press-depth);
+  overflow: hidden;
+  font-size: 1.375rem;
   font-weight: var(--font-weight-display);
   letter-spacing: var(--letter-spacing-display);
-  line-height: 1.1;
+  line-height: var(--head-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .legal-updated {
@@ -117,7 +151,6 @@ body {
 
 /* The chevron ‹ reads as a bracket in the display family, so it keeps the system font. */
 .legal-back-chevron {
-  margin-right: 0.25em;
   font-family: var(--font-family-symbol);
   font-size: 1.25rem;
   line-height: 1;
@@ -152,30 +185,4 @@ body {
 .legal-terms li::marker {
   color: var(--color-accent);
   font-weight: var(--font-weight-display);
-}
-
-/* Desktop (ADR 0031): the way back and the other page in a column beside the text, kept in view. */
-@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
-  .legal {
-    display: grid;
-    grid-template-columns: 12rem minmax(0, var(--legal-measure));
-    column-gap: var(--space-columns);
-    max-width: calc(12rem + var(--space-columns) + var(--legal-measure));
-    padding-top: var(--space-sheet);
-  }
-
-  .legal > * {
-    grid-column: 2;
-  }
-
-  .legal-nav {
-    grid-column: 1;
-    grid-row: 1 / span 40;
-    position: sticky;
-    top: var(--space-sheet);
-    flex-direction: column;
-    align-items: flex-start;
-    align-self: start;
-    margin: 0;
-  }
 }

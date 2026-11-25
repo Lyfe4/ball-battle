@@ -150,13 +150,18 @@
    * The page frame (ADR 0087): every screen where nothing fights sits in one frame, its header row
    * at the frame's top and its content from the frame's left edge. The gutter and top are a
    * phone's here (and beside); the desktop query below widens them. The rail's room is what the
-   * rail takes from the left, set by the layout queries. Batch 2 of the plan puts these to use.
+   * rail takes from the left, set by the layout queries (frame.css puts them to use).
    */
   --frame-gutter: 16px;
   --frame-top: max(16px, env(safe-area-inset-top));
   --frame-max: 90rem;
   --head-height: var(--tap-target);
   --col-aside: 26rem;
+  /* The columns a screen's content takes in the frame (frame.css): a list (Friends, Ranks), a
+     reading line (sign-in, Profile, notices) and a wide screen's own columns (a ball, a setup). */
+  --col-list: 36rem;
+  --col-reading: 40rem;
+  --col-wide: 64rem;
   --rail-room: 0px;
 
   /*
@@ -165,6 +170,8 @@
    * moments (the 3-2-1, the toss, the Winner sticker) keep their springs. A literal anywhere else
    * fails motion-tokens.test.ts.
    */
+  /* A press pushing a button into its slab: quicker than any screen motion, so a tap feels instant. */
+  --motion-press: 80ms;
   --motion-quick: 120ms;
   --motion-base: 200ms;
   --motion-slow: 320ms;

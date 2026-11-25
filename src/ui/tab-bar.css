@@ -197,9 +197,11 @@
     height: auto;
   }
 
+  /* Its gear at the frame's right edge, where every screen's sits (ADR 0087). */
   body[data-shell='tab'] .stage[data-home] .hud {
     flex: none;
     min-width: min-content;
+    margin-inline-start: auto;
   }
 }
 

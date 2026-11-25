@@ -4,6 +4,6 @@ import { runTipsArenaFlow } from './tips-arena-flow.ts';
 
 describe('a tip in the arena', () => {
   it('rings what it is about, tags it inside the court and captions it', async () => {
-    await runTipsArenaFlow('top-of-panel');
+    await runTipsArenaFlow('under-panel');
   }, 120_000);
 });

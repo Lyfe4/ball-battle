@@ -24,14 +24,12 @@ const EXEMPT = new Set([
 
 /** Today's literals outside the arena, per file, sorted: to be moved onto tokens, never added to. */
 const ALLOWED: Readonly<Record<string, readonly string[]>> = {
-  'styles/layout.css': ['0.4s', 'ease-out'],
   'ui/busy-button.css': [
     '560ms',
     '560ms',
     'cubic-bezier(0.5, 0, 0.5, 1)',
     'cubic-bezier(0.5, 0, 0.5, 1)',
   ],
-  'ui/button.css': ['120ms', '80ms', '80ms', 'ease-out', 'ease-out', 'ease-out'],
   'ui/hud.css': ['0.3s', '300ms', '450ms', 'ease-out'],
   'ui/manual/manual.css': ['0.15s'],
   'ui/notice.css': [

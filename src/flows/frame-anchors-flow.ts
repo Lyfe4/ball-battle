@@ -6,8 +6,10 @@
 //
 // On every screen: the row's first part is the lead slot, one tap target wide (Back, the avatar, or
 // nothing); the title follows it after one gap, one line in the title's size; the gear is the
-// row's last control, after any `?`. Across screens at one size: the lead slot's box, the title's
-// left and top, the gear's box and the row's top differ by no more than half a pixel.
+// row's last control, after any `?`; the content under the row starts at the row's left edge.
+// Across screens at one size: the lead slot's box, the title's left and top, the gear's box and the
+// row's top differ by no more than half a pixel, and the page's width doesn't change (a scrollbar
+// coming and going).
 import { expect } from 'vitest';
 import { settle, until, visible } from './page-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
@@ -33,6 +35,8 @@ export const FRAME_SCREENS: readonly (readonly [name: string, search: string, sc
 
 interface Anchors {
   readonly top: number;
+  /** The page's width inside any scrollbar: it never changes between screens. */
+  readonly width: number;
   readonly lead: DOMRect;
   readonly title: DOMRect;
   readonly gear: DOMRect;
@@ -47,12 +51,21 @@ function shownHeader(where: string): HTMLElement {
   return head;
 }
 
-const laidOut = (node: Element): boolean =>
+const laidOut = (node: Element): node is HTMLElement =>
   node instanceof HTMLElement && node.getClientRects().length > 0 && !node.hidden;
+
+/** The first part laid out after `node` in its parent (the legend's panel is under the row). */
+function nextLaidOut(node: Element): HTMLElement | undefined {
+  for (let next = node.nextElementSibling; next !== null; next = next.nextElementSibling) {
+    if (laidOut(next)) return next;
+  }
+  return undefined;
+}
 
 /** Checks the row's parts on one screen and returns where they sit. */
 export function headerAnchors(where: string): Anchors {
   const head = shownHeader(where);
+  const headBox = head.getBoundingClientRect();
   const parts = [...head.children].filter(laidOut);
   const lead = parts[0];
   expect(lead?.classList.contains('screen-lead'), `${where}: the lead slot comes first`).toBe(true);
@@ -74,8 +87,17 @@ export function headerAnchors(where: string): Anchors {
   const gear = controls.at(-1);
   expect(gear?.classList.contains('settings-toggle'), `${where}: the gear is last`).toBe(true);
   if (gear === undefined) throw new Error(`${where}: no gear`);
+  // The content starts where the row does: at the frame's left edge, never a column centred.
+  const content = nextLaidOut(head);
+  if (content !== undefined) {
+    expect(
+      Math.abs(content.getBoundingClientRect().left - headBox.left),
+      `${where}: the content starts at the row's left edge`,
+    ).toBeLessThanOrEqual(SAME);
+  }
   return {
-    top: head.getBoundingClientRect().top,
+    top: headBox.top,
+    width: document.documentElement.clientWidth,
     lead: leadBox,
     title: titleBox,
     gear: gear.getBoundingClientRect(),
@@ -95,40 +117,45 @@ function expectSameBox(a: DOMRect, b: DOMRect, what: string): void {
   expect(off, `${what}: ${box(a)} against ${box(b)}`).toBeLessThanOrEqual(SAME);
 }
 
+const near = (a: number, b: number, what: string): void => {
+  expect(Math.abs(a - b), `${what}: ${a.toFixed(1)} against ${b.toFixed(1)}`).toBeLessThanOrEqual(
+    SAME,
+  );
+};
+
 export interface FrameChecks {
-  /** The parts must also sit on the same pixels on every screen (all sizes once the frame is in). */
-  readonly across: boolean;
+  /**
+   * Where Play's header row is held to the frame: `frame`, all of it (a phone, a desktop: the row
+   * runs across the frame's top); `gear`, its gear alone (beside, where the row tops the panel next
+   * to the court, ADR 0067, and only the gear keeps to the frame's right edge); `none` until Play's
+   * desktop layout joins the frame (plan PR 9).
+   */
+  readonly play: 'frame' | 'gear' | 'none';
 }
 
-/** Opens every frame screen and checks its header row (and, with `across`, that none moves). */
+/** Opens every frame screen and checks its header row, and that none of it moves between them. */
 export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
   await openAs({ online: true, accounts: true }, '');
   await onScreen('home');
-  let first: { readonly name: string; readonly anchors: Anchors } | undefined;
+  const seen: { readonly name: string; readonly screen: string; readonly anchors: Anchors }[] = [];
   for (const [name, search, screen] of FRAME_SCREENS) {
     if (search !== '') await follow(search);
     await until(() => screenOn() === screen, 5_000, name, false);
     await settle();
-    const anchors = headerAnchors(name);
-    if (!checks.across) continue;
-    if (first === undefined) {
-      first = { name, anchors };
-      continue;
-    }
+    seen.push({ name, screen, anchors: headerAnchors(name) });
+  }
+  const whole = seen.filter((one) => one.screen !== 'home' || checks.play === 'frame');
+  const first = whole[0];
+  if (first === undefined) throw new Error('No screen to compare');
+  for (const { name, screen, anchors } of seen) {
+    if (screen === 'home' && checks.play === 'none') continue;
     const than = `${name} than ${first.name}`;
-    expect(
-      Math.abs(anchors.top - first.anchors.top),
-      `the row's top on ${than}`,
-    ).toBeLessThanOrEqual(SAME);
-    expectSameBox(anchors.lead, first.anchors.lead, `the lead slot on ${than}`);
+    expect(anchors.width, `the page's width on ${than}`).toBe(first.anchors.width);
     expectSameBox(anchors.gear, first.anchors.gear, `the gear on ${than}`);
-    expect(
-      Math.abs(anchors.title.left - first.anchors.title.left),
-      `the title's left on ${than}`,
-    ).toBeLessThanOrEqual(SAME);
-    expect(
-      Math.abs(anchors.title.top - first.anchors.title.top),
-      `the title's top on ${than}`,
-    ).toBeLessThanOrEqual(SAME);
+    if (screen === 'home' && checks.play === 'gear') continue;
+    near(anchors.top, first.anchors.top, `the row's top on ${than}`);
+    expectSameBox(anchors.lead, first.anchors.lead, `the lead slot on ${than}`);
+    near(anchors.title.left, first.anchors.title.left, `the title's left on ${than}`);
+    near(anchors.title.top, first.anchors.title.top, `the title's top on ${than}`);
   }
 }
