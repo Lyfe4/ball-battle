@@ -128,7 +128,7 @@
   margin-left: auto;
   color: var(--color-text-muted);
   font-size: 1.25rem;
-  transition: transform 0.15s;
+  transition: transform var(--motion-quick) var(--ease-out);
 }
 
 .quick-why[open] > .quick-why-summary::after {

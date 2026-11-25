@@ -41,4 +41,18 @@ describe('the chosen option has one look', () => {
       .map((file) => file.path);
     expect(without).toStrictEqual([]);
   });
+
+  it('is never worn by tabs, which switch views rather than choose a value', () => {
+    // ADR 0087: the Balls / Matchup chart switch is a tab list (aria-selected, one underline).
+    const tabs = files(SRC, '.ts').filter((file) => file.text.includes("'role', 'tab'"));
+    expect(tabs.map((file) => file.path)).toStrictEqual(['ui/view-tabs.ts']);
+    for (const file of tabs) {
+      const code = file.text.replace(/\/\/.*$/gm, '');
+      expect(code, file.path).not.toMatch(/\bchoice\b|aria-pressed|aria-checked/);
+    }
+    const look = files(SRC, '.css').find((file) => file.path === 'ui/view-tabs.css');
+    const rules = (look?.text ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(rules).toContain('.view-tab');
+    expect(rules).not.toMatch(/aria-pressed|aria-checked|choice/);
+  });
 });

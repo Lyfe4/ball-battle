@@ -104,7 +104,7 @@
   margin-left: auto;
   color: var(--color-text-muted);
   font-size: 1.25rem;
-  transition: transform 0.15s;
+  transition: transform var(--motion-quick) var(--ease-out);
 }
 
 .ball-detail-how[open] > .ball-detail-how-summary::after {
@@ -221,24 +221,6 @@
 
 .manual-steps > * {
   flex: 1;
-}
-
-/* The Balls / Matchup chart choice spans the column. */
-.manual-tabs .segmented {
-  justify-content: stretch;
-}
-
-.manual-tabs .segmented-button {
-  flex: 1;
-}
-
-.manual-tabs .segmented-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 .ball-detail-text {
@@ -368,11 +350,6 @@
   .ball-detail-strong-group .ball-detail-opponent,
   .ball-detail-weak-group .ball-detail-opponent {
     min-height: 32px;
-  }
-
-  /* Two tabs needn't span the sheet. */
-  .manual-tabs {
-    width: var(--setup-width);
   }
 }
 
