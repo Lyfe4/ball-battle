@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendsResponse } from '../../api/friends.ts';
 import { callApi, type ApiFailure } from '../../app/api.ts';
+import { FIRST_PAINT_FONT } from '../../app/first-paint.ts';
 import { visitCache } from '../../app/visit-cache.ts';
 import { createFriendsSection } from './friends-section.ts';
 
@@ -78,6 +79,9 @@ const at = (node: Element | null) => {
 
 describe('the Friends section loading (ADR 0087)', () => {
   it('draws the inbox’s friends at once, and nothing moves when the list lands', async () => {
+    // The page shows nothing before its font is ready (first-paint.ts): measure in it, as a player sees.
+    await document.fonts.load(FIRST_PAINT_FONT);
+    await document.fonts.ready;
     const page = held();
     page.friends.statuses(TWO.friends);
     const opened = page.friends.open();
