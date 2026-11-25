@@ -1,6 +1,7 @@
 // A person's sheet on the Friends tab (ADR 0086, social S 5), on the shared sheet (sheet.ts): tap a
 // row and this opens. A friend's: their disc ringed in their status's colour, name and status;
-// Challenge · live when it can succeed; Remove friend as a row; then, apart, Report name and Block
+// Challenge · live, always (unavailable, with why, when it can't succeed); Take turns where the
+// build plays by turns; Remove friend as a row; then, apart, Report name and Block
 // in the danger look. Remove and Block are confirmed with what they do (Cancel the default); Report
 // asks why, with "Also block". A request to you has Accept and Decline, then Report and Block; a
 // request you sent has Cancel request; a blocked player has Unblock. One close, the ×; whatever an
@@ -11,6 +12,7 @@ import { element } from '../dom.ts';
 import { createSheet } from '../sheet.ts';
 import {
   BLOCK_STEP,
+  liveUnavailable,
   personStatus,
   REMOVE_STEP,
   REPORT_CHOICES,
@@ -140,19 +142,38 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
     const actions = element('div', 'friend-sheet-actions');
     if (kind === 'friend') {
       const challenge = host.challenge;
-      if (challenge !== undefined && person.status === 'online') {
-        const live = element('button', 'hud-button hud-button-primary', SHEET_LINES.challenge);
+      const turns = host.turns;
+      // Challenge · live always shows, so the sheet keeps one shape (ADR 0086, 2026-11-26). When
+      // the friend can't take it, it stays focusable but unavailable, one line under it says why
+      // and the way that works, and Take turns (where there is one) is the primary instead.
+      const why = liveUnavailable(person, waiting, turns !== undefined);
+      if (challenge !== undefined) {
+        const live = element('button', 'hud-button', SHEET_LINES.challenge);
         live.type = 'button';
         live.setAttribute('aria-label', `Challenge ${person.name} live`);
+        live.classList.toggle('hud-button-primary', why === undefined);
         live.addEventListener('click', () => {
+          if (live.getAttribute('aria-disabled') === 'true') return;
           sheet.close();
           challenge(person);
         });
         actions.append(live);
+        if (why !== undefined) {
+          const line = element('p', 'friend-sheet-why', why);
+          line.id = 'friend-sheet-why';
+          live.setAttribute('aria-disabled', 'true');
+          live.setAttribute('aria-describedby', line.id);
+          actions.append(line);
+        }
       }
-      const turns = host.turns;
       if (turns !== undefined) {
-        const take = element('button', 'hud-button', SHEET_LINES.turns);
+        // The way that works, but not over a friend waiting on you: theirs is in Waiting for you.
+        const primary = challenge !== undefined && why !== undefined && !waiting;
+        const take = element(
+          'button',
+          `hud-button${primary ? ' hud-button-primary' : ''}`,
+          SHEET_LINES.turns,
+        );
         take.type = 'button';
         take.setAttribute('aria-label', `Take turns with ${person.name}`);
         take.addEventListener('click', () => {

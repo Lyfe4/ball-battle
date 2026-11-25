@@ -385,6 +385,14 @@
   gap: var(--space-small);
 }
 
+/* Why Challenge · live can't be taken now, and what works: one quiet line under it. */
+.friend-sheet-why {
+  margin: 0 0 var(--space-small);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
 .friend-sheet-also {
   display: flex;
   align-items: center;

@@ -109,6 +109,24 @@ export function personStatus(
   return STATUS_WORDS[person.status ?? 'offline'];
 }
 
+/**
+ * Why a friend's Challenge · live can't be taken now, and the way that works, as one line under it
+ * (the sheet keeps one shape, ADR 0086 as changed 2026-11-26): undefined when it can (online, and
+ * not waiting on you). `turns` where the build plays by turns, which works any time.
+ */
+export function liveUnavailable(
+  person: { readonly name: string; readonly status?: FriendStatus },
+  waiting: boolean,
+  turns: boolean,
+): string | undefined {
+  if (waiting) return `${person.name} is waiting for you · Accept in Waiting for you`;
+  if (person.status === 'online') return undefined;
+  if (person.status === 'in_a_match') {
+    return `${person.name} is in a match · ${turns ? 'Take turns instead' : 'Try again after it'}`;
+  }
+  return `${person.name} is offline · ${turns ? 'Take turns instead' : 'Try again when they’re online'}`;
+}
+
 /** A friend's status in words, beside its dot (PR (d)). */
 export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
   online: 'Online',

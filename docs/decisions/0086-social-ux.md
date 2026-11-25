@@ -184,3 +184,20 @@ test-only ones skip Netlify, `netlify-ignore.sh`). "S n" is this record's pull r
   seen mark (a migration); S 11 checks the cost against ADR 0084's budget.
 - The crossed-challenge merge is a server rule in one transaction (`challenges.ts`), tested with two
   `TestBrowser`s.
+
+## Addendum (2026-11-26): the friend sheet keeps one shape
+
+The owner's change after Batch 3. **Challenge · live always shows** in a friend's sheet. When the
+friend can't take it (offline, in a match, or waiting on you in their own lobby) it stays visible
+but unavailable: `aria-disabled` (focusable, in the tab order, never `disabled`), its click does
+nothing, and one line under it (`aria-describedby`) says why and the way that works:
+
+- "Jo is offline · Take turns instead" / "Jo is in a match · Take turns instead" where the build
+  plays by turns, and Take turns takes the primary look (one primary per sheet);
+- "… · Try again when they're online" / "… · Try again after it" where it doesn't;
+- "Jo is waiting for you · Accept in Waiting for you" for a friend whose lobby waits on you (Take
+  turns stays secondary: theirs is the way).
+
+The sheet's parts and their order are the same in every state (`friend-sheet.browser.test.ts`).
+The row's inline Challenge keeps its rule: it shows only when it can succeed. Words in
+`friends-text.ts` (`liveUnavailable`).
