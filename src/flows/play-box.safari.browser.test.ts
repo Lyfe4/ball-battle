@@ -184,9 +184,9 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(document.getElementById(dialog.getAttribute('aria-labelledby') ?? '')?.textContent).toBe(
       'What to play',
     );
-    // Focus moved in, onto what is chosen first.
+    // Focus moved in, onto the dialog's title (ADR 0086): its name is heard, Tab reaches a choice.
     expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement?.getAttribute('aria-pressed')).toBe('true');
+    expect(document.activeElement?.id).toBe('play-sheet-title');
     expect(groups()).toStrictEqual([
       { name: 'Against', choices: ['vs Bot', 'vs Friend'], chosen: ['vs Bot'] },
       { name: 'Length', choices: ['Best of 3', 'Best of 5'], chosen: ['Best of 3'] },

@@ -30,7 +30,7 @@
   box-shadow: none;
 }
 
-.segmented-button:focus-visible {
+:where(:root:not([data-input='pointer'])) .segmented-button:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 

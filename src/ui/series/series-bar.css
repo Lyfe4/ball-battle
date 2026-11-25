@@ -50,7 +50,7 @@
   cursor: pointer;
 }
 
-.series-bar-score:focus-visible {
+:where(:root:not([data-input='pointer'])) .series-bar-score:focus-visible {
   box-shadow: var(--focus-ring);
 }
 

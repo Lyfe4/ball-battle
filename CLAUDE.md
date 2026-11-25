@@ -346,6 +346,31 @@ Each line is a rule; its ADR has the reasoning.
 
 **UI**
 
+- The quality bar (ADR 0086, 0087; the plan's batches 2-4 build what isn't true yet), a rule a line:
+  - New UI gets a mockup in the game's real styles first (a throwaway page under `pnpm dev`), at
+    390 × 664 and one beside or desktop view.
+  - An action is a button or a sheet row; a text link only navigates and keeps its "›" (never on
+    Close, Cancel, Copy or Remove).
+  - One place per piece of information: the same news never shows twice at once.
+  - No doubled controls: one close per overlay (the shared × last in its head, `close-button.ts`;
+    tap outside, Escape and Back as well), one primary per card.
+  - Destructive actions sit apart in the danger look, one level deep, confirmed with what they do;
+    Cancel is the safe default. A row offers at most one inline action, only when it can succeed;
+    the rest is in that person's sheet.
+  - Focus rings for the keyboard only (`:root:not([data-input='pointer'])`, `input-modality.ts`);
+    a sheet or dialog focuses its title.
+  - Every state is designed: empty, loading (a sized skeleton, only after 150 ms), error (one
+    failure card with Try again), offline, the other person gone; a refusal in the game's words.
+  - One frame: the lead slot, title, `?` and gear (always last) sit on the same pixels on every
+    non-fight screen at a size (`frame-anchors`).
+  - Nothing jumps: no load or screen change moves the header or the content's left edge, no
+    scrollbar shifts a page, and a first visit's layout shifts stay ≤ 0.02 (`first-paint`).
+  - Static content first, in its final place; sections never reorder after a read (an empty state
+    takes the section's place).
+  - One read per answer: a screen reuses what the page already read; a new function call says in
+    its pull request why it fits ADR 0084's budget.
+  - Motion from the tokens only outside the arena (`--motion-*`, `--ease-*`,
+    `motion-tokens.test.ts`): calm, no overshoot; reduced motion fades or doesn't move.
 - Phone first (about 375 px), then a deliberate layout for larger screens (ADR 0020, 0031):
   re-arranged for the space, never the phone column centred. Desktop rules go in the one query
   `(min-width: 64rem) and (min-aspect-ratio: 5/4)` beside the phone rules. Between them, any

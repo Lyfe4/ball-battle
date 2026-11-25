@@ -21,6 +21,17 @@ canvas {
   display: block;
 }
 
+/*
+ * Classic scrollbars (a mouse on Windows, or "always show" elsewhere) reserve their gutter, so a
+ * screen that grows taller than the window never shifts the page sideways (ADR 0087). Overlay
+ * scrollbars (phones, macOS's default) reserve nothing, so phones lose no width.
+ */
+@media (min-aspect-ratio: 5/4) and (pointer: fine) {
+  :root {
+    scrollbar-gutter: stable;
+  }
+}
+
 /* Controls are told apart by fill, never by a line (tokens.css): no browser default border. */
 button {
   border: 0;
@@ -29,10 +40,17 @@ button {
 /*
  * One focus style for every control, so it can't drift between components: the focus-ring halo,
  * shown for keyboard focus only. Elements focused by script alone (tabindex -1: a screen's heading,
- * the arena) take no ring.
+ * the arena) take no ring. The ring is guarded by the input flag (input-modality.ts, ADR 0086): a
+ * page last used by a press shows none, even where the browser calls a script's focus visible
+ * (WebKit after a tap). Every ring rule wears the same guard, in a :where() so it adds no weight
+ * (focus-ring.test.ts); the browser's own outline goes whatever the input.
  */
 :where(button, a, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
   outline: none;
+}
+
+:where(:root:not([data-input='pointer']))
+  :where(button, a, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
   box-shadow: var(--focus-ring);
 }
 

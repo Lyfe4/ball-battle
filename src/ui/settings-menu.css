@@ -24,7 +24,7 @@
   color: var(--color-text);
 }
 
-.settings-toggle:focus-visible {
+:where(:root:not([data-input='pointer'])) .settings-toggle:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
 }
 
@@ -55,7 +55,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .settings-panel {
-    animation: settings-open 120ms ease-out;
+    animation: settings-open var(--motion-quick) var(--ease-out);
   }
 }
 
@@ -134,7 +134,7 @@
   cursor: pointer;
 }
 
-.settings-switch:focus-visible {
+:where(:root:not([data-input='pointer'])) .settings-switch:focus-visible {
   box-shadow: var(--focus-ring);
 }
 

@@ -130,13 +130,6 @@ export function createHome(
   const playMeta = element('span', 'home-play-meta');
   play.append(playLabel, playMeta);
   busyOnClick(play, () => (choice === undefined ? undefined : actions.onPlay(choice)));
-  // Focused on arrival for the keyboard, with no ring until a key is pressed (2026-11-24: a ring
-  // round Play on every visit read as a choice already made).
-  const quiet = () => {
-    delete play.dataset['quietFocus'];
-  };
-  document.addEventListener('keydown', quiet, { capture: true });
-  play.addEventListener('blur', quiet);
   // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
   const fresh = element('button', 'text-link home-new-series', 'New series');
   fresh.type = 'button';
@@ -227,7 +220,7 @@ export function createHome(
       showPlay();
     },
     focus() {
-      play.dataset['quietFocus'] = '';
+      // For the keyboard: no ring until a key is pressed (input-modality.ts, ADR 0086).
       play.focus();
     },
     setStatus(line) {

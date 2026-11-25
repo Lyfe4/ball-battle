@@ -45,6 +45,11 @@
   font-weight: 800;
 }
 
+/* Focused by script as the sheet opens, for screen readers: never drawn (play-sheet.ts). */
+.play-sheet-title:focus {
+  outline: none;
+}
+
 .play-sheet-close {
   min-height: var(--tap-target);
   padding: 0 var(--space-small);

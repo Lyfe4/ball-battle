@@ -1,6 +1,7 @@
 import './style.css';
 import { screenKeyOf } from './app/history-rules.ts';
 import { createMoves } from './app/moves.ts';
+import { showWhenLaidOut } from './app/first-paint.ts';
 import { createNavigation } from './app/navigation.ts';
 import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
 import { ONLINE_BUILD } from './app/online-build.ts';
@@ -38,7 +39,8 @@ import { installSymbolTooltips } from './ui/symbol-tooltip.ts';
 import { installFrameMeter } from './ui/frame-meter.ts';
 import { createFrameTip } from './ui/frame-tip.ts';
 
-// Sound waits for the first tap (sound.ts); a finger's tap shows on what it presses (press.ts).
+// Sound waits for the first tap (sound.ts); a finger's tap shows on what it presses, and never as
+// a focus ring (press.ts).
 installSound(storage);
 installPressFeedback();
 const stage = getElement('stage', HTMLElement);
@@ -351,3 +353,5 @@ navigation.onChange(showCurrentRoute);
 // Something is on the arena from the first frame: the link's match (its URL corrected if an id was
 // invalid), or a match behind a setup screen, which keeps its own URL; home puts on its demo.
 router.show(initialRoute);
+// The first screen is laid out: the stage shows in one frame, in the font (ADR 0087).
+showWhenLaidOut(window, stage, arena.fit);

@@ -7,16 +7,34 @@ export interface CanvasSize {
   readonly cssPixels: number;
 }
 
+/** A canvas kept to its container: `fit` sizes it to the layout now, `stop` stops watching. */
+export interface CanvasFit {
+  fit(): void;
+  stop(): void;
+}
+
+/** The container's content box (its padding is the page gutter), as a ResizeObserver reports it. */
+function contentSizeOf(container: HTMLElement): { width: number; height: number } {
+  const style = getComputedStyle(container);
+  const px = (value: string) => Number.parseFloat(value) || 0;
+  return {
+    width: container.clientWidth - px(style.paddingLeft) - px(style.paddingRight),
+    height: container.clientHeight - px(style.paddingTop) - px(style.paddingBottom),
+  };
+}
+
 /**
  * Keeps a square canvas as large as fits inside `container`, with a backing store sized for the
  * device pixel ratio so lines stay sharp on high-density screens. Calls `onResize` whenever the
- * size changes. Returns a function that stops watching.
+ * size changes. It is sized at once, from the layout as it stands, so nothing is ever drawn at the
+ * canvas's default 300 x 150 (ADR 0087); `fit` sizes it again from the layout, for the moment a
+ * screen is laid out before a resize observer has said so.
  */
 export function fitCanvasToContainer(
   canvas: HTMLCanvasElement,
   container: HTMLElement,
   onResize: (size: CanvasSize) => void,
-): () => void {
+): CanvasFit {
   let cssWidth = 0;
   let cssHeight = 0;
 
@@ -33,6 +51,12 @@ export function fitCanvasToContainer(
     }
     onResize({ pixels, cssPixels: cssSize });
   };
+
+  const fit = (): void => {
+    ({ width: cssWidth, height: cssHeight } = contentSizeOf(container));
+    apply();
+  };
+  fit();
 
   const resizeObserver = new ResizeObserver(([entry]) => {
     if (entry === undefined) return;
@@ -57,8 +81,11 @@ export function fitCanvasToContainer(
   }
   watchPixelRatio();
 
-  return () => {
-    resizeObserver.disconnect();
-    pixelRatioQuery?.removeEventListener('change', onPixelRatioChange);
+  return {
+    fit,
+    stop: () => {
+      resizeObserver.disconnect();
+      pixelRatioQuery?.removeEventListener('change', onPixelRatioChange);
+    },
   };
 }

@@ -231,13 +231,8 @@
   box-shadow: none;
 }
 
-.play-box:focus-visible {
+:where(:root:not([data-input='pointer'])) .play-box:focus-visible {
   box-shadow: var(--shadow-slab), var(--focus-ring);
-}
-
-/* Focused on arrival for the keyboard, ringed only once a key is pressed (home.ts). */
-.home-play[data-quiet-focus]:focus-visible {
-  box-shadow: var(--shadow-accent-slab);
 }
 
 .home-play-meta[hidden] {

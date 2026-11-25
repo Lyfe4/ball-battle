@@ -22,6 +22,42 @@
     max(var(--space-gutter), env(safe-area-inset-bottom)) var(--stage-left);
 }
 
+/*
+ * The first paint is the real frame (ADR 0087): laid out but transparent until the first screen is
+ * (first-paint.ts), so the boot box and the canvas's default size are never seen moving. Transparent
+ * rather than hidden: a screen focuses its first control as it opens, and a hidden one can't take
+ * focus. If the script never gets there, the stage and a line to reload show after --boot-safety.
+ */
+.stage[data-booting] {
+  opacity: 0;
+  animation-name: boot-safety;
+  animation-delay: var(--boot-safety);
+  animation-fill-mode: forwards;
+}
+
+.boot-fallback {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: var(--space-gutter);
+  text-align: center;
+  color: var(--color-text-muted);
+  opacity: 0;
+  pointer-events: none;
+  animation-name: boot-safety;
+  animation-delay: var(--boot-safety);
+  animation-fill-mode: forwards;
+}
+
+@keyframes boot-safety {
+  to {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .arena-container {
   /* Square by default, but allowed to shrink when the HUD needs the height. */
   flex: 0 1 auto;

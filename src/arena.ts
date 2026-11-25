@@ -83,6 +83,8 @@ export interface Arena {
   countdown(text: string | undefined): void;
   /** Draws the match on screen again (e.g. after the HUD changed around it). */
   redraw(): void;
+  /** Sizes the canvas to the layout as it stands and draws it: the first screen is laid out. */
+  readonly fit: () => void;
   /** The sim's latest world. */
   world(): WorldState;
   /** Focuses what the player does next: Fight! when the match waits on it, else the arena. */
@@ -322,7 +324,7 @@ export function createArena(
     lastFrameMs = undefined;
   });
 
-  fitCanvasToContainer(canvas, container, (size) => {
+  const canvasFit = fitCanvasToContainer(canvas, container, (size) => {
     canvasView = { canvasPixels: size.pixels, cssPixels: size.cssPixels };
     render();
   });
@@ -384,6 +386,9 @@ export function createArena(
       ready.countdown(text);
     },
     redraw: render,
+    fit: () => {
+      canvasFit.fit();
+    },
     focus() {
       if (!ready.focus()) canvas.focus();
     },

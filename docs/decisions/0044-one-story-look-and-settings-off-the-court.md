@@ -6,6 +6,7 @@
   legend's look, §5 the consistency flow also compares rendered looks), ADR 0040 (§ one panel:
   where it is placed, a compact form, the match waits under it, and a tap outside returns focus)
 - Amended by: ADR 0054 (§3: only an offline match waits; a live one never does)
+- Amended by: ADR 0086 (the menu and the legend close with the shared ×)
 
 ## Context
 

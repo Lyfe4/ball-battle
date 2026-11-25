@@ -231,7 +231,7 @@
 
 .lineup-level-chevron {
   font-family: var(--font-family-symbol);
-  transition: transform 120ms ease;
+  transition: transform var(--motion-quick) var(--ease-out);
 }
 
 .lineup-level-toggle[aria-expanded='true'] .lineup-level-chevron {

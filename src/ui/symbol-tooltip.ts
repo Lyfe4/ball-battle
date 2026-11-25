@@ -7,6 +7,7 @@
 // There is no press-and-hold: on phones it opened the browser's own selection menu instead.
 // One tooltip serves the whole page, found by event delegation on `[data-symbol]`, so a screen only
 // names its symbols (`markSymbol`) and never wires a tooltip of its own.
+import { keyboardFocused } from '../app/input-modality.ts';
 import { element } from './dom.ts';
 import { tooltipLines, type SymbolKey } from './symbols.ts';
 import { placeTooltip } from './tooltip-place.ts';
@@ -135,8 +136,8 @@ export function installSymbolTooltips(doc: Document = document): void {
   });
   doc.addEventListener('focusin', (event) => {
     const target = event.target;
-    // Keyboard focus only: a tap or a click focuses without :focus-visible.
-    if (!(target instanceof HTMLElement) || !target.matches(':focus-visible')) return;
+    // Keyboard focus only: after a tap or a click, even where WebKit calls a script's focus visible.
+    if (!(target instanceof HTMLElement) || !keyboardFocused(target, doc)) return;
     const scope = target.closest(SCOPE) ?? target;
     const symbols = symbolsIn(scope);
     if (symbols.length > 0) show(scope, symbols);
