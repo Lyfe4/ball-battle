@@ -85,6 +85,7 @@ describe('the bundle check', () => {
       'let n=await S(e.api(`POST`,`friends`,{to:t}));n!==',
       'let n=await e.api(`GET`,`friends`);n.ok?(h.hidde',
       'c(){let e=await $(`GET`,`me/inbox`);if(!e.ok||e.body===',
+      'load:()=>a(`GET`,`me/record`),open:t.openSeries',
     ]) {
       expect(problemsIn('main.js', text, true, false), text).toHaveLength(1);
     }
