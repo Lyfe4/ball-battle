@@ -44,7 +44,7 @@ export interface OnlineMount {
     ScreenHandlers,
     'online' | 'challenge' | 'send' | 'start' | 'signin' | 'friends'
   > &
-    Partial<Pick<ScreenHandlers, 'profile'>>;
+    Partial<Pick<ScreenHandlers, 'profile' | 'matches'>>;
   /** The avatar (accounts builds), for the shell to place in the tab screens' lead slot. */
   readonly avatars: Pick<Avatars, 'head'> | undefined;
   /** Settings' online group, when there is one. */
@@ -294,6 +294,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       signin: screens.signin,
       friends: screens.friends,
       ...(screens.profile === undefined ? {} : { profile: screens.profile }),
+      ...(screens.matches === undefined ? {} : { matches: screens.matches }),
     },
     avatars,
     // With accounts, everything about the player is on the account screen; settings are this

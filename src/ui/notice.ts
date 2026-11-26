@@ -230,6 +230,9 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       }
       if (content.more !== undefined && content.more.length > 0) {
         const more = element('div', 'notice-more');
+        if (content.moreTitle !== undefined) {
+          more.append(element('h2', 'friends-group-title notice-more-title', content.moreTitle));
+        }
         for (const spec of content.more) {
           const action = element('button', 'sheet-row', spec.text);
           action.type = 'button';

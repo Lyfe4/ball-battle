@@ -15,13 +15,12 @@ import type { SeriesView } from '../api/series.ts';
 import { currentMatch, writeMatchParams, type MatchPlace } from './current-match.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
-import { logOut } from './log-out.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
 import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
 import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
 import { writeShellParams } from '../app/route.ts';
 import { createFriendsTab } from './friends-tab.ts';
-import { createProfile } from './profile.ts';
+import { createProfileScreens } from './profile-screens.ts';
 import { createSignIn } from './sign-in.ts';
 import type { WhoSource } from '../app/who-source.ts';
 import { createPrimer } from './online-prime.ts';
@@ -67,6 +66,8 @@ export interface OnlineScreens {
   readonly signin: ScreenHandler<'signin'>;
   /** Profile (ADR 0081), in accounts builds; elsewhere the shell's route sends it home. */
   readonly profile?: ScreenHandler<'profile'>;
+  /** All matches (ADR 0089), opened from Profile: accounts builds only, as Profile. */
+  readonly matches?: ScreenHandler<'matches'>;
   /** The Friends tab (ADR 0081): every online build. */
   readonly friends: ScreenHandler<'friends'>;
   readonly play: OnlinePlay;
@@ -109,6 +110,7 @@ export function createOnlineScreens(
   const signInLoading = section('online-signin-loading', 'Sign in');
   const profileNotice = section('online-profile', 'Profile');
   const profileLoading = section('online-profile-loading', 'Profile');
+  const matchesRoot = section('online-matches', 'All matches');
   const friendsRoot = section('online-friends', 'Friends');
   const exit = element('div', 'series-exit');
   exit.hidden = true;
@@ -125,6 +127,7 @@ export function createOnlineScreens(
     signInLoading,
     profileNotice,
     profileLoading,
+    matchesRoot,
     friendsRoot,
   ]) {
     hud.insertBefore(node, status);
@@ -236,22 +239,19 @@ export function createOnlineScreens(
       )
     : undefined;
 
-  // Profile (ADR 0081), as the sign-in screen: only in a build with accounts.
-  const profile = ACCOUNTS_BUILD
-    ? createProfile(
-        { notice: profileNotice, loading: profileLoading },
+  // Profile and All matches (ADR 0081, 0089), as the sign-in screen: only in a build with accounts.
+  const accountScreens = ACCOUNTS_BUILD
+    ? createProfileScreens(
+        { notice: profileNotice, loading: profileLoading, matches: matchesRoot },
         {
           ...player,
+          navigation: host.navigation,
+          go: (write) => {
+            host.go(write);
+          },
+          lookup,
           back: backHome,
           home,
-          signIn: () => {
-            host.go(writeSignInParams);
-          },
-          cookies: () => document.cookie,
-          logOut: () => logOut(host.storage, startAfresh),
-          forget: () => forgetMeHost(host.storage, startAfresh).forget(),
-          lookup,
-          // A finished series' own screen, once read (online-prime.ts): Watch again there.
           openSeries: (id) => toMatch({ kind: 'series', id }),
         },
       )
@@ -312,15 +312,9 @@ export function createOnlineScreens(
         signIn?.show(route.google);
       },
     },
-    ...(profile === undefined
+    ...(accountScreens === undefined
       ? {}
-      : {
-          profile: {
-            show: () => {
-              profile.show();
-            },
-          },
-        }),
+      : { profile: accountScreens.profile, matches: accountScreens.matches }),
     friends: {
       show: () => {
         friendsTab.show();
@@ -332,7 +326,7 @@ export function createOnlineScreens(
     setVisible(screen) {
       friendsTab.setVisible(screen === 'friends');
       signIn?.setVisible(screen === 'signin');
-      profile?.setVisible(screen === 'profile');
+      accountScreens?.setVisible(screen);
       challenges.setVisible(screen === 'challenge' || screen === 'send' || screen === 'start');
       play.setVisible(screen === 'online');
     },

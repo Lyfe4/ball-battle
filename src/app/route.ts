@@ -45,15 +45,15 @@ export type Route =
    */
   | { readonly screen: 'outdated'; readonly kind: 'match' | 'series'; readonly made: number }
   /**
-   * The shell's screens (ADR 0081): the Friends tab (online builds), Profile and the Ranks tab
-   * (builds with accounts). Elsewhere their URLs open home.
+   * The shell's screens (ADR 0081): the Friends tab (online builds), Profile, the Ranks tab and All
+   * matches (ADR 0089; builds with accounts). Elsewhere their URLs open home.
    */
   | { readonly screen: ShellView }
   /** Online play (ADR 0052), only in builds that have it: a series, a challenge, sending one. */
   | OnlineRoute;
 
 /** The shell's screens a URL names by `?view=` (ADR 0081). */
-export const SHELL_VIEWS = ['friends', 'profile', 'ranks'] as const;
+export const SHELL_VIEWS = ['friends', 'profile', 'ranks', 'matches'] as const;
 export type ShellView = (typeof SHELL_VIEWS)[number];
 
 /** Where a best-of-3 screen is: the rules first, then the steps a link can name. */

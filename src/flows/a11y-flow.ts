@@ -7,6 +7,7 @@ import axe, { type Result } from 'axe-core';
 import { vi } from 'vitest';
 import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
+import { onStatsSheet, RECORD_ANSWERS } from './profile-answers.ts';
 import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
 import { settle, until, visible } from './page-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
@@ -25,6 +26,7 @@ const SIGNED_IN: OnlineAnswers = {
     outgoing: [{ id: 'o-1', name: 'Taylor' }],
     blocked: [],
   },
+  ...RECORD_ANSWERS,
 };
 
 /** One finding: where, which rule, how bad, and the first nodes it names. */
@@ -105,6 +107,11 @@ export async function walkA11y(signedIn: boolean): Promise<Finding[]> {
     }
     findings.push(...(await check(name)));
     if (signedIn && screen === 'friends') await sheets(findings);
+    if (signedIn && screen === 'profile') {
+      await onStatsSheet(async () => {
+        findings.push(...(await check('Your stats')));
+      });
+    }
   }
   await follow('');
   await onScreen('home');

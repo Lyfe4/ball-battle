@@ -7,5 +7,6 @@ export const NAVIGATING: Readonly<Record<string, string>> = {
   'play-box': 'opens What to play (a box drawn as a link, ADR 0081 addendum)',
   'home-link': 'Free play’s setup',
   'skeleton-home': 'home, from a screen still loading',
+  'profile-all': 'All matches, Profile’s own screen (ADR 0089)',
   'series-leave': 'home, from a series by turns (a live match’s is a button: it forfeits)',
 };

@@ -261,24 +261,13 @@ describe('the shell’s screens (ADR 0081)', () => {
     ['without online play (production today)', false, false],
   ] as const;
 
-  it('opens Friends in online builds, Profile and Ranks only with accounts, else home', () => {
+  it('opens Friends in online builds, Profile, Ranks and All matches only with accounts', () => {
+    const views = ['friends', 'profile', 'ranks', 'matches'] as const;
     const opens = (online: boolean, accounts: boolean) =>
-      ['view=friends', 'view=profile', 'view=ranks'].map((query) => as(query, online, accounts));
-    expect(opens(true, true)).toStrictEqual([
-      { screen: 'friends' },
-      { screen: 'profile' },
-      { screen: 'ranks' },
-    ]);
-    expect(opens(true, false)).toStrictEqual([
-      { screen: 'friends' },
-      { screen: 'home' },
-      { screen: 'home' },
-    ]);
-    expect(opens(false, false)).toStrictEqual([
-      { screen: 'home' },
-      { screen: 'home' },
-      { screen: 'home' },
-    ]);
+      views.map((view) => as(`view=${view}`, online, accounts).screen);
+    expect(opens(true, true)).toStrictEqual([...views]);
+    expect(opens(true, false)).toStrictEqual(['friends', 'home', 'home', 'home']);
+    expect(opens(false, false)).toStrictEqual(['home', 'home', 'home', 'home']);
   });
 
   it('round-trips each, over whatever screen the URL was on', () => {

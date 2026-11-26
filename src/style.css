@@ -40,7 +40,9 @@
 @import './ui/settings-sound.css';
 @import './ui/online/online.css';
 @import './ui/online/friends-section.css';
+@import './ui/online/match-row.css';
 @import './ui/online/profile-record.css';
+@import './ui/online/stats-sheet.css';
 @import './ui/symbol-tooltip.css';
 @import './ui/winner-sticker.css';
 @import './ui/sticker.css';

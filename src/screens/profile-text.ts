@@ -1,5 +1,5 @@
-// What Profile says (ADR 0081, 0087): who the player is, then the account's own actions as rows and,
-// apart, the danger zone; for a guest, what signing in unlocks. The record (the stats card and
+// What Profile says (ADR 0081, 0087, 0089): who the player is, then the account's own actions as
+// rows under "Account" and, apart, the danger zone; for a guest, what signing in unlocks. The record (the stats card and
 // Recent matches, ADR 0088) is a part the screen draws itself (profile-record.ts), as are the legal
 // links. Pure, so every state is tested without a DOM.
 import type { NoticeButton, NoticeContent } from '../ui/notice-content.ts';
@@ -52,6 +52,7 @@ export function accountProfile(profile: AccountProfile): NoticeContent {
     body: [],
     buttons: [],
     more,
+    moreTitle: 'Account',
     danger,
     ...(profile.problem === undefined ? {} : { note: profile.problem }),
   };

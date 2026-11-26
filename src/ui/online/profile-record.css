@@ -1,7 +1,9 @@
 /*
- * An account's record on Profile (profile-record.ts, ADR 0088): the stats card's three facts side
- * by side (the number big, its word under it), then Recent matches as the Friends tab's rows. The
- * facts keep their size while loading: placeholder blocks, shown only after SKELETON_AFTER_MS.
+ * An account's record on Profile (profile-record.ts, ADR 0088, 0089 A1): the record card's three
+ * facts side by side (the number big, its word under it), the whole card a button that opens Your
+ * stats; then Last matches as the Friends tab's rows (match-row.css), three on a phone and up to
+ * eight on a desktop, and All matches. The facts keep their size while loading: placeholder
+ * blocks, shown only after SKELETON_AFTER_MS. All matches (all-matches.ts) is last.
  */
 .profile-record {
   display: grid;
@@ -16,6 +18,49 @@
   column-gap: var(--space-group);
   gap: var(--space-gap);
   margin: 0;
+}
+
+/* The card as a button: the card's look, its words left, "More stats" at the head's end. */
+button.profile-stats {
+  display: grid;
+  gap: var(--space-small);
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-large);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  button.profile-stats:hover {
+    background: var(--color-raised);
+  }
+}
+
+button.profile-stats[data-pressed] {
+  background: var(--color-raised);
+}
+
+:where(:root:not([data-input='pointer'])) button.profile-stats:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.profile-stats-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
+/* The link's look and its chevron (.text-link), quiet: the whole card is what is pressed. */
+.profile-stats .profile-stats-more {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
 }
 
 .profile-fact {
@@ -78,30 +123,57 @@
   margin: 0;
 }
 
-/* A finished match's row: the name, Won or Lost and the score under it, the date and how at the end. */
-.profile-match .friends-open {
+/* Last matches: three on a phone and beside; up to eight on a desktop, two columns. */
+.profile-recent .profile-match:nth-child(n + 4) {
+  display: none;
+}
+
+/* Flush with the heading and rows above it; a tap target tall. */
+.profile-all {
+  justify-self: start;
+  min-height: var(--tap-target);
+  padding: 0;
+}
+
+/* All matches (all-matches.ts): its line, the rows, then the loading row, the end or the failure. */
+.matches-body {
+  display: grid;
   gap: var(--space-gap);
 }
 
-.profile-match-result {
+.matches-line,
+.matches-end {
+  margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
-.profile-match-result[data-won='true'] {
-  color: var(--color-won);
+.matches-end {
+  padding: var(--space-small) 0 var(--space-group);
+  text-align: center;
 }
 
-.profile-match .friends-open::after {
-  margin-inline-start: 0;
+.matches-tail {
+  display: grid;
 }
 
-.profile-match-when {
-  flex: none;
-  margin-inline-start: auto;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  white-space: nowrap;
+.matches-loading {
+  margin: 0;
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .profile-recent .profile-match:nth-child(n + 4) {
+    display: flex;
+  }
+
+  /* Rows side by side: a row as wide as the frame puts its date far from its name. */
+  .profile-recent .friends-list,
+  .matches-list {
+    grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+    column-gap: var(--space-gap);
+  }
+
+  .profile-all[data-phone-only] {
+    display: none;
+  }
 }

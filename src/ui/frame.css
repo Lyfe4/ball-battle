@@ -49,7 +49,7 @@
   /* list (Friends, Ranks) and reading (sign-in, Profile, notices): one column from the left edge. */
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    :is(.friends-screen, .ranks-screen)
+    :is(.friends-screen, .ranks-screen, .matches-screen)
     > :not(.screen-header) {
     width: 100%;
     max-width: var(--col-list);
@@ -171,7 +171,7 @@
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    :is(.friends-screen, .ranks-screen)
+    :is(.friends-screen, .ranks-screen, .matches-screen)
     > :not(.screen-header) {
     max-width: none;
   }
@@ -238,72 +238,92 @@
     grid-area: 2 / 2;
   }
 
-  /* Profile: the reading line, the danger zone in the aside; the header row spans the frame. */
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card.notice {
-    grid-template-columns: minmax(0, var(--col-reading)) var(--col-aside) minmax(0, 1fr);
+  /*
+   * Profile (ADR 0089 A1): the matches in the main column, who you are, the record, the account and
+   * the danger zone in the aside, so nothing that matters is below the fold; the header row spans
+   * the frame. The notice's wrappers step aside so each part is a cell of the card's grid; the
+   * matches span every row, the last of which takes what the aside leaves.
+   */
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card.notice:has(.profile-record) {
+    grid-template-columns: minmax(0, 1fr) var(--col-aside);
+    grid-template-rows: auto repeat(5, auto) 1fr;
     column-gap: var(--space-columns);
     align-items: start;
   }
 
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    .profile-card.notice
+    .profile-card:has(.profile-record)
+    :is(.notice-body:has(> .profile-part), .profile-part, .profile-record, .notice-after) {
+    display: contents;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card.notice:has(.profile-record)
     > :not(.screen-header),
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    .profile-card
+    .profile-card:has(.profile-record)
     .notice-after
-    > * {
-    grid-column: 1;
+    > *,
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card:has(.profile-record)
+    .profile-identity,
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card:has(.profile-record)
+    .profile-record
+    > .friends-card {
+    grid-column: 2;
+    width: auto;
+    max-width: none;
   }
 
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .screen-header {
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card:has(.profile-record)
+    .notice-after
+    > *
+    + * {
+    margin-top: var(--space-group);
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card:has(.profile-record)
+    .screen-header {
     grid-column: 1 / -1;
   }
 
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    .profile-card
-    .notice-after:not([hidden]) {
-    display: contents;
-  }
-
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .notice-danger {
-    grid-area: 3 / 2 / span 3;
-    margin-top: var(--space-group);
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  /*
-   * Profile's record (ADR 0088): the stats card (or its failure card) in the aside above the
-   * danger zone, Recent matches in the reading line under who you are. Their wrappers step aside
-   * so each is a cell of the card's grid.
-   */
+    .profile-card:has(.profile-record)
+    .profile-recent,
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    .profile-card
-    :is(.notice-body:has(> .profile-part), .profile-part, .profile-record) {
-    display: contents;
+    .profile-card:has(.profile-record)
+    .profile-record[data-empty]
+    > .friends-card {
+    grid-area: 2 / 1 / -1;
   }
 
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    .profile-card
-    .profile-identity,
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .profile-recent {
-    grid-column: 1;
-  }
-
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .profile-recent {
-    margin-top: var(--space-group);
-  }
-
-  body[data-shell]:not([data-shell='fight'])
-    .stage:not([data-home])
-    .profile-card
+    .profile-card:has(.profile-record)
     .profile-record
     > .friends-card {
-    grid-area: 2 / 2;
+    margin-top: var(--space-group);
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card:has(.profile-record)
+    .notice-danger {
+    padding-top: var(--space-group);
+    border-top: 1px solid var(--color-raised);
   }
 }

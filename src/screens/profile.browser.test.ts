@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Fetch } from '../app/api.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
+import { recordFixture } from '../api/record-support.ts';
 import { createProfile, type ProfileHost } from './profile.ts';
 import { callApi } from '../app/api.ts';
 import { createVisitCache } from '../app/visit-cache.ts';
@@ -89,7 +90,9 @@ function showKnown(known: WhoAmI, answer: Promise<WhoAmI>): void {
       forget: () => Promise.resolve(undefined),
       lookup: BALL_LOOKUP,
       openSeries: () => Promise.resolve(),
-      send: () => Promise.resolve(json(200, { wins: 0, played: 0, favourite: null, recent: [] })),
+      allMatches: () => undefined,
+      send: () =>
+        Promise.resolve(json(200, recordFixture({ wins: 0, played: 0, favourite: null }))),
     },
   );
   screen.setVisible(true);
@@ -108,7 +111,7 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
     asked.push(`${init.method ?? 'GET'} ${path}`);
     if (path === 'me') return Promise.resolve(json(...me));
     if (path === 'me/record') {
-      return Promise.resolve(json(200, { wins: 0, played: 0, favourite: null, recent: [] }));
+      return Promise.resolve(json(200, recordFixture({ wins: 0, played: 0, favourite: null })));
     }
     return Promise.resolve(json(404, { error: { code: 'not_found', message: 'no' } }));
   };
@@ -135,6 +138,7 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
       },
       lookup: BALL_LOOKUP,
       openSeries: () => Promise.resolve(),
+      allMatches: () => done.push('all matches'),
       send,
     },
   );
@@ -156,6 +160,7 @@ describe('Profile', () => {
     // The record's card (ADR 0088), no primary for the name: rows, then the danger zone.
     await until(() => texts('.profile-empty').length === 1, 'the empty record');
     expect(texts('.notice .hud-button-primary')).toStrictEqual([]);
+    expect(texts('.notice-more-title')).toStrictEqual(['Account']);
     expect(texts('.notice-more button')).toStrictEqual(['Change username', 'Log out']);
     expect(texts('.notice-danger .danger-row')).toStrictEqual(['Delete account']);
     expect(texts('.profile-legal a')).toStrictEqual(['Privacy', 'Terms']);
