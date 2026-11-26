@@ -56,7 +56,7 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     const vsBot = { opponent: 'bot', bot, friend } as const;
     expect(boxWho(vsBot)).toBe('vs Normal bot');
     expect(boxRules(vsBot)).toBe('Best of 5 · Reveal');
-    expect(boxSpoken(vsBot)).toBe('What to play: vs Normal bot, Best of 5, Reveal');
+    expect(boxSpoken(vsBot)).toBe('vs Normal bot, Best of 5 · Reveal: what to play');
     // Blind has no level to name.
     const blind = { ...vsBot, bot: { ...bot, format: 'blind' } } as const;
     expect(boxWho(blind)).toBe('vs Bot');
@@ -64,7 +64,7 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     const vsFriend = { opponent: 'friend', bot, friend } as const;
     expect(boxWho(vsFriend)).toBe('vs Friend');
     expect(boxRules(vsFriend)).toBe('Live · Best of 3 · Reveal');
-    expect(boxSpoken(vsFriend)).toBe('What to play: vs Friend, live, Best of 3, Reveal');
+    expect(boxSpoken(vsFriend)).toBe('vs Friend, Live · Best of 3 · Reveal: what to play');
     expect(friendPlaySpoken({ format: 'showdown', bestOf: 5 })).toBe(
       'Play a friend live, Best of 5, Showdown: send them a link',
     );

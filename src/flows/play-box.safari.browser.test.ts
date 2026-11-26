@@ -162,7 +162,9 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(visible('.home-link').map((link) => link.textContent)).toStrictEqual(['Free play']);
     expect(boxSays()).toStrictEqual({ who: 'vs Normal bot', rules: 'Best of 3 · Reveal' });
     expect(box().getAttribute('aria-haspopup')).toBe('dialog');
-    expect(box().getAttribute('aria-label')).toBe('What to play: vs Normal bot, Best of 3, Reveal');
+    expect(box().getAttribute('aria-label')).toBe(
+      'vs Normal bot, Best of 3 · Reveal: what to play',
+    );
     expect(play().textContent.trim()).toBe('Play');
     expect(play().getAttribute('aria-label')).toBe(
       'Play Best of 3, Reveal, against the Normal bot',
