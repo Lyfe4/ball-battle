@@ -158,26 +158,10 @@ export async function markMade(
     where id = ${id} and series_id is null`;
 }
 
-/** The player's start not yet made into a series, if any (one live match at a time). */
-export async function openStartOf(db: Db, player: string): Promise<string | undefined> {
-  const [row] = await db<{ id: string }[]>`
-    select id from game.starts
-    where series_id is null and (player_a = ${player} or player_b = ${player})
-    order by agreed_at desc limit 1`;
-  return row?.id;
-}
-
 /** Starts whose clock has run out and nobody has made into a series yet (the sweep). */
 export async function startsToSettle(sql: Sql, limit = 100): Promise<string[]> {
   const rows = await sql<{ id: string }[]>`
     select id from game.starts where series_id is null and deadline_at <= now()
     order by deadline_at limit ${limit}`;
   return rows.map((row) => row.id);
-}
-
-/** The start a rematch of `seriesId` made, if any. */
-export async function startOfRematch(db: Db, seriesId: string): Promise<string | undefined> {
-  const [row] = await db<{ id: string }[]>`
-    select id from game.starts where rematch_of = ${seriesId}`;
-  return row?.id;
 }

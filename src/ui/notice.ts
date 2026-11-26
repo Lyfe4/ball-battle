@@ -10,7 +10,7 @@ import { createScreenHeader } from './screen-header.ts';
 import type { NoticeContent, NoticeField } from './notice-content.ts';
 import { createSticker } from './sticker.ts';
 
-export type { NoticeButton, NoticeContent, NoticeField } from './notice-content.ts';
+export type { NoticeContent, NoticeField } from './notice-content.ts';
 
 export interface Notice {
   readonly element: HTMLElement;
