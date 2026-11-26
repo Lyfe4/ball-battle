@@ -20,6 +20,8 @@ export interface PlaySheetActions {
   readonly onChange: (choice: PlayChoice) => void;
   /** It closed, by any way out: focus goes back to what opened it. */
   readonly onClosed: () => void;
+  /** "Who do you want to play?" (accounts builds, ADR 0089): a row under Against a friend. */
+  readonly who?: { readonly label: string; readonly open: () => void };
 }
 
 /**
@@ -123,8 +125,19 @@ export function createPlaySheet(
     },
   );
 
+  // Who, against a friend (ADR 0089): the sheet that picks them, in this one's place.
+  const onWho = actions.who;
+  const who = element('button', 'sheet-row play-sheet-who', onWho?.label ?? '');
+  who.type = 'button';
+  // Named by its words alone: the chevron a row that opens something draws is decoration.
+  who.setAttribute('aria-label', onWho?.label ?? '');
+  who.dataset['opens'] = '';
+  who.addEventListener('click', () => {
+    sheet.close();
+    onWho?.open();
+  });
   const groups = element('div', 'play-sheet-groups');
-  groups.append(againstRoot, lengthRoot, formatRoot, levelRoot);
+  groups.append(againstRoot, who, lengthRoot, formatRoot, levelRoot);
   sheet.content.append(groups);
 
   function render(): void {
@@ -135,6 +148,7 @@ export function createPlaySheet(
     formatsFor(choice.opponent).select(current.format);
     level.select(choice.bot.level);
     levelRoot.hidden = choice.opponent !== 'bot' || !botChooses(choice.bot.format);
+    who.hidden = choice.opponent !== 'friend' || onWho === undefined;
   }
 
   return {

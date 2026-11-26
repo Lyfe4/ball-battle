@@ -83,6 +83,10 @@ describe('moveFor', () => {
     ['friends', 'profile', 'home', 'push'],
     ['manual-entry', 'profile', 'manual', 'push'],
     ['profile', 'manual-entry', 'manual-entry', 'return'],
+    // All matches (ADR 0089): a step above Profile, Back to it.
+    ['profile', 'matches', 'friends', 'push'],
+    ['matches', 'profile', 'profile', 'return'],
+    ['matches', 'friends', 'profile', 'push'],
   ];
   it.each(cases)('%s → %s (came from %s): %s', (from, to, previous, move) => {
     expect(moveFor(from, to, previous)).toBe(move);
@@ -290,6 +294,20 @@ describe('Back with the shell’s tabs (ADR 0081)', () => {
     navigation.go(writeHomeParams);
     expect(query(history.href())).toBe('');
     expect(history.entries).toHaveLength(1);
+  });
+
+  it('opens All matches a step above Profile, and Back returns to Profile', () => {
+    const { to, back, at, entries } = shell();
+    to('friends');
+    to('profile');
+    to('matches');
+    expect(at()).toBe('?view=matches');
+    back();
+    expect(at()).toBe('?view=profile');
+    to('matches');
+    to('profile');
+    back();
+    expect([at(), entries.length]).toStrictEqual(['?view=friends', 4]);
   });
 
   it('returns from Profile to the screen it was opened on', () => {

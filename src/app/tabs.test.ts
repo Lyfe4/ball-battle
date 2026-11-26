@@ -13,6 +13,7 @@ const SCREENS: Readonly<Record<ScreenKey, ShellKind>> = {
   ranks: 'tab',
   'manual-entry': 'browse',
   profile: 'browse',
+  matches: 'browse',
   pick: 'task',
   'series-rules': 'task',
   send: 'task',

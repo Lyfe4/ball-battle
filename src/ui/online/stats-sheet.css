@@ -1,0 +1,48 @@
+/*
+ * Your stats (stats-sheet.ts, ADR 0089): a row each, its name left and its value right, a rule
+ * between, then what counts in a quiet line.
+ */
+.stats-list {
+  display: grid;
+  margin: 0;
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
+  min-height: var(--tap-target);
+  border-bottom: 1px solid var(--color-raised);
+}
+
+.stats-row:last-child {
+  border-bottom: 0;
+}
+
+.stats-label {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.stats-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  margin: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.stats-icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.stats-note {
+  margin: var(--space-small) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}

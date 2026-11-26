@@ -1,6 +1,8 @@
 // What the friend challenge screens (online-challenge.ts) need from the page, and what they offer
 // it: kept apart so the screens' file holds only their behaviour.
 import type { CurrentMatch } from '../api/live.ts';
+import type { ChallengeInfo } from '../api/challenges.ts';
+import type { FriendEntry } from '../api/friends.ts';
 import type { FriendSetup } from '../app/modes.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { BestOf, Format } from '../sim/series.ts';
@@ -24,6 +26,14 @@ export interface ChallengeHost {
   toMatch(match: CurrentMatch): Promise<void>;
   /** The sender's lobby waits for the friend (each of its asks): news is expected. */
   readonly lobbyWaits?: () => void;
+  /**
+   * What a lobby of a link to anyone shows after the link (ADR 0089, accounts builds): friends to
+   * challenge instead (`swap` stops the link and sends them one), or how to sign in for that.
+   */
+  readonly lobbyAfter?: (
+    card: ChallengeInfo,
+    swap: (friend: FriendEntry) => Promise<void>,
+  ) => HTMLElement | undefined;
 }
 
 export interface ChallengeScreens {
@@ -36,7 +46,7 @@ export interface ChallengeScreens {
    * The Play tab's Play against a friend (ADR 0081 addendum): sent on `setup` with no rules step,
    * straight to the link to share; the 16+ question first on a device without a guest.
    */
-  playFriend(setup: FriendSetup): Promise<void>;
+  playFriend(setup: FriendSetup, friend?: FriendEntry): Promise<void>;
   /** The lineups picked together once a challenge or rematch is agreed (ADR 0080). */
   showStart(id: string): void;
   /** The ended series whose rematch's lineups show now, if any: it asks for itself. */

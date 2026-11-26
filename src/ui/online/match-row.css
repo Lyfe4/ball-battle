@@ -1,0 +1,69 @@
+/*
+ * One finished match (match-row.ts, ADR 0088, 0089): the opponent's disc, the name over "Won" as a
+ * filled tag or "Lost" as an outlined one (the word says it, never colour alone) and the score or
+ * whose forfeit it was, then the date over Live or By turns, and the row's chevron.
+ */
+.profile-match .friends-open {
+  gap: var(--space-gap);
+}
+
+/* On a raised row the disc sits on the page's colour, so it reads as a disc. */
+.profile-match .friends-disc {
+  background: var(--color-page);
+  box-shadow: inset 0 0 0 3px var(--color-page);
+}
+
+/* A deleted player's disc, quieter. */
+.profile-match .friends-disc[data-gone] {
+  color: var(--color-text-muted);
+}
+
+.profile-match-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-width: 0;
+}
+
+.profile-match-result {
+  flex: none;
+  padding: 0 8px;
+  border: 2px solid currentcolor;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.profile-match-result[data-won='true'] {
+  border-color: var(--color-won);
+  background: var(--color-won);
+  color: var(--color-page);
+}
+
+.profile-match-detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-match .friends-open::after {
+  margin-inline-start: 0;
+}
+
+.profile-match-when {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 2px;
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}

@@ -75,6 +75,7 @@ export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
     'friends',
     'profile',
     'ranks',
+    'matches',
   ].includes(screen);
 }
 
@@ -165,6 +166,7 @@ const TITLES: Readonly<Record<Screen, string>> = {
   friends: 'Friends · BallBattle',
   profile: 'Profile · BallBattle',
   ranks: 'Ranks · BallBattle',
+  matches: 'All matches · BallBattle',
 };
 
 /** Every screen the router knows (a table keyed by `Screen` lists them all). */

@@ -1,8 +1,8 @@
-// Profile (ADR 0081, 0087, accounts builds): who the player is and the account's own
+// Profile (ADR 0081, 0087, 0089 A1, accounts builds): who the player is and the account's own
 // actions, which it shares with the sign-in screen (account-step.ts): the username, Log out and
 // Delete account; for a guest, what signing in unlocks, Sign in and Forget me. It reads `/me` once
 // when it opens (who-source.ts, shared with the avatar), and for an account its record
-// (`/me/record`, ADR 0088: the stats card and Recent matches, profile-record.ts).
+// (`/me/record`, ADR 0088, 0089: the record card, Last matches and All matches ›, profile-record.ts).
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { WhoSource } from '../app/who-source.ts';
@@ -34,6 +34,8 @@ export interface ProfileHost {
   readonly lookup: DefinitionLookup;
   /** Opens a finished online series' own screen (ADR 0088), once it is read. */
   readonly openSeries: (id: string) => Promise<unknown>;
+  /** All matches, its own screen (ADR 0089). */
+  readonly allMatches: () => void;
   /** The page's fetch; tests give their own. */
   readonly send?: Fetch;
 }
@@ -83,6 +85,7 @@ export function createProfile(
     lookup: host.lookup,
     load: () => api<RecordResponse>('GET', 'me/record'),
     open: host.openSeries,
+    allMatches: host.allMatches,
   });
 
   let visible = false;
@@ -178,6 +181,8 @@ export function createProfile(
       if (!next) {
         roots.notice.hidden = true;
         roots.loading.hidden = true;
+        // Your stats belongs to Profile: leaving (Back, a tab) closes it.
+        record.close();
       }
     },
   };

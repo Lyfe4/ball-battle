@@ -13,6 +13,7 @@ import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { settle, until, visible } from './page-support.ts';
 import { NAVIGATING } from '../ui/text-links-support.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
+import { onStatsSheet, onWhoSheet, RECORD_ANSWERS } from './profile-answers.ts';
 import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
@@ -39,6 +40,7 @@ const SIGNED_IN = {
     outgoing: [{ id: 'o-1', name: 'Taylor' }],
     blocked: [],
   },
+  ...RECORD_ANSWERS,
 };
 
 const laidOut = (node: Element): node is HTMLElement =>
@@ -188,6 +190,12 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
         await checkSheet(person, problems);
       }
     }
+    if (signedIn && screen === 'profile') {
+      await onStatsSheet(() => {
+        problems.push(...controlProblems('Your stats', scopeNow()));
+        return Promise.resolve();
+      });
+    }
   }
   // The settings menu, open over Play (2026-11-27): its rows and switches are controls too.
   await follow('');
@@ -199,6 +207,12 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
   if (menu !== undefined) problems.push(...controlProblems('the settings menu', menu));
   visible('.settings-toggle')[0]?.click();
   await settle();
+  if (signedIn) {
+    await onWhoSheet(() => {
+      problems.push(...controlProblems('Who do you want to play?', scopeNow()));
+      return Promise.resolve();
+    });
+  }
   // Every online state, signed in (a guest's are the same screens).
   if (signedIn) {
     await walkOnline(api, (state) => {

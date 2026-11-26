@@ -221,6 +221,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       const rest: HTMLElement[] = [];
       if (content.link !== undefined) rest.push(linkPart(content.link));
       if (content.note !== undefined) rest.push(element('p', 'notice-text', content.note));
+      if (content.after instanceof HTMLElement) rest.push(content.after);
       if (content.quiet !== undefined) {
         const quiet = element('button', 'hud-button notice-quiet', content.quiet.text);
         quiet.type = 'button';
@@ -230,6 +231,9 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       }
       if (content.more !== undefined && content.more.length > 0) {
         const more = element('div', 'notice-more');
+        if (content.moreTitle !== undefined) {
+          more.append(element('h2', 'friends-group-title notice-more-title', content.moreTitle));
+        }
         for (const spec of content.more) {
           const action = element('button', 'sheet-row', spec.text);
           action.type = 'button';

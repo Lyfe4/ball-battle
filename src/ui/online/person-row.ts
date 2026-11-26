@@ -1,6 +1,7 @@
 // A person's row on the Friends tab (ADR 0086): their disc, name and status (a dot only on a
 // friend's status line), the whole row opening their sheet, and at most one inline action, only
-// where it can succeed: Accept and Decline for a request, Challenge for a friend online.
+// where it can succeed: Accept and Decline for a request, Challenge for a friend online (and, in
+// "Who do you want to play?", Play by turns for one who isn't, ADR 0089).
 import type { FriendEntry } from '../../api/friends.ts';
 import { personStatus, type FriendGroup } from '../../screens/friends-text.ts';
 import { busyOnClick } from '../busy-button.ts';
@@ -16,6 +17,11 @@ export interface PersonRowHost {
   readonly made: (method: 'POST' | 'DELETE', path: string) => () => Promise<boolean>;
   /** Challenge a friend online (the vs Friend setup), where the build offers it. */
   readonly challenge: ((friend: FriendEntry) => void) | undefined;
+  /**
+   * Play by turns with a friend who isn't online ("Who do you want to play?", ADR 0089), where the
+   * build plays by turns; the Friends tab offers it in the friend's sheet instead.
+   */
+  readonly turns?: (friend: FriendEntry) => void;
 }
 
 export function personRow(
@@ -59,6 +65,15 @@ export function personRow(
       challenge(friend);
     });
     actions.append(send);
+  } else if (kind === 'friend' && host.turns !== undefined) {
+    const turns = host.turns;
+    const play = element('button', 'hud-button friends-challenge', 'Play by turns');
+    play.type = 'button';
+    play.setAttribute('aria-label', `Play by turns with ${friend.name}`);
+    play.addEventListener('click', () => {
+      turns(friend);
+    });
+    actions.append(play);
   }
   return item;
 }

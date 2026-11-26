@@ -3,6 +3,7 @@
 - Status: Accepted (2026-11-25), the owner's answers to `docs/hosting-cost-proposal.md` section 8.
   Built: the series read in one query and the pick in two (decision 4).
 - Date: 2026-11-25
+- Amended by: ADR 0089 (addendum: All matches, a page at a time)
 - Amends: ADR 0052 (section 11, decision 6: "Move to Personal when the first functions go live in
   production" is replaced by the triggers below; "Cost, roughly" is superseded by the proposal's
   measured figures)
@@ -47,3 +48,15 @@ not before ~1,500 daily players or live ranked at scale), Fly.io.
 - ADR 0083's ranked ships after accounts are in production, so ranked arrives on Pro in Sydney.
 - Supabase stays on Free until its own trigger (the proposal's ~600-800 daily players for Realtime,
   or ADR 0052's launch plan for backups); the daily check now warns at 300 MB (ADR 0083).
+
+## Addendum (2026-11-27): All matches, a page at a time (ADR 0089)
+
+Profile's one read (`/me/record`, ADR 0088) now also carries "Your stats" and the cursor after its
+20 matches, in the same statement: still one call and one round trip per Profile visit. The rest
+of the history is `GET /api/v1/me/matches?after=<cursor>` (the same function as the record, so no
+second cold start), one statement and one counted read (`LIMITS.reads`) per page of 20, keyset on
+`(finished_at, id)` over the existing `series_finished_a` / `series_finished_b` indexes. A page is
+read only when a player opens All matches and scrolls past what the record already holds; a
+player with 20 or fewer matches never asks for one. Against the estimate (63 / 140 calls a
+player-day) this is noise: a page is a deliberate scroll, not a poll, and nothing reads it in the
+background.

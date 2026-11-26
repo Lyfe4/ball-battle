@@ -17,6 +17,8 @@ import { generateSeed } from '../app/fresh-seed.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { SeriesState } from '../sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
+import { CHOOSE_WHO, type FriendBox } from './who-text.ts';
+import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { createWorld } from '../sim/world.ts';
 import { createHome } from '../ui/home.ts';
 
@@ -34,10 +36,16 @@ export interface HomeHost {
   /** Forgets the held series (New series opens Play's lineup after it). */
   forget(): void;
   /**
-   * Play against a friend (online builds): a live challenge on these rules, straight to the link
-   * to share, the 16+ question first on a device without a guest. Busy until it shows.
+   * Play against a friend (online builds; made after home, so asked for when needed): signed in,
+   * the friend last picked or "Who do you want to play?" (ADR 0089), else a live challenge on these
+   * rules straight to the link to share, the 16+ question first on a device without a guest. Busy
+   * until it shows. The box says the friend picked; What to play offers to choose another.
    */
-  playFriend(setup: FriendSetup): Promise<void>;
+  friends(): {
+    playFriend(setup: FriendSetup): Promise<void>;
+    readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
+    readonly chooseWho?: () => void;
+  };
 }
 
 export interface HomeController {
@@ -73,7 +81,7 @@ export function createHomeController(
 
   const home = createHome(root, balls, PLAY_CHOICES, {
     onPlay: (choice) => {
-      if (choice.opponent === 'friend') return host.playFriend(choice.friend);
+      if (choice.opponent === 'friend') return host.friends().playFriend(choice.friend);
       if (host.held() !== undefined) host.resume();
       else play();
       return undefined;
@@ -92,6 +100,17 @@ export function createHomeController(
         writePickParams(url, demoAt(index).matchup);
       });
     },
+    friendBox: (setup) => host.friends().friendBox?.(setup),
+    ...(ACCOUNTS_BUILD
+      ? {
+          who: {
+            label: CHOOSE_WHO,
+            open: () => {
+              host.friends().chooseWho?.();
+            },
+          },
+        }
+      : {}),
     onWatch: () => {
       waiting = false;
       home.setWaiting(false);

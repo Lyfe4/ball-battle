@@ -34,8 +34,15 @@ export interface Sender {
   send(chosen: SetupChoices): Promise<void>;
   /** A challenge by turns with its sender's lineup (ADR 0085). */
   sendTurns(chosen: SetupChoices, lineup: Lineup): Promise<void>;
-  /** The Play tab's Play against a friend: no rules step. */
-  playFriend(setup: FriendSetup): Promise<void>;
+  /**
+   * The Play tab's Play against a friend: no rules step; to `friend` when one is picked (B1),
+   * `instead` of the link whose lobby was on screen.
+   */
+  playFriend(
+    setup: FriendSetup,
+    friend?: { readonly id: string; readonly name: string },
+    instead?: boolean,
+  ): Promise<void>;
   /**
    * The friend the next challenge is for (a friend row's Challenge), or none; `turns` when it is
    * Play by turns from their sheet (ADR 0085): the send screen goes straight on to the lineup.
@@ -54,6 +61,8 @@ export function createSender(host: SenderHost): Sender {
   let inviting: { readonly id: string; readonly name: string } | undefined;
   let left: (() => void) | undefined;
   let straightToLineup = false;
+  /** The challenge being sent replaces a link's lobby (its Or challenge a friend, ADR 0089). */
+  let instead = false;
 
   /** Play's own step on the send screen, in place of its rules step. */
   function leave(show: () => void, chosen: SetupChoices): void {
@@ -97,7 +106,9 @@ export function createSender(host: SenderHost): Sender {
     if (link === undefined) return;
     requestId = crypto.randomUUID();
     // Sent to a friend from Friends: the lobby takes the setup's place, so Back from it is Friends.
-    const toFriend = inviting !== undefined;
+    // From Play's "Who do you want to play?" (ADR 0089) it is a step on from Play, as a link is;
+    // from a link's lobby (`instead`), the friend's lobby takes the link's place.
+    const toFriend = inviting !== undefined && (via !== 'play' || instead);
     inviting = undefined;
     // The sender's own card (the lobby) shares the link. It is read first, so the button stays
     // busy until the lobby can show.
@@ -117,8 +128,10 @@ export function createSender(host: SenderHost): Sender {
       return Promise.resolve();
     },
     sendTurns: (chosen, lineup) => send(chosen, 'setup', lineup),
-    async playFriend(setup) {
+    async playFriend(setup, friend, swapped = false) {
       const chosen: SetupChoices = { ...setup, level: '' };
+      if (friend !== undefined) inviting = friend;
+      instead = swapped;
       // With a guest, sent from home: Play stays busy until the lobby can show.
       if (hasGuest(host.storage)) {
         await send(chosen, 'play');

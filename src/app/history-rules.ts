@@ -32,7 +32,8 @@ export type ScreenKey =
   | 'signin'
   | 'friends'
   | 'profile'
-  | 'ranks';
+  | 'ranks'
+  | 'matches';
 
 export type Move = 'push' | 'replace' | 'return';
 

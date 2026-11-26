@@ -100,6 +100,7 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
       // never routes here (their URLs open home), so these are only the safe way out.
       friends: { show: host.goHome },
       profile: { show: host.goHome },
+      matches: { show: host.goHome },
     },
     holdAvatars(avatars) {
       headAvatar = avatars.head;

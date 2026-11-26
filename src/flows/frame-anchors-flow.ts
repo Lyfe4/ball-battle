@@ -1,6 +1,6 @@
 // One frame (ADR 0087): every screen where nothing fights has the same header row, and at one size
 // its parts sit on the same pixels on every screen. The flow opens each such screen in turn (the tab
-// screens, a ball's page, the chart, Profile, sign-in, each setup, a lineup, Free play, the
+// screens, a ball's page, the chart, Profile, All matches, sign-in, each setup, a lineup, Free play, the
 // older-link notice)
 // in a build with accounts and online play (the API refuses everything: no screen waits on a
 // server), and reads the header row's boxes.
@@ -29,6 +29,7 @@ export const FRAME_SCREENS: readonly (readonly [name: string, search: string, sc
   ['Friends', '?view=friends', 'friends'],
   ['Ranks', '?view=ranks', 'ranks'],
   ['Profile', '?view=profile', 'profile'],
+  ['All matches', '?view=matches', 'matches'],
   ['sign-in', '?view=signin', 'signin'],
   ['the vs Bot setup', '?mode=bo3', 'series'],
   // Its lineup is the same task's next screen: the header stays put, the rail too on a PC (ADR 0087

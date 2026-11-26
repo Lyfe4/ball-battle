@@ -6,6 +6,8 @@
 // build with accounts; iPhone Safari's visible size, Chromium only. Twice (ADR 0082): by Realtime
 // poke, where the card comes within seconds and the lobby reads only on its 20 s heartbeat; and
 // with the socket blocked, where the card comes with the 30 s read and the lobby reads every 2 s.
+// And from the Play tab (ADR 0089, B1): Play against a friend opens "Who do you want to play?",
+// whose Challenge sends the friend a live challenge straight to its lobby; the box remembers them.
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { INBOX_MS } from '../app/inbox-poll.ts';
@@ -136,6 +138,42 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
       await pickTogether([{ page: two }, { page: one }]);
       expect(errors).toStrictEqual([]);
       // Done: their pages stop asking, so the next test's server isn't still serving this match.
+      for (const page of [one, two]) await page.context().close();
+    },
+  );
+});
+
+describe('challenging a friend from Play’s sheet (ADR 0089)', () => {
+  it(
+    'opens "Who do you want to play?", and Challenge reaches the friend; the box remembers them',
+    { timeout: 180_000 },
+    async () => {
+      const stem = crypto.randomUUID().slice(0, 6);
+      const sam = `Sam_${stem}`;
+      const jo = `Jo_${stem}`;
+      const one = await signedInPhone(browser, BASE, sam, errors, false);
+      const two = await signedInPhone(browser, BASE, jo, errors, false);
+      await befriend(one, two, jo, sam);
+      await two.goto(BASE);
+      await two.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
+
+      // Play against a friend: the sheet, the friend online with Challenge.
+      await one.evaluate(() => {
+        localStorage.setItem('ballbattle.playOpponent', 'friend');
+      });
+      await one.goto(BASE);
+      await one.getByRole('button', { name: `Profile, ${sam}` }).waitFor();
+      await one.getByRole('button', { name: 'Play a friend live', exact: false }).click();
+      const sheet = one.getByRole('dialog', { name: 'Who do you want to play?' });
+      await sheet.getByRole('button', { name: `Challenge ${jo}` }).click();
+      await one.getByText(`Waiting for ${jo}`).waitFor();
+      expect(new URL(one.url()).searchParams.has('challenge')).toBe(true);
+
+      const card = two.getByRole('region', { name: 'Challenge' });
+      await card.getByText(`${sam} challenges you`, { exact: true }).waitFor({ timeout: 10_000 });
+      await card.getByRole('button', { name: 'Accept' }).click();
+      await pickTogether([{ page: two }, { page: one }]);
+      expect(errors).toStrictEqual([]);
       for (const page of [one, two]) await page.context().close();
     },
   );

@@ -107,6 +107,7 @@ describe('router', () => {
       friends: handler('friends'),
       profile: handler('profile'),
       ranks: handler('ranks'),
+      matches: handler('matches'),
     };
     return { log, handlers };
   }
@@ -137,6 +138,7 @@ describe('isSetupScreen', () => {
       'friends',
       'profile',
       'ranks',
+      'matches',
     ] as const) {
       expect(isSetupScreen(screen, false)).toBe(true);
     }
@@ -177,6 +179,7 @@ describe('screenTitle', () => {
     expect(screenTitle('friends')).toBe('Friends · BallBattle');
     expect(screenTitle('profile')).toBe('Profile · BallBattle');
     expect(screenTitle('ranks')).toBe('Ranks · BallBattle');
+    expect(screenTitle('matches')).toBe('All matches · BallBattle');
   });
 });
 
@@ -239,6 +242,7 @@ describe('the banners by screen and moment (ADR 0070, 0081, 0086)', () => {
     ['Friends', 'friends', at(undefined), 'calm'],
     ['Profile', 'profile', at(undefined), 'calm'],
     ['Ranks', 'ranks', at(undefined), 'calm'],
+    ['All matches', 'matches', at(undefined), 'calm'],
   ];
 
   it.each(ROWS)('%s: %s is %s', (_what, screen, moment, kind) => {
