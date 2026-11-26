@@ -45,9 +45,19 @@ const findingsOf = (where: string, results: readonly Result[]): Finding[] =>
       .map((node) => `${node.target.join(' ')}: ${node.failureSummary ?? ''}`),
   }));
 
-/** axe on what shows now (`scope`, else the page). Animations are let finish first. */
-async function check(where: string, scope?: Element): Promise<Finding[]> {
+/**
+ * axe on what shows now (`scope`, else the page). Every animation running is let finish first, by
+ * name: a sheet fading in measured mid-fade reads as low contrast (WebKit in CI, 2026-11-27).
+ * Endless ones (a skeleton breathing, a waiting ball) are left: they never finish.
+ */
+export async function check(where: string, scope?: Element): Promise<Finding[]> {
   await settle();
+  const finite = document
+    .getAnimations()
+    .filter((animation) =>
+      Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity),
+    );
+  await Promise.all(finite.map((animation) => animation.finished.catch(() => undefined)));
   const results = await axe.run(scope ?? document, {
     runOnly: {
       type: 'tag',

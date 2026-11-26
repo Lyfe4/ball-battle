@@ -108,8 +108,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
-      # outgoing connections: while images pull, one can take a port just before Docker binds it
-      # ("address already in use", 3 runs to 2026-11-26). Reserved, no outgoing connection gets one.
+      # outgoing connections: one can be taken just before Docker binds it ("address already in use",
+      # runs to 2026-11-26, and 45817543736 the day the reservation was taken out). Reserved, no
+      # outgoing connection gets one. A second cause remains: when public.ecr.aws rate-limits the
+      # pulls, the CLI's retry can collide with its own half-started container (rerun the job).
       - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       # Postgres, Auth, Realtime, the gateway and the pooler (Supavisor) in Docker, with
       # supabase/migrations and supabase/seed.sql applied (ADR 0052, "Tests and CI"). The API
@@ -152,8 +154,10 @@ jobs:
       # starts in the background and "Wait for Supabase" joins it: about 45 s off this job, the
       # critical path of every run. Its log is printed either way.
       # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
-      # outgoing connections: while images pull, one can take a port just before Docker binds it
-      # ("address already in use", 3 runs to 2026-11-26). Reserved, no outgoing connection gets one.
+      # outgoing connections: one can be taken just before Docker binds it ("address already in use",
+      # runs to 2026-11-26, and 45817543736 the day the reservation was taken out). Reserved, no
+      # outgoing connection gets one. A second cause remains: when public.ecr.aws rate-limits the
+      # pulls, the CLI's retry can collide with its own half-started container (rerun the job).
       - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - name: Start Supabase in the background
         run: |

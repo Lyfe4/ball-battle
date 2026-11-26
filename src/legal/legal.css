@@ -144,10 +144,12 @@ body {
 
 /*
  * Links inside the text keep the body's size, so a sentence doesn't shrink around them, and drop the
- * trailing chevron, which would sit between an address and its full stop.
+ * trailing chevron, which would sit between an address and its full stop. An address (an email)
+ * breaks anywhere rather than run past the page with its text at 200% (2026-11-27).
  */
 .legal p .text-link,
 .legal li .text-link {
+  overflow-wrap: anywhere;
   font-size: inherit;
 }
 
