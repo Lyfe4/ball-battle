@@ -70,7 +70,7 @@ describe('adding a friend', () => {
       const accept = friendsOf(two).getByRole('button', { name: `Accept ${sam}` });
       await accept.waitFor();
       two.off('request', countMe);
-      expect(asked, 'one /me for the avatar and the Friends tab').toHaveLength(99);
+      expect(asked, 'one /me for the avatar and the Friends tab').toHaveLength(1);
       await accept.click();
       await listed(two, 'friends', sam);
       expect(await namesIn(two, 'friends')).toStrictEqual([sam]);
