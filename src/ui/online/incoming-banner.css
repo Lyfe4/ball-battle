@@ -1,9 +1,9 @@
 /*
  * One incoming banner (incoming-banner.ts, ADR 0086): a friend's live challenge or a rematch. On a
- * phone held upright it sits at the top, over the header row only: the page makes room under that
- * row while it shows (`--incoming-height`), so it never covers Play, the court or the tab bar (on
- * Play the demo court gives way). Beside and on a desktop it sits at the bottom right, never over
- * the rail. It rises in on the motion tokens; with reduced motion it only fades.
+ * phone held upright it floats at the top over the header row, inside the safe area; it never moves
+ * the page, the header or the court (frame-anchors-flow.ts checks with one open). Beside and on a
+ * desktop it sits at the bottom right, never over the rail. It rises in on the motion tokens; with
+ * reduced motion it only fades.
  */
 .incoming-banner {
   position: fixed;
@@ -108,13 +108,6 @@
 
 .incoming-banner[data-urgent] .incoming-bar-fill {
   background: var(--color-accent-2);
-}
-
-/* A phone held upright: the page makes room under the header row, so the banner covers only it. */
-@media not all and (min-aspect-ratio: 5/4) {
-  body[data-incoming] .stage .screen-header {
-    margin-block-end: max(0px, calc(var(--incoming-height, 0px) - var(--tap-target)));
-  }
 }
 
 /* Beside and on a desktop: the bottom right corner, clear of the rail. */
