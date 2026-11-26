@@ -304,7 +304,7 @@ export function createOnlinePlay(
     roundOnArena: () => host.worldsShown() === shownAt,
     isLive: () => visible && isLive(),
     endScreen: () => (visible ? extras.rematch.watching() : undefined),
-    endingTold: (told) => extras.rematch.told(told),
+    rematch: extras.rematch,
     seriesShown: () => (visible ? id : undefined),
     liveRate: (playedMs) => (visible && isLive() ? live.rate(playedMs) : 1),
     footLine: () =>

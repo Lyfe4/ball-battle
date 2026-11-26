@@ -44,6 +44,11 @@ export interface OnlineRematch {
   note(): string | undefined;
   /** The end screen of series `id` said why its rematch ended (`note`): news already told. */
   told(id: string): boolean;
+  /**
+   * A rematch question is open on the end screen on show (asked, either way, or agreed and on its
+   * way to the lineups): it comes first, so a friend's challenge waits behind it.
+   */
+  holds(): boolean;
   /** Rematch: ask, or say yes. */
   yes(): Promise<void>;
   /** No thanks. */
@@ -196,6 +201,10 @@ export function createOnlineRematch(host: RematchHost): OnlineRematch {
       return ending ?? failure;
     },
     told: (id) => endingsTold.has(id),
+    holds: () =>
+      visible &&
+      series !== undefined &&
+      (rematch?.state === 'asked' || rematch?.state === 'agreed'),
     yes: () => move('yes'),
     no: () => move('no'),
   };

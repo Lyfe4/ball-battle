@@ -118,7 +118,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     fighting: () => fighting,
     ownScreen: () => screens.play.endScreen() ?? screens.rematchShown(),
     seriesShown: () => screens.play.seriesShown(),
-    endingTold: (id) => screens.play.endingTold(id),
+    endingTold: (id) => screens.play.rematch.told(id),
     backChanged: (back) => {
       rematchWaiting = back;
       showPlay();
@@ -132,7 +132,8 @@ export function mountOnline(context: MountContext): OnlineMount {
   const inboxWatch = ACCOUNTS_BUILD
     ? createInboxWatch(inboxRoot, {
         open: (token, live) => screens.openInvite(token, live),
-        calm: () => calm,
+        // One banner at a time: the end screen's rematch question first, then the challenge.
+        calm: () => calm && !screens.play.rematch.holds(),
         onFriends: () => onScreen === 'friends',
         badge: () =>
           document.querySelector<HTMLElement>('.tab-bar-tab[data-tab="friends"] .tab-bar-badge') ??
@@ -156,6 +157,9 @@ export function mountOnline(context: MountContext): OnlineMount {
     ended: (view) => {
       rematchWatch.ended(view);
       inboxWatch?.quicken();
+    },
+    rematchMoved: () => {
+      inboxWatch?.refresh();
     },
     lobbyWaits: () => {
       // The lobby asks every 2 s while it shows; a little longer covers its next ask.

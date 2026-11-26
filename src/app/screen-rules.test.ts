@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { DEFAULT_MATCHUP } from './matchup.ts';
+import type { Screen } from './route.ts';
 import { createRouter, type ScreenHandlers } from './router.ts';
 import {
   initialAppState,
   isCalmMoment,
   invitesMayShow,
   isFighting,
+  SCREENS,
+  screenKindOf,
+  type ScreenKind,
   isSetupScreen,
   readyMomentOf,
   resumesMatch,
@@ -184,47 +188,59 @@ describe('readyMomentOf', () => {
   });
 });
 
-describe('invitesMayShow (ADR 0081)', () => {
-  const at = (matchOver: boolean, phase: string | undefined, live = false) => ({
+describe('the banners by screen and moment (ADR 0070, 0081, 0086)', () => {
+  const at = (phase: string | undefined, live = false, matchOver = false) => ({
     matchOver,
     phase,
     live,
   });
-  it('waits through a fight and a lineup pick, and shows once the match is over', () => {
-    // A fight, and a live match at any moment.
-    expect(invitesMayShow('match', at(false, undefined))).toBe(false);
-    expect(invitesMayShow('online', at(false, 'between', true))).toBe(false);
-    // A lineup pick: a series' lineup and its rounds between fights, a start's lineup.
-    expect(invitesMayShow('series', at(false, undefined))).toBe(false);
-    expect(invitesMayShow('series', at(false, 'between'))).toBe(false);
-    expect(invitesMayShow('online', at(false, 'between'))).toBe(false);
-    expect(invitesMayShow('start', at(false, undefined))).toBe(false);
-    // Over: the match's end, and every calm screen.
-    expect(invitesMayShow('series', at(false, 'finished'))).toBe(true);
-    expect(invitesMayShow('online', at(false, 'finished'))).toBe(true);
-    expect(invitesMayShow('match', at(true, undefined))).toBe(true);
-    for (const screen of ['home', 'manual', 'friends', 'ranks', 'profile', 'pick'] as const) {
-      expect(invitesMayShow(screen, at(false, undefined)), screen).toBe(true);
-    }
-  });
-});
+  type Row = readonly [
+    what: string,
+    screen: Screen,
+    moment: ReturnType<typeof at>,
+    kind: ScreenKind,
+  ];
+  // Every live and bot state each screen can be in: a rematch shows unless `fight`, a friend's
+  // challenge only when `calm`.
+  const ROWS: readonly Row[] = [
+    ['Free play, a match on', 'match', at(undefined), 'fight'],
+    ['Free play, its result', 'match', at(undefined, false, true), 'calm'],
+    ['a bot series’ setup or lineup', 'series', at(undefined), 'pick'],
+    ['a bot series round', 'series', at('playing'), 'fight'],
+    ['between a bot series’ rounds (the next pick)', 'series', at('between'), 'pick'],
+    ['a bot series’ end', 'series', at('finished'), 'calm'],
+    ['a live match loading', 'online', at(undefined, true), 'fight'],
+    ['a live match’s picks or coin toss', 'online', at('between', true), 'fight'],
+    ['a live fight', 'online', at('playing', true), 'fight'],
+    ['a live match’s end screen (staging, 2026-11-26)', 'online', at('finished', true), 'calm'],
+    ['a series by turns loading, or a notice', 'online', at(undefined), 'pick'],
+    ['a series by turns, a round', 'online', at('playing'), 'fight'],
+    ['a series by turns, between rounds (a pick)', 'online', at('between'), 'pick'],
+    ['a series by turns, its end', 'online', at('finished'), 'calm'],
+    ['a start’s lineup', 'start', at(undefined), 'pick'],
+    ['Play', 'home', at(undefined), 'calm'],
+    ['Free play’s picker', 'pick', at(undefined), 'calm'],
+    ['Balls', 'manual', at(undefined), 'calm'],
+    ['an old link', 'outdated', at(undefined), 'calm'],
+    ['a challenge card, or a lobby', 'challenge', at(undefined), 'calm'],
+    ['the vs Friend setup', 'send', at(undefined), 'calm'],
+    ['sign-in', 'signin', at(undefined), 'calm'],
+    ['Friends', 'friends', at(undefined), 'calm'],
+    ['Profile', 'profile', at(undefined), 'calm'],
+    ['Ranks', 'ranks', at(undefined), 'calm'],
+  ];
 
-describe('isFighting', () => {
-  const at = (matchOver: boolean, phase: string | undefined, live = false) => ({
-    matchOver,
-    phase,
-    live,
+  it.each(ROWS)('%s: %s is %s', (_what, screen, moment, kind) => {
+    expect(screenKindOf(screen, moment)).toBe(kind);
+    expect(isFighting(screen, moment), 'a rematch waits only through a fight').toBe(
+      kind === 'fight',
+    );
+    expect(invitesMayShow(screen, moment), 'a challenge waits through a fight or a pick').toBe(
+      kind === 'calm',
+    );
   });
-  it('is a Free play match before its result, a series round, and a live match at any moment', () => {
-    expect(isFighting('match', at(false, undefined))).toBe(true);
-    expect(isFighting('match', at(true, undefined))).toBe(false);
-    expect(isFighting('series', at(false, 'playing'))).toBe(true);
-    expect(isFighting('series', at(false, 'between'))).toBe(false);
-    expect(isFighting('series', at(false, 'finished'))).toBe(false);
-    expect(isFighting('online', at(false, 'between', true))).toBe(true);
-    expect(isFighting('online', at(false, 'finished'))).toBe(false);
-    for (const screen of ['home', 'pick', 'manual', 'outdated', 'send', 'challenge'] as const) {
-      expect(isFighting(screen, at(false, undefined))).toBe(false);
-    }
+
+  it('names every screen the router knows', () => {
+    expect(new Set(ROWS.map(([, screen]) => screen))).toStrictEqual(new Set(SCREENS));
   });
 });
