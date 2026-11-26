@@ -2,7 +2,7 @@
 // in parallel, each with its own local Supabase and `netlify dev`, and a job with the old required
 // name passes only if all three do. Files are spread by measured time, not by count: each shard's
 // files add up to about the same. The seconds are each file's median over six green CI runs
-// (2026-11-26); re-balance when a shard runs much longer than the others.
+// (2026-11-26; challenge-on-end estimated); re-balance when a shard runs much longer than the others.
 // `online-shards.test.ts` fails when a file is in no shard or in two, so a new flow always runs.
 // CI imports `shardFiles` (node strips the types) and passes that shard's files to `vitest run`.
 
@@ -11,14 +11,14 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
   [
     ['live-match-blocked.online.test.ts', 307],
     ['rematch.online.test.ts', 100],
+    ['inbox-poke.online.test.ts', 94],
     ['rematch-anywhere.online.test.ts', 59],
     ['live-sync.online.test.ts', 23],
-    ['rematch-yes-away.online.test.ts', 12],
   ],
   [
     ['live-match.online.test.ts', 230],
     ['lineups-together.online.test.ts', 158],
-    ['inbox-poke.online.test.ts', 94],
+    ['challenge-on-end.online.test.ts', 120],
     ['sign-in.online.test.ts', 18],
   ],
   [
@@ -27,6 +27,7 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['friend-rematch.online.test.ts', 121],
     ['coin-toss.online.test.ts', 36],
     ['turns.online.test.ts', 24],
+    ['rematch-yes-away.online.test.ts', 12],
     ['friends.online.test.ts', 12],
     ['online-failures.online.test.ts', 5],
   ],

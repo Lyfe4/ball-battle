@@ -24,11 +24,10 @@ export interface LeaveConfirm {
 export function createLeaveConfirm(onLeave: () => unknown, ask = true): LeaveConfirm {
   const root = element('div', 'leave-confirm');
   // Leave series is an action (a button); Home, in its other form, only goes somewhere (a link, ›).
-  const link = element(
-    'button',
-    `${ask ? 'hud-button' : 'text-link'} series-leave`,
-    ask ? 'Leave series' : 'Home',
-  );
+  // A live match's Leave match is an action too (it forfeits, asked first): `setLive`.
+  const link = ask
+    ? element('button', 'hud-button series-leave', 'Leave series')
+    : element('button', 'text-link series-leave', 'Home');
   link.type = 'button';
 
   const row = element('div', 'leave-confirm-row');
@@ -36,7 +35,8 @@ export function createLeaveConfirm(onLeave: () => unknown, ask = true): LeaveCon
   const question = element('p', 'leave-confirm-question', 'Leave? You’ll lose this series');
   question.id = 'leave-confirm-question';
   row.setAttribute('aria-labelledby', question.id);
-  const leave = element('button', 'hud-button leave-confirm-leave', 'Leave');
+  // Leaving loses the series: the danger look, never the primary (ADR 0086); Stay is the default.
+  const leave = element('button', 'hud-button danger-button leave-confirm-leave', 'Leave');
   leave.type = 'button';
   const stay = element('button', 'hud-button hud-button-primary leave-confirm-stay', 'Stay');
   stay.type = 'button';
@@ -102,6 +102,12 @@ export function createLeaveConfirm(onLeave: () => unknown, ask = true): LeaveCon
     },
     setLive(live) {
       asks = live || ask;
+      // Online: a live match's way out is an action, a compact button; by turns, Home, a link.
+      if (!ask) {
+        link.classList.toggle('text-link', !live);
+        link.classList.toggle('hud-button', live);
+        link.classList.toggle('hud-button-compact', live);
+      }
       setText(link, live ? 'Leave match' : words.link);
       setText(question, live ? 'Leave and forfeit?' : words.question);
     },

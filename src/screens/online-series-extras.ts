@@ -21,6 +21,8 @@ export interface ExtrasHost {
   go(write: (params: URLSearchParams) => void): void;
   primeSeries(id: string): Promise<void>;
   redraw(): void;
+  /** The end screen's rematch moved (asked, answered, ended): a waiting banner may now show. */
+  readonly rematchMoved?: () => void;
 }
 
 /** Where the series stands this tick, as the extras need it. */
@@ -64,6 +66,7 @@ export function createSeriesExtras(
     },
     changed: () => {
       host.redraw();
+      host.rematchMoved?.();
     },
   });
 

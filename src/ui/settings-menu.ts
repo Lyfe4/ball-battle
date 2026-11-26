@@ -37,6 +37,12 @@ export interface SettingsHost {
 }
 
 const PANEL_ID = 'settings-panel';
+
+/** The pages About opens (ADR 0069): the privacy policy and the terms. */
+export const ABOUT_LINKS = [
+  { text: 'Privacy', href: '/privacy.html' },
+  { text: 'Terms', href: '/terms.html' },
+] as const;
 const SVG = 'http://www.w3.org/2000/svg';
 
 /** A chunky eight-tooth gear with a round hole, drawn as a path so it is the same on every device. */
@@ -142,6 +148,20 @@ function buildMenu(): Menu {
   close.classList.add('settings-close');
   const foot = element('div', 'settings-foot');
   foot.append(again);
+  // About, last (ADR 0069 addendum of 2026-11-26): the privacy policy and terms one tap from every
+  // screen, each in a tab of its own so nothing here is left (a fight, a live match's clock).
+  const about = element('p', 'settings-about');
+  about.append(element('span', 'settings-about-label', 'About'));
+  for (const { text, href } of ABOUT_LINKS) {
+    const link = element('a', 'text-link', text);
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    about.append(link);
+  }
+  // In the foot, under Show all tips again with no gap of its own (its links' 44 px rows are the
+  // room), so the menu still fits whole above its gear on a phone mid-fight (390 x 664).
+  foot.append(about);
   // The note that the match waits shares the title's row, so every row sits where it does on any
   // other screen, and it shows even when the menu scrolls inside itself.
   const top = element('div', 'info-panel-head settings-top');

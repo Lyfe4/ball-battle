@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { NAVIGATING } from './text-links-support.ts';
 
 const SRC = fileURLToPath(new URL('..', import.meta.url));
 
@@ -17,13 +18,6 @@ function files(dir: string): { path: string; text: string }[] {
     return [{ path: relative(SRC, path).split(sep).join('/'), text: readFileSync(path, 'utf8') }];
   });
 }
-
-/** Each text-link button, by its other class, and where it goes. */
-const NAVIGATING: Readonly<Record<string, string>> = {
-  'play-box': 'opens What to play (a box drawn as a link, ADR 0081 addendum)',
-  'home-link': 'Free play’s setup',
-  'skeleton-home': 'home, from a screen still loading',
-};
 
 describe('a text link only navigates', () => {
   it('is a link, or a named button that goes somewhere', () => {

@@ -247,3 +247,23 @@ each on the one before. What the record above left open, and what changed in the
   (`game.series_seen`, migration `20261125234153_series_seen.sql`; no trigger, so seeing pokes
   nobody). The inbox reads turns, games and endings in one statement (`gamesFor`); an ending already
   pokes both inboxes through the series trigger (ADR 0085). `privacy.html` names the seen mark.
+
+## Addendum (2026-11-26): a challenge shows on a live match's end screen
+
+The owner's staging check: two friends finished a live match, one said No thanks to the rematch and
+stayed on the end screen, the other went home and challenged them, and nothing showed until they
+went home too. The cause: `isFighting` counted the online screen as a fight whenever the series was
+live, its end included, so `invitesMayShow` held the banner there. The rule was always "never over
+a fight or a lineup pick", and the end screen comes after the match.
+
+- **One table** (`screenKindOf`, `screen-rules.ts`): every screen and moment is a `fight`, a `pick`
+  or `calm`. A rematch waits only through a fight; a friend's challenge waits through a fight or a
+  pick. A series' end (bot, by turns or live) is calm. `screen-rules.test.ts` lists every live and
+  bot state, and fails when a screen the router knows is missing from it.
+- **One banner at a time**: while the end screen's own rematch question is open (asked either way,
+  or agreed and on its way to the lineups, `OnlineRematch.holds`), a friend's challenge waits
+  behind it, and shows the moment the rematch is answered (the end screen's read refreshes the
+  inbox watch).
+- **Test**: `challenge-on-end.online.test.ts` (shard 2): Jo says No thanks to Sam's rematch and
+  stays on the end screen; Sam challenges Jo from Friends; Jo's banner shows there, and Accept
+  opens the lineup.

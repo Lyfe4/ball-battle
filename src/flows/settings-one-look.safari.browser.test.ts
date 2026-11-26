@@ -29,6 +29,7 @@ const PARTS = [
   '#settings-panel-tips',
   '.settings-switch',
   '.settings-again',
+  '.settings-about',
   '.settings-close',
 ];
 

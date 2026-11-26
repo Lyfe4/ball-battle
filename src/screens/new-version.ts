@@ -1,5 +1,5 @@
 // A tab running an older build than the one deployed (issue #17, ADR 0066): checked when the tab
-// comes back into view and when home opens, at most once a minute and never on a timer, and said
+// comes back into view (or from the back/forward cache) and when home opens, at most once a minute and never on a timer, and said
 // at the next calm moment with a Reload card. main.ts says when the screen is calm.
 import { createBuildCheck } from '../app/build-check.ts';
 import { createUpdateNotice } from '../ui/update-notice.ts';
@@ -37,12 +37,18 @@ export function installNewVersion(root: HTMLElement): NewVersion {
     loaded: loadedAssets(document),
     fetchIndex,
     now: () => Date.now(),
-    found: () => {
+    found: (compared) => {
+      // Said once per page, so a report of the card can say which builds it saw.
+      console.info('BallBattle: a newer build is deployed', compared);
       notice.found();
     },
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') void check.check();
+  });
+  // A phone bringing the page back from the back/forward cache may not report it visible again.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) void check.check();
   });
   return {
     homeShown: () => void check.check(),

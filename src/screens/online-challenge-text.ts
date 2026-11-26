@@ -191,7 +191,7 @@ export function cardFor(
       const lineups = info.startId;
       if (info.seriesId === null && lineups !== null) {
         return {
-          title: 'You accepted this challenge',
+          title: 'Challenge accepted',
           body: [what],
           buttons: [
             {
@@ -203,7 +203,7 @@ export function cardFor(
         };
       }
       return {
-        title: 'You accepted this challenge',
+        title: 'Challenge accepted',
         body: [what],
         buttons: [
           {

@@ -24,6 +24,7 @@ export interface LineupStep {
    * Shows the lineup step for `format` at `bestOf` balls, with `draft` in the tray and the bot's
    * `level` (where it makes choices), and focuses the heading. Against a player (ADR 0052) there
    * is no level (`undefined`), and `done` names what the full tray does ("Send challenge").
+   * `pace` ends the line of what the lineup is for ("by turns", ADR 0085).
    */
   open(
     format: Format,
@@ -31,6 +32,7 @@ export interface LineupStep {
     level: string | undefined,
     bestOf: BestOf,
     done?: string,
+    pace?: string,
   ): void;
   /** The lineup in the tray, complete or not. */
   draft(): Draft;
@@ -50,6 +52,11 @@ export interface LineupActions {
   readonly onChange: (draft: Draft) => void;
   /** The player chose the bot's level here (ADR 0046), without leaving the step. */
   readonly onLevel: (level: string) => void;
+  /**
+   * Change, beside the rules this lineup is for, where they were set without a rules step (Play
+   * by turns from a friend's sheet): the rules step, then back here.
+   */
+  readonly onRules?: () => void;
 }
 
 const TRAY_ICON_PX = 36;
@@ -83,6 +90,16 @@ export function createLineupStep(
   statusLine.setAttribute('role', 'status');
   statusLine.hidden = true;
   mode.append(modeName, level.element, statusLine);
+  if (actions.onRules !== undefined) {
+    const onRules = actions.onRules;
+    const change = element('button', 'hud-button hud-button-compact lineup-rules', 'Change');
+    change.type = 'button';
+    change.setAttribute('aria-label', 'Change the rules');
+    change.addEventListener('click', () => {
+      onRules();
+    });
+    modeName.after(change);
+  }
 
   const tray = element('ol', 'lineup-tray');
   tray.setAttribute('aria-label', 'Your lineup');
@@ -183,7 +200,7 @@ export function createLineupStep(
 
   return {
     element: root,
-    open(nextFormat, nextDraft, nextLevel, bestOf, done) {
+    open(nextFormat, nextDraft, nextLevel, bestOf, done, pace) {
       format = nextFormat;
       size = bestOf;
       doneText = done;
@@ -191,7 +208,10 @@ export function createLineupStep(
       // bot goes on quietly.
       if (done === undefined) delete doneButton.dataset['sound'];
       else doneButton.dataset['sound'] = 'tap';
-      setText(modeName, setupLine(format, size));
+      setText(
+        modeName,
+        [setupLine(format, size), ...(pace === undefined ? [] : [pace])].join(' · '),
+      );
       // Five slots share the row in a Best of 5 (series-setup.css).
       tray.style.setProperty('--tray-slots', String(size));
       tray.classList.toggle('lineup-tray-compact', size > 3);

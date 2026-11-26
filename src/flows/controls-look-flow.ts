@@ -1,13 +1,19 @@
-// One button and row system (button.css, 2026-11-26), checked on every screen where nothing fights
-// and in every sheet, signed in with friends (the API answered by the test): a button or a row is
-// at least one tap target tall (a compact button's unseen reach counts); its label keeps
-// LABEL_INSET from its edges; and no two controls, nor a control and a person's disc, come closer
-// than the stack gap. The 2026-11-26 staging check found labels touching their edges on Profile,
-// the friend sheet's disc touching its first button, and Copy stretched for one word.
+// One button and row system (button.css, 2026-11-26), checked on every screen where nothing fights,
+// in every sheet, and in every state the online flows reach (online-looks-support.ts: the card, both
+// lobbies, the lineups together, a live fight and its Leave, the end and its rematch, failure and
+// offline), signed in with friends (the API answered by the test): a button or a row is at least one
+// tap target tall (a compact button's unseen reach counts); its label keeps LABEL_INSET from its
+// edges; no two controls, nor a control and a person's disc, come closer than the stack gap; and no
+// action is drawn as a link (a text-link button or a bare <summary> that doesn't only go somewhere).
+// The 2026-11-26 staging checks found labels touching their edges on Profile and the friend lobby,
+// the friend sheet's disc touching its first button, Copy stretched for one word, and the lobby's
+// "Also send a link" drawn as a pink link.
 import { expect, vi } from 'vitest';
 import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { settle, until, visible } from './page-support.ts';
+import { NAVIGATING } from '../ui/text-links-support.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
+import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
 const TAP = 44;
@@ -38,7 +44,9 @@ const SIGNED_IN = {
 const laidOut = (node: Element): node is HTMLElement =>
   node instanceof HTMLElement &&
   node.getClientRects().length > 0 &&
-  node.closest('[hidden]') === null;
+  node.closest('[hidden]') === null &&
+  // Inside a closed fold, only its summary shows.
+  node.closest('details:not([open]) > :not(summary)') === null;
 
 /** Where a control can be pressed: its box, reaching further where a compact one's ::before does. */
 function targetOf(control: HTMLElement): DOMRect {
@@ -101,6 +109,18 @@ export function controlProblems(where: string, scope: ParentNode): string[] {
       }
     }
   }
+  // An action drawn as a link: a text-link button that isn't one that only goes somewhere, or a
+  // <summary> drawn as neither a button nor a row that hides actions (a fold with buttons in it).
+  // A <details> that tells more is information on a tap (ADR 0025), not an action.
+  const links = [...scope.querySelectorAll('button.text-link, summary')].filter(laidOut);
+  for (const link of links) {
+    const goes = [...link.classList].some((name) => name in NAVIGATING);
+    const drawn = link.matches('.hud-button, .sheet-row');
+    const hides = link.matches('summary') && link.parentElement?.querySelector('button') !== null;
+    if (!goes && !drawn && (hides || link.matches('button'))) {
+      problems.push(`${name(link)} is an action drawn as a link`);
+    }
+  }
   const parts = [...controls, ...discs];
   for (const [index, one] of parts.entries()) {
     for (const other of parts.slice(index + 1)) {
@@ -144,7 +164,8 @@ async function checkSheet(person: string, problems: string[]): Promise<void> {
 export async function checkControlsLook(signedIn = true): Promise<void> {
   vi.stubEnv('VITE_TURNS', '1');
   if (signedIn) localStorage.setItem(ACCOUNT_STORAGE_KEY, '1');
-  await openAs({ online: true, accounts: true }, '', signedIn ? SIGNED_IN : {});
+  const api: OnlineAnswers = signedIn ? { ...SIGNED_IN } : {};
+  await openAs({ online: true, accounts: true }, '', api);
   await onScreen('home');
   const problems: string[] = [];
   // Signed in, sign-in sends you on: it is the guest walk's.
@@ -161,6 +182,13 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
         await checkSheet(person, problems);
       }
     }
+  }
+  // Every online state, signed in (a guest's are the same screens).
+  if (signedIn) {
+    await walkOnline(api, (state) => {
+      problems.push(...controlProblems(state.name, document.body));
+      return Promise.resolve();
+    });
   }
   expect(problems).toStrictEqual([]);
 }

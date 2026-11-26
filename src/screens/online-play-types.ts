@@ -5,6 +5,7 @@ import type { SeriesView } from '../api/series.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { WorldState } from '../sim/types.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
+import type { OnlineRematch } from './online-rematch.ts';
 
 export interface OnlinePlayHost {
   showWorld(world: WorldState, seed: number): void;
@@ -28,6 +29,8 @@ export interface OnlinePlayHost {
   primeSeries(id: string): Promise<void>;
   /** A live series ended on this device: a rematch of it reaches the player anywhere. */
   readonly ended?: (view: SeriesView) => void;
+  /** The end screen's rematch moved: a friend's challenge waiting behind it may now show. */
+  readonly rematchMoved?: () => void;
 }
 
 export interface OnlinePlay {
@@ -47,8 +50,11 @@ export interface OnlinePlay {
   isLive(): boolean;
   /** The ended live series whose end screen shows now, which offers its own rematch. */
   endScreen(): string | undefined;
-  /** Series `id`'s end screen said why its rematch ended: Home never says it again (ADR 0086). */
-  endingTold(id: string): boolean;
+  /**
+   * The end screen's rematch: whether it said why a series' rematch ended (Home never says it
+   * again, ADR 0086), and whether its question is open now (it comes before a friend's challenge).
+   */
+  readonly rematch: Pick<OnlineRematch, 'told' | 'holds'>;
   /** The series on screen, if this screen shows: a rematch's new match once it started. */
   seriesShown(): string | undefined;
   /**

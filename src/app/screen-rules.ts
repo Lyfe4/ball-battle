@@ -78,10 +78,6 @@ export function isSetupScreen(screen: Screen, seriesPlaying: boolean): boolean {
   ].includes(screen);
 }
 
-/**
- * A fight is on screen: a Free play match before its result, a series round on the arena (its
- * ready card too), or a live match at any moment. A rematch notice waits until it is over.
- */
 /** Where the screen on show stands: its match over, its series' phase, a live match on. */
 export interface ScreenMoment {
   readonly matchOver: boolean;
@@ -89,23 +85,60 @@ export interface ScreenMoment {
   readonly live: boolean;
 }
 
+/**
+ * What a screen at a moment is, for the banners (ADR 0070, 0081, 0086), one row per state:
+ *
+ * | Screen and moment                                          | Kind   | Rematch | Challenge |
+ * | ---------------------------------------------------------- | ------ | ------- | --------- |
+ * | Free play: a match before its result                       | fight  | waits   | waits     |
+ * | Free play: a match's result                                | calm   | shows   | shows     |
+ * | A series' setup and lineup (bot; `series`, no phase)       | pick   | shows   | waits     |
+ * | A series round being fought (bot or by turns, `playing`)   | fight  | waits   | waits     |
+ * | Between a series' rounds (bot or by turns, `between`)      | pick   | shows   | waits     |
+ * | A live match, loading, picks, coin toss, fights, between    | fight  | waits   | waits     |
+ * | A series' end, bot, by turns or live (`finished`)          | calm   | shows   | shows     |
+ * | An online series loading or a notice (`online`, no phase)  | pick   | shows   | waits     |
+ * | A start's lineup (`start`)                                 | pick   | shows   | waits     |
+ * | Every other screen: tabs, setups, the card, lobby, sign-in | calm   | shows   | shows     |
+ *
+ * A rematch waits only through a fight (it is about the match just played, and a lineup pick is
+ * where it leads); a friend's challenge waits through a fight and a lineup pick. A live match's end
+ * screen is calm (staging, 2026-11-26: a friend's challenge never showed there); its own rematch
+ * question, while open, comes first (`rematch.holds`, online-mount.ts).
+ */
+export type ScreenKind = 'fight' | 'pick' | 'calm';
+
+export function screenKindOf(screen: Screen, now: ScreenMoment): ScreenKind {
+  switch (screen) {
+    case 'match':
+      return now.matchOver ? 'calm' : 'fight';
+    case 'series':
+    case 'online':
+      if (now.phase === 'finished') return 'calm';
+      if (now.phase === 'playing' || (screen === 'online' && now.live)) return 'fight';
+      return 'pick';
+    case 'start':
+      return 'pick';
+    default:
+      return 'calm';
+  }
+}
+
+/**
+ * A fight is on screen: a Free play match before its result, a series round on the arena (its
+ * ready card too), or a live match until its end. A rematch notice waits until it is over.
+ */
 export function isFighting(screen: Screen, now: ScreenMoment): boolean {
-  if (screen === 'match') return !now.matchOver;
-  if (screen === 'online' && now.live) return true;
-  return (screen === 'series' || screen === 'online') && now.phase === 'playing';
+  return screenKindOf(screen, now) === 'fight';
 }
 
 /**
  * Whether a friend's challenge may pop up now (ADR 0081): never over a fight or a lineup pick (a
  * series' lineup and its rounds, a live match's picks, a start's lineup, a coin toss); it waits
- * until the match is over. Every calm screen may show it. A rematch's card keeps its own rule
- * (`isFighting`, ADR 0070).
+ * until the match is over. Every calm screen may show it, a live match's end screen too.
  */
 export function invitesMayShow(screen: Screen, now: ScreenMoment): boolean {
-  if (isFighting(screen, now)) return false;
-  if (screen === 'start') return false;
-  if (screen === 'series' || screen === 'online') return now.phase === 'finished';
-  return true;
+  return screenKindOf(screen, now) === 'calm';
 }
 
 /**
@@ -133,6 +166,9 @@ const TITLES: Readonly<Record<Screen, string>> = {
   profile: 'Profile · BallBattle',
   ranks: 'Ranks · BallBattle',
 };
+
+/** Every screen the router knows (a table keyed by `Screen` lists them all). */
+export const SCREENS = Object.keys(TITLES) as readonly Screen[];
 
 /** The vs Bot setup's title (ADR 0055): who the series is against, as its heading says. */
 export const BOT_SETUP_TITLE = 'vs Bot · BallBattle';

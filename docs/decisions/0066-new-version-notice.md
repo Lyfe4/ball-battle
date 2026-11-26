@@ -48,3 +48,25 @@ would still be on the old build).
 - Positive: a tab open across a deploy says so the next time its player comes back to it.
 - Negative: a deploy that changes only `public/` files (icons) isn't announced; nothing there
   changes how the game plays.
+
+## Addendum (2026-11-26): the false alarm after every game
+
+The owner saw "A new version of BallBattle is ready." after nearly every game on staging, more on a
+phone. Staging was rebuilt several times that day, but the card came without a deploy too: since
+the font preload (ADR 0087, 2026-11-25) the served `index.html` names three `/assets/` files (the
+script, the stylesheet and `<link rel="preload" as="font">`), and `assetsOf` counted every
+`/assets/` URL in a `<script>` or `<link>` while the page's own count (`loadedAssets`) reads only
+scripts and stylesheets. The two lists never matched, so the first check a minute after loading
+(home after a game, or the phone's tab coming back into view) always "found" a newer build.
+
+- **One rule on both sides**: `assetsOf` counts a `<script src>` and a `<link rel="stylesheet">`
+  only, as `loadedAssets` does; a preload or module preload is not what the page ran.
+  `build-check.test.ts` checks the served head (with the font preload and a module preload) as the
+  same build and a changed script behind them as new; `update-notice.browser.test.ts` parses that
+  head and checks both counts agree.
+- **Logged**: when a newer build is found, the console says what was compared (`loaded`,
+  `deployed`), once per page.
+- **The back/forward cache**: a page a phone restores from it (`pageshow` with `persisted`) checks
+  as one coming back into view does, at most once a minute as before.
+- Unchanged: a calm moment only, once per page (a found build is never asked about again), no
+  timer.

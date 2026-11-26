@@ -54,9 +54,9 @@ export function createProfile(
   roots: { readonly notice: HTMLElement; readonly loading: HTMLElement },
   host: ProfileHost,
 ): ProfileScreen {
-  // The card, then Privacy · Terms at the end, quiet, as on the Play tab (ADR 0069).
+  // The card, then Privacy · Terms at the end, quiet, as in settings' About (ADR 0069).
   const card = element('div', 'profile-card');
-  const legal = element('p', 'home-footer profile-legal');
+  const legal = element('p', 'profile-legal');
   for (const [text, href] of [
     ['Privacy', '/privacy.html'],
     ['Terms', '/terms.html'],

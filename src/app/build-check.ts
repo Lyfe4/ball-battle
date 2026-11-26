@@ -4,13 +4,17 @@
 // hash in `index.html`; the page compares the ones it loaded with the ones a fresh `index.html`
 // names. No version file and no build step: any change to what ships changes a name.
 
-/** The built assets an `index.html` loads: its `/assets/` script and stylesheet URLs, sorted. */
+/**
+ * The built assets an `index.html` loads: its `/assets/` scripts and stylesheets, sorted. The same
+ * rule as the page's own count (`loadedAssets`): a preload (the font, ADR 0087) or a module preload
+ * is not counted, or every check would differ from the page it compares with and announce a build
+ * that isn't new (staging, 2026-11-26).
+ */
 export function assetsOf(html: string): readonly string[] {
   const found = new Set<string>();
-  for (const match of html.matchAll(
-    /<(?:script|link)\b[^>]*?\b(?:src|href)="(\/assets\/[^"]+)"/g,
-  )) {
-    const url = match[1];
+  for (const [tag, name] of html.matchAll(/<(script|link)\b[^>]*>/g)) {
+    if (name === 'link' && !/\brel="stylesheet"/.test(tag)) continue;
+    const url = /\b(?:src|href)="(\/assets\/[^"]+)"/.exec(tag)?.[1];
     if (url !== undefined) found.add(url);
   }
   return [...found].sort();
@@ -26,8 +30,11 @@ export interface BuildCheckHost {
   fetchIndex(): Promise<string | undefined>;
   /** This device's clock in ms (only the gap between checks reads it). */
   now(): number;
-  /** A newer build is deployed: called once. */
-  found(): void;
+  /** A newer build is deployed: called once, with what was compared. */
+  found(compared: {
+    readonly loaded: readonly string[];
+    readonly deployed: readonly string[];
+  }): void;
 }
 
 export interface BuildCheck {
@@ -58,7 +65,7 @@ export function createBuildCheck(host: BuildCheckHost): BuildCheck {
       if (deployed.length === 0) return;
       if (deployed.join(' ') === host.loaded.join(' ')) return;
       known = true;
-      host.found();
+      host.found({ loaded: host.loaded, deployed });
     },
   };
 }

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../styles/tokens.css';
 import './button.css';
 import './update-notice.css';
+import { assetsOf } from '../app/build-check.ts';
 import { loadedAssets } from '../screens/new-version.ts';
 import { createUpdateNotice, UPDATE_TEXT } from './update-notice.ts';
 
@@ -71,6 +72,21 @@ describe('loadedAssets', () => {
       '/assets/index-_6uxHbYr.css',
       '/assets/index-upiV00it.js',
     ]);
+  });
+
+  it('counts a served page as the check counts it, preloads and all (false alarm of 2026-11-26)', () => {
+    // The head staging serves since the font preload (ADR 0087): one rule on both sides, or the
+    // same build reads as a new one after every game.
+    const html = `<!doctype html><html><head>
+      <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      <script type="module" crossorigin src="/assets/main-CKIH6pF5.js"></script>
+      <link rel="modulepreload" crossorigin href="/assets/chunk-B1u2v3w4.js">
+      <link rel="stylesheet" crossorigin href="/assets/main-CK1NFlc2.css">
+      <link rel="preload" href="/assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2" as="font" type="font/woff2" crossorigin>
+    </head><body></body></html>`;
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    expect(loadedAssets(doc)).toStrictEqual(assetsOf(html));
+    expect(loadedAssets(doc)).toHaveLength(2);
   });
 
   it('reads none on the dev server, so nothing is ever checked there', () => {

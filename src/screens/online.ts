@@ -48,6 +48,8 @@ export interface OnlineHost {
   readonly who: WhoSource;
   /** A live series ended on this device: a rematch of it reaches the player anywhere. */
   readonly ended?: (view: SeriesView) => void;
+  /** The end screen's rematch moved: a friend's challenge waiting behind it may now show. */
+  readonly rematchMoved?: () => void;
   /** The friends changed on the account screen: the inbox reads now (ADR 0079 PR (d)). */
   readonly friendsChanged?: () => void;
   /** Accept and No thanks on a friend's challenge in the Friends tab (the inbox's, ADR 0081). */

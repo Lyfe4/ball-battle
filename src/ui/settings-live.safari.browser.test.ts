@@ -63,11 +63,14 @@ describe('settings in a live match', () => {
       control.textContent.trim().startsWith('Show all tips again'),
     );
     const shown = again?.getBoundingClientRect();
+    // About, the last line (Privacy · Terms, ADR 0069 addendum of 2026-11-26), whole inside too.
+    const about = menu?.querySelector('.settings-about')?.getBoundingClientRect();
     expect({
       scrolls: menu === null ? 'none' : menu.scrollHeight > menu.clientHeight + 1,
       againInside: shown !== undefined && shown.bottom <= panel.bottom + 0.5,
+      aboutInside: about !== undefined && about.height > 0 && about.bottom <= panel.bottom + 0.5,
       overGear: panel.bottom > 386,
-    }).toStrictEqual({ scrolls: false, againInside: true, overGear: false });
+    }).toStrictEqual({ scrolls: false, againInside: true, aboutInside: true, overGear: false });
   });
 
   it('cover the court and hold an offline match when nothing else fits', () => {
