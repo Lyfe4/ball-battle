@@ -3,14 +3,15 @@
 // rematch of it can move (rematch-watch.ts in app), from the end of its last fight: a match played
 // out is finished at its last pick, and "not offered" until that fight ends means not yet. Away
 // from the rematch's own screens (the end screen and the new lineup ask for themselves), this asks
-// every ASK_MS while something can happen, and says so on the floating card on any calm screen,
-// never over a fight, where it waits:
+// every ASK_MS while something can happen, and says so on the incoming banner (ADR 0086) on any
+// calm screen, never over a fight, where it waits:
 //
 // - the other player asks: who, the seconds left, Accept (straight to the lineup) and No thanks;
 // - both said yes, this player's lineup to come: "Player 4821 accepted", the seconds, Choose lineup;
 //   home shows the way back too (`back`);
 // - the new match started once this player's lineup was in: straight into it;
-// - a no, or the time running out, to the one who asked and to anyone who said yes, with OK.
+// - a no, or the time running out, to the one who asked and to anyone who said yes, with OK; never
+//   when the end screen already said it (`endingTold`, ADR 0086).
 //
 // A hidden page doesn't ask, and asks at once when back. Every time is the server's.
 //
@@ -34,9 +35,10 @@ import {
 import { decodeRematchView, type RematchView } from '../api/rematch.ts';
 import type { SeriesView } from '../api/series.ts';
 import { seatsOf } from '../app/online-series.ts';
-import type { DefinitionLookup } from '../sim/types.ts';
-import { createRematchNotice } from '../ui/online/rematch-notice.ts';
+import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
+import { rematchIncoming } from './incoming-text.ts';
 import { failureLine } from './online-failure-text.ts';
+import { challengeLine } from './online-text.ts';
 import {
   rematchBackOf,
   rematchNoticeOf,
@@ -66,6 +68,8 @@ export interface RematchWatchHost {
   ownScreen(): string | undefined;
   /** The live series on screen, if any: the new match once it started. */
   seriesShown(): string | undefined;
+  /** Series `id`'s end screen already said why its rematch ended: Home never says it again. */
+  endingTold(id: string): boolean;
   /** Home's way back changed: shown while the rematch waits on this player. */
   backChanged(back: RematchHomeBack | undefined): void;
 }
@@ -86,11 +90,7 @@ export interface RematchWatcher {
   active(): boolean;
 }
 
-export function createRematchWatch(
-  root: HTMLElement,
-  lookup: DefinitionLookup,
-  host: RematchWatchHost,
-): RematchWatcher {
+export function createRematchWatch(root: HTMLElement, host: RematchWatchHost): RematchWatcher {
   let watch = rematchWatchOf(host.storage, Date.now());
   let rematch: RematchView | undefined;
   /** When `rematch` was answered, by this device's clock: the server's time moves on from it. */
@@ -136,7 +136,7 @@ export function createRematchWatch(
     });
   };
 
-  const notice = createRematchNotice(root, lookup, {
+  const notice = createIncomingBanner(root, 'Rematch', {
     accept: async () => {
       const watching = watch;
       // Both said yes already: Choose lineup.
@@ -148,6 +148,8 @@ export function createRematchWatch(
       forget();
       render();
     },
+    // A rematch has no × (it can't wait anywhere else): its answers or its 30 s end it.
+    later: () => undefined,
   });
 
   function stopAsking(): void {
@@ -281,7 +283,7 @@ export function createRematchWatch(
   /** Shows what there is to say now, moves into a new match that started, and asks again. */
   function render(): void {
     const watching = watch;
-    const said =
+    let said =
       watching === undefined || rematch === undefined || !away()
         ? undefined
         : rematchNoticeOf(
@@ -294,12 +296,13 @@ export function createRematchWatch(
           );
     host.backChanged(away() ? homeBack(watching) : undefined);
     if (said?.kind === 'started') {
+      const { seriesId } = said;
       // Already on it (its lineup screen moved in), or moved now once no fight is on.
-      if (host.seriesShown() === said.seriesId) forget();
+      if (host.seriesShown() === seriesId) forget();
       else if (!host.fighting()) {
         forget();
         host.go((url) => {
-          writeOnlineSeriesParams(url, said.seriesId);
+          writeOnlineSeriesParams(url, seriesId);
         });
       }
       notice.show(undefined);
@@ -307,10 +310,19 @@ export function createRematchWatch(
       schedule();
       return;
     }
+    // News the end screen already said is not said again away from it (ADR 0086).
+    if (said?.kind === 'ended' && watching !== undefined && host.endingTold(watching.id)) {
+      said = undefined;
+    }
     const calm = away() && !host.fighting();
     // Nothing more can come of it, and nothing to say: the watch ends.
     if (rematch !== undefined && !rematchOpen(rematch) && !notYet() && said === undefined) forget();
-    notice.show(calm ? said : undefined, failure);
+    notice.show(
+      calm && said !== undefined && watching !== undefined
+        ? rematchIncoming(said, watching.they, challengeLine(watching))
+        : undefined,
+      failure,
+    );
     const counting = calm && (said?.kind === 'asked' || said?.kind === 'agreed');
     if (counting && ticking === undefined) {
       ticking = window.setInterval(render, DISPLAY_MS);

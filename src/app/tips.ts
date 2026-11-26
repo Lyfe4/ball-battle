@@ -21,7 +21,7 @@ export interface Tips {
   /** Ability hints in the arena ("Lightning!"). */
   enabled(): boolean;
   setEnabled(on: boolean): void;
-  /** The ready moment's "what to watch" card ("Don't show these again" turns it off). */
+  /** The ready moment's "what to watch" card (its Hide tips turns it off). */
   readyCards(): boolean;
   setReadyCards(on: boolean): void;
   /** True the first time this device sees `key` (a ball's ability) while hints are on. */

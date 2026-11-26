@@ -23,6 +23,9 @@ import { askToDelete } from './account-delete.ts';
 import { createCodeStep } from './sign-in-code.ts';
 import { offerSwitch } from './sign-in-switch.ts';
 import { inAMatchCard } from './current-match.ts';
+
+/** Signing in waits for a live match or lobby to end (ADR 0079, `whileNotLive`). */
+const SIGN_IN_IN_A_MATCH = 'Finish or leave your match first, then sign in';
 import { onlineNotice } from './online-text.ts';
 import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './sign-in-text.ts';
 
@@ -128,7 +131,7 @@ export function createSignIn(
     if (answer.kind === 'error') {
       switch (answer.code) {
         case 'in_a_match':
-          show(inAMatchCard(answer.message, host.toMatch, host.home));
+          show(inAMatchCard(host.toMatch, host.home, SIGN_IN_IN_A_MATCH));
           return;
         case 'already_signed_in':
           done(false);
@@ -238,8 +241,7 @@ export function createSignIn(
     if (google === 'signed_in') done();
     else if (google === 'switch') signedIn('switch', 'google');
     else if (google === 'in_a_match') {
-      const line = 'Finish or leave your match first, then sign in';
-      show(inAMatchCard(line, host.toMatch, host.home));
+      show(inAMatchCard(host.toMatch, host.home, SIGN_IN_IN_A_MATCH));
     } else start(GOOGLE_PROBLEMS[google]);
   }
 

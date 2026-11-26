@@ -10,8 +10,10 @@
 // row's last control, after any `?`; the content under the row starts at the row's left edge.
 // Across screens at one size: the lead slot's box, the title's left and top, the gear's box and the
 // row's top differ by no more than half a pixel, and the page's width doesn't change (a scrollbar
-// coming and going).
+// coming and going). With a friend's banner open (ADR 0086) nothing moves: it floats over the row.
 import { expect } from 'vitest';
+import { LATER_NAME } from '../screens/incoming-text.ts';
+import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
 import { settle, until, visible } from './page-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
@@ -131,6 +133,66 @@ const near = (a: number, b: number, what: string): void => {
   );
 };
 
+/** What a banner must never move: the header row, what follows it, Play's court, the tab bar. */
+function landmarks(where: string): Map<string, DOMRect> {
+  const head = shownHeader(where);
+  const found = new Map<string, DOMRect>([['the header row', head.getBoundingClientRect()]]);
+  const next = nextLaidOut(head);
+  if (next !== undefined) found.set('the content under the row', next.getBoundingClientRect());
+  for (const [what, selector] of [
+    ['the court', '.stage[data-home] .arena-container'],
+    ['the tab bar', '.tab-bar'],
+  ] as const) {
+    const node = document.querySelector(selector);
+    if (node !== null && laidOut(node)) found.set(what, node.getBoundingClientRect());
+  }
+  const page = document.scrollingElement ?? document.documentElement;
+  found.set("the page's height", new DOMRect(0, 0, 0, page.scrollHeight));
+  return found;
+}
+
+/** Opens a friend's challenge banner over the screen on show, checks it moved nothing, and closes it. */
+async function bannerMovesNothing(where: string): Promise<void> {
+  const before = landmarks(where);
+  const root = document.createElement('div');
+  document.body.append(root);
+  const banner = createIncomingBanner(root, 'A friend’s challenge', {
+    accept: () => Promise.resolve(),
+    decline: () => Promise.resolve(),
+    dismiss: () => undefined,
+    later: () => undefined,
+  });
+  banner.show({
+    who: 'Sam_R',
+    title: 'Sam_R challenges you',
+    line: 'Best of 3 · Reveal · live',
+    answers: 'answer',
+    later: LATER_NAME,
+    left: 1,
+  });
+  await settle();
+  try {
+    const after = landmarks(where);
+    for (const [what, rect] of before) {
+      const moved = after.get(what);
+      expect(moved, `${where}: ${what} with a banner open`).toBeDefined();
+      if (moved !== undefined) expectSameBox(moved, rect, `${where}: ${what} with a banner open`);
+    }
+    // A phone held upright: it floats over the header row, inside the safe area.
+    if (!matchMedia('(min-aspect-ratio: 5/4)').matches) {
+      const head = before.get('the header row');
+      const box = root.getBoundingClientRect();
+      expect(box.top, `${where}: the banner is over the header row`).toBeLessThan(
+        head?.bottom ?? 0,
+      );
+      expect(box.top, `${where}: the banner keeps off the screen's edge`).toBeGreaterThan(0);
+    }
+  } finally {
+    banner.show(undefined);
+    root.remove();
+  }
+}
+
 export interface FrameChecks {
   /**
    * Where Play's header row is held to the frame: `frame`, all of it (a phone, a desktop: the row
@@ -139,6 +201,39 @@ export interface FrameChecks {
    * desktop layout joins the frame (plan PR 9).
    */
   readonly play: 'frame' | 'gear' | 'none';
+}
+
+/**
+ * A browse move mid-transition (ADR 0087, PR 19): Balls → a ball's page rises and fades, but the
+ * header row's lead slot and title stay on their pixels every frame, and nothing animates the row
+ * or the rail (their View Transition parts are still, screen-motion.css).
+ */
+async function checkMidTransition(): Promise<void> {
+  await follow('?view=manual');
+  await onScreen('manual');
+  const head = shownHeader('Balls');
+  const lead = head.querySelector('.screen-lead')?.getBoundingClientRect();
+  const still = (part: string) => /\((screen-head|rail)\)/.test(part);
+  const moved: string[] = [];
+  history.pushState(null, '', `${location.pathname}?view=manual&ball=vampire`);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+  for (let frame = 0; frame < 20; frame += 1) {
+    await new Promise((done) => requestAnimationFrame(done));
+    for (const animation of document.getAnimations()) {
+      const effect = animation.effect as KeyframeEffect | null;
+      const target = effect?.target;
+      const pseudo = effect?.pseudoElement ?? '';
+      if (still(pseudo) || target?.closest('.screen-header, .tab-bar') != null) {
+        moved.push(`frame ${String(frame)}: ${pseudo || (target?.className ?? '')}`);
+      }
+    }
+    const now = visible('.stage .screen-header .screen-lead')[0]?.getBoundingClientRect();
+    if (lead !== undefined && now !== undefined && Math.abs(now.left - lead.left) > 1) {
+      moved.push(`frame ${String(frame)}: the lead slot at ${String(now.left)}`);
+    }
+  }
+  await onScreen('manual');
+  expect(moved, 'the header row and rail mid-transition').toStrictEqual([]);
 }
 
 /** Opens every frame screen and checks its header row, and that none of it moves between them. */
@@ -152,6 +247,7 @@ export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
     await settle();
     const content = screen === 'home' && checks.play !== 'frame' ? 'skip' : 'check';
     seen.push({ name, screen, anchors: headerAnchors(name, content) });
+    await bannerMovesNothing(name);
   }
   const whole = seen.filter((one) => one.screen !== 'home' || checks.play === 'frame');
   const first = whole[0];
@@ -167,4 +263,5 @@ export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
     near(anchors.title.left, first.anchors.title.left, `the title's left on ${than}`);
     near(anchors.title.top, first.anchors.title.top, `the title's top on ${than}`);
   }
+  await checkMidTransition();
 }

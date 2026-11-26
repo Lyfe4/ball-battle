@@ -71,10 +71,23 @@
   line-height: 1.3;
 }
 
+/* Hide tips beside Fight!, the primary last; the row ends the card. */
+.ready-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--stack-gap);
+  margin: 4px 0 var(--space-gap);
+}
+
+.ready-actions:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
 .ready-fight {
   min-width: 10rem;
   min-height: var(--tap-target);
-  margin: 4px 0 var(--press-depth);
+  margin-bottom: var(--press-depth);
   padding: 0 var(--space-gap);
   border: 0;
   border-radius: var(--radius);
@@ -100,9 +113,12 @@
 }
 
 .ready-never {
-  min-height: var(--tap-target);
-  color: var(--color-on-sticker-muted);
-  font-size: var(--font-size-tiny);
+  flex: none;
+}
+
+.ready-fight[hidden],
+.ready-never[hidden] {
+  display: none;
 }
 
 /*
@@ -122,6 +138,20 @@
 
   .ready-reason {
     line-height: 1.25;
+  }
+
+  /*
+   * Fight! and Hide tips side by side inside a 288 px court: the row is the card's width and Fight!
+   * takes what Hide tips leaves, so the row never widens the card (WebKit's wider text did).
+   */
+  .ready-actions {
+    align-self: stretch;
+    justify-self: stretch;
+  }
+
+  .ready-fight {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 

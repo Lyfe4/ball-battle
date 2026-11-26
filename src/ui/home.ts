@@ -32,8 +32,6 @@ export interface HomeActions {
   /** The sheet changed what Play starts: remembered on this device. */
   readonly onChoice: (choice: PlayChoice) => void;
   readonly onFreePlay: () => void;
-  /** The status strip: the Friends tab, where what it says waits (ADR 0081). */
-  readonly onStatus: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
 }
@@ -54,16 +52,13 @@ export interface Home {
    * Play (or Resume series), the one obvious first action.
    */
   arrive(): void;
-  /** The status strip's line, or nothing: it hides (ADR 0081, never "0 friends online"). */
-  setStatus(line: string | undefined): void;
 }
 
 const STRIP_ICON_PX = 28;
 
 /**
  * The Play tab (ADR 0081), phone first: the title row with the gear at the top, the live demo
- * match on the arena, which balls are playing, the status strip (filled by the inbox), the mode box
- * saying what Play starts (it opens "What to play", play-sheet.ts), one large Play, then Free play
+ * match on the arena, which balls are playing, the mode box saying what Play starts (it opens "What to play", play-sheet.ts), one large Play, then Free play
  * as a quiet link, and Privacy · Terms at the end. On a wide screen it sits beside the arena, with
  * the pitch line and the roster's drawings as a strip on a desktop.
  */
@@ -87,14 +82,8 @@ export function createHome(
 
   const pitch = element('p', 'home-pitch', 'Pick your balls. Watch your plan fight it out.');
 
-  // What waits on the player and who is online, from the inbox (ADR 0081): a link to the Friends
-  // tab, its arrow the one our links draw (`.text-link::after`); hidden while it has nothing.
-  const status = element('button', 'text-link home-status');
-  status.type = 'button';
-  status.hidden = true;
-  const statusText = element('span', 'home-status-text');
-  status.append(statusText);
-  status.addEventListener('click', actions.onStatus);
+  // Nothing social on Play (ADR 0086): what waits on the player is the Friends tab's badge, who is
+  // online the Friends list's title. The court has the room the status strip took.
 
   let choice: PlayChoice | undefined;
   let held: SeriesState | undefined;
@@ -132,13 +121,14 @@ export function createHome(
   const playMeta = element('span', 'home-play-meta');
   play.append(playLabel, playMeta);
   busyOnClick(play, () => (choice === undefined ? undefined : actions.onPlay(choice)));
-  // With a series held, Play resumes it; a quiet link beside it starts afresh instead.
-  const fresh = element('button', 'hud-button home-new-series', 'New series');
+  // With a series held, Play resumes it; New series, in Free play's row at its end (under Play's
+  // end), starts afresh instead: a row of its own cost the demo court 56 px at 390 x 664.
+  const fresh = element('button', 'hud-button hud-button-compact home-new-series', 'New series');
   fresh.type = 'button';
   fresh.addEventListener('click', actions.onNewSeries);
   // The box and Play are one row: "Back to your match" takes their place (online-mount.ts).
   const playRow = element('div', 'home-play-row');
-  playRow.append(box, play, fresh);
+  playRow.append(box, play);
 
   const link = (text: string, onClick: () => void) => {
     const button = element('button', 'text-link home-link', text);
@@ -149,7 +139,7 @@ export function createHome(
     return button;
   };
   const more = element('div', 'home-more');
-  more.append(link(FREE_PLAY, actions.onFreePlay));
+  more.append(link(FREE_PLAY, actions.onFreePlay), fresh);
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -179,7 +169,7 @@ export function createHome(
   // so it has no Back (ADR 0081).
   const head = createScreenHeader('BallBattle', 'Back', () => undefined, { tab: 'play' }).element;
   head.classList.add('home-head');
-  root.append(head, demo, pitch, status, playRow, more, strip, footer, sheet.element);
+  root.append(head, demo, pitch, playRow, more, strip, footer, sheet.element);
 
   /** The box and Play as the choice and the held series say. */
   function showPlay(): void {
@@ -226,10 +216,6 @@ export function createHome(
       sheet.close();
       // For the keyboard: no ring until a key is pressed (input-modality.ts, ADR 0086).
       play.focus();
-    },
-    setStatus(line) {
-      setText(statusText, line ?? '');
-      setHidden(status, line === undefined);
     },
   };
 }

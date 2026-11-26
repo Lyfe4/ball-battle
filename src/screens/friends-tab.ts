@@ -3,7 +3,7 @@
 // places the link card first while there are no friends yet); for a guest or nobody, what signing
 // in unlocks, with Sign in, never a wall; with accounts off, that friends lists are on the way. It
 // reads `/me` (only where there may be a player) and `/me/friends` when it opens; never on a timer.
-import type { FriendEntry, Invite, TurnWaiting } from '../api/friends.ts';
+import type { Ending, FriendEntry, GameWaiting, Invite, TurnWaiting } from '../api/friends.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { TURNS_BUILD } from '../app/turns-build.ts';
 import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
@@ -50,7 +50,12 @@ export interface FriendsTab {
   /** The friends' status from the inbox, drawn if the list shows. */
   statuses(friends: readonly FriendEntry[]): void;
   /** The friends' open challenges and turns (ADR 0085) from the inbox, first in Waiting for you. */
-  invites(invites: readonly Invite[], turns?: readonly TurnWaiting[]): void;
+  invites(
+    invites: readonly Invite[],
+    turns?: readonly TurnWaiting[],
+    games?: readonly GameWaiting[],
+    endings?: readonly Ending[],
+  ): void;
 }
 
 /** A card of the tab: its title, then what it holds. */
@@ -186,8 +191,8 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     statuses(list) {
       friends?.statuses(list);
     },
-    invites(list, turns) {
-      friends?.challenges(list, turns);
+    invites(list, turns, games, endings) {
+      friends?.challenges(list, turns, games, endings);
     },
   };
 }

@@ -36,7 +36,7 @@ afterAll(async () => {
 });
 
 const friendsOf = (page: Page) => page.locator('.friends');
-const rematchCardOf = (page: Page) => page.locator('.rematch-notice[aria-label="Rematch"]');
+const rematchCardOf = (page: Page) => page.locator('.incoming-banner[aria-label="Rematch"]');
 
 /** Makes the two accounts friends through their Friends sections. */
 async function befriend(one: Page, two: Page, twoName: string, oneName: string): Promise<void> {
@@ -98,7 +98,7 @@ describe('a rematch of a friend’s challenge', () => {
       // Sam, home all along: the card says Jo accepted, with the seconds to choose.
       const told = rematchCardOf(asker);
       await told
-        .locator('.pick-clock', { hasText: new RegExp(`^${jo} accepted\\s*\\d+ s`) })
+        .locator('.incoming-title', { hasText: new RegExp(`^${jo} accepted$`) })
         .waitFor({ timeout: 10_000 });
       await asker.getByRole('button', { name: /^Back to your rematch/ }).waitFor();
       await told.getByRole('button', { name: 'Choose lineup' }).click();

@@ -51,5 +51,6 @@
 @import './ui/update-notice.css';
 @import './ui/tab-bar.css';
 @import './ui/coming-soon.css';
-@import './ui/online/rematch-notice.css';
+@import './ui/online/incoming-banner.css';
+@import './ui/screen-motion.css';
 @import './ui/frame.css';

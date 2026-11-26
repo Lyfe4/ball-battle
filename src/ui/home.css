@@ -33,51 +33,6 @@
 }
 
 /*
- * The status strip (ADR 0081): what waits on the player and who is online, from the inbox, leading
- * to the Friends tab. A calm pill in the page's own text, with a green dot; its arrow is the chevron
- * every text link draws (`.text-link::after`, one-chevron.test.ts). Nothing at all while it has
- * nothing to say.
- */
-.home-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-  min-height: var(--tap-target);
-  padding: 0 var(--space-gap);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-weight: 600;
-  text-align: start;
-}
-
-.home-status::before {
-  content: '';
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-favoured);
-}
-
-.home-status-text {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Its words in the page's text; its arrow in a link's colour, as every other link's (2026-11-24). */
-.home-status::after {
-  color: var(--color-focus);
-}
-
-.home-status[hidden] {
-  display: none;
-}
-
-/*
  * A phone held upright: the title row at the top of the page, above the court (ADR 0081), and the
  * rest of the tab under it. The panel's boxes step aside so the court and the tab's parts are one
  * column; the court gives way, so Play shows without a scroll at 390 x 664 with the bar.
@@ -124,23 +79,25 @@
   opacity: 0.8;
 }
 
-/*
- * Play, and New series while a series is held (ADR 0046): the link sits right under the button's end,
- * so Play keeps its full width and its line of format and score never wraps on a phone.
- */
+/* The box saying what Play starts, then Play at its full width. */
 .home-play-row {
   display: grid;
   justify-items: stretch;
   gap: var(--space-small);
 }
 
+/*
+ * New series while a series is held (ADR 0046): in Free play's row, under Play's end, so Play keeps
+ * its full width and the demo court keeps its room (ADR 0086). It goes with Play's row when "Back to
+ * your match" takes that row's place.
+ */
 .home-new-series {
+  grid-column: 3;
   justify-self: end;
-  min-height: var(--tap-target);
-  padding: 0 var(--space-small);
 }
 
-.home-new-series[hidden] {
+.home-new-series[hidden],
+.home-play-row[hidden] ~ .home-more .home-new-series {
   display: none;
 }
 
@@ -238,12 +195,16 @@
   display: none;
 }
 
-/* Free play: a quiet link under Play. */
+/* Free play: a quiet link under Play, centred; New series at the row's end while one is held. */
 .home-more {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-small) var(--space-gap);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.home-more > .home-link {
+  grid-column: 2;
 }
 
 .home-link {

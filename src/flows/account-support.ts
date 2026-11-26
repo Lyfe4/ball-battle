@@ -25,6 +25,19 @@ async function forgetNetworkCodes(): Promise<void> {
   }
 }
 
+/**
+ * The turn of series by turns `id` runs out now (moved a minute into the past in the local
+ * database): the next read settles it, as the sweep would in production (ADR 0085, 0086).
+ */
+export async function expireTurn(id: string): Promise<void> {
+  const sql = postgres(LOCAL_DATABASE, { max: 1, onnotice: () => undefined });
+  try {
+    await sql`update game.series set turn_deadline = now() - interval '1 minute' where id = ${id}`;
+  } finally {
+    await sql.end();
+  }
+}
+
 /** How many emails `email` has had. */
 export async function mailCount(email: string): Promise<number> {
   const query = encodeURIComponent(`to:"${email}"`);

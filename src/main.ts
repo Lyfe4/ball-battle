@@ -1,5 +1,6 @@
 import './style.css';
 import { screenKeyOf } from './app/history-rules.ts';
+import { withScreenMotion } from './ui/screen-motion.ts';
 import { createMoves } from './app/moves.ts';
 import { showWhenLaidOut } from './app/first-paint.ts';
 import { createNavigation } from './app/navigation.ts';
@@ -58,8 +59,7 @@ const speedRoot = getElement('hud-speed', HTMLDivElement);
 const navigation = createNavigation(window, (url) =>
   screenKeyOf(parseRoute(url.searchParams, BALL_LOOKUP, false)),
 );
-const currentRoute = (): Route =>
-  parseRoute(new URL(window.location.href).searchParams, BALL_LOOKUP);
+const currentRoute = (): Route => parseRoute(new URL(location.href).searchParams, BALL_LOOKUP);
 const initialRoute = currentRoute();
 const state = initialAppState(initialRoute, loadSpeed(storage), generateSeed);
 const tips = createTips(storage);
@@ -75,9 +75,10 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
-function showCurrentRoute(): void {
-  router.show(currentRoute());
-}
+// Each screen change with its motion (ADR 0087): the URL's route, or the one given.
+const showCurrentRoute = withScreenMotion(screenKeyOf, currentRoute, (route) => {
+  router.show(route);
+});
 const { go, replaceWith, goHome, backOrHome } = createMoves(navigation, showCurrentRoute);
 
 const ballLink = createBallLink(go);
@@ -177,7 +178,7 @@ const online = ONLINE_BUILD
       redraw: () => {
         arena.redraw();
       },
-      waiting: inboxViews(shell, home),
+      waiting: inboxViews(shell),
     })
   : offlineMount(() => {
       goHome('replace');
@@ -352,6 +353,6 @@ navigation.onChange(showCurrentRoute);
 
 // Something is on the arena from the first frame: the link's match (its URL corrected if an id was
 // invalid), or a match behind a setup screen, which keeps its own URL; home puts on its demo.
-router.show(initialRoute);
+showCurrentRoute(initialRoute);
 // The first screen is laid out: the stage shows in one frame, in the font (ADR 0087).
 showWhenLaidOut(window, stage, arena.fit);

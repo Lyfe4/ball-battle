@@ -8,10 +8,11 @@ import {
   addedLine,
   friendsTabLabel,
   hasAnyone,
-  inviteLine,
   liveUnavailable,
   STATUS_WORDS,
-  statusLine,
+  endingLine,
+  friendsTitle,
+  gameName,
   waitingCount,
 } from './friends-text.ts';
 
@@ -33,13 +34,6 @@ describe('the Friends section’s words', () => {
   });
 
   it('names a friend’s challenge and every status in words', () => {
-    const challenge = { token: 't', from: 'Sam_R', format: 'showdown', bestOf: 5 } as const;
-    expect(inviteLine({ ...challenge, live: true })).toBe(
-      'Sam_R challenges you · Best of 5 · Showdown · live',
-    );
-    expect(inviteLine({ ...challenge, live: false })).toBe(
-      'Sam_R challenges you · Best of 5 · Showdown · take turns',
-    );
     expect(Object.values(STATUS_WORDS)).toStrictEqual(['Online', 'In a match', 'Offline']);
   });
 });
@@ -63,59 +57,17 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
     deadline: '2026-11-26T10:00:00.000Z',
   });
 
-  it('says whose turn it is first: one by name, more by count (ADR 0085)', () => {
-    const none = { friends: [friend('online')], requests: 0, invites: [] };
-    expect(statusLine({ ...none, turns: [turn('Sam')] })).toBe('Your turn vs Sam · 1 online');
-    expect(statusLine({ ...none, friends: [], turns: [turn('Sam')] })).toBe('Your turn vs Sam');
-    expect(statusLine({ ...none, friends: [], turns: [turn(null)] })).toBe('Your turn');
-    expect(statusLine({ ...none, friends: [], turns: [turn('Sam'), turn('Jo')] })).toBe(
-      'Your turn in 2 series',
-    );
-    expect(statusLine({ ...none, invites: [invite], turns: [turn('Sam'), turn('Jo')] })).toBe(
-      '2 turns · 1 challenge · 1 online',
-    );
-    expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(2);
+  it('counts what waits for the badge: turns, challenges and requests (ADR 0085)', () => {
+    const none = { friends: [friend('online')], requests: 1, invites: [] };
+    expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(3);
   });
 
-  it('puts what waits first, then who is online, and says nothing when there is nothing', () => {
-    // One thing says it whole; more than one, each in a word, so a 390 px phone shows them all.
-    expect(statusLine({ friends: [], requests: 0, invites: [invite], turns: [] })).toBe(
-      '1 challenge waiting',
+  it('says who is online in the friends list’s title, never "0 online" (ADR 0086)', () => {
+    expect(friendsTitle('Friends', [])).toBe('Friends · 0');
+    expect(friendsTitle('Friends', [friend('online'), friend('offline')])).toBe(
+      'Friends · 2 · 1 online',
     );
-    expect(statusLine({ friends: [], requests: 2, invites: [], turns: [] })).toBe(
-      '2 friend requests',
-    );
-    expect(statusLine({ friends: [friend('online')], requests: 0, invites: [], turns: [] })).toBe(
-      '1 friend online',
-    );
-    expect(
-      statusLine({
-        friends: [friend('online'), friend('online')],
-        requests: 0,
-        invites: [invite],
-        turns: [],
-      }),
-    ).toBe('1 challenge · 2 online');
-    expect(statusLine({ friends: [friend('online')], requests: 2, invites: [], turns: [] })).toBe(
-      '2 requests · 1 online',
-    );
-    expect(
-      statusLine({
-        friends: [friend('online'), friend('online')],
-        requests: 1,
-        invites: [invite],
-        turns: [],
-      }),
-    ).toBe('1 challenge · 1 request · 2 online');
-    // Never "0 friends online": in a match or offline is not online.
-    expect(
-      statusLine({
-        friends: [friend('in_a_match'), friend('offline')],
-        requests: 0,
-        invites: [],
-        turns: [],
-      }),
-    ).toBeUndefined();
+    expect(friendsTitle('Friends', [friend('in_a_match'), friend('offline')])).toBe('Friends · 2');
   });
 
   it('counts what waits on the player for the badge, and names it', () => {
@@ -168,5 +120,20 @@ describe('the person’s sheet’s words (ADR 0086)', () => {
     expect(BLOCK_STEP('Jo').title).toBe('Block Jo?');
     expect(BLOCK_STEP('Jo').text).toContain('can’t add or challenge you');
     expect(BLOCK_STEP('Jo').action).toBe('Block Jo');
+  });
+});
+
+describe('Your games’ words (ADR 0086)', () => {
+  it('says whose turn, and how a game ended, to each player', () => {
+    expect(gameName({ opponent: 'Sam' })).toBe('Sam’s turn');
+    expect(gameName({ opponent: null })).toBe('Their turn');
+    expect(endingLine({ opponent: 'Sam', outcome: 'won-ran-out' })).toBe(
+      'You won vs Sam: their turn ran out',
+    );
+    expect(endingLine({ opponent: 'Sam', outcome: 'lost' })).toBe('Sam won');
+    expect(endingLine({ opponent: 'Sam', outcome: 'lost-ran-out' })).toBe(
+      'You lost: your turn ran out',
+    );
+    expect(endingLine({ opponent: 'Sam', outcome: 'won' })).toBe('You won vs Sam');
   });
 });

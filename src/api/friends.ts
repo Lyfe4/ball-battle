@@ -42,6 +42,28 @@ export interface TurnWaiting {
   readonly deadline: string;
 }
 
+/** A series by turns waiting on the other player's pick (ADR 0086): "Sam's turn · 20 h left". */
+export interface GameWaiting {
+  readonly seriesId: string;
+  /** The other player's name; null when they have been deleted. */
+  readonly opponent: string | null;
+  /** ISO 8601: their turn runs out then. */
+  readonly deadline: string;
+}
+
+/**
+ * How a series by turns ended, as its player sees it: won or lost, played out, or by a turn that ran
+ * out (`ranOut`: theirs when won, the player's own when lost).
+ */
+export type EndingOutcome = 'won' | 'lost' | 'won-ran-out' | 'lost-ran-out';
+
+/** A series by turns that ended and its player hasn't seen yet (ADR 0086): kept until seen. */
+export interface Ending {
+  readonly seriesId: string;
+  readonly opponent: string | null;
+  readonly outcome: EndingOutcome;
+}
+
 /** GET /api/v1/me/inbox: read every 30 s while the page is visible and the account has friends. */
 export interface InboxResponse {
   /** Accepted friends, each with a status. */
@@ -51,6 +73,13 @@ export interface InboxResponse {
   readonly invites: readonly Invite[];
   /** Series by turns where it is this account's turn, the soonest deadline first (ADR 0085). */
   readonly turns: readonly TurnWaiting[];
+  /**
+   * Series by turns waiting on the other player, the soonest deadline first (ADR 0086). Absent from
+   * a server from before them: none.
+   */
+  readonly games?: readonly GameWaiting[];
+  /** Series by turns that ended and this account hasn't seen, the latest first (ADR 0086). */
+  readonly endings?: readonly Ending[];
 }
 
 /** GET /api/v1/friends, and the answer to every change. */

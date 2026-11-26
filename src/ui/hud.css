@@ -18,7 +18,7 @@
 .hud-ball {
   display: grid;
   grid-template-columns: 1fr auto;
-  transition: opacity 0.3s;
+  transition: opacity var(--motion-slow) var(--ease-out);
   gap: 4px var(--space-small);
   align-items: baseline;
 }
@@ -63,7 +63,7 @@
 /* Health just lost: sits behind the fill and catches up after a short hold. */
 .hud-health-ghost {
   background: var(--color-health-ghost);
-  transition: width 450ms ease-out 300ms;
+  transition: width var(--motion-drain) var(--ease-out) var(--motion-drain-hold);
 }
 
 .hud-result {

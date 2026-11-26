@@ -12,7 +12,7 @@
   display: block;
   border-radius: var(--radius);
   background: var(--color-surface);
-  animation: skeleton-breathe 1.6s ease-in-out infinite;
+  animation: skeleton-breathe var(--motion-breathe) var(--ease-swing) infinite;
 }
 
 .skeleton-title {
@@ -95,5 +95,22 @@
 
   .skeleton-card .skeleton-block {
     background: var(--color-raised);
+  }
+}
+
+/* What takes a seen skeleton's place fades in once (skeleton.ts, ADR 0087); still with reduced motion. */
+[data-revealed] {
+  animation: skeleton-reveal var(--motion-base) var(--ease-out);
+}
+
+@keyframes skeleton-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-revealed] {
+    animation: none;
   }
 }

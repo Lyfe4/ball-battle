@@ -47,6 +47,8 @@ export interface OnlinePlay {
   isLive(): boolean;
   /** The ended live series whose end screen shows now, which offers its own rematch. */
   endScreen(): string | undefined;
+  /** Series `id`'s end screen said why its rematch ended: Home never says it again (ADR 0086). */
+  endingTold(id: string): boolean;
   /** The series on screen, if this screen shows: a rematch's new match once it started. */
   seriesShown(): string | undefined;
   /**

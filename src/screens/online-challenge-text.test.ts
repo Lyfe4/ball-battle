@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChallengeInfo } from '../api/challenges.ts';
 import { cardFor, challengeChips, howItGoes, type CardActions } from './online-challenge-text.ts';
+import { inAMatchCard, lobbyWaitingCard } from './current-match.ts';
 
 const actions: CardActions = {
   token: 'abc',
@@ -14,6 +15,7 @@ const actions: CardActions = {
   sendOwn: () => undefined,
   share: () => Promise.resolve('Shared'),
   cancel: () => Promise.resolve(),
+  unblock: () => Promise.resolve(),
 };
 const info = (over: Partial<ChallengeInfo> = {}): ChallengeInfo => ({
   format: 'reveal',
@@ -26,6 +28,7 @@ const info = (over: Partial<ChallengeInfo> = {}): ChallengeInfo => ({
   own: false,
   invitee: null,
   declined: false,
+  blocked: null,
   ...over,
 });
 
@@ -101,5 +104,80 @@ describe('a challenge by turns sent to a friend (ADR 0085)', () => {
 
   it('keeps the link card for one sent to nobody in particular', () => {
     expect(sent({ invitee: null }).title).toBe('Send this link to a friend');
+  });
+});
+
+describe('the challenge lifecycle’s words (ADR 0086)', () => {
+  it('tells a player who blocked the sender, with Unblock and Not now', () => {
+    const card = cardFor(info({ blocked: 'pair-1' }), actions);
+    expect(card.title).toBe('You blocked Player 6908');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Unblock']);
+    expect(card.quiet?.text).toBe('Not now');
+    // Nobody blocked: the challenge as ever.
+    expect(cardFor(info(), actions).title).toBe('Player 6908 challenges you');
+  });
+
+  it('says whose lobby waits when sending or accepting another, never the server’s sentence', () => {
+    const lobby = { kind: 'lobby', token: 't', format: 'reveal', bestOf: 3 } as const;
+    const ways = {
+      open: () => Promise.resolve(),
+      replace: () => Promise.resolve(),
+      home: () => undefined,
+    };
+    const send = lobbyWaitingCard({ ...lobby, invitee: 'Jo' }, 'send', ways);
+    expect(send.title).toBe('You already challenged Jo');
+    expect(send.buttons.map((button) => button.text)).toStrictEqual([
+      'Open it',
+      'Cancel that and send this',
+    ]);
+    const accept = lobbyWaitingCard({ ...lobby, invitee: null }, 'accept', ways);
+    expect(accept.title).toBe('Your challenge link is waiting');
+    expect(accept.buttons[1]?.text).toBe('Cancel that and accept this');
+    expect(
+      inAMatchCard(
+        () => Promise.resolve(),
+        () => undefined,
+      ).body,
+    ).toStrictEqual(['One live match at a time.']);
+  });
+});
+
+describe('the friend lobby (ADR 0086)', () => {
+  const lobby = (over: Partial<ChallengeInfo> = {}) =>
+    cardFor(info({ status: 'yours', own: true, invitee: 'Jo', ...over }), actions);
+
+  it('says Challenge sent, waits for Jo by name, says what comes next, the link folded', () => {
+    const card = lobby();
+    expect(card.title).toBe('Challenge sent');
+    expect(card.waiting).toStrictEqual({
+      title: 'Waiting for Jo',
+      line: 'Best of 3 · Reveal · live',
+      who: 'Jo',
+    });
+    expect(card.note).toMatch(/^Once they accept, you both pick lineups, 60 s\./);
+    expect(lobby({ bestOf: 5 }).note).toMatch(/pick lineups, 75 s\./);
+    expect(card.buttons).toStrictEqual([]);
+    expect(card.quiet?.text).toBe('Cancel challenge');
+    expect([card.link?.fold, card.link?.share?.text]).toStrictEqual([
+      'Also send a link',
+      'Share link',
+    ]);
+  });
+
+  it('after a No thanks leads with Challenge someone else and Home', () => {
+    const card = lobby({ declined: true });
+    expect(card.title).toBe('Jo said no thanks');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual([
+      'Challenge someone else',
+      'Home',
+    ]);
+    expect(card.link?.fold).toBe('Also send a link');
+  });
+
+  it('keeps Copy link first in a lobby for a link to anyone', () => {
+    const card = lobby({ invitee: null });
+    expect(card.title).toBe('Your challenge');
+    expect(card.buttons[0]?.text).toBe('Share link');
+    expect(card.link?.fold).toBeUndefined();
   });
 });

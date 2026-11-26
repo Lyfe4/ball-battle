@@ -1,6 +1,7 @@
 // Online play's words (ADR 0052): the notices in place of a screen (loading, a failure, nothing
 // to show) and the line under a series that waits or ended without being played out. Pure.
 import type { ChallengeInfo } from '../api/challenges.ts';
+import type { ErrorCode } from '../api/errors.ts';
 import type { SeriesView } from '../api/series.ts';
 import type { FailureKind } from '../app/api.ts';
 import { dueOf, seatsOf, timeLeft } from '../app/online-series.ts';
@@ -22,6 +23,8 @@ export function onlineNotice(
   retry: () => Promise<unknown>,
   home: () => void,
   reason?: string,
+  /** A refusal's code: the game's own words where it has them (ADR 0086). */
+  code?: ErrorCode,
 ): NoticeContent {
   const homeButton = { text: 'Home', onClick: home };
   switch (status) {
@@ -32,7 +35,7 @@ export function onlineNotice(
         buttons: [homeButton],
       };
     default: {
-      const { title, body } = failureText(status, reason);
+      const { title, body } = failureText(status, reason, code);
       return { title, body: [body], buttons: [{ text: 'Try again', onClick: retry }, homeButton] };
     }
   }

@@ -1,31 +1,39 @@
-// A friend's live challenge reaches a signed-in player anywhere (ADR 0079, PR (d); ADR 0081), over
-// a fake inbox: the rematch's floating card says who and what, never over a fight or a lineup pick
+// A friend's live challenge reaches a signed-in player anywhere (ADR 0079, PR (d); ADR 0081, 0086),
+// over a fake inbox: the incoming banner says who and what, never over a fight or a lineup pick
 // (it waits until the match is over), Accept goes straight to the challenge's lineup, No thanks
-// tells the server and the card goes; ignored (closed, or 20 s) it folds back into the badge and
-// doesn't come back; the whole answer is handed on (the badge, the strip, the Friends tab); signed
-// out, nothing is read and nothing waits.
+// tells the server and the banner goes; ignored (the ×, or 20 s while the page is seen) it folds
+// into the badge, which pulses once, and doesn't come back; while it shows the badge doesn't count
+// it too; on Friends there is no banner; a sender who stops waiting is said with OK; the whole
+// answer is handed on (the badge, the Friends tab); signed out, nothing is read and nothing waits.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../style.css';
 import type { InboxResponse } from '../api/friends.ts';
-import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { waitingCount } from './friends-text.ts';
+import { LATER_NAME } from './incoming-text.ts';
 import { createInboxWatch, INVITE_FOLD_MS } from './inbox-watch.ts';
 
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
 const INBOX: InboxResponse = {
   friends: [{ id: 'f-1', name: 'Sam_R', status: 'online' }],
   requests: 0,
-  invites: [{ token: TOKEN, from: 'Sam_R', format: 'reveal', bestOf: 3, live: true }],
+  invites: [
+    { token: TOKEN, from: 'Sam_R', friend: 'f-1', format: 'reveal', bestOf: 3, live: true },
+  ],
   turns: [],
 };
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(document, 'hidden');
 });
 
 function watch(busy = false, foldMs = INVITE_FOLD_MS, first = INBOX) {
   const sent: string[] = [];
   let inbox = first;
+  let friendsShown = false;
+  const badgeNode = document.createElement('span');
+  badgeNode.className = 'tab-bar-badge';
+  badgeNode.textContent = '1';
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const path = new URL(url, location.href).pathname;
@@ -39,7 +47,7 @@ function watch(busy = false, foldMs = INVITE_FOLD_MS, first = INBOX) {
     return Promise.resolve(new Response(null, { status: 204 }));
   });
   const root = document.createElement('div');
-  document.body.replaceChildren(root);
+  document.body.replaceChildren(root, badgeNode);
   const went: string[] = [];
   const seen: string[] = [];
   /** What the badge would count, after each answer handed on. */
@@ -47,13 +55,14 @@ function watch(busy = false, foldMs = INVITE_FOLD_MS, first = INBOX) {
   let calm = !busy;
   const inboxWatch = createInboxWatch(
     root,
-    BALL_LOOKUP,
     {
       open: (token, live) => {
         went.push(live ? token : `${token} by turns`);
         return Promise.resolve();
       },
       calm: () => calm,
+      onFriends: () => friendsShown,
+      badge: () => badgeNode,
       expecting: () => false,
       inbox: (answer) => {
         badge.push(answer === undefined ? 0 : waitingCount(answer));
@@ -71,10 +80,25 @@ function watch(busy = false, foldMs = INVITE_FOLD_MS, first = INBOX) {
     went,
     seen,
     badge,
+    badgeNode,
     setBusy: (value: boolean) => {
       calm = !value;
     },
+    setFriends: (value: boolean) => {
+      friendsShown = value;
+    },
+    /** The next inbox answer. */
+    answer: (next: InboxResponse) => {
+      inbox = next;
+    },
   };
+}
+
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** The page hidden or seen again, as a phone face down and back. */
+function hide(hidden: boolean): void {
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+  document.dispatchEvent(new Event('visibilitychange'));
 }
 
 const until = async (check: () => boolean, what: string) => {
@@ -86,19 +110,34 @@ const until = async (check: () => boolean, what: string) => {
 };
 const press = (root: HTMLElement, text: string) => {
   [...root.querySelectorAll<HTMLButtonElement>('button')]
-    .find((button) => button.textContent === text && !button.hidden)
+    .find(
+      (button) =>
+        (button.textContent === text || button.getAttribute('aria-label') === text) &&
+        !button.hidden,
+    )
     ?.click();
 };
+const words = (root: HTMLElement) =>
+  [root.querySelector('.incoming-title'), root.querySelector('.incoming-line')].map(
+    (node) => node?.textContent,
+  );
+const shown = (root: HTMLElement) => root.isConnected && !root.hidden;
 
-describe('a friend’s challenge on the floating card', () => {
-  it('shows who and what with Accept and No thanks; Accept opens its lineup', async () => {
-    const { inboxWatch, root, went, seen } = watch();
+describe('a friend’s challenge on the incoming banner', () => {
+  it('shows who and what with No thanks, Accept and the ×; Accept opens its lineup', async () => {
+    const { inboxWatch, root, went, seen, badge } = watch();
     inboxWatch.signedIn(true);
     await until(() => !root.hidden, 'the card');
     expect(root.getAttribute('aria-label')).toBe('Challenge');
-    expect(root.querySelector('.rematch-notice-line')?.textContent).toBe(
-      'Sam_R challenges you · Best of 3 · Reveal · live',
-    );
+    expect(words(root)).toStrictEqual(['Sam_R challenges you', 'Best of 3 · Reveal · live']);
+    expect(
+      [...root.querySelectorAll<HTMLButtonElement>('button')]
+        .filter((one) => !one.hidden)
+        .map((one) => one.getAttribute('aria-label') ?? one.textContent),
+    ).toStrictEqual([LATER_NAME, 'No thanks', 'Accept']);
+    // One place for the news: the badge doesn't count what the banner shows.
+    expect(badge.at(-1)).toBe(0);
+    expect(root.querySelector<HTMLElement>('.incoming-bar')?.hidden).toBe(false);
     expect(seen).toStrictEqual(['Sam_R online']);
     press(root, 'Accept');
     await until(() => went.length === 1, 'the lineup');
@@ -137,12 +176,15 @@ describe('a friend’s challenge on the floating card', () => {
     expect(root.hidden).toBe(true);
   });
 
-  it('closed, it folds too, and Accept from the Friends tab still works', async () => {
-    const { inboxWatch, root, went, badge } = watch();
+  it('closed with the ×, it folds into the badge, which pulses once; Accept in Friends works', async () => {
+    const { inboxWatch, root, went, badge, badgeNode } = watch();
     inboxWatch.signedIn(true);
     await until(() => !root.hidden, 'the card');
-    press(root, 'Later');
-    expect(root.hidden).toBe(true);
+    press(root, LATER_NAME);
+    // Counted on the badge at once; the banner lands in it, then the badge pulses.
+    expect(badge.at(-1)).toBe(1);
+    await until(() => root.hidden === true, 'the fold');
+    await until(() => badgeNode.hasAttribute('data-pulse') || reduced(), 'the pulse');
     inboxWatch.refresh();
     expect(root.hidden).toBe(true);
     await inboxWatch.accept(TOKEN);
@@ -160,6 +202,57 @@ describe('a friend’s challenge on the floating card', () => {
     expect(badge.at(-1)).toBe(1);
     await inboxWatch.accept(TOKEN);
     expect(went).toStrictEqual([`${TOKEN} by turns`]);
+  });
+
+  it('never shows on Friends: it is kept there, and not popped up after (ADR 0086)', async () => {
+    const { inboxWatch, root, sent, setFriends, badge } = watch();
+    setFriends(true);
+    inboxWatch.signedIn(true);
+    await until(() => sent.length === 1 && badge.length > 0, 'the read');
+    expect(shown(root)).toBe(false);
+    expect(badge.at(-1)).toBe(1);
+    setFriends(false);
+    inboxWatch.refresh();
+    expect(shown(root)).toBe(false);
+  });
+
+  it('says the sender stopped waiting, with OK, when their challenge goes while it shows', async () => {
+    const { inboxWatch, root, answer, badge } = watch();
+    inboxWatch.signedIn(true);
+    await until(() => !root.hidden, 'the card');
+    answer({ ...INBOX, invites: [] });
+    inboxWatch.poke();
+    await until(() => words(root)[0] === 'Sam_R stopped waiting', 'the sender gone');
+    expect(words(root)[1]).toBe('Challenge them back from Friends');
+    expect(badge.at(-1)).toBe(0);
+    press(root, 'OK');
+    expect(root.hidden).toBe(true);
+  });
+
+  it('says nothing when the challenge was taken on another tab (the sender is in that match)', async () => {
+    const { inboxWatch, root, answer, sent } = watch();
+    inboxWatch.signedIn(true);
+    await until(() => !root.hidden, 'the card');
+    answer({
+      ...INBOX,
+      friends: [{ id: 'f-1', name: 'Sam_R', status: 'in_a_match' }],
+      invites: [],
+    });
+    const reads = sent.length;
+    inboxWatch.poke();
+    await until(() => sent.length > reads, 'the read');
+    await until(() => root.hidden === true, 'the banner to go');
+  });
+
+  it('counts its 20 s only while the page is seen', async () => {
+    const { inboxWatch, root } = watch(false, 300);
+    inboxWatch.signedIn(true);
+    await until(() => !root.hidden, 'the card');
+    hide(true);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(root.hidden, 'not folded while hidden').toBe(false);
+    hide(false);
+    await until(() => root.hidden === true, 'the fold once seen');
   });
 
   it('No thanks tells the server, and the card goes', async () => {

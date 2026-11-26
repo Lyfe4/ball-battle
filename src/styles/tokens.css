@@ -195,6 +195,13 @@
    */
   --motion-swing: 900ms;
   --ease-swing: cubic-bezier(0.5, 0, 0.5, 1);
+  /* A busy button's ball, one hop (busy-button.css), on the same even curve as the swing. */
+  --motion-hop: 560ms;
+  /* A skeleton's slow breath while it waits for its content (skeleton.css). */
+  --motion-breathe: 1.6s;
+  /* Health just lost (hud.css): the ghost holds, then catches up with the fill. */
+  --motion-drain: 450ms;
+  --motion-drain-hold: 300ms;
   /*
    * The first paint (ADR 0087): the stage shows once its first screen is laid out (first-paint.ts),
    * in about 1.1 s on Slow 4G. Past this, the stylesheet shows it anyway with a line to reload, so a

@@ -162,3 +162,55 @@ export async function openSeriesOf(db: Db, player: string): Promise<number> {
 export async function lockPlayer(db: TransactionSql, player: string): Promise<void> {
   await db`select pg_advisory_xact_lock(hashtextextended(${`live:${player}`}, 0))`;
 }
+
+/**
+ * Holds several players' starting of live matches, always in one order (by id), so two players
+ * accepting each other's challenge at once (ADR 0086) wait in turn instead of deadlocking. One at
+ * a time on the connection, never pipelined.
+ */
+export async function lockPlayers(db: TransactionSql, players: readonly string[]): Promise<void> {
+  for (const player of [...new Set(players)].sort()) await lockPlayer(db, player);
+}
+
+/** `creator`'s live lobby still waiting for `invitee`, if any: a crossed challenge (ADR 0086). */
+export async function lobbyWaitingFor(
+  db: Db,
+  creator: string,
+  invitee: string,
+): Promise<string | undefined> {
+  const [row] = await db<{ id: string }[]>`
+    select id from game.challenges
+    where creator = ${creator} and invitee = ${invitee} and live and series_id is null
+      and start_id is null and cancelled_at is null
+      and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})
+    order by created_at desc
+    limit 1`;
+  return row?.id;
+}
+
+/** The lineups `a` and `b` are picking together now (ADR 0080), if any. */
+export async function startBetween(db: Db, a: string, b: string): Promise<string | undefined> {
+  const [row] = await db<{ id: string }[]>`
+    select id from game.starts
+    where series_id is null
+      and ((player_a = ${a} and player_b = ${b}) or (player_a = ${b} and player_b = ${a}))
+    order by agreed_at desc
+    limit 1`;
+  return row?.id;
+}
+
+/**
+ * The pair's row when `viewer` blocked `other` (blocks.ts): its id, for Unblock; else undefined.
+ * Only the viewer's own block: being blocked reads as nothing at all.
+ */
+export async function blockedBy(
+  db: Db,
+  viewer: string,
+  other: string,
+): Promise<string | undefined> {
+  const [row] = await db<{ id: string }[]>`
+    select id from game.friendships
+    where low = least(${viewer}::uuid, ${other}::uuid) and high = greatest(${viewer}::uuid, ${other}::uuid)
+      and blocked_by = ${viewer}`;
+  return row?.id;
+}

@@ -1,5 +1,5 @@
 // A rematch reaching a player away from the end screen (rematch-watch.ts, playtest 2026-11-19), in a
-// real browser against a fake server: the notice says who asks with the seconds left on any calm
+// real browser against a fake server: the incoming banner (ADR 0086) says who asks with the seconds left on any calm
 // screen, waits while a fight is on, never shows on that match's own screens, sends one answer
 // however often Accept is tapped, takes the one who accepts to the lineup, tells the one who asked
 // of the yes with the seconds left and Choose lineup (2026-11-23) and of a no (after a reload too),
@@ -7,7 +7,6 @@
 // shows home's way back while it waits on the player, and ends quietly when the time runs out.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../style.css';
-import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createRematchWatch } from './rematch-watch.ts';
 import { ended, host, ID, played, server, START, T, view } from './rematch-watch-support.ts';
 
@@ -15,9 +14,12 @@ const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
 let root: HTMLElement;
 const card = () => ({
   shown: !root.hidden,
-  title: root.querySelector('.pick-clock-title-text')?.textContent,
-  seconds: root.querySelector('.pick-clock-seconds')?.textContent,
-  line: root.querySelector('.rematch-notice-line')?.textContent,
+  title: root.querySelector('.incoming-title')?.textContent,
+  // The seconds end the banner's second line ("Best of 3 · Reveal · 24 s").
+  seconds: / (\d+ s)$/.exec(root.querySelector('.incoming-line')?.textContent ?? '')?.[1],
+  // An ending is the banner's title, with OK (ADR 0086).
+  line: root.querySelector('.incoming-title')?.textContent,
+  bar: root.querySelector<HTMLElement>('.incoming-bar')?.hidden === false,
   buttons: [...root.querySelectorAll<HTMLButtonElement>('button')]
     .filter((one) => !one.hidden)
     .map((one) => one.textContent),
@@ -47,14 +49,15 @@ describe('a rematch asked of a player away from the end screen', () => {
       // themselves.
       own = url.has('start') ? ID : undefined;
     };
-    const watch = createRematchWatch(root, BALL_LOOKUP, page.made);
+    const watch = createRematchWatch(root, page.made);
     watch.ended(ended('b'));
     await wait(100);
     expect(card()).toMatchObject({
       shown: true,
       title: 'Player 4195 wants a rematch',
       seconds: '24 s',
-      buttons: ['Accept', 'No thanks'],
+      buttons: ['No thanks', 'Accept'],
+      bar: true,
     });
     // Tapped three times: one answer, and the player goes straight to the new lineup.
     for (let tap = 0; tap < 3; tap += 1) button('Accept')?.click();
@@ -75,7 +78,7 @@ describe('a rematch asked of a player away from the end screen', () => {
     server(view({ state: 'asked', askedBy: 'a', deadline: T + 24_000 }));
     let endScreen: string | undefined = ID;
     const page = host({ ownScreen: () => endScreen });
-    const watch = createRematchWatch(root, BALL_LOOKUP, page.made);
+    const watch = createRematchWatch(root, page.made);
     watch.ended(ended('b'));
     await wait(100);
     expect(card().shown, 'the end screen asks for itself').toBe(false);
@@ -92,13 +95,13 @@ describe('a rematch asked of a player away from the end screen', () => {
   it('tells the one who asked of a no, after a reload too, until OK', async () => {
     const fake = server(view({ state: 'asked', askedBy: 'a', deadline: T + 24_000 }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(ended('a'));
+    createRematchWatch(root, page.made).ended(ended('a'));
     await wait(100);
     expect(card().shown, 'the asker waits').toBe(false);
     // The tab closed and opened again: the watch is remembered.
     fake.state.answer = view({ state: 'declined', askedBy: 'a', declinedBy: 'b' });
     root.replaceChildren();
-    createRematchWatch(root, BALL_LOOKUP, page.made);
+    createRematchWatch(root, page.made);
     await wait(100);
     expect(card()).toMatchObject({
       shown: true,
@@ -110,10 +113,19 @@ describe('a rematch asked of a player away from the end screen', () => {
     expect(page.memory.size).toBe(0);
   });
 
+  it('never says again on Home an ending the end screen already said (ADR 0086)', async () => {
+    server(view({ state: 'declined', askedBy: 'a', declinedBy: 'b' }));
+    const page = host({ endingTold: (id) => id === ID });
+    createRematchWatch(root, page.made).ended(ended('a'));
+    await wait(100);
+    expect(card().shown).toBe(false);
+    expect(page.memory.size).toBe(0);
+  });
+
   it('ends quietly for the one asked when the time runs out, and stops asking', async () => {
     const fake = server(view({ state: 'asked', askedBy: 'a', deadline: T + 1_000 }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(ended('b'));
+    createRematchWatch(root, page.made).ended(ended('b'));
     await wait(100);
     expect(card().seconds).toBe('1 s');
     await wait(1_100);
@@ -132,7 +144,7 @@ describe('a rematch asked of a player away from the end screen', () => {
     // asker's phone showed nothing.
     const fake = server(view({ state: 'asked', askedBy: 'a', deadline: T + 24_000 }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(ended('a'));
+    createRematchWatch(root, page.made).ended(ended('a'));
     await wait(100);
     expect(card().shown, 'waiting for the answer: no card').toBe(false);
     expect(page.backs, 'home leads back to the end screen').toStrictEqual(['answer']);
@@ -158,7 +170,7 @@ describe('a rematch asked of a player away from the end screen', () => {
   it('keeps the watch as long as the rematch can move: a yes gives the lineups their minute', async () => {
     server(view({ state: 'agreed', askedBy: 'a', deadline: T + 400_000 }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(ended('a'));
+    createRematchWatch(root, page.made).ended(ended('a'));
     await wait(100);
     const kept = JSON.parse(page.memory.values().next().value ?? '{}') as { until: number };
     expect(kept.until).toBeGreaterThan(Date.now() + 400_000);
@@ -167,7 +179,7 @@ describe('a rematch asked of a player away from the end screen', () => {
   it('tells a player who said yes that time ran out, and moves one whose lineup was in', async () => {
     const fake = server(view({ state: 'agreed', askedBy: 'a', deadline: T + 30_000 }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(ended('b'));
+    createRematchWatch(root, page.made).ended(ended('b'));
     await wait(100);
     expect(card().title).toBe('Rematch on: choose your lineup');
     fake.state.answer = view({ state: 'expired', askedBy: 'a', deadline: T + 30_000 });
@@ -188,7 +200,7 @@ describe('a rematch asked of a player away from the end screen', () => {
       deadline: T + 30_000,
     });
     const other = host();
-    createRematchWatch(root, BALL_LOOKUP, other.made).ended(ended('a'));
+    createRematchWatch(root, other.made).ended(ended('a'));
     await wait(100);
     expect(card().shown, 'waiting for the other lineup: nothing to say').toBe(false);
     fake.state.answer = view({ state: 'started', askedBy: 'a', seriesId: NEW });
@@ -203,7 +215,7 @@ describe('a rematch asked of a player away from the end screen', () => {
     // one who asked heard nothing of the yes later.
     const fake = server(view({ state: 'none', offered: false, now: T }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(played('a', T + 1_000));
+    createRematchWatch(root, page.made).ended(played('a', T + 1_000));
     await wait(100);
     expect(page.memory.size, 'not offered yet is not over').toBe(1);
     fake.state.answer = view({
@@ -224,7 +236,7 @@ describe('a rematch asked of a player away from the end screen', () => {
   it('asks again only when the last fight has ended, not every 2 s before', async () => {
     const fake = server(view({ state: 'none', offered: false, now: T }));
     const page = host();
-    createRematchWatch(root, BALL_LOOKUP, page.made).ended(played('b', T + 60_000));
+    createRematchWatch(root, page.made).ended(played('b', T + 60_000));
     await wait(2_500);
     expect(fake.sent).toHaveLength(1);
     const kept = JSON.parse(page.memory.values().next().value ?? '{}') as { until: number };

@@ -6,6 +6,7 @@
 // card whole inside the court with no line wider than its box, the ability caption (its title in
 // the ball's colour) and its ring in the tip's cream, settings' headings and rows, and Free
 // play's picker scrolling the page.
+import { FIRST_PAINT_FONT } from '../app/first-paint.ts';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -48,6 +49,10 @@ describe('the smallest phone turned sideways', () => {
     await import('../main.ts');
     await settle();
 
+    // Measured in the game's font, as the page is first shown: CI's first frame can be drawn
+    // before it, in a wider system font.
+    await document.fonts.load(FIRST_PAINT_FONT);
+    await document.fonts.ready;
     // The card: whole inside the court, and no line wider than its box.
     await until(() => visible('.ready-card').length === 1, 10_000, 'the ready card', false);
     const card = visible('.ready-card')[0];
@@ -62,6 +67,18 @@ describe('the smallest phone turned sideways', () => {
       across: c.left >= court.left && c.right <= court.right,
       clipped: card === undefined ? ['no card'] : tooWide(card),
     }).toStrictEqual({ inside: true, across: true, clipped: [] });
+    // Hide tips is a compact secondary beside Fight! (ADR 0086), on one row inside the card. The
+    // sticker is tilted, so the row is read from the layout's own boxes, not the drawn ones.
+    const hide = button('Hide tips');
+    const fight = button('Fight!');
+    const middle = (node: HTMLElement) => node.offsetTop + node.offsetHeight / 2;
+    expect({
+      row: Math.abs(middle(hide) - middle(fight)) < 2,
+      apart: fight.offsetLeft - (hide.offsetLeft + hide.offsetWidth) >= 12,
+      inside:
+        hide.getBoundingClientRect().left >= c.left &&
+        fight.getBoundingClientRect().right <= c.right,
+    }).toStrictEqual({ row: true, apart: true, inside: true });
 
     // The caption and its ring appear together (its title in the ball's colour, the ring in the
     // tip's cream), the caption's ball drawn beside its title, and the caption whole on screen,

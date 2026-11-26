@@ -29,19 +29,54 @@ export function writeMatchParams(params: URLSearchParams, match: MatchPlace): vo
   else writeChallengeParams(params, match.token);
 }
 
+/** What was refused for being in a match already: sending a challenge, or accepting one. */
+export type RefusedMove = 'send' | 'accept';
+
 /**
- * Starting a second live match was refused (`in_a_match`): say so, with the way back to the one
- * the player is in (asked for when tapped, so it is never stale) and Home.
+ * Sending or accepting a live challenge with a lobby of one's own waiting (ADR 0086): "You already
+ * challenged Jo", with Open it (the lobby) and Cancel that and send this (or accept this).
+ */
+export function lobbyWaitingCard(
+  lobby: Extract<CurrentMatch, { kind: 'lobby' }>,
+  move: RefusedMove,
+  actions: {
+    readonly open: () => Promise<void>;
+    /** Cancels the lobby, then does the refused move again. */
+    readonly replace: () => Promise<unknown>;
+    readonly home: () => void;
+  },
+): NoticeContent {
+  return {
+    title:
+      lobby.invitee === null
+        ? 'Your challenge link is waiting'
+        : `You already challenged ${lobby.invitee}`,
+    body: ['One live challenge at a time.'],
+    buttons: [
+      { text: 'Open it', onClick: actions.open },
+      {
+        text: move === 'send' ? 'Cancel that and send this' : 'Cancel that and accept this',
+        onClick: actions.replace,
+      },
+    ],
+    quiet: { text: 'Home', onClick: actions.home },
+  };
+}
+
+/**
+ * Starting a second live match was refused (`in_a_match`) by a match or lineups under way: say so
+ * in the game's words, with the way back to it (asked for when tapped, so never stale) and Home.
  */
 export function inAMatchCard(
-  message: string,
   /** Goes to the match once its screen is read (ADR 0054). */
   toMatch: (match: CurrentMatch) => Promise<void>,
   home: () => void,
+  /** Why it matters here, in the game's words (sign-in has its own). */
+  line = 'One live match at a time.',
 ): NoticeContent {
   return {
     title: 'You’re in a match already',
-    body: [message, 'One live match at a time.'],
+    body: [line],
     buttons: [
       {
         text: 'Back to your match',

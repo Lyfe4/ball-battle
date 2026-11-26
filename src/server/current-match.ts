@@ -3,7 +3,7 @@
 // once the grace period runs out. A series is settled first, so one already lost isn't offered.
 import type { CurrentMatch } from '../api/live.ts';
 import { tokenFor } from './challenges.ts';
-import { liveNowOf } from './db/live.ts';
+import { lobbyInvitee, liveNowOf } from './db/live.ts';
 import { loadSeries } from './db/series-record.ts';
 import type { Deps } from './http.ts';
 import { settleLive } from './live-service.ts';
@@ -22,7 +22,8 @@ export async function currentMatch(deps: Deps, userId: string): Promise<CurrentM
   }
   if (now.kind === 'lobby') {
     const token = await tokenFor(deps.config, userId, now.requestId);
-    return { kind: 'lobby', token, format: now.format, bestOf: now.bestOf };
+    const invitee = await lobbyInvitee(deps.sql, userId, now.requestId);
+    return { kind: 'lobby', token, format: now.format, bestOf: now.bestOf, invitee };
   }
   const loaded = await loadSeries(deps.sql, now.id);
   if (loaded === undefined) return null;

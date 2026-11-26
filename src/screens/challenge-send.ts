@@ -22,7 +22,7 @@ export interface SenderHost {
   /** On a device with no guest, asks the 16+ question, then does `then`: true when it asked. */
   askFirst(then: () => unknown): boolean;
   /** A failure as a notice in the screen's place, with `retry`. */
-  failed(answer: ApiFailure, retry: () => Promise<unknown>): void;
+  failed(answer: ApiFailure, retry: () => Promise<unknown>, move?: 'send'): Promise<void>;
   /** The link is made and its card read (if it could be): the lobby shows next. */
   sent(token: string, info: ChallengeInfo | undefined): void;
   /** By turns (ADR 0085): the lineup to send with it, on this screen. */
@@ -86,9 +86,9 @@ export function createSender(host: SenderHost): Sender {
       // Home has no room for it: the send screen says what failed, with Try again there.
       if (via === 'play') {
         leave(() => {
-          host.failed(answer, retry);
+          void host.failed(answer, retry, 'send');
         }, chosen);
-      } else host.failed(answer, retry);
+      } else await host.failed(answer, retry, 'send');
       return;
     }
     // Each opponent's rules are remembered (ADR 0081): the friend's, as sent.

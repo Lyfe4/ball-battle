@@ -157,6 +157,8 @@ describe('the match to go back to', () => {
       token,
       format: 'showdown',
       bestOf: 3,
+      // A link to anyone waits for nobody by name (ADR 0086).
+      invitee: null,
     });
     const id = await playLink(sender, friend, token);
     for (const player of [sender, friend]) {

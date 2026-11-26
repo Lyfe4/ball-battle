@@ -46,8 +46,11 @@ export function createReadyCard(
   const reason = element('p', 'ready-reason');
   const fight = element('button', 'ready-fight', 'Fight!');
   fight.type = 'button';
-  const never = element('button', 'text-link ready-never', 'Don’t show these again');
+  // A compact secondary beside Fight! (ADR 0086): it hides these cards for good and starts the fight
+  // it closes, so it never costs the court a line of its own (667 x 320 beside).
+  const never = element('button', 'hud-button hud-button-compact ready-never', 'Hide tips');
   never.type = 'button';
+  never.setAttribute('aria-label', 'Hide tips and fight');
   // Both start the fight, which has its sound (arena.ts): a tap is that one sound.
   fight.dataset['sound'] = 'own';
   never.dataset['sound'] = 'own';
@@ -55,7 +58,10 @@ export function createReadyCard(
   const count = element('p', 'ready-count');
   count.setAttribute('role', 'status');
   count.hidden = true;
-  card.append(head.element, edge, reason, fight, count, never);
+  // Hide tips, then Fight!: the primary last, under the thumb.
+  const actions = element('div', 'ready-actions');
+  actions.append(never, fight);
+  card.append(head.element, edge, reason, actions, count);
   layer.append(card);
   layer.hidden = true;
   container.append(layer);
@@ -132,7 +138,7 @@ export function createReadyCard(
       if (!held && !still) return false;
       card.dataset['card'] = String(withCard);
       fill(first, second, withCard);
-      // "Don't show these again" starts the fight it closes; a live fight starts at its own time
+      // Hide tips starts the fight it closes; a live fight starts at its own time
       // (settings switch the cards off there, ADR 0040).
       never.hidden = !withCard || live;
       return held;

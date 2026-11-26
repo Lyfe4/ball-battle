@@ -1,13 +1,14 @@
 // Play by turns with a friend through the real page (ADR 0085): two phones signed in to accounts
 // that are friends. The sender challenges from the friend's row, chooses By turns on the vs Friend
 // setup, picks a lineup and sends; the card says it reached the friend. The friend finds it in
-// Friends' Waiting for you (never a floating card), accepts with a lineup and is in the series.
-// Whoever's turn it is sees "Your turn vs …" on Play's strip and in Waiting for you, plays a turn
-// from there, and the turn reaches the other phone by poke. `netlify dev` serving an online build
+// Friends' Waiting for you (never a banner), accepts with a lineup and is in the series.
+// Whoever's turn it is sees the Friends tab's badge and "Your turn vs …" in Waiting for you (Play
+// shows nothing social, ADR 0086), plays a turn from there, and the turn reaches the other phone by
+// poke. `netlify dev` serving an online build
 // with accounts and play by turns (BALLBATTLE_TURNS=1, VITE_TURNS=1); Chromium only.
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { befriend, signedInPhone } from './account-support.ts';
+import { befriend, expireTurn, signedInPhone } from './account-support.ts';
 import { buildLineup, pickIfDue } from './live-support.ts';
 import { socketOf } from './realtime-support.ts';
 
@@ -31,14 +32,18 @@ afterAll(async () => {
 });
 
 const friendsOf = (page: Page) => page.locator('.friends');
-const strip = (page: Page) => page.locator('.home-status');
+const badge = (page: Page) => page.locator('.tab-bar-tab[data-tab="friends"] .tab-bar-badge');
+const turnButton = (page: Page, name?: string) =>
+  friendsOf(page).getByRole('button', {
+    name: name === undefined ? /^Play: Your turn/ : `Play: Your turn vs ${name}`,
+  });
 
-/** Which phone's strip says it is their turn, waiting up to `ms` for one to. */
+/** Which phone's Waiting for you says it is their turn, waiting up to `ms` for one to. */
 async function whoseTurn(pages: readonly Page[], ms: number): Promise<Page> {
   const end = Date.now() + ms;
   for (;;) {
     for (const page of pages) {
-      if ((await strip(page).textContent())?.startsWith('Your turn') === true) return page;
+      if ((await turnButton(page).count()) > 0) return page;
     }
     if (Date.now() > end) throw new Error('Nobody was told it was their turn');
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -70,38 +75,62 @@ describe('play by turns with a friend', () => {
       await buildLineup(one, 'Send challenge');
       await one.getByRole('heading', { name: `Sent to ${jo}` }).waitFor();
 
-      // The friend: told on Play's strip (by poke), never a floating card; Accept from Friends.
-      // With Sam online too, each part in short: "1 challenge · 1 online".
-      await strip(two)
-        .getByText(/^1 challenge/)
-        .waitFor({ timeout: 10_000 });
+      // The friend: told by the Friends tab's badge (by poke), never a banner, nothing on Play;
+      // Accept from Friends.
+      await badge(two).getByText('1', { exact: true }).waitFor({ timeout: 10_000 });
+      expect(await two.locator('.home-status').count()).toBe(0);
       expect(await two.getByRole('region', { name: 'Challenge' }).isVisible()).toBe(false);
-      await strip(two).click();
+      await two.locator('.tab-bar-tab[data-tab="friends"]').click();
       await friendsOf(two)
         .getByRole('button', { name: `Accept ${sam}’s challenge` })
         .click();
       await buildLineup(two, 'Accept challenge');
       await two.waitForURL(/[?&]online=/, { timeout: 20_000 });
 
-      // Whoever is due is told on Play, and plays from Waiting for you.
-      for (const page of [one, two]) await page.goto(BASE);
+      // Whoever is due sees the badge and plays from Waiting for you.
+      for (const page of [one, two]) await page.goto(`${BASE}/?view=friends`);
       const due = await whoseTurn([one, two], 40_000);
       const other = due === one ? two : one;
       const otherName = due === one ? jo : sam;
-      expect(await strip(due).textContent()).toMatch(new RegExp(`^Your turn vs ${otherName}`));
-      await strip(due).click();
-      await friendsOf(due)
-        .getByRole('button', { name: `Play: Your turn vs ${otherName}` })
-        .click();
+      await badge(due).getByText('1', { exact: true }).waitFor();
+      await turnButton(due, otherName).click();
       await due.waitForURL(/[?&]online=/, { timeout: 20_000 });
       await expect.poll(() => pickIfDue(due), { timeout: 20_000 }).toBe(true);
 
-      // The turn reaches the other phone by poke: its strip says so within seconds.
+      // The turn reaches the other phone by poke: its Waiting for you says so within seconds.
       await socketOf(other).waitUp();
       const dueName = due === one ? sam : jo;
-      await strip(other)
-        .getByText(new RegExp(`^Your turn vs ${dueName}`))
+      await turnButton(other, dueName).waitFor({ timeout: 10_000 });
+      await badge(other).getByText('1', { exact: true }).waitFor();
+
+      // Your games (ADR 0086): the one who just played finds the game waiting on the other.
+      const seriesId = new URL(due.url()).searchParams.get('online') ?? '';
+      await due.goto(`${BASE}/?view=friends`);
+      await friendsOf(due)
+        .getByRole('button', { name: `Open: ${otherName}’s turn` })
         .waitFor({ timeout: 10_000 });
+      // The other's turn runs out: both are told how it ended, each in their own words.
+      await expireTurn(seriesId);
+      const won = `Open: You won vs ${otherName}: their turn ran out`;
+      await due.reload();
+      await friendsOf(due).getByRole('button', { name: won }).waitFor({ timeout: 10_000 });
+      await other.goto(`${BASE}/?view=friends`);
+      await friendsOf(other)
+        .getByRole('button', { name: 'Open: You lost: your turn ran out' })
+        .waitFor({ timeout: 10_000 });
+      // Seen once opened: gone from Friends for that player, still there for the other.
+      await friendsOf(due).getByRole('button', { name: won }).click();
+      await due.waitForURL(/[?&]online=/, { timeout: 20_000 });
+      await due.goto(`${BASE}/?view=friends`);
+      await friendsOf(due)
+        .getByText(/^Friends · /)
+        .waitFor();
+      expect(await friendsOf(due).getByRole('button', { name: won }).count()).toBe(0);
+      expect(
+        await friendsOf(other)
+          .getByRole('button', { name: 'Open: You lost: your turn ran out' })
+          .count(),
+      ).toBe(1);
       expect(errors).toStrictEqual([]);
       for (const page of [one, two]) await page.context().close();
     },

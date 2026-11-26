@@ -4,7 +4,8 @@
 // complete, idempotent read, so a Realtime "poke" can replace the timer without changing it.
 import type { InboxResponse } from '../api/friends.ts';
 import { tokenFor } from './challenges.ts';
-import { friendStatuses, invitesFor, turnsFor, waitingRequests } from './db/inbox.ts';
+import type { EndingOutcome } from '../api/friends.ts';
+import { friendStatuses, gamesFor, invitesFor, waitingRequests, type GameRow } from './db/inbox.ts';
 import { settleExpired } from './db/series.ts';
 import type { Deps } from './http.ts';
 
@@ -26,10 +27,23 @@ export async function inboxOf(deps: Deps, userId: string): Promise<InboxResponse
   }
   // A turn that ran out is the forfeit it is before it is listed (no sweep outside production).
   await settleExpired(deps.sql, undefined, userId);
-  const turns = (await turnsFor(deps.sql, userId)).map((row) => ({
+  // Turns, games and unseen endings in one statement (ADR 0086).
+  const series = await gamesFor(deps.sql, userId);
+  const waiting = (row: GameRow) => ({
     seriesId: row.seriesId,
     opponent: row.opponent,
-    deadline: row.deadline.toISOString(),
-  }));
-  return { friends, requests, invites, turns };
+    deadline: (row.deadline ?? new Date(0)).toISOString(),
+  });
+  const turns = series.filter((row) => row.open && row.yours).map(waiting);
+  const games = series.filter((row) => row.open && !row.yours).map(waiting);
+  const endings = series
+    .filter((row) => !row.open)
+    .map((row) => ({ seriesId: row.seriesId, opponent: row.opponent, outcome: outcomeOf(row) }));
+  return { friends, requests, invites, turns, games, endings };
+}
+
+/** How a series by turns ended for its player: by a turn that ran out when it was forfeit. */
+export function outcomeOf(row: Pick<GameRow, 'status' | 'won'>): EndingOutcome {
+  if (row.status === 'forfeit') return row.won ? 'won-ran-out' : 'lost-ran-out';
+  return row.won ? 'won' : 'lost';
 }

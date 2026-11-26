@@ -18,6 +18,8 @@ import { createOnlineScreens } from './online.ts';
 import type { InboxResponse } from '../api/friends.ts';
 import { invitesMayShow, isFighting, type ScreenMoment } from '../app/screen-rules.ts';
 import { createInboxWatch } from './inbox-watch.ts';
+import { leftLine, takeLeft } from '../app/left-match.ts';
+import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
 import { createRematchWatch, type RematchHomeBack } from './rematch-watch.ts';
 import { createHomeBack } from '../ui/online/back-to-match.ts';
 import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
@@ -102,11 +104,13 @@ export function mountOnline(context: MountContext): OnlineMount {
   let fighting = false;
   /** A friend's challenge may pop up (not over a fight or a lineup pick). */
   let calm = true;
+  /** The screen on show, as last changed. */
+  let onScreen: Screen | undefined;
   const rematchRoot = document.createElement('div');
   document.body.append(rematchRoot);
   /** Home's way back to a rematch waiting on this player, as the watch last said. */
   let rematchWaiting: RematchHomeBack | undefined;
-  const rematchWatch = createRematchWatch(rematchRoot, BALL_LOOKUP, {
+  const rematchWatch = createRematchWatch(rematchRoot, {
     storage: browserStorage,
     go: (write) => {
       context.go(write);
@@ -114,6 +118,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     fighting: () => fighting,
     ownScreen: () => screens.play.endScreen() ?? screens.rematchShown(),
     seriesShown: () => screens.play.seriesShown(),
+    endingTold: (id) => screens.play.endingTold(id),
     backChanged: (back) => {
       rematchWaiting = back;
       showPlay();
@@ -125,12 +130,16 @@ export function mountOnline(context: MountContext): OnlineMount {
   /** Until when (device time) the sender's lobby is known to wait: refreshed by each of its asks. */
   let lobbyWaiting = 0;
   const inboxWatch = ACCOUNTS_BUILD
-    ? createInboxWatch(inboxRoot, BALL_LOOKUP, {
+    ? createInboxWatch(inboxRoot, {
         open: (token, live) => screens.openInvite(token, live),
         calm: () => calm,
+        onFriends: () => onScreen === 'friends',
+        badge: () =>
+          document.querySelector<HTMLElement>('.tab-bar-tab[data-tab="friends"] .tab-bar-badge') ??
+          undefined,
         // A rematch window or a lobby waiting: news is expected, read every 2 s (2026-11-23).
         expecting: () => rematchWatch.active() || lobbyWaiting > Date.now(),
-        // One answer, three views (ADR 0081): the Friends tab's lists, its badge, Play's strip.
+        // One answer, two views (ADR 0081, 0086): the Friends tab's lists and its badge.
         inbox: (answer) => {
           screens.friendStatuses(answer);
           context.waiting(answer);
@@ -249,6 +258,16 @@ export function mountOnline(context: MountContext): OnlineMount {
       homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
     }
   };
+  const leftRoot = document.createElement('div');
+  document.body.append(leftRoot);
+  const leftNews = createIncomingBanner(leftRoot, 'Match', {
+    accept: () => Promise.resolve(),
+    decline: () => Promise.resolve(),
+    dismiss: () => {
+      leftNews.show(undefined);
+    },
+    later: () => undefined,
+  });
   // A live fight's line, where the speed toggle sits (it makes way: live fights are 1x only).
   const liveLine = document.createElement('p');
   liveLine.className = 'live-line';
@@ -294,11 +313,17 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     homeShown: () => {
       void askHome();
+      // Just left a live match: said once, on the banner's look, with OK (ADR 0086).
+      const they = takeLeft();
+      if (they !== undefined) {
+        leftNews.show({ who: they, title: leftLine(they), line: '', answers: 'ok' });
+      }
     },
     playFriend: (setup) => screens.playFriend(setup),
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
     screenChanged: (screen, now) => {
+      onScreen = screen;
       fighting = isFighting(screen, now);
       calm = invitesMayShow(screen, now);
       rematchWatch.refresh();

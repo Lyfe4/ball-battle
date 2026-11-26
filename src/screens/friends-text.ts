@@ -5,11 +5,11 @@ import type {
   ReportReason,
   FriendStatus,
   FriendsResponse,
+  Ending,
+  GameWaiting,
   InboxResponse,
-  Invite,
   TurnWaiting,
 } from '../api/friends.ts';
-import { challengeLine } from './online-text.ts';
 import { TURN_HOURS } from '../api/series.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
@@ -145,11 +145,6 @@ export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
   offline: 'Offline',
 };
 
-/** A friend's live challenge on the floating card: who, and what is played. */
-export function inviteLine(invite: Invite): string {
-  return `${invite.from} challenges you · ${challengeLine(invite)} · ${invite.live ? 'live' : 'take turns'}`;
-}
-
 /** The tab's way to play anyone, with or without an account (ADR 0081). */
 export const LINK_CARD = {
   title: 'Play a friend with a link',
@@ -175,49 +170,17 @@ export const FRIENDS_SOON = {
   body: 'Soon you can add friends by a code and see who’s online. Until then, a link works for anyone.',
 } as const;
 
-const counted = (count: number, one: string, many: string) =>
-  `${String(count)} ${count === 1 ? one : many}`;
-
 /**
- * The Play tab's status strip (ADR 0081): what waits on the player first, then who is online;
- * nothing at all when there is nothing to say (never "0 friends online"). One thing is said whole
- * ("1 challenge waiting"); more than one, each in short ("1 challenge · 2 online"), so a phone's
- * strip shows every part rather than cutting the last (2026-11-24). A series by turns waiting on
- * the player's pick comes first (ADR 0085): "Your turn vs Sam".
+ * The friends list's title (ADR 0086): how many, then how many are online, the one place the page
+ * says who is online (Play shows nothing social). Never "0 online": in a match or offline isn't.
  */
-export function statusLine(inbox: InboxResponse): string | undefined {
-  const online = inbox.friends.filter((friend) => friend.status === 'online').length;
-  const turns = inbox.turns.length;
-  const one = inbox.turns[0];
-  const parts = [
-    one !== undefined
-      ? {
-          long: turns > 1 ? `Your turn in ${String(turns)} series` : turnName(one),
-          short: turns > 1 ? `${String(turns)} turns` : turnName(one),
-        }
-      : undefined,
-    inbox.invites.length > 0
-      ? {
-          long: `${counted(inbox.invites.length, 'challenge', 'challenges')} waiting`,
-          short: counted(inbox.invites.length, 'challenge', 'challenges'),
-        }
-      : undefined,
-    inbox.requests > 0
-      ? {
-          long: counted(inbox.requests, 'friend request', 'friend requests'),
-          short: counted(inbox.requests, 'request', 'requests'),
-        }
-      : undefined,
-    online > 0
-      ? {
-          long: `${counted(online, 'friend', 'friends')} online`,
-          short: `${String(online)} online`,
-        }
-      : undefined,
-  ].filter((part) => part !== undefined);
-  if (parts.length === 0) return undefined;
-  if (parts.length === 1) return parts[0]?.long;
-  return parts.map((part) => part.short).join(' · ');
+export function friendsTitle(
+  title: string,
+  friends: readonly Readonly<{ status?: string | undefined }>[],
+): string {
+  const online = friends.filter((friend) => friend.status === 'online').length;
+  const count = `${title} · ${String(friends.length)}`;
+  return online === 0 ? count : `${count} · ${String(online)} online`;
 }
 
 /** What waits on the player, for the Friends tab's badge: turns, challenges and friend requests. */
@@ -236,3 +199,25 @@ export const challengesYou = (name: string) => `${name} challenges you`;
 /** A series by turns waiting on the player's pick (ADR 0085): "Your turn vs Sam". */
 export const turnName = (turn: Pick<TurnWaiting, 'opponent'>): string =>
   turn.opponent === null ? 'Your turn' : `Your turn vs ${turn.opponent}`;
+
+/** The section of games by turns on Friends (ADR 0086). */
+export const YOUR_GAMES = 'Your games';
+
+/** A game by turns waiting on the other player: "Sam’s turn". */
+export const gameName = (game: Pick<GameWaiting, 'opponent'>): string =>
+  game.opponent === null ? 'Their turn' : `${game.opponent}’s turn`;
+
+/** How a game by turns ended, said to its player until seen (ADR 0086). */
+export function endingLine(ending: Pick<Ending, 'opponent' | 'outcome'>): string {
+  const they = ending.opponent ?? 'a deleted player';
+  switch (ending.outcome) {
+    case 'won':
+      return `You won vs ${they}`;
+    case 'lost':
+      return `${ending.opponent ?? 'They'} won`;
+    case 'won-ran-out':
+      return `You won vs ${they}: their turn ran out`;
+    case 'lost-ran-out':
+      return 'You lost: your turn ran out';
+  }
+}

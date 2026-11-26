@@ -1,16 +1,20 @@
 // The inbox reaching a signed-in player anywhere in the game (ADR 0079, PR (d); ADR 0081), from the
 // page's first screen, whichever it is. It reads `/me/inbox` on the poll's time (inbox-poll.ts:
 // every 30 s while visible, with friends; every 2 s while something is expected) and hands the
-// whole answer, less what was answered here, to its host: the Friends tab's badge, the Play tab's
-// status strip and the Friends tab's lists are three views of it. And:
+// whole answer, less what was answered here, to its host: the Friends tab's badge and its lists
+// are two views of it. And (ADR 0086):
 //
-// - a friend's live challenge pops up as the rematch's floating card (one look, ADR 0070): who and
+// - a friend's live challenge arrives as the incoming banner (one look with a rematch's): who and
 //   what, Accept straight to the lineup and No thanks, only where `calm` says (never over a fight
-//   or a lineup pick: it waits until the match is over);
-// - ignored, it folds back into the badge: closed, or after 20 s without an answer, it goes and
-//   doesn't come back for that challenge on this page; the challenge stays in Waiting for you.
+//   or a lineup pick: it waits until the match is over); while it shows, the badge doesn't count it
+//   too (one place for each piece of news);
+// - ignored, it folds into the badge: the × (Later), or 20 s of the page being seen without an
+//   answer, and it doesn't come back for that challenge on this page; it waits in Friends;
+// - on the Friends tab there is no banner: its row in Waiting for you lights up (friends-section);
+// - the sender stopping (cancelled, or their lobby went stale) while it shows turns it into "Alex
+//   stopped waiting" with OK.
 //
-// The link the sender shares still works without any of this: the card only saves a message.
+// The link the sender shares still works without any of this: the banner only saves a message.
 //
 // Signed in, it wants the page's poke socket (ADR 0082, `pokes.ts`): an `inbox` poke reads at once,
 // and while the socket is up the poll keeps only a 120 s safety read (inbox-poll.ts).
@@ -18,13 +22,14 @@ import type { InboxResponse, Invite } from '../api/friends.ts';
 import { callApi, failureKindOf } from '../app/api.ts';
 import { createInboxPoll } from '../app/inbox-poll.ts';
 import { pokes } from '../app/pokes.ts';
-import type { DefinitionLookup } from '../sim/types.ts';
-import { createRematchNotice } from '../ui/online/rematch-notice.ts';
-import { inviteLine } from './friends-text.ts';
+import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
+import { challengeIncoming, stoppedIncoming } from './incoming-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
-/** How long a challenge's card waits for an answer before it folds into the badge (ADR 0081). */
+/** How long a challenge's banner waits, while the page is seen, before it folds (ADR 0086). */
 export const INVITE_FOLD_MS = 20_000;
+/** The banner's bar is redrawn this often while it waits. */
+const TICK_MS = 250;
 
 export interface InboxWatchHost {
   /**
@@ -34,6 +39,10 @@ export interface InboxWatchHost {
   open(token: string, live: boolean): Promise<void>;
   /** Whether a challenge may pop up now: not over a fight or a lineup pick (`invitesMayShow`). */
   calm(): boolean;
+  /** The Friends tab shows: no banner, its row lights instead (ADR 0086). */
+  onFriends(): boolean;
+  /** The Friends tab's badge, where a folded banner lands (undefined: not on screen). */
+  badge(): HTMLElement | undefined;
   /** The inbox as it stands here (undefined: signed out, nothing to show). */
   inbox(answer: InboxResponse | undefined): void;
   /** Something is expected (a rematch window, a lobby waiting): the inbox reads every 2 s. */
@@ -57,7 +66,6 @@ export interface InboxWatch {
 
 export function createInboxWatch(
   root: HTMLElement,
-  lookup: DefinitionLookup,
   host: InboxWatchHost,
   foldMs = INVITE_FOLD_MS,
 ): InboxWatch {
@@ -67,75 +75,120 @@ export function createInboxWatch(
   /** Invites whose card was closed or ignored, by token: in the badge, never popped up again. */
   const folded = new Set<string>();
   let failure: string | undefined;
-  /** The challenge whose card shows now, and its fold timer. */
-  let showing: string | undefined;
-  let fold: number | undefined;
+  /** The challenge on the banner now. */
+  let showing: Invite | undefined;
+  /** Its time seen so far (ms), and since when it is being seen (undefined: the page is hidden). */
+  let seenMs = 0;
+  let seenSince: number | undefined;
+  let ticking: number | undefined;
+  /** The sender who stopped waiting while their banner showed: said until OK. */
+  let stopped: string | undefined;
+  /** What the host was last told, so an unchanged answer isn't handed on again. */
+  let told: { inbox: InboxResponse | undefined; invites: string } | undefined;
 
   const open = (): readonly Invite[] =>
     last === undefined ? [] : last.invites.filter((one) => !answered.has(one.token));
   /** The newest live challenge that may still pop up; one by turns waits in the lists (ADR 0085). */
   const popping = (): Invite | undefined =>
     open().find((one) => one.live && !folded.has(one.token));
+  const seen = () => seenMs + (seenSince === undefined ? 0 : Date.now() - seenSince);
+  const leftOf = () => Math.max(0, 1 - seen() / foldMs);
 
+  /** The answer handed on, less the challenge on the banner: the badge counts it once it folds. */
   function tell(): void {
-    host.inbox(last === undefined ? undefined : { ...last, invites: open() });
+    const without = showing?.token;
+    const invites = open().filter((one) => one.token !== without);
+    const key = invites.map((one) => one.token).join();
+    if (told !== undefined && told.inbox === last && told.invites === key) return;
+    told = { inbox: last, invites: key };
+    host.inbox(last === undefined ? undefined : { ...last, invites });
   }
 
+  function stopTicking(): void {
+    if (ticking !== undefined) window.clearInterval(ticking);
+    ticking = undefined;
+  }
+
+  /** The banner's bar, and the fold once its time is seen out. */
+  function tick(): void {
+    const invite = showing;
+    if (invite === undefined) return;
+    if (leftOf() <= 0) {
+      foldNow(invite.token);
+      return;
+    }
+    banner.show(challengeIncoming(invite, leftOf()), failure);
+  }
+
+  /** Into the badge (×, or its time seen out): never popped up again on this page. */
   function foldNow(token: string): void {
     folded.add(token);
+    if (showing?.token === token) {
+      showing = undefined;
+      stopTicking();
+      banner.fold(host.badge());
+    }
     render();
   }
 
-  const card = createRematchNotice(
-    root,
-    lookup,
-    {
-      accept: () => {
-        const taken = popping();
-        if (taken === undefined) return Promise.resolve();
-        return accept(taken.token);
-      },
-      decline: async () => {
-        const said = popping();
-        if (said === undefined) return;
-        failure = await decline(said.token);
-        render();
-      },
-      dismiss: () => {
-        const closed = popping();
-        if (closed !== undefined) foldNow(closed.token);
-      },
+  const banner = createIncomingBanner(root, 'Challenge', {
+    accept: () => {
+      const taken = showing;
+      if (taken === undefined) return Promise.resolve();
+      return accept(taken.token);
     },
-    'Challenge',
-  );
+    decline: async () => {
+      const said = showing;
+      if (said === undefined) return;
+      failure = await decline(said.token);
+      render();
+    },
+    dismiss: () => {
+      stopped = undefined;
+      render();
+    },
+    later: () => {
+      if (showing !== undefined) foldNow(showing.token);
+    },
+  });
 
   function render(): void {
-    const invite = host.calm() ? popping() : undefined;
-    const said =
-      invite === undefined ? undefined : { kind: 'invite' as const, line: inviteLine(invite) };
-    // Ignored for 20 s from when it first shows, it folds back into the badge.
-    if (invite?.token !== showing) {
-      if (fold !== undefined) window.clearTimeout(fold);
-      fold = undefined;
-      showing = invite?.token;
-      if (invite !== undefined) {
-        const token = invite.token;
-        fold = window.setTimeout(() => {
-          foldNow(token);
-        }, foldMs);
-      }
+    // On Friends, what would pop up lights its row instead (friends-section), and is kept there.
+    if (host.onFriends()) {
+      for (let next = popping(); next !== undefined; next = popping()) folded.add(next.token);
     }
-    // The card joins the page the first time it has something to say: a page with no challenge
-    // holds one floating card of this look, the rematch's.
-    if (said !== undefined && !root.isConnected) document.body.append(root);
-    card.show(said, invite === undefined ? undefined : failure);
+    const invite = host.calm() && stopped === undefined ? popping() : undefined;
+    if (invite?.token !== showing?.token) {
+      failure = undefined;
+      seenMs = 0;
+      seenSince = document.hidden ? undefined : Date.now();
+    }
+    showing = invite;
+    // The banner joins the page the first time it has something to say.
+    if ((invite !== undefined || stopped !== undefined) && !root.isConnected) {
+      document.body.append(root);
+    }
+    if (stopped !== undefined) banner.show(host.calm() ? stoppedIncoming(stopped) : undefined);
+    else
+      banner.show(invite === undefined ? undefined : challengeIncoming(invite, leftOf()), failure);
+    if (invite !== undefined && ticking === undefined) ticking = window.setInterval(tick, TICK_MS);
+    else if (invite === undefined) stopTicking();
+    tell();
+  }
+
+  /** The challenge on the banner is gone from `inbox`: its sender stopped, unless they're playing. */
+  function stoppedIn(inbox: InboxResponse): string | undefined {
+    const was = showing;
+    if (was === undefined || inbox.invites.some((one) => one.token === was.token)) return undefined;
+    // Accepted on another of this player's tabs: the sender is in that match now, not gone.
+    const sender = inbox.friends.find((friend) => friend.id === was.friend);
+    return sender?.status === 'in_a_match' ? undefined : was.from;
   }
 
   async function accept(token: string): Promise<void> {
     const live = last?.invites.find((one) => one.token === token)?.live !== false;
     answered.add(token);
     await host.open(token, live);
-    tell();
     render();
   }
 
@@ -145,7 +198,6 @@ export function createInboxWatch(
       return failureLine(failureKindOf(answer));
     }
     answered.add(token);
-    tell();
     render();
     return undefined;
   }
@@ -155,11 +207,9 @@ export function createInboxWatch(
     if (!answer.ok || answer.body === undefined) return true;
     const inbox = answer.body;
     // One the sender stopped is gone from the answer, and its failure with it.
-    if (popping()?.token !== inbox.invites.find((one) => !answered.has(one.token))?.token) {
-      failure = undefined;
-    }
+    stopped = stoppedIn(inbox) ?? stopped;
+    if (stopped !== undefined) failure = undefined;
     last = inbox;
-    tell();
     render();
     return (
       inbox.friends.length > 0 ||
@@ -180,6 +230,13 @@ export function createInboxWatch(
   });
   document.addEventListener('visibilitychange', () => {
     poll.visibility();
+    // The fold's 20 s count only while the page is seen (a phone face down doesn't fold it).
+    if (document.hidden && seenSince !== undefined) {
+      seenMs += Date.now() - seenSince;
+      seenSince = undefined;
+    } else if (!document.hidden && showing !== undefined && seenSince === undefined) {
+      seenSince = Date.now();
+    }
   });
   pokes?.listen({
     onPoke: (event) => {
@@ -204,7 +261,7 @@ export function createInboxWatch(
         release = undefined;
         poll.stop();
         last = undefined;
-        tell();
+        stopped = undefined;
         render();
       }
     },

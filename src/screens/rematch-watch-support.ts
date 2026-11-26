@@ -85,6 +85,7 @@ export function host(over: Partial<RematchWatchHost> = {}) {
     fighting: () => fighting,
     ownScreen: () => undefined,
     seriesShown: () => undefined,
+    endingTold: () => false,
     backChanged: (back) => {
       if (backs.at(-1) !== back?.kind) backs.push(back?.kind);
     },

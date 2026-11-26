@@ -33,6 +33,7 @@ const TABLES = [
   'rating_changes',
   'queue_entries',
   'season_rewards',
+  'series_seen',
 ];
 
 describe('the game schema', () => {

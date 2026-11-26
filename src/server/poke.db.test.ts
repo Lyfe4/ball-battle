@@ -15,6 +15,9 @@ import {
   type Player,
 } from './test/series-support.ts';
 import { adminSql, testDeps } from './test/support.ts';
+import { befriend, newAccount } from './test/friends-support.ts';
+import { tokenOf } from './test/live-support.ts';
+import { challengeOne, challenges } from './routes/challenges.ts';
 
 const deps = testDeps();
 const admin = adminSql();
@@ -170,6 +173,33 @@ describe('a friend’s challenge', () => {
   });
 });
 
+describe('crossed challenges (ADR 0086)', () => {
+  it('pokes each player once for the merge: the inbox that lost one, the lobby that moved on', async () => {
+    const sam = await newAccount(deps, admin);
+    const jo = await newAccount(deps, admin);
+    const id = await befriend(admin, sam, jo);
+    const send = (from: Player) =>
+      from.browser.call(challenges, 'POST', '/api/v1/challenges', {
+        format: 'reveal',
+        bestOf: 3,
+        requestId: crypto.randomUUID(),
+        live: true,
+        friend: id,
+      });
+    const samsLink = tokenOf(await send(sam));
+    expect((await send(jo)).status).toBe(201);
+    // Jo accepts Sam's: Jo's lobby is cancelled (Sam's inbox loses it, Jo's lobby reads) and Sam's
+    // is accepted (Sam's lobby reads, Jo's inbox loses it). One of each, never twice.
+    const poked = await pokedBy([sam, jo], () =>
+      jo.browser.call(challengeOne, 'POST', `/api/v1/challenges/${samsLink}/accept`, {}),
+    );
+    expect(poked.map((events) => [...events].sort())).toStrictEqual([
+      ['inbox', 'match'],
+      ['inbox', 'match'],
+    ]);
+  });
+});
+
 describe('a start lineup', () => {
   it('pokes both when one opens or locks in, never on a draft', async () => {
     const a = await newPlayer(deps);
@@ -225,6 +255,26 @@ describe('a series by turns (ADR 0085)', () => {
         await read(players.b, id);
       }),
     ).toStrictEqual([[], []]);
+  });
+
+  it('pokes both inboxes once when a turn runs out; seeing the ending pokes nobody (ADR 0086)', async () => {
+    const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
+    const both = [players.a, players.b];
+    const id = await newSeries(deps, players, 'reveal');
+    await admin`update game.series set turn_deadline = now() - interval '1 minute' where id = ${id}`;
+    // Settled on the next read (as the inbox and the sweep do): the ending, told to both.
+    const each = ['match', 'inbox'];
+    expect(await pokedBy(both, () => read(players.a, id))).toStrictEqual([each, each]);
+    // The ended series read again (by both, so both write their seen mark): nobody is poked.
+    expect(
+      await pokedBy(both, async () => {
+        await read(players.a, id);
+        await read(players.b, id);
+      }),
+    ).toStrictEqual([[], []]);
+    const [row] = await admin<{ n: number }[]>`
+      select count(*)::int as n from game.series_seen where series_id = ${id}`;
+    expect(row?.n).toBe(2);
   });
 });
 

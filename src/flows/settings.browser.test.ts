@@ -1,6 +1,6 @@
 // Settings (ADR 0040) through the real page: the tip switches and the speed are saved on the device
 // and read back on the next visit, the in-fight speed and the menu show the same choice, the
-// Fight! card's "Don't show these again" is the menu's cards switch, and "Show all tips again"
+// Fight! card's Hide tips is the menu's cards switch, and "Show all tips again"
 // turns both switches back on. The menu is two groups, Fights and Tips, with Show all tips again
 // and Close on the last row. It opens on a Free play match and never moves to another screen: a
 // history entry left behind upsets later files' Back in WebKit (CLAUDE.md, browsers project).
@@ -90,8 +90,8 @@ describe('settings', () => {
     expect(pressed('#hud-speed', 2)).toBe('true');
     button('Close').click();
 
-    // The Fight! card's "Don't show these again" is the menu's cards switch.
-    button('Don’t show these again').click();
+    // The Fight! card's Hide tips is the menu's cards switch.
+    button('Hide tips').click();
     await settle();
     expect(createTips(storage).readyCards()).toBe(false);
 

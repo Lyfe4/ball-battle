@@ -34,6 +34,14 @@ const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
 };
 
 /**
+ * Prefers reduced motion, or not, for the whole page (reduced-motion.browser.test.ts, ADR 0087):
+ * Playwright's media emulation, the same in every engine.
+ */
+const reduceMotion: BrowserCommand<[on: boolean]> = async (context, on) => {
+  await context.page.emulateMedia({ reducedMotion: on ? 'reduce' : 'no-preference' });
+};
+
+/**
  * A press at a point of the element marked `data-press-here` (settings-checks.ts): a finger's tap
  * on a touch phone, else a mouse click. Relative to the element, so the test frame's own
  * place on the page doesn't matter.
@@ -194,6 +202,7 @@ export default defineConfig({
             screenshotFailures: false,
             // V8, SpiderMonkey and JavaScriptCore: every engine a player or a server might run.
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+            commands: { reduceMotion },
           },
         },
       },

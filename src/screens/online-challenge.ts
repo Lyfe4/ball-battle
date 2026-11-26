@@ -23,6 +23,7 @@ import { createSkeleton } from '../ui/skeleton.ts';
 import { createChallengeLobby } from './challenge-lobby.ts';
 import { createSender } from './challenge-send.ts';
 import { createFriendSetup } from './friend-setup.ts';
+import { unblockThen } from './challenge-unblock.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
@@ -98,9 +99,7 @@ export function createChallengeScreens(
     },
     intoSeries: (id) => intoSeries(id),
     home,
-    failed: (answer, retry) => {
-      failed(answer, retry);
-    },
+    failed: (answer, retry) => failed(answer, retry),
   });
 
   /** Shows one part; `focus` false keeps focus where it is (the lobby's card, asked again). */
@@ -158,9 +157,7 @@ export function createChallengeScreens(
       host.replaceWith(write);
     },
     askFirst: (then) => askFirst(then),
-    failed: (answer, retry) => {
-      failed(answer, retry);
-    },
+    failed: (answer, retry, move) => failed(answer, retry, move),
     sent: (next, card) => {
       token = next;
       info = card;
@@ -193,7 +190,7 @@ export function createChallengeScreens(
         } else await loadCard();
         return;
       }
-      failed(answer, () => accept(how, own));
+      await failed(answer, () => accept(how, own));
       return;
     }
     rememberGuest(host.storage, true);
@@ -209,7 +206,7 @@ export function createChallengeScreens(
     if (!answer.ok || answer.body === undefined) {
       if (!answer.ok && answer.kind === 'error' && answer.status === 404) {
         show('notice', cardFor(undefined, cardActions()));
-      } else if (!answer.ok) failed(answer, () => loadCard());
+      } else if (!answer.ok) await failed(answer, () => loadCard());
       return;
     }
     info = answer.body;
@@ -238,14 +235,14 @@ export function createChallengeScreens(
   }
 
   /** The sender stops waiting: the link stops, and they go home (or on, if it was accepted). */
-  async function cancel(): Promise<void> {
+  async function cancel(then?: 'friend'): Promise<void> {
     if (token === undefined) return;
     lobby.stop();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
     const card = answer.ok ? answer.body : undefined;
     if (card?.seriesId != null) await intoSeries(card.seriesId);
     else if (card?.startId != null) await intoStart(card.startId);
-    else host.home();
+    else (then === 'friend' ? host.friend : home)();
   }
 
   function cardActions() {
@@ -268,7 +265,8 @@ export function createChallengeScreens(
       url: challengeUrl(current),
       canShare: typeof navigator.share === 'function',
       copy: () => copyLink(current),
-      cancel: () => cancel(),
+      cancel: (then?: 'friend') => cancel(then),
+      unblock: (pair: string) => unblockThen(pair, () => loadCard(), failed),
     };
   }
 

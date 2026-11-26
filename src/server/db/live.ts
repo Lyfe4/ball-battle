@@ -60,6 +60,19 @@ export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undef
   return { kind: 'lobby', requestId: row.ref, format: row.format, bestOf: row.best_of };
 }
 
+/** Who `creator`'s lobby (by its request id) waits for, by name; null for a link to anyone. */
+export async function lobbyInvitee(
+  db: Db,
+  creator: string,
+  requestId: string,
+): Promise<string | null> {
+  const [row] = await db<{ name: string | null }[]>`
+    select coalesce(i.username, i.display_name) as name from game.challenges c
+    left join game.profiles i on i.user_id = c.invitee
+    where c.creator = ${creator} and c.request_id = ${requestId}`;
+  return row?.name ?? null;
+}
+
 /**
  * The sender's lobby page asked about their live link: it stays open. Only a link still waiting
  * is kept alive; one that stopped (silent past LOBBY_SEEN_MS, or cancelled) stays stopped.

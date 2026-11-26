@@ -95,6 +95,56 @@
   background: var(--color-sunken);
 }
 
+/*
+ * Waiting for a friend by name (ADR 0086): their disc, larger, its ring breathing gently on the
+ * swing tokens; still with reduced motion.
+ */
+.notice-waiting-disc {
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
+  box-shadow: 0 0 0 4px var(--color-accent);
+}
+
+/* The link folded under "Also send a link" in a friend's lobby, Share inside it. */
+/*
+ * A block, not a grid: a grid details puts its content in one auto-sized item that the long link
+ * would widen past the column. The link is cut with an ellipsis instead.
+ */
+.notice-fold {
+  width: 100%;
+  min-width: 0;
+}
+
+.notice-fold > .notice-link,
+.notice-fold > .notice-fold-share {
+  margin-top: var(--space-small);
+}
+
+/* Share as wide as the column, the fold's one main action. */
+.notice-fold-share {
+  width: 100%;
+}
+
+.notice-fold-summary {
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+  color: var(--color-focus);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notice-fold-summary[data-pressed] {
+  text-decoration: underline;
+}
+
+@media (hover: hover) {
+  .notice-fold-summary:hover {
+    text-decoration: underline;
+  }
+}
+
 .notice-waiting-title {
   margin: 0;
   font-size: 1.5rem;
@@ -265,6 +315,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .notice-waiting-disc {
+    animation: notice-pulse var(--motion-breathe) var(--ease-swing) infinite alternate;
+  }
+
   .notice-waiting-ball::before {
     animation: notice-bounce var(--motion-swing) var(--ease-swing) infinite alternate;
   }
@@ -363,4 +417,10 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-target);
+}
+
+@keyframes notice-pulse {
+  to {
+    box-shadow: 0 0 0 10px transparent;
+  }
 }

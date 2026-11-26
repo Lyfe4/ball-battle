@@ -32,14 +32,20 @@ export interface NoticeContent {
   readonly title: string;
   /** One paragraph per entry. */
   readonly body: readonly string[];
-  /** In order; the first is the primary. Empty only while something loads. */
+  /**
+   * In order; the first is the primary. Empty while something loads, or where the one action is
+   * the quiet one (a friend's lobby: Cancel challenge, ADR 0086).
+   */
   readonly buttons: readonly NoticeButton[];
   /** A sticker in the title's place (a friend's card): the title is then for screen readers. */
   readonly sticker?: StickerWords;
   /** Short facts as chips under the sticker: "Best of 3", "Reveal", "Live · 30 s a pick". */
   readonly chips?: readonly string[];
-  /** A waiting card with a bouncing ball (the lobby): its heading and one quiet line. */
-  readonly waiting?: { readonly title: string; readonly line: string };
+  /**
+   * A waiting card (the lobby): its heading and one quiet line, with a bouncing ball, or the
+   * friend's disc with a gentle pulse when it waits for someone by name (`who`, ADR 0086).
+   */
+  readonly waiting?: { readonly title: string; readonly line: string; readonly who?: string };
   /** A field to type in (an email, a code). */
   readonly field?: NoticeField;
   /**
@@ -50,8 +56,16 @@ export interface NoticeContent {
   readonly part?: object;
   /** A short numbered list in a box: "How it goes". */
   readonly steps?: { readonly title: string; readonly items: readonly string[] };
-  /** A link in a quiet box under the buttons, with Copy where there is a clipboard. */
-  readonly link?: { readonly url: string; readonly copy?: () => Promise<string> };
+  /**
+   * A link in a quiet box under the buttons, with Copy where there is a clipboard. Folded under
+   * `fold` (a friend's lobby: "Also send a link", ADR 0086), with `share` inside it.
+   */
+  readonly link?: {
+    readonly url: string;
+    readonly copy?: () => Promise<string>;
+    readonly fold?: string;
+    readonly share?: NoticeButton;
+  };
   /** Pages to read, as links after the body (the privacy policy and terms); each opens in a tab of
    * its own, so the screen it was read from stays where it was. */
   readonly links?: readonly { readonly text: string; readonly href: string }[];

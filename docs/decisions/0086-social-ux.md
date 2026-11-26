@@ -201,3 +201,47 @@ nothing, and one line under it (`aria-describedby`) says why and the way that wo
 The sheet's parts and their order are the same in every state (`friend-sheet.browser.test.ts`).
 The row's inline Challenge keeps its rule: it shows only when it can succeed. Words in
 `friends-text.ts` (`liveUnavailable`).
+
+## Addendum (2026-11-26): Batch 4 as built
+
+Batch 4 of the plan (social S7-S11 with ADR 0087's P19), built as one stack of six pull requests,
+each on the one before. What the record above left open, and what changed in the building:
+
+- **S7, Play loses the strip**: `statusLine` and the strip are gone; "N online" is in the friends
+  list's title ("Friends · 5 · 2 online", never "0 online"). The demo court is 200 px at 390 × 664.
+  New series (a held bot series) moved into Free play's row, at its end: its own row cost the court
+  56 px.
+- **S8, one incoming banner** (`incoming-banner.ts`, `incoming-text.ts`): the rematch's old card is
+  gone. On a phone it floats at the top over the header row, inside the safe area, and moves
+  nothing (a first build pushed the page down under the row, which shrank Play's court by 92 px at
+  390 × 664; `frame-anchors` now opens a banner on every frame screen at every size and checks that
+  no landmark moves); bottom right on a desktop; on Play beside it sits over the
+  court's foot, since the corner there is Play. **A rematch has no ×**: it can't wait anywhere else,
+  so only a challenge folds into the badge. While a challenge's banner shows, the badge doesn't count
+  it (one place for the news); it counts it from the fold, then pulses. "Stopped waiting" is told
+  apart from "taken on another of this player's tabs" by the sender's status in the same inbox
+  answer (in a match: taken). An ending the end screen showed is never repeated (`endingTold`).
+- **P19, screen motion**: a tab change has **no** motion (the record allowed none or a quick fade;
+  instant keeps tabs quick and avoids fading twice with a skeleton's reveal). View Transitions are
+  used for browse moves only, with the rail and the visible header row named (the header by script,
+  so two never meet); under reduced motion no View Transition runs (its group still moves the
+  picture), only a fade. Rows leaving Friends fade as a still copy over their place, so a redraw
+  stays one synchronous step. The motion-literal allow-list is empty. The ready card's "Hide tips"
+  is a compact secondary beside Fight!. While the friend count is unknown on a phone, the cards
+  under the list wait unseen in their place (rather than storing a count on the device, which
+  `privacy.html` would have to name).
+- **S9, the challenge lifecycle**: crossed challenges merge in `acceptChallenge`, both players'
+  advisory locks taken in one order before the link's row lock; a second, simultaneous Accept finds
+  the pair's lineups and joins them. A blocked sender's link: the blocker's card says "You blocked
+  Sam" (Unblock, Not now) and Accept is refused (`friend_blocked`); the sender is told nothing.
+  `/me/match` names the friend a lobby waits for. Every 4xx of the challenge services has the game's
+  words (`CHALLENGE_REFUSALS`). The leaver is told once on Home on the banner's look.
+- **S10, the friend lobby**: the line on what comes next reads the lineups' clock from
+  `startLineupMs` (`src/api/start.ts`, 60 s, 75 s for Best of 5). After a No thanks, "Challenge
+  someone else" cancels the lobby first, so the next send isn't refused for it.
+- **S11, Your games and endings**: Your games lists the games waiting on the **other** player; a
+  game waiting on you stays in Waiting for you with Play, so no game shows twice. Endings show until
+  seen, for at most 7 days (`ENDING_DAYS`), seen by the player's own read of the ended series
+  (`game.series_seen`, migration `20261125234153_series_seen.sql`; no trigger, so seeing pokes
+  nobody). The inbox reads turns, games and endings in one statement (`gamesFor`); an ending already
+  pokes both inboxes through the series trigger (ADR 0085). `privacy.html` names the seen mark.

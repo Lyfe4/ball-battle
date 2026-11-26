@@ -1,6 +1,7 @@
 /*
  * A card that floats over every screen (`.floating-notice`): a new version is ready
- * (update-notice.ts, ADR 0066), or a rematch is asked (rematch-notice.ts). The new version is one
+ * (update-notice.ts, ADR 0066). A friend's challenge or a rematch is the incoming banner
+ * (incoming-banner.css, ADR 0086), at the top on a phone. The new version is one
  * card with Reload, in a notice's surface box like the slow-frames line (frame-tip.css). It floats at the bottom, clear of the home bar,
  * so it never moves what is on screen, and the page gains room under its end while it shows, so
  * it never covers the last thing on a page either. On a phone it spans the column; on a desktop it
@@ -40,7 +41,7 @@
   padding: 0 var(--space-gap);
 }
 
-body:is([data-update], [data-rematch-notice]) .stage {
+body[data-update] .stage {
   padding-bottom: calc(max(var(--space-gutter), env(safe-area-inset-bottom)) + 5rem);
 }
 
