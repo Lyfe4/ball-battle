@@ -136,18 +136,35 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      # The local stack takes about 45 s to start (most of it pulling images), about as long as the
+      # three steps after it together, which don't need it (the online build reads no .env). So it
+      # starts in the background and "Wait for Supabase" joins it: about 45 s off this job, the
+      # critical path of every run. Its log is printed either way.
+      - name: Start Supabase in the background
+        run: |
+          (
+            pnpm exec supabase start \
+              -x studio,postgres-meta,imgproxy,logflare,vector,edge-runtime,storage-api
+            echo "$?" > supabase-start.exit
+          ) > supabase-start.log 2>&1 &
       # The browser only, no apt: the runner image already has Chromium's system libraries (it
       # ships Chrome), and apt from the Ubuntu mirror can stall for minutes (ADR 0065).
       - run: pnpm exec playwright install chromium
-      - run: >-
-          pnpm exec supabase start
-          -x studio,postgres-meta,imgproxy,logflare,vector,edge-runtime,storage-api
-      # The functions' settings from the local stack (scripts/local-env.ts), and an online build
-      # served by `netlify dev` with the functions on one origin, as on a deploy preview.
-      - run: node scripts/local-env.ts > .env
+      # An online build served by `netlify dev` with the functions on one origin, as on a deploy
+      # preview.
       - run: pnpm build:online
       # Its own step: the install alone takes about two minutes.
       - run: npm install --global netlify-cli@27.14.0
+      - name: Wait for Supabase
+        run: |
+          for attempt in $(seq 1 150); do
+            [ -f supabase-start.exit ] && break
+            sleep 2
+          done
+          cat supabase-start.log
+          [ "$(cat supabase-start.exit 2>/dev/null)" = 0 ]
+      # The functions' settings from the local stack (scripts/local-env.ts).
+      - run: node scripts/local-env.ts > .env
       - name: Start netlify dev
         run: |
           netlify dev --offline > netlify-dev.log 2>&1 &
