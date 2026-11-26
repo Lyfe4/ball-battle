@@ -200,7 +200,9 @@ nothing, and one line under it (`aria-describedby`) says why and the way that wo
 
 The sheet's parts and their order are the same in every state (`friend-sheet.browser.test.ts`).
 The row's inline Challenge keeps its rule: it shows only when it can succeed. Words in
-`friends-text.ts` (`liveUnavailable`).
+`friends-text.ts` (`liveUnavailable`). Since ADR 0087's "one button and row system" addendum the
+sheet says **Play by turns** where this record says Take turns ("Jo is offline · Play by turns
+instead").
 
 ## Addendum (2026-11-26): Batch 4 as built
 

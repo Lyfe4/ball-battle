@@ -14,9 +14,9 @@ Never paste a real secret into this file, a pull request, a commit or a chat. Pl
 steps) says `browser-poke` with a dash; this runbook uses `browser_poke`, and staging's key should
 be renamed to match when it is next rotated.
 
-**Netlify plan.** The site is on the legacy Free plan. Variable **scopes** (Builds, Functions,
-Runtime, Post processing) are a Pro feature: on Free every variable applies to every scope, so
-ignore ADR 0082's "scoped to Functions". **Deploy contexts** (Production, Deploy Previews, Branch
+**Netlify plan.** The site is on the legacy Free plan until step 1 moves it to Pro (ADR 0084).
+Variable **scopes** (Builds, Functions, Runtime, Post processing) are a Pro feature: once step 1 is
+done, scope the secrets to Functions as ADR 0082 asks; on Free every variable applies to every scope. **Deploy contexts** (Production, Deploy Previews, Branch
 deploys, Local development) are available on every plan (the vs Friend switch already sets
 `BALLBATTLE_ONLINE` for Production only), so set every value below for the **Production** context
 only. (verify: Netlify's pricing page still lists per-context values on Free.)
@@ -32,6 +32,7 @@ Where things are read:
 | `SUPABASE_BROWSER_KEY`                     | functions only (`GET /me/poke` hands it to the page; never in the bundle)                                      | unset                 |
 | `VITE_POKE`                                | the build only (`src/app/poke-build.ts`, `scripts/check-bundle.ts`)                                            | unset                 |
 | `BALLBATTLE_EMAIL_CODES`                   | functions; `off` switches email codes off (Google still works)                                                 | unset (on)            |
+| `BALLBATTLE_TURNS`, `VITE_TURNS`           | play by turns with a friend (ADR 0085): previews and staging only; production's command blanks `VITE_TURNS`    | unset: leave it so    |
 
 `VITE_POKE` is **not** derived from `BALLBATTLE_POKE`: the production command only prefixes
 `VITE_ONLINE` and `VITE_ACCOUNTS`. Set `VITE_POKE=1` for Production yourself; Netlify passes every
@@ -61,11 +62,48 @@ site variable into the build's environment, and the command's prefixes don't rem
 --branch main --limit 1`).
 - [ ] Today's production: `curl -s https://battle-ball.netlify.app/api/v1/health` (on 24 Nov 2026
       it read `"accounts":"off"` and had **no** `emailSends` key: `release` predates the mail
-      watch, so the hooks migrations are not in production yet. Step 2 fixes that).
+      watch, so the hooks migrations are not in production yet. Step 3 fixes that).
+- [ ] ADR 0084's trigger: accounts going live is one of its two triggers, so step 1 (Netlify Pro,
+      functions in Sydney) comes first, in the same week.
 
 **Undo:** nothing to undo.
 
-## 1. Privacy policy pull request
+## 1. Netlify Pro, functions in Sydney (ADR 0084)
+
+**Why:** ADR 0084 decision 1: the legacy free plan counts function calls (125,000 a month, the whole
+site stops past it), and friends' traffic reaches that at about 29 daily players. Accounts going
+live is the trigger to move to **Netlify Pro ($20, credit-based) with functions in `syd`**, beside
+the database, in that week. Leaving the legacy plan is permanent, so do it only when step 11 is
+days away, not weeks.
+
+**Do:**
+
+1. Before: `node scripts/live-measure.ts https://battle-ball.netlify.app bo3 > live-before.json`
+   (two browser contexts play one live match; keep the JSON for the comparison).
+2. Netlify → team → **Billing** → change plan → **Pro**. (verify: whether the team can still buy
+   _legacy_ Pro or only the credit plan; the proposal assumes credits, 3,000 a month.)
+3. A branch and PR, merged green before step 3 so the Publish carries it:
+   - the functions' region: `netlify.toml` `[functions]` (its comment says Ohio, Free plan), or the
+     site setting **Project configuration → Build & deploy → Functions region** → Asia Pacific
+     (Sydney) `ap-southeast-2` if `netlify.toml` doesn't take a region (verify which);
+   - `privacy.html`: Netlify's line says the server code "runs in Ohio, USA, so every online
+     request passes through the United States"; change it to Sydney, Australia, and the "Last
+     updated" date (fold this into step 2's privacy PR if they go together).
+4. Now on Pro, variable **scopes** exist: in step 10 scope the secrets (`GOOGLE_CLIENT_SECRET`,
+   `SUPABASE_BROWSER_KEY`) to **Functions** only, as ADR 0082 asked.
+
+**Check:**
+
+- Netlify → Billing shows Pro; Usage shows credits.
+- After step 3's deploy: Netlify → the production deploy → Functions → region Sydney.
+- `node scripts/live-measure.ts https://battle-ball.netlify.app bo3 > live-after.json`: a read's
+  time falls (ADR 0084 expects ~190 ms less per database round trip).
+- Weekly: Usage → credits against 3,000 (ADR 0084 decision 5).
+
+**Undo:** the region can go back to Ohio by the same setting and a deploy (and `privacy.html` with
+it). The plan change can't return to the legacy free plan.
+
+## 2. Privacy policy pull request
 
 **Why:** ADR 0069 and ADR 0079's "Before accounts are switched on in production": the policy must
 match what production does on the day it does it.
@@ -78,27 +116,39 @@ match what production does on the day it does it.
   only in a build without accounts (ADR 0078). Say where each button is in each build.
 - Re-read the accounts, friends, email-code, Resend and Realtime sections against the constants
   (`scripts/legal-pages.test.ts` checks the numbers) now that they apply to production.
-- Merge it green (merge commit, branch deleted) before step 2, so the Publish carries it.
+- Merge it green (merge commit, branch deleted) before step 3, so the Publish carries it.
 
-**Check:** `pnpm test scripts/legal-pages.test.ts` green on the branch; after step 2,
+**Check:** `pnpm test scripts/legal-pages.test.ts` green on the branch; after step 3,
 `https://battle-ball.netlify.app/privacy.html` shows the new date.
 
 **Undo:** revert the PR (a policy that describes more than is live is wrong, so keep it only if
 accounts ship).
 
-## 2. Publish: migrations and code to production
+## 3. Publish: migrations and code to production
 
-**Why:** the Auth hooks, the poke flag and the mail watch are migrations
-(`20261124090000_auth_hooks.sql`, `20261124120000_poke.sql`, `20261124190000_mail_watch.sql`), and
-blocking and name reports (`20261125090000_blocks_reports.sql`).
+**Why:** production (`release` at `f349248`, 23 Nov 2026) lacks every migration since then. Checked
+against `main` on 26 Nov 2026 (`git diff --stat origin/release origin/main -- supabase/migrations`):
+
+| Migration                                 | What it adds                                                                 |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `20261124090000_auth_hooks.sql`           | the two Auth hooks, `game.auth_tickets`, `game.mail_relay`                   |
+| `20261124120000_poke.sql`                 | `game.flags` (`poke`, off), poke keys and the row triggers                   |
+| `20261124190000_mail_watch.sql`           | `game.mail_sends`, `game.mail_outcomes`                                      |
+| `20261125090000_blocks_reports.sql`       | `game.friendships.blocked_by`, `game.name_reports`, `game.name_seen_by`      |
+| `20261125150000_ranked.sql`               | ranked groundwork: seasons, ratings, rating changes, queue, rewards (unused) |
+| `20261125200000_poke_turns.sql`           | `game.poke_turns()` and its trigger on `game.series`                         |
+| `20261125210000_mail_watch_read_only.sql` | `mail_outcomes` for `supabase_read_only_user` (the daily check)              |
+| `20261125234153_series_seen.sql`          | `game.series_seen` (the seen mark on an ended game by turns)                 |
+
+Re-run that diff on the day: anything merged since joins this list and the check below.
 Publish applies them to production before `release` moves (ADR 0068). It must come **before**
-step 7: the before-user-created hook refuses any sign-up without a ticket, and only the new code
+step 8: the before-user-created hook refuses any sign-up without a ticket, and only the new code
 writes tickets, so turning the hook on under the old release would break every new guest.
 
 **Do:** `gh workflow run publish.yml` (or Actions → Publish → Run workflow, ref `main`). It refuses
 a commit whose CI on `main` didn't pass, migrates production, then fast-forwards `release`; Netlify
-builds `release` (one production deploy: about a minute of the 300 build minutes on the legacy
-Free plan; 15 credits on a credit plan).
+builds `release` (one production deploy: 15 credits on Pro after step 1; about a minute of the 300
+build minutes on the legacy Free plan).
 
 **Check:**
 
@@ -111,14 +161,20 @@ Free plan; 15 credits on a credit plan).
   select to_regprocedure('public.ballbattle_before_user_created(jsonb)') is not null as hook_user,
          to_regprocedure('public.ballbattle_send_email(jsonb)') is not null as hook_email,
          to_regprocedure('game.mail_outcomes(integer)') is not null as mail_watch,
-         (select enabled from game.flags where name = 'poke') as poke_flag;
+         (select enabled from game.flags where name = 'poke') as poke_flag,
+         to_regclass('game.name_reports') is not null as reports,
+         to_regclass('game.ratings') is not null as ranked,
+         exists (select 1 from pg_trigger where tgname = 'poke_turns_changed') as poke_turns,
+         has_function_privilege('supabase_read_only_user', 'game.mail_outcomes(integer)', 'execute')
+           as read_only_watch,
+         to_regclass('game.series_seen') is not null as series_seen;
   ```
-  Expect `true, true, true, false`.
+  Expect `true, true, true, false, true, true, true, true, true`.
 
 **Undo:** migrations are expand-only and stay. To roll the code back, Netlify → Deploys → an
 earlier production deploy → "Publish deploy" (Publish never moves `release` backwards).
 
-## 3. Resend: domain and a production API key
+## 4. Resend: domain and a production API key
 
 **Why:** the Send Email hook posts each code to Resend's API with this key; Auth's SMTP fallback
 uses the same key as its password.
@@ -136,7 +192,7 @@ uses the same key as its password.
 
 **Undo:** API Keys → the key → Delete (codes then fail: watch `emailSends`; see rollback).
 
-## 4. Supabase Auth settings (ADR 0079's list), production project
+## 5. Supabase Auth settings (ADR 0079's list), production project
 
 **Why:** `/health` reads `"accounts":"misconfigured"` without Confirm email, and the rest is what
 staging and `supabase/config.toml` already hold.
@@ -165,7 +221,7 @@ sidebar groups move between dashboard releases):
 **Undo:** set each back; none matters while accounts are off, except anonymous sign-ins (never
 turn that off: guests need it).
 
-## 5. Vault secret `resend_api_key`
+## 6. Vault secret `resend_api_key`
 
 **Why:** the hook reads the Resend key from Vault by the name in `game.mail_relay.key_name`.
 
@@ -181,7 +237,7 @@ select name, created_at from vault.secrets where name = 'resend_api_key';
 
 **Undo:** Vault → the secret → Delete (the hook then refuses with "The mail relay has no key").
 
-## 6. The `game.mail_relay` row
+## 7. The `game.mail_relay` row
 
 **Why:** the one row tells the hook where to post. Set by hand, never by a migration, so a local
 Mailpit row can't reach a hosted project.
@@ -193,18 +249,18 @@ insert into game.mail_relay (kind, url, sender_name, sender_email, key_name)
 values ('resend', 'https://api.resend.com/emails', 'BallBattle', '<SENDER_ADDRESS>', 'resend_api_key');
 ```
 
-`<SENDER_ADDRESS>` is the same address as step 4's SMTP sender, on `play.calvinrdevelopment.com`.
+`<SENDER_ADDRESS>` is the same address as step 5's SMTP sender, on `play.calvinrdevelopment.com`.
 
 **Check:** `select kind, url, sender_name, sender_email, key_name from game.mail_relay;` shows one
 row (`only_row` allows no second).
 
 **Undo:** `delete from game.mail_relay;` (the hook then refuses with "No mail relay is set").
 
-## 7. The two Auth hooks
+## 8. The two Auth hooks
 
 **Why:** ADR 0082 decision 2: with the browser key in a page, anyone could call Auth's `/otp` and
 `/signup`; the hooks refuse a sign-up or email the functions didn't ticket. Required before the
-browser key reaches a production page (step 8 onwards). Only after step 2's release is live.
+browser key reaches a production page (step 9 onwards). Only after step 3's release is live.
 
 **Do:** Supabase → production → Authentication → **Auth Hooks** (verify: the docs call it
 "Hooks") → **Add hook**:
@@ -222,13 +278,13 @@ The migration already grants execute to `supabase_auth_admin`; both are `securit
   and see the challenge link.
 - `node scripts/project-check.ts production` (writes a one-minute ticket, signs up and deletes one
   test guest) passes and says Auth **refuses** a sign-up without a ticket.
-- Email can't be tested until step 9; until then nobody can request a code on production.
+- Email can't be tested until step 11; until then nobody can request a code on production.
 
-**Undo:** Auth Hooks → each hook → disable (Send Email off: Auth sends through step 4's SMTP with
+**Undo:** Auth Hooks → each hook → disable (Send Email off: Auth sends through step 5's SMTP with
 the templates; Before User Created off: sign-ups need no ticket). Do this only after the browser
 key is revoked (rollback order below).
 
-## 8. Google OAuth for production
+## 9. Google OAuth for production
 
 **Why:** Google signs in through our own callback; redirect URIs are exact, so production needs
 its own entry. `/health` checks the Google provider only when the functions have
@@ -256,18 +312,18 @@ by hand.
 **Client IDs** `<GOOGLE_CLIENT_ID>`, **Skip nonce checks** off. Client secret: as on staging
 (Auth's ID-token path doesn't use it; verify whether the form insists).
 
-**Do, Netlify** (step 9 sets it with the others): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+**Do, Netlify** (step 10 sets it with the others): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
-**Check:** after step 10, `curl -s https://battle-ball.netlify.app/api/v1/auth/options` offers
+**Check:** after step 11, `curl -s https://battle-ball.netlify.app/api/v1/auth/options` offers
 Google, and signing in with a Google account not on any test list works.
 
 **Undo:** remove the redirect URI or the Netlify variables (and redeploy); Supabase → Google off
 makes `/health` read `misconfigured` while the functions still have the id.
 
-## 9. Browser key `browser_poke` and the Netlify variables
+## 10. Browser key `browser_poke` and the Netlify variables
 
 **Why:** the page opens its Realtime socket with a dedicated publishable key, revocable alone (the
-emergency stop for every socket). Setting every variable now means step 10's one deploy carries
+emergency stop for every socket). Setting every variable now means step 11's one deploy carries
 all of them (each production deploy costs build minutes).
 
 **Do, Supabase** → production → **Project Settings** → **API Keys** → Publishable keys → **Create
@@ -286,8 +342,9 @@ variable** → Add a single variable → "Different value for each deploy contex
 | `BALLBATTLE_POKE`      | `1`                                                                 |
 | `VITE_POKE`            | `1`                                                                 |
 
-Leave `BALLBATTLE_ACCOUNTS` to step 10's script. On Free there is no Scopes choice: the variables
-reach the build too, which is harmless (`check-bundle.ts` fails a build whose bundle holds a
+Leave `BALLBATTLE_ACCOUNTS` to step 11's script. On Pro (step 1) set **Scopes** to Functions for
+`GOOGLE_CLIENT_SECRET` and `SUPABASE_BROWSER_KEY`; `VITE_POKE` needs Builds. Without scopes the
+variables reach the build too, which is harmless (`check-bundle.ts` fails a build whose bundle holds a
 secret, and the browser key is publishable). If an existing variable already has a value for
 another context, use Options → Edit and set Production only.
 
@@ -295,9 +352,9 @@ another context, use Options → Edit and set Production only.
 the other contexts. Nothing is live until a deploy. `BALLBATTLE_POKE=1` on its own sends no poke:
 `game.flags` `poke` is still off, so `/me/poke` answers `{ "off": true }`.
 
-**Undo:** Options → Delete for each, then a deploy; or revoke `browser_poke` at once (step 13).
+**Undo:** Options → Delete for each, then a deploy; or revoke `browser_poke` at once (rollback step 2).
 
-## 10. Accounts on: `friend-switch.ts on --accounts`
+## 11. Accounts on: `friend-switch.ts on --accounts`
 
 **Why:** one variable, one deploy: the build gets `VITE_ACCOUNTS` from `BALLBATTLE_ACCOUNTS` and
 the functions read the same one, so page and API switch together.
@@ -326,10 +383,10 @@ for Production; triggers a production deploy (about a minute of build time); wai
 **Undo:** `node scripts/friend-switch.ts off --accounts` (unsets the variable, one deploy; every
 `/api/v1/auth/*` then answers `accounts_off`, signed-in players stay in the database).
 
-## 11. Pokes on: `poke-switch.ts on production --production`
+## 12. Pokes on: `poke-switch.ts on production --production`
 
 **Why:** the database flag is the last of the three poke switches, instant and with no deploy.
-Only now: the hooks are on (step 7) and the page and functions already carry the key (steps 9-10).
+Only now: the hooks are on (step 8) and the page and functions already carry the key (steps 10-11).
 
 **Do:** `node scripts/poke-switch.ts status production` (expect off), then
 `node scripts/poke-switch.ts on production --production` (your own `supabase login`).
@@ -347,7 +404,7 @@ Only now: the hooks are on (step 7) and the page and functions already carry the
 **Undo:** `node scripts/poke-switch.ts off production` (never refused, instant; pages fall back to
 their timers at their next `/me/poke` ask; revoke the key to drop open sockets at once).
 
-## 12. UptimeRobot keyword monitors
+## 13. UptimeRobot keyword monitors
 
 **Why:** `/health` stays 200 for sign-in and email problems, so the plain up/down monitor never
 sees them; keyword monitors do (ADR 0079, ADR 0082 mail watch).
@@ -396,7 +453,7 @@ Fastest and cheapest first. Stop as soon as the problem is gone.
 
 1. **Pokes off** (instant, no deploy): `node scripts/poke-switch.ts off production`.
 2. **Drop every open socket** (instant): Supabase → Project Settings → API Keys → `browser_poke` →
-   Revoke/Delete. `/me/poke` keeps handing out a dead key until step 4's deploy; pages then poll.
+   Revoke/Delete. `/me/poke` keeps handing out a dead key until rollback step 4's deploy; pages then poll.
 3. **Email codes off, Google kept** (needs a deploy): Netlify Production `BALLBATTLE_EMAIL_CODES=off`,
    Deploys → Trigger deploy → Deploy project. Use this for a Resend or abuse problem alone.
 4. **Accounts off**: pause the UptimeRobot `accounts` monitor, then
