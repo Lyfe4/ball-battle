@@ -140,9 +140,18 @@
     line-height: 1.25;
   }
 
-  /* Fight! and Hide tips side by side inside a 288 px court. */
+  /*
+   * Fight! and Hide tips side by side inside a 288 px court: the row is the card's width and Fight!
+   * takes what Hide tips leaves, so the row never widens the card (WebKit's wider text did).
+   */
+  .ready-actions {
+    align-self: stretch;
+    justify-self: stretch;
+  }
+
   .ready-fight {
-    min-width: 8rem;
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 
