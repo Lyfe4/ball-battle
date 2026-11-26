@@ -183,6 +183,16 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
       }
     }
   }
+  // The settings menu, open over Play (2026-11-27): its rows and switches are controls too.
+  await follow('');
+  await onScreen('home');
+  visible('.settings-toggle')[0]?.click();
+  await until(() => visible('#settings-panel').length > 0, 5_000, 'the settings menu', false);
+  await settle();
+  const menu = visible('#settings-panel')[0];
+  if (menu !== undefined) problems.push(...controlProblems('the settings menu', menu));
+  visible('.settings-toggle')[0]?.click();
+  await settle();
   // Every online state, signed in (a guest's are the same screens).
   if (signedIn) {
     await walkOnline(api, (state) => {
