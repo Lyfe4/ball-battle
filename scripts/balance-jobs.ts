@@ -1,10 +1,10 @@
 // The work `pnpm balance` does, split into independent jobs that can run on worker threads. Each
 // job plays one pair of balls over every seed with the real simulation, so a job gives the same
 // result on any thread, and results are put back in job order: parallel output equals serial.
-import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { BALLS } from '../src/sim/balls/index.ts';
 import type { BallDefinition } from '../src/sim/types.ts';
+import { balanceWorkers } from './worker-pool.ts';
 import { mergePairResults, playPair, withMaxHealth, type PairResult } from './balance-stats.ts';
 
 /** One pair played over every seed. Plain data, so it can be posted to a worker. */
@@ -77,7 +77,7 @@ export async function runJobs(
 ): Promise<readonly PairResult[]> {
   if (serial) return jobs.map((job) => runJob(job));
 
-  const workerCount = availableParallelism();
+  const workerCount = balanceWorkers();
   const tasks = splitJobs(jobs, workerCount);
   const results: (PairResult | undefined)[] = tasks.map(() => undefined);
   let next = 0;
