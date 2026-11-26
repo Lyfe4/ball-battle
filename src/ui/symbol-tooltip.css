@@ -30,8 +30,7 @@
 button:has([data-symbol]),
 [data-symbol-tap],
 .ball-tile,
-.quick-slot,
-.matchup-button {
+.quick-slot {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;

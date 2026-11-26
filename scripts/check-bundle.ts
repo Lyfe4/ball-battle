@@ -12,6 +12,8 @@ export const SECRET_MARKS: readonly RegExp[] = [
   /c2VydmljZV9yb2xl|NlcnZpY2Vfcm9sZ|zZXJ2aWNlX3JvbG/,
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   /postgres(?:ql)?:\/\/[^\s"'`]*:[^\s"'`@]+@/,
+  // Google's OAuth client secret (GOOGLE_CLIENT_SECRET): the functions' only, never a page's.
+  /GOCSPX-/,
 ];
 
 /**

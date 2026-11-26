@@ -337,11 +337,6 @@ export function settingsCoverCourt(): boolean {
   return menu?.opener !== undefined && menu.covers;
 }
 
-/** Closes the menu for a control in it that moves to another screen (Sign in, ADR 0079). */
-export function closeSettings(): void {
-  closeMenu(false);
-}
-
 /** Shows the in-fight speed's change in an open menu. */
 export function refreshSettings(): void {
   if (menu?.opener !== undefined) menu.render();

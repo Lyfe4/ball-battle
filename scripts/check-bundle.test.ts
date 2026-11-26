@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { problemsIn } from './check-bundle.ts';
 
 describe('the bundle check', () => {
-  it('finds a secret key, a service-role token, a private key or a database password', () => {
+  it('finds a secret key, a service-role token, a private key, a database password or a Google client secret', () => {
     const jwt = Buffer.from('{"role":"service_role"}').toString('base64url');
     for (const text of [
       'const k="sb_secret_abc"',
       `x="eyJhbGciOiJIUzI1NiJ9.${jwt}.sig"`,
       '-----BEGIN EC PRIVATE KEY-----',
       'postgresql://game_api:hunter2@db.example:5432/postgres',
+      'const s="GOCSPX-abcdefghijklmnopqrstuvwxyz12"',
     ]) {
       expect(problemsIn('a.js', text, true), text).toHaveLength(1);
     }

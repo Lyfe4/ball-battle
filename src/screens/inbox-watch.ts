@@ -23,6 +23,7 @@ import { callApi, failureKindOf } from '../app/api.ts';
 import { createInboxPoll } from '../app/inbox-poll.ts';
 import { pokes } from '../app/pokes.ts';
 import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
+import { inboxToWatch } from './friends-text.ts';
 import { challengeIncoming, stoppedIncoming } from './incoming-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
@@ -211,12 +212,7 @@ export function createInboxWatch(
     if (stopped !== undefined) failure = undefined;
     last = inbox;
     render();
-    return (
-      inbox.friends.length > 0 ||
-      inbox.requests > 0 ||
-      inbox.invites.length > 0 ||
-      inbox.turns.length > 0
-    );
+    return inboxToWatch(inbox);
   }
 
   const poll = createInboxPoll({

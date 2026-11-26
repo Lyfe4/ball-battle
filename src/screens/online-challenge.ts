@@ -339,7 +339,7 @@ export function createChallengeScreens(
       const open = () => {
         show('setup');
         setup.open({ format, bestOf, level: '' });
-        // Take turns from a friend's sheet: the setup's own By turns path, straight to its lineup.
+        // Play by turns from a friend's sheet: the setup's own By turns path, straight to its lineup.
         if (sender.turnsFirst()) void sender.send({ format, bestOf, level: '', turns: true });
       };
       if (!askFirst(open)) open();
