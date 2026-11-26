@@ -14,6 +14,7 @@ import { decodeRematchView, type RematchView } from '../api/rematch.ts';
 import type { SeriesView } from '../api/series.ts';
 import { seatsOf } from '../app/online-series.ts';
 import type { PickClock } from './pick-clock-text.ts';
+import { createToldEndings } from '../app/told-endings.ts';
 import { rematchChoiceOf, rematchClockOf, rematchEnding } from './rematch-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
@@ -62,8 +63,11 @@ const ended = (view: SeriesView | undefined): view is SeriesView =>
 export function createOnlineRematch(host: RematchHost): OnlineRematch {
   let series: SeriesView | undefined;
   let visible = false;
-  /** Series whose end screen showed why their rematch ended (ADR 0086: never said again on Home). */
-  const endingsTold = new Set<string>();
+  /**
+   * Series whose end screen showed why their rematch ended (ADR 0086: never said again on Home),
+   * kept for the page's session so a reload doesn't say it again (told-endings.ts).
+   */
+  const endingsTold = createToldEndings(() => window.sessionStorage);
   let rematch: RematchView | undefined;
   /** When `rematch` was answered, by this device's clock: the server's time moves on from it. */
   let heardAt = 0;

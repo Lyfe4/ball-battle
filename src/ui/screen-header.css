@@ -45,17 +45,27 @@
 }
 
 /* One line, cut with an ellipsis rather than wrapping the row taller (a long ball name). */
+/*
+ * The title: one line in the row's height, centred on it; a long one (a name, "Waiting for
+ * Robin_the_great") wraps to a second line rather than losing its end, and only a third is cut
+ * (2026-11-27). The padding centres a single line exactly where the row's line height put it, so the
+ * title's box is the row's height and frame-anchors keeps its place.
+ */
 .screen-title {
+  display: -webkit-box;
   flex: 1;
   min-width: 0;
   margin: 0 0 var(--press-depth);
+  padding-block: calc((var(--head-height) - 1.2em) / 2);
   overflow: hidden;
+  overflow-wrap: anywhere;
   font-size: 1.375rem;
-  line-height: var(--head-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
   font-weight: var(--font-weight-display);
   letter-spacing: var(--letter-spacing-display);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* The symbol legend's ?: round, quiet, a full tap target. */

@@ -430,3 +430,12 @@ From the owner's look at the screenshots of the addendum above, at 1920 × 1080:
 - **A person's row drops its "›" when it shows a button** (Challenge, Accept and Decline): the
   mark sat before the button, as if the button opened something. The whole row still opens the
   sheet.
+- **A long title takes two lines** (amends "the title is one line"): at 375 px a name in a title
+  ("Waiting for Robin_the_greatest") lost its end to the ellipsis. The title wraps to a second line
+  and only a third is cut (`-webkit-line-clamp: 2`); one line keeps the row's height exactly, so
+  `frame-anchors` (now checking at most two lines, and one line at the row's height) and every
+  screen's first line stay put. `screen-title.safari` checks a long one shows whole.
+- **Leave series' question takes the foot's whole width on a phone** (it sat half-width beside
+  speed): the foot wraps while it is open (`panel-parts` checks the width at three sizes).
+- **"Jo said no" is told once per page session**, a reload included: the endings told are kept as
+  series ids in `sessionStorage` (`told-endings.ts`, the most recent 20), nothing personal.
