@@ -96,7 +96,8 @@ describe.each(SOCKETS)(
         }
         const ids = [sender, friend].map((page) => new URL(page.url()).searchParams.get('online'));
         expect(ids[0]).toBe(ids[1]);
-        expect(await noticeOf(friend).isVisible()).toBe(false);
+        // Gone once the new match is on (never over a fight): waited for, as it goes on its next read.
+        await noticeOf(friend).waitFor({ state: 'hidden', timeout: 10_000 });
 
         // The other way round: the sender leaves the new match; the friend asks, then goes home.
         await panelOf(sender).locator('.pick-clock:visible').first().waitFor({ timeout: 20_000 });

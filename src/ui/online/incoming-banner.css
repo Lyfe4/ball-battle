@@ -23,8 +23,7 @@
   color: var(--color-text);
   transition:
     opacity var(--motion-base) var(--ease-out),
-    transform var(--motion-base) var(--ease-out),
-    display var(--motion-base) allow-discrete;
+    transform var(--motion-base) var(--ease-out);
 }
 
 .incoming-banner[hidden] {
@@ -166,9 +165,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .incoming-banner {
-    transition:
-      opacity var(--motion-quick) var(--ease-out),
-      display var(--motion-quick) allow-discrete;
+    transition: opacity var(--motion-quick) var(--ease-out);
   }
 
   @starting-style {
