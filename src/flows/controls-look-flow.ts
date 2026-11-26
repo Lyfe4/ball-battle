@@ -157,6 +157,12 @@ async function checkSheet(person: string, problems: string[]): Promise<void> {
 }
 
 /**
+ * The walk's own budget: every screen, sheet, the settings menu and every online state, about 10 s
+ * on an idle machine; Vitest's 5-15 s default ran out on a loaded one (2026-11-27).
+ */
+export const WALK_TIMEOUT_MS = 60_000;
+
+/**
  * Every frame screen and every person's sheet, signed in with friends; or, as a guest (`signedIn`
  * false), every frame screen as a guest sees it (sign-in, a guest's Friends and Profile). The page
  * loads once per file, so each is a file of its own.
@@ -183,6 +189,16 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
       }
     }
   }
+  // The settings menu, open over Play (2026-11-27): its rows and switches are controls too.
+  await follow('');
+  await onScreen('home');
+  visible('.settings-toggle')[0]?.click();
+  await until(() => visible('#settings-panel').length > 0, 5_000, 'the settings menu', false);
+  await settle();
+  const menu = visible('#settings-panel')[0];
+  if (menu !== undefined) problems.push(...controlProblems('the settings menu', menu));
+  visible('.settings-toggle')[0]?.click();
+  await settle();
   // Every online state, signed in (a guest's are the same screens).
   if (signedIn) {
     await walkOnline(api, (state) => {

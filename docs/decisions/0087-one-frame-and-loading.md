@@ -389,3 +389,53 @@ words touching its edges and "Also send a link" was pink words, an action drawn 
   words fit one line, else each takes the whole width ("Challenge someone else" and "Choose your
   lineup" wrapped inside their buttons); "You accepted this challenge" was cut by the title's
   ellipsis at 390 px and is "Challenge accepted".
+
+## Addendum (2026-11-26, latest): account and settings together, top right
+
+The owner's staging check: a player couldn't tell the yellow disc before the title was her account,
+and looked for it with settings. Amends decision 3 above (the avatar in the lead slot).
+
+- **The avatar sits top right on every tab screen**, just before the tools: the avatar, then `?`
+  where the screen has one, then the gear, always last (`shell.ts` places it before the row's `?`
+  or gear). The lead slot keeps its place, so the title's left edge doesn't move between screens
+  (`frame-anchors` unchanged).
+- **Beside and on a desktop** (where the rail shows) the avatar is a pill: its disc, then the
+  username ("calvino"). On a phone held upright, the disc alone. A guest or an unknown player shows
+  the plain person icon alone everywhere (no name to show). The accessible name is unchanged:
+  "Profile, <username>", or "Profile".
+- **The lead slot of a tab screen**: on a phone held upright (no rail) it shows the game's mark,
+  the ball atop the rail elsewhere; beside and on a desktop it stays empty, one tap target wide, the
+  rail's mark saying BallBattle. A screen opened from a tab keeps Back there (the mark hides).
+- **Play's title** is "Play" where the rail shows, like the other tabs; "BallBattle" on a phone held
+  upright (one heading, the other words hidden, `railTitle`).
+- **Tests**: `tab-headers.safari` (mark, title, avatar, `?`, gear on each tab at 390 × 664; Back and
+  no avatar on a ball's page); `tab-avatar.{safari,wide,landscape-small}` (the avatar in the row
+  just before its tools; one mark, the rail's or the row's); `frame-anchors` in every project.
+- Mockups (the real screens with this header injected, Play, Balls, Friends and Profile at
+  390 × 664 and 1920 × 1080) were shown to the owner before the build.
+
+## Addendum (2026-11-27): the tab's icon leads beside and on a desktop
+
+From the owner's look at the screenshots of the addendum above, at 1920 × 1080:
+
+- **The lead slot is never an empty gap.** Beside and on a desktop an empty slot left the title
+  about 56 px right of the content under it, reading as a missing image. A tab screen's lead slot
+  there holds that tab's own icon, the rail's (`shapeIcon`, in the accent), decorative and
+  `aria-hidden`; on a phone held upright the mark stays. A screen opened from a tab keeps Back (the
+  icon hides with the mark). `frame-anchors` is unchanged: the slot keeps its width.
+- **One name.** The screenshots showed "calvino calvino" on Balls and Friends: the throwaway
+  mockup tool added its own name beside the real one; the page itself shows it once. The avatar
+  tests now sign in (`tab-avatar.{safari,wide,full,landscape,landscape-small}`) and fail on a
+  name shown twice in the row (or at all on a phone), and check the lead slot's icon is the rail's.
+- **A person's row drops its "›" when it shows a button** (Challenge, Accept and Decline): the
+  mark sat before the button, as if the button opened something. The whole row still opens the
+  sheet.
+- **A long title takes two lines** (amends "the title is one line"): at 375 px a name in a title
+  ("Waiting for Robin_the_greatest") lost its end to the ellipsis. The title wraps to a second line
+  and only a third is cut (`-webkit-line-clamp: 2`); one line keeps the row's height exactly, so
+  `frame-anchors` (now checking at most two lines, and one line at the row's height) and every
+  screen's first line stay put. `screen-title.safari` checks a long one shows whole.
+- **Leave series' question takes the foot's whole width on a phone** (it sat half-width beside
+  speed): the foot wraps while it is open (`panel-parts` checks the width at three sizes).
+- **"Jo said no" is told once per page session**, a reload included: the endings told are kept as
+  series ids in `sessionStorage` (`told-endings.ts`, the most recent 20), nothing personal.

@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { budgetLine, budgetProblems } from './bundle-budget.ts';
 
 /** Text that only a secret contains: Supabase's secret and service-role keys, private keys. */
 export const SECRET_MARKS: readonly RegExp[] = [
@@ -88,24 +89,20 @@ function filesIn(dir: string): string[] {
  */
 export function reportDist(online: boolean, accounts = false, poke = false, turns = false): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
-  const problems = filesIn(dist)
+  const files = filesIn(dist)
     .filter((file) => /\.(?:js|html|css|json|webmanifest)$/.test(file))
-    .flatMap((file) =>
-      problemsIn(
-        file.slice(dist.length + 1),
-        readFileSync(file, 'utf8'),
-        online,
-        accounts,
-        poke,
-        turns,
-      ),
-    );
+    .map((file) => ({ name: file.slice(dist.length + 1), text: readFileSync(file, 'utf8') }));
+  const problems = [
+    ...files.flatMap(({ name, text }) => problemsIn(name, text, online, accounts, poke, turns)),
+    // The size budget (bundle-budget.ts), in the same check so CI's build job holds it.
+    ...budgetProblems(files),
+  ];
   if (problems.length > 0) {
     console.error(problems.join('\n'));
     process.exit(1);
   }
   const without = !online ? ' and no online code' : accounts ? '' : ' and no sign-in code';
-  console.log(`dist/ holds no secret${without}.`);
+  console.log(`dist/ holds no secret${without}; ${budgetLine(files)}.`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -73,11 +73,12 @@ export function boxRules(choice: PlayChoice): string {
   return setupLine(choice.bot.format, choice.bot.bestOf);
 }
 
-/** The mode box's name: what it opens, then both lines in words. */
+/**
+ * The mode box's name: both lines as they show, then what it opens, so a voice user who says the
+ * words they see reaches it (WCAG 2.5.3, Lighthouse on staging, 2026-11-27).
+ */
 export function boxSpoken(choice: PlayChoice): string {
-  const { format, bestOf } = choice.opponent === 'friend' ? choice.friend : choice.bot;
-  const live = choice.opponent === 'friend' ? 'live, ' : '';
-  return `${SHEET_WORDS.title}: ${boxWho(choice)}, ${live}${bestOfName(bestOf)}, ${FORMAT_SHORT[format]}`;
+  return `${boxWho(choice)}, ${boxRules(choice)}: ${SHEET_WORDS.title.toLowerCase()}`;
 }
 
 /** The sheet's heading and its groups' names (its way out is the shared ×, close-button.ts). */

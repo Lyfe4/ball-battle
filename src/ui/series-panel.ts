@@ -108,7 +108,8 @@ export function createSeriesPanel(
 
   const headingId = 'series-heading';
   root.setAttribute('aria-labelledby', headingId);
-  const heading = element('h2', 'visually-hidden', 'Best of 3');
+  // The fight's screen has no header row (ADR 0087): this is its one level-one heading.
+  const heading = element('h1', 'visually-hidden', 'Best of 3');
   heading.id = headingId;
   // Announced when it changes: the round starting, a result, a pick due, the series result.
   const status = element('p', 'visually-hidden');

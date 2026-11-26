@@ -87,7 +87,16 @@ export function headerAnchors(where: string, content: 'check' | 'skip' = 'check'
     `${where}: one gap after the lead`,
   ).toBeLessThanOrEqual(SAME);
   expect(getComputedStyle(title).fontSize, `${where}: the title's size`).toBe('22px');
-  expect(getComputedStyle(title).whiteSpace, `${where}: the title is one line`).toBe('nowrap');
+  // One line in the row's height; a long title wraps to a second rather than losing its end, and
+  // only a third is cut (ADR 0087 addendum of 2026-11-27).
+  expect(getComputedStyle(title).webkitLineClamp, `${where}: at most two lines`).toBe('2');
+  const lineHeight = Number.parseFloat(getComputedStyle(title).lineHeight);
+  if (titleBox.height < 1.5 * lineHeight + leadBox.height / 2) {
+    expect(
+      Math.abs(titleBox.height - leadBox.height),
+      `${where}: one line, the row's height`,
+    ).toBeLessThanOrEqual(SAME);
+  }
   // The row's controls (the legend's panel opens under it): the gear is the last.
   const controls = parts.filter((node) => node.matches('button'));
   const gear = controls.at(-1);

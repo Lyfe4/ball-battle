@@ -41,11 +41,16 @@ const RECORD = `
   CanvasRenderingContext2D.prototype.arc = function (x, y, radius, ...rest) {
     if (radius === 50 && this.canvas.id === 'arena' && frame !== window.__frame) {
       frame = window.__frame;
-      window.__drawn.push({ at: Date.now(), x, y });
+      window.__drawn.push({ at: window.__frameAt ?? Date.now(), x, y });
     }
     return arc.call(this, x, y, radius, ...rest);
   };
-  const count = () => { window.__frame += 1; raf(count); };
+  // Each point at its frame's own time, not when the draw got to it (as frame-pacing does).
+  const count = (ts) => {
+    window.__frame += 1;
+    window.__frameAt = performance.timeOrigin + ts;
+    raf(count);
+  };
   raf(count);
 `;
 
@@ -72,7 +77,9 @@ const UNEVEN_FRAMES = `
     const due = queue;
     queue = [];
     window.__frame = (window.__frame ?? 0) + 1;
-    for (const callback of due) callback(performance.now());
+    const now = performance.now();
+    window.__frameAt = performance.timeOrigin + now;
+    for (const callback of due) callback(now);
     n += 1;
     setTimeout(beat, n % 2 === 0 ? 25 : 42);
   };

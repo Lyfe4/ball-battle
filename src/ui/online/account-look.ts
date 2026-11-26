@@ -23,11 +23,18 @@ export function accountLook(who: WhoAmI): {
   readonly look: 'initial' | 'face';
   readonly text: string;
   readonly label: string;
+  /** The name beside the disc where the rail shows (ADR 0087 addendum); none for the face. */
+  readonly name: string;
 } {
   if (who.kind === 'account' && who.username !== null) {
-    return { look: 'initial', text: initialOf(who.username), label: `Profile, ${who.username}` };
+    return {
+      look: 'initial',
+      text: initialOf(who.username),
+      label: `Profile, ${who.username}`,
+      name: who.username,
+    };
   }
   // A guest, nobody, an account without a username, or not known: the plain face, which claims
   // nothing (Profile says who, and holds Sign in).
-  return { look: 'face', text: '', label: 'Profile' };
+  return { look: 'face', text: '', label: 'Profile', name: '' };
 }
