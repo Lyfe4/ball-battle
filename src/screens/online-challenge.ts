@@ -23,6 +23,7 @@ import { createSkeleton } from '../ui/skeleton.ts';
 import { createChallengeLobby } from './challenge-lobby.ts';
 import { createSender } from './challenge-send.ts';
 import { createFriendSetup } from './friend-setup.ts';
+import { unblockThen } from './challenge-unblock.ts';
 import { createGuestGate } from './guest-gate.ts';
 import { CARD_SAYS, cardFor } from './online-challenge-text.ts';
 import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.ts';
@@ -265,10 +266,7 @@ export function createChallengeScreens(
       canShare: typeof navigator.share === 'function',
       copy: () => copyLink(current),
       cancel: () => cancel(),
-      unblock: async (pair: string) => {
-        const done = await callApi<unknown>('POST', `friends/${pair}/unblock`, {});
-        await (done.ok ? loadCard() : failed(done, () => loadCard()));
-      },
+      unblock: (pair: string) => unblockThen(pair, () => loadCard(), failed),
     };
   }
 
