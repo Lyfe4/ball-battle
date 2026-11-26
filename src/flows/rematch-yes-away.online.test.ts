@@ -85,7 +85,7 @@ describe('a rematch asked, then the asker goes home', () => {
       }
       const ids = [asker, friend].map((page) => new URL(page.url()).searchParams.get('online'));
       expect(ids[0]).toBe(ids[1]);
-      expect(await cardOf(asker).isVisible()).toBe(false);
+      await cardOf(asker).waitFor({ state: 'hidden', timeout: 10_000 });
       expect(phones.errors).toStrictEqual([]);
     },
   );
