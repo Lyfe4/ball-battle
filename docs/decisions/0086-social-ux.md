@@ -212,8 +212,10 @@ each on the one before. What the record above left open, and what changed in the
   New series (a held bot series) moved into Free play's row, at its end: its own row cost the court
   56 px.
 - **S8, one incoming banner** (`incoming-banner.ts`, `incoming-text.ts`): the rematch's old card is
-  gone. On a phone the page makes room under the header row while it shows, so it covers only that
-  row (on Play the demo court gives way); bottom right on a desktop; on Play beside it sits over the
+  gone. On a phone it floats at the top over the header row, inside the safe area, and moves
+  nothing (a first build pushed the page down under the row, which shrank Play's court by 92 px at
+  390 × 664; `frame-anchors` now opens a banner on every frame screen at every size and checks that
+  no landmark moves); bottom right on a desktop; on Play beside it sits over the
   court's foot, since the corner there is Play. **A rematch has no ×**: it can't wait anywhere else,
   so only a challenge folds into the badge. While a challenge's banner shows, the badge doesn't count
   it (one place for the news); it counts it from the fold, then pulses. "Stopped waiting" is told
