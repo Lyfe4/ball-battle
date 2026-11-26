@@ -7,16 +7,20 @@
 import { readyFor, type ReadyMoment } from '../app/ready-moment.ts';
 import type { Tips } from '../app/tips.ts';
 import { counterFor } from '../sim/counter-map.ts';
+import type { Side } from '../sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { favouredOf, levelOf, setMark } from './balls/matchups.ts';
+import { favouredOf, leanOf, levelOf, setMark } from './balls/matchups.ts';
 import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
 
 export type { ReadyMoment } from '../app/ready-moment.ts';
 
 export interface ReadyCard {
-  /** A new match: true when it waits on Fight! (the card shows over its opening world). */
-  start(world: WorldState, moment: ReadyMoment): boolean;
+  /**
+   * A new match: true when it waits on Fight! (the card shows over its opening world). `yours` is
+   * the player's side (a series: a; online: theirs); undefined in Free play, where slot A speaks.
+   */
+  start(world: WorldState, moment: ReadyMoment, yours?: Side): boolean;
   /** Focuses Fight! when the match waits on it; false when it doesn't. */
   focus(): boolean;
   /** Starts a held match without Fight! (a live fight's time came): true when one was held. */
@@ -88,34 +92,43 @@ export function createReadyCard(
   // Escape only closes things (ADR 0038): it never starts a fight. The card isn't modal (Tab moves
   // on), so it is never a trap; Fight! (a click, Enter or Space) is the one way to start.
 
-  function fill(first: BallDefinition, second: BallDefinition, withCard: boolean): void {
+  function fill(
+    first: BallDefinition,
+    second: BallDefinition,
+    withCard: boolean,
+    yours: Side | undefined,
+  ): void {
     const mirror = first.id === second.id;
     head.show(first, second);
     edge.hidden = !withCard;
     reason.hidden = !withCard;
     never.hidden = !withCard;
+    head.mark(undefined);
     if (!withCard) return;
+    // The mark speaks for the player, as the pick screen's legend does ("▲ you're favoured"): it
+    // sits beside the player's own ball, ▲ or ▼ from that ball's side, and nothing when even.
+    const [own, other] = yours === 'b' ? [second, first] : [first, second];
+    if (!mirror && leanOf(own.id, other.id) !== 'even') {
+      const mark = element('span', 'ready-mark');
+      setMark(mark, own.id, other.id);
+      mark.setAttribute('aria-hidden', 'true');
+      head.mark(yours === 'b' ? 1 : 0, mark);
+    }
     const favoured = favouredOf(first.id, second.id);
-    const mark = element('span', 'ready-mark');
-    // The favoured ball's mark (▲▲ or ▲), or = for an even pair.
-    const other = favoured === second.id ? first.id : second.id;
-    setMark(mark, favoured ?? first.id, favoured === undefined ? second.id : other);
-    mark.setAttribute('aria-hidden', 'true');
     const favouredName = favoured === first.id ? first.name : second.name;
     const how = levelOf(first.id, second.id) === 'strong' ? 'strongly' : 'slightly';
-    const words = mirror
+    edge.textContent = mirror
       ? 'Mirror match'
       : favoured === undefined
         ? 'Even matchup'
         : `${favouredName} is ${how} favoured`;
-    edge.replaceChildren(mark, ` ${words}`);
     reason.textContent = mirror
       ? 'Same ball, same tricks.'
       : `What to watch: ${counterFor(first.id, second.id)?.reason ?? ''}`;
   }
 
   return {
-    start(world, moment) {
+    start(world, moment, yours) {
       const [a, b] = world.balls;
       const first = a === undefined ? undefined : lookup.get(a.definitionId);
       const second = b === undefined ? undefined : lookup.get(b.definitionId);
@@ -137,7 +150,7 @@ export function createReadyCard(
       count.classList.remove('ready-count-pop');
       if (!held && !still) return false;
       card.dataset['card'] = String(withCard);
-      fill(first, second, withCard);
+      fill(first, second, withCard, yours);
       // Hide tips starts the fight it closes; a live fight starts at its own time
       // (settings switch the cards off there, ADR 0040).
       never.hidden = !withCard || live;

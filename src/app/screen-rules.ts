@@ -5,7 +5,7 @@ import type { PlaybackSpeed } from './speed.ts';
 import { DEFAULT_MATCHUP, type Matchup } from './matchup.ts';
 import type { Route, Screen } from './route.ts';
 import type { RouteOf } from './router.ts';
-import type { SeriesSetup } from '../sim/series.ts';
+import type { SeriesSetup, Side } from '../sim/series.ts';
 import { sameSeries } from './series-url.ts';
 
 /**
@@ -203,4 +203,17 @@ export function readyMomentOf(
   if (screen === 'home') return demoWaits ? 'still' : 'demo';
   if (!seriesOnScreen) return 'quick';
   return live ? 'live' : 'series';
+}
+
+/**
+ * The player's side of the match on screen, whose ball the ready card marks: side a against the
+ * bot, the server's seat online, none in Free play or on home (both slots are the player's).
+ */
+export function yourSideOf(
+  screen: Screen,
+  seriesOnScreen: boolean,
+  onlineSide: Side | undefined,
+): Side | undefined {
+  if (screen === 'online') return onlineSide;
+  return seriesOnScreen && screen !== 'home' ? 'a' : undefined;
 }

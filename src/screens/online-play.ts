@@ -315,6 +315,7 @@ export function createOnlinePlay(
         ? liveFootLine(view, live.now(), reconnecting, watched === 0)
         : undefined,
     sides: () => (view === undefined ? undefined : sidesOf(view)),
+    yourSide: () => view?.you,
     setVisible(next) {
       panel.setVisible(next && visible && status === 'ready');
       roots.loading.hidden = !(next && visible && status === 'loading');

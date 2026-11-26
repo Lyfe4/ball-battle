@@ -42,7 +42,10 @@ describe('tips in the arena', () => {
     const card = visible('.ready-card')[0];
     expect(card?.textContent).toContain('Venom');
     expect(card?.textContent).toContain('Chrono');
-    expect(card?.querySelector('.ready-edge')?.textContent).toBe('▲▲ Venom is strongly favoured');
+    expect(card?.querySelector('.ready-edge')?.textContent).toBe('Venom is strongly favoured');
+    // The mark sits beside slot A's ball, from its side (Free play has no opponent).
+    const marked = card?.querySelector('.ready-mark')?.closest('.pairing-name')?.textContent;
+    expect(marked).toBe('▲▲Venom');
     expect(card?.querySelector('.ready-reason')?.textContent).toMatch(/^What to watch: \S/);
     expect(window.localStorage.getItem(READY_SEEN_STORAGE_KEY)).toBe('chrono|venom');
 

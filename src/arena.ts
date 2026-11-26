@@ -27,6 +27,7 @@ import { cue, fightReset, fightTick } from './sound/sound.ts';
 import { introLook } from './render/motion.ts';
 import { theme } from './render/theme.ts';
 import { step } from './sim/step.ts';
+import type { Side } from './sim/series.ts';
 import type { DefinitionLookup, WorldState } from './sim/types.ts';
 import { createArenaTips } from './ui/arena-tips.ts';
 import type { FrameTip } from './ui/frame-tip.ts';
@@ -54,6 +55,8 @@ export interface ArenaHost {
   readonly tips: Tips;
   /** What the match on screen is: the home demo, a Free play match or a series round (ADR 0037). */
   moment(): ReadyMoment;
+  /** The player's side of the match on screen; undefined in Free play (the ready card's mark). */
+  yourSide(): Side | undefined;
   /** Says once, after a fight, why fights drawn at about 30 a second look less smooth (ADR 0063). */
   readonly frameTip: FrameTip;
 }
@@ -341,7 +344,7 @@ export function createArena(
       counted = '';
       fightReset();
       // A finished match never waits on Fight!: the ready card treats it as it treats the demo.
-      held = ready.start(world, finished ? 'demo' : moment);
+      held = ready.start(world, finished ? 'demo' : moment, host.yourSide());
       // A finished match starts with its intro already over, so both balls are drawn at once.
       playback = finished
         ? { ...startPlayback(world, 0), effectMs: theme.introMs }

@@ -2,7 +2,8 @@
 // (online-play.ts): whether one is on screen and being played, so a setup screen is up otherwise,
 // and whether the arena holds one of its rounds yet (ADR 0073 fix: never the home demo behind it).
 import type { Screen } from '../app/route.ts';
-import { isSetupScreen } from '../app/screen-rules.ts';
+import { isSetupScreen, yourSideOf } from '../app/screen-rules.ts';
+import type { Side } from '../sim/series.ts';
 
 interface SeriesOnArena {
   roundOnArena(): boolean;
@@ -15,6 +16,8 @@ export interface SeriesStage {
   readonly playing: () => boolean;
   /** A setup screen is up (choosing balls, or setting up a series): no match is being watched. */
   readonly isSetup: () => boolean;
+  /** The player's side of the series on screen, whose ball the ready card marks (yourSideOf). */
+  readonly yourSide: () => Side | undefined;
   /**
    * Marks the stage `data-no-round` while the series on screen has none of its rounds on the arena
    * (a live match's lineups, picks and coin toss before round 1): the arena then shows nothing,
@@ -31,7 +34,7 @@ export interface SeriesStage {
 export function createSeriesStage(
   stage: { toggleAttribute(name: string, force?: boolean): boolean },
   current: () => Screen,
-  online: SeriesOnArena & { playing(): boolean },
+  online: SeriesOnArena & { playing(): boolean; yourSide(): Side | undefined },
   offline: SeriesOnArena & { isPlaying(): boolean },
 ): SeriesStage {
   const onScreen = () => current() === 'series' || current() === 'online';
@@ -44,6 +47,7 @@ export function createSeriesStage(
     onScreen,
     playing,
     isSetup: () => isSetupScreen(current(), playing()),
+    yourSide: () => yourSideOf(current(), onScreen(), online.yourSide()),
     markRoundOnArena,
     markRound: (roundOver) => {
       stage.toggleAttribute('data-round-over', roundOver);

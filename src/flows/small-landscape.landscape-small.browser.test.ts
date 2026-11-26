@@ -58,7 +58,7 @@ describe('the smallest phone turned sideways', () => {
     const card = visible('.ready-card')[0];
     await atRest(() => JSON.stringify(box(card)));
     expect(card?.querySelector('.ready-edge')?.textContent).toBe(
-      '▲▲ Necromancer is strongly favoured',
+      'Necromancer is strongly favoured',
     );
     const court = box(document.getElementById('arena'));
     const c = box(card);

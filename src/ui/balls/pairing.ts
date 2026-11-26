@@ -10,6 +10,11 @@ export interface Pairing {
   readonly element: HTMLElement;
   /** The two balls, the player's (or slot A's) first; undefined is not known yet. */
   show(first: BallDefinition | undefined, second: BallDefinition | undefined): void;
+  /**
+   * Puts `node` (a matchup mark) before one ball's name, 0 the first, or takes any mark away
+   * (undefined): the ready card marks the player's own ball only.
+   */
+  mark(index: 0 | 1 | undefined, node?: HTMLElement): void;
 }
 
 const ICON_PX = 48;
@@ -49,6 +54,14 @@ export function createPairing(): Pairing {
         element('span', 'pairing-vs', 'vs'),
         side(second, mirror),
       );
+    },
+    mark(index, node) {
+      for (const old of root.querySelectorAll('[data-pairing-mark]')) old.remove();
+      if (index === undefined || node === undefined) return;
+      const name = root.querySelectorAll('.pairing-ball')[index]?.querySelector('.pairing-name');
+      if (name === null || name === undefined) return;
+      node.dataset['pairingMark'] = '';
+      name.prepend(node);
     },
   };
 }

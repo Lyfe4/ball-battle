@@ -14,6 +14,7 @@ import {
   isSetupScreen,
   readyMomentOf,
   resumesMatch,
+  yourSideOf,
   screenTitle,
   seriesRound,
 } from './screen-rules.ts';
@@ -185,6 +186,16 @@ describe('readyMomentOf', () => {
     expect(readyMomentOf('home', false, false, true)).toBe('still');
     expect(readyMomentOf('series', true, true, true)).toBe('live');
     expect(readyMomentOf('match', false, false, true)).toBe('quick');
+  });
+});
+
+describe('yourSideOf', () => {
+  it('is side a against the bot, the server’s seat online, and nobody’s in Free play', () => {
+    expect(yourSideOf('series', true, undefined)).toBe('a');
+    expect(yourSideOf('online', true, 'b')).toBe('b');
+    expect(yourSideOf('online', false, undefined)).toBeUndefined();
+    expect(yourSideOf('match', false, undefined)).toBeUndefined();
+    expect(yourSideOf('home', false, undefined)).toBeUndefined();
   });
 });
 

@@ -9,6 +9,7 @@ import { createTips } from '../app/tips.ts';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import { createWorld } from '../sim/world.ts';
+import { leanOf, levelOf } from './balls/matchups.ts';
 import { createReadyCard } from './ready-card.ts';
 
 const memory = new Map<string, string>();
@@ -70,5 +71,84 @@ describe('a live sticker at Fight!', () => {
     const frames = await framesUntilGone(layer);
     expect(frames.at(-1)).toBe('gone');
     expect(new Set(frames.slice(0, -1)), 'only the last number, then gone').toEqual(new Set(['1']));
+  });
+});
+
+// The card's mark speaks for the player (owner's decision, 2026-11-27): it sits beside the player's
+// own ball, ▲ green when the player is favoured, ▼ red when not, nothing when even; never beside
+// the opponent's ball, so it reads as the pick screen's legend does ("▲ you're favoured").
+describe('the ready card’s mark', () => {
+  function cardFor(first: string, second: string, side: 'a' | 'b' | undefined) {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const card = createReadyCard(
+      container,
+      BALL_LOOKUP,
+      createTips(() => storage),
+      () => undefined,
+    );
+    const world = createWorld(1, [
+      getDefinition(BALL_LOOKUP, first),
+      getDefinition(BALL_LOOKUP, second),
+    ]);
+    card.start(world, 'series', side);
+    const balls = [...container.querySelectorAll('.pairing-ball')];
+    const marks = balls.map((ball) => ball.querySelector<HTMLElement>('.ready-mark'));
+    return { container, marks };
+  }
+
+  // A pair the counter map calls a strong counter, the first ball the losing side.
+  const pairs = [...BALL_LOOKUP.keys()].flatMap((a) => [...BALL_LOOKUP.keys()].map((b) => [a, b]));
+  const strong = pairs.find(
+    ([a = '', b = '']) => leanOf(a, b) === 'unfavoured' && levelOf(a, b) === 'strong',
+  );
+  const [weak = '', strongOne = ''] = strong ?? [];
+
+  it('shows ▼▼ beside the player’s ball when the bot’s ball is strongly favoured', () => {
+    const { container, marks } = cardFor(weak, strongOne, 'a');
+    expect(marks[0]?.textContent).toBe('▼▼');
+    expect(marks[0]?.dataset['lean']).toBe('unfavoured');
+    expect(marks[1], 'never beside the opponent’s ball').toBeNull();
+    expect(container.querySelectorAll('.ready-mark')).toHaveLength(1);
+    const name = BALL_LOOKUP.get(strongOne)?.name ?? '';
+    expect(container.querySelector('.ready-edge')?.textContent).toBe(
+      `${name} is strongly favoured`,
+    );
+  });
+
+  it('shows ▲▲ beside the player’s ball when the player is on side b and favoured', () => {
+    const { marks } = cardFor(weak, strongOne, 'b');
+    expect(marks[0], 'never beside the opponent’s ball').toBeNull();
+    expect(marks[1]?.textContent).toBe('▲▲');
+    expect(marks[1]?.dataset['lean']).toBe('favoured');
+  });
+
+  it('shows no mark for a mirror', () => {
+    const { container } = cardFor('archer', 'archer', 'a');
+    expect(container.querySelectorAll('.ready-mark')).toHaveLength(0);
+  });
+});
+
+describe('the ready card’s mark for an even pair', () => {
+  it('shows nothing', () => {
+    const even = [...BALL_LOOKUP.keys()].find(
+      (id) => id !== 'archer' && leanOf('archer', id) === 'even',
+    );
+    if (even === undefined) throw new Error('No even pair for the Archer');
+    const container = document.createElement('div');
+    document.body.append(container);
+    const card = createReadyCard(
+      container,
+      BALL_LOOKUP,
+      createTips(() => storage),
+      () => undefined,
+    );
+    card.start(
+      createWorld(1, [getDefinition(BALL_LOOKUP, 'archer'), getDefinition(BALL_LOOKUP, even)]),
+      'series',
+      'a',
+    );
+    expect(container.querySelectorAll('.ready-mark')).toHaveLength(0);
+    expect(container.querySelector('.ready-edge')?.textContent).toBe('Even matchup');
   });
 });
