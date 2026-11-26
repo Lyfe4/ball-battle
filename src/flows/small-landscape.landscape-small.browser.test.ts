@@ -6,6 +6,7 @@
 // card whole inside the court with no line wider than its box, the ability caption (its title in
 // the ball's colour) and its ring in the tip's cream, settings' headings and rows, and Free
 // play's picker scrolling the page.
+import { FIRST_PAINT_FONT } from '../app/first-paint.ts';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import page from '../../index.html?raw';
@@ -48,6 +49,10 @@ describe('the smallest phone turned sideways', () => {
     await import('../main.ts');
     await settle();
 
+    // Measured in the game's font, as the page is first shown: CI's first frame can be drawn
+    // before it, in a wider system font.
+    await document.fonts.load(FIRST_PAINT_FONT);
+    await document.fonts.ready;
     // The card: whole inside the court, and no line wider than its box.
     await until(() => visible('.ready-card').length === 1, 10_000, 'the ready card', false);
     const card = visible('.ready-card')[0];
