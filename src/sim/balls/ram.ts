@@ -69,7 +69,7 @@ export const ram = defineBall<RamState>({
   ability: { name: 'Throw', shownBy: { kind: 'hookDamage', hook: 'onTick' }, tipOn: 'struck' },
   radius: STANDARD_BALL_RADIUS,
   speed: 760,
-  maxHealth: 63,
+  maxHealth: 61,
   contactDamage: 14,
   initialAbilityState: { thrownId: '', crashBy: 0 },
   hooks: {
