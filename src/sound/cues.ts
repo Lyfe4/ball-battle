@@ -205,6 +205,10 @@ export function cuesOf(
       case 'ballDefeated':
         add('knockout', ended ? 1 : 0.6, before.get(event.ballId)?.position);
         break;
+      // A time-limit end has no knockout to hear, and a draw no winner: a bell says it is over.
+      case 'matchEnded':
+        if (event.reason !== 'knockout' || event.result.kind === 'draw') add('endBell', 1);
+        break;
       default:
         break;
     }

@@ -155,6 +155,19 @@ describe.skipIf(noAudio)('controls sound when pressed', () => {
     });
     await userEvent.click(inner);
     expect(heard()).toHaveLength(1);
+    await pause(700);
+    // A key moment's tap follows the same rule (ADR 0070): a handler passing the click on to one
+    // is one sound, and so is a double tap on Play.
+    const accept = control('Accept', 'tap');
+    const sheetAccept = control('Accept in a sheet');
+    sheetAccept.addEventListener('click', () => {
+      accept.click();
+    });
+    await userEvent.click(sheetAccept);
+    expect(heard()).toHaveLength(1);
+    await pause(700);
+    await userEvent.dblClick(control('Play', 'tap'));
+    expect(heard()).toHaveLength(1);
   });
 
   it('sounds once a tap through a quick run, and on Enter', async (context) => {

@@ -37,6 +37,17 @@ describe('createGate', () => {
     expect(gate.pass([one('boom')], MIX_WINDOW_MS + 1)).toEqual([1]);
   });
 
+  it('always plays a kind marked always, even with the mix full, and counts it toward the cap', () => {
+    const gate = createGate({ ...rules, last: { gapMs: 0, runMs: 0, always: true } });
+    const full = Array.from({ length: MAX_PER_WINDOW }, () => one('boom', 1));
+    expect(gate.pass(full, 0).every((gain) => gain > 0)).toBe(true);
+    // A knockout a moment later, the window still full: heard.
+    expect(gate.pass([{ kind: 'last', strength: 1 }], 50)[0]).toBeGreaterThan(0);
+    // An ordinary sound after it is still capped.
+    expect(gate.pass([one('tick')], 60)).toEqual([0]);
+    expect(gate.pass([one('tick')], MIX_WINDOW_MS + 51)[0]).toBeGreaterThan(0);
+  });
+
   it('starts over on reset', () => {
     const gate = createGate(rules);
     gate.pass([one('tick')], 0);

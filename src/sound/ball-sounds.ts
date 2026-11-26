@@ -37,4 +37,4 @@ export const BALL_SOUNDS: Readonly<Record<string, readonly FightCue[]>> = {
 };
 
 /** The sounds every ball makes. */
-export const SHARED_SOUNDS: readonly FightCue[] = ['bump', 'hit', 'knockout'];
+export const SHARED_SOUNDS: readonly FightCue[] = ['bump', 'hit', 'knockout', 'endBell'];

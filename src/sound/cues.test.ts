@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { step } from '../sim/step.ts';
+import { blue, red, run, withBalls } from '../sim/test-support.ts';
 import { createWorld } from '../sim/world.ts';
 import { cuesOf, type FightCue } from './cues.ts';
 
@@ -31,6 +32,38 @@ describe('cuesOf', () => {
     const counts = heard('brawler', 'frost');
     expect(counts.get('bump') ?? 0).toBeGreaterThan(3);
     expect(counts.get('knockout')).toBe(1);
+    expect(counts.get('endBell') ?? 0, 'a knockout is its own end').toBe(0);
+  });
+
+  it('rings the end bell once when the time runs out, which has no knockout to hear', () => {
+    // Too much health to knock out in a minute: the match goes to the time limit.
+    const start = withBalls(createWorld(3, [red, blue]), [{ health: 1e6 }, { health: 1e6 }]);
+    let world = start;
+    const kinds: FightCue[] = [];
+    while (world.match.status === 'running') {
+      const { world: next, events } = run(world, 1);
+      kinds.push(...cuesOf(events, world, next).map((cue) => cue.kind));
+      world = next;
+    }
+    expect(world.match).toMatchObject({ reason: 'timeLimit' });
+    expect(kinds.filter((kind) => kind === 'endBell')).toHaveLength(1);
+    expect(kinds).not.toContain('knockout');
+  });
+
+  it('rings the end bell for a draw, beside its knockouts', () => {
+    const world = createWorld(3, [red, blue]);
+    const draw = { kind: 'draw' } as const;
+    const [a = '', b = ''] = world.balls.map((ball) => ball.id);
+    const kinds = cuesOf(
+      [
+        { type: 'ballDefeated', tick: 1, ballId: a, defeatedById: b },
+        { type: 'ballDefeated', tick: 1, ballId: b, defeatedById: a },
+        { type: 'matchEnded', tick: 1, result: draw, reason: 'knockout' },
+      ],
+      world,
+      world,
+    ).map((cue) => cue.kind);
+    expect(kinds).toStrictEqual(['knockout', 'knockout', 'endBell']);
   });
 
   it('gives the Archer its own shot and arrow hit', () => {

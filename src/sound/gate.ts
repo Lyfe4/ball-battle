@@ -1,7 +1,8 @@
 // Keeps a busy fight from turning into noise: pure, on real time (never the match's), so 2x speed,
 // a catch-up and a burst of arrows all meet the same limits. Each kind has a shortest gap between
 // plays; a kind that repeats inside its run window gets quieter with each repeat, and the whole
-// mix plays at most MAX_PER_WINDOW sounds per window, the strongest first.
+// mix plays at most MAX_PER_WINDOW sounds per window, the strongest first, except a kind that must
+// always be heard (the knockout), which still counts toward it.
 
 /** How a kind of sound may repeat. */
 export interface GateRule {
@@ -9,6 +10,11 @@ export interface GateRule {
   readonly gapMs: number;
   /** A play this soon after the last of its kind continues a run, each one quieter. */
   readonly runMs: number;
+  /**
+   * Never dropped by the mix's cap (the knockout: a match never ends in silence); it still counts
+   * toward the cap, so what follows it in the window waits.
+   */
+  readonly always?: boolean;
 }
 
 /** Each repeat in a run plays at this share of the one before. */
@@ -51,7 +57,7 @@ export function createGate<K extends string>(rules: Readonly<Record<K, GateRule>
         const rule = rules[sound.kind];
         const previous = last.get(sound.kind);
         if (previous !== undefined && nowMs - previous < rule.gapMs) continue;
-        if (played.length >= MAX_PER_WINDOW) continue;
+        if (played.length >= MAX_PER_WINDOW && rule.always !== true) continue;
         const inRun = previous !== undefined && nowMs - previous < rule.runMs;
         const count = inRun ? (runs.get(sound.kind) ?? 0) + 1 : 0;
         runs.set(sound.kind, count);

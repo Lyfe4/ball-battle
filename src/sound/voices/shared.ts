@@ -1,7 +1,7 @@
-// The sounds every ball makes: a bump, a hit from anything without a voice of its own, and a
-// knockout. The Brawler has no ability, so these are all it says.
+// The sounds every ball makes: a bump, a hit from anything without a voice of its own, a
+// knockout, and the bell for a match that ends without one (the time limit, a draw). The Brawler has no ability, so these are all it says.
 import { noise, tone } from '../synth.ts';
-import { A5, C6, E6, type Voice } from './scale.ts';
+import { A5, C6, E6, G5, type Voice } from './scale.ts';
 
 export const SHARED_VOICES = {
   /** Two rubber balls meeting: a pitch-dropping thump and a soft click; harder is lower and louder. */
@@ -37,6 +37,17 @@ export const SHARED_VOICES = {
         gain: 0.16 * gain,
         detune,
       });
+    });
+  },
+  /**
+   * The time is up, or nobody won: two soft bell strikes, G5 then C6, each a sine with a quiet
+   * octave above, ringing out; about 0.6 s, so it reads as "that's it" and never as a hit.
+   */
+  endBell(kit, at, { gain }) {
+    [G5, C6].forEach((pitch, index) => {
+      const when = at + index * 0.16;
+      tone(kit, { from: pitch, at: when, length: 0.42, gain: 0.32 * gain, detune: 0 });
+      tone(kit, { from: pitch * 2, at: when, length: 0.25, gain: 0.08 * gain, detune: 0 });
     });
   },
 } satisfies Record<string, Voice>;

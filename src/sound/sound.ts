@@ -64,15 +64,16 @@ export function installSound(storage: () => Storage): void {
     'click',
     (event) => {
       const sound = pressSoundOf(event.target);
-      if (sound === 'tap') cue('tap');
-      else if (sound !== undefined && event.isTrusted) menuCue(sound);
+      // Key moments too (ADR 0070): a person's click only, through the gate, so a click passed on
+      // or a double tap on Play is one sound.
+      if (sound !== undefined && event.isTrusted) menuCue(sound);
     },
     { capture: true },
   );
 }
 
 /** A control's soft tick, through its own gate: one per tap, quieter in a quick run. */
-function menuCue(name: 'press' | 'back'): void {
+function menuCue(name: 'tap' | 'press' | 'back'): void {
   if (installed?.settings.on !== true) return;
   const [share = 0] = menuGate.pass([{ kind: name, strength: 1 }], performance.now());
   if (share > 0) installed.engine.play(name, { gain: share, detune: nextDetune() });
