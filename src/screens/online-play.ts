@@ -4,15 +4,7 @@
 // server's time on both screens (online-live.ts), and the page asks every second or two, which is
 // its heartbeat (live-ask.ts). Requests are online-series-client.ts's; at the end, the fair-play check.
 import { rememberWatched, watchedOf } from '../app/online-device.ts';
-import {
-  fairPlayOf,
-  reportReplay,
-  seatsOf,
-  sessionOf,
-  sidesOf,
-  stateAtAttempt,
-  type FairPlay,
-} from '../app/online-series.ts';
+import { reportReplay, seatsOf, sessionOf, sidesOf, stateAtAttempt } from '../app/online-series.ts';
 import { advanceSession, settleCurrent, type SeriesSession } from '../app/series-session.ts';
 import type { SeriesView } from '../api/series.ts';
 import { replaysHere } from '../sim/ruleset.ts';
@@ -26,6 +18,7 @@ import { liveFootLine } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
 import { createSeriesClient, sameView } from './online-series-client.ts';
 import { createLivePoke } from './live-poke.ts';
+import { createFairCheck } from './online-fair.ts';
 import { createSeriesExtras } from './online-series-extras.ts';
 import { onlineNotice, type LoadStatus } from './online-text.ts';
 import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
@@ -49,7 +42,11 @@ export function createOnlinePlay(
   /** Which play the arena was given (round, attempt, seed): only that one is ever recorded. */
   let shownPlay = '';
   let phase: SeriesPhase = 'between';
-  let fair: FairPlay | 'checking' | undefined;
+  /**
+   * Watch again (ADR 0088): a finished series' rounds from round 1, on this page's arena as by
+   * turns (a live one too), until another series opens.
+   */
+  let replaying = false;
   /** A live page whose last read failed: it says so, and keeps asking. */
   let reconnecting = false;
   const keyOf = (play: NextMatch | undefined) =>
@@ -61,7 +58,7 @@ export function createOnlinePlay(
    */
   const ours = () => host.worldsShown() === shownAt && keyOf(session?.current) === shownPlay;
   /** A live series this page can fight (its own ruleset); otherwise it is shown as by turns. */
-  const isLive = () => view?.live != null && replaysHere(view.ruleset);
+  const isLive = () => !replaying && view?.live != null && replaysHere(view.ruleset);
   const shown = () => {
     shownAt = host.worldsShown();
     shownPlay = keyOf(session?.current);
@@ -113,6 +110,14 @@ export function createOnlinePlay(
       onPick: (ball) => client.pick(ball),
       onRematch: () => extras.rematch.yes(),
       onDecline: () => extras.rematch.no(),
+      onWatchAgain: () => {
+        if (view === undefined) return;
+        replaying = true;
+        live.clear();
+        watched = 0;
+        session = sessionAt(0);
+        render();
+      },
       onNewSeries: () => {
         host.home();
       },
@@ -152,21 +157,17 @@ export function createOnlinePlay(
   function setWatched(seen: number): void {
     if (view === undefined || seen === watched) return;
     watched = seen;
-    rememberWatched(host.storage, view.id, watched);
+    // Watching again never lowers what the device remembers it watched.
+    if (!replaying) rememberWatched(host.storage, view.id, watched);
   }
 
+  const fair = createFairCheck(lookup, () => {
+    render();
+  });
   /** Once every round has been watched, the fair-play check (once per series). */
-  function checkFairPlay(): void {
-    if (view === undefined || view.status === 'open' || watched !== view.rounds.length) return;
-    if (fair !== undefined) return;
-    const checked = view;
-    fair = 'checking';
-    void fairPlayOf(checked, lookup).then((result) => {
-      fair = result;
-      if (result === 'unfair') console.error(`Series ${checked.id}: the fair-play check failed`);
-      render();
-    });
-  }
+  const checkFairPlay = () => {
+    fair.check(view, watched);
+  };
 
   /**
    * A live series at the server's moment: rounds whose fights have ended count as watched, and the
@@ -215,10 +216,11 @@ export function createOnlinePlay(
     if (next.live != null && next.status !== 'open') host.ended?.(next);
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
     // here: the server plays it on its own frozen sim, and this page shows its rounds on the track.
+    // Watching again, the rounds watched are this page's count, not the device's.
     const replayable = replaysHere(next.ruleset);
-    watched = replayable
-      ? Math.min(watchedOf(host.storage, next.id), next.rounds.length)
-      : next.rounds.length;
+    watched = !replayable
+      ? next.rounds.length
+      : Math.min(replaying ? watched : watchedOf(host.storage, next.id), next.rounds.length);
     status = 'ready';
     reconnecting = false;
     if (isLive()) placeLive(first);
@@ -278,7 +280,8 @@ export function createOnlinePlay(
         id = next;
         view = undefined;
         session = undefined;
-        fair = undefined;
+        replaying = false;
+        fair.reset();
         status = 'loading';
         client.open(next, primed);
       }
@@ -351,7 +354,7 @@ export function createOnlinePlay(
         due: all ? dueAt(view, live.now()) : [],
         online: { ...extras.moment(tick), now: () => live.now() },
       });
-      extras.shown(tick, next, fair);
+      extras.shown(tick, next, fair.result());
       if (next !== phase) {
         phase = next;
         host.layoutChanged();

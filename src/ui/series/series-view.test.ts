@@ -251,7 +251,7 @@ describe('the end of a series against the bot (ADR 0081)', () => {
 
 describe('the end of a live match, and a rematch (ADR 0055)', () => {
   const ended = play(series('blind'), 'a', 'a');
-  const end = (rematch?: 'offer' | 'answer') =>
+  const end = (rematch?: 'offer' | 'answer', watchAgain?: boolean) =>
     seriesScreenOf({
       state: ended,
       current: undefined,
@@ -259,7 +259,12 @@ describe('the end of a live match, and a rematch (ADR 0055)', () => {
       linkState: undefined,
       seats: { you: 'a', their: 'Player 2’s', them: 'Player 2', they: 'Player 2' },
       due: [],
-      online: { note: undefined, live: true, ...(rematch === undefined ? {} : { rematch }) },
+      online: {
+        note: undefined,
+        live: true,
+        ...(rematch === undefined ? {} : { rematch }),
+        ...(watchAgain === undefined ? {} : { watchAgain }),
+      },
     });
 
   it('offers Home alone when no rematch can be asked', () => {
@@ -269,6 +274,13 @@ describe('the end of a live match, and a rematch (ADR 0055)', () => {
   it('offers Rematch beside Home, and Rematch or No thanks when the friend asked', () => {
     expect(end('offer').actions).toStrictEqual(['rematch', 'newSeries']);
     expect(end('answer').actions).toStrictEqual(['rematch', 'decline']);
+  });
+
+  it('offers Watch again beside Home where it replays here, never over a rematch (ADR 0088)', () => {
+    expect(end(undefined, true).actions).toStrictEqual(['watchAgain', 'newSeries']);
+    expect(end(undefined, false).actions).toStrictEqual(['newSeries']);
+    expect(end('offer', true).actions).toStrictEqual(['rematch', 'newSeries']);
+    expect(end('answer', true).actions).toStrictEqual(['rematch', 'decline']);
   });
 });
 

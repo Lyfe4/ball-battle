@@ -2,6 +2,7 @@
 // back from the constants that decide them, so a change to either fails here until both agree.
 // They are pages of their own, built with the game, each with a way back (ADR 0027: no dead ends).
 import { readFileSync } from 'node:fs';
+import { RECENT_SERIES } from '../src/api/record.ts';
 import { describe, expect, it } from 'vitest';
 import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
@@ -129,6 +130,13 @@ describe('the privacy policy and terms', () => {
     );
     expect(text).toContain('through Supabase Realtime');
     expect(text).toContain('for about 3 days');
+  });
+
+  it('say the record is read from matches, seen by you, and by a friend only with them (ADR 0088)', () => {
+    const text = privacy.replace(/\s+/g, ' ');
+    expect(text).toContain('your record is worked out from these matches, never stored on its own');
+    expect(text).toContain(`last ${String(RECENT_SERIES)} matches, which only you see`);
+    expect(text).toContain('A friend sees only your record with them');
   });
 
   it('say a guest’s request counts go within about an hour (swept every 15 minutes)', () => {

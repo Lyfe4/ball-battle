@@ -3,6 +3,7 @@
 // Sam goes home and challenges Jo from Friends. Jo must get the incoming banner there, not only once
 // they go home too (the end screen counted as a fight while the match was "live"). The end screen
 // comes after the match, so the banner's rule ("never over a fight or a lineup pick") lets it show.
+// Then both players' Profiles list that first match (ADR 0088).
 // `netlify dev` serving an online build with accounts; iPhone Safari's visible size, Chromium only.
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -94,6 +95,23 @@ describe('a friend’s challenge on the end screen', () => {
       );
       await challengeOf(friend).getByRole('button', { name: 'Accept' }).click();
       await friend.waitForURL(/[?&]start=/, { timeout: 15_000 });
+
+      // Both Profiles list the first match (ADR 0088): one row each, naming the other, one won.
+      const results: string[] = [];
+      for (const [page, other] of [
+        [asker, jo],
+        [friend, sam],
+      ] as const) {
+        await page.goto(`${BASE}/?view=profile`);
+        const row = page.locator(`.profile-match[data-series="${first}"]`);
+        await row.waitFor({ timeout: 15_000 });
+        expect(await row.locator('.friends-name').innerText()).toBe(other);
+        results.push((await row.locator('.profile-match-result').innerText()).split(' ')[0] ?? '');
+        await expect
+          .poll(() => page.locator('.profile-fact-label').allInnerTexts())
+          .toContain('Played');
+      }
+      expect(results.toSorted()).toStrictEqual(['Lost', 'Won']);
       expect(errors).toStrictEqual([]);
     },
   );

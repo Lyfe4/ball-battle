@@ -5,6 +5,7 @@ import type { FriendEntry, FriendStatus } from '../../api/friends.ts';
 import { AWAY_AFTER_MS, GRACE_MS, LOBBY_SEEN_MS } from '../../api/live.ts';
 import type { BestOf, Format } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
+import { COUNTED } from './record.ts';
 
 type Db = Sql | TransactionSql;
 
@@ -14,13 +15,29 @@ type Db = Sql | TransactionSql;
  */
 export const ONLINE_MS = 150_000;
 
+interface StatusRow {
+  readonly id: string;
+  readonly name: string;
+  readonly status: FriendStatus;
+  readonly played?: number;
+  readonly wins?: number;
+  readonly losses?: number;
+}
+
 /**
  * Each accepted friend's status: in a match (a live series they are still heard from on, or a lobby
- * waiting), else online (active within ONLINE_MS), else offline.
+ * waiting), else online (active within ONLINE_MS), else offline. With `headToHead` (the Friends
+ * list, ADR 0088; never the inbox, read every 30 s), the player's record against each, from their
+ * series together that count (`COUNTED`), in the same statement; absent where they never played.
  */
-export async function friendStatuses(db: Db, userId: string): Promise<FriendEntry[]> {
-  return db<{ readonly id: string; readonly name: string; readonly status: FriendStatus }[]>`
+export async function friendStatuses(
+  db: Db,
+  userId: string,
+  headToHead = false,
+): Promise<FriendEntry[]> {
+  const rows = await db<StatusRow[]>`
     select f.id, game.name_seen_by(${userId}, o.user_id, o.username, o.display_name) as name,
+      ${headToHead ? db`h.played, h.wins, h.losses,` : db``}
       case
         when exists (
           select 1 from game.series s
@@ -43,8 +60,25 @@ export async function friendStatuses(db: Db, userId: string): Promise<FriendEntr
       end as status
     from game.friendships f
     join game.profiles o on o.user_id = case when f.low = ${userId} then f.high else f.low end
+    ${
+      headToHead
+        ? db`cross join lateral (
+            select count(*)::int as played,
+              (count(*) filter (where s.winner = case when s.player_a = o.user_id then 'b' else 'a' end))::int as wins,
+              (count(*) filter (where s.winner = case when s.player_a = o.user_id then 'a' else 'b' end))::int as losses
+            from game.series s
+            where ((s.player_a = ${userId}::uuid and s.player_b = o.user_id)
+              or (s.player_b = ${userId}::uuid and s.player_a = o.user_id)) and ${COUNTED(db)}
+          ) h`
+        : db``
+    }
     where ${userId} in (f.low, f.high) and f.accepted_at is not null
     order by lower(coalesce(o.username, o.display_name)), f.created_at`;
+  return rows.map(({ id, name, status, played, wins, losses }) =>
+    played === undefined || played === 0
+      ? { id, name, status }
+      : { id, name, status, record: { wins: wins ?? 0, losses: losses ?? 0 } },
+  );
 }
 
 /**

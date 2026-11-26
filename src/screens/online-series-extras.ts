@@ -6,6 +6,7 @@ import type { SeriesView } from '../api/series.ts';
 import { liveTossOf } from '../app/coin-toss.ts';
 import type { FairPlay } from '../app/online-series.ts';
 import { writeOnlineSeriesParams } from '../app/online-url.ts';
+import { replaysHere } from '../sim/ruleset.ts';
 import type { SeriesState } from '../sim/series.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
@@ -14,7 +15,7 @@ import { createPickClock } from '../ui/series/pick-clock.ts';
 import type { SeriesMoment } from '../ui/series/series-view.ts';
 import { liveNote } from './live-text.ts';
 import { createOnlineRematch, type OnlineRematch } from './online-rematch.ts';
-import { waitNote } from './online-text.ts';
+import { OLDER_VERSION, waitNote } from './online-text.ts';
 import { pickClockOf } from './pick-clock-text.ts';
 
 export interface ExtrasHost {
@@ -75,9 +76,13 @@ export function createSeriesExtras(
     moment(tick) {
       const { view, live, all } = tick;
       rematch.watch(live && all ? view : undefined, tick.visible);
-      const note = live
+      const ended = view.status !== 'open';
+      const older = ended && !replaysHere(view.ruleset);
+      const said = live
         ? (rematch.note() ?? liveNote(view, tick.watched))
         : waitNote(view, Date.now());
+      // An older ruleset's series (ADR 0088): its result, and why its fights don't show.
+      const note = older ? [said, OLDER_VERSION].filter(Boolean).join(' ') : said;
       const choice = rematch.choice();
       const toss = live ? liveTossOf(view) : undefined;
       return {
@@ -86,6 +91,8 @@ export function createSeriesExtras(
         // Live, played out or forfeit while this page still shows a fight of it: nothing to leave.
         over: live && view.status !== 'open',
         ...(choice === undefined ? {} : { rematch: choice }),
+        // Watch again where it replays here, once nothing else is asked (ADR 0088).
+        watchAgain: all && ended && !older && view.status !== 'void' && choice === undefined,
         ...(toss === undefined ? {} : { toss }),
       };
     },

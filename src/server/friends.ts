@@ -67,8 +67,9 @@ export async function listFriends(deps: Deps, userId: string): Promise<FriendsRe
   const entry = ({ id, name }: { id: string; name: string }) => ({ id, name });
   return {
     code,
-    // With each one's status (PR (d)), read in the one statement joined on accepted friendships.
-    friends: await friendStatuses(deps.sql, userId),
+    // With each one's status (PR (d)) and the player's record against them (ADR 0088), read in the
+    // one statement joined on accepted friendships.
+    friends: await friendStatuses(deps.sql, userId, true),
     incoming: rows.filter((row) => !row.accepted && !row.mine && !row.declined).map(entry),
     // Declined or not, a request the player sent reads as sent (ADR 0079): a "no" is never told,
     // nor a block (blocks.ts).

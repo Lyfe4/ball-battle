@@ -13,6 +13,7 @@ import { createSheet } from '../sheet.ts';
 import {
   BLOCK_STEP,
   handleOf,
+  headToHead,
   liveUnavailable,
   personStatus,
   REMOVE_STEP,
@@ -158,7 +159,8 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
 
   /**
    * The person's head: their disc, their @username (none for a made-up "Player 1234") and status
-   * on one line under the sheet's title, which is their name.
+   * on one line under the sheet's title, which is their name; a friend's head-to-head under it
+   * where they have finished a series together (ADR 0088).
    */
   function headOf(person: FriendEntry, kind: PersonKind, waiting: boolean): HTMLElement {
     const head = element('div', 'friend-sheet-person');
@@ -169,7 +171,17 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
     if (kind === 'friend')
       status.dataset['status'] = waiting ? 'waiting' : (person.status ?? 'offline');
     who.append(status);
-    head.append(personDisc(person, 'sheet'), who);
+    const words = element('div', 'friend-sheet-words');
+    words.append(who);
+    if (kind === 'friend' && person.record !== undefined) {
+      const { shown, said } = headToHead(person.record, person.name);
+      const record = element('p', 'friend-sheet-record');
+      const visible = element('span', '', shown);
+      visible.setAttribute('aria-hidden', 'true');
+      record.append(visible, element('span', 'visually-hidden', said));
+      words.append(record);
+    }
+    head.append(personDisc(person, 'sheet'), words);
     return head;
   }
 

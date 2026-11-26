@@ -237,3 +237,17 @@ export function endingLine(ending: Pick<Ending, 'opponent' | 'outcome'>): string
       return 'You lost: your turn ran out';
   }
 }
+
+/**
+ * A friend's head-to-head under their name in their sheet (ADR 0088): "You 3 – 2 Jo", and the same
+ * in words for a screen reader. Series won by each side, as Profile counts them.
+ */
+export function headToHead(
+  record: { readonly wins: number; readonly losses: number },
+  name: string,
+): { readonly shown: string; readonly said: string } {
+  return {
+    shown: `You ${String(record.wins)} – ${String(record.losses)} ${name}`,
+    said: `Your record with ${name}: you won ${String(record.wins)}, ${name} won ${String(record.losses)}`,
+  };
+}
