@@ -13,7 +13,7 @@ export const MOST_BOOST = 0.75;
 /** ...over this many ticks without touching a ball. */
 export const BUILD_TICKS = 150;
 /** The share of its bump that goes with its speed: (speed now / own speed - 1) times this. */
-export const SPEED_SHARE = 0.45;
+export const SPEED_SHARE = 0.4;
 
 const SPEED = 725;
 const BUMP = 20.5;
