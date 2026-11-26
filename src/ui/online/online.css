@@ -101,3 +101,45 @@
 .account-toggle[data-pressed] {
   filter: brightness(1.08);
 }
+
+/*
+ * The username beside the disc where the rail shows (ADR 0087 addendum of 2026-11-26): the avatar
+ * becomes a pill, its disc inside and the name after it. On a phone the disc alone; a guest or an
+ * unknown player shows the plain face alone everywhere (no name to show).
+ */
+.account-toggle-name {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .account-toggle:has(> .account-toggle-name:not([hidden])) {
+    display: inline-flex;
+    gap: var(--space-small);
+    width: auto;
+    padding: 0 var(--button-pad) 0 6px;
+    background: var(--color-raised);
+    color: var(--color-text);
+    font-size: var(--font-size-small);
+  }
+
+  .account-toggle:has(> .account-toggle-name:not([hidden])) .account-toggle-face {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .account-toggle-name:not([hidden]) {
+    display: inline;
+    max-width: 12rem;
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

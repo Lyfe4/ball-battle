@@ -389,3 +389,27 @@ words touching its edges and "Also send a link" was pink words, an action drawn 
   words fit one line, else each takes the whole width ("Challenge someone else" and "Choose your
   lineup" wrapped inside their buttons); "You accepted this challenge" was cut by the title's
   ellipsis at 390 px and is "Challenge accepted".
+
+## Addendum (2026-11-26, latest): account and settings together, top right
+
+The owner's staging check: a player couldn't tell the yellow disc before the title was her account,
+and looked for it with settings. Amends decision 3 above (the avatar in the lead slot).
+
+- **The avatar sits top right on every tab screen**, just before the tools: the avatar, then `?`
+  where the screen has one, then the gear, always last (`shell.ts` places it before the row's `?`
+  or gear). The lead slot keeps its place, so the title's left edge doesn't move between screens
+  (`frame-anchors` unchanged).
+- **Beside and on a desktop** (where the rail shows) the avatar is a pill: its disc, then the
+  username ("calvino"). On a phone held upright, the disc alone. A guest or an unknown player shows
+  the plain person icon alone everywhere (no name to show). The accessible name is unchanged:
+  "Profile, <username>", or "Profile".
+- **The lead slot of a tab screen**: on a phone held upright (no rail) it shows the game's mark,
+  the ball atop the rail elsewhere; beside and on a desktop it stays empty, one tap target wide, the
+  rail's mark saying BallBattle. A screen opened from a tab keeps Back there (the mark hides).
+- **Play's title** is "Play" where the rail shows, like the other tabs; "BallBattle" on a phone held
+  upright (one heading, the other words hidden, `railTitle`).
+- **Tests**: `tab-headers.safari` (mark, title, avatar, `?`, gear on each tab at 390 × 664; Back and
+  no avatar on a ball's page); `tab-avatar.{safari,wide,landscape-small}` (the avatar in the row
+  just before its tools; one mark, the rail's or the row's); `frame-anchors` in every project.
+- Mockups (the real screens with this header injected, Play, Balls, Friends and Profile at
+  390 × 664 and 1920 × 1080) were shown to the owner before the build.

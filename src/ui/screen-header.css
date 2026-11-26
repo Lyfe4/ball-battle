@@ -218,3 +218,36 @@
 .screen-back[hidden] {
   display: none;
 }
+
+/*
+ * A tab screen's lead slot on a phone held upright (ADR 0087 addendum of 2026-11-26): the game's
+ * mark, as the rail's top shows it where there is one. Beside and on a desktop the rail says it, so
+ * the slot stays empty (still one tap target wide: the title keeps its place).
+ */
+.screen-mark {
+  width: 34px;
+  height: 34px;
+}
+
+.screen-mark[hidden] {
+  display: none;
+}
+
+/* The title where the rail shows, if it differs (Play's "Play"): hidden until then. */
+.screen-title-rail {
+  display: none;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .screen-mark {
+    display: none;
+  }
+
+  .screen-title-phone:has(+ .screen-title-rail) {
+    display: none;
+  }
+
+  .screen-title-rail {
+    display: inline;
+  }
+}

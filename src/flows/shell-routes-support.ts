@@ -141,10 +141,10 @@ const TAB_SCREENS = [
 ] as const;
 
 /**
- * On every tab screen of a build with accounts, reached by its tab: one avatar, in the header row's
- * lead slot at every size (ADR 0087), and where the rail shows, the game's mark atop it in the
- * avatar's old place; the avatar opens Profile, which has none, and Profile's Back returns to that
- * tab (ADR 0081). Ends back on Play.
+ * On every tab screen of a build with accounts, reached by its tab: one avatar, top right in this
+ * screen's header row just before its `?` and gear (ADR 0087 addendum of 2026-11-26); where the
+ * rail shows, the game's mark atop it, else the mark in the header's lead slot; the avatar opens
+ * Profile, which has none, and Profile's Back returns to that tab (ADR 0081). Ends back on Play.
  */
 export async function avatarOnEveryTab(): Promise<void> {
   await openAs({ online: true, accounts: true }, '');
@@ -157,19 +157,24 @@ export async function avatarOnEveryTab(): Promise<void> {
     const avatar = shown[0];
     if (avatar === undefined) return;
     expect(avatar.getAttribute('aria-label'), screen).toBe('Profile');
-    // In this screen's own lead slot, first in its header row.
-    const lead = avatar.parentElement;
-    expect(lead?.classList.contains('screen-lead'), screen).toBe(true);
-    expect(lead?.parentElement?.firstElementChild, screen).toBe(lead);
-    expect(lead?.closest('[hidden]'), screen).toBeNull();
+    // In this screen's own header row, just before its tools: the `?` or the gear.
+    const row = avatar.parentElement;
+    expect(row?.classList.contains('screen-header'), screen).toBe(true);
+    expect(row?.closest('[hidden]'), screen).toBeNull();
+    const next = avatar.nextElementSibling;
+    expect(next?.matches('.symbol-legend-toggle, .settings-toggle'), screen).toBe(true);
     const rail = tabBar();
     const mark = rail?.querySelector('.tab-bar-mark');
-    if (mark instanceof HTMLElement && mark.getClientRects().length > 0) {
-      // The rail (beside, a desktop): the mark tops it, above its first tab.
+    const own = row?.querySelector('.screen-lead .screen-mark');
+    const seen = (node: Element | null | undefined) =>
+      node instanceof HTMLElement && node.getClientRects().length > 0;
+    if (seen(mark)) {
+      // The rail (beside, a desktop): the mark tops it, above its first tab; none in the row.
       const first = rail?.querySelector('a')?.getBoundingClientRect();
-      expect(mark.getBoundingClientRect().bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
+      expect(mark?.getBoundingClientRect().bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
       expect(rail?.querySelector('.account-toggle'), screen).toBeNull();
-    }
+      expect(seen(own), `${screen}: one mark`).toBe(false);
+    } else expect(seen(own), `${screen}: the mark leads the row`).toBe(true);
     avatar.click();
     await onScreen('profile');
     await settle();
