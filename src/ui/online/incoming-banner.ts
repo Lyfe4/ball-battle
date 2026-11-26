@@ -5,8 +5,8 @@
 // once. The same banner says what changed while it showed ("Alex stopped waiting", a rematch's
 // ending) with OK, and "Rematch on" with Choose lineup.
 //
-// It enters at the top on a phone held upright (over the header row only) and at the bottom right
-// beside and on a desktop, never over the rail (incoming-banner.css). It moves on the motion tokens
+// It floats in at the top on a phone held upright (over the header row, moving nothing) and at the
+// bottom right beside and on a desktop, never over the rail (incoming-banner.css). It moves on the motion tokens
 // alone; with reduced motion it fades. Each answer is a request: its button stays busy until the
 // server has it (busy-button.ts), so a double tap sends one.
 import { busyOnClick } from '../busy-button.ts';
@@ -47,14 +47,6 @@ function tokenMs(name: string): number {
 
 const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-/** Marks the page while a banner shows (a phone's header row makes way under it, no layout moves). */
-function markPage(): void {
-  const shown = [...document.querySelectorAll('.incoming-banner')].some(
-    (one) => one instanceof HTMLElement && !one.hidden && !one.hasAttribute('data-folding'),
-  );
-  document.body.toggleAttribute('data-incoming', shown);
-}
 
 /** The badge pulses once as the banner lands in it (incoming-banner.css; none with reduced motion). */
 export function pulse(badge: HTMLElement): void {
@@ -124,7 +116,6 @@ export function createIncomingBanner(
     folding = undefined;
     root.removeAttribute('data-folding');
     setHidden(root, true);
-    markPage();
   }
 
   return {
@@ -170,14 +161,10 @@ export function createIncomingBanner(
       fill.style.transform = `scaleX(${left.toFixed(4)})`;
       root.toggleAttribute('data-urgent', incoming.left !== undefined && left < 0.25);
       setHidden(root, false);
-      markPage();
-      // A phone's page makes room under the header row for it (incoming-banner.css).
-      document.body.style.setProperty('--incoming-height', `${String(root.offsetHeight)}px`);
     },
     fold(target) {
       if (root.hidden || folding !== undefined) return;
       root.setAttribute('data-folding', '');
-      markPage();
       const from = root.getBoundingClientRect();
       const to = target?.getClientRects().length ? target.getBoundingClientRect() : undefined;
       const still = reducedMotion() || to === undefined;
