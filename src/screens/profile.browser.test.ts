@@ -7,7 +7,7 @@ import type { Fetch } from '../app/api.ts';
 import { createProfile, type ProfileHost } from './profile.ts';
 import { callApi } from '../app/api.ts';
 import { createVisitCache } from '../app/visit-cache.ts';
-import { whoAmI } from '../app/who-am-i.ts';
+import { whoAmI, type WhoAmI } from '../app/who-am-i.ts';
 import { createWhoSource } from '../app/who-source.ts';
 import type { PlayerResponse } from '../api/session.ts';
 
@@ -50,6 +50,46 @@ function press(name: string): void {
   );
   if (found === undefined) throw new Error(`No button ${name}`);
   found.click();
+}
+
+/** A promise the test settles when it chooses. */
+function held() {
+  let resolve: (who: WhoAmI) => void = () => undefined;
+  const promise = new Promise<WhoAmI>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
+/** The shown button named `name`. */
+function button(name: string): HTMLButtonElement {
+  const found = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+    (node) => node.textContent.trim() === name && node.closest('[hidden]') === null,
+  );
+  if (found === undefined) throw new Error(`No button ${name}`);
+  return found;
+}
+
+/** Profile where this visit already knows `known`, and `/me` answers with `answer`. */
+function showKnown(known: WhoAmI, answer: Promise<WhoAmI>): void {
+  const notice = document.createElement('section');
+  const loading = document.createElement('div');
+  document.body.replaceChildren(notice, loading);
+  const screen = createProfile(
+    { notice, loading },
+    {
+      storage: memory(),
+      who: { known: () => known, ask: () => answer },
+      back: () => undefined,
+      home: () => undefined,
+      signIn: () => undefined,
+      cookies: () => '',
+      logOut: () => Promise.resolve(undefined),
+      forget: () => Promise.resolve(undefined),
+    },
+  );
+  screen.setVisible(true);
+  screen.show();
 }
 
 /** Profile over a fake API whose `/me` says `me`. */
@@ -131,6 +171,30 @@ describe('Profile', () => {
     press('Log out');
     await until(() => done.length > 0, 'Log out');
     expect(done).toStrictEqual(['log out']);
+  });
+
+  // ADR 0087's refresh in place: an account this visit knows shows at once, and `/me` answers later.
+  // An answer that changes nothing draws nothing, so a confirm the player opened meanwhile stays.
+  it('keeps the Delete confirm open when /me answers the account it already shows', async () => {
+    const answer = held();
+    showKnown({ kind: 'account', username: 'robin_b' }, answer.promise);
+    await titled('robin_b');
+    press('Delete account');
+    await titled('Delete your account?');
+    const confirm = button('Delete');
+    answer.resolve({ kind: 'account', username: 'robin_b' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(texts('h1')).toStrictEqual(['Delete your account?']);
+    expect(button('Delete')).toBe(confirm);
+    expect(confirm.isConnected).toBe(true);
+  });
+
+  it('draws the account again when /me says something new about it', async () => {
+    const answer = held();
+    showKnown({ kind: 'account', username: 'robin_b' }, answer.promise);
+    await titled('robin_b');
+    answer.resolve({ kind: 'account', username: 'robin_c' });
+    await titled('robin_c');
   });
 
   it('tells a guest what signing in unlocks, with Sign in and Forget me', async () => {
