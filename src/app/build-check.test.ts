@@ -17,7 +17,28 @@ const OLD = page('index-upiV00it.js', 'index-_6uxHbYr.css');
 const NEW = page('index-Q2w9xYzA.js', 'index-_6uxHbYr.css');
 const LOADED = ['/assets/index-_6uxHbYr.css', '/assets/index-upiV00it.js'];
 
+/**
+ * The page as staging serves it since the font preload (ADR 0087, 2026-11-25): the entry script,
+ * its stylesheet, the preloaded font and, where Vite splits chunks, a module preload. Only the
+ * script and stylesheet are what the page itself counts (`loadedAssets`), so only they compare.
+ */
+const SERVED = (script: string) => `<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" crossorigin src="/assets/${script}"></script>
+    <link rel="modulepreload" crossorigin href="/assets/chunk-B1u2v3w4.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-_6uxHbYr.css">
+    <link rel="preload" href="/assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2" as="font" type="font/woff2" crossorigin>
+  </head>
+  <body><main class="stage" id="stage"></main></body>
+</html>`;
+
 describe('assetsOf', () => {
+  it('reads what the page counts as loaded: no preloaded font or module preload (false alarm of 2026-11-26)', () => {
+    expect(assetsOf(SERVED('index-upiV00it.js'))).toStrictEqual(LOADED);
+  });
+
   it('lists the built script and stylesheet, sorted, and nothing outside /assets/', () => {
     expect(assetsOf(OLD)).toStrictEqual(LOADED);
   });
@@ -47,6 +68,20 @@ function checker(deployed: () => Promise<string | undefined>, loaded = LOADED) {
 describe('createBuildCheck', () => {
   it('finds a newer build when the deployed page names other assets', async () => {
     const { check, found, wait } = checker(() => Promise.resolve(NEW));
+    wait(CHECK_GAP_MS);
+    await check.check();
+    expect(found).toHaveBeenCalledOnce();
+  });
+
+  it('finds nothing when the same build is served with its font and chunks preloaded', async () => {
+    const { check, found, wait } = checker(() => Promise.resolve(SERVED('index-upiV00it.js')));
+    wait(CHECK_GAP_MS);
+    await check.check();
+    expect(found).not.toHaveBeenCalled();
+  });
+
+  it('still finds a newer build behind the preloads', async () => {
+    const { check, found, wait } = checker(() => Promise.resolve(SERVED('index-Q2w9xYzA.js')));
     wait(CHECK_GAP_MS);
     await check.check();
     expect(found).toHaveBeenCalledOnce();
