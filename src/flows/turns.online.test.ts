@@ -9,7 +9,7 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { befriend, expireTurn, signedInPhone } from './account-support.ts';
-import { buildLineup, pickIfDue } from './live-support.ts';
+import { buildLineup, pickIfDue, sendChallenge } from './live-support.ts';
 import { socketOf } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
@@ -71,7 +71,31 @@ describe('play by turns with a friend', () => {
         .locator('.friends-row', { hasText: jo })
         .locator('.friends-open')
         .click();
+      const sheetOf = async () => {
+        await friendsOf(one)
+          .locator('.friends-row', { hasText: jo })
+          .locator('.friends-open')
+          .click();
+      };
       await one.getByRole('button', { name: `Play by turns with ${jo}` }).click();
+      // Its lineup says the rules it sends, with Change: no rules step on the way in, so Back
+      // leaves for Friends, the sheet closed (staging, 2026-11-26).
+      const lineup = one.locator('#online-lineup .lineup-step:visible');
+      await lineup
+        .locator('.lineup-mode-name', { hasText: /^Best of 3 · Reveal · by turns$/ })
+        .waitFor();
+      await lineup.getByRole('button', { name: 'Back' }).click();
+      await one.waitForURL((url) => url.searchParams.get('view') === 'friends');
+      await friendsOf(one).locator('.friends-row', { hasText: jo }).waitFor();
+      expect(await one.locator('dialog[open]').count(), 'the sheet closed').toBe(0);
+      // Change opens the rules step for by turns, and comes back to the tray as it was.
+      await sheetOf();
+      await one.getByRole('button', { name: `Play by turns with ${jo}` }).click();
+      await lineup.locator('.ball-grid button').first().click();
+      await lineup.getByRole('button', { name: 'Change the rules' }).click();
+      await one.getByRole('heading', { name: 'vs Friend' }).waitFor();
+      await one.getByRole('button', { name: 'Choose lineup' }).click();
+      await lineup.locator('.lineup-tray-slot:not(.lineup-tray-empty)').first().waitFor();
       await buildLineup(one, 'Send challenge');
       await one.getByRole('heading', { name: `Sent to ${jo}` }).waitFor();
 
@@ -131,6 +155,14 @@ describe('play by turns with a friend', () => {
           .getByRole('button', { name: 'Open: You lost: your turn ran out' })
           .count(),
       ).toBe(1);
+
+      // Challenge · live from the sheet: Back from its lobby returns to Friends, not the setup.
+      await one.goto(`${BASE}/?view=friends`);
+      await sheetOf();
+      await one.getByRole('button', { name: `Challenge ${jo} live` }).click();
+      await sendChallenge(one, `Waiting for ${jo}`);
+      await one.locator('.screen-header:visible').getByRole('button', { name: 'Back' }).click();
+      await one.waitForURL((url) => url.searchParams.get('view') === 'friends');
       expect(errors).toStrictEqual([]);
       for (const page of [one, two]) await page.context().close();
     },

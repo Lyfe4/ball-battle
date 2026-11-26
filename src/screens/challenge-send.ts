@@ -96,6 +96,8 @@ export function createSender(host: SenderHost): Sender {
     const link = answer.body;
     if (link === undefined) return;
     requestId = crypto.randomUUID();
+    // Sent to a friend from Friends: the lobby takes the setup's place, so Back from it is Friends.
+    const toFriend = inviting !== undefined;
     inviting = undefined;
     // The sender's own card (the lobby) shares the link. It is read first, so the button stays
     // busy until the lobby can show.
@@ -104,7 +106,7 @@ export function createSender(host: SenderHost): Sender {
     const write = (url: URLSearchParams) => {
       writeChallengeParams(url, link.token);
     };
-    if (via === 'gate') host.replaceWith(write);
+    if (via === 'gate' || toFriend) host.replaceWith(write);
     else host.go(write);
   }
 

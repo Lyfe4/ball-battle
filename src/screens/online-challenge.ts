@@ -56,7 +56,10 @@ export function createChallengeScreens(
   const notice = createNotice(roots.notice, back);
   createSkeleton(roots.loading, 'card', back);
   const setup = createFriendSetup({
-    back,
+    // Opened by the lineup's Change: Back returns to that lineup, its tray as it was.
+    back: () => {
+      if (!turnsLineup.resume()) back();
+    },
     rewrite: (write) => {
       host.rewrite(write);
     },
@@ -72,13 +75,10 @@ export function createChallengeScreens(
     // Lock in is a request: the button shows it is working.
     onDone: (own) => start.lock(own),
   });
-  const turnsLineup = createTurnsLineup(balls, {
-    show: () => {
-      show('turns');
-    },
-    back: (toSetup) => {
-      if (toSetup) show('setup');
-      else if (info === undefined) back();
+  const turnsLineup = createTurnsLineup(balls, setup, {
+    show,
+    back: (to) => {
+      if (to === 'leave' || info === undefined) back();
       else showCard(info, true);
     },
     send: (chosen, own) => sender.sendTurns(chosen, own),
@@ -339,8 +339,9 @@ export function createChallengeScreens(
       const open = () => {
         show('setup');
         setup.open({ format, bestOf, level: '' });
-        // Play by turns from a friend's sheet: the setup's own By turns path, straight to its lineup.
-        if (sender.turnsFirst()) void sender.send({ format, bestOf, level: '', turns: true });
+        // Play by turns from a friend's sheet: straight to its lineup, which says its rules with
+        // Change; Back from it leaves for Friends, the rules step never seen.
+        if (sender.turnsFirst()) turnsLineup.send({ format, bestOf, level: '', turns: true }, true);
       };
       if (!askFirst(open)) open();
     },

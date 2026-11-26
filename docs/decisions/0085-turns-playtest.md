@@ -62,3 +62,23 @@ showing it in production.
   turn" (friends are accounts only).
 - The by-turns lineup has no URL of its own and no 16+ question of its own beyond the setup's.
   Ranked's flow (ADR 0083 PR 6) decides those properly.
+
+## Addendum (2026-11-26): one path in and out of the lineup by turns
+
+The owner's staging check: Play by turns from a friend's sheet went straight to the lineup on the
+last rules, but Back from that lineup opened the vs Friend rules step the player never saw.
+
+- **The lineup says its rules**: the sender's lineup by turns reads "Best of 3 · Reveal · by turns"
+  with a compact **Change** beside it (`lineup-step.ts`'s `onRules`, named "Change the rules").
+  Change opens the rules step for by turns in the same entry; its Choose lineup comes back to the
+  lineup with the tray as it was, and so does its Back.
+- **Back leaves the way the player came**: from a friend's sheet, Back from the lineup returns to
+  Friends (the sheet closed); from the vs Friend setup (a link, By turns chosen there) it returns
+  to the setup, as before; the friend's lineup returns to the card.
+- **The live Challenge from the sheet**: Send challenge puts the lobby in the setup's place
+  (`challenge-send.ts`, a challenge to a friend), so Back from the lobby is Friends too. A link
+  challenge's lobby still steps back to its setup.
+- **Tests**: `history-rules-friends.test.ts` (both sheet paths: one Back is Friends);
+  `turns.online.test.ts` (the rules line, Back to Friends with the sheet closed, Change keeping the
+  tray, Back from the live lobby). `no-dead-end.test.ts` is unchanged: its series moments are not
+  touched, and every state of the lineup by turns keeps Back and its main action.
