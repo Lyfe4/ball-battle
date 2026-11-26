@@ -8,12 +8,12 @@ Where it's heading (PvP best of 3 with blind lineups, soft counters, then a back
 `docs/vision.md`. Built today: Best of 3 and Best of 5 against a bot (ADR 0017, 0048), three draft
 formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot levels (ADR 0035);
 online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080);
-play by turns with a friend on previews and staging only, for the two-phone playtest (ADR 0085).
-Next: a Supabase Realtime "poke" in place of most polling (ADR 0082, `docs/realtime-poke-proposal.md`),
-built behind three switches that stay off outside local and tests.
+accounts, friends and Realtime pokes (ADR 0079, 0082) on staging, off in production; play by turns
+with a friend on previews and staging only (ADR 0085); the social and frame batches (ADR 0086, 0087).
+Next: the two-phone playtest (`docs/turns-playtest.md`), then accounts and pokes in production
+(`docs/production-accounts-runbook.md`, after the move to Netlify Pro in Sydney, ADR 0084).
 Ranked (ADR 0083, `docs/ranked-proposal.md`): trophies over a hidden Glicko-2, by turns first;
-groundwork only (rating maths, schema), nothing a player sees until accounts and pokes are on in
-production. Hosting stays on Netlify's legacy free plan until ADR 0084's triggers.
+groundwork only (rating maths, schema), nothing a player sees until then.
 The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
 "What to play" (who, length, format, the bot's level), remembered per opponent; Play goes straight
 in (first visit: Best of 3 · Reveal · vs Normal bot to its lineup; vs Friend in online builds sends
@@ -59,7 +59,7 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   where the functions have `BALLBATTLE_ONLINE=1`; production builds `VITE_ONLINE` from
   `BALLBATTLE_ONLINE`, the vs Friend switch (`node scripts/friend-switch.ts on|off|status`, ADR
   0068). Never switch it on unless the user asks. The Realtime poke (ADR 0082) has three switches,
-  all off outside local and tests: `VITE_POKE` (the build), `BALLBATTLE_POKE` with
+  on in local, tests and staging, off in production: `VITE_POKE` (the build), `BALLBATTLE_POKE` with
   `SUPABASE_BROWSER_KEY` (the functions) and the database's flag (no deploy; production on needs
   `--production`): `node scripts/poke-switch.ts status|on|off local|staging|production`. Play by
   turns with a friend (ADR 0085) has two: `VITE_TURNS` (`netlify.toml`: previews and the main branch
@@ -230,11 +230,11 @@ Each line is a rule; its ADR has the reasoning.
 - Friends (ADR 0079 addendum of 2026-11-23) are between accounts only, one `game.friendships`
   row per pair, named to the page by its own `id` (never a user id). A lookup is one exact username
   or code, counted first per account and network; a decline is kept 30 days and still reads as sent
-  to its sender. The Friends section is part of the account screen.
-- The inbox (`/me/inbox`, ADR 0079 PR (d)) is read on `inbox-poll.ts`'s time only (30 s while
-  visible, with friends; never while hidden); keep the read complete so a Realtime poke can
-  replace the timer. Status comes from one statement joined on accepted friendships; a friend's
-  challenge reuses the rematch's floating card, never over a fight.
+  to its sender. Friends is its own tab (ADR 0081), not part of the account screen.
+- The inbox (`/me/inbox`, ADR 0079 PR (d)) is read on `inbox-poll.ts`'s time only: on a poke,
+  with a 120 s safety read (30 s without pokes, with friends; never while hidden); keep the read
+  complete. Status, turns, games and endings come from one statement each; a friend's live
+  challenge is the one incoming banner (ADR 0086), never over a fight.
 - Auth makes a user or sends an email only for a ticket written just before (ADR 0082): its hooks
   (`20261124090000_auth_hooks.sql`) refuse anything else, and the Send Email hook delivers the code
   itself (`game.mail_relay`). A new Auth call that signs up or sends a code writes its ticket with
@@ -262,10 +262,11 @@ Each line is a rule; its ADR has the reasoning.
   refused. The page starts each fight with a timer for its server time (`online-live.ts`), plays
   it at 1x, and shows nothing of a round before its `ends_at`.
 - One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
-  Live is Reveal and Showdown only. Play by turns is offered only where `TURNS_BUILD` (ADR 0085): a
-  Play row on the vs Friend setup, the lineup in place, "Your turn" from the inbox.
-- A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): a floating card on
-  any screen but over a fight, Accept straight to the lineup, the asker told of a no.
+  Live is Reveal and Showdown only. Play by turns is offered only where `TURNS_BUILD` (ADR 0085):
+  in a friend's sheet and a Play row on the vs Friend setup, the lineup in place, "Your turn" from
+  the inbox.
+- A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): the incoming banner on
+  any screen but over a fight (ADR 0086), Accept straight to the lineup, the asker told of a no.
 - A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2
   minutes of a live match's end, answered within 30 s, then the lineups picked together (below).
   Its timers are read against `now()`, never written; every move locks the old series' row in a

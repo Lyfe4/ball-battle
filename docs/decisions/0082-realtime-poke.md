@@ -1,7 +1,8 @@
 # 0082: A Supabase Realtime "poke" in place of most polling
 
 - Status: Accepted (2026-11-24), approved by the owner with the answers below to the proposal's
-  section 7. Building: PRs 0 to 4 (groundwork, nothing wired to a screen)
+  section 7. Built: PRs 0 to 8 (#166-#176); on in staging since 2026-11-25, off in production
+  until `docs/production-accounts-runbook.md`
 - Date: 2026-11-24
 - Amends: ADR 0052 (the browser opens one socket to Supabase Realtime; `connect-src` gains its
   origins), ADR 0053 ("polling now, a Realtime poke when it pays": it pays now), ADR 0079 (the

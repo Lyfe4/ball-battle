@@ -1,8 +1,8 @@
 # 0083: Ranked play: trophies over a hidden Glicko-2, by turns first
 
 - Status: Accepted (2026-11-25), approved by the owner from `docs/ranked-proposal.md` with the
-  answers to its section 14 below (decision 5 declined, decision 8 changed). Building: PR 2 (the
-  rating maths) and PR 3 (the schema), nothing a player sees. Ranked ships to players only once
+  answers to its section 14 below (decision 5 declined, decision 8 changed). Built: PR 2 (the
+  rating maths, #180) and PR 3 (the schema, #181), nothing a player sees. Ranked ships to players only once
   accounts and pokes are on in production (decision 10).
 - Date: 2026-11-25
 - Amends: ADR 0052 ("Ranked PvP": the rating is hidden and trophies are shown, the board's sort,
