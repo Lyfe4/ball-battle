@@ -46,7 +46,7 @@ const findingsOf = (where: string, results: readonly Result[]): Finding[] =>
   }));
 
 /** axe on what shows now (`scope`, else the page). Animations are let finish first. */
-async function check(where: string, scope?: Element): Promise<Finding[]> {
+export async function check(where: string, scope?: Element): Promise<Finding[]> {
   await settle();
   const results = await axe.run(scope ?? document, {
     runOnly: {

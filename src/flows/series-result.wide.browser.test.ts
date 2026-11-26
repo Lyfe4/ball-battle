@@ -13,16 +13,30 @@ import { randomBot } from '../sim/bot.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import { setupWithPicks } from '../sim/series.ts';
 import { playLikeTheGame } from '../sim/test-support.ts';
+import { check, linesOf, serious } from './a11y-flow.ts';
+import { controlProblems } from './controls-look-flow.ts';
 import { button, settle, tossed, until, visible } from './page-support.ts';
 
 const phase = () => document.querySelector<HTMLElement>('#series')?.dataset['phase'];
 const score = () => visible('.series-track-points')[0]?.textContent;
+
+/** What the look and axe checks found between rounds and at the result (2026-11-27). */
+const found: string[] = [];
+
+/** The button and row system and axe on the series screen as it stands. */
+async function checkScreen(where: string): Promise<void> {
+  await settle();
+  found.push(...controlProblems(where, document.getElementById('stage') ?? document));
+  const a11y = await check(where);
+  if (serious(a11y).length > 0) found.push(linesOf(serious(a11y)));
+}
 
 /** Plays the replayed link to its result: Play round whenever the screen offers it. */
 async function playToResult(): Promise<void> {
   for (;;) {
     await until(() => phase() !== 'playing', 60_000, 'the round to end');
     if (phase() === 'finished') return;
+    if (found.length === 0) await checkScreen('a bot series between rounds');
     await browserPage.getByRole('button', { name: /^(Play round|↻ Replay round)/ }).click();
     await until(() => phase() === 'playing', 5_000, 'the next round to start');
   }
@@ -65,6 +79,9 @@ describe('the Best of 3 result screen', () => {
     history.replaceState(null, '', start);
     await import('../main.ts');
     await playToResult();
+    // The result screen keeps the button and row system and has no serious axe finding.
+    await checkScreen('a bot series’ result');
+    expect(found).toStrictEqual([]);
 
     // The result: no health bars or speed under it.
     expect(visible('.hud-ball-name')).toHaveLength(0);
