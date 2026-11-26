@@ -14,6 +14,16 @@ export interface Build {
 /** A test's own API answers, by path ("/api/v1/me"); any other path is refused. */
 export type Answers = Readonly<Record<string, unknown>>;
 
+/** An answer with no response at all: the device is offline (a fetch that rejects). */
+export const OFFLINE = Symbol('offline');
+const STATUS = Symbol('status');
+/** An answer with a status of its own (a server error, a refusal), not 200. */
+export const withStatus = (status: number, body: unknown) => ({ [STATUS]: status, body });
+const statusOf = (answer: unknown): { status: number; body: unknown } | undefined =>
+  typeof answer === 'object' && answer !== null && STATUS in answer
+    ? { status: Number(answer[STATUS]), body: (answer as unknown as { body: unknown }).body }
+    : undefined;
+
 /**
  * Loads the page as `build` at `search`, the API answering from `answers` where it has one. Once
  * per file: main.ts runs once.
@@ -27,6 +37,16 @@ export async function openAs(build: Build, search: string, answers: Answers = {}
     if (!url.pathname.startsWith('/api/')) return real(input, init);
     // Sign-in's options, so Google's return is read, and the test's own; everything else refused.
     const answer = answers[url.pathname];
+    if (answer === OFFLINE) return Promise.reject(new TypeError('Failed to fetch'));
+    const given = statusOf(answer);
+    if (given !== undefined) {
+      return Promise.resolve(
+        new Response(JSON.stringify(given.body), {
+          status: given.status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    }
     const options = url.pathname === '/api/v1/auth/options';
     const ok = options || answer !== undefined;
     const body = options

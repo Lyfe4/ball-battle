@@ -31,7 +31,7 @@
 .leave-confirm-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-  gap: var(--space-small);
+  gap: var(--stack-gap);
 }
 
 @media (prefers-reduced-motion: no-preference) {

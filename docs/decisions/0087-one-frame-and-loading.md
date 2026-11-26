@@ -359,3 +359,33 @@ see), the account's rows, the danger group; Privacy · Terms at the column's lef
 button or row is under one tap target, its label within 12 px of its side, or two controls (or a
 control and a person's disc) closer than the stack gap; on the code before this it found 35 such
 breaks (the disc on the first button, 8 px gaps, "Hear it" 6 px from its edge).
+
+## Addendum (2026-11-26, later): the online screens on the button and row system
+
+The owner's staging check after the system above: on the friend lobby "Cancel challenge" had its
+words touching its edges and "Also send a link" was pink words, an action drawn as a link.
+`controls-look` had never seen an online screen, so neither failed.
+
+- **`controls-look` walks every online state** (`src/flows/online-looks-support.ts`, the API
+  answered by the test, the page's own screens reached by their URLs): a friend's link opened, the
+  friend lobby (folded, its link open, said no thanks), the link lobby, a link stopped, taken and
+  accepted, a server failure and offline, the lineups picked together, a live fight and its Leave
+  asked, and the end with a rematch offered, asked of you, asked by you and declined. It also fails
+  on an action drawn as a link: a text-link `<button>` that doesn't only go somewhere
+  (`text-links-support.ts`, shared with `text-links.test.ts`), or a `<summary>` that folds buttons
+  and isn't drawn as a button or a row; a `<details>` that tells more stays information on a tap.
+  On the code before this it found 12 breaks at 390 × 664 (Cancel challenge and Not now 0 px from
+  their edges, Also send a link as a link, Leave match as a link, Stay and Leave 8 px apart,
+  Rematch and Home or No thanks 8 px apart). Not walked: a live pick (the server's clock and
+  seeds are more than a fixture is worth; the pick rows are the bot series' own).
+- **The fixes**: the quiet action (`.notice-quiet`: Cancel challenge, Not now) is a plain button
+  of the system with its padding; "Also send a link" is a row (`.sheet-row`) with a ▾ that turns
+  over while open, and what it folds (the link and Copy or Share) sits a stack gap apart in a body
+  of its own; a live match's "Leave match" is a compact button (by turns its "Home" stays a link,
+  it only goes home); its confirm's Leave is in the danger look and Stay and Leave sit a stack gap
+  apart; `.hud-actions` (Rematch, Home, No thanks; Free play's and the bot series' too) are a
+  stack gap apart.
+- **Also fixed** (the walk's screenshots): a notice's buttons sit side by side only while their
+  words fit one line, else each takes the whole width ("Challenge someone else" and "Choose your
+  lineup" wrapped inside their buttons); "You accepted this challenge" was cut by the title's
+  ellipsis at 390 px and is "Challenge accepted".

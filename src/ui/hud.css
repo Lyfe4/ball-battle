@@ -78,7 +78,8 @@
 
 .hud-actions {
   display: flex;
-  gap: var(--space-small);
+  /* One stack gap between actions, as everywhere (button.css). */
+  gap: var(--stack-gap);
 }
 
 .hud-actions[hidden] {

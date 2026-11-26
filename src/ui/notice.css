@@ -116,9 +116,12 @@
   min-width: 0;
 }
 
-.notice-fold > .notice-link,
-.notice-fold > .notice-fold-share {
-  margin-top: var(--space-small);
+/* The link and Share under the row, one stack gap apart; the link's words never widen it. */
+.notice-fold-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--stack-gap);
+  margin-top: var(--stack-gap);
 }
 
 /* Share as wide as the column, the fold's one main action. */
@@ -126,23 +129,31 @@
   width: 100%;
 }
 
+/*
+ * "Also send a link" (ADR 0086): a row of the system (button.css), its ▾ turning over while it is
+ * open, as the series bar's and the level's do. It once was pink words, an action drawn as a link.
+ */
 .notice-fold-summary {
-  min-height: var(--tap-target);
-  display: flex;
-  align-items: center;
-  color: var(--color-focus);
-  font-weight: 700;
-  cursor: pointer;
+  list-style: none;
 }
 
-.notice-fold-summary[data-pressed] {
-  text-decoration: underline;
+.notice-fold-summary::-webkit-details-marker {
+  display: none;
 }
 
-@media (hover: hover) {
-  .notice-fold-summary:hover {
-    text-decoration: underline;
+.notice-fold-summary::after {
+  color: var(--color-text-muted);
+  content: '▾' / '';
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .notice-fold-summary::after {
+    transition: rotate var(--motion-quick) var(--ease-out);
   }
+}
+
+.notice-fold[open] > .notice-fold-summary::after {
+  rotate: 180deg;
 }
 
 .notice-waiting-title {
@@ -262,15 +273,16 @@
   font-size: 1rem;
 }
 
-.notice-link-copy::after,
-.notice-quiet::after {
+.notice-link-copy::after {
   content: none;
 }
 
+/*
+ * The quiet action (Cancel challenge, Not now): a plain button of the system, sized to its words
+ * with its padding (button.css); it once had none, so its words touched its edges.
+ */
 .notice-quiet {
-  min-height: var(--tap-target);
-  padding: 0;
-  font-size: 1rem;
+  flex: none;
 }
 
 /*
@@ -357,6 +369,20 @@
     scale: 0.7;
     opacity: 0.6;
   }
+}
+
+/*
+ * A notice's buttons side by side while their words fit on one line; else each takes a row of its
+ * own, the whole width, one stack gap apart. Squeezed, "Challenge someone else" and "Choose your
+ * lineup" broke onto two lines inside their buttons (2026-11-26).
+ */
+.notice > .screen-footer {
+  flex-wrap: wrap;
+}
+
+.notice > .screen-footer > .hud-button {
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 
 /* Nothing is fighting: no arena at any width, like the manual. */

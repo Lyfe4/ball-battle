@@ -48,7 +48,11 @@ function linkPart(link: NonNullable<NoticeContent['link']>): HTMLElement {
   fold.addEventListener('toggle', () => {
     foldOpen = fold.open;
   });
-  fold.append(element('summary', 'notice-fold-summary', link.fold), linkBox(link));
+  // What it folds in a body of its own: a <details>' content sits in the browser's own slot, so the
+  // fold's gap never reaches between its parts.
+  const body = element('div', 'notice-fold-body');
+  body.append(linkBox(link));
+  fold.append(element('summary', 'sheet-row notice-fold-summary', link.fold), body);
   const share = link.share;
   if (share !== undefined) {
     const button = element('button', 'hud-button notice-fold-share', share.text);
@@ -58,7 +62,7 @@ function linkPart(link: NonNullable<NoticeContent['link']>): HTMLElement {
       const said = await share.onClick();
       if (share.relabel === true && typeof said === 'string') button.textContent = said;
     });
-    fold.append(button);
+    body.append(button);
   }
   return fold;
 }
