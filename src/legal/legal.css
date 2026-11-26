@@ -2,7 +2,7 @@
  * The privacy policy and terms (privacy.html, terms.html; ADR 0069): reading pages in the game's own
  * look, with no script, in the game's page frame (below).
  */
-@import '@fontsource-variable/bricolage-grotesque';
+@import './legal-font.css';
 @import '../styles/tokens.css';
 @import '../styles/base.css';
 @import '../ui/button.css';
@@ -22,13 +22,19 @@ body {
  */
 .legal {
   --legal-measure: var(--col-reading);
+  /*
+   * The other page's link, where the gear sits: a width of its own that holds "Privacy policy" in
+   * the game's font, so its box and the title's never depend on which font has arrived
+   * (legal-font.css).
+   */
+  --legal-link: 6.5rem;
   --frame-extra: max(
     0px,
     (100% - var(--rail-room) - 2 * var(--frame-gutter) - var(--frame-max)) / 2
   );
 
   display: grid;
-  grid-template-columns: var(--tap-target) minmax(0, 1fr) auto;
+  grid-template-columns: var(--tap-target) minmax(0, 1fr) var(--legal-link);
   align-content: start;
   column-gap: var(--space-gap);
   padding: var(--frame-top)
@@ -89,6 +95,7 @@ body {
   grid-row: 1;
   grid-column: 3;
   align-items: center;
+  justify-content: flex-end;
   min-height: var(--tap-target);
   margin-bottom: var(--press-depth);
 }
