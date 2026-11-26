@@ -346,8 +346,8 @@ Each line is a rule; its ADR has the reasoning.
 
 **UI**
 
-- The quality bar (ADR 0086, 0087; batches 1-3 are built, batch 4, the strip, the banner and screen
-  motion, isn't yet), a rule a line:
+- The quality bar (ADR 0086, 0087; all four batches built, ADR 0086 addendum "Batch 4 as built"), a
+  rule a line:
   - New UI gets a mockup in the game's real styles first (a throwaway page under `pnpm dev`), at
     390 × 664 and one beside or desktop view.
   - An action is a button or a sheet row; a text link only navigates and keeps its "›" (never on

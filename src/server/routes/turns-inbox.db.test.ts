@@ -126,3 +126,47 @@ describe('your turn in the inbox', () => {
     expect(row).toStrictEqual({ status: 'forfeit', end_reason: 'timeout' });
   });
 });
+
+describe('your games and endings (ADR 0086)', () => {
+  async function started() {
+    const { me, friend, id } = await friends(on);
+    const accepted = await acceptTurns(friend, tokenOf(await sendTurns(me, id)));
+    const seriesId = (accepted.body as Accepted).seriesId ?? '';
+    const players = { a: me, b: friend };
+    const side = dueSides(await read(me, seriesId))[0] ?? 'a';
+    return { seriesId, due: players[side], waiting: players[side === 'a' ? 'b' : 'a'] };
+  }
+
+  it('lists a game waiting on the other player in Your games, never twice', async () => {
+    const { seriesId, due, waiting } = await started();
+    const theirs = await inbox(waiting);
+    expect(theirs.games?.map((game) => [game.seriesId, game.opponent])).toStrictEqual([
+      [seriesId, due.username],
+    ]);
+    expect(theirs.turns).toStrictEqual([]);
+    const mine = await inbox(due);
+    expect(mine.turns.map((turn) => turn.seriesId)).toStrictEqual([seriesId]);
+    expect(mine.games).toStrictEqual([]);
+  });
+
+  it('tells both how it ended, in their own words, until each has seen it', async () => {
+    const { seriesId, due, waiting } = await started();
+    await admin`
+      update game.series set turn_deadline = now() - interval '1 minute' where id = ${seriesId}`;
+    const lost = await inbox(due);
+    expect(lost.endings).toStrictEqual([
+      { seriesId, opponent: waiting.username, outcome: 'lost-ran-out' },
+    ]);
+    expect(lost.games).toStrictEqual([]);
+    expect((await inbox(waiting)).endings).toStrictEqual([
+      { seriesId, opponent: due.username, outcome: 'won-ran-out' },
+    ]);
+    // Seen by reading the ended series: gone for that player alone.
+    await read(waiting, seriesId);
+    expect((await inbox(waiting)).endings).toStrictEqual([]);
+    expect((await inbox(due)).endings?.map((ending) => ending.seriesId)).toStrictEqual([seriesId]);
+    const [row] = await admin<{ n: number }[]>`
+      select count(*)::int as n from game.series_seen where series_id = ${seriesId}`;
+    expect(row?.n).toBe(1);
+  });
+});

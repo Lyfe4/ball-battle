@@ -80,28 +80,51 @@ export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
 }
 
 /** A series by turns waiting on the player's pick (ADR 0085). */
-export interface TurnRow {
-  readonly seriesId: string;
-  readonly opponent: string | null;
-  readonly deadline: Date;
-}
+/** How long an ending of a series by turns waits to be seen in Friends (ADR 0086). */
+export const ENDING_DAYS = 7;
 
 /**
- * Series by turns where it is the player's turn, the soonest deadline first. Run after
- * `settleExpired` for the player, so a turn that ran out reads as the forfeit it is (the sweep runs
- * only in production, where by turns is off).
+ * Every series by turns of the player's that Friends lists (ADR 0086), in one statement: open ones
+ * (`yours`: the player's turn), and those that ended within ENDING_DAYS that the player hasn't
+ * seen (`game.series_seen`). Open first by deadline, then endings, the latest first.
  */
-export async function turnsFor(db: Db, userId: string): Promise<TurnRow[]> {
-  return db<TurnRow[]>`
-    select s.id as "seriesId", s.turn_deadline as deadline,
-      game.name_seen_by(${userId}, p.user_id, p.username, p.display_name) as opponent
+export interface GameRow {
+  readonly seriesId: string;
+  readonly opponent: string | null;
+  readonly open: boolean;
+  readonly yours: boolean;
+  readonly deadline: Date | null;
+  readonly status: 'open' | 'finished' | 'forfeit' | 'void';
+  readonly won: boolean;
+}
+
+export async function gamesFor(db: Db, userId: string): Promise<GameRow[]> {
+  return db<GameRow[]>`
+    select s.id as "seriesId", s.status = 'open' as open, s.turn_deadline as deadline, s.status,
+      game.name_seen_by(${userId}, p.user_id, p.username, p.display_name) as opponent,
+      (s.status = 'open' and (s.turn = 'both'
+        or s.turn = case when s.player_a = ${userId} then 'a' else 'b' end)) as yours,
+      coalesce(s.winner = case when s.player_a = ${userId} then 'a' else 'b' end, false) as won
     from game.series s
     left join game.profiles p
       on p.user_id = case when s.player_a = ${userId} then s.player_b else s.player_a end
-    where s.status = 'open' and not s.live and s.turn_deadline is not null
-      and ${userId} in (s.player_a, s.player_b)
-      and (s.turn = 'both' or s.turn = case when s.player_a = ${userId} then 'a' else 'b' end)
-    order by s.turn_deadline`;
+    where not s.live and ${userId} in (s.player_a, s.player_b) and (
+      (s.status = 'open' and s.turn_deadline is not null)
+      or (s.status in ('finished', 'forfeit')
+        and s.finished_at > now() - make_interval(days => ${ENDING_DAYS})
+        and not exists (select 1 from game.series_seen v
+          where v.series_id = s.id and v.player = ${userId})))
+    order by s.status <> 'open', s.turn_deadline, s.finished_at desc`;
+}
+
+/**
+ * The player saw how series `seriesId` ended (ADR 0086): Friends stops listing it. A write the
+ * player makes by viewing; nobody else reads it, so nothing pokes.
+ */
+export async function markSeen(db: Db, seriesId: string, userId: string): Promise<void> {
+  await db`
+    insert into game.series_seen (series_id, player) values (${seriesId}, ${userId})
+    on conflict do nothing`;
 }
 
 /** Requests waiting for the player's answer. */

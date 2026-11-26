@@ -2,9 +2,15 @@
 // your pick ("Your turn", ADR 0085, with Play), then a friend's challenge (who and what, Accept and
 // No thanks as buttons side by side, ADR 0086). Report name and Block are in the person's sheet: a
 // tap on who opens it. Each row keeps the friends list's own look (`.friends-row`).
-import type { Invite, TurnWaiting } from '../../api/friends.ts';
+import type { Ending, GameWaiting, Invite, TurnWaiting } from '../../api/friends.ts';
 import { timeLeft } from '../../app/online-series.ts';
-import { challengesYou, turnName } from '../../screens/friends-text.ts';
+import {
+  challengesYou,
+  endingLine,
+  gameName,
+  turnName,
+  YOUR_GAMES,
+} from '../../screens/friends-text.ts';
 import { challengeLine } from '../../screens/online-text.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { element } from '../dom.ts';
@@ -19,6 +25,8 @@ export interface WaitingRowsHost {
   readonly say: (line: string) => void;
   /** Opens the person's sheet for the friendship `friend` (Report name, Block, ADR 0086). */
   readonly person: (friend: string) => void;
+  /** An ending opened from its row: seen, so it leaves at once (the server marks it on read). */
+  readonly seen?: (seriesId: string) => void;
 }
 
 function rowWith(
@@ -98,4 +106,46 @@ export function challengeRow(invite: Invite, host: WaitingRowsHost): HTMLElement
   });
   actions.append(decline, accept);
   return item;
+}
+
+/** A row with one Open: a game by turns, or how one ended (ADR 0086). */
+function openRow(name: string, what: string, seriesId: string, host: WaitingRowsHost) {
+  const { item, actions } = rowWith(name, what);
+  item.dataset['game'] = seriesId;
+  const open = element('button', 'hud-button friends-open-game', 'Open');
+  open.type = 'button';
+  open.setAttribute('aria-label', `Open: ${name}`);
+  busyOnClick(open, () => host.play?.(seriesId));
+  actions.append(open);
+  return { item, open };
+}
+
+/**
+ * Your games (ADR 0086): each game by turns waiting on the other player (whose turn, the time left,
+ * Open), then each ending not seen yet ("You won vs Sam: their turn ran out"), gone once opened.
+ * Undefined when there is nothing to list: the section isn't drawn.
+ */
+export function gamesGroup(
+  games: readonly GameWaiting[],
+  endings: readonly Ending[],
+  now: number,
+  host: WaitingRowsHost,
+): HTMLElement | undefined {
+  if (games.length + endings.length === 0) return undefined;
+  const group = element('section', 'friends-group');
+  group.dataset['group'] = 'games';
+  const list = element('ul', 'friends-list');
+  for (const game of games) {
+    list.append(
+      openRow(gameName(game), timeLeft(game.deadline, now) ?? '', game.seriesId, host).item,
+    );
+  }
+  for (const ending of endings) {
+    const { item, open } = openRow(endingLine(ending), 'Ended', ending.seriesId, host);
+    item.dataset['ending'] = '';
+    open.addEventListener('click', () => host.seen?.(ending.seriesId));
+    list.append(item);
+  }
+  group.append(element('h2', 'friends-group-title', YOUR_GAMES), list);
+  return group;
 }

@@ -14,14 +14,17 @@
 import {
   shownFriendCode,
   type AddFriendResponse,
+  type Ending,
   type FriendEntry,
   type FriendsResponse,
+  type GameWaiting,
   type Invite,
   type TurnWaiting,
 } from '../../api/friends.ts';
 import type { ApiFailure, ApiResult } from '../../app/api.ts';
 import { visitCache, type VisitKey } from '../../app/visit-cache.ts';
 import { createRowMotion } from './row-motion.ts';
+import { personRow } from './person-row.ts';
 import { litAfter } from './waiting-rows.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { addField } from './friends-add-field.ts';
@@ -32,8 +35,8 @@ import {
   skeletonRows,
   skeletonShown,
 } from './friends-loading.ts';
-import { createFriendSheet, personDisc } from './friend-sheet.ts';
-import { challengeRow, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
+import { createFriendSheet } from './friend-sheet.ts';
+import { challengeRow, gamesGroup, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
 import { element } from '../dom.ts';
 import {
   addedLine,
@@ -41,7 +44,6 @@ import {
   FRIENDS_FAILED_TITLE,
   friendsTitle,
   NO_FRIENDS,
-  personStatus,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
 
@@ -81,9 +83,15 @@ export interface FriendsSection {
   statuses(friends: readonly FriendEntry[]): void;
   /**
    * The friends' open challenges from the inbox, and the series by turns waiting on your pick
-   * (ADR 0085): first in Waiting for you (ADR 0081).
+   * (ADR 0085): first in Waiting for you (ADR 0081); then Your games, the games waiting on the
+   * other player and the endings not seen yet (ADR 0086).
    */
-  challenges(invites: readonly Invite[], turns?: readonly TurnWaiting[]): void;
+  challenges(
+    invites: readonly Invite[],
+    turns?: readonly TurnWaiting[],
+    games?: readonly GameWaiting[],
+    endings?: readonly Ending[],
+  ): void;
 }
 
 export function createFriendsSection(host: FriendsHost): FriendsSection {
@@ -125,6 +133,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
   let turns: readonly TurnWaiting[] = [];
+  let games: readonly GameWaiting[] = [];
+  let endings: readonly Ending[] = [];
+  /** Endings opened here: seen, so gone before the next inbox read says so. */
+  const opened = new Set<string>();
   /**
    * Challenges that arrived while Friends showed: no banner there, their rows light (ADR 0086).
    * Unset until the challenges are first heard of: what waited then is no arrival.
@@ -172,6 +184,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       say(line, true);
     },
     person: openPerson,
+    seen: (seriesId) => {
+      opened.add(seriesId);
+      draw();
+    },
   };
 
   function say(text: string, error = false): void {
@@ -186,46 +202,16 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
    * request to you keeps Decline and Accept side by side.
    */
   function rowOf(group: FriendGroup, friend: FriendEntry): HTMLElement {
-    const item = element('li', 'friends-row');
-    item.dataset['friend'] = friend.id;
     const kind = group.key === 'friends' ? 'friend' : group.key;
     const waiting = kind === 'friend' && waitsOnYou(friend);
-    const open = element('button', 'friends-who friends-open');
-    open.type = 'button';
-    open.setAttribute('aria-label', `${friend.name}: ${personStatus(friend, kind, waiting)}`);
-    const status = element('span', 'friends-status', personStatus(friend, kind, waiting));
-    // A dot only on a friend's status line (ADR 0086), in its status's colour.
-    if (kind === 'friend')
-      status.dataset['status'] = waiting ? 'waiting' : (friend.status ?? 'offline');
-    const words = element('span', 'friends-words');
-    words.append(element('span', 'friends-name', friend.name), status);
-    open.append(personDisc(friend, 'row'), words);
-    open.addEventListener('click', () => {
-      sheet.open(friend, kind, waiting);
+    return personRow(group, friend, {
+      waiting,
+      open: () => {
+        sheet.open(friend, kind, waiting);
+      },
+      made,
+      challenge: host.challenge,
     });
-    const actions = element('span', 'friends-actions');
-    item.append(open, actions);
-    if (kind === 'incoming') {
-      const decline = element('button', 'hud-button friends-decline', 'Decline');
-      decline.type = 'button';
-      decline.setAttribute('aria-label', `Decline ${friend.name}`);
-      busyOnClick(decline, made('DELETE', `friends/${friend.id}`));
-      const accept = element('button', 'hud-button hud-button-primary friends-accept', 'Accept');
-      accept.type = 'button';
-      accept.setAttribute('aria-label', `Accept ${friend.name}`);
-      busyOnClick(accept, made('POST', `friends/${friend.id}/accept`));
-      actions.append(decline, accept);
-    } else if (kind === 'friend' && friend.status === 'online' && host.challenge !== undefined) {
-      const challenge = host.challenge;
-      const send = element('button', 'hud-button friends-challenge', 'Challenge');
-      send.type = 'button';
-      send.setAttribute('aria-label', `Challenge ${friend.name}`);
-      send.addEventListener('click', () => {
-        challenge(friend);
-      });
-      actions.append(send);
-    }
-    return item;
   }
 
   const rowMotion = createRowMotion(root);
@@ -271,7 +257,12 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     );
     // What waits on you and your friends lead; what you sent sits with your code (ADR 0081).
     const withCode = (group: FriendGroup) => group.key === 'outgoing' || group.key === 'blocked';
-    lists.replaceChildren(...groups.filter((group) => !withCode(group)).map(box));
+    const shown = groups.filter((group) => !withCode(group)).map(box);
+    // Your games, in the fixed order: after Waiting for you, before the friends (ADR 0087).
+    const left = endings.filter((ending) => !opened.has(ending.seriesId));
+    const playing = gamesGroup(games, left, Date.now(), rows);
+    if (playing !== undefined) shown.splice(shown.length - 1, 0, playing);
+    lists.replaceChildren(...shown);
     // A turn and a friend's challenges come first in Waiting for you: they wait on a clock.
     lists.querySelector('.friends-group[data-group="incoming"] .friends-list')?.prepend(
       ...turns.map((turn) => turnRow(turn, Date.now(), rows)),
@@ -358,12 +349,15 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   return {
     element: root,
     open,
-    challenges(next, nextTurns = []) {
-      if (JSON.stringify([next, nextTurns]) === JSON.stringify([invites, turns])) return;
+    challenges(next, nextTurns = [], nextGames = [], nextEndings = []) {
+      const now = [next, nextTurns, nextGames, nextEndings];
+      if (JSON.stringify(now) === JSON.stringify([invites, turns, games, endings])) return;
       // A live challenge arriving while Friends shows: its row lights instead of a banner.
       lit = litAfter(lit, invites, next, root.getClientRects().length > 0);
       invites = next;
       turns = nextTurns;
+      games = nextGames;
+      endings = nextEndings;
       if (root.isConnected) draw();
     },
     statuses(friends) {

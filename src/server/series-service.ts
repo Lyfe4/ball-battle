@@ -5,6 +5,7 @@
 // nothing, reloads and tries again). The functions may run far from the database, so round trips
 // are what a move costs. Every round is played and every finished series verified by the frozen
 // sim of its own ruleset (series-move.ts).
+import { markSeen } from './db/inbox.ts';
 import { commitmentOf } from '../api/fairness.ts';
 import type { PickRequest, SeriesView } from '../api/series.ts';
 import type { BestOf, Format, Side } from '../sim/index.ts';
@@ -128,9 +129,15 @@ export async function readSeries(
   if (series !== undefined && sideOf(series.players, userId) !== undefined && series.live) {
     return viewFor(await settleLive(deps, series), userId);
   }
-  if (series?.expired !== true) return viewFor(series, userId);
-  await settleExpired(deps.sql, id);
-  return viewFor(await loadSeries(deps.sql, id), userId);
+  const served =
+    series?.expired !== true
+      ? viewFor(series, userId)
+      : (await settleExpired(deps.sql, id), viewFor(await loadSeries(deps.sql, id), userId));
+  // Its player sees how a series by turns ended: Friends stops listing it (ADR 0086, no poke).
+  if (served.view.status !== 'open' && served.view.live == null) {
+    await markSeen(deps.sql, id, userId);
+  }
+  return served;
 }
 
 /**

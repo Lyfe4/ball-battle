@@ -5,6 +5,8 @@ import type {
   ReportReason,
   FriendStatus,
   FriendsResponse,
+  Ending,
+  GameWaiting,
   InboxResponse,
   TurnWaiting,
 } from '../api/friends.ts';
@@ -197,3 +199,25 @@ export const challengesYou = (name: string) => `${name} challenges you`;
 /** A series by turns waiting on the player's pick (ADR 0085): "Your turn vs Sam". */
 export const turnName = (turn: Pick<TurnWaiting, 'opponent'>): string =>
   turn.opponent === null ? 'Your turn' : `Your turn vs ${turn.opponent}`;
+
+/** The section of games by turns on Friends (ADR 0086). */
+export const YOUR_GAMES = 'Your games';
+
+/** A game by turns waiting on the other player: "Sam’s turn". */
+export const gameName = (game: Pick<GameWaiting, 'opponent'>): string =>
+  game.opponent === null ? 'Their turn' : `${game.opponent}’s turn`;
+
+/** How a game by turns ended, said to its player until seen (ADR 0086). */
+export function endingLine(ending: Pick<Ending, 'opponent' | 'outcome'>): string {
+  const they = ending.opponent ?? 'a deleted player';
+  switch (ending.outcome) {
+    case 'won':
+      return `You won vs ${they}`;
+    case 'lost':
+      return `${ending.opponent ?? 'They'} won`;
+    case 'won-ran-out':
+      return `You won vs ${they}: their turn ran out`;
+    case 'lost-ran-out':
+      return 'You lost: your turn ran out';
+  }
+}

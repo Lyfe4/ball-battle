@@ -10,7 +10,9 @@ import {
   hasAnyone,
   liveUnavailable,
   STATUS_WORDS,
+  endingLine,
   friendsTitle,
+  gameName,
   waitingCount,
 } from './friends-text.ts';
 
@@ -118,5 +120,20 @@ describe('the person’s sheet’s words (ADR 0086)', () => {
     expect(BLOCK_STEP('Jo').title).toBe('Block Jo?');
     expect(BLOCK_STEP('Jo').text).toContain('can’t add or challenge you');
     expect(BLOCK_STEP('Jo').action).toBe('Block Jo');
+  });
+});
+
+describe('Your games’ words (ADR 0086)', () => {
+  it('says whose turn, and how a game ended, to each player', () => {
+    expect(gameName({ opponent: 'Sam' })).toBe('Sam’s turn');
+    expect(gameName({ opponent: null })).toBe('Their turn');
+    expect(endingLine({ opponent: 'Sam', outcome: 'won-ran-out' })).toBe(
+      'You won vs Sam: their turn ran out',
+    );
+    expect(endingLine({ opponent: 'Sam', outcome: 'lost' })).toBe('Sam won');
+    expect(endingLine({ opponent: 'Sam', outcome: 'lost-ran-out' })).toBe(
+      'You lost: your turn ran out',
+    );
+    expect(endingLine({ opponent: 'Sam', outcome: 'won' })).toBe('You won vs Sam');
   });
 });

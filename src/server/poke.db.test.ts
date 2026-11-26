@@ -256,6 +256,26 @@ describe('a series by turns (ADR 0085)', () => {
       }),
     ).toStrictEqual([[], []]);
   });
+
+  it('pokes both inboxes once when a turn runs out; seeing the ending pokes nobody (ADR 0086)', async () => {
+    const players = { a: await newPlayer(deps), b: await newPlayer(deps) };
+    const both = [players.a, players.b];
+    const id = await newSeries(deps, players, 'reveal');
+    await admin`update game.series set turn_deadline = now() - interval '1 minute' where id = ${id}`;
+    // Settled on the next read (as the inbox and the sweep do): the ending, told to both.
+    const each = ['match', 'inbox'];
+    expect(await pokedBy(both, () => read(players.a, id))).toStrictEqual([each, each]);
+    // The ended series read again (by both, so both write their seen mark): nobody is poked.
+    expect(
+      await pokedBy(both, async () => {
+        await read(players.a, id);
+        await read(players.b, id);
+      }),
+    ).toStrictEqual([[], []]);
+    const [row] = await admin<{ n: number }[]>`
+      select count(*)::int as n from game.series_seen where series_id = ${id}`;
+    expect(row?.n).toBe(2);
+  });
 });
 
 describe('game.poke', () => {

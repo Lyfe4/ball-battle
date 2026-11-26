@@ -9,7 +9,7 @@ import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts'
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
 import { REPORT_DAYS } from '../src/server/blocks.ts';
 import { DECLINE_DAYS } from '../src/server/db/friends.ts';
-import { ONLINE_MS } from '../src/server/db/inbox.ts';
+import { ENDING_DAYS, ONLINE_MS } from '../src/server/db/inbox.ts';
 import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
 
@@ -104,6 +104,13 @@ describe('the privacy policy and terms', () => {
     ];
     expect(Math.max(...counts.map((limit) => limit.windowSeconds))).toBeLessThanOrEqual(86_400);
     expect(privacy.replace(/\s+/g, ' ')).toContain('how many friends are looked up and asked');
+  });
+
+  it('name the seen mark of a game by turns and how long an ending waits (ADR 0086)', () => {
+    expect(privacy).toContain('When you saw how a game by turns ended');
+    expect(privacy.replace(/\s+/g, ' ')).toContain(
+      `stops showing after ${String(ENDING_DAYS)} days`,
+    );
   });
 
   it('name when an account was last active, its 150 s, and who a challenge went to (ADR 0079, 0082)', () => {

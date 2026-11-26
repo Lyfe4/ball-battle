@@ -8,7 +8,7 @@
 // with accounts and play by turns (BALLBATTLE_TURNS=1, VITE_TURNS=1); Chromium only.
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { befriend, signedInPhone } from './account-support.ts';
+import { befriend, expireTurn, signedInPhone } from './account-support.ts';
 import { buildLineup, pickIfDue } from './live-support.ts';
 import { socketOf } from './realtime-support.ts';
 
@@ -102,6 +102,35 @@ describe('play by turns with a friend', () => {
       const dueName = due === one ? sam : jo;
       await turnButton(other, dueName).waitFor({ timeout: 10_000 });
       await badge(other).getByText('1', { exact: true }).waitFor();
+
+      // Your games (ADR 0086): the one who just played finds the game waiting on the other.
+      const seriesId = new URL(due.url()).searchParams.get('online') ?? '';
+      await due.goto(`${BASE}/?view=friends`);
+      await friendsOf(due)
+        .getByRole('button', { name: `Open: ${otherName}’s turn` })
+        .waitFor({ timeout: 10_000 });
+      // The other's turn runs out: both are told how it ended, each in their own words.
+      await expireTurn(seriesId);
+      const won = `Open: You won vs ${otherName}: their turn ran out`;
+      await due.reload();
+      await friendsOf(due).getByRole('button', { name: won }).waitFor({ timeout: 10_000 });
+      await other.goto(`${BASE}/?view=friends`);
+      await friendsOf(other)
+        .getByRole('button', { name: 'Open: You lost: your turn ran out' })
+        .waitFor({ timeout: 10_000 });
+      // Seen once opened: gone from Friends for that player, still there for the other.
+      await friendsOf(due).getByRole('button', { name: won }).click();
+      await due.waitForURL(/[?&]online=/, { timeout: 20_000 });
+      await due.goto(`${BASE}/?view=friends`);
+      await friendsOf(due)
+        .getByText(/^Friends · /)
+        .waitFor();
+      expect(await friendsOf(due).getByRole('button', { name: won }).count()).toBe(0);
+      expect(
+        await friendsOf(other)
+          .getByRole('button', { name: 'Open: You lost: your turn ran out' })
+          .count(),
+      ).toBe(1);
       expect(errors).toStrictEqual([]);
       for (const page of [one, two]) await page.context().close();
     },

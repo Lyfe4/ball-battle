@@ -335,7 +335,7 @@ export function createOnlineScreens(
     },
     friendStatuses(inbox) {
       friendsTab.statuses(inbox?.friends ?? []);
-      friendsTab.invites(inbox?.invites ?? [], inbox?.turns ?? []);
+      friendsTab.invites(inbox?.invites ?? [], inbox?.turns ?? [], inbox?.games, inbox?.endings);
     },
     openInvite: (token, live) => challenges.openInvite(token, live),
     playFriend: (setup) => challenges.playFriend(setup),

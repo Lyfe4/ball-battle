@@ -7,7 +7,12 @@ const ROW = '.friends-row';
 
 const keyOf = (row: HTMLElement): string => {
   const group = row.closest<HTMLElement>('[data-group]')?.dataset['group'] ?? '';
-  const id = row.dataset['invite'] ?? row.dataset['turn'] ?? row.dataset['friend'] ?? '';
+  const id =
+    row.dataset['invite'] ??
+    row.dataset['turn'] ??
+    row.dataset['game'] ??
+    row.dataset['friend'] ??
+    '';
   return `${group}:${id}`;
 };
 
