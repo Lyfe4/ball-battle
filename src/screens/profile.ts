@@ -122,6 +122,9 @@ export function createProfile(
     const who = await host.who.ask();
     switch (who.kind) {
       case 'account':
+        // The account already drawn: an answer that changes nothing draws nothing, so a card the
+        // player opened meanwhile (Delete's confirm, Change username) stays as it is.
+        if (known?.kind === 'account' && known.username === who.username) return;
         account.show(who.username);
         return;
       case 'unknown':
