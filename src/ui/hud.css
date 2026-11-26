@@ -138,6 +138,18 @@
   display: none;
 }
 
+/*
+ * Leave series asked (leave-confirm.ts): the question and its two buttons take a row of their own,
+ * the foot's whole width, under speed, rather than half of it beside speed (2026-11-27).
+ */
+.hud-foot:has(.leave-confirm-row:not([hidden])) {
+  flex-wrap: wrap;
+}
+
+.hud-foot .series-exit:has(.leave-confirm-row:not([hidden])) {
+  flex: 1 1 100%;
+}
+
 /* A phone turned sideways keeps speed and Leave series on one row; a desktop gives each its own. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .hud-foot {

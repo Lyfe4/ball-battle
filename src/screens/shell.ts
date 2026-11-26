@@ -32,8 +32,8 @@ export interface ShellScreens {
   /** What waits on the player: the Friends tab's badge (ADR 0081). */
   waiting(count: number): void;
   /**
-   * The avatar (accounts builds, ADR 0081, 0087): in the lead slot of whichever tab screen shows
-   * (`data-tab-head`), at every size, and leaves with the tab.
+   * The avatar (accounts builds, ADR 0081, 0087): top right in whichever tab screen's header shows
+   * (the row of its `data-tab-head` slot), before the `?` and gear, and leaves with the tab.
    */
   holdAvatars(avatars: { readonly head: HTMLElement }): void;
 }
@@ -73,12 +73,17 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
   );
   document.body.append(bar.element);
   let headAvatar: HTMLElement | undefined;
-  /** The avatar into the tab's lead slot, or out of the page where no tab shows. */
+  /**
+   * The avatar into the tab's header row, just before its `?` and gear (ADR 0087 addendum of
+   * 2026-11-26), or out of the page where no tab shows.
+   */
   const placeAvatar = (tab: Tab['id'] | undefined): void => {
     if (headAvatar === undefined) return;
-    const head = tab === undefined ? null : document.querySelector(`[data-tab-head="${tab}"]`);
-    if (head === null) headAvatar.remove();
-    else if (head.firstElementChild !== headAvatar) head.prepend(headAvatar);
+    const lead = tab === undefined ? null : document.querySelector(`[data-tab-head="${tab}"]`);
+    const row = lead?.parentElement;
+    const tools = row?.querySelector(':scope > .symbol-legend-toggle, :scope > .settings-toggle');
+    if (tools === null || tools === undefined) headAvatar.remove();
+    else if (tools.previousElementSibling !== headAvatar) tools.before(headAvatar);
   };
   let shown: Tab['id'] | undefined;
   /** The last tab shown: a screen browsed or tasked to from it keeps it lit (ADR 0087). */

@@ -198,8 +198,15 @@ describe('the Friends section', () => {
       'In a match',
       'in_a_match',
     ]);
+    // The row's "›" at its end while it has no button; dropped once it shows Challenge (it would
+    // sit before the button).
+    const chevron = () =>
+      getComputedStyle(root.querySelector('[data-friend="f-1"] .friends-open') ?? root, '::after')
+        .content;
+    expect(chevron()).toContain('›');
     friends.statuses([{ id: 'f-1', name: 'Robin', status: 'online' }]);
     expect(status()?.textContent).toBe('Online');
+    expect(chevron()).toBe('none');
     named(root, 'Challenge Robin')?.click();
     expect(challenged).toStrictEqual(['f-1']);
     // A change made here tells the inbox to read now.

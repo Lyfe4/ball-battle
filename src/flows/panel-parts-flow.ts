@@ -51,11 +51,20 @@ function checkSeriesBar(desktop: boolean, line = 'Best of 3 · Reveal · Hard'):
   }
 }
 
-/** The question over Stay and Leave: side by side (or stacked) at the same size, Stay first. */
+/**
+ * The question over Stay and Leave: side by side (or stacked) at the same size, Stay first, the row
+ * as wide as the room it sits in.
+ */
 async function checkLeaveConfirm(): Promise<void> {
   button('Leave series').click();
   await settle();
   const question = visible('.leave-confirm-question')[0]?.getBoundingClientRect();
+  // The whole width it sits in: on a phone the foot's, not half of it beside speed (2026-11-27).
+  const row = visible('.leave-confirm-row')[0]?.getBoundingClientRect();
+  const foot = visible('#series-exit')[0]?.parentElement?.getBoundingClientRect();
+  const panel = document.getElementById('series')?.getBoundingClientRect();
+  const room = foot !== undefined && foot.width > 0 ? foot : panel;
+  expect(row?.width ?? 0).toBeGreaterThanOrEqual((room?.width ?? 0) - 2 * NEAR - 1);
   const stay = button('Stay');
   const leave = button('Leave');
   expect(document.activeElement).toBe(stay);

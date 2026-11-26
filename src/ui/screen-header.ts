@@ -1,5 +1,6 @@
 import type { TabId } from '../app/tabs.ts';
 import { element } from './dom.ts';
+import { shapeIcon } from './icons.ts';
 import { createSettingsToggle } from './settings-menu.ts';
 import { createSymbolLegend } from './symbol-legend.ts';
 
@@ -22,16 +23,23 @@ export interface ScreenHeaderOptions {
    */
   readonly settings?: boolean;
   /**
-   * The tab this screen is, if it is one (ADR 0081): the shell puts the avatar in its lead slot
-   * while it shows as that tab (shell.ts, ADR 0087), and it has no Back (addendum of 2026-11-24):
-   * the tab bar and the browser's Back lead away. `setBack` shows it on a screen opened from it.
+   * The tab this screen is, if it is one (ADR 0081): it has no Back (addendum of 2026-11-24), the
+   * tab bar and the browser's Back leading away, and its lead slot shows the game's mark on a phone
+   * held upright, where no rail shows it, and the tab's icon where the rail does (ADR 0087 addenda of
+   * 2026-11-26 and 2026-11-27); the shell puts the
+   * avatar before its tools (shell.ts). `setBack` shows Back on a screen opened from it.
    */
   readonly tab?: TabId;
+  /**
+   * The title where the rail shows (beside, a desktop), if it differs: Play is "Play" there, the
+   * rail's mark already saying BallBattle.
+   */
+  readonly railTitle?: string;
 }
 
 /**
- * The lead slot of a header row: one tap target wide whether it holds Back, the avatar (a tab
- * screen's, `data-tab-head`, placed by the shell) or nothing.
+ * The lead slot of a header row: one tap target wide whether it holds Back, a tab screen's mark
+ * (on a phone, `data-tab-head`) or its tab's icon (where the rail shows), or nothing.
  */
 export function createLeadSlot(tab?: TabId): HTMLElement {
   const lead = element('div', 'screen-lead');
@@ -63,8 +71,24 @@ export function createScreenHeader(
   back.addEventListener('click', onBack);
   back.hidden = options.tab !== undefined;
   lead.append(back);
-  const heading = element('h1', 'screen-title', title);
+  // The game's mark on a tab screen, where no rail shows it (screen-header.css): decoration.
+  const mark = options.tab === undefined ? undefined : element('img', 'screen-mark');
+  if (mark !== undefined) {
+    mark.src = '/favicon.svg';
+    mark.alt = '';
+    mark.setAttribute('aria-hidden', 'true');
+    lead.append(mark);
+  }
+  // Where the rail shows the mark instead (beside, a desktop), the tab's own icon, the rail's for
+  // it, so the slot is never an empty gap before the title (screen-header.css): decoration too.
+  const tabIcon = options.tab === undefined ? undefined : shapeIcon(options.tab, 'screen-tab-icon');
+  if (tabIcon !== undefined) lead.append(tabIcon);
+  const heading = element('h1', 'screen-title');
   heading.tabIndex = -1;
+  // One heading; where the rail shows it may read otherwise (Play), the other words hidden.
+  const phoneTitle = element('span', 'screen-title-phone', title);
+  if (options.railTitle === undefined) heading.append(phoneTitle);
+  else heading.append(phoneTitle, element('span', 'screen-title-rail', options.railTitle));
   header.append(lead, heading);
   // The tools: the ? where the screen shows symbols, then the gear, always last (ADR 0087, amending
   // ADR 0040), so it never moves between screens. The legend opens under the row.
@@ -78,10 +102,12 @@ export function createScreenHeader(
       heading.focus();
     },
     setTitle: (next) => {
-      heading.textContent = next;
+      phoneTitle.textContent = next;
     },
     setBack: (shown) => {
       back.hidden = !shown;
+      if (mark !== undefined) mark.hidden = shown;
+      tabIcon?.toggleAttribute('hidden', shown);
     },
   };
 }

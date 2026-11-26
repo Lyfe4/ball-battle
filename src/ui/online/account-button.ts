@@ -1,5 +1,6 @@
-// The avatar (ADR 0081, replacing ADR 0079's account button): on every tab screen, in its header's
-// lead slot at every size (ADR 0087; the rail's top holds the game's mark). A round button with the account's initial once signed in, else a plain face. It opens Profile, where
+// The avatar (ADR 0081, replacing ADR 0079's account button): on every tab screen, top right in its
+// header, just before the `?` and the gear (ADR 0087 addendum of 2026-11-26); where the rail shows
+// (beside, a desktop) the username sits beside its disc. A round button with the account's initial once signed in, else a plain face. It opens Profile, where
 // the username, Log out and Delete account live, or Sign in and Forget me for a guest. What it shows
 // is what `/me` said (who-am-i.ts); while that isn't known (asking, offline, failing) it is the
 // plain face that claims nothing, so a signed-in player is never told to sign in.
@@ -26,22 +27,29 @@ function faceIcon(): SVGSVGElement {
   return svg;
 }
 
-/** The avatar button: the lead slot of whichever tab screen shows (shell.ts). */
+/** The avatar button: top right in whichever tab screen's header shows (shell.ts). */
 export function createAccountButton(open: () => void): AccountButton {
   const button = element('button', 'account-toggle');
   button.type = 'button';
   button.dataset['place'] = 'head';
   const face = element('span', 'account-toggle-face');
   face.setAttribute('aria-hidden', 'true');
-  button.append(face, faceIcon());
+  // The username beside the disc where the rail shows (online.css hides it on a phone); the
+  // button's accessible name already says it.
+  const name = element('span', 'account-toggle-name');
+  name.setAttribute('aria-hidden', 'true');
+  name.hidden = true;
+  button.append(face, faceIcon(), name);
   button.addEventListener('click', open);
   return {
     element: button,
     show(who) {
-      const { look, text, label } = accountLook(who);
+      const { look, text, label, name: shown } = accountLook(who);
       setAttr(button, 'data-look', look);
       setAttr(button, 'aria-label', label);
       setText(face, text);
+      setText(name, shown);
+      name.hidden = shown === '';
     },
   };
 }

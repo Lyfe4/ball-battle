@@ -361,6 +361,11 @@
   content: '›' / '';
 }
 
+/* A row with its own button (Challenge, Accept) drops the "›": it would sit before the button. */
+.friends-row:has(> .friends-actions > *) .friends-open::after {
+  content: none;
+}
+
 :where(:root:not([data-input='pointer'])) .friends-open:focus-visible {
   border-radius: var(--radius);
   outline: none;

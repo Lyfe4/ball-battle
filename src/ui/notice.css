@@ -2,6 +2,8 @@
    way on. */
 .notice {
   display: grid;
+  /* One column as wide as the room, never as wide as its longest word or button (text at 200%). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-gap);
 }
 
@@ -380,9 +382,15 @@
   flex-wrap: wrap;
 }
 
+/*
+ * Side by side only while their words fit one line, else each takes a row (never squeezed): a
+ * button is never narrower than its words on one line, or the whole row where even that is too
+ * wide (text at 200%), and then its words wrap inside it rather than run off the screen.
+ */
 .notice > .screen-footer > .hud-button {
   flex: 1 1 auto;
-  white-space: nowrap;
+  min-width: fit-content;
+  white-space: normal;
 }
 
 /* Nothing is fighting: no arena at any width, like the manual. */

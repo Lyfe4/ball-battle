@@ -1,7 +1,8 @@
-// The tab screens' headers on a phone (390 x 664, ADR 0081 addendum of 2026-11-24): the avatar,
-// the tab's title and the gear last (ADR 0087), with no Back (the tab bar and the browser's Back lead away; Back
-// from any tab is Play). Balls keeps its ?, which explains the matchup chart's marks. A screen
-// opened from a tab (a ball's page, Profile) keeps its Back.
+// The tab screens' headers on a phone (390 x 664, ADR 0081 addendum of 2026-11-24): the game's mark
+// in the lead slot, the tab's title, then the avatar, the `?` where there is one and the gear last
+// (ADR 0087 addendum of 2026-11-26), with no Back (the tab bar and the browser's Back lead away;
+// Back from any tab is Play). Balls keeps its ?, which explains the matchup chart's marks. A screen
+// opened from a tab (a ball's page, Profile) keeps its Back, and no avatar.
 import { describe, expect, it } from 'vitest';
 import { back, visible } from './page-support.ts';
 import {
@@ -19,34 +20,38 @@ function header(): string[] {
     (node) => node.getClientRects().length > 0 && node.closest('[hidden]') === null,
   );
   if (head === undefined) return [];
-  // The lead slot holds Back or the avatar (ADR 0087): read what it holds in its place.
+  // The lead slot holds Back or the game's mark (ADR 0087): read what it holds in its place.
   return [...head.children]
     .flatMap((node) => (node.matches('.screen-lead') ? [...node.children] : [node]))
-    .filter((node) => node instanceof HTMLElement && node.getClientRects().length > 0)
+    .filter(
+      (node): node is HTMLElement =>
+        node instanceof HTMLElement && node.getClientRects().length > 0,
+    )
     .map((node) => {
       if (node.matches('.account-toggle')) return 'avatar';
+      if (node.matches('.screen-mark')) return 'mark';
       if (node.matches('.screen-back')) return 'back';
       if (node.matches('.settings-toggle')) return 'gear';
       if (node.matches('.symbol-legend-toggle')) return '?';
-      return node.textContent.trim();
+      return node.innerText.trim();
     });
 }
 
 describe('the tab screens’ headers on a phone', () => {
-  it('are the avatar, the title and the gear, with no Back; a screen opened from one has Back', async () => {
+  it('are the mark, the title, the avatar and the gear, with no Back; one opened from them has Back', async () => {
     await openAs({ online: true, accounts: true }, '');
     await onScreen('home');
-    expect(header()).toStrictEqual(['avatar', 'BallBattle', 'gear']);
+    expect(header()).toStrictEqual(['mark', 'BallBattle', 'avatar', 'gear']);
     tabLink('Balls').click();
     await onScreen('manual');
-    expect(header()).toStrictEqual(['avatar', 'Balls', '?', 'gear']);
+    expect(header()).toStrictEqual(['mark', 'Balls', 'avatar', '?', 'gear']);
     expect(document.title).toBe('Balls · BallBattle');
     tabLink('Friends').click();
     await onScreen('friends');
-    expect(header()).toStrictEqual(['avatar', 'Friends', 'gear']);
+    expect(header()).toStrictEqual(['mark', 'Friends', 'avatar', 'gear']);
     tabLink('Ranks').click();
     await onScreen('ranks');
-    expect(header()).toStrictEqual(['avatar', 'Ranks', 'gear']);
+    expect(header()).toStrictEqual(['mark', 'Ranks', 'avatar', 'gear']);
     // The browser's Back from any tab is Play (ADR 0081).
     await back();
     await onScreen('home');

@@ -53,6 +53,9 @@ async function befriend(one: Page, two: Page, twoName: string, oneName: string):
 /** `page` reloaded onto home, its socket and inbox reads watched from the load. */
 async function home(page: Page, name: string, blocked = false) {
   if (blocked) await blockRealtime(page.context());
+  // Off the last page first: a read it still had under way (Accept pokes the inbox) must not count
+  // as this load's first (a 442 ms "poll" failed CI on 2026-11-25).
+  await page.goto('about:blank');
   const socket = watchPokes(page);
   const reads = watchReads(page, INBOX);
   await page.goto(BASE);

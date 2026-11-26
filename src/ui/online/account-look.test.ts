@@ -7,6 +7,7 @@ describe('the avatar (ADR 0081)', () => {
       look: 'initial',
       text: 'S',
       label: 'Profile, sam_r',
+      name: 'sam_r',
     });
     expect(initialOf('_9lives')).toBe('9');
     expect(initialOf('___')).toBe('?');
@@ -22,7 +23,12 @@ describe('the avatar (ADR 0081)', () => {
 
   it('shows a guest or nobody the plain face: Profile holds Sign in', () => {
     for (const kind of ['guest', 'none'] as const) {
-      expect(accountLook({ kind })).toStrictEqual({ look: 'face', text: '', label: 'Profile' });
+      expect(accountLook({ kind })).toStrictEqual({
+        look: 'face',
+        text: '',
+        label: 'Profile',
+        name: '',
+      });
     }
   });
 
@@ -31,6 +37,7 @@ describe('the avatar (ADR 0081)', () => {
       look: 'face',
       text: '',
       label: 'Profile',
+      name: '',
     });
     expect(accountLook({ kind: 'account', username: null }).look).toBe('face');
   });

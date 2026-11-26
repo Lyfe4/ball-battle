@@ -158,7 +158,10 @@ export function createHome(
   // The header row every screen has (ADR 0087): the avatar's slot, the title, the gear last. The
   // top of the page on a phone, the top of the panel beside the court. Play is the root of the tabs,
   // so it has no Back (ADR 0081).
-  const head = createScreenHeader('BallBattle', 'Back', () => undefined, { tab: 'play' }).element;
+  const head = createScreenHeader('BallBattle', 'Back', () => undefined, {
+    tab: 'play',
+    railTitle: 'Play',
+  }).element;
   head.classList.add('home-head');
   // Play ends with Free play: the privacy policy and terms are in settings' About, one tap from
   // every screen, and on Profile (ADR 0069 addendum of 2026-11-26).
