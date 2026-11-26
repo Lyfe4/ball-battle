@@ -1,5 +1,6 @@
 import type { TabId } from '../app/tabs.ts';
 import { element } from './dom.ts';
+import { shapeIcon } from './icons.ts';
 import { createSettingsToggle } from './settings-menu.ts';
 import { createSymbolLegend } from './symbol-legend.ts';
 
@@ -24,7 +25,8 @@ export interface ScreenHeaderOptions {
   /**
    * The tab this screen is, if it is one (ADR 0081): it has no Back (addendum of 2026-11-24), the
    * tab bar and the browser's Back leading away, and its lead slot shows the game's mark on a phone
-   * held upright, where no rail shows it (ADR 0087 addendum of 2026-11-26); the shell puts the
+   * held upright, where no rail shows it, and the tab's icon where the rail does (ADR 0087 addenda of
+   * 2026-11-26 and 2026-11-27); the shell puts the
    * avatar before its tools (shell.ts). `setBack` shows Back on a screen opened from it.
    */
   readonly tab?: TabId;
@@ -36,8 +38,8 @@ export interface ScreenHeaderOptions {
 }
 
 /**
- * The lead slot of a header row: one tap target wide whether it holds Back, the game's mark (a tab
- * screen's on a phone, `data-tab-head`) or nothing.
+ * The lead slot of a header row: one tap target wide whether it holds Back, a tab screen's mark
+ * (on a phone, `data-tab-head`) or its tab's icon (where the rail shows), or nothing.
  */
 export function createLeadSlot(tab?: TabId): HTMLElement {
   const lead = element('div', 'screen-lead');
@@ -77,6 +79,10 @@ export function createScreenHeader(
     mark.setAttribute('aria-hidden', 'true');
     lead.append(mark);
   }
+  // Where the rail shows the mark instead (beside, a desktop), the tab's own icon, the rail's for
+  // it, so the slot is never an empty gap before the title (screen-header.css): decoration too.
+  const tabIcon = options.tab === undefined ? undefined : shapeIcon(options.tab, 'screen-tab-icon');
+  if (tabIcon !== undefined) lead.append(tabIcon);
   const heading = element('h1', 'screen-title');
   heading.tabIndex = -1;
   // One heading; where the rail shows it may read otherwise (Play), the other words hidden.
@@ -101,6 +107,7 @@ export function createScreenHeader(
     setBack: (shown) => {
       back.hidden = !shown;
       if (mark !== undefined) mark.hidden = shown;
+      tabIcon?.toggleAttribute('hidden', shown);
     },
   };
 }

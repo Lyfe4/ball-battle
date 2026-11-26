@@ -4,6 +4,7 @@
 // previews. The API answers every request with a refusal at once, so no screen waits on a server.
 import { expect, vi } from 'vitest';
 import page from '../../index.html?raw';
+import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { button, settle, until, visible } from './page-support.ts';
 
 export interface Build {
@@ -140,41 +141,86 @@ const TAB_SCREENS = [
   ['Ranks', 'ranks'],
 ] as const;
 
+const NAME = 'calvino';
+const FRIENDS = [
+  { id: 'f-1', name: 'Jo', status: 'offline' },
+  { id: 'f-2', name: 'Robin', status: 'online' },
+];
+/** A signed-in account with two friends: the avatar shows its name where the rail shows. */
+const SIGNED_IN: Answers = {
+  '/api/v1/me': { name: NAME, account: true, username: NAME },
+  '/api/v1/me/inbox': { friends: FRIENDS, requests: 0, invites: [], turns: [] },
+  '/api/v1/friends': {
+    code: '7KQ2M9XD',
+    friends: FRIENDS,
+    incoming: [],
+    outgoing: [],
+    blocked: [],
+  },
+};
+
+const seen = (node: Element | null | undefined): node is Element =>
+  node instanceof Element && node.getClientRects().length > 0;
+
+/** How many times `text` shows, laid out, in `root` (`display: none` text is not in innerText). */
+const timesShown = (root: HTMLElement, text: string): number =>
+  root.innerText.split(text).length - 1;
+
 /**
- * On every tab screen of a build with accounts, reached by its tab: one avatar, top right in this
- * screen's header row just before its `?` and gear (ADR 0087 addendum of 2026-11-26); where the
- * rail shows, the game's mark atop it, else the mark in the header's lead slot; the avatar opens
- * Profile, which has none, and Profile's Back returns to that tab (ADR 0081). Ends back on Play.
+ * On every tab screen of a build with accounts, signed in, reached by its tab: one avatar, top
+ * right in this screen's header row just before its `?` and gear (ADR 0087 addendum of
+ * 2026-11-26), its username shown once in the row where the rail shows and not at all on a phone;
+ * where the rail shows, the game's mark atop it and this tab's own icon in the lead slot, else the
+ * mark in the lead slot; the avatar opens Profile, which has none, and Profile's Back returns to
+ * that tab (ADR 0081). Ends back on Play.
  */
 export async function avatarOnEveryTab(): Promise<void> {
-  await openAs({ online: true, accounts: true }, '');
+  // A remembered account, so the page asks /me who it is (who-am-i.ts).
+  localStorage.setItem(ACCOUNT_STORAGE_KEY, '1');
+  await openAs({ online: true, accounts: true }, '', SIGNED_IN);
   for (const [label, screen] of TAB_SCREENS) {
     if (label !== 'Play') tabLink(label).click();
     await onScreen(screen);
+    await until(
+      () => avatarsShown().some((node) => node.getAttribute('aria-label') === `Profile, ${NAME}`),
+      5_000,
+      `${screen}: the avatar signed in`,
+    );
     await settle();
     const shown = avatarsShown();
     expect(shown, screen).toHaveLength(1);
     const avatar = shown[0];
     if (avatar === undefined) return;
-    expect(avatar.getAttribute('aria-label'), screen).toBe('Profile');
     // In this screen's own header row, just before its tools: the `?` or the gear.
     const row = avatar.parentElement;
-    expect(row?.classList.contains('screen-header'), screen).toBe(true);
-    expect(row?.closest('[hidden]'), screen).toBeNull();
+    if (row === null) return;
+    expect(row.classList.contains('screen-header'), screen).toBe(true);
+    expect(row.closest('[hidden]'), screen).toBeNull();
     const next = avatar.nextElementSibling;
     expect(next?.matches('.symbol-legend-toggle, .settings-toggle'), screen).toBe(true);
     const rail = tabBar();
     const mark = rail?.querySelector('.tab-bar-mark');
-    const own = row?.querySelector('.screen-lead .screen-mark');
-    const seen = (node: Element | null | undefined) =>
-      node instanceof HTMLElement && node.getClientRects().length > 0;
+    const own = row.querySelector('.screen-lead .screen-mark');
+    const icon = row.querySelector('.screen-lead .screen-tab-icon');
     if (seen(mark)) {
-      // The rail (beside, a desktop): the mark tops it, above its first tab; none in the row.
+      // The rail (beside, a desktop): the mark tops it, above its first tab; the lead slot holds
+      // this tab's own icon, the one the rail shows for it, and no mark.
       const first = rail?.querySelector('a')?.getBoundingClientRect();
-      expect(mark?.getBoundingClientRect().bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
+      expect(mark.getBoundingClientRect().bottom, screen).toBeLessThanOrEqual(first?.top ?? 0);
       expect(rail?.querySelector('.account-toggle'), screen).toBeNull();
       expect(seen(own), `${screen}: one mark`).toBe(false);
-    } else expect(seen(own), `${screen}: the mark leads the row`).toBe(true);
+      expect(seen(icon), `${screen}: the tab's icon leads the row`).toBe(true);
+      const railPath = rail?.querySelector('[aria-current="page"] .tab-bar-icon path');
+      expect(icon?.querySelector('path')?.getAttribute('d'), screen).toBe(
+        railPath?.getAttribute('d'),
+      );
+      expect(icon?.getAttribute('aria-hidden'), screen).toBe('true');
+      expect(timesShown(row, NAME), `${screen}: the name once`).toBe(1);
+    } else {
+      expect(seen(own), `${screen}: the mark leads the row`).toBe(true);
+      expect(seen(icon), `${screen}: no tab icon beside the mark`).toBe(false);
+      expect(timesShown(row, NAME), `${screen}: no name on a phone`).toBe(0);
+    }
     avatar.click();
     await onScreen('profile');
     await settle();

@@ -233,6 +233,18 @@
   display: none;
 }
 
+/*
+ * Where the rail shows the mark (beside, a desktop), the tab's own icon leads its header instead
+ * (ADR 0087 addendum of 2026-11-27): the rail's icon for this tab, centred in the slot, so the title
+ * never sits after an empty gap. Hidden on a phone held upright, where the mark leads.
+ */
+.screen-tab-icon {
+  display: none;
+  width: 28px;
+  height: 28px;
+  fill: var(--color-accent);
+}
+
 /* The title where the rail shows, if it differs (Play's "Play"): hidden until then. */
 .screen-title-rail {
   display: none;
@@ -241,6 +253,10 @@
 @media (min-aspect-ratio: 5/4) {
   .screen-mark {
     display: none;
+  }
+
+  .screen-tab-icon:not([hidden]) {
+    display: block;
   }
 
   .screen-title-phone:has(+ .screen-title-rail) {

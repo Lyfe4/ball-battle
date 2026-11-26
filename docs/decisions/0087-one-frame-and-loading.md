@@ -413,3 +413,20 @@ and looked for it with settings. Amends decision 3 above (the avatar in the lead
   just before its tools; one mark, the rail's or the row's); `frame-anchors` in every project.
 - Mockups (the real screens with this header injected, Play, Balls, Friends and Profile at
   390 × 664 and 1920 × 1080) were shown to the owner before the build.
+
+## Addendum (2026-11-27): the tab's icon leads beside and on a desktop
+
+From the owner's look at the screenshots of the addendum above, at 1920 × 1080:
+
+- **The lead slot is never an empty gap.** Beside and on a desktop an empty slot left the title
+  about 56 px right of the content under it, reading as a missing image. A tab screen's lead slot
+  there holds that tab's own icon, the rail's (`shapeIcon`, in the accent), decorative and
+  `aria-hidden`; on a phone held upright the mark stays. A screen opened from a tab keeps Back (the
+  icon hides with the mark). `frame-anchors` is unchanged: the slot keeps its width.
+- **One name.** The screenshots showed "calvino calvino" on Balls and Friends: the throwaway
+  mockup tool added its own name beside the real one; the page itself shows it once. The avatar
+  tests now sign in (`tab-avatar.{safari,wide,full,landscape,landscape-small}`) and fail on a
+  name shown twice in the row (or at all on a phone), and check the lead slot's icon is the rail's.
+- **A person's row drops its "›" when it shows a button** (Challenge, Accept and Decline): the
+  mark sat before the button, as if the button opened something. The whole row still opens the
+  sheet.
