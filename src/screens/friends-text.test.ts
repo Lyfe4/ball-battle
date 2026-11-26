@@ -13,6 +13,7 @@ import {
   endingLine,
   friendsTitle,
   gameName,
+  inboxToWatch,
   waitingCount,
 } from './friends-text.ts';
 
@@ -60,6 +61,21 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
   it('counts what waits for the badge: turns, challenges and requests (ADR 0085)', () => {
     const none = { friends: [friend('online')], requests: 1, invites: [] };
     expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(3);
+  });
+
+  it('keeps watching an inbox with a game waiting on the other player, friends or not', () => {
+    const empty = { friends: [], requests: 0, invites: [], turns: [] };
+    expect(inboxToWatch(empty)).toBe(false);
+    // A game from a link, or with a friend since removed: their move makes it "Your turn".
+    expect(inboxToWatch({ ...empty, games: [turn('Sam')] })).toBe(true);
+    expect(inboxToWatch({ ...empty, turns: [turn('Sam')] })).toBe(true);
+    expect(inboxToWatch({ ...empty, friends: [friend('offline')] })).toBe(true);
+    expect(inboxToWatch({ ...empty, requests: 1 })).toBe(true);
+    expect(inboxToWatch({ ...empty, invites: [invite] })).toBe(true);
+    // An ending only waits to be seen: nothing more will come of it.
+    expect(
+      inboxToWatch({ ...empty, endings: [{ seriesId: 's', opponent: 'Sam', outcome: 'won' }] }),
+    ).toBe(false);
   });
 
   it('says who is online in the friends list’s title, never "0 online" (ADR 0086)', () => {
