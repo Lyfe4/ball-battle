@@ -107,10 +107,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
-      # outgoing connections: while images pull, one can take a port just before Docker binds it
-      # ("address already in use", 3 runs to 2026-11-26). Reserved, no outgoing connection gets one.
-      - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       # Postgres, Auth, Realtime, the gateway and the pooler (Supavisor) in Docker, with
       # supabase/migrations and supabase/seed.sql applied (ADR 0052, "Tests and CI"). The API
       # connects through the pooler, as on Netlify. Realtime makes `realtime.send`, which the
@@ -151,10 +147,6 @@ jobs:
       # three steps after it together, which don't need it (the online build reads no .env). So it
       # starts in the background and "Wait for Supabase" joins it: about 45 s off this job, the
       # critical path of every run. Its log is printed either way.
-      # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
-      # outgoing connections: while images pull, one can take a port just before Docker binds it
-      # ("address already in use", 3 runs to 2026-11-26). Reserved, no outgoing connection gets one.
-      - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - name: Start Supabase in the background
         run: |
           (
