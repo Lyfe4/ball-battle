@@ -4,6 +4,15 @@
 import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 
+/**
+ * Worker threads to run: `BALANCE_WORKERS` when set to a whole number of 1 or more (to leave cores
+ * free for other work), else one per core.
+ */
+export function balanceWorkers(): number {
+  const asked = Number(process.env['BALANCE_WORKERS']);
+  return Number.isInteger(asked) && asked >= 1 ? asked : availableParallelism();
+}
+
 export interface PoolMessage<T> {
   readonly index: number;
   readonly task: T;
@@ -23,7 +32,7 @@ export async function runPool<R>(
   const results: (R | undefined)[] = tasks.map(() => undefined);
   let next = 0;
   let done = 0;
-  const workerCount = Math.min(availableParallelism(), Math.max(1, tasks.length));
+  const workerCount = Math.min(balanceWorkers(), Math.max(1, tasks.length));
   await Promise.all(
     Array.from({ length: workerCount }, () => {
       const worker = new Worker(workerUrl);
