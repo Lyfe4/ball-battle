@@ -201,6 +201,10 @@ export function createOnlineScreens(
   };
   // Who the player is, for the screens that ask: the device and the one `/me` (ADR 0087).
   const player = { storage: host.storage, who: host.who };
+  /** In-app Back: the previous screen, else Play. */
+  const backHome = () => {
+    host.navigation.back(home);
+  };
   // The account screen exists only in a build with accounts (ADR 0079): production with vs Friend
   // on and accounts off holds none of its code (`scripts/check-bundle.ts`), and its route is home
   // there (`parseOnlineRoute`).
@@ -209,9 +213,7 @@ export function createOnlineScreens(
         { notice: signInNotice, loading: signInLoading },
         {
           ...player,
-          back: () => {
-            host.navigation.back(home);
-          },
+          back: backHome,
           home,
           rewrite: (write) => {
             host.navigation.replace(write);
@@ -240,9 +242,7 @@ export function createOnlineScreens(
         { notice: profileNotice, loading: profileLoading },
         {
           ...player,
-          back: () => {
-            host.navigation.back(home);
-          },
+          back: backHome,
           home,
           signIn: () => {
             host.go(writeSignInParams);
@@ -250,6 +250,9 @@ export function createOnlineScreens(
           cookies: () => document.cookie,
           logOut: () => logOut(host.storage, startAfresh),
           forget: () => forgetMeHost(host.storage, startAfresh).forget(),
+          lookup,
+          // A finished series' own screen, once read (online-prime.ts): Watch again there.
+          openSeries: (id) => toMatch({ kind: 'series', id }),
         },
       )
     : undefined;
@@ -257,9 +260,7 @@ export function createOnlineScreens(
   const friendsTab = createFriendsTab(friendsRoot, {
     ...player,
     cookies: () => document.cookie,
-    back: () => {
-      host.navigation.back(home);
-    },
+    back: backHome,
     // The vs Friend setup, on the friend's rules as last chosen here (ADR 0081 addendum).
     sendLink: () => {
       const { format, bestOf } = loadFriendSetup(host.storage);

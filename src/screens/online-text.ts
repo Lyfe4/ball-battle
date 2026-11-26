@@ -42,6 +42,13 @@ export function onlineNotice(
 }
 
 /**
+ * A finished series under a ruleset whose fights this page doesn't play (`replaysHere`, ADR 0088):
+ * its result is shown, its fights aren't, and there is no Watch again.
+ */
+export const OLDER_VERSION =
+  'Played on an older version of the game: the result stands, but its fights can’t be shown here.';
+
+/**
  * The line under a series: whose turn it is and the time left, or how it ended without being
  * played out (a forfeit, a series called off). Undefined when the screens say it all.
  */

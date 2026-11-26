@@ -1,9 +1,10 @@
-// Profile (ADR 0081) through a fake API: an account by its username, the stats marked "Coming
-// soon", Change username, Log out and Delete account (asked once, Keep first); a guest told what
+// Profile (ADR 0081) through a fake API: an account by its username, its record (ADR 0088; its
+// states in profile-record.browser.test.ts), Change username, Log out and Delete account (asked once, Keep first); a guest told what
 // signing in unlocks, with Sign in and Forget me; nobody, with no Forget me and no request at all;
-// and Privacy · Terms at the end. It reads `/me` once when it opens, and nothing else.
+// and Privacy · Terms at the end. It reads `/me` once when it opens, and an account's record.
 import { describe, expect, it } from 'vitest';
 import type { Fetch } from '../app/api.ts';
+import { BALL_LOOKUP } from '../sim/balls/index.ts';
 import { createProfile, type ProfileHost } from './profile.ts';
 import { callApi } from '../app/api.ts';
 import { createVisitCache } from '../app/visit-cache.ts';
@@ -86,6 +87,9 @@ function showKnown(known: WhoAmI, answer: Promise<WhoAmI>): void {
       cookies: () => '',
       logOut: () => Promise.resolve(undefined),
       forget: () => Promise.resolve(undefined),
+      lookup: BALL_LOOKUP,
+      openSeries: () => Promise.resolve(),
+      send: () => Promise.resolve(json(200, { wins: 0, played: 0, favourite: null, recent: [] })),
     },
   );
   screen.setVisible(true);
@@ -103,6 +107,9 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
     const path = new URL(input, location.href).pathname.replace('/api/v1/', '');
     asked.push(`${init.method ?? 'GET'} ${path}`);
     if (path === 'me') return Promise.resolve(json(...me));
+    if (path === 'me/record') {
+      return Promise.resolve(json(200, { wins: 0, played: 0, favourite: null, recent: [] }));
+    }
     return Promise.resolve(json(404, { error: { code: 'not_found', message: 'no' } }));
   };
   const screen = createProfile(
@@ -126,6 +133,8 @@ function profile(me: [number, unknown], cookies = '__Host-bb_player=1', storage 
         done.push('forget');
         return Promise.resolve('You’re offline');
       },
+      lookup: BALL_LOOKUP,
+      openSeries: () => Promise.resolve(),
       send,
     },
   );
@@ -144,14 +153,14 @@ describe('Profile', () => {
     expect(texts('.profile-identity .notice-text')).toStrictEqual([
       'Opponents see you as robin_b.',
     ]);
-    // No stats card (ADR 0087), no primary for the name: rows, then the danger zone.
-    expect(texts('.soon-card-title')).toStrictEqual([]);
+    // The record's card (ADR 0088), no primary for the name: rows, then the danger zone.
+    await until(() => texts('.profile-empty').length === 1, 'the empty record');
     expect(texts('.notice .hud-button-primary')).toStrictEqual([]);
     expect(texts('.notice-more button')).toStrictEqual(['Change username', 'Log out']);
     expect(texts('.notice-danger .danger-row')).toStrictEqual(['Delete account']);
     expect(texts('.profile-legal a')).toStrictEqual(['Privacy', 'Terms']);
-    // One read of `/me`.
-    expect(asked).toStrictEqual(['GET me']);
+    // One read of `/me`, then the account's record.
+    expect(asked).toStrictEqual(['GET me', 'GET me/record']);
 
     // Asked once, Keep first; a failed try says why (here the fake says offline).
     press('Delete account');

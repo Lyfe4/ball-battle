@@ -52,6 +52,8 @@ export interface SeriesActions {
   readonly onRematch: () => unknown;
   /** Online: No thanks to the friend's rematch (a request). */
   readonly onDecline?: () => unknown;
+  /** Online, at a finished series' result: its rounds again from round 1 (ADR 0088). */
+  readonly onWatchAgain?: () => void;
   /** Back to the lineup builder: Change balls against the bot, Home online. */
   readonly onNewSeries: () => void;
   /** Against the bot, at the end: Home (ADR 0081). */
@@ -158,9 +160,12 @@ export function createSeriesPanel(
   const { rematch, newSeries, home } = createEndButtons(online, actions);
   const decline = button('No thanks', 'hud-button', () => undefined);
   busyOnClick(decline, () => actions.onDecline?.());
+  const again = button('Watch again', 'hud-button hud-button-primary', () => {
+    actions.onWatchAgain?.();
+  });
   // Online: why it waits, or how it ended.
   const note = element('p', 'series-note');
-  buttons.append(next, rematch, decline, newSeries, home);
+  buttons.append(next, again, rematch, decline, newSeries, home);
   const share = button('Copy link', 'hud-button series-share', () => {
     void copyLink();
   });
@@ -329,15 +334,17 @@ export function createSeriesPanel(
         next,
         state.pending.length > 0 ? '↻ Replay round' : `Play round ${String(roundsPlayed + 1)}`,
       );
-      const again = actions.includes('rematch');
+      const asked = actions.includes('rematch');
       const fresh = actions.includes('newSeries');
-      setHidden(rematch, !again);
+      const watch = actions.includes('watchAgain');
+      setHidden(again, !watch);
+      setHidden(rematch, !asked);
       setHidden(decline, !actions.includes('decline'));
       // Online, Home steps back beside a Rematch (ADR 0055): one main button.
-      if (online) newSeries.classList.toggle('hud-button-primary', !again);
+      if (online) newSeries.classList.toggle('hud-button-primary', !asked && !watch);
       setHidden(newSeries, !fresh);
       setHidden(home, !actions.includes('home'));
-      setHidden(buttons, !play && !again && !fresh && !actions.includes('decline'));
+      setHidden(buttons, !play && !asked && !watch && !fresh && !actions.includes('decline'));
       setHidden(share, !finished || online);
       if (!finished) setText(share, 'Copy link');
       leave.setHidden(!offersLeave(screen, moment.online));

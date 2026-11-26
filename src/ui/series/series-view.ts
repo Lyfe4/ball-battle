@@ -209,7 +209,8 @@ export function lastPlayOf(state: SeriesState): NextMatch | undefined {
  * `leave`: a live match's only way on while it waits (Leave and forfeit, ADR 0053). `decline`:
  * No thanks to a friend's rematch (ADR 0055).
  */
-export type SeriesAction = 'pick' | 'play' | 'rematch' | 'decline' | 'newSeries' | 'home' | 'leave';
+export type SeriesAction =
+  'pick' | 'play' | 'rematch' | 'decline' | 'newSeries' | 'home' | 'leave' | 'watchAgain';
 
 /** Where the series is: a round being fought, the screen between rounds, or the result. */
 export type SeriesPhase = 'playing' | 'between' | 'finished';
@@ -254,6 +255,11 @@ export interface SeriesMoment {
      * `answer`, the other player asked, so Rematch or No thanks.
      */
     readonly rematch?: 'offer' | 'answer' | undefined;
+    /**
+     * A finished series this page can fight again (its ruleset replays here, ADR 0088): Watch again
+     * at the result, from round 1, when no rematch is on offer.
+     */
+    readonly watchAgain?: boolean;
     /** A live Reveal's coin toss on the server's clock (ADR 0061), from the start to the first pick. */
     readonly toss?: TossTimes;
     /** The server's clock as this page knows it (live). */
@@ -279,12 +285,13 @@ export interface SeriesScreen {
 /**
  * The ways on at the end (ADR 0081): against the bot Rematch, Change balls (`newSeries`, its
  * lineup) and Home; online Home (`newSeries`), and a friend's rematch, which already opens new
- * lineups (ADR 0080).
+ * lineups (ADR 0080), else Watch again where it replays here (ADR 0088).
  */
 function endActionsOf(online: SeriesMoment['online']): readonly SeriesAction[] {
   if (online === undefined) return ['rematch', 'newSeries', 'home'];
   if (online.rematch === 'answer') return ['rematch', 'decline'];
-  return online.rematch === 'offer' ? ['rematch', 'newSeries'] : ['newSeries'];
+  if (online.rematch === 'offer') return ['rematch', 'newSeries'];
+  return online.watchAgain === true ? ['watchAgain', 'newSeries'] : ['newSeries'];
 }
 
 /**

@@ -1,0 +1,107 @@
+/*
+ * An account's record on Profile (profile-record.ts, ADR 0088): the stats card's three facts side
+ * by side (the number big, its word under it), then Recent matches as the Friends tab's rows. The
+ * facts keep their size while loading: placeholder blocks, shown only after SKELETON_AFTER_MS.
+ */
+.profile-record {
+  display: grid;
+  gap: var(--space-group);
+  margin-top: var(--space-group);
+}
+
+.profile-facts {
+  display: grid;
+  /* The two numbers as wide as they need; the favourite ball's name has the rest. */
+  grid-template-columns: auto auto minmax(0, 1fr);
+  column-gap: var(--space-group);
+  gap: var(--space-gap);
+  margin: 0;
+}
+
+.profile-fact {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  min-height: 3.5rem;
+}
+
+.profile-fact-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-size-display);
+  font-weight: 800;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-fact-value > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The favourite: its ball and name, at the words' size beside the big numbers. */
+.profile-fact-value:has(> .profile-fact-icon) {
+  font-size: var(--font-size-lead);
+}
+
+.profile-fact-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+
+.profile-fact-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+/* Placeholders keep the facts' place; seen only for a slow read. */
+.profile-facts[data-loading]:not([data-shown]) .skeleton-block {
+  visibility: hidden;
+}
+
+.profile-facts .skeleton-block {
+  width: 4rem;
+  height: 1.6rem;
+}
+
+.profile-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* A finished match's row: the name, Won or Lost and the score under it, the date and how at the end. */
+.profile-match .friends-open {
+  gap: var(--space-gap);
+}
+
+.profile-match-result {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-match-result[data-won='true'] {
+  color: var(--color-won);
+}
+
+.profile-match .friends-open::after {
+  margin-inline-start: 0;
+}
+
+.profile-match-when {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}

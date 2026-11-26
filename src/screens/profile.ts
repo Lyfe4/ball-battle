@@ -1,12 +1,16 @@
 // Profile (ADR 0081, 0087, accounts builds): who the player is and the account's own
 // actions, which it shares with the sign-in screen (account-step.ts): the username, Log out and
 // Delete account; for a guest, what signing in unlocks, Sign in and Forget me. It reads `/me` once
-// when it opens (who-source.ts, shared with the avatar) and nothing else.
+// when it opens (who-source.ts, shared with the avatar), and for an account its record
+// (`/me/record`, ADR 0088: the stats card and Recent matches, profile-record.ts).
 import { callApi, failureKindOf, type ApiFailure, type Fetch } from '../app/api.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { WhoSource } from '../app/who-source.ts';
 import { element } from '../ui/dom.ts';
+import type { RecordResponse } from '../api/record.ts';
+import type { DefinitionLookup } from '../sim/types.ts';
 import { createNotice, type NoticeContent } from '../ui/notice.ts';
+import { createProfileRecord } from '../ui/online/profile-record.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { askToDelete } from './account-delete.ts';
 import { createAccountStep } from './account-step.ts';
@@ -26,6 +30,10 @@ export interface ProfileHost {
   /** Log out, and Delete account or Forget me: undefined when done (the page starts afresh). */
   readonly logOut: () => Promise<string | undefined>;
   readonly forget: () => Promise<string | undefined>;
+  /** The balls, for the favourite's picture and name. */
+  readonly lookup: DefinitionLookup;
+  /** Opens a finished online series' own screen (ADR 0088), once it is read. */
+  readonly openSeries: (id: string) => Promise<unknown>;
   /** The page's fetch; tests give their own. */
   readonly send?: Fetch;
 }
@@ -70,6 +78,12 @@ export function createProfile(
   createSkeleton(roots.loading, 'card', host.back);
   const api = <T>(method: 'GET' | 'PUT', path: string, body?: unknown) =>
     callApi<T>(method, path, body, {}, host.send);
+  // The record (ADR 0088): its own part of the card, kept across redraws, read when shown.
+  const record = createProfileRecord({
+    lookup: host.lookup,
+    load: () => api<RecordResponse>('GET', 'me/record'),
+    open: host.openSeries,
+  });
 
   let visible = false;
   function show(content: NoticeContent): void {
@@ -99,7 +113,7 @@ export function createProfile(
     logOut: host.logOut,
     forget: host.forget,
     card: (username, change, actions) => ({
-      part: identityBlock(username),
+      part: withRecord(identityBlock(username)),
       ...accountProfile({
         username,
         change,
@@ -114,14 +128,24 @@ export function createProfile(
     }),
   });
 
+  /** Who you are, then your record under it (ADR 0088). */
+  function withRecord(identity: HTMLElement): HTMLElement {
+    const part = element('div', 'profile-part');
+    part.append(identity, record.element);
+    return part;
+  }
+
   async function open(): Promise<void> {
     // An account this visit already knows shows at once, then refreshes in place (ADR 0087).
     const known = host.who.known();
-    if (known?.kind === 'account') account.show(known.username);
-    else loading();
+    if (known?.kind === 'account') {
+      account.show(known.username);
+      void record.refresh();
+    } else loading();
     const who = await host.who.ask();
     switch (who.kind) {
       case 'account':
+        if (known?.kind !== 'account') void record.refresh();
         // The account already drawn: an answer that changes nothing draws nothing, so a card the
         // player opened meanwhile (Delete's confirm, Change username) stays as it is.
         if (known?.kind === 'account' && known.username === who.username) return;

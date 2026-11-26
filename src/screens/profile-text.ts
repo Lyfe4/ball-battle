@@ -1,7 +1,7 @@
 // What Profile says (ADR 0081, 0087): who the player is, then the account's own actions as rows and,
-// apart, the danger zone; for a guest, what signing in unlocks. The stats card is gone until it has
-// one real number (ADR 0087). Pure, so every state is tested without a DOM; the legal links are a
-// part the screen draws itself.
+// apart, the danger zone; for a guest, what signing in unlocks. The record (the stats card and
+// Recent matches, ADR 0088) is a part the screen draws itself (profile-record.ts), as are the legal
+// links. Pure, so every state is tested without a DOM.
 import type { NoticeButton, NoticeContent } from '../ui/notice-content.ts';
 
 /** What signing in unlocks, said on a guest's Profile and Friends tab. */
@@ -34,7 +34,7 @@ export function identityLines(username: string | null): readonly string[] {
  */
 export function accountProfile(profile: AccountProfile): NoticeContent {
   // Rows (ADR 0087): changing the name is not the screen's primary, Log out a row; Delete account
-  // apart in the danger zone. The stats card is gone until it has one real number.
+  // apart in the danger zone. The stats card is the record's (ADR 0088), drawn by the screen.
   const more: NoticeButton[] = [
     {
       text: profile.username === null ? 'Choose a username' : 'Change username',
