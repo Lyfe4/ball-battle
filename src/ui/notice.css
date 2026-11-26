@@ -305,9 +305,23 @@
   font-weight: 700;
 }
 
-/* Privacy · Terms at the column's left edge, under the card they belong to, never centred. */
+/*
+ * Privacy · Terms at the column's left edge, under the card they belong to, never centred: quiet, in
+ * a row that wraps, each a full tap target.
+ */
 .profile-legal {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
+  column-gap: var(--space-gutter);
+  margin: 0;
+  font-size: var(--font-size-small);
+}
+
+.profile-legal .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
 }
 
 .notice[data-sticker] .notice-after {

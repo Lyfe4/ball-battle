@@ -198,3 +198,28 @@
 .settings-switch[data-pressed] {
   filter: brightness(1.08);
 }
+
+/*
+ * About, the menu's last line (ADR 0069): "About", then Privacy and Terms, quiet, as a heading
+ * beside its rows. The links open the pages in a tab of their own.
+ */
+.settings-about {
+  display: flex;
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  align-items: center;
+  column-gap: var(--space-gap);
+  margin: 0;
+  font-size: var(--font-size-small);
+}
+
+.settings-about-label {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.settings-about .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+}

@@ -223,22 +223,6 @@
   list-style: none;
 }
 
-/* Privacy and Terms: quiet, in a row that wraps, each a full tap target. */
-.home-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  column-gap: var(--space-gutter);
-  margin: 0;
-  font-size: var(--font-size-small);
-}
-
-.home-footer .text-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap-target);
-}
-
 /*
  * Beside the court: up to the setup width, but never more than the room beside it
  * (`--beside-room`, layout.css), so a 667 x 320 phone's demo court keeps full height.

@@ -89,3 +89,20 @@ a change to either fails until both agree. The 16+ card says the same in short.
 - Turning on Sentry (`SENTRY_DSN`), adding accounts, or changing a retention constant changes the
   policy in the same pull request, with a new date.
 - The pages go live with the next Publish, whether or not vs Friend is switched on.
+
+## Addendum (2026-11-26): About in settings, not on Play
+
+The owner's staging check: Privacy · Terms at the foot of the Play tab were the last thing on it,
+under Free play, on the screen meant for playing. They move to an **About** line, the last line
+of the settings menu ("About Privacy › Terms ›"), so they are one tap from every screen, the
+gear being on every screen (ADR 0040, 0087). Each opens its page in a tab of its own, as the 16+
+question's links do, so nothing is left behind (a fight, a live match's clock). Profile keeps them
+at the end of its column. The Play tab ends with Free play.
+
+- Nothing here or in `scripts/legal-pages.test.ts` requires the links on home: the test checks the
+  pages, their links to each other and to the game, and the 16+ question's links (`LEGAL_LINKS`),
+  which are unchanged. "Quietly from home" above was where they sat, not a requirement; this
+  replaces it with settings.
+- The menu still fits whole above its gear on a phone mid-fight (390 × 664): About sits in the menu's
+  foot under Show all tips again with no gap of its own, its links' 44 px rows being the room
+  (`settings-live.safari.browser.test.ts`); `settings-one-look` checks it is the same on every screen.
