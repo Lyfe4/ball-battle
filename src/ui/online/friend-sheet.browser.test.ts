@@ -1,7 +1,8 @@
 // A friend's sheet (friend-sheet.ts, ADR 0085, 0086): Challenge · live always, unavailable with one
 // line on why when the friend can't take it (ADR 0086 as changed 2026-11-26), Play by turns where the
 // build plays by turns (any time: the other plays their turn later), and the status of a friend
-// waiting on you in their lobby said as "Waiting for you".
+// waiting on you in their lobby said as "Waiting for you"; the head-to-head under a friend's name
+// (ADR 0088).
 import { afterEach, describe, expect, it } from 'vitest';
 import '../../style.css';
 import type { FriendEntry } from '../../api/friends.ts';
@@ -112,5 +113,31 @@ describe('a friend’s sheet', () => {
     expect(sheet.element.querySelector('#friend-sheet-why')?.textContent).toBe(
       'Robin is waiting for you · Accept in Waiting for you',
     );
+  });
+});
+
+describe('a friend’s head-to-head (ADR 0088)', () => {
+  const line = () => document.querySelector('dialog .friend-sheet-record');
+
+  it('shows "You 3 – 2 Robin" under the name, in words for a screen reader', () => {
+    const { sheet } = sheetWith({});
+    sheet.open({ ...robin('online'), record: { wins: 3, losses: 2 } }, 'friend');
+    const record = line();
+    expect(record?.querySelector('[aria-hidden="true"]')?.textContent).toBe('You 3 – 2 Robin');
+    expect(record?.querySelector('.visually-hidden')?.textContent).toBe(
+      'Your record with Robin: you won 3, Robin won 2',
+    );
+    // Under the status line, in the head beside the disc.
+    expect(record?.previousElementSibling?.classList.contains('friend-sheet-who')).toBe(true);
+    expect(record instanceof HTMLElement && record.getClientRects().length > 0).toBe(true);
+  });
+
+  it('shows nothing where they never played, nor for a request', () => {
+    const { sheet } = sheetWith({});
+    sheet.open(robin('online'), 'friend');
+    expect(line()).toBeNull();
+    sheet.element.close();
+    sheet.open({ id: 'r-1', name: 'Sam', record: { wins: 1, losses: 0 } }, 'incoming');
+    expect(line()).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-// An account's record (ADR 0088), against the local Supabase: online series counted once finished,
+// An account's record and its head-to-head with each friend (ADR 0088), against the local Supabase: online series counted once finished,
 // a forfeit a loss for the side that left, void and open series never; the favourite ball and its
 // tie; only the reader's own series; guests and pages without a session get nothing. Series are
 // made by the service and ended in SQL, with the columns the series service writes.
@@ -6,9 +6,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
 import { RECENT_SERIES, type RecordResponse } from '../../api/record.ts';
 import type { Side } from '../../sim/index.ts';
+import type { FriendsResponse } from '../../api/friends.ts';
 import { TestBrowser } from '../test/client.ts';
+import { befriend, newAccount } from '../test/friends-support.ts';
 import { newPlayer, newSeries, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
+import { friends } from './friends.ts';
 import { meRecord } from './record.ts';
 
 const deps = testDeps();
@@ -21,17 +24,8 @@ afterAll(async () => {
   await admin.end();
 });
 
-let names = 0;
 /** A new account with a username of its own. */
-async function account(): Promise<Player & { readonly username: string }> {
-  const player = await newPlayer(deps);
-  names += 1;
-  const username = `r${String(Date.now() % 1e7)}x${String(names)}`.slice(0, 15);
-  await admin`
-    update game.profiles set account_at = now(), username = ${username}
-    where user_id = ${player.userId}`;
-  return { ...player, username };
-}
+const account = () => newAccount(deps, admin);
 
 const call = (player: Player) => player.browser.call(meRecord, 'GET', '/api/v1/me/record');
 
@@ -184,5 +178,42 @@ describe('an account’s record (ADR 0088)', () => {
     const stranger = new TestBrowser(deps, '10.8.0.1');
     const none = await stranger.call(meRecord, 'GET', '/api/v1/me/record');
     expect([none.status, errorOf(none.body)?.code]).toStrictEqual([401, 'unauthenticated']);
+  });
+
+  it('gives each friend in the Friends list the head-to-head, from the same counted series', async () => {
+    const me = await account();
+    const jo = await account();
+    const sam = await account();
+    const kim = await account();
+    await befriend(admin, me, jo);
+    await befriend(admin, sam, me);
+    // Kim is no friend: no row at all, nothing of a stranger.
+    await played(me, kim, { status: 'finished', winner: 'a' });
+    await played(me, jo, { status: 'finished', winner: 'a' });
+    await played(jo, me, { status: 'finished', winner: 'b' });
+    await played(me, jo, { status: 'forfeit', winner: 'b' });
+    await played(jo, me, { status: 'forfeit', winner: null });
+    await played(me, jo, { status: 'void', winner: null });
+    await newSeries(deps, { a: me, b: jo }, 'reveal');
+    const list = async (player: Player) => {
+      const answer = await player.browser.call(friends, 'GET', '/api/v1/friends');
+      expect(answer.status).toBe(200);
+      return (answer.body as FriendsResponse).friends;
+    };
+    const mine = await list(me);
+    expect(mine.find((row) => row.name === jo.username)?.record).toStrictEqual({
+      wins: 2,
+      losses: 1,
+    });
+    // Sam and I never finished a series: no record, not "0 – 0".
+    const samRow = mine.find((row) => row.name === sam.username);
+    expect(samRow).toBeDefined();
+    expect(samRow?.record).toBeUndefined();
+    expect(mine.some((row) => row.name === kim.username)).toBe(false);
+    // Jo's side of it.
+    expect((await list(jo)).find((row) => row.name === me.username)?.record).toStrictEqual({
+      wins: 1,
+      losses: 2,
+    });
   });
 });

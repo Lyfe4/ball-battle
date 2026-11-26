@@ -17,6 +17,11 @@ export interface FriendEntry {
   readonly name: string;
   /** An accepted friend's status; absent for a request. */
   readonly status?: FriendStatus;
+  /**
+   * In the Friends list only (ADR 0088): the series this account won and lost against this friend,
+   * counted as Profile's record counts them; absent when they never finished one together.
+   */
+  readonly record?: { readonly wins: number; readonly losses: number };
 }
 
 /** A challenge a friend sent this account: live, waiting in their lobby (PR (d)); or by turns. */
