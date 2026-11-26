@@ -1,0 +1,32 @@
+# Supabase's Docker images from the Actions cache, so a run pulls them from public.ecr.aws only when
+# the CLI's version or the config changed. Pulls by every job of every run met the registry's rate
+# limit: the database job and the online shards then failed (or the CLI's retry collided with its
+# own half-started container). Restore only: the database job saves on a miss (ci.yml), once per
+# key. On a miss nothing is loaded and `supabase start` pulls as before.
+name: Supabase images
+description: Load the local stack's Docker images from the cache, if they are there.
+outputs:
+  key:
+    description: The cache key, for the job that saves on a miss.
+    value: ${{ steps.key.outputs.key }}
+  hit:
+    description: Whether the images came from the cache.
+    value: ${{ steps.restore.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    # The CLI's version pins every image it starts; the config decides which services run.
+    - id: key
+      shell: bash
+      run: |
+        version=$(pnpm exec supabase --version)
+        echo "key=supabase-images-${{ runner.os }}-${version}-${{ hashFiles('supabase/config.toml', '.github/actions/supabase-images/action.yml') }}" >> "$GITHUB_OUTPUT"
+    - id: restore
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/supabase-images.tar.zst
+        key: ${{ steps.key.outputs.key }}
+    # About 20 s for the whole set, against 45 s of pulls that can be refused.
+    - if: steps.restore.outputs.cache-hit == 'true'
+      shell: bash
+      run: zstd -dc ~/supabase-images.tar.zst | docker load
