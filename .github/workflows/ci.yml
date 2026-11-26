@@ -159,6 +159,17 @@ jobs:
           exit 1
       # Two browser contexts (two guests) send, accept and play a challenge to its end.
       - run: pnpm test:online
+        env:
+          ONLINE_TRACE: '1'
+      # TEMPORARY (#219): sign-in's traces.
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: online-traces
+          path: |
+            traces/
+            netlify-dev.log
+          if-no-files-found: warn
 
   browsers:
     name: Browsers in ${{ matrix.name }} (${{ matrix.part }})
