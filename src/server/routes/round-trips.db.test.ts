@@ -12,6 +12,7 @@ import type { Deps } from '../http.ts';
 import { TestBrowser } from '../test/client.ts';
 import { leftOf, newPlayer, newSeries, read, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
+import { meRecord } from './record.ts';
 import { seriesOne } from './series.ts';
 
 const ONE_WAY_MS = 100;
@@ -115,5 +116,16 @@ describe('a move across an ocean', () => {
     const picking = await measure(pick);
     expect(picking.queries).toBe(2);
     expect(picking.ms).toBeLessThan(3 * ROUND_TRIP_MS);
+  });
+
+  it('reads an account’s record in one round trip (ADR 0088)', async () => {
+    const player = await newPlayer(deps);
+    await admin`update game.profiles set account_at = now() where user_id = ${player.userId}`;
+    const browser = farOf(player);
+    const call = () => browser.call(meRecord, 'GET', '/api/v1/me/record');
+    expect((await call()).status).toBe(200);
+    const reading = await measure(call);
+    expect(reading.queries).toBe(1);
+    expect(reading.ms).toBeLessThan(2 * ROUND_TRIP_MS);
   });
 });
