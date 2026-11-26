@@ -26,23 +26,13 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // TEMPORARY (#219): each phone's trace, uploaded by CI.
-  let n = 0;
-  for (const context of contexts) {
-    if (process.env['ONLINE_TRACE'] === '1') {
-      await context.tracing.stop({ path: `traces/sign-in-${String(n++)}.zip` });
-    }
-    await context.close();
-  }
+  for (const context of contexts) await context.close();
   await browser.close();
 });
 
 async function phone(): Promise<Page> {
   const context = await browser.newContext({ viewport: PHONE });
   contexts.push(context);
-  if (process.env['ONLINE_TRACE'] === '1') {
-    await context.tracing.start({ screenshots: true, snapshots: true });
-  }
   await allowLocalRealtime(context, BASE);
   return context.newPage();
 }
