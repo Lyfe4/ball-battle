@@ -12,7 +12,7 @@ import type { Deps } from '../http.ts';
 import { TestBrowser } from '../test/client.ts';
 import { leftOf, newPlayer, newSeries, read, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
-import { meRecord } from './record.ts';
+import { meMatches, meRecord } from './record.ts';
 import { seriesOne } from './series.ts';
 
 const ONE_WAY_MS = 100;
@@ -118,7 +118,7 @@ describe('a move across an ocean', () => {
     expect(picking.ms).toBeLessThan(3 * ROUND_TRIP_MS);
   });
 
-  it('reads an account’s record in one round trip (ADR 0088)', async () => {
+  it('reads an account’s record and a page of matches in one round trip each (ADR 0088, 0089)', async () => {
     const player = await newPlayer(deps);
     await admin`update game.profiles set account_at = now() where user_id = ${player.userId}`;
     const browser = farOf(player);
@@ -127,5 +127,13 @@ describe('a move across an ocean', () => {
     const reading = await measure(call);
     expect(reading.queries).toBe(1);
     expect(reading.ms).toBeLessThan(2 * ROUND_TRIP_MS);
+    // All matches' next page (ADR 0089): one round trip as well.
+    const cursor = '2026-11-27T10:00:00.000000Z_00000000-0000-0000-0000-000000000000';
+    const page = () =>
+      browser.call(meMatches, 'GET', `/api/v1/me/matches?after=${encodeURIComponent(cursor)}`);
+    expect((await page()).status).toBe(200);
+    const paging = await measure(page);
+    expect(paging.queries).toBe(1);
+    expect(paging.ms).toBeLessThan(2 * ROUND_TRIP_MS);
   });
 });

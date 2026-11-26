@@ -8,27 +8,14 @@ import type { RecentSeries, RecordResponse } from '../../api/record.ts';
 import type { ApiResult } from '../../app/api.ts';
 import { visitCache } from '../../app/visit-cache.ts';
 import { BALL_LOOKUP } from '../../sim/balls/index.ts';
+import { recordFixture, seriesFixture } from '../../api/record-support.ts';
 import { createProfileRecord } from './profile-record.ts';
 
-const row = (id: string, over: Partial<RecentSeries> = {}): RecentSeries => ({
-  id,
-  opponent: 'Jo',
-  live: true,
-  bestOf: 3,
-  format: 'reveal',
-  won: true,
-  forfeit: false,
-  score: { you: 2, them: 1 },
-  finishedAt: new Date().toISOString(),
-  ruleset: 23,
-  ...over,
-});
-const RECORD: RecordResponse = {
-  wins: 3,
-  played: 5,
-  favourite: 'vampire',
+const row = (id: string, over: Partial<RecentSeries> = {}): RecentSeries =>
+  seriesFixture({ id, ...over });
+const RECORD: RecordResponse = recordFixture({
   recent: [row('s-1'), row('s-2', { won: false, live: false, opponent: null })],
-};
+});
 const ok = (body: RecordResponse): ApiResult<RecordResponse | undefined> => ({
   ok: true,
   status: 200,
@@ -90,7 +77,7 @@ describe('an account’s record on Profile (ADR 0088)', () => {
   it('says what will show before the first online match, with no Recent matches', async () => {
     const { record, answers } = mount();
     const read = record.refresh();
-    answers[0]?.(ok({ wins: 0, played: 0, favourite: null, recent: [] }));
+    answers[0]?.(ok(recordFixture({ wins: 0, played: 0, favourite: null })));
     await read;
     expect(texts('.profile-empty')).toHaveLength(1);
     expect(texts('.profile-fact-value')).toStrictEqual([]);

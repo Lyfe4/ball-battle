@@ -1,26 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { RecentSeries } from '../api/record.ts';
+import { recordFixture, seriesFixture } from '../api/record-support.ts';
 import { recentRow, shortDate, statFacts } from './record-text.ts';
 
 const NOW = new Date('2026-11-27T09:00:00Z');
-const series = (over: Partial<RecentSeries> = {}): RecentSeries => ({
-  id: 's-1',
-  opponent: 'Jo',
-  live: true,
-  bestOf: 3,
-  format: 'reveal',
-  won: true,
-  forfeit: false,
-  score: { you: 2, them: 1 },
-  finishedAt: '2026-11-26T12:00:00Z',
-  ruleset: 23,
-  ...over,
-});
+const series = (over: Partial<RecentSeries> = {}): RecentSeries =>
+  seriesFixture({ finishedAt: '2026-11-26T12:00:00Z', ...over });
 
 describe('the record’s words (ADR 0088)', () => {
   it('says wins, played and the favourite ball by name', () => {
     const names = (id: string) => ({ vampire: 'Vampire' })[id];
-    const record = { wins: 1, played: 4, favourite: 'vampire', recent: [] };
+    const record = recordFixture({ wins: 1, played: 4, favourite: 'vampire' });
     expect(statFacts(record, names)).toStrictEqual([
       { value: '1', label: 'Win' },
       { value: '4', label: 'Played' },

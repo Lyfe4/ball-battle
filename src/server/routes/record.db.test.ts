@@ -4,11 +4,11 @@
 // made by the service and ended in SQL, with the columns the series service writes.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { errorOf } from '../../api/errors.ts';
-import { RECENT_SERIES, type RecordResponse } from '../../api/record.ts';
-import type { Side } from '../../sim/index.ts';
+import { RECENT_SERIES } from '../../api/record.ts';
 import type { FriendsResponse } from '../../api/friends.ts';
 import { TestBrowser } from '../test/client.ts';
 import { befriend, newAccount } from '../test/friends-support.ts';
+import { recordSupport } from '../test/record-support.ts';
 import { newPlayer, newSeries, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
 import { friends } from './friends.ts';
@@ -26,56 +26,28 @@ afterAll(async () => {
 
 /** A new account with a username of its own. */
 const account = () => newAccount(deps, admin);
-
+const { recordOf, played } = recordSupport(deps, admin);
 const call = (player: Player) => player.browser.call(meRecord, 'GET', '/api/v1/me/record');
-
-const recordOf = async (player: Player): Promise<RecordResponse> => {
-  const answer = await call(player);
-  expect(answer.status, JSON.stringify(answer.body)).toBe(200);
-  return answer.body as RecordResponse;
-};
-
-interface Ending {
-  readonly status: 'finished' | 'forfeit' | 'void';
-  /** Null: a forfeit both sides missed, or a void series. */
-  readonly winner: Side | null;
-  /** The rounds each side won. */
-  readonly rounds?: { readonly a: number; readonly b: number };
-  /** Minutes ago it finished, so a test can order them. */
-  readonly ago?: number;
-  readonly live?: boolean;
-}
-
-/** A Reveal series between `a` and `b`, ended as `ending` says. */
-async function played(
-  a: Player,
-  b: Player,
-  ending: Ending,
-  lineups?: readonly [string[], string[]],
-): Promise<string> {
-  const id = await newSeries(deps, { a, b }, 'reveal');
-  const { a: wonA, b: wonB } = ending.rounds ?? { a: 0, b: 0 };
-  const winners: Side[] = [...Array<Side>(wonA).fill('a'), ...Array<Side>(wonB).fill('b')];
-  for (const [round, winner] of winners.entries()) {
-    await admin`
-      insert into game.rounds (series_id, round, a, b, seeds, outcomes, winner, sudden_death)
-      values (${id}, ${round}, 'archer', 'brawler', ${[1]}, ${[winner]}, ${winner}, false)`;
-  }
-  await admin`
-    update game.series set status = ${ending.status}, winner = ${ending.winner}, turn = null,
-      turn_deadline = null, live = ${ending.live ?? false},
-      finished_at = now() - make_interval(mins => ${ending.ago ?? 0}),
-      lineup_a = coalesce(${lineups?.[0] ?? null}::text[], lineup_a),
-      lineup_b = coalesce(${lineups?.[1] ?? null}::text[], lineup_b)
-    where id = ${id}`;
-  return id;
-}
 
 describe('an account’s record (ADR 0088)', () => {
   it('counts finished series and forfeits, never open or void ones, the latest first', async () => {
     const me = await account();
     const jo = await account();
-    expect(await recordOf(me)).toStrictEqual({ wins: 0, played: 0, favourite: null, recent: [] });
+    expect(await recordOf(me)).toStrictEqual({
+      wins: 0,
+      played: 0,
+      favourite: null,
+      stats: {
+        live: { wins: 0, played: 0 },
+        turns: { wins: 0, played: 0 },
+        bestOf3: { wins: 0, played: 0 },
+        bestOf5: { wins: 0, played: 0 },
+        bestStreak: 0,
+        favouriteIn: 0,
+      },
+      recent: [],
+      next: null,
+    });
 
     const won = await played(me, jo, {
       status: 'finished',
@@ -140,6 +112,7 @@ describe('an account’s record (ADR 0088)', () => {
     const mine = await recordOf(me);
     expect(mine.played).toBe(RECENT_SERIES + 1);
     expect(mine.recent).toHaveLength(RECENT_SERIES);
+    expect(mine.next).not.toBeNull();
     expect(new Set(mine.recent.map((row) => row.opponent))).toStrictEqual(new Set([sam.username]));
   });
 
