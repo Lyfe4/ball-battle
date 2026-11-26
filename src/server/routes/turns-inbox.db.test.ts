@@ -14,9 +14,12 @@ import { dueSides, LINEUP_3, leftOf, pick, read, type Player } from '../test/ser
 import { adminSql, testDeps } from '../test/support.ts';
 import { challengeOne, challenges } from './challenges.ts';
 import { meInbox } from './me.ts';
+import { seriesOne } from './series.ts';
 
 const off = testDeps();
 const on = testDeps({ BALLBATTLE_TURNS: '1' });
+/** A second connection, for two requests at once. */
+const other = testDeps({ BALLBATTLE_TURNS: '1' });
 const admin = adminSql();
 beforeAll(async () => {
   await admin`delete from game.rate_limits`;
@@ -24,6 +27,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await off.sql.end();
   await on.sql.end();
+  await other.sql.end();
   await admin.end();
 });
 
@@ -168,5 +172,48 @@ describe('your games and endings (ADR 0086)', () => {
     const [row] = await admin<{ n: number }[]>`
       select count(*)::int as n from game.series_seen where series_id = ${seriesId}`;
     expect(row?.n).toBe(1);
+  });
+});
+
+describe('the seen mark (ADR 0086)', () => {
+  const marks = async (seriesId: string) =>
+    (
+      await admin<{ player: string; seen_at: Date }[]>`
+      select player, seen_at from game.series_seen where series_id = ${seriesId}`
+    ).map((row) => ({ ...row }));
+
+  it('is never written while the series is open, nor by anyone not playing in it', async () => {
+    const { me, friend, id } = await friends(on);
+    const accepted = await acceptTurns(friend, tokenOf(await sendTurns(me, id)));
+    const seriesId = (accepted.body as Accepted).seriesId ?? '';
+    await read(me, seriesId);
+    expect(await marks(seriesId)).toStrictEqual([]);
+    await admin`
+      update game.series set turn_deadline = now() - interval '1 minute' where id = ${seriesId}`;
+    // Ended (settled on the inbox's read), then read by someone else: refused, and nothing written.
+    await inbox(me);
+    const stranger = await newAccount(on, admin);
+    const answer = await stranger.browser.call(seriesOne, 'GET', `/api/v1/series/${seriesId}`);
+    expect(code(answer)).toStrictEqual([404, 'not_found']);
+    expect(await marks(seriesId)).toStrictEqual([]);
+  });
+
+  it('is written once however often its player reads the ended series', async () => {
+    const { me, friend, id } = await friends(on);
+    const accepted = await acceptTurns(friend, tokenOf(await sendTurns(me, id)));
+    const seriesId = (accepted.body as Accepted).seriesId ?? '';
+    await admin`
+      update game.series set turn_deadline = now() - interval '1 minute' where id = ${seriesId}`;
+    await read(me, seriesId);
+    const [first] = await marks(seriesId);
+    // Again, and twice at once (two tabs): each read answers, and the first mark stands.
+    await read(me, seriesId);
+    const twice = await Promise.all([
+      me.browser.call(seriesOne, 'GET', `/api/v1/series/${seriesId}`),
+      me.browser.elsewhere(other).call(seriesOne, 'GET', `/api/v1/series/${seriesId}`),
+    ]);
+    expect(twice.map((answer) => answer.status)).toStrictEqual([200, 200]);
+    expect(await marks(seriesId)).toStrictEqual([first]);
+    expect(first?.player).toBe(me.userId);
   });
 });
