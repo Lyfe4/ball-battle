@@ -135,6 +135,19 @@ export function createIncomingBanner(
         if (folding === undefined) hide();
         return;
       }
+      // One banner at a time, in one place: news (OK alone) yields to a banner that asks for an
+      // answer, and waits out while one shows ("You left" under a rematch ask, ADR 0086).
+      const others = [...document.querySelectorAll<HTMLElement>('.incoming-banner')].filter(
+        (one) => one !== root && !one.hidden,
+      );
+      const news = incoming.answers === 'ok';
+      if (news && others.some((one) => !one.hasAttribute('data-news'))) {
+        if (folding === undefined) hide();
+        return;
+      }
+      if (!news)
+        for (const one of others.filter((it) => it.hasAttribute('data-news'))) one.hidden = true;
+      root.toggleAttribute('data-news', news);
       folding?.cancel();
       folding = undefined;
       root.removeAttribute('data-folding');
