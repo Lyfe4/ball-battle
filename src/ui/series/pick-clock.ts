@@ -23,7 +23,7 @@ const ICON_PX = 36;
 export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): PickClockCard {
   const root = element('section', 'pick-clock');
   const head = element('div', 'pick-clock-head');
-  const title = element('h3', 'pick-clock-title');
+  const title = element('h2', 'pick-clock-title');
   const titleText = element('span', 'pick-clock-title-text');
   const dots = element('span', 'pick-clock-dots');
   dots.setAttribute('aria-hidden', 'true');

@@ -157,6 +157,12 @@ async function checkSheet(person: string, problems: string[]): Promise<void> {
 }
 
 /**
+ * The walk's own budget: every screen, sheet, the settings menu and every online state, about 10 s
+ * on an idle machine; Vitest's 5-15 s default ran out on a loaded one (2026-11-27).
+ */
+export const WALK_TIMEOUT_MS = 60_000;
+
+/**
  * Every frame screen and every person's sheet, signed in with friends; or, as a guest (`signedIn`
  * false), every frame screen as a guest sees it (sign-in, a guest's Friends and Profile). The page
  * loads once per file, so each is a file of its own.
