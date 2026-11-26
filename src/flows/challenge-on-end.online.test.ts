@@ -68,11 +68,16 @@ describe('a friend’s challenge on the end screen', () => {
         .locator('.pick-clock', { hasText: new RegExp(`^${sam} wants a rematch`) })
         .waitFor({ timeout: 10_000 });
       await panelOf(friend).getByRole('button', { name: 'No thanks' }).click();
+      // Sam's end screen says so (and Home never says it again, ADR 0086).
+      await panelOf(asker)
+        .getByText(new RegExp(`^${jo} said no to a rematch`))
+        .waitFor({ timeout: 10_000 });
 
       // Sam goes home, then challenges Jo again from Friends.
       await panelOf(asker).getByRole('button', { name: 'Home' }).click();
       await asker.waitForURL((url) => !url.search.includes('online='));
-      await asker.goto(`${BASE}/?view=friends`);
+      // The Friends tab, as a player taps it (a reload would forget what the end screen said).
+      await asker.locator('.tab-bar-tab[data-tab="friends"]').click();
       const again = friendsOf(asker)
         .locator('.friends-row', { hasText: jo })
         .getByRole('button', { name: `Challenge ${jo}` });
