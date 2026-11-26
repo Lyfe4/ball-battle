@@ -46,7 +46,7 @@ export interface ChallengeScreens {
   /**
    * Challenge a friend from the Friends section (ADR 0079 PR (d)): the vs Friend setup, and the
    * challenge sent goes to their inbox too. Kept until it is sent or the player
-   * leaves these screens. `turns` (Take turns in the friend's sheet, ADR 0085, 0086): by turns,
+   * leaves these screens. `turns` (Play by turns in the friend's sheet, ADR 0085, 0086): by turns,
    * straight to its lineup on the friend's rules as last chosen.
    */
   challengeFriend(friend: { readonly id: string; readonly name: string }, turns?: boolean): void;

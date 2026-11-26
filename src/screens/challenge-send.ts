@@ -38,7 +38,7 @@ export interface Sender {
   playFriend(setup: FriendSetup): Promise<void>;
   /**
    * The friend the next challenge is for (a friend row's Challenge), or none; `turns` when it is
-   * Take turns from their sheet (ADR 0085): the send screen goes straight on to the lineup.
+   * Play by turns from their sheet (ADR 0085): the send screen goes straight on to the lineup.
    */
   invite(friend: { readonly id: string; readonly name: string } | undefined, turns?: boolean): void;
   /** Whether the send screen goes straight on to the lineup by turns: true once, then false. */

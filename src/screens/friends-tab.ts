@@ -29,7 +29,7 @@ export interface FriendsTabHost {
   /** Sign in: its own screen. */
   readonly signIn: () => void;
   /**
-   * Challenge a friend: the send screen, for them; `turns` (Take turns in their sheet, where
+   * Challenge a friend: the send screen, for them; `turns` (Play by turns in their sheet, where
    * TURNS_BUILD, ADR 0085) goes by turns straight to its lineup.
    */
   readonly challenge: (friend: FriendEntry, turns?: boolean) => void;
@@ -103,7 +103,7 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
         challenge: (friend) => {
           host.challenge(friend);
         },
-        // Take turns only where the build plays by turns (ADR 0085).
+        // Play by turns only where the build plays by turns (ADR 0085).
         ...(TURNS_BUILD
           ? {
               takeTurns: (friend: FriendEntry) => {
