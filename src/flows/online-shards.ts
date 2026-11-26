@@ -1,0 +1,40 @@
+// Which CI shard runs each online flow (`*.online.test.ts`): CI's online job runs as three shards
+// in parallel, each with its own local Supabase and `netlify dev`, and a job with the old required
+// name passes only if all three do. Files are spread by measured time, not by count: each shard's
+// files add up to about the same. The seconds are each file's median over six green CI runs
+// (2026-11-26); re-balance when a shard runs much longer than the others.
+// `online-shards.test.ts` fails when a file is in no shard or in two, so a new flow always runs.
+// CI imports `shardFiles` (node strips the types) and passes that shard's files to `vitest run`.
+
+/** Each shard's files, by name in src/flows, with their measured seconds. */
+export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds: number])[])[] = [
+  [
+    ['live-match-blocked.online.test.ts', 307],
+    ['rematch.online.test.ts', 100],
+    ['rematch-anywhere.online.test.ts', 59],
+    ['live-sync.online.test.ts', 23],
+    ['rematch-yes-away.online.test.ts', 12],
+  ],
+  [
+    ['live-match.online.test.ts', 230],
+    ['lineups-together.online.test.ts', 158],
+    ['inbox-poke.online.test.ts', 94],
+    ['sign-in.online.test.ts', 18],
+  ],
+  [
+    ['slime-live.online.test.ts', 167],
+    ['friend-challenge.online.test.ts', 134],
+    ['friend-rematch.online.test.ts', 121],
+    ['coin-toss.online.test.ts', 36],
+    ['turns.online.test.ts', 24],
+    ['friends.online.test.ts', 12],
+    ['online-failures.online.test.ts', 5],
+  ],
+];
+
+/** The files of shard `n` (1-based), as paths `vitest run` takes. */
+export function shardFiles(n: number): string[] {
+  const shard = ONLINE_SHARDS[n - 1];
+  if (shard === undefined) throw new Error(`No online shard ${String(n)}`);
+  return shard.map(([file]) => `src/flows/${file}`);
+}

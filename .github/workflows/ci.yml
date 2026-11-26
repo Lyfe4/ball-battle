@@ -118,13 +118,20 @@ jobs:
       # access rules, sessions, the series machine and challenges.
       - run: pnpm test:db
 
-  online-flow:
-    name: A friend challenge in Chromium
+  # The online flows in three shards at once, each with its own local Supabase and `netlify dev`
+  # (the files of one shard still run one at a time, as before). The suite took ~24 min of tests
+  # in one job, the whole critical path of every run (2026-11-26). Which file runs where is
+  # src/flows/online-shards.ts, spread by measured time; its test fails on a file in no shard.
+  online-shard:
+    name: A friend challenge in Chromium (${{ matrix.shard }}/3)
     runs-on: ubuntu-24.04
-    # The whole online suite took about 16 min of tests (2026-11-23, 12 files of two-phone
-    # matches) plus about 2 min of setup; the Realtime poke (ADR 0082) runs most flows twice, by
-    # poke and with the socket blocked: room to grow before a run is cut off.
-    timeout-minutes: 45
+    strategy:
+      # Every shard reports, so one failure shows whether the others pass too.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    # A shard is about 8 min of tests plus 2 of setup: room to grow before a run is cut off.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -174,8 +181,35 @@ jobs:
           done
           cat netlify-dev.log
           exit 1
-      # Two browser contexts (two guests) send, accept and play a challenge to its end.
-      - run: pnpm test:online
+      # Two browser contexts (two guests) send, accept and play a challenge to its end: this
+      # shard's files of the online project.
+      - name: Run shard ${{ matrix.shard }} of the online flows
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          files=$(node --input-type=module -e "
+            const { shardFiles } = await import('./src/flows/online-shards.ts');
+            console.log(shardFiles(Number(process.env.SHARD)).join(' '));
+          ")
+          echo "Shard $SHARD: $files"
+          pnpm exec vitest run --project online $files
+
+  # The required check (the ruleset "main: CI must pass" names this job): it passes only when every
+  # shard passed. A shard that failed, was cancelled or was skipped fails it, and it runs even then
+  # (`always()`), so the required name always reports.
+  online-flow:
+    name: A friend challenge in Chromium
+    needs: online-shard
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every shard passed
+        env:
+          RESULT: ${{ needs.online-shard.result }}
+        run: |
+          echo "The online shards: $RESULT"
+          [ "$RESULT" = success ]
 
   browsers:
     name: Browsers in ${{ matrix.name }} (${{ matrix.part }})

@@ -84,7 +84,11 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   `test:slow` replays every frozen ruleset's results against its own bundle.
 
 CI runs format, lint, typecheck, unit tests and build in one job, `test:slow`, `balance:ci` and
-`test:db` (against a local Supabase) and `test:online` (against `netlify dev`) in their own, and the browser suite in two jobs per engine (phones, the rest): 11 jobs. All must pass.
+`test:db` (against a local Supabase) in their own, the online flows in three shards (each its own
+Supabase and `netlify dev`) joined by one job with the required name, and the browser suite in two
+jobs per engine (phones, the rest): 14 jobs, 11 required by name. All must pass. A new
+`*.online.test.ts` goes in the shard of `src/flows/online-shards.ts` that keeps the measured times
+even (its test fails on a file in no shard).
 
 ## Architecture rules
 
@@ -125,11 +129,18 @@ CI jobs and Netlify's deploy preview; Netlify's header, pages-changed and redire
 informational), merge it yourself with a merge commit (no squash) and delete the branch. Never
 merge a red pull request: fix it on the branch. GitHub enforces part of this: the ruleset "main:
 CI must pass" requires a pull request (no reviews), merge commits only, and every CI job that runs
-on a pull request (the 11 jobs by name, from GitHub Actions); so `gh pr merge --auto --merge
+on a pull request (11 names, from GitHub Actions; the online shards report through the one job
+with the old name, so they need no entry); so `gh pr merge --auto --merge
 --delete-branch` waits for them. Netlify's preview is not required by it: check it yourself. When
 a CI job is added or renamed, update the ruleset's list in the same pull request (repository
 Settings → Rules → Rulesets), or merges wait forever for a check that never reports. `release` is
 not covered, so Publish still moves it.
+
+A stack of pull requests (each branch on the one before, merged as one by merging the top with a
+merge commit): open every PR but the top as a draft. Only the top PR's CI decides the merge (drafts
+still run CI, so wait on the top one only). Every push to a branch restarts CI there and on each
+merge-up above it, cancelling the runs under way: fix a problem on the branch it belongs to, then
+merge it up through the stack once per round of fixes, not after each.
 
 Merging doesn't publish. Production is the `release` branch (Netlify's Free plan charges 15 of 300
 monthly credits per production deploy, ADR 0052): publish a batch of merges with the Publish
