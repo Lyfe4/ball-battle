@@ -162,8 +162,9 @@
  *   card in the aside, where an account's sits.
  * - Ranks (list): the three boards in the main column; the aside says what ranks are and offers the
  *   one thing to do until they open (the intro and Play a friend now).
- * - Profile (reading): who you are and your account's rows in the reading line; the danger zone in
- *   the aside, apart from them (the quality bar: destructive actions sit apart).
+ * - Profile (reading): who you are, Recent matches and your account's rows in the reading line;
+ *   the stats card in the aside (ADR 0088), the danger zone under it, apart from them (the quality
+ *   bar: destructive actions sit apart).
  * - Sign-in and the notices (reading) have no aside: everything on them is the task itself, and the
  *   sign-in's words are what its button agrees to, so they stay together in one reading line.
  */
@@ -268,9 +269,41 @@
   }
 
   body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .notice-danger {
-    grid-area: 2 / 2 / span 3;
-    margin-top: 0;
+    grid-area: 3 / 2 / span 3;
+    margin-top: var(--space-group);
     padding-top: 0;
     border-top: 0;
+  }
+
+  /*
+   * Profile's record (ADR 0088): the stats card (or its failure card) in the aside above the
+   * danger zone, Recent matches in the reading line under who you are. Their wrappers step aside
+   * so each is a cell of the card's grid.
+   */
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card
+    :is(.notice-body:has(> .profile-part), .profile-part, .profile-record) {
+    display: contents;
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card
+    .profile-identity,
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .profile-recent {
+    grid-column: 1;
+  }
+
+  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .profile-card .profile-recent {
+    margin-top: var(--space-group);
+  }
+
+  body[data-shell]:not([data-shell='fight'])
+    .stage:not([data-home])
+    .profile-card
+    .profile-record
+    > .friends-card {
+    grid-area: 2 / 2;
   }
 }

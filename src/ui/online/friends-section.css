@@ -422,6 +422,21 @@
   font-size: 1rem;
 }
 
+/* Their status line, then the head-to-head under it (ADR 0088). */
+.friend-sheet-words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.friend-sheet-record {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .friend-sheet-handle {
   font-weight: 700;
 }

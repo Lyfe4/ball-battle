@@ -26,13 +26,13 @@ export const SECRET_MARKS: readonly RegExp[] = [
 export const ONLINE_MARK = /\/api\/v1\/(?!me["'`])/;
 
 /**
- * What only accounts' code contains (ADR 0079): the sign-in routes, choosing a username and the
- * friends routes (a path under "friends/", or "friends" itself called with its method). An online
- * build without accounts (production with vs Friend on) holds none of it. The word "friends" alone
- * is the Friends tab's name (ADR 0081), which that build has.
+ * What only accounts' code contains (ADR 0079): the sign-in routes, choosing a username, the
+ * record (ADR 0088) and the friends routes (a path under "friends/", or "friends" itself called
+ * with its method). An online build without accounts (production with vs Friend on) holds none of
+ * it. The word "friends" alone is the Friends tab's name (ADR 0081), which that build has.
  */
 export const ACCOUNTS_MARK =
-  /\bauth\/(?:options|email|google|switch)\b|\bme\/(?:username|inbox)\b|["'`]friends\/|["'`](?:GET|POST|PUT|PATCH|DELETE)["'`]\s*,\s*["'`]friends["'`]/;
+  /\bauth\/(?:options|email|google|switch)\b|\bme\/(?:username|inbox|record)\b|["'`]friends\/|["'`](?:GET|POST|PUT|PATCH|DELETE)["'`]\s*,\s*["'`]friends["'`]/;
 
 /**
  * What only the Realtime poke's code contains (ADR 0082): its route, Realtime's socket path and
