@@ -36,6 +36,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
     phase: () => undefined,
     noticeShown: () => false,
     sides: () => undefined,
+    yourSide: () => undefined,
     setVisible: () => undefined,
     homeShown: () => undefined,
     // Home offers no friend without online play (PLAY_CHOICES): nothing to send.

@@ -110,9 +110,12 @@ jobs:
       # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
       # outgoing connections: one can be taken just before Docker binds it ("address already in use",
       # runs to 2026-11-26, and 45817543736 the day the reservation was taken out). Reserved, no
-      # outgoing connection gets one. A second cause remains: when public.ecr.aws rate-limits the
-      # pulls, the CLI's retry can collide with its own half-started container (rerun the job).
+      # outgoing connection gets one. The second cause, public.ecr.aws rate-limiting the pulls (the
+      # CLI's retry then collides with its own half-started container), is gone with the images
+      # cached: pulled only when the CLI or the config changes.
       - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
+      - id: images
+        uses: ./.github/actions/supabase-images
       # Postgres, Auth, Realtime, the gateway and the pooler (Supavisor) in Docker, with
       # supabase/migrations and supabase/seed.sql applied (ADR 0052, "Tests and CI"). The API
       # connects through the pooler, as on Netlify. Realtime makes `realtime.send`, which the
@@ -120,6 +123,15 @@ jobs:
       - run: >-
           pnpm exec supabase start
           -x studio,postgres-meta,imgproxy,logflare,vector,edge-runtime,storage-api
+      # On a miss, this job saves the images the stack runs (the shards use the same set), before
+      # the tests, so a failing test still leaves them cached. One job saves, once per key.
+      - if: steps.images.outputs.hit != 'true'
+        run: docker ps --format '{{.Image}}' | sort -u | xargs docker save | zstd -T0 -3 -o ~/supabase-images.tar.zst
+      - if: steps.images.outputs.hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/supabase-images.tar.zst
+          key: ${{ steps.images.outputs.key }}
       # The route handlers called with Request objects, against the real database: the schema's
       # access rules, sessions, the series machine and challenges.
       - run: pnpm test:db
@@ -156,9 +168,10 @@ jobs:
       # Supabase's fixed host ports (54320-54329, supabase/config.toml) sit inside Linux's range for
       # outgoing connections: one can be taken just before Docker binds it ("address already in use",
       # runs to 2026-11-26, and 45817543736 the day the reservation was taken out). Reserved, no
-      # outgoing connection gets one. A second cause remains: when public.ecr.aws rate-limits the
-      # pulls, the CLI's retry can collide with its own half-started container (rerun the job).
+      # outgoing connection gets one. Its images come from the cache the database job saves, so
+      # public.ecr.aws's rate limit no longer fails the start (supabase-images).
       - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
+      - uses: ./.github/actions/supabase-images
       - name: Start Supabase in the background
         run: |
           (

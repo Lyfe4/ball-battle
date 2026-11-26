@@ -119,3 +119,26 @@ ruleset bump, the golden results unchanged.
   rest.
 - Not verified here: how it sounds on a real phone speaker over a Best of 5. The board's busiest
   fights are there to judge it by ear.
+
+## Addendum (2026-11-27): the audit's top three
+
+From the sound audit (`proposals-sound/PROPOSAL.md`, findings 3.1 to 3.3):
+
+- **The knockout is always heard.** A gate rule may say `always` (`gate.ts`): it skips the cap of 4
+  per 120 ms but still counts toward it. The knockout and the end bell have it, so a busy last
+  moment (Quake against Boomerang at 2x) never ends the match in silence. "At most 4 per window"
+  now reads "at most 4, except a sound that must be heard".
+- **Every end has a sound.** A time-limit end has no knockout, and a draw no winner: `endBell`, a
+  shared cue on `matchEnded` when the reason is the time limit or the result a draw. Two soft sine
+  bell strikes, G5 then C6, each with a quiet octave, about 0.6 s: on the scale, under a second.
+  A knockout win keeps its pop alone. Silent where every fight sound is (the demo, a finished
+  match, a catch-up).
+- **A key moment's `tap` follows ADR 0070.** It goes through the menu gate (its own `MENU` rule)
+  on a trusted click only, like every other control, so a click passed on to Accept or a double tap
+  on Play is one sound. A quick run of taps on key moments now gets quieter like the rest.
+
+Tests: `gate.test.ts` (a full window still plays an `always` kind, and the next ordinary sound is
+capped), `cues.test.ts` (a time-limit match rings once and pops never; a knockout draw pops twice
+and rings; a knockout win never rings), `rules.test.ts` (`tap` has the menu rule),
+`taps.browser.test.ts` (a click passed on to a `tap` control and a double tap on Play are one sound
+each). Each failed with its fix taken out. The voice tests cover the bell's length and level.

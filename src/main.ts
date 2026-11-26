@@ -81,8 +81,6 @@ const showCurrentRoute = withScreenMotion(screenKeyOf, currentRoute, (route) => 
 });
 const { go, replaceWith, goHome, backOrHome } = createMoves(navigation, showCurrentRoute);
 
-const ballLink = createBallLink(go);
-
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
   showWorld,
   go,
@@ -125,7 +123,7 @@ const quick = createQuickController(
     started: () => {
       arena.focus();
     },
-    ballLink,
+    ballLink: createBallLink(go),
   },
 );
 
@@ -257,6 +255,7 @@ const arena = createArena(
     tips,
     moment: () =>
       readyMomentOf(router.current(), seriesStage.onScreen(), online.isLive(), home.isWaiting()),
+    yourSide: () => seriesStage.yourSide(),
     drawn: (world, resultShown, celebrated) => {
       hud.update(world, resultShown);
       // A finished Free play match has no use for speed: it makes way (ADR 0039).

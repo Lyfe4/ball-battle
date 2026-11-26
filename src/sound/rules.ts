@@ -11,7 +11,10 @@ import type { GateRule } from './gate.ts';
  * and a run of quick taps through a menu gets quieter rather than tiring.
  */
 const MENU: GateRule = { gapMs: 60, runMs: 600 };
-export const MENU_RULES = { press: MENU, back: MENU } as const satisfies Record<string, GateRule>;
+export const MENU_RULES = { tap: MENU, press: MENU, back: MENU } as const satisfies Record<
+  string,
+  GateRule
+>;
 
 /** A hit: close repeats allowed, each quieter. */
 const HIT: GateRule = { gapMs: 70, runMs: 300 };
@@ -23,7 +26,10 @@ const STREAM: GateRule = { gapMs: 220, runMs: 900 };
 export const FIGHT_RULES: Readonly<Record<FightCue, GateRule>> = {
   bump: { gapMs: 70, runMs: 250 },
   hit: HIT,
-  knockout: { gapMs: 0, runMs: 0 },
+  // The match's biggest moment is never lost to a busy mix (gate.ts `always`).
+  knockout: { gapMs: 0, runMs: 0, always: true },
+  // A match that ends without a winner's pop (the time limit, a draw) is never silent either.
+  endBell: { gapMs: 0, runMs: 0, always: true },
   arrowFire: { gapMs: 120, runMs: 400 },
   arrowHit: HIT,
   boomThrow: MOMENT,

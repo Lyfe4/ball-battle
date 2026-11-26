@@ -3,6 +3,7 @@
 import type { ApiResult } from '../app/api.ts';
 import type { SeriesView } from '../api/series.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
+import type { Side } from '../sim/series.ts';
 import type { WorldState } from '../sim/types.ts';
 import type { SeriesPhase } from '../ui/series-panel.ts';
 import type { OnlineRematch } from './online-rematch.ts';
@@ -67,6 +68,8 @@ export interface OnlinePlay {
   setVisible(visible: boolean): void;
   /** The health bars' labels, slot A's first: "You" on the player's side, the other's name. */
   sides(): readonly string[] | undefined;
+  /** The player's side ("you" in the server's view), for the ready card's mark. */
+  yourSide(): Side | undefined;
   settle(world: WorldState): void;
   update(world: WorldState, celebrated: boolean): void;
 }

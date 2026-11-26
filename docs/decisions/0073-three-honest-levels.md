@@ -201,3 +201,24 @@ old grid's columns.
 | Phone (390 x 664)                                  | Sideways (812 x 375)                                | Desktop (1280 x 800)                                   |
 | -------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
 | ![The chart on a phone](../images/chart/phone.png) | ![The chart sideways](../images/chart/sideways.png) | ![The chart on a desktop](../images/chart/desktop.png) |
+
+## Addendum (2026-11-27): the ready card's mark speaks for the player
+
+The owner's decision, from the first-time walk (`proposals-ftue/PROPOSAL.md` §1.3): the ready card
+put the favoured ball's own ▲ beside its name whoever owned it, so the bot's favoured Slime wore the
+green ▲ the pick screen's legend had just defined as "you're favoured". Now a mark beside a pair
+always speaks for the player:
+
+- It sits beside the player's own ball only (`Pairing.mark`, the ball's name), from that ball's
+  side: green ▲ or ▲▲ when the player is favoured, red ▼ or ▼▼ when not, nothing for an even pair
+  or a mirror. Never a mark beside the opponent's ball.
+- The player's side is side a against the bot and the server's seat online (`yourSideOf`, through
+  the arena host's `yourSide`). Free play has no opponent: slot A speaks, as its slots and tiles do.
+- The words are unchanged ("Slime is slightly favoured"), now without a mark of their own, and the
+  legend still reads "▲ you're favoured". The pick rows already marked the player's own ball from
+  its side; the manual and Free play's slots read from the ball they belong to.
+
+Tests: `ready-card.browser.test.ts` (▼▼ beside the player's ball on side a, ▲▲ on side b, none
+beside the opponent's, none for a mirror or an even pair; all four failed on the old card),
+`series-stage.test.ts` and `screen-rules.test.ts` (whose side), `arena-tips.wide` (the mark beside
+slot A's ball).

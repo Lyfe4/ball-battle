@@ -12,7 +12,11 @@ function setup(screen: Screen) {
       return on === true;
     },
   };
-  const online = { playing: () => true, roundOnArena: () => false };
+  const online = {
+    playing: () => true,
+    roundOnArena: () => false,
+    yourSide: (): 'a' | 'b' | undefined => 'b',
+  };
   const offline = { isPlaying: () => true, roundOnArena: () => false };
   const series = createSeriesStage(stage, () => screen, online, offline);
   return { attributes, online, offline, series };
@@ -46,5 +50,13 @@ describe('the stage behind a series', () => {
     expect(series.isSetup()).toBe(false);
     offline.isPlaying = () => false;
     expect(series.isSetup()).toBe(true);
+  });
+});
+
+describe('the player’s side', () => {
+  it('is the server’s seat online, side a against the bot, and none in Free play', () => {
+    expect(setup('online').series.yourSide()).toBe('b');
+    expect(setup('series').series.yourSide()).toBe('a');
+    expect(setup('match').series.yourSide()).toBeUndefined();
   });
 });

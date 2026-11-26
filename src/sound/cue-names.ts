@@ -5,6 +5,7 @@ export const FIGHT_CUES = [
   'bump',
   'hit',
   'knockout',
+  'endBell',
   // From range.
   'arrowFire',
   'arrowHit',

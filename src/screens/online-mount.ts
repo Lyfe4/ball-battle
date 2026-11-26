@@ -10,6 +10,7 @@ import { writeSendParams } from '../app/online-url.ts';
 import { browserStorage } from '../app/storage.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import type { Arena } from '../arena.ts';
+import type { Side } from '../sim/series.ts';
 import type { WorldState } from '../sim/types.ts';
 import { getElement } from '../ui/dom.ts';
 import type { SettingsHost } from '../ui/settings-menu.ts';
@@ -59,6 +60,8 @@ export interface OnlineMount {
   noticeShown(): boolean;
   /** The health bars' labels for the online series on screen. */
   sides(): readonly string[] | undefined;
+  /** The player's side of the online series on screen. */
+  yourSide(): Side | undefined;
   setVisible(screen: Screen): void;
   /** Home was opened: "Back to your match" asks again. */
   homeShown(): void;
@@ -309,6 +312,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     // The series' notice section (online.ts) is up in the series' place.
     noticeShown: () => document.getElementById('online-series-notice')?.hidden === false,
     sides: () => screens.play.sides(),
+    yourSide: () => screens.play.yourSide(),
     setVisible: (screen) => {
       if (screen === 'signin' || screen === 'profile') whoStale = true;
       // Any tab screen may show the avatar, so any of them asks again once it is stale.
