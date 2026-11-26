@@ -2,6 +2,7 @@
 // the arena tells a series each frame, and the page's layout. `mountOnline` builds it in a build
 // with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
+import type { FriendBox } from './who-text.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { writeShellParams, type Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
@@ -65,8 +66,15 @@ export interface OnlineMount {
   setVisible(screen: Screen): void;
   /** Home was opened: "Back to your match" asks again. */
   homeShown(): void;
-  /** The Play tab's Play against a friend (ADR 0081 addendum): straight to the link to share. */
+  /**
+   * The Play tab's Play against a friend: signed in, the friend last picked or "Who do you want to
+   * play?" (ADR 0089); else straight to the link to share (ADR 0081 addendum).
+   */
   playFriend(setup: FriendSetup): Promise<void>;
+  /** The box over Play with a friend picked (accounts builds, signed in). */
+  readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
+  /** "Who do you want to play?", from What to play (accounts builds). */
+  readonly chooseWho?: () => void;
   /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
   isLive(): boolean;
   /** A live fight's rate: 1, or a little off while it catches up with the server (ADR 0063). */
@@ -321,6 +329,8 @@ export function mountOnline(context: MountContext): OnlineMount {
       screens.setVisible(screen);
     },
     homeShown: () => {
+      // Arriving on Play (a visit, Back) closes "Who do you want to play?", as What to play.
+      screens.homeShown();
       void askHome();
       // Just left a live match: said once, on the banner's look, with OK (ADR 0086).
       const they = takeLeft();
@@ -329,6 +339,8 @@ export function mountOnline(context: MountContext): OnlineMount {
       }
     },
     playFriend: (setup) => screens.playFriend(setup),
+    ...(screens.friendBox === undefined ? {} : { friendBox: screens.friendBox }),
+    ...(screens.chooseWho === undefined ? {} : { chooseWho: screens.chooseWho }),
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
     screenChanged: (screen, now) => {

@@ -7,7 +7,6 @@ import type { Navigation } from '../app/navigation.ts';
 import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { element } from '../ui/dom.ts';
 import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import type { InboxResponse } from '../api/friends.ts';
@@ -21,6 +20,9 @@ import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
 import { writeShellParams } from '../app/route.ts';
 import { createFriendsTab } from './friends-tab.ts';
 import { createProfileScreens } from './profile-screens.ts';
+import { pickerFor } from './friend-pick-flow.ts';
+import { createOnlineRoots } from './online-roots.ts';
+import type { FriendBox } from './who-text.ts';
 import { createSignIn } from './sign-in.ts';
 import type { WhoSource } from '../app/who-source.ts';
 import { createPrimer } from './online-prime.ts';
@@ -80,10 +82,19 @@ export interface OnlineScreens {
   friendStatuses(inbox: InboxResponse | undefined): void;
   /** A friend's challenge accepted from the incoming banner: its lineups, read first. */
   openInvite(token: string, live: boolean): Promise<void>;
-  /** The Play tab's Play against a friend: straight to the link to share (ADR 0081 addendum). */
+  /**
+   * The Play tab's Play against a friend: signed in, the friend last picked or "Who do you want to
+   * play?" (ADR 0089); else straight to the link to share (ADR 0081 addendum).
+   */
   playFriend(setup: FriendSetup): Promise<void>;
+  /** The box over Play with a friend picked (accounts builds, signed in). */
+  readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
+  /** "Who do you want to play?", from What to play (accounts builds). */
+  readonly chooseWho?: () => void;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
   rematchShown(): string | undefined;
+  /** Play shows (a visit, Back): "Who do you want to play?" closes. */
+  homeShown(): void;
 }
 
 export function createOnlineScreens(
@@ -93,46 +104,10 @@ export function createOnlineScreens(
   lookup: DefinitionLookup,
   host: OnlineHost,
 ): OnlineScreens {
-  const section = (id: string, label: string) => {
-    const node = element('section', '');
-    node.id = id;
-    node.setAttribute('aria-label', label);
-    node.hidden = true;
-    return node;
-  };
-  const challengeNotice = section('online-challenge', 'Challenge');
-  const challengeLoading = section('online-challenge-loading', 'Challenge');
-  const lineupRoot = section('online-lineup', 'Your lineup');
-  const seriesNotice = section('online-series-notice', 'Online series');
-  const seriesLoading = section('online-series-loading', 'Online series');
-  const panel = section('online-series', 'Online series');
-  const signInNotice = section('online-signin', 'Sign in');
-  const signInLoading = section('online-signin-loading', 'Sign in');
-  const profileNotice = section('online-profile', 'Profile');
-  const profileLoading = section('online-profile-loading', 'Profile');
-  const matchesRoot = section('online-matches', 'All matches');
-  const friendsRoot = section('online-friends', 'Friends');
-  const exit = element('div', 'series-exit');
-  exit.hidden = true;
-  // Beside the offline screens: before the health bars, and the way out under them.
-  const status = hud.querySelector('#hud-status');
-  for (const node of [
-    challengeNotice,
-    challengeLoading,
-    lineupRoot,
-    seriesNotice,
-    seriesLoading,
-    panel,
-    signInNotice,
-    signInLoading,
-    profileNotice,
-    profileLoading,
-    matchesRoot,
-    friendsRoot,
-  ]) {
-    hud.insertBefore(node, status);
-  }
-  foot.append(exit);
+  const roots = createOnlineRoots(hud, foot);
+  const { challengeNotice, challengeLoading, lineupRoot, seriesNotice, seriesLoading } = roots;
+  const { panel, signInNotice, signInLoading, profileNotice, profileLoading } = roots;
+  const { matchesRoot, friendsRoot, exit } = roots;
 
   const home = () => {
     host.home();
@@ -179,8 +154,13 @@ export function createOnlineScreens(
       primeSeries: (id) => primer.series(id),
       toMatch,
       ...(host.lobbyWaits === undefined ? {} : { lobbyWaits: host.lobbyWaits }),
+      // The picker is made just below; a lobby asks for this only after.
+      ...(ACCOUNTS_BUILD ? { lobbyAfter: (card, swap) => picker?.lobbyAfter(card, swap) } : {}),
     },
   );
+
+  // One vs Friend path (ADR 0089): who Play is against, in a build with accounts.
+  const picker = ACCOUNTS_BUILD ? pickerFor(challenges, host) : undefined;
 
   const back = createBackToMatch(toMatch);
   const backToMatch = {
@@ -331,11 +311,21 @@ export function createOnlineScreens(
       play.setVisible(screen === 'online');
     },
     friendStatuses(inbox) {
+      if (inbox !== undefined) picker?.statuses(inbox.friends);
       friendsTab.statuses(inbox?.friends ?? []);
       friendsTab.invites(inbox?.invites ?? [], inbox?.turns ?? [], inbox?.games, inbox?.endings);
     },
     openInvite: (token, live) => challenges.openInvite(token, live),
-    playFriend: (setup) => challenges.playFriend(setup),
+    playFriend: (setup) => picker?.play(setup) ?? challenges.playFriend(setup),
+    ...(picker === undefined
+      ? {}
+      : {
+          friendBox: (setup) => picker.box(setup),
+          chooseWho: () => {
+            picker.choose();
+          },
+        }),
     rematchShown: () => challenges.rematchShown(),
+    homeShown: () => picker?.close(),
   };
 }

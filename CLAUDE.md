@@ -425,7 +425,9 @@ Each line is a rule; its ADR has the reasoning.
 - Home by opponent (ADR 0055, 0081 Option B): the box over Play says what it starts (`PlayChoice`:
   who, and each opponent's rules, remembered per opponent) and opens the "What to play" dialog
   (`play-sheet.ts`), whose Against row is `PLAY_CHOICES` (Ranked and Casual join it later); Play
-  goes straight to the bot's lineup or, against a friend, sends the challenge (no rules step).
+  goes straight to the bot's lineup or, against a friend, sends the challenge (no rules step);
+  signed in, to the friend last picked or "Who do you want to play?" first (ADR 0089, B1). Profile
+  shows three matches; All matches is its own screen (`?view=matches`), paged by `/me/matches`.
   Formats are always Reveal, Showdown, Blind (`SETUP_FORMATS`). Every setup is the one
   `rules-step.ts` screen (old links, the Friends tab), and its choices rewrite its own entry. A lineup's in-app Back without
   history goes to its setup. `?mode=bo3` links open the vs Bot setup; `?view=modes` opens home; a

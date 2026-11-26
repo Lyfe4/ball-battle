@@ -227,22 +227,29 @@ export function createChallengeScreens(
 
   /** The card for `card`; a waiting lobby asks again soon (each ask keeps the link open). */
   function showCard(card: ChallengeInfo, focus: boolean): void {
-    show('notice', cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent)), focus);
+    const content = cardFor(card, cardActions(), inAppBrowserOf(navigator.userAgent));
+    // A link to anyone, waiting: friends to challenge instead, or how to (ADR 0089).
+    const after = host.lobbyAfter?.(card, (friend) => cancel(friend));
+    show('notice', after === undefined ? content : { ...content, after }, focus);
     if (card.live && card.status === 'yours' && visible) {
       lobby.next();
       host.lobbyWaits?.();
     }
   }
 
-  /** The sender stops waiting: the link stops, and they go home (or on, if it was accepted). */
-  async function cancel(then?: 'friend'): Promise<void> {
+  /**
+   * The sender stops waiting: the link stops, and they go home (or on, if it was accepted); a friend
+   * picked in its lobby gets a challenge on its rules instead (ADR 0089).
+   */
+  async function cancel(to?: 'friend' | { id: string; name: string }): Promise<void> {
     if (token === undefined) return;
     lobby.stop();
     const answer = await callApi<ChallengeInfo>('POST', `challenges/${token}/cancel`, {});
     const card = answer.ok ? answer.body : undefined;
     if (card?.seriesId != null) await intoSeries(card.seriesId);
     else if (card?.startId != null) await intoStart(card.startId);
-    else (then === 'friend' ? host.friend : home)();
+    else if (typeof to === 'object' && info !== undefined) await sender.playFriend(info, to, true);
+    else (to === 'friend' ? host.friend : home)();
   }
 
   function cardActions() {
@@ -321,10 +328,10 @@ export function createChallengeScreens(
       sender.invite(friend, turns);
       host.friend();
     },
-    async playFriend(setup) {
+    async playFriend(setup, friend) {
       token = undefined;
       start.stop();
-      await sender.playFriend(setup);
+      await sender.playFriend(setup, friend);
     },
     showSend(format: Format, bestOf: BestOf) {
       token = undefined;

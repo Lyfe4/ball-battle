@@ -149,6 +149,13 @@
   color: var(--color-accent);
 }
 
+/* A friend picked (ADR 0089): their initial on the icon's disc. */
+.play-box-initial {
+  color: var(--color-text);
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+}
+
 .play-box-shape {
   width: 24px;
   height: 24px;

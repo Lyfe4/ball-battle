@@ -1,0 +1,46 @@
+/*
+ * "Who do you want to play?" (who-sheet.ts, ADR 0089): its groups a stack gap apart, each a quiet
+ * title, an optional line and the Friends tab's rows; "Anyone, with a link" last as a row (with no
+ * friends, the main button). The link lobby's friends and a guest's sign-in line, after the link.
+ */
+.who-sheet-groups,
+.who-sheet-group,
+.who-lobby {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.who-sheet-groups {
+  gap: var(--space-group);
+}
+
+.who-sheet-line,
+.who-lobby-line {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.who-sheet-add {
+  justify-self: start;
+  min-height: var(--tap-target);
+  padding: 0;
+}
+
+/* The notice lines its parts up at the start: the friends take the line's whole width. */
+.who-lobby {
+  justify-self: stretch;
+  width: 100%;
+  margin-top: var(--space-group);
+}
+
+.who-lobby-sign-in {
+  min-height: var(--tap-target);
+  padding: 0;
+}
+
+/* A friend with nothing to start (not online, no play by turns in this build): quiet. */
+.who-sheet .friends-open:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

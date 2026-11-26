@@ -7,7 +7,7 @@ import axe, { type Result } from 'axe-core';
 import { vi } from 'vitest';
 import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
-import { onStatsSheet, RECORD_ANSWERS } from './profile-answers.ts';
+import { onStatsSheet, onWhoSheet, RECORD_ANSWERS } from './profile-answers.ts';
 import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
 import { settle, until, visible } from './page-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
@@ -120,6 +120,9 @@ export async function walkA11y(signedIn: boolean): Promise<Finding[]> {
   findings.push(...(await check('the settings menu')));
   visible('.settings-toggle')[0]?.click();
   if (signedIn) {
+    await onWhoSheet(async () => {
+      findings.push(...(await check('Who do you want to play?')));
+    });
     const online: Finding[] = [];
     await walkOnline(api, async (state) => {
       online.push(...(await check(state.name)));

@@ -2,6 +2,7 @@
 
 - Status: Accepted (2026-11-27); built in the overnight run of 2026-11-27 (Track B)
 - Date: 2026-11-27
+- Amended by: ADR 0089 (the record card opens "Your stats"; three matches, then All matches as its own screen; each match says how a forfeit ended)
 - Builds on: ADR 0052 (series on the server, `viewOf`), ADR 0053 (live), ADR 0069 (privacy),
   ADR 0078 (Forget me), ADR 0079 (accounts, friends), ADR 0081 (Profile is accounts-only), ADR
   0084 (one read per answer), ADR 0085 (by turns), ADR 0087 (the frame, loading states)

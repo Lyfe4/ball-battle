@@ -71,6 +71,17 @@ export const challengeChips = (info: Pick<ChallengeInfo, 'format' | 'bestOf'>) =
  * What a challenge's card says and offers; `undefined` is a link nobody made. `inApp`: the link was
  * opened inside an app's own browser, so a live challenge's card suggests the phone's browser first.
  */
+/** The sender's own live link to anyone, still waiting: its lobby may offer friends (ADR 0089). */
+export function waitsForAnyone(card: ChallengeInfo): boolean {
+  return (
+    card.live &&
+    card.own &&
+    card.status === 'yours' &&
+    card.invitee === null &&
+    card.seriesId === null
+  );
+}
+
 export function cardFor(
   info: ChallengeInfo | undefined,
   actions: CardActions,

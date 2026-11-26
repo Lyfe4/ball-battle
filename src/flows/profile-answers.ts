@@ -1,9 +1,11 @@
 // Profile's record and All matches' next page (ADR 0088, 0089), as the flows' fake API answers them
 // for an account with a long history: 25 matches, a forfeit of each kind among the first, and a
-// second page that ends the list. Shared by the controls-look and axe walks.
+// second page that ends the list; and Play's "Who do you want to play?" opened for a walk. Shared
+// by the controls-look and axe walks.
 import { recordFixture, seriesFixture } from '../api/record-support.ts';
 import type { RecentSeries } from '../api/record.ts';
 import { settle, until, visible } from './page-support.ts';
+import { follow, onScreen } from './shell-routes-support.ts';
 
 const NAMES = ['Robin', 'Jo', 'Alex', 'Mina', 'Łukasz', 'Priya', 'Kai', 'Yuki'];
 const ENDINGS = ['youLeft', 'theyLeft', 'yourTime', 'theirTime'] as const;
@@ -45,4 +47,24 @@ export async function onStatsSheet(check: () => Promise<void>): Promise<void> {
     ?.querySelector<HTMLButtonElement>('.close-button')
     ?.click();
   await settle();
+}
+
+/**
+ * On Play, signed in with friends: Play against a friend opens "Who do you want to play?" (ADR
+ * 0089); runs `check` on it, closes it, and puts Play back on the bot.
+ */
+export async function onWhoSheet(check: () => Promise<void>): Promise<void> {
+  localStorage.setItem('ballbattle.playOpponent', 'friend');
+  await follow('?view=manual');
+  await follow('');
+  await onScreen('home');
+  visible('.home-play')[0]?.click();
+  const sheet = () => document.querySelector<HTMLDialogElement>('dialog.who-sheet');
+  await until(() => sheet()?.open === true, 5_000, 'Who do you want to play?', false);
+  await until(() => visible('.who-sheet .friends-name').length > 0, 5_000, 'the friends', false);
+  await settle();
+  await check();
+  sheet()?.querySelector<HTMLButtonElement>('.close-button')?.click();
+  await settle();
+  localStorage.setItem('ballbattle.playOpponent', 'bot');
 }

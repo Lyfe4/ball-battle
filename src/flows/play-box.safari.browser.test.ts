@@ -321,6 +321,9 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     // Play stayed busy until the lobby could show: home, then the lobby, nothing between.
     expect(screens.seen).toStrictEqual(['challenge']);
     expect(asked.filter((line) => line.startsWith('POST'))).toHaveLength(1);
+    // Production's shape has no accounts (ADR 0089): no friends to offer, no sign-in line.
+    expect(visible('.who-lobby, .who-lobby-line')).toHaveLength(0);
+    expect(document.querySelector('dialog.who-sheet')).toBeNull();
     await back();
     await onScreen('home');
     expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Showdown' });

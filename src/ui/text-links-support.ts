@@ -8,5 +8,7 @@ export const NAVIGATING: Readonly<Record<string, string>> = {
   'home-link': 'Free play’s setup',
   'skeleton-home': 'home, from a screen still loading',
   'profile-all': 'All matches, Profile’s own screen (ADR 0089)',
+  'who-sheet-add': 'the Friends tab, to add a friend (ADR 0089)',
+  'who-lobby-sign-in': 'sign-in, from a guest’s lobby (ADR 0089)',
   'series-leave': 'home, from a series by turns (a live match’s is a button: it forfeits)',
 };

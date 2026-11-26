@@ -91,8 +91,9 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
   forget: () => {
     series.forget();
   },
-  // Online play is made below, and only in builds with it: home offers a friend only there.
-  playFriend: (setup) => online.playFriend(setup),
+  // Online play is made below, and only in builds with it: home offers a friend only there; who
+  // by name (ADR 0089) only with accounts.
+  friends: () => online,
 });
 
 const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {

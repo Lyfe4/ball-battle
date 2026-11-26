@@ -3,6 +3,7 @@
 - Status: Accepted (2026-11-25), the owner's answers to `docs/hosting-cost-proposal.md` section 8.
   Built: the series read in one query and the pick in two (decision 4).
 - Date: 2026-11-25
+- Amended by: ADR 0089 (addendum: All matches, a page at a time)
 - Amends: ADR 0052 (section 11, decision 6: "Move to Personal when the first functions go live in
   production" is replaced by the triggers below; "Cost, roughly" is superseded by the proposal's
   measured figures)

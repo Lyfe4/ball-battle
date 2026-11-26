@@ -13,7 +13,7 @@ import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { settle, until, visible } from './page-support.ts';
 import { NAVIGATING } from '../ui/text-links-support.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
-import { onStatsSheet, RECORD_ANSWERS } from './profile-answers.ts';
+import { onStatsSheet, onWhoSheet, RECORD_ANSWERS } from './profile-answers.ts';
 import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
@@ -207,6 +207,12 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
   if (menu !== undefined) problems.push(...controlProblems('the settings menu', menu));
   visible('.settings-toggle')[0]?.click();
   await settle();
+  if (signedIn) {
+    await onWhoSheet(() => {
+      problems.push(...controlProblems('Who do you want to play?', scopeNow()));
+      return Promise.resolve();
+    });
+  }
   // Every online state, signed in (a guest's are the same screens).
   if (signedIn) {
     await walkOnline(api, (state) => {

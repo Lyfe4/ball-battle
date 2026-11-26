@@ -71,6 +71,8 @@ export interface NoticeContent {
   readonly links?: readonly { readonly text: string; readonly href: string }[];
   /** One paragraph after the link box. */
   readonly note?: string;
+  /** A part after the note, before the quiet button: the lobby's friends (ADR 0089). */
+  readonly after?: object;
   /** A quiet action, a secondary button, last: Cancel challenge, Not now (ADR 0086). */
   readonly quiet?: NoticeButton;
   /** Actions as rows at the card's end (ADR 0086): Profile's Change username and Log out. */

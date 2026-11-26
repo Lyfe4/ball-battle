@@ -221,6 +221,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
       const rest: HTMLElement[] = [];
       if (content.link !== undefined) rest.push(linkPart(content.link));
       if (content.note !== undefined) rest.push(element('p', 'notice-text', content.note));
+      if (content.after instanceof HTMLElement) rest.push(content.after);
       if (content.quiet !== undefined) {
         const quiet = element('button', 'hud-button notice-quiet', content.quiet.text);
         quiet.type = 'button';
