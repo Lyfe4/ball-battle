@@ -147,7 +147,7 @@ function landmarks(where: string): Map<string, DOMRect> {
     if (node !== null && laidOut(node)) found.set(what, node.getBoundingClientRect());
   }
   const page = document.scrollingElement ?? document.documentElement;
-  found.set("the page's height", new DOMRect(0, 0, page.scrollWidth, page.scrollHeight));
+  found.set("the page's height", new DOMRect(0, 0, 0, page.scrollHeight));
   return found;
 }
 
