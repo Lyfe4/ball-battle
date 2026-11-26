@@ -11,6 +11,14 @@ import { createRematchWatch } from './rematch-watch.ts';
 import { ended, host, ID, played, server, START, T, view } from './rematch-watch-support.ts';
 
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
+/** Waits until `done`, at most `ms`: a named wait, never a fixed one where the page acts on a tick. */
+async function within(ms: number, what: string, done: () => boolean): Promise<void> {
+  const end = Date.now() + ms;
+  while (!done()) {
+    if (Date.now() > end) throw new Error(`Not within ${String(ms)} ms: ${what}`);
+    await wait(20);
+  }
+}
 let root: HTMLElement;
 const card = () => ({
   shown: !root.hidden,
@@ -128,8 +136,9 @@ describe('a rematch asked of a player away from the end screen', () => {
     createRematchWatch(root, page.made).ended(ended('b'));
     await wait(100);
     expect(card().seconds).toBe('1 s');
-    await wait(1_100);
-    expect(card().shown).toBe(false);
+    // It hides on the display's 250 ms tick that finds the deadline past (rematch-watch.ts), so by
+    // the deadline plus one tick, with room for a busy runner; a fixed 1.1 s missed a late tick.
+    await within(1_000 + 250 + 500, 'the banner hides at its deadline', () => !card().shown);
     fake.state.answer = view({ state: 'expired', askedBy: 'a', deadline: T + 1_000 });
     await wait(2_200);
     const asked = fake.sent.length;
