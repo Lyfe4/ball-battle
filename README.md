@@ -18,12 +18,12 @@ arena until one wins, and every decision is made before the fight starts.
   a shield and spear, a curse, webs on the walls, a battery that stores big hits, a slime that
   splits in two, a floating balloon, a wail nothing blocks, a kraken's tentacles, a mirage's
   decoy copy, a jouster's lance, a hunter's snares, a tortoise's shell, and more.
-- **Best of 3 against a bot** at three levels (Easy, Normal, Hard) in three draft formats: Reveal
-  (take turns showing first, after a coin toss; the main mode, one tap from home), Showdown and
-  Blind. **Best of 5** (five balls, first to three) is the longer, more skilful option in the vs
-  Bot setup ([ADR 0048](docs/decisions/0048-best-of-5.md)).
-- **Live friend matches** (deploy previews, staging, and the live site while vs Friend is switched
-  on, [ADR 0068](docs/decisions/0068-hosted-projects.md);
+- **Best of 5 against a bot** (five balls, first to three; Best of 3 in the vs Bot setup) at three
+  levels (Easy, Normal, Hard) in three draft formats: Reveal (take turns showing first, after a
+  coin toss; the main mode, one tap from home), Showdown and Blind
+  ([ADR 0048](docs/decisions/0048-best-of-5.md)). A brand-new device's first series is a guided
+  Best of 3 against the Easy bot ([ADR 0090](docs/decisions/0090-first-five-minutes.md)).
+- **Live friend matches** (staging, and the live site while vs Friend is switched on, [ADR 0068](docs/decisions/0068-hosted-projects.md);
   [ADR 0053](docs/decisions/0053-live-friend-matches.md)): send a link, wait in the lobby, and play
   Reveal or Showdown together. 30 s a pick, fights that start at the same moment on both phones at
   the server's time, and a fair-play check at the end against seeds committed at the start.
@@ -48,8 +48,9 @@ arena until one wins, and every decision is made before the fight starts.
 TypeScript (strict), Vite, plain HTML Canvas 2D and plain DOM. No game engine, no physics library,
 no UI framework. Tested with Vitest, in Node and through Playwright in Chromium, Firefox and
 WebKit. ESLint, Prettier, Husky and GitHub Actions. Deployed as a static site on Netlify with a
-strict Content Security Policy. Pull requests get deploy previews; production is published in
-batches from the `release` branch by a manual workflow (`.github/workflows/publish.yml`).
+strict Content Security Policy. Pull requests run CI (Netlify's Deploy Previews are off to save
+build minutes); `main` deploys to staging, and production is published in batches from the
+`release` branch by a manual workflow (`.github/workflows/publish.yml`).
 
 ## Engineering highlights
 
@@ -86,9 +87,9 @@ batches from the `release` branch by a manual workflow (`.github/workflows/publi
 ## How it plays
 
 The home screen plays a demo match behind the pitch. Its main button, **Play**, is the game: the
-last series set up against the bot, straight to choosing your lineup (a first visit plays Best of 3
-· Reveal · vs Normal bot). Under it is a card per opponent: **vs Bot** opens its setup (Best of 3 or
-Best of 5, Reveal, Showdown or Blind, and the bot's level), and **vs Friend** (in online builds)
+last series set up against the bot, straight to choosing your lineup (a brand-new device plays a
+guided Best of 3 against the Easy bot first, then Best of 5 · Reveal · vs Normal bot). Under it is
+a card per opponent: **vs Bot** opens its setup (Best of 5 or Best of 3, Reveal, Showdown or Blind, and the bot's level), and **vs Friend** (in online builds)
 starts a live match. **Free play**, where you choose both balls of one match to try things out,
 and the **Ball manual** sit below. While a series is held (left with Back, or after a reload), Play
 becomes **Resume series**, with its format and score, and a quiet **New series** starts afresh
@@ -235,7 +236,7 @@ link from another version says so and offers to play under today's rules rather 
 replaying a different fight
 ([ADR 0022](docs/decisions/0022-ruleset-version-and-verified-series.md)).
 
-Online play (ADR 0052, live friend matches ADR 0053) runs in deploy previews and staging, and on
+Online play (ADR 0052, live friend matches ADR 0053) runs on staging, and on
 the live site while the vs Friend switch is on (ADR 0068). Locally: Docker, then
 `pnpm exec supabase start`, `node scripts/local-env.ts > .env`, `pnpm build:online` and
 `netlify dev` (http://localhost:8888), which serves the game and the API on one origin.
@@ -324,11 +325,13 @@ The rules, in brief:
    applies them in a fixed order.
 
 Why: every decision has a short record in [docs/decisions](docs/decisions/README.md), indexed
-with its status and what superseded it; ADR 0001 to 0003 cover the rules above.
-Full rules for contributors: [CLAUDE.md](CLAUDE.md).
+with its status and what superseded it; ADR 0001 to 0003 cover the rules above. A one-page map of
+the whole system, client to database: [ARCHITECTURE.md](ARCHITECTURE.md). How to set up, test and
+ship a change: [CONTRIBUTING.md](CONTRIBUTING.md). Every rule in full: [CLAUDE.md](CLAUDE.md).
 
 Production bundle (28 November 2026, ruleset 24, 32 balls, vs Friend on as production builds it):
-491.0 kB JS (154.4 kB gzipped); 132.5 kB CSS (22.0 kB gzipped); and the self-hosted font's Latin
+491.0 kB JS (154.4 kB gzipped), of which the Balls tab's manual (4.1 kB gzipped) is a chunk of its
+own; 132.5 kB CSS (22.0 kB gzipped); and the self-hosted font's Latin
 subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License
