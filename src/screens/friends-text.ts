@@ -11,6 +11,7 @@ import type {
   InboxResponse,
   TurnWaiting,
 } from '../api/friends.ts';
+import type { CurrentMatch } from '../api/live.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
 export interface FriendGroup {
@@ -114,13 +115,18 @@ export function personStatus(
  * Why a friend's Challenge can't be taken now, and the way that works, as one line under it (the
  * sheet keeps one shape, ADR 0086 as changed 2026-11-26): undefined when it can. Live needs them
  * online; `turns` where the build plays by turns, which works any time ("Who do you want to play?"
- * says which, ADR 0089 addendum of 2026-11-27). Never over a challenge of theirs waiting on you.
+ * says which, ADR 0089 addendum of 2026-11-27). Never over a challenge of theirs waiting on you,
+ * nor while the player is in a game (`inGame`, or with this friend).
  */
 export function challengeUnavailable(
   person: { readonly name: string; readonly status?: FriendStatus },
   waiting: boolean,
   turns: boolean,
+  inGame = false,
 ): string | undefined {
+  // One game at a time (ADR 0089 addendum of 2026-11-27): no new challenge while in one.
+  if (person.status === 'with_you') return `${person.name} is in a game with you · Finish it first`;
+  if (inGame) return 'You’re in a game · Finish it first';
   if (waiting) return `${person.name} is waiting for you · Accept in Waiting for you`;
   if (person.status === 'online' || turns) return undefined;
   if (person.status === 'in_a_match') return `${person.name} is in a match · Try again after it`;
@@ -138,6 +144,7 @@ export function handleOf(name: string): string | undefined {
 /** A friend's status in words, beside its dot (PR (d)). */
 export const STATUS_WORDS: Readonly<Record<FriendStatus, string>> = {
   online: 'Online',
+  with_you: 'In a game with you',
   in_a_match: 'In a match',
   offline: 'Offline',
 };
@@ -249,3 +256,31 @@ export function missesNews(
     friends.some((one) => !drawn.has(one.id))
   );
 }
+
+/** The way back to the game the player is in (ADR 0089 addendum of 2026-11-27, the setup phase). */
+export const BACK_TO_IT = 'Back to it';
+
+/** The live game (lineups or match) the player is in, and with whom when it's known. */
+export interface InGame {
+  readonly name?: string;
+}
+
+/**
+ * The game the player is in, from the inbox's friends (one in a game with them) and what this page
+ * knows (live-memory.ts: a lineup or match it showed, or `/me/match` said); a lobby of one's own
+ * isn't one (a new challenge calls it off). Undefined: not in one, as far as this page knows.
+ */
+export function inGameWith(
+  friends: readonly Pick<FriendEntry, 'name' | 'status'>[],
+  known: CurrentMatch | null | undefined,
+): InGame | undefined {
+  const friend = friends.find((one) => one.status === 'with_you');
+  if (friend !== undefined) return { name: friend.name };
+  if (known?.kind === 'series') return known.opponent === null ? {} : { name: known.opponent };
+  if (known?.kind === 'start') return {};
+  return undefined;
+}
+
+/** "You're in a game with Robin": the one line that stands for any new challenge while in one. */
+export const inGameLine = (game: InGame): string =>
+  game.name === undefined ? 'You’re in a game' : `You’re in a game with ${game.name}`;

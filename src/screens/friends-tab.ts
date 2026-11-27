@@ -10,11 +10,22 @@ import { callApi, failureKindOf, type Fetch } from '../app/api.ts';
 import { hasAccount, type DeviceStorage } from '../app/online-device.ts';
 import type { WhoAmI } from '../app/who-am-i.ts';
 import type { WhoSource } from '../app/who-source.ts';
-import { element } from '../ui/dom.ts';
+import { knownLive } from '../app/live-memory.ts';
+import { busyOnClick } from '../ui/busy-button.ts';
+import { element, setHidden, setText } from '../ui/dom.ts';
 import { failureCard } from '../ui/online/friends-loading.ts';
 import { createFriendsSection } from '../ui/online/friends-section.ts';
 import { createScreenHeader } from '../ui/screen-header.ts';
-import { FRIENDS_FAILED_TITLE, FRIENDS_SOON, LINK_CARD, SIGN_IN_CARD } from './friends-text.ts';
+import {
+  BACK_TO_IT,
+  FRIENDS_FAILED_TITLE,
+  FRIENDS_SOON,
+  inGameLine,
+  inGameWith,
+  LINK_CARD,
+  SIGN_IN_CARD,
+  type InGame,
+} from './friends-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
 export interface FriendsTabHost {
@@ -37,6 +48,8 @@ export interface FriendsTabHost {
   readonly declineInvite?: (token: string) => Promise<string | undefined>;
   /** A series by turns waiting on your pick: Play opens it (ADR 0085). */
   readonly openSeries?: (seriesId: string) => Promise<void>;
+  /** Back to the live game the player is in; resolves false when there is none any more. */
+  readonly backToGame: () => Promise<boolean>;
   /** The page's fetch; tests give their own. */
   readonly send?: Fetch;
 }
@@ -75,13 +88,30 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
 
   const challenge = element('button', 'hud-button hud-button-primary', LINK_CARD.button);
   challenge.type = 'button';
-  challenge.addEventListener('click', host.sendLink);
-  const link = card(
-    'friends-link-card',
-    LINK_CARD.title,
-    element('p', 'friends-card-text', LINK_CARD.body),
-    challenge,
-  );
+  const linkText = element('p', 'friends-card-text', LINK_CARD.body);
+  const link = card('friends-link-card', LINK_CARD.title, linkText, challenge);
+  const linkTitle = link.querySelector<HTMLElement>('.friends-card-title');
+  // In a live game (ADR 0089 addendum of 2026-11-27), the card offers no new challenge: one line,
+  // "You're in a game with Robin", and Back to it, which asks where that is when tapped.
+  let friendsNow: readonly FriendEntry[] = [];
+  let game: InGame | undefined;
+  function drawLink(): void {
+    game = inGameWith(friendsNow, knownLive());
+    if (linkTitle !== null)
+      setText(linkTitle, game === undefined ? LINK_CARD.title : inGameLine(game));
+    setHidden(linkText, game !== undefined);
+    setText(challenge, game === undefined ? LINK_CARD.button : BACK_TO_IT);
+  }
+  busyOnClick(challenge, () => {
+    if (game === undefined) {
+      host.sendLink();
+      return undefined;
+    }
+    // Gone meanwhile: the card and the rows offer challenges again.
+    return host.backToGame().then((moved) => {
+      if (!moved) redraw();
+    });
+  });
 
   const api = <T>(method: 'GET' | 'POST' | 'DELETE', path: string, payload?: unknown) =>
     callApi<T>(method, path, payload, {}, host.send);
@@ -104,6 +134,7 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
         },
         // A friend not online can be challenged by turns where the build plays by turns (ADR 0085).
         turns: TURNS_BUILD,
+        game: { inGame: () => game !== undefined, backToGame: () => host.backToGame() },
         ...(host.changed === undefined ? {} : { changed: host.changed }),
         ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
         ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
@@ -136,8 +167,15 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     return failureCard(FRIENDS_FAILED_TITLE, failureLine(kind), open);
   }
 
+  /** The card and the list again, for what the page now knows of the player's game. */
+  function redraw(): void {
+    drawLink();
+    friends?.statuses(friendsNow);
+  }
+
   let visible = false;
   async function open(): Promise<void> {
+    drawLink();
     if (friends === undefined) {
       body.replaceChildren(
         link,
@@ -182,6 +220,8 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
       root.hidden = !visible;
     },
     statuses(list) {
+      friendsNow = list;
+      drawLink();
       friends?.statuses(list);
     },
     heard(requests, list) {

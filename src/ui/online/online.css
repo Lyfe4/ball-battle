@@ -17,13 +17,15 @@
   align-items: center;
 }
 
-/* Home's "Back to your match" (ADR 0053) takes Play's place: Play's row goes while it shows. */
+/*
+ * Home's "Back to your match" (ADR 0053) takes Play's place: over Play's row, in its cell and at its
+ * full height (home.css, .home-play-place), while Play's row is covered.
+ */
 .home-back-match {
   display: grid;
 }
 
-.home-back-match[hidden],
-.home-play-row[hidden] {
+.home-back-match[hidden] {
   display: none;
 }
 

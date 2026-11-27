@@ -321,7 +321,8 @@
   background: var(--color-favoured);
 }
 
-.friends-status[data-status='in_a_match']::before {
+.friends-status[data-status='in_a_match']::before,
+.friends-status[data-status='with_you']::before {
   background: var(--color-accent);
 }
 
@@ -400,7 +401,8 @@
   box-shadow: inset 0 0 0 3px var(--color-favoured);
 }
 
-.friends-disc[data-status='in_a_match'] {
+.friends-disc[data-status='in_a_match'],
+.friends-disc[data-status='with_you'] {
   box-shadow: inset 0 0 0 3px var(--color-accent);
 }
 

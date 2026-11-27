@@ -21,13 +21,24 @@ import {
   REPORT_CHOICES,
   reportTitle,
   SHEET_LINES,
+  BACK_TO_IT,
 } from '../../screens/friends-text.ts';
+
+/** The live game the player is in (lineups or match, ADR 0089 addendum of 2026-11-27). */
+export interface GameWay {
+  /** Whether the player is in one, as the page knows. */
+  inGame(): boolean;
+  /** Back to it; resolves false when there is none any more. */
+  backToGame(): Promise<boolean>;
+}
 
 export interface FriendSheetHost {
   /** Challenge: "Who do you want to play?" with this friend picked (the one path). */
   readonly challenge?: (friend: FriendEntry) => void;
   /** Whether the build plays by turns (ADR 0085): a friend not online can still be challenged. */
   readonly turns?: boolean;
+  /** The live game the player is in: no new challenge then, and Back to it (ADR 0089 addendum). */
+  readonly game?: GameWay;
   /** Each change to a friendship; resolves true when it was made (the tab redrew). */
   readonly remove: (id: string) => Promise<boolean>;
   readonly block: (id: string) => Promise<boolean>;
@@ -186,13 +197,25 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
     return head;
   }
 
-  /** A friend's actions: Challenge, always, into the one path with them picked. */
+  /**
+   * A friend's actions: Challenge, always, into the one path with them picked; a friend in a game
+   * with you has Back to it in its place (ADR 0089 addendum of 2026-11-27).
+   */
   function friendActions(person: FriendEntry, waiting: boolean): HTMLElement {
     const actions = element('div', 'action-stack friend-sheet-actions');
+    const game = host.game;
+    if (person.status === 'with_you' && game !== undefined) {
+      const back = action(BACK_TO_IT, `Back to your game with ${person.name}`, true);
+      busyOnClick(back, async () => {
+        if (await game.backToGame()) sheet.close();
+      });
+      actions.append(back);
+      return actions;
+    }
     const challenge = host.challenge;
     // Challenge always shows, so the sheet keeps one shape (ADR 0086, 2026-11-26). When nothing can
     // start with the friend now, it stays focusable but unavailable, and one line under it says why.
-    const why = challengeUnavailable(person, waiting, host.turns === true);
+    const why = challengeUnavailable(person, waiting, host.turns === true, host.game?.inGame());
     if (challenge !== undefined) {
       const go = action(SHEET_LINES.challenge, `Challenge ${person.name}`, why === undefined);
       go.addEventListener('click', () => {

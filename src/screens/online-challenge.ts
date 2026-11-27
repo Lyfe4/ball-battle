@@ -9,6 +9,7 @@
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
 import { rememberGuest } from '../app/online-device.ts';
+import { rememberLobby } from '../app/live-memory.ts';
 import {
   writeChallengeParams,
   writeOnlineSeriesParams,
@@ -233,6 +234,8 @@ export function createChallengeScreens(
     const after = host.lobbyAfter?.(card);
     show('notice', after === undefined ? content : { ...content, after }, focus);
     if (waitingOn(card) && visible) {
+      // Home knows at once that this lobby waits.
+      if (token !== undefined) rememberLobby(token, card);
       lobby.next();
       host.lobbyWaits?.();
     }

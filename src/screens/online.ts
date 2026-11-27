@@ -4,14 +4,14 @@
 // are added here, beside the offline screens' own.
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import type { Navigation } from '../app/navigation.ts';
-import { hasGuest, type DeviceStorage } from '../app/online-device.ts';
+import type { DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { createBackToMatch } from '../ui/online/back-to-match.ts';
 import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import type { InboxResponse } from '../api/friends.ts';
 import type { SeriesView } from '../api/series.ts';
-import { currentMatch, writeMatchParams, type MatchPlace } from './current-match.ts';
+import { writeMatchParams, type MatchPlace } from './current-match.ts';
+import { createBackToGame, createHomeBack, type HomeBack } from './home-back.ts';
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
@@ -80,15 +80,8 @@ export interface OnlineScreens {
   /** The Friends tab (ADR 0081): every online build. */
   readonly friends: ScreenHandler<'friends'>;
   readonly play: OnlinePlay;
-  /**
-   * Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows;
-   * `stopsInMs`, for a lobby shown, how long until it stops unless its page is heard from.
-   */
-  readonly backToMatch: {
-    readonly element: HTMLElement;
-    refresh(): Promise<boolean>;
-    stopsInMs(): number | undefined;
-  };
+  /** Home's "Back to your match" (ADR 0053) and what Play's place shows meanwhile. */
+  readonly backToMatch: HomeBack;
   readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
@@ -132,6 +125,8 @@ export function createOnlineScreens(
       writeMatchParams(url, match);
     });
   };
+  const backToMatch = createHomeBack(host.storage, toMatch);
+  const backToGame = createBackToGame(toMatch);
   const play = createOnlinePlay(
     { panel, exit, notice: seriesNotice, loading: seriesLoading },
     lookup,
@@ -172,8 +167,7 @@ export function createOnlineScreens(
       toMatch,
       ...(host.lobbyWaits === undefined ? {} : { lobbyWaits: host.lobbyWaits }),
       lobbyGone: () => {
-        lobbyStops = undefined;
-        back.show(null);
+        backToMatch.gone();
         host.lobbyGone?.();
       },
       // The picker is made just below; a waiting screen asks for this only after.
@@ -182,7 +176,7 @@ export function createOnlineScreens(
   );
 
   // One vs Friend path (ADR 0089 and its addendum): who to play, in a build with accounts.
-  const picker = ACCOUNTS_BUILD ? pickerFor(challenges, host) : undefined;
+  const picker = ACCOUNTS_BUILD ? pickerFor(challenges, { ...host, backToGame }) : undefined;
 
   /**
    * Every way to play a friend outside Play's own button: Play's box is vs Friend from now on;
@@ -195,23 +189,6 @@ export function createOnlineScreens(
     if (picker === undefined) void otherwise();
     else void picker.open(preset, otherwise);
   }
-
-  const back = createBackToMatch(toMatch);
-  /** The lobby home last showed: it stops by the clock, which pokes nobody. */
-  let lobbyStops: number | undefined;
-  const backToMatch = {
-    element: back.element,
-    stopsInMs: () => lobbyStops,
-    /** Asks for the player's live match, only on a device that has played online. */
-    async refresh(): Promise<boolean> {
-      if (!hasGuest(host.storage)) return back.show(null);
-      const match = await currentMatch();
-      // Unknown (offline, a failure): keep what shows; the next ask may know.
-      if (match === undefined) return !back.element.hidden;
-      lobbyStops = match?.kind === 'lobby' ? match.stopsInMs : undefined;
-      return back.show(match);
-    },
-  };
 
   // Back from another app (a share sheet, a chat): a waiting lobby asks at once.
   document.addEventListener('visibilitychange', () => {
@@ -295,6 +272,7 @@ export function createOnlineScreens(
     ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
     ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
     openSeries: (id) => toMatch({ kind: 'series', id }),
+    backToGame,
   });
 
   // Settings' Forget me, in an online build without accounts (no account screen there).

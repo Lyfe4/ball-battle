@@ -8,7 +8,8 @@
 // it knew nor a failure card with Try again. The screens are the page's own, reached by their URLs
 // (FRAME_SCREENS and the online flows' states), with the API answered by the test.
 import { expect, vi } from 'vitest';
-import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
+import { rememberLive } from '../app/live-memory.ts';
+import { ACCOUNT_STORAGE_KEY, rememberGuest } from '../app/online-device.ts';
 import { visitCache } from '../app/visit-cache.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
 import { ONLINE_STATES, type OnlineAnswers } from './online-looks-support.ts';
@@ -121,7 +122,9 @@ const shownParts = () =>
 const skeletonUp = () =>
   visible('.skeleton-block, .friends-skeleton, .friends-skeleton-row').filter(
     (node) => node.closest('[hidden]') === null,
-  ).length > 0;
+  ).length > 0 ||
+  // Play waiting for `/me/match` (home-play-state.ts) is a skeleton too.
+  document.querySelector('#home:not([hidden]) .home-play-row[data-waiting]:not([hidden])') !== null;
 const failureShown = () =>
   visible('#stage button').some((node) => node.textContent.trim() === 'Try again');
 
@@ -169,6 +172,71 @@ async function look(
 /** The screens whose content is a read: cold and failing, each shows the failure card. */
 const READS = ['Friends', 'Profile', 'All matches'];
 
+/** Play's place, as a player could press it: on screen, not waiting, not inert. */
+const playOffered = (): boolean => {
+  const row = document.querySelector<HTMLElement>('#home:not([hidden]) .home-play-row');
+  return (
+    row !== null &&
+    !row.hidden &&
+    !row.inert &&
+    row.getClientRects().length > 0 &&
+    getComputedStyle(row).visibility !== 'hidden'
+  );
+};
+const backToLineupShown = () =>
+  visible('#home button').some((node) => node.textContent.includes('Back to your lineup'));
+
+/**
+ * Home while the player is choosing lineups (ADR 0089 addendum of 2026-11-27, the setup phase):
+ * cold (nothing known this visit), Play waits for the slow `/me/match` and is never pressable, then
+ * "Back to your lineup"; warm (the page showed the lineup), the way back at once. Failing, Play
+ * shows once the answer fails (vs Bot works offline; the server refuses a second match itself).
+ */
+async function homeInAStart(
+  api: OnlineAnswers,
+  slow: { pending(): number },
+  failing: boolean,
+  problems: string[],
+): Promise<void> {
+  const start = {
+    kind: 'start',
+    id: 'aaaaaaaa-0000-4000-8000-000000000001',
+    format: 'reveal',
+    bestOf: 3,
+  } as const;
+  api['/api/v1/me/match'] = { match: start };
+  rememberGuest(() => localStorage, true);
+  for (const visit of ['cold', 'warm'] as const) {
+    const name = `Home during a start (${visit})`;
+    await follow('?view=manual');
+    if (visit === 'cold') visitCache.clear();
+    else rememberLive(start);
+    const seen = { offered: false, sampling: true };
+    const sample = () => {
+      if (!seen.sampling) return;
+      if (playOffered()) seen.offered = true;
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+    await look(
+      name,
+      async () => {
+        await follow('');
+        if (visit === 'warm' && !backToLineupShown()) problems.push(`${name}: no way back at once`);
+      },
+      slow,
+      failing,
+      problems,
+    );
+    seen.sampling = false;
+    if (failing) continue;
+    if (seen.offered) problems.push(`${name}: Play offered before the server said`);
+    if (!backToLineupShown()) problems.push(`${name}: no "Back to your lineup" once answered`);
+  }
+  api['/api/v1/me/match'] = { match: null };
+  visitCache.clear();
+}
+
 /**
  * Walks every screen and online state signed in, the API slowed (and `failing`), cold then warm.
  * Fails with every problem found, by screen.
@@ -199,6 +267,7 @@ export async function walkSlowly(failing: boolean): Promise<void> {
       );
     }
   }
+  await homeInAStart(api, slow, failing, problems);
   if (!failing) {
     for (const state of ONLINE_STATES) {
       Object.assign(api, await state.answers(Date.now()));

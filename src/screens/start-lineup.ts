@@ -12,6 +12,7 @@
 import { callApi, type ApiFailure } from '../app/api.ts';
 import { createPokePace, type PokePace } from '../app/poke-pace.ts';
 import { pokes } from '../app/pokes.ts';
+import { rememberLive } from '../app/live-memory.ts';
 import { secondsUntil } from '../app/live-play.ts';
 import { decodeStartView, type StartView } from '../api/start.ts';
 import type { Lineup } from '../sim/series.ts';
@@ -102,6 +103,10 @@ export function createStartLineup(step: LineupStep, host: StartLineupHost): Star
     view = next;
     heardAt = Date.now();
     seq = Math.max(seq, next.seq);
+    // Home knows at once that the player is choosing a lineup (its match follows once made).
+    if (next.seriesId === null) {
+      rememberLive({ kind: 'start', id: next.id, format: next.format, bestOf: next.bestOf });
+    }
   }
 
   async function read(id: string): Promise<ApiFailure | undefined> {

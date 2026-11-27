@@ -20,6 +20,8 @@ import type { ChallengeInfo } from '../api/challenges.ts';
 import type { ChallengeScreens } from './online-challenge-types.ts';
 import { waitsForAnyone } from './online-challenge-text.ts';
 import { SIGN_IN, SIGN_IN_LINE } from './who-text.ts';
+import { inGameWith } from './friends-text.ts';
+import { knownLive } from '../app/live-memory.ts';
 
 export interface FriendPicker {
   /** Play against a friend, on the box's rules: who first, signed in; else the link. */
@@ -44,6 +46,8 @@ export function pickerFor(
     readonly storage: DeviceStorage;
     readonly who: WhoSource;
     go(write: (params: URLSearchParams) => void): void;
+    /** Back to the live game the player is in; false when there is none any more. */
+    backToGame(): Promise<boolean>;
   },
 ): FriendPicker {
   let friends: readonly FriendEntry[] | undefined;
@@ -76,6 +80,8 @@ export function pickerFor(
         writeShellParams(url, 'friends');
       });
     },
+    inGame: () => inGameWith(friends ?? [], knownLive()),
+    backToGame: () => host.backToGame(),
   });
 
   /** Signed in as an account: asked of `/me` (shared, once a visit) only when not known yet. */

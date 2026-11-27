@@ -44,3 +44,18 @@ export function addField(): AddField {
   };
   return { field, input, add, said, say };
 }
+
+/** Your friend code's line in the add card: its label, the code (drawn later) and Copy. */
+export function friendCodeRow(): {
+  readonly codeRow: HTMLElement;
+  readonly codeText: HTMLElement;
+  readonly copy: HTMLButtonElement;
+} {
+  const codeRow = element('p', 'friends-code');
+  const codeText = element('strong', 'friends-code-value');
+  const copy = element('button', 'hud-button hud-button-compact friends-copy', 'Copy');
+  copy.type = 'button';
+  copy.setAttribute('aria-label', 'Copy your friend code');
+  codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
+  return { codeRow, codeText, copy };
+}
