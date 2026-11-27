@@ -174,6 +174,7 @@ export async function checkFirstPaint(search: string, where: string): Promise<vo
 export async function checkNewDeviceFirstPaint(): Promise<void> {
   localStorage.removeItem(FIRST_SERIES_STORAGE_KEY);
   await checkFirstPaint('', 'Play, a first visit');
-  expect(localStorage.getItem(FIRST_SERIES_STORAGE_KEY)).toBe('guided');
+  // Nothing written by the load: the device is new by having nothing (first-series.ts).
+  expect(localStorage.getItem(FIRST_SERIES_STORAGE_KEY)).toBeNull();
   expect(PLAYED_KEYS.filter((key) => localStorage.getItem(key) !== null)).toStrictEqual([]);
 }

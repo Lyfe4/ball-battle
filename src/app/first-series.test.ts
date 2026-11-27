@@ -28,10 +28,19 @@ const throwing: FirstSeriesStorage = () => {
 };
 
 describe('the first series (ADR 0090)', () => {
-  it('is ahead on a brand-new device, and stays so across page loads', () => {
+  it('is ahead on a brand-new device, and a first page load writes nothing', () => {
     const { storage, store } = memory();
     expect(createFirstSeries(storage).done()).toBe(false);
+    expect(store.size).toBe(0);
+    expect(createFirstSeries(storage).done()).toBe(false);
+  });
+
+  it('is remembered from its start, so the keys it writes itself never end it', () => {
+    const { storage, store } = memory();
+    createFirstSeries(storage).begin();
     expect(store.get(FIRST_SERIES_STORAGE_KEY)).toBe('guided');
+    store.set(SERIES_STORAGE_KEY, '{}');
+    store.set(HINTS_SEEN_STORAGE_KEY, 'archer');
     expect(createFirstSeries(storage).done()).toBe(false);
   });
 
@@ -78,7 +87,8 @@ describe('the first series (ADR 0090)', () => {
     const { storage, store } = memory({ [key]: 'x' });
     const first = createFirstSeries(storage);
     expect(first.done()).toBe(true);
-    expect(store.get(FIRST_SERIES_STORAGE_KEY)).toBe('done');
+    first.begin();
+    expect(store.has(FIRST_SERIES_STORAGE_KEY)).toBe(false);
     // An existing player sees nothing marked new.
     expect(first.isNew('showdown')).toBe(false);
     expect(first.takeFormatBox('blind')).toBe(false);
