@@ -108,7 +108,8 @@ const sendButton = () => {
 const names = () =>
   [...(sheet()?.querySelectorAll('.who-row .friends-name') ?? [])].map((n) => n.textContent);
 const play = () => {
-  const found = visible('.home-play')[0];
+  // Play itself: "Back to your lobby" wears the same look in Play's place while a lobby waits.
+  const found = visible('.home-play-row .home-play')[0];
   if (found === undefined) throw new Error('No Play');
   return found;
 };
