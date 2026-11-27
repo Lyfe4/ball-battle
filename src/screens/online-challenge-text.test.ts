@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ChallengeInfo } from '../api/challenges.ts';
-import { cardFor, challengeChips, howItGoes, type CardActions } from './online-challenge-text.ts';
+import {
+  backStep,
+  cardFor,
+  challengeChips,
+  howItGoes,
+  type CardActions,
+} from './online-challenge-text.ts';
 import { inAMatchCard } from './current-match.ts';
 
 const actions: CardActions = {
@@ -72,7 +78,7 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
     expect(lobby.link?.url).toBe('https://ballbattle.test/?challenge=abc');
     expect(lobby.link?.copy).toBeDefined();
     expect(lobby.note).toBe(
-      'Once they accept, you both pick lineups, 60 s. Stay until the end: leaving for 30 s loses the match. Leaving this screen cancels the challenge.',
+      'Once they accept, you both pick lineups, 60 s. Stay until the end: leaving for 30 s loses the match. Away from this screen for a minute, it stops.',
     );
     expect(lobby.quiet?.text).toBe('Cancel challenge');
   });
@@ -222,5 +228,17 @@ describe('no dead ends on the vs Friend path (ADR 0027, 0089 addendum of 2026-11
     }
     expect(seen).toBe(STATUSES.length * 2 ** 6);
     expect(cardFor(undefined, actions).buttons.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Back on the waiting screen (ADR 0089 addendum of 2026-11-27)', () => {
+  it('asks first, with Keep waiting the safe answer', () => {
+    expect(backStep('Robin')).toStrictEqual({
+      title: 'Cancel your challenge to Robin?',
+      text: 'Robin won’t be able to accept it.',
+      action: 'Cancel challenge',
+      cancel: 'Keep waiting',
+    });
+    expect(backStep(null).title).toBe('Cancel your challenge?');
   });
 });

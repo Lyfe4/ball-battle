@@ -262,7 +262,11 @@ export function mountOnline(context: MountContext): OnlineMount {
     matchShowing = await screens.backToMatch.refresh();
     showPlay();
     if (matchShowing && !homeRoot.hidden) {
-      homeAsk = window.setTimeout(() => void askHome(), HOME_ASK_MS);
+      // A lobby shown is asked about again just after it would stop (ADR 0089 addendum): "Back
+      // to your lobby" never outlives it.
+      const stops = screens.backToMatch.stopsInMs();
+      const next = stops === undefined ? HOME_ASK_MS : Math.min(HOME_ASK_MS, stops + 500);
+      homeAsk = window.setTimeout(() => void askHome(), next);
     }
   };
   const leftRoot = document.createElement('div');

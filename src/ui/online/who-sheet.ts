@@ -66,8 +66,11 @@ export interface WhoSheet {
     preset?: WhoPreset,
     first?: string,
   ): void;
-  /** The inbox said who is a friend now: drawn again if it is open, the pick kept if it still can. */
-  update(friends: readonly FriendEntry[]): void;
+  /**
+   * The inbox said who is a friend now, and whose live challenge waits for you (by friendship id):
+   * drawn again if it is open, the pick kept if it still can.
+   */
+  update(friends: readonly FriendEntry[], waiting?: ReadonlySet<string>): void;
   isOpen(): boolean;
   close(): void;
 }
@@ -96,6 +99,10 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   let first: string | undefined;
   /** A friend to pick once the inbox has answered (a Challenge before it had). */
   let wanted: string | undefined;
+  /** Friends whose live challenge waits for this player: picking them accepts it (crossed). */
+  let waiting: ReadonlySet<string> = new Set();
+  const howOf = (friend: FriendEntry, rulesNow: FriendSetup) =>
+    howFor(friend, rulesNow, host.turns, waiting.has(friend.id));
   let all = false;
 
   function say(line: string | undefined): void {
@@ -162,11 +169,14 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   function friendRows(people: readonly FriendEntry[], rulesNow: FriendSetup): HTMLElement {
     const list = element('div', 'who-sheet-rows');
     for (const friend of people) {
-      const how = howFor(friend, rulesNow, host.turns);
+      const how = howOf(friend, rulesNow);
       const pick: WhoPick | undefined =
-        how === undefined ? undefined : { kind: 'friend', friend, how };
+        how === undefined
+          ? undefined
+          : { kind: 'friend', friend, how, accepts: waiting.has(friend.id) };
       const disc = personDisc(friend, 'row');
-      const item = row(friend.id, friend.name, friendLine(friend, how, rulesNow), disc, pick);
+      const line = friendLine(friend, how, rulesNow, waiting.has(friend.id));
+      const item = row(friend.id, friend.name, line, disc, pick);
       item.dataset['status'] = friend.status ?? 'offline';
       list.append(item);
     }
@@ -191,9 +201,11 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     if (picked?.kind !== 'friend' || setup === undefined) return;
     const id = picked.friend.id;
     const now = friends?.find((friend) => friend.id === id);
-    const how = now === undefined ? undefined : howFor(now, setup, host.turns);
+    const how = now === undefined ? undefined : howOf(now, setup);
     picked =
-      now === undefined || how === undefined ? undefined : { kind: 'friend', friend: now, how };
+      now === undefined || how === undefined
+        ? undefined
+        : { kind: 'friend', friend: now, how, accepts: waiting.has(now.id) };
   }
 
   /** The friend a Challenge asked for, picked as soon as the inbox lists them. */
@@ -201,8 +213,9 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     if (wanted === undefined || friends === undefined || setup === undefined) return;
     const friend = friends.find((one) => one.id === wanted);
     wanted = undefined;
-    const how = friend === undefined ? undefined : howFor(friend, setup, host.turns);
-    if (friend !== undefined && how !== undefined) picked = { kind: 'friend', friend, how };
+    const how = friend === undefined ? undefined : howOf(friend, setup);
+    if (friend !== undefined && how !== undefined)
+      picked = { kind: 'friend', friend, how, accepts: waiting.has(friend.id) };
   }
 
   function draw(): void {
@@ -281,8 +294,9 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
       if (!sheet.element.isConnected) document.body.append(sheet.element);
       sheet.open();
     },
-    update(next) {
+    update(next, waitingNow) {
       friends = next;
+      if (waitingNow !== undefined) waiting = waitingNow;
       if (!sheet.isOpen()) return;
       keepPick();
       pickWanted();

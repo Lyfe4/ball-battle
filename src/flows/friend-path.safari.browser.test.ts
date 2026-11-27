@@ -33,7 +33,7 @@ const INBOX = { friends: FRIENDS, requests: 0, invites: [], turns: [] };
 
 /** The page's API: who, the inbox, challenges sent (to a friend or anyone) and their lobby. */
 function fakeServer(asked: string[]): void {
-  let invitee: string | null = null;
+  let invitee: string | null | undefined;
   let cancelled = false;
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
@@ -50,7 +50,15 @@ function fakeServer(asked: string[]): void {
       );
     if (path === 'me') return json(200, ME);
     if (path === 'me/inbox') return json(200, INBOX);
-    if (path === 'me/match') return json(200, { match: null });
+    // Home's way back: the waiting challenge while it is out and not cancelled.
+    if (path === 'me/match') {
+      const out = invitee !== undefined && !cancelled;
+      return json(200, {
+        match: out
+          ? { kind: 'lobby', token: TOKEN, format: 'reveal', bestOf: 3, invitee, stopsInMs: 60_000 }
+          : null,
+      });
+    }
     if (path === 'friends') {
       return json(200, {
         code: '7KQ2M9XD',
@@ -82,7 +90,7 @@ function fakeServer(asked: string[]): void {
         startId: null,
         live: true,
         own: true,
-        invitee,
+        invitee: invitee ?? null,
         declined: false,
         superseded: false,
         blocked: null,
@@ -167,7 +175,7 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     await settle();
   });
 
-  it('sends nothing on a pick, only on the button; Back from waiting cancels it', async () => {
+  it('sends nothing on a pick, only on the button; Back asks before it cancels', async () => {
     const asked: string[] = [];
     fakeServer(asked);
     await openSheet();
@@ -184,14 +192,30 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     expect(sentPosts(asked)[0]).toContain('"live":true');
     // The one waiting screen offers no other friends.
     expect(visible('.who-lobby')).toHaveLength(0);
-    await back();
-    await onScreen('home');
-    await until(
-      () => asked.some((line) => line.startsWith(`POST challenges/${TOKEN}/cancel`)),
-      5_000,
-      'the cancel of the waiting screen left',
-      false,
+    // Back asks first; Keep waiting keeps it, nothing sent.
+    const asking = () => document.querySelector<HTMLDialogElement>('dialog.waiting-back');
+    const inAppBack = () =>
+      visible('#online-challenge .screen-back, .screen-header .screen-back')[0];
+    await userEvent.click(inAppBack() ?? play());
+    await until(() => asking()?.open === true, 2_000, 'Back to ask', false);
+    expect(asking()?.querySelector('.sheet-title')?.textContent).toBe(
+      'Cancel your challenge to Robin?',
     );
+    await userEvent.click(
+      visible('dialog.waiting-back button').find((b) => b.textContent === 'Keep waiting') ?? play(),
+    );
+    await until(() => asking()?.open === false, 2_000, 'the question to close', false);
+    await onScreen('challenge');
+    expect(asked.some((line) => line.includes('/cancel'))).toBe(false);
+    // Asked again: Cancel challenge cancels it, then home.
+    await userEvent.click(inAppBack() ?? play());
+    await until(() => asking()?.open === true, 2_000, 'Back to ask again', false);
+    await userEvent.click(
+      visible('dialog.waiting-back button').find((b) => b.textContent === 'Cancel challenge') ??
+        play(),
+    );
+    await onScreen('home');
+    expect(asked.some((line) => line.startsWith(`POST challenges/${TOKEN}/cancel`))).toBe(true);
     // Play never goes straight to anyone: the box says vs Friend, and Play asks again, Robin first.
     expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
     await openSheet();
@@ -217,7 +241,7 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     await until(() => what?.open === false, 2_000, 'What to play to close', false);
   });
 
-  it('sends a link from the same sheet', async () => {
+  it('sends a link from the same sheet; leaving another way keeps it, home leads back', async () => {
     const asked: string[] = [];
     fakeServer(asked);
     await openSheet();
@@ -226,7 +250,29 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     await userEvent.click(sendButton());
     await waitingFor('Waiting for anyone with the link');
     expect(sentPosts(asked)[0]).not.toContain('"friend"');
+    // The browser's Back (or a tab) leaves the screen: the challenge stays, nothing cancelled.
     await back();
+    await onScreen('home');
+    expect(asked.some((line) => line.includes('/cancel'))).toBe(false);
+    // Home's "Back to your lobby" leads back while it is alive.
+    await until(
+      () => visible('.home-play').some((b) => /lobby/i.test(b.textContent)),
+      5_000,
+      'Back to your lobby',
+      false,
+    );
+    await userEvent.click(
+      visible('.home-play').find((b) => /lobby/i.test(b.textContent)) ?? play(),
+    );
+    await waitingFor('Waiting for anyone with the link');
+    await userEvent.click(visible('.screen-header .screen-back')[0] ?? play());
+    const asking = document.querySelector<HTMLDialogElement>('dialog.waiting-back');
+    await until(() => asking?.open === true, 2_000, 'Back to ask', false);
+    expect(asking?.querySelector('.sheet-title')?.textContent).toBe('Cancel your challenge?');
+    await userEvent.click(
+      visible('dialog.waiting-back button').find((b) => b.textContent === 'Cancel challenge') ??
+        play(),
+    );
     await onScreen('home');
   });
 

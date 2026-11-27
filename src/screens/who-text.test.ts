@@ -34,6 +34,11 @@ describe('the words of "Who do you want to play?" (ADR 0089 addendum of 2026-11-
     expect(howFor(friend('a', 'offline'), LIVE, true)).toBe('turns');
     // By turns asked for: by turns, whoever is online.
     expect(howFor(friend('a', 'online'), TURNS, true)).toBe('turns');
+    // Their lobby waits for you (they read as in a match): live, accepting theirs (crossed).
+    expect(howFor(friend('a', 'in_a_match'), TURNS, true, true)).toBe('live');
+    expect(friendLine(friend('a', 'in_a_match'), 'live', LIVE, true)).toBe(
+      'Waiting for you · live',
+    );
   });
 
   it('says on each friend what picking them starts, or why they can’t be picked', () => {
@@ -52,6 +57,10 @@ describe('the words of "Who do you want to play?" (ADR 0089 addendum of 2026-11-
     expect(sendWords({ kind: 'link' })).toBe('Send a link');
     expect(sendWords({ kind: 'friend', friend: robin, how: 'live' })).toBe('Challenge Robin');
     expect(sendWords({ kind: 'friend', friend: robin, how: 'turns' })).toBe('Play Robin by turns');
+    // Their challenge waits for you: the button says it accepts it.
+    expect(sendWords({ kind: 'friend', friend: robin, how: 'live', accepts: true })).toBe(
+      'Accept Robin’s challenge',
+    );
     expect(sendSpoken({ kind: 'friend', friend: robin, how: 'live' }, LIVE)).toBe(
       'Challenge Robin live, Best of 3 · Reveal',
     );

@@ -78,8 +78,15 @@ export interface OnlineScreens {
   /** The Friends tab (ADR 0081): every online build. */
   readonly friends: ScreenHandler<'friends'>;
   readonly play: OnlinePlay;
-  /** Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows. */
-  readonly backToMatch: { readonly element: HTMLElement; refresh(): Promise<boolean> };
+  /**
+   * Home's "Back to your match" (ADR 0053); `refresh` asks the server, true when one shows;
+   * `stopsInMs`, for a lobby shown, how long until it stops unless its page is heard from.
+   */
+  readonly backToMatch: {
+    readonly element: HTMLElement;
+    refresh(): Promise<boolean>;
+    stopsInMs(): number | undefined;
+  };
   readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
@@ -94,8 +101,6 @@ export interface OnlineScreens {
   playFriend(setup: FriendSetup): Promise<void>;
   /** Whether Play against a friend asks who (an account is signed in). */
   asksWho(): boolean;
-  /** The cancel of a waiting screen just left, until the server has it. */
-  leaving(): Promise<void>;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
   rematchShown(): string | undefined;
   /** Play shows (a visit, Back): "Who do you want to play?" closes. */
@@ -185,16 +190,19 @@ export function createOnlineScreens(
   }
 
   const back = createBackToMatch(toMatch);
+  /** The lobby home last showed: it stops by the clock, which pokes nobody. */
+  let lobbyStops: number | undefined;
   const backToMatch = {
     element: back.element,
+    stopsInMs: () => lobbyStops,
     /** Asks for the player's live match, only on a device that has played online. */
     async refresh(): Promise<boolean> {
       if (!hasGuest(host.storage)) return back.show(null);
-      // A waiting screen just left is cancelled first: never "Back to your lobby" for it.
-      await challenges.leaving();
       const match = await currentMatch();
       // Unknown (offline, a failure): keep what shows; the next ask may know.
-      return match === undefined ? !back.element.hidden : back.show(match);
+      if (match === undefined) return !back.element.hidden;
+      lobbyStops = match?.kind === 'lobby' ? match.stopsInMs : undefined;
+      return back.show(match);
     },
   };
 
@@ -333,14 +341,15 @@ export function createOnlineScreens(
       play.setVisible(screen === 'online');
     },
     friendStatuses(inbox) {
-      if (inbox !== undefined) picker?.statuses(inbox.friends);
+      if (inbox !== undefined) picker?.statuses(inbox.friends, inbox.invites);
+      // First: a request or friend the list hasn't drawn reads it again (before the merge below).
+      if (inbox !== undefined) friendsTab.heard(inbox.requests, inbox.friends);
       friendsTab.statuses(inbox?.friends ?? []);
       friendsTab.invites(inbox?.invites ?? [], inbox?.turns ?? [], inbox?.games, inbox?.endings);
     },
     openInvite: (token, live) => challenges.openInvite(token, live),
     playFriend: (setup) => picker?.play(setup) ?? challenges.playFriend(setup),
     asksWho: () => picker?.asksWho() ?? false,
-    leaving: () => challenges.leaving(),
     rematchShown: () => challenges.rematchShown(),
     homeShown: () => picker?.close(),
   };

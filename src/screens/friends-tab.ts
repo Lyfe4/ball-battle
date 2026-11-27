@@ -46,6 +46,8 @@ export interface FriendsTab {
   setVisible(visible: boolean): void;
   /** The friends' status from the inbox, drawn if the list shows. */
   statuses(friends: readonly FriendEntry[]): void;
+  /** What the inbox says waits: news the list hasn't drawn reads it again (friends-section.ts). */
+  heard(requests: number, friends: readonly FriendEntry[]): void;
   /** The friends' open challenges and turns (ADR 0085) from the inbox, first in Waiting for you. */
   invites(
     invites: readonly Invite[],
@@ -181,6 +183,9 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     },
     statuses(list) {
       friends?.statuses(list);
+    },
+    heard(requests, list) {
+      friends?.heard(requests, list);
     },
     invites(list, turns, games, endings) {
       friends?.challenges(list, turns, games, endings);

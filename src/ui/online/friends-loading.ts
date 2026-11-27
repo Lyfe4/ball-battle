@@ -3,6 +3,7 @@
 // shows no skeleton at all); one calm reveal when they're replaced; and one failure card, in the
 // failed section's place, in the game's words with Try again.
 import type { FriendEntry, FriendsResponse } from '../../api/friends.ts';
+import type { ApiResult } from '../../app/api.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { element } from '../dom.ts';
 
@@ -13,24 +14,66 @@ export const SKELETON_AFTER_MS = 150;
 export const DEFAULT_SKELETON_ROWS = 3;
 
 /**
- * `count` placeholder rows, each a row's height (friends-section.css), hidden until
- * SKELETON_AFTER_MS has passed: they show only for a slow read.
+ * Keeps `node`'s place from the first frame but unseen until SKELETON_AFTER_MS has passed, so a
+ * quick answer shows no skeleton and a slow one shows it without anything moving (ADR 0087 addendum
+ * of 2026-11-27: `hidden` took the space away, so the skeleton pushed the page when it appeared).
+ */
+export function unseenAtFirst(node: HTMLElement): void {
+  node.dataset['unseen'] = '';
+  window.setTimeout(() => {
+    delete node.dataset['unseen'];
+  }, SKELETON_AFTER_MS);
+  // (What replaces the placeholders in the same node clears the mark itself, so it shows at once.)
+}
+
+/**
+ * `count` placeholder rows, each a row's height (friends-section.css), in their place at once and
+ * seen from SKELETON_AFTER_MS: they show only for a slow read.
  */
 export function skeletonRows(count: number): HTMLElement {
   const rows = element('ul', 'friends-list friends-skeleton');
   rows.setAttribute('aria-hidden', 'true');
   for (let at = 0; at < count; at += 1) rows.append(element('li', 'friends-skeleton-row'));
-  rows.hidden = true;
-  window.setTimeout(() => {
-    if (rows.isConnected) rows.hidden = false;
-  }, SKELETON_AFTER_MS);
+  unseenAtFirst(rows);
   return rows;
+}
+
+/**
+ * `count` rows' places in `items` (a group whose rows are coming), seen from SKELETON_AFTER_MS;
+ * `requests`: a request's height, its Accept and Decline under the name.
+ */
+export function holdRows(items: HTMLElement, count: number, requests = false): void {
+  const rows = [...skeletonRows(count).children];
+  if (requests) for (const row of rows) row.classList.add('friends-skeleton-request');
+  items.append(...rows);
+  items.classList.add('friends-skeleton');
+  items.setAttribute('aria-hidden', 'true');
+  unseenAtFirst(items);
+}
+
+/**
+ * The list read again for news the inbox brought (ADR 0089 addendum of 2026-11-27), one read at a
+ * time: `done` gets the new list; a failed read keeps what shows (the next news reads again).
+ */
+export function createReread(
+  read: () => Promise<ApiResult<FriendsResponse | undefined>>,
+  done: (list: FriendsResponse) => void,
+): () => void {
+  let busy = false;
+  return () => {
+    if (busy) return;
+    busy = true;
+    void read().then((answer) => {
+      busy = false;
+      if (answer.ok && answer.body !== undefined) done(answer.body);
+    });
+  };
 }
 
 /** Whether a skeleton was seen (so what replaces it fades in once, rather than snapping). */
 export function skeletonShown(root: ParentNode): boolean {
   const rows = root.querySelector('.friends-skeleton');
-  return rows instanceof HTMLElement && !rows.hidden;
+  return rows instanceof HTMLElement && !rows.hidden && rows.dataset['unseen'] === undefined;
 }
 
 /** The one failure card: the section's title, the game's words for what failed, Try again. */

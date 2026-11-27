@@ -3,6 +3,7 @@
 import type {
   AddFriendResponse,
   ReportReason,
+  FriendEntry,
   FriendStatus,
   FriendsResponse,
   Ending,
@@ -184,22 +185,6 @@ export function waitingCount(inbox: InboxResponse): number {
   return inbox.turns.length + inbox.invites.length + inbox.requests;
 }
 
-/**
- * Whether the inbox has anything to keep reading for (the timer's `read`, `inbox-poll.ts`): a
- * friend, a request, a challenge, or a game by turns on either side, which the other's move or
- * the clock changes, even with no friend (a game from a link, or a friend since removed). An ending
- * only waits to be seen.
- */
-export function inboxToWatch(inbox: InboxResponse): boolean {
-  return (
-    inbox.friends.length > 0 ||
-    inbox.requests > 0 ||
-    inbox.invites.length > 0 ||
-    inbox.turns.length > 0 ||
-    (inbox.games?.length ?? 0) > 0
-  );
-}
-
 /** The Friends tab's accessible name, with what waits in it (ADR 0081). */
 export function friendsTabLabel(waiting: number): string {
   return waiting === 0 ? 'Friends' : `Friends, ${String(waiting)} waiting`;
@@ -246,4 +231,21 @@ export function headToHead(
     shown: `You ${String(record.wins)} – ${String(record.losses)} ${name}`,
     said: `Your record with ${name}: you won ${String(record.wins)}, ${name} won ${String(record.losses)}`,
   };
+}
+
+/**
+ * Whether the inbox says something the Friends list hasn't drawn (ADR 0089 addendum of
+ * 2026-11-27): a request waiting that it doesn't show, or a friend it doesn't list (or one gone).
+ */
+export function missesNews(
+  list: Pick<FriendsResponse, 'incoming' | 'friends'>,
+  requests: number,
+  friends: readonly Pick<FriendEntry, 'id'>[],
+): boolean {
+  const drawn = new Set(list.friends.map((one) => one.id));
+  return (
+    list.incoming.length !== requests ||
+    friends.length !== drawn.size ||
+    friends.some((one) => !drawn.has(one.id))
+  );
 }

@@ -6,7 +6,7 @@
 // last picked is listed first. A guest, or an account whose `/me` isn't known, goes straight to the
 // link as before, and its waiting screen says how to challenge friends instead (sign in). Who is a
 // friend and online is the inbox's list (no read of its own).
-import type { FriendEntry } from '../api/friends.ts';
+import type { FriendEntry, Invite } from '../api/friends.ts';
 import { loadFriendPick, saveFriendPick } from '../app/friend-pick.ts';
 import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
@@ -31,8 +31,8 @@ export interface FriendPicker {
   open(preset: WhoPreset, guest: () => unknown): Promise<void>;
   /** Whether Play asks who (an account is signed in, as this visit knows). */
   asksWho(): boolean;
-  /** The inbox's friends and their status. */
-  statuses(friends: readonly FriendEntry[]): void;
+  /** The inbox's friends and their status, and its friends' live challenges waiting for you. */
+  statuses(friends: readonly FriendEntry[], invites?: readonly Invite[]): void;
   /** What a guest's waiting link shows after it: how to challenge friends by name. */
   lobbyAfter(card: ChallengeInfo): HTMLElement | undefined;
   close(): void;
@@ -103,9 +103,12 @@ export function pickerFor(
       openSheet(preset);
     },
     asksWho: () => owner() !== undefined,
-    statuses(next) {
+    statuses(next, invites = []) {
       friends = next;
-      sheet.update(next);
+      const waiting = invites.flatMap((one) =>
+        one.live && one.friend !== undefined ? [one.friend] : [],
+      );
+      sheet.update(next, new Set(waiting));
     },
     lobbyAfter(card) {
       if (!waitsForAnyone(card) || owner() !== undefined) return undefined;

@@ -1,8 +1,9 @@
 // Friend challenges on the page (ADR 0052, 0055, 0080; ADR 0089 addendum of 2026-11-27): sending
 // one ("Who do you want to play?", or a guest's Play against a friend), the one waiting screen, and
-// answering one (the card, with Accept); then both pick lineups together (`?start=`). The waiting
-// screen lasts while it shows: leaving it in the game (Back, a tab, another screen) cancels the
-// challenge, so nobody is left waiting for a lobby that isn't there. The 16+ question comes first,
+// answering one (the card, with Accept); then both pick lineups together (`?start=`). A waiting
+// challenge ends by Cancel challenge, or Back once asked (waiting-back.ts); another tab or screen,
+// or the app hidden, keeps it, and the server stops it once its screen is unwatched for a minute
+// (LOBBY_SEEN_MS), telling both. The 16+ question comes first,
 // once per device, never on load. Every state has a way on (ADR 0027). By turns (ADR 0085), each
 // player's lineup goes with the challenge they send or accept, picked here in place.
 import { callApi } from '../app/api.ts';
@@ -29,6 +30,7 @@ import type { ChallengeHost, ChallengeScreens } from './online-challenge-types.t
 import { cardActionsFor } from './challenge-card-actions.ts';
 import { createStartLineup } from './start-lineup.ts';
 import { createTurnsLineup } from './turns-lineup.ts';
+import { createWaitingBack } from './waiting-back.ts';
 
 /** The part of these screens on show. */
 type Part = 'notice' | 'lineup' | 'turns' | 'loading';
@@ -46,8 +48,8 @@ export function createChallengeScreens(
   let visible = false;
   let info: ChallengeInfo | undefined;
   let token: string | undefined;
-  /** The cancel of a waiting screen just left, until the server has it. */
-  let leaving: Promise<void> = Promise.resolve();
+  /** Back on the waiting screen asks first. */
+  const waitingBack = createWaitingBack();
   /** The waiting screen asking again while the sender waits on it. */
   const lobby = createChallengeLobby(() => loadCard(false));
 
@@ -57,7 +59,16 @@ export function createChallengeScreens(
   const back = () => {
     host.back(home);
   };
-  const notice = createNotice(roots.notice, back);
+  // On the waiting screen, Back cancels the challenge, once the player says so; else it stays.
+  const noticeBack = () => {
+    const waiting = info;
+    if (!waitingOn(waiting) || waiting === undefined) {
+      back();
+      return;
+    }
+    void waitingBack.ask(waiting.invitee).then((yes) => (yes ? cancel() : undefined));
+  };
+  const notice = createNotice(roots.notice, noticeBack);
   createSkeleton(roots.loading, 'card', back);
   const lineup = createLineupStep(balls, {
     // Back holds the lineups: the clock runs on, and home leads back to them (ADR 0080).
@@ -105,15 +116,6 @@ export function createChallengeScreens(
     turnsLineup.element.hidden = part !== 'turns';
     roots.loading.hidden = !visible || part !== 'loading';
     if (content !== undefined) notice.show(content, focus);
-  }
-
-  /** Left without Cancel challenge (Back, a tab): it stops all the same; an accepted one doesn't. */
-  function leaveWaiting(): void {
-    const left = token;
-    if (left === undefined || !waitingOn(info)) return;
-    lobby.stop();
-    if (info !== undefined) info = { ...info, status: 'stopped' };
-    leaving = callApi<ChallengeInfo>('POST', `challenges/${left}/cancel`, {}).then(() => undefined);
   }
 
   /** Into series `id` once it is read, in place of this screen. */
@@ -264,25 +266,20 @@ export function createChallengeScreens(
     });
 
   /** Another of these screens shows (a new challenge, the lineups, the send screen). */
-  function moveOn(next?: string): void {
-    if (next !== token) leaveWaiting();
+  function moveOn(): void {
     start.stop();
   }
 
   return {
     setVisible(next) {
-      if (!next && visible) {
-        leaveWaiting();
-        // Leaving these screens forgets a friend picked for by turns.
-        sender.forget();
-      }
+      // Leaving these screens forgets a friend picked for by turns; a waiting challenge stays.
+      if (!next && visible) sender.forget();
       visible = next;
       if (!next) {
         show('notice');
         start.stop();
       }
     },
-    leaving: () => leaving,
     resumed() {
       // Back from a share sheet or another app: the waiting screen asks at once.
       if (visible && lobby.waiting()) {
@@ -291,7 +288,7 @@ export function createChallengeScreens(
       }
     },
     showChallenge(next) {
-      moveOn(next);
+      moveOn();
       if (token !== next) info = undefined;
       token = next;
       // Read just before (the waiting screen after a send): shown at once, and asked again as the
@@ -311,7 +308,7 @@ export function createChallengeScreens(
     },
     rematchShown: () => start.rematchOf(),
     openInvite(next, live = true) {
-      moveOn(next);
+      moveOn();
       token = next;
       info = undefined;
       if (live) return accept('go');

@@ -1,9 +1,11 @@
 // When the page reads the inbox (ADR 0079, PR (d)): once at the start, then every INBOX_MS while
-// the page is visible and the last answer had something to watch (a friend, a waiting request or
-// an invite), and every INBOX_EXPECTING_MS while something is expected (a rematch window, a lobby
-// waiting: `expecting`, 2026-11-23); never while hidden, and once at once when the page shows
-// again. Anything that changes the friends (a request sent or answered) pokes it. Only the wait
-// lives here.
+// the page is visible, signed in, whatever the last answer held (ADR 0089 addendum of 2026-11-27:
+// a player with nothing to watch yet is the one a first friend request is for, so a lost poke or
+// a socket down must not leave it unseen); every INBOX_EXPECTING_MS while something is expected (a
+// rematch window, a lobby waiting: `expecting`, 2026-11-23); at a deadline an answer named (`soon`:
+// a friend's lobby stopping); never while hidden, and once at once when the page shows again.
+// Anything that changes the friends (a request sent or answered) pokes it. Only the wait lives
+// here.
 //
 // With the Realtime poke socket up (ADR 0082, `socket(true)`), the server's `inbox` pokes call
 // `poke` and the timer is only a safety read every INBOX_SAFETY_MS, expecting or not: news arrives
@@ -18,8 +20,8 @@ export const INBOX_EXPECTING_MS = 2_000;
 export const INBOX_SAFETY_MS = 120_000;
 
 export interface InboxPollHost {
-  /** Reads the inbox and says whether there is anything to keep watching. */
-  read(): Promise<boolean>;
+  /** Reads the inbox. */
+  read(): Promise<unknown>;
   /** The page is hidden (`document.hidden`). */
   hidden(): boolean;
   /** Something is expected (a rematch window, a lobby waiting): read every INBOX_EXPECTING_MS. */
@@ -39,6 +41,8 @@ export interface InboxPoll {
   visibility(): void;
   /** Something may be expected now: a slow wait is cut to INBOX_EXPECTING_MS, without a read. */
   quicken(): void;
+  /** A read within `ms` (a lobby the inbox showed stops then): sooner than the wait, never later. */
+  soon(ms: number): void;
   /** The poke socket went up (read now, then the safety read) or down (today's timers again). */
   socket(up: boolean): void;
 }
@@ -55,6 +59,8 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
   let due = 0;
   /** The poke socket is up: pokes bring news, the timer is only a safety read. */
   let up = false;
+  /** A deadline asked for while a read was out: kept for the wait after it. */
+  let pending: number | undefined;
 
   /** How long to wait after a read worth watching. */
   const cadence = (): number =>
@@ -73,12 +79,10 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
     }
     clear();
     busy = true;
-    let watch: boolean;
     try {
-      watch = await host.read();
+      await host.read();
     } catch {
       // A failed read (offline, a server error) keeps time: the next one may work.
-      watch = true;
     }
     busy = false;
     if (again) {
@@ -86,7 +90,9 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
       void poke();
       return;
     }
-    if (isOn() && (watch || host.expecting()) && !host.hidden()) wait(cadence());
+    // Signed in and seen, it always keeps time: the safety read, at the least.
+    if (isOn() && !host.hidden()) wait(Math.min(cadence(), pending ?? Infinity));
+    pending = undefined;
   }
 
   function wait(ms: number): void {
@@ -118,6 +124,15 @@ export function createInboxPoll(host: InboxPollHost): InboxPoll {
     quicken() {
       if (up || !on || busy || host.hidden() || !host.expecting()) return;
       if (timer === undefined || due > Date.now() + INBOX_EXPECTING_MS) wait(INBOX_EXPECTING_MS);
+    },
+    soon(ms) {
+      if (!on || host.hidden()) return;
+      // A read under way schedules its own next wait; this deadline is kept for after it.
+      if (busy) {
+        pending = Math.min(pending ?? ms, ms);
+        return;
+      }
+      if (timer === undefined || due > Date.now() + ms) wait(ms);
     },
     socket(next) {
       if (up === next) return;

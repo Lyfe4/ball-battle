@@ -74,7 +74,10 @@ describe('play by turns with a friend', () => {
           .locator('.friends-row', { hasText: jo })
           .locator('.friends-open')
           .click();
-        await one.getByRole('button', { name: `Challenge ${jo}` }).click();
+        await one
+          .getByRole('dialog', { name: jo })
+          .getByRole('button', { name: `Challenge ${jo}` })
+          .click();
         const who = one.getByRole('dialog', { name: 'Who do you want to play?' });
         await who.locator('.who-row[aria-checked="true"]').waitFor();
         return who;
@@ -156,8 +159,13 @@ describe('play by turns with a friend', () => {
       await one.goto(`${BASE}/?view=friends`);
       await sheetOf();
       await sendChallenge(one, `Waiting for ${jo}`);
+      // Back asks first (ADR 0089 addendum): Cancel challenge, then where it came from.
       await one.locator('.screen-header:visible').getByRole('button', { name: 'Back' }).click();
-      await one.waitForURL((url) => url.searchParams.get('view') === 'friends');
+      await one
+        .getByRole('dialog', { name: `Cancel your challenge to ${jo}?` })
+        .getByRole('button', { name: 'Cancel challenge' })
+        .click();
+      await one.locator('.home-play-row .home-play').waitFor();
       expect(errors).toStrictEqual([]);
       for (const page of [one, two]) await page.context().close();
     },

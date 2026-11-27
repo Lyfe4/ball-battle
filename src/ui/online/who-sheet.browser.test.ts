@@ -166,6 +166,18 @@ describe('Who do you want to play? (ADR 0089 addendum of 2026-11-27)', () => {
     expect(sent).toStrictEqual([]);
   });
 
+  it('picks a friend waiting for you live: sending accepts theirs (crossed)', () => {
+    const { sheet } = mount(false);
+    sheet.open(SOME, LIVE);
+    sheet.update(SOME, new Set(['f-Mina']));
+    expect(row('Mina').getAttribute('aria-disabled')).toBeNull();
+    expect(row('Mina').querySelector('.friends-status')?.textContent).toBe(
+      'Waiting for you · live',
+    );
+    row('Mina').click();
+    expect(sendButton().textContent).toBe('Accept Mina’s challenge');
+  });
+
   it('plays everyone by turns when the box says By turns', () => {
     const { sheet } = mount();
     sheet.open(SOME, { ...LIVE, turns: true });

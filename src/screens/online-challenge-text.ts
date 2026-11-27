@@ -227,8 +227,21 @@ export function cardFor(
 export const nextLine = (bestOf: BestOf): string =>
   `Once they accept, you both pick lineups, ${String(startLineupMs(bestOf) / 1000)} s. ${STAY_STEP}`;
 
-/** Said on the waiting screen: it lasts only while it shows. */
-export const LEAVING_LINE = 'Leaving this screen cancels the challenge.';
+/** Said on the waiting screen: away from it for a minute (another app, the phone locked), it stops. */
+export const LEAVING_LINE = 'Away from this screen for a minute, it stops.';
+
+/** Back on the waiting screen asks first (waiting-back.ts): what it does, Keep waiting the default. */
+export function backStep(friend: string | null) {
+  return {
+    title: friend === null ? 'Cancel your challenge?' : `Cancel your challenge to ${friend}?`,
+    text:
+      friend === null
+        ? 'Nobody can join it with the link after this.'
+        : `${friend} won’t be able to accept it.`,
+    action: 'Cancel challenge',
+    cancel: 'Keep waiting',
+  } as const;
+}
 
 /**
  * The one waiting screen (ADR 0089 addendum of 2026-11-27), for a friend or a link alike:
@@ -293,7 +306,10 @@ function stoppedOwn(info: ChallengeInfo, actions: CardActions): NoticeContent {
   }
   return {
     title: 'This challenge stopped',
-    body: [what, 'It stops when you leave its screen. Send a new one when you’re ready.'],
+    body: [
+      what,
+      'You cancelled it, or were away from its screen for a minute. Send a new one when you’re ready.',
+    ],
     buttons: [{ text: 'Challenge a friend', onClick: actions.sendOwn }, home],
   };
 }

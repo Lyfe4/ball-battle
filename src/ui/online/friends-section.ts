@@ -34,6 +34,8 @@ import {
   inboxList,
   skeletonRows,
   skeletonShown,
+  holdRows,
+  createReread,
 } from './friends-loading.ts';
 import { createFriendSheet } from './friend-sheet.ts';
 import { challengeRow, gamesGroup, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
@@ -43,6 +45,7 @@ import {
   FRIEND_GROUPS,
   FRIENDS_FAILED_TITLE,
   friendsTitle,
+  missesNews,
   NO_FRIENDS,
   type FriendGroup,
 } from '../../screens/friends-text.ts';
@@ -82,6 +85,12 @@ export interface FriendsSection {
   /** The friends' status from the inbox (PR (d)), drawn if the section shows. */
   statuses(friends: readonly FriendEntry[]): void;
   /**
+   * What the inbox says waits (ADR 0089 addendum of 2026-11-27): a request or a friend the list
+   * hasn't drawn reads `/friends` again, while the section shows. Before `statuses`, which merges
+   * the inbox's friends into the list.
+   */
+  heard(requests: number, friends: readonly FriendEntry[]): void;
+  /**
    * The friends' open challenges from the inbox, and the series by turns waiting on your pick
    * (ADR 0085): first in Waiting for you (ADR 0081); then Your games, the games waiting on the
    * other player and the endings not seen yet (ADR 0086).
@@ -105,7 +114,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
 
   // Adding: the notice's field look, its own Add button, and one line for what happened.
-  const { field, input, add, said } = addField();
+  const { field, input, add, say } = addField();
 
   // Waiting for you, then your friends; your code and Add in a card of their own, with what you sent.
   const lists = element('div', 'friends-lists');
@@ -129,6 +138,8 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   let code = '';
   let list: FriendsResponse | undefined;
+  /** How many requests the inbox says wait: their rows' place before `/friends` answers. */
+  let inboxRequests = 0;
   /** The friends as the inbox last said (names and status): rows at once, before `/friends`. */
   let inboxFriends: readonly FriendEntry[] | undefined;
   let invites: readonly Invite[] = [];
@@ -190,12 +201,6 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     },
   };
 
-  function say(text: string, error = false): void {
-    said.textContent = text;
-    said.toggleAttribute('data-error', error);
-    input.setAttribute('aria-invalid', String(error));
-  }
-
   /**
    * A person's row (ADR 0086): their disc, name and what they are; the row opens their sheet (its
    * chevron). One inline action at most, only where it can succeed: Challenge for a friend online; a
@@ -239,6 +244,10 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       const items = element('ul', 'friends-list');
       items.append(...now[group.key].map((friend) => rowOf(group, friend)));
       shown.append(title, items);
+      // Requests the inbox counted, not read yet: their rows' place, so nothing moves (ADR 0087).
+      if (group.key === 'incoming' && list === undefined && inboxRequests > 0) {
+        holdRows(items, inboxRequests, true);
+      }
       if (group.key !== 'friends') return shown;
       // Your friends always sit here: rows, skeleton rows while unknown, or the empty state.
       if (list === undefined && inboxFriends === undefined) {
@@ -253,7 +262,8 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       (group) =>
         group.key === 'friends' ||
         now[group.key].length > 0 ||
-        (group.key === 'incoming' && invites.length + turns.length > 0),
+        (group.key === 'incoming' &&
+          invites.length + turns.length + (list === undefined ? inboxRequests : 0) > 0),
     );
     // What waits on you and your friends lead; what you sent sits with your code (ADR 0081).
     const withCode = (group: FriendGroup) => group.key === 'outgoing' || group.key === 'blocked';
@@ -310,17 +320,19 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     say(addedLine(answer));
   }
   busyOnClick(add, addFriend);
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      add.click();
-    }
-  });
   copy.addEventListener('click', () => {
     void host.copy(shownFriendCode(code)).then((done) => {
       copy.textContent = done ? 'Copied' : 'Copy';
     });
   });
+
+  const reread = createReread(
+    () => host.api<FriendsResponse>('GET', 'friends'),
+    (next) => {
+      list = next;
+      draw();
+    },
+  );
 
   async function open(): Promise<void> {
     note.textContent = '';
@@ -359,6 +371,13 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       games = nextGames;
       endings = nextEndings;
       if (root.isConnected) draw();
+    },
+    heard(requests, friends) {
+      inboxRequests = requests;
+      // The inbox says only how many requests wait: their rows (and a request now a friend, out of
+      // Sent) come from `/friends`, read once for this news, never on a timer.
+      if (list === undefined || root.getClientRects().length === 0) return;
+      if (missesNews(list, requests, friends)) reread();
     },
     statuses(friends) {
       // Before `/friends` answers, the inbox's friends are the rows (ADR 0087 rule 6).

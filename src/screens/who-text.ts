@@ -23,7 +23,13 @@ export type How = 'live' | 'turns';
 
 /** What the sheet sends: a friend (live or by turns), or a link to anyone. */
 export type WhoPick =
-  | { readonly kind: 'friend'; readonly friend: FriendEntry; readonly how: How }
+  | {
+      readonly kind: 'friend';
+      readonly friend: FriendEntry;
+      readonly how: How;
+      /** Their live challenge waits for you: sending accepts it (crossed). */
+      readonly accepts?: boolean;
+    }
   | { readonly kind: 'link' };
 
 /** The rules the challenge goes on, from Play's box: "Live · Best of 3 · Reveal". */
@@ -42,14 +48,18 @@ export function othersTitle(anyOnline: boolean, count: number): string {
 export const showAll = (count: number): string => `Show all ${String(count)} friends`;
 
 /**
- * How a friend can be played on these rules, or undefined when they can't now. By turns works any
- * time; live needs them online, else by turns where the build plays by turns (`turns`).
+ * How a friend can be played on these rules, or undefined when they can't now. A friend whose own
+ * live challenge waits for you (`waiting`) is live: sending is accepting theirs (crossed, ADR 0089
+ * addendum of 2026-11-27). By turns works any time; live needs them online, else by turns where
+ * the build plays by turns (`turns`).
  */
 export function howFor(
   friend: Pick<FriendEntry, 'status'>,
   setup: FriendSetup,
   turns: boolean,
+  waiting = false,
 ): How | undefined {
+  if (waiting) return 'live';
   if (turns && setup.turns) return 'turns';
   if (friend.status === 'online') return 'live';
   return turns ? 'turns' : undefined;
@@ -60,7 +70,10 @@ export function friendLine(
   friend: Pick<FriendEntry, 'status'>,
   how: How | undefined,
   setup: FriendSetup,
+  waiting = false,
 ): string {
+  // Their lobby waits for you (they read as in a match): picking them starts it.
+  if (waiting) return 'Waiting for you · live';
   const status =
     friend.status === 'online'
       ? 'Online'
@@ -79,6 +92,7 @@ export function friendLine(
 export function sendWords(pick: WhoPick | undefined): string {
   if (pick === undefined) return PICK_FIRST;
   if (pick.kind === 'link') return 'Send a link';
+  if (pick.accepts === true) return `Accept ${pick.friend.name}’s challenge`;
   return pick.how === 'live'
     ? `Challenge ${pick.friend.name}`
     : `Play ${pick.friend.name} by turns`;
@@ -88,6 +102,9 @@ export function sendWords(pick: WhoPick | undefined): string {
 export function sendSpoken(pick: WhoPick | undefined, setup: FriendSetup): string {
   if (pick === undefined) return `${PICK_FIRST}: pick a friend or a link first`;
   const rules = setupLine(setup.format, setup.bestOf);
+  if (pick.kind === 'friend' && pick.accepts === true) {
+    return `Accept ${pick.friend.name}’s challenge, ${rules}`;
+  }
   if (pick.kind === 'link') return `Send a link, ${rulesLine(setup)}`;
   return pick.how === 'live'
     ? `Challenge ${pick.friend.name} live, ${rules}`

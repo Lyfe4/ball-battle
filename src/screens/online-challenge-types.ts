@@ -35,8 +35,6 @@ export interface ChallengeHost {
 
 export interface ChallengeScreens {
   setVisible(visible: boolean): void;
-  /** The cancel of a waiting screen just left, until the server has it (home asks after it). */
-  leaving(): Promise<void>;
   /** A friend's link: its card (Accept), or the sender's waiting screen. */
   showChallenge(token: string): void;
   /**
