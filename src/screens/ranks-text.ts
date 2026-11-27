@@ -1,13 +1,9 @@
-// What the Ranks tab says (ADR 0081): plainly that ranks are coming, what each part will be, and a
-// way on now. Pure, so the words are tested without a DOM.
+// What the Ranks tab says (ADR 0081, 0090 D5): what ranks will be, one card saying plainly that
+// ranked play is coming and what to do until then, and that way on. Pure, so the words are tested
+// without a DOM.
 export const RANKS = {
   title: 'Ranks',
-  intro:
-    'Win online matches to climb. Ranks open with ranked play; until then, every match is for fun.',
-  cards: [
-    { title: 'Trophy road', line: 'Trophies for each online win, milestones along the way.' },
-    { title: 'Friends', line: 'You and your friends, by trophies.' },
-    { title: 'Everyone', line: 'The top players, this season.' },
-  ],
+  intro: 'Ranks open with ranked play: trophies for online wins.',
+  card: { title: 'Ranked is coming', line: 'Until then, play a friend.' },
   button: 'Play a friend now',
 } as const;
