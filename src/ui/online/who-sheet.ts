@@ -42,12 +42,13 @@ export interface WhoSheetHost {
   /**
    * Sends what was picked: calls `moving` just before the next screen shows (the sheet closes
    * then, so focus lands on that screen), or resolves with the line that says why it didn't, said
-   * above the button.
+   * above the button. `wanted` is false once the player closed the sheet while it was sending.
    */
   readonly send: (
     pick: WhoPick,
     setup: FriendSetup,
     moving: () => void,
+    wanted: () => boolean,
   ) => Promise<string | undefined>;
   /** The Friends tab, to add one. */
   readonly addFriend: () => void;
@@ -111,6 +112,8 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   let all = false;
   /** The game the player is in, as last drawn: one line and Back to it in the sheet's place. */
   let game: InGame | undefined;
+  /** Counts the sheet's openings, so a send knows whether it was opened again since. */
+  let opens = 0;
   /** What the groups were last drawn as, so a redraw that changes nothing keeps the same rows. */
   let drawn = '';
 
@@ -165,7 +168,10 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     const moving = () => {
       sheet.close();
     };
-    return host.send(pick, setup, moving).then((line) => {
+    // Closed while it sends (×, Escape, Back, a tap outside), or opened again since: not wanted.
+    const sentFrom = opens;
+    const wanted = () => sheet.isOpen() && opens === sentFrom;
+    return host.send(pick, setup, moving, wanted).then((line) => {
       if (line !== undefined) say(line);
     });
   });
@@ -327,6 +333,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
 
   return {
     open(next, rulesNow, preset, last) {
+      opens += 1;
       setup = rulesNow;
       friends = next;
       first = last;
