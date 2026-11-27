@@ -78,6 +78,8 @@ async function playFirstSeries(): Promise<void> {
   await click(visible('.home-play')[0] ?? document.body);
   await settle();
   expect(location.search).toBe('?mode=bo3&fmt=reveal&step=lineup');
+  // Play starts it, remembered before the series writes keys of its own.
+  expect(stored()).toBe('guided');
   expect(textOf('.lineup-guide .notice-steps-title')).toBe('How a series goes');
   expect(textOf('.lineup-mode-name')).toBe(FIRST_VISIT.play);
   expect(visible('.lineup-level-toggle'), 'Pick for me in the level’s place').toHaveLength(0);
@@ -188,7 +190,7 @@ export async function runFirstVisitFlow(): Promise<void> {
   // A first load writes nothing that means play (ADR 0090, D6): still new after the demo runs.
   await new Promise((resolve) => setTimeout(resolve, 3_000));
   expect(PLAYED_KEYS.filter((key) => localStorage.getItem(key) !== null)).toStrictEqual([]);
-  expect(stored()).toBe('guided');
+  expect(stored(), 'a first load writes no state of its own').toBeNull();
 
   await playFirstSeries();
   await click(button('Home'));
