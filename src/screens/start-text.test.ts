@@ -59,7 +59,9 @@ describe('the lineups picked together (ADR 0080)', () => {
       title: 'Waiting for Jo’s lineup',
       line: 'The match starts when it’s in · 12 s left',
     });
-    expect(waiting.quiet?.text).toBe('Home');
+    // The way out, never the main action (ADR 0087 addendum of 2026-11-28).
+    expect(waiting.buttons).toStrictEqual([{ text: 'Home', onClick: home, plain: true }]);
+    expect(waiting.quiet).toBeUndefined();
     const going = startWaiting(start(), { made: 'Time ran out', home, go: home });
     expect(going.buttons.map((button) => button.text)).toStrictEqual(['Go to match']);
   });

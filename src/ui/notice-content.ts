@@ -23,6 +23,11 @@ export interface NoticeButton {
   readonly relabel?: boolean;
   /** As a row, it opens something (a step, a field): its "›" (button.css). */
   readonly opens?: boolean;
+  /**
+   * Never the primary, even first: a waiting screen's way out (Home), where nothing is the
+   * player's to do, so the screen has no main action (ADR 0087 addendum of 2026-11-28).
+   */
+  readonly plain?: boolean;
 }
 
 /**
