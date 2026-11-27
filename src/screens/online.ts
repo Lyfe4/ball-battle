@@ -133,6 +133,9 @@ export function createOnlineScreens(
     {
       ...host,
       home,
+      back: () => {
+        host.navigation.back(home);
+      },
       primed: (id) => primer.takeSeries(id),
       primeSeries: (id) => primer.series(id),
     },

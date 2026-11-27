@@ -1,6 +1,7 @@
 // What a notice says and offers (notice.ts), as data: pure, so a screen's words are tested
 // without a DOM.
 import type { StickerWords } from './sticker-words.ts';
+import type { WaitingContent } from './waiting-content.ts';
 
 export interface NoticeButton {
   readonly text: string;
@@ -42,10 +43,10 @@ export interface NoticeContent {
   /** Short facts as chips under the sticker: "Best of 3", "Reveal", "Live · 30 s a pick". */
   readonly chips?: readonly string[];
   /**
-   * A waiting card (the lobby): its heading and one quiet line, with a bouncing ball, or the
-   * friend's disc with a gentle pulse when it waits for someone by name (`who`, ADR 0086).
+   * The waiting card (waiting.ts): the ball over its heading and one quiet line, the friend's disc
+   * beside the heading when it waits for someone by name (`who`, ADR 0086).
    */
-  readonly waiting?: { readonly title: string; readonly line: string; readonly who?: string };
+  readonly waiting?: WaitingContent;
   /** A field to type in (an email, a code). */
   readonly field?: NoticeField;
   /**

@@ -13,6 +13,7 @@ import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup, WorldState } from '../sim/types.ts';
 import { cue } from '../sound/sound.ts';
 import { createSticker } from './sticker.ts';
+import { createWaiting } from './waiting.ts';
 import { busyOnClick } from './busy-button.ts';
 import { createEndButtons } from './series/end-buttons.ts';
 import { element, setAttr, setHidden, setText } from './dom.ts';
@@ -164,8 +165,10 @@ export function createSeriesPanel(
   const again = button('Watch again', 'hud-button hud-button-primary', () => {
     actions.onWatchAgain?.();
   });
-  // Online: why it waits, or how it ended.
+  // Online: why it waits, or how it ended; by turns, waiting on the other, the waiting card.
   const note = element('p', 'series-note');
+  const waiting = element('div', 'series-waiting');
+  let waitingKey = '';
   buttons.append(next, again, rematch, decline, newSeries, home);
   const share = button('Copy link', 'hud-button series-share', () => {
     void copyLink();
@@ -179,6 +182,7 @@ export function createSeriesPanel(
     status,
     result,
     note,
+    waiting,
     toss.element,
     track.element,
     banner.element,
@@ -353,6 +357,13 @@ export function createSeriesPanel(
       const said = playing ? undefined : moment.online?.note;
       setHidden(note, said === undefined);
       setText(note, said ?? '');
+      const waits = playing ? undefined : moment.online?.waiting;
+      const key = waits === undefined ? '' : [waits.title, waits.line, waits.who].join('|');
+      if (key !== waitingKey) {
+        waitingKey = key;
+        waiting.replaceChildren(...(waits === undefined ? [] : [createWaiting(waits)]));
+      }
+      setHidden(waiting, waits === undefined);
 
       let text = '';
       if (playing && current !== undefined) {
@@ -364,6 +375,7 @@ export function createSeriesPanel(
       } else if (upcoming !== undefined) text = betweenLine(state, upcoming, nameOf, seats);
       else if (linkState !== undefined) text = linkPickLine(roundsPlayed);
       else if (said !== undefined) text = said;
+      else if (waits !== undefined) text = `${waits.title} · ${waits.line}`;
       setText(status, text);
       return phase;
     },

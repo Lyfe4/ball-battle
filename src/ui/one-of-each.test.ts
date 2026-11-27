@@ -39,6 +39,9 @@ const OWNERS: readonly (readonly [string, string])[] = [
   // ADR 0055: one sticker off the court (a friend's card, the end of a series), one pick card.
   ["'sticker'", 'ui/sticker.ts'],
   ["'pick-clock'", 'ui/series/pick-clock.ts'],
+  // One waiting look (2026-11-27): every wait on another player is the one ball and its card.
+  ["'waiting-ball'", 'ui/waiting.ts'],
+  ["'waiting-title'", 'ui/waiting.ts'],
   // ADR 0073: one key over a grid of marked tiles (the quick setup).
   ["'quick-legend'", 'ui/balls/matchup-legend.ts'],
 ];

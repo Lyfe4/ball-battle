@@ -1,6 +1,7 @@
 // What the best-of-3 screens show, as pure functions of the series state, so the visuals (the
 // round track, the pick rows, the next pairing; ADR 0025) are tested without a DOM. Only what the
 // player is allowed to know is ever returned: the bot's hidden balls are `undefined`.
+import type { WaitingContent } from '../waiting-content.ts';
 import type { TossTimes } from '../../app/coin-toss.ts';
 import {
   attemptSeed,
@@ -240,6 +241,8 @@ export interface SeriesMoment {
    */
   readonly online?: {
     readonly note: string | undefined;
+    /** By turns, waiting on the other's pick: the one waiting card (waiting.ts) in the note's place. */
+    readonly waiting?: WaitingContent;
     /**
      * A live match (ADR 0053): it goes on only while both players stay, so while it waits the way
      * on is "Leave match" (asked as Leave and forfeit?), never a Home that would quietly lose it.

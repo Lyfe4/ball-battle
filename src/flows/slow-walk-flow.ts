@@ -47,8 +47,11 @@ const WAITS_ON_THEM: ReadonlySet<string> = new Set([
   'the friend lobby',
   'the link lobby',
   'the end, your rematch asked',
+  'your lineup in, waiting for theirs',
+  'a game by turns, their pick',
 ]);
-const WAITING_MARKS = '.notice-waiting-ball, .notice-waiting-disc, .pick-clock-dots, .busy-ball';
+/** The one waiting look (waiting.ts): a busy button is the page waiting on the server, not on them. */
+const WAITING_MARKS = '.waiting-ball';
 
 /** The API as the test answers it, every call taking `slow` ms, or failing with a 500. */
 function slowApi(how: { slow: number; failing: boolean }) {

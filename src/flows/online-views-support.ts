@@ -105,3 +105,29 @@ export const rematch = (
   offered: state === 'none',
   startId: null,
 });
+
+/**
+ * A Reveal series by turns as side A sees it (ADR 0085): A picked round 1's ball, and it is B's
+ * turn for most of a day: the waiting card in the page frame (turns-frame.ts).
+ */
+export const turnsSeries = (id: string, now: number): SeriesView => ({
+  id,
+  kind: 'friend',
+  ruleset: RULESET_VERSION,
+  format: 'reveal',
+  bestOf: 3,
+  you: 'a',
+  names: { a: 'robin_b', b: 'Sam_R' },
+  lineups: { a: SETUP.a, b: SETUP.b },
+  picks: [{ round: 0, side: 'a', ball: SETUP.a[0] ?? 'archer' }],
+  rounds: [],
+  commitments: [],
+  revealed: [],
+  turn: 'b',
+  deadline: new Date(now + 23 * 3_600_000).toISOString(),
+  status: 'open',
+  winner: null,
+  version: 2,
+  final: null,
+  live: null,
+});

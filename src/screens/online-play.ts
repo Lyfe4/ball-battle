@@ -12,15 +12,14 @@ import { replaysHere } from '../sim/ruleset.ts';
 import { nextMatch, type NextMatch } from '../sim/series.ts';
 import { matchWorld } from '../sim/series-verify.ts';
 import type { DefinitionLookup } from '../sim/types.ts';
-import { createNotice } from '../ui/notice.ts';
 import { createSeriesPanel, type SeriesPanelRoots, type SeriesPhase } from '../ui/series-panel.ts';
-import { createSkeleton } from '../ui/skeleton.ts';
 import { liveFootLine } from './live-text.ts';
 import { createLiveDriver, dueAt, liveArenaOf, nextAskOf } from './online-live.ts';
 import { createSeriesClient, sameView } from './online-series-client.ts';
 import { createLivePoke } from './live-poke.ts';
 import { createFairCheck } from './online-fair.ts';
 import { createSeriesExtras } from './online-series-extras.ts';
+import { createSeriesAround } from './online-play-around.ts';
 import { onlineNotice, type LoadStatus } from './online-text.ts';
 import type { OnlinePlay, OnlinePlayHost } from './online-play-types.ts';
 
@@ -132,13 +131,8 @@ export function createOnlinePlay(
   );
   // The pick card, the fair-play line and the rematch (ADR 0055).
   const extras = createSeriesExtras(roots.panel, lookup, host);
-  const notice = createNotice(roots.notice, () => {
-    host.home();
-  });
-  // Opened cold (a link, a reload): the pick screen's layout until the first answer (ADR 0054).
-  createSkeleton(roots.loading, 'series', () => {
-    host.home();
-  });
+  // The notice in the panel's place, its skeleton, and by turns the page frame's header row.
+  const { notice, frame } = createSeriesAround(roots, host);
 
   /** The session at `seen` rounds watched: the next one to watch on the arena, if any. */
   const sessionAt = (seen: number) => (view === undefined ? undefined : sessionOf(view, seen));
@@ -256,6 +250,7 @@ export function createOnlinePlay(
       );
     }
     panel.setVisible(visible && ready);
+    if (!visible || !ready) frame.show(undefined, false);
     live.setActive(visible && ready && isLive(), () => {
       const slot = live.staged();
       if (slot !== undefined && live.now() >= slot.endAt) placeLive(false);
@@ -319,6 +314,9 @@ export function createOnlinePlay(
         : undefined,
     sides: () => (view === undefined ? undefined : sidesOf(view)),
     yourSide: () => view?.you,
+    // Its notice or skeleton in the series' place (a cold series may be by turns: nothing moves
+    // when it is; the arena takes over a live one), or by turns between its fights.
+    framed: () => visible && (frame.framed() || !roots.notice.hidden || !roots.loading.hidden),
     setVisible(next) {
       panel.setVisible(next && visible && status === 'ready');
       roots.loading.hidden = !(next && visible && status === 'loading');
@@ -359,6 +357,8 @@ export function createOnlinePlay(
         online: { ...extras.moment(tick), now: () => live.now() },
       });
       extras.shown(tick, next, fair.result());
+      // By turns, between its fights: in the page frame, a task's shell (turns-frame.ts).
+      if (frame.show(view, !isLive() && next !== 'playing')) host.layoutChanged();
       if (next !== phase) {
         phase = next;
         host.layoutChanged();

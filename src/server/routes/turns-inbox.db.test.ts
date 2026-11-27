@@ -15,6 +15,7 @@ import { adminSql, testDeps } from '../test/support.ts';
 import { challengeOne, challenges } from './challenges.ts';
 import { meInbox } from './me.ts';
 import { seriesOne } from './series.ts';
+import { createSeries } from '../series-service.ts';
 
 const off = testDeps();
 const on = testDeps({ BALLBATTLE_TURNS: '1' });
@@ -151,6 +152,33 @@ describe('your games and endings (ADR 0086)', () => {
     const mine = await inbox(due);
     expect(mine.turns.map((turn) => turn.seriesId)).toStrictEqual([seriesId]);
     expect(mine.games).toStrictEqual([]);
+  });
+
+  it('never lists a live match, open or ended: Play and the friend’s sheet lead to it', async () => {
+    // 2026-11-27: beside a live lineup, a game by turns between the same two read as that match.
+    const { me, friend } = await friends(on);
+    const liveId = await on.sql.begin((db) =>
+      createSeries(db, on.config, {
+        format: 'reveal',
+        bestOf: 3,
+        players: { a: me.userId, b: friend.userId },
+        lineups: LINEUP_3,
+        live: true,
+      }),
+    );
+    await admin`
+      update game.series set turn = 'b', turn_deadline = now() + interval '30 seconds'
+      where id = ${liveId}`;
+    const listed = (box: InboxResponse) =>
+      [...box.turns, ...(box.games ?? []), ...(box.endings ?? [])].map((one) => one.seriesId);
+    expect(listed(await inbox(me))).not.toContain(liveId);
+    expect(listed(await inbox(friend))).not.toContain(liveId);
+    await admin`
+      update game.series set status = 'forfeit', winner = 'a', turn = null, turn_deadline = null,
+        finished_at = now()
+      where id = ${liveId}`;
+    expect(listed(await inbox(me))).not.toContain(liveId);
+    expect(listed(await inbox(friend))).not.toContain(liveId);
   });
 
   it('tells both how it ended, in their own words, until each has seen it', async () => {

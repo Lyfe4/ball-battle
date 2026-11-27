@@ -48,6 +48,30 @@ const group = (root: HTMLElement, key: string) =>
   );
 
 describe('the Friends section’s signals', () => {
+  it('drops a game by turns or a turn whose time ran out, before the server says so (2026-11-27)', async () => {
+    const { friends, root } = section();
+    await friends.open();
+    const later = new Date(Date.now() + 3_600_000).toISOString();
+    const gone = new Date(Date.now() - 1_000).toISOString();
+    friends.challenges(
+      [],
+      [
+        { seriesId: 't-1', opponent: 'Robin', deadline: later },
+        { seriesId: 't-2', opponent: 'Sam_R', deadline: gone },
+      ],
+      [
+        { seriesId: 's-1', opponent: 'Robin', deadline: later },
+        { seriesId: 's-2', opponent: 'Sam_R', deadline: gone },
+      ],
+      [],
+    );
+    await until(() => group(root, 'games').length > 0, 'Your games by turns');
+    expect(group(root, 'games')).toStrictEqual(['Robin’s turn']);
+    expect(
+      [...root.querySelectorAll('[data-turn]')].map((row) => row.getAttribute('data-turn')),
+    ).toStrictEqual(['t-1']);
+  });
+
   it('lists Your games after Waiting for you; an ending opened leaves at once (ADR 0086)', async () => {
     const { friends, root } = section();
     await friends.open();
@@ -60,7 +84,7 @@ describe('the Friends section’s signals', () => {
     );
     expect(
       [...root.querySelectorAll('.friends-group-title')].map((title) => title.textContent),
-    ).toStrictEqual(['Waiting for you', 'Your games', 'Friends · 1']);
+    ).toStrictEqual(['Waiting for you', 'Your games by turns', 'Friends · 1']);
     const names = () => group(root, 'games');
     expect(names()).toStrictEqual(['Robin’s turn', 'You won vs Robin: their turn ran out']);
     named(root, 'Open: You won vs Robin: their turn ran out')?.click();

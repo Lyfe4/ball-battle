@@ -7,7 +7,8 @@
 // action is drawn as a link (a text-link button or a bare <summary> that doesn't only go somewhere).
 // The 2026-11-26 staging checks found labels touching their edges on Profile and the friend lobby,
 // the friend sheet's disc touching its first button, Copy stretched for one word, and the lobby's
-// "Also send a link" drawn as a pink link.
+// "Also send a link" drawn as a pink link. Every wait on another player shows the one waiting ball
+// (waiting-look.ts): the friend lobby once showed the friend's disc in its place.
 import { expect, vi } from 'vitest';
 import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
 import { settle, until, visible } from './page-support.ts';
@@ -15,6 +16,7 @@ import { NAVIGATING } from '../ui/text-links-support.ts';
 import { FRAME_SCREENS } from './frame-anchors-flow.ts';
 import { onStatsSheet, onWhoSheet, RECORD_ANSWERS } from './profile-answers.ts';
 import { walkOnline, type OnlineAnswers } from './online-looks-support.ts';
+import { waitingProblems } from './waiting-look.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
 const TAP = 44;
@@ -184,7 +186,7 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
     await settle();
     const people = signedIn && screen === 'friends';
     if (people) await until(() => visible('.friends-open').length > 0, 5_000, 'the friends', false);
-    problems.push(...controlProblems(name, scopeNow()));
+    problems.push(...controlProblems(name, scopeNow()), ...waitingProblems(name));
     if (people) {
       for (const person of ['Robin', 'Jo', 'Sam_R', 'Morgan', 'Taylor']) {
         await checkSheet(person, problems);
@@ -216,7 +218,7 @@ export async function checkControlsLook(signedIn = true): Promise<void> {
   // Every online state, signed in (a guest's are the same screens).
   if (signedIn) {
     await walkOnline(api, (state) => {
-      problems.push(...controlProblems(state.name, document.body));
+      problems.push(...controlProblems(state.name, document.body), ...waitingProblems(state.name));
       return Promise.resolve();
     });
   }

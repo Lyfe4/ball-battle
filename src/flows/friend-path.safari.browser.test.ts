@@ -137,7 +137,7 @@ async function openSheet(): Promise<void> {
 async function waitingFor(who: string): Promise<void> {
   await onScreen('challenge');
   await until(
-    () => visible('.notice-waiting-title').some((node) => node.textContent === who),
+    () => visible('.waiting-title-text').some((node) => node.textContent === who),
     5_000,
     `the waiting screen, "${who}"`,
     false,

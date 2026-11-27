@@ -54,60 +54,6 @@
   font-weight: 700;
 }
 
-/* The lobby's waiting card: a big bouncing ball, the busy ball's sibling (busy-button.css). */
-.notice-waiting {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-small);
-  padding: var(--space-gutter) var(--space-gap) var(--space-gutter);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  text-align: center;
-}
-
-.notice-waiting-ball {
-  position: relative;
-  width: 56px;
-  height: 84px;
-}
-
-.notice-waiting-ball::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 30%, rgb(255 255 255 / 0.35) 0 14%, transparent 16%),
-    var(--color-accent);
-  box-shadow: inset -6px -6px 0 var(--color-accent-slab);
-  transform: translateY(24px);
-}
-
-.notice-waiting-ball::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  width: 40px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-sunken);
-}
-
-/*
- * Waiting for a friend by name (ADR 0086): their disc, larger, its ring breathing gently on the
- * swing tokens; still with reduced motion.
- */
-.notice-waiting-disc {
-  width: 64px;
-  height: 64px;
-  font-size: 1.5rem;
-  box-shadow: 0 0 0 4px var(--color-accent);
-}
-
 /* The link folded under "Also send a link" in a friend's lobby, Share inside it. */
 /*
  * A block, not a grid: a grid details puts its content in one auto-sized item that the long link
@@ -156,17 +102,6 @@
 
 .notice-fold[open] > .notice-fold-summary::after {
   rotate: 180deg;
-}
-
-.notice-waiting-title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.notice-waiting-line {
-  margin: 0;
-  color: var(--color-text-muted);
 }
 
 /* "How it goes": three short steps in a box. */
@@ -342,37 +277,6 @@
   justify-items: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .notice-waiting-disc {
-    animation: notice-pulse var(--motion-breathe) var(--ease-swing) infinite alternate;
-  }
-
-  .notice-waiting-ball::before {
-    animation: notice-bounce var(--motion-swing) var(--ease-swing) infinite alternate;
-  }
-
-  .notice-waiting-ball::after {
-    animation: notice-shadow var(--motion-swing) var(--ease-swing) infinite alternate;
-  }
-}
-
-@keyframes notice-bounce {
-  from {
-    transform: translateY(24px);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes notice-shadow {
-  to {
-    scale: 0.7;
-    opacity: 0.6;
-  }
-}
-
 /*
  * A notice's buttons side by side while their words fit on one line; else each takes a row of its
  * own, the whole width, one stack gap apart. Squeezed, "Challenge someone else" and "Choose your
@@ -428,7 +332,6 @@
   }
 
   /* Its own boxes sit into the card rather than vanish into it. */
-  .notice-waiting,
   .notice-steps,
   .notice-link {
     background: var(--color-sunken);
@@ -465,10 +368,4 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-target);
-}
-
-@keyframes notice-pulse {
-  to {
-    box-shadow: 0 0 0 10px transparent;
-  }
 }

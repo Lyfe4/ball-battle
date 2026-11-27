@@ -21,6 +21,8 @@ export interface OnlinePlayHost {
   redraw(): void;
   /** Home, the way on from a series that waits on the other side or has ended. */
   home(): void;
+  /** In-app Back from a series by turns (its header row): the previous screen, else Play. */
+  readonly back?: () => void;
   readonly storage: DeviceStorage;
   /** The series read just before moving here, shown at once (online-prime.ts, ADR 0054). */
   readonly primed?: (id: string) => ApiResult<unknown> | undefined;
@@ -66,6 +68,11 @@ export interface OnlinePlay {
   /** The line under a live fight, where the speed toggle would be. */
   footLine(): string | undefined;
   setVisible(visible: boolean): void;
+  /**
+   * The screen is a task's, in the page frame (tabs.ts): a notice or the skeleton in the series'
+   * place, or a series by turns between its fights (turns-frame.ts).
+   */
+  framed(): boolean;
   /** The health bars' labels, slot A's first: "You" on the player's side, the other's name. */
   sides(): readonly string[] | undefined;
   /** The player's side ("you" in the server's view), for the ready card's mark. */

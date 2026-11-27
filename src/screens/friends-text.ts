@@ -204,8 +204,15 @@ export const challengesYou = (name: string) => `${name} challenges you`;
 export const turnName = (turn: Pick<TurnWaiting, 'opponent'>): string =>
   turn.opponent === null ? 'Your turn' : `Your turn vs ${turn.opponent}`;
 
-/** The section of games by turns on Friends (ADR 0086). */
-export const YOUR_GAMES = 'Your games';
+/**
+ * The section of games by turns on Friends (ADR 0086): by turns only, said in its name (2026-11-27:
+ * read beside a live lineup, "Your games" seemed to mean that match). A live game is never listed.
+ */
+export const YOUR_GAMES = 'Your games by turns';
+
+/** A game by turns or a turn still running at `now`: one whose time ran out leaves at once. */
+export const stillRunning = (row: { readonly deadline: string }, now: number): boolean =>
+  Date.parse(row.deadline) > now;
 
 /** A game by turns waiting on the other player: "Sam’s turn". */
 export const gameName = (game: Pick<GameWaiting, 'opponent'>): string =>

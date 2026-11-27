@@ -194,3 +194,17 @@
 .series-result[hidden] {
   display: none;
 }
+
+/*
+ * A series by turns between its fights (turns-frame.ts): the page frame's header row tops it, with
+ * the ? and the gear, so its own bar and heading step aside (one ?, one gear, one heading).
+ */
+.series[data-framed] > .series-bar,
+.series[data-framed] > h1 {
+  display: none;
+}
+
+.series > .turns-head[hidden],
+.series-waiting[hidden] {
+  display: none;
+}

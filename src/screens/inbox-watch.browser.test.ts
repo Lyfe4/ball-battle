@@ -290,4 +290,16 @@ describe('when a friend’s lobby stops (ADR 0089 addendum of 2026-11-27)', () =
       nextStop({ invites: [{ ...live('c', 5_000), live: false }, live('d')] }),
     ).toBeUndefined();
   });
+
+  it('reads again when a game by turns or a turn runs out: no clock pokes (2026-11-27)', () => {
+    const now = 1_000_000;
+    const at = (ms: number) => new Date(now + ms).toISOString();
+    const game = (ms: number) => ({ seriesId: 's', opponent: 'Sam_R', deadline: at(ms) });
+    expect(nextStop({ invites: [], games: [game(90_000)] }, now)).toBe(90_000);
+    expect(nextStop({ invites: [], turns: [game(40_000)], games: [game(90_000)] }, now)).toBe(
+      40_000,
+    );
+    // One already past by this device's clock is the server's to settle, never a read at once.
+    expect(nextStop({ invites: [], games: [game(-5_000)] }, now)).toBeUndefined();
+  });
 });
