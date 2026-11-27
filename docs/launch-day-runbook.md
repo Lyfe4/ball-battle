@@ -171,7 +171,7 @@ socket open with no CSP error. Undo: `node scripts/poke-switch.ts off production
 ## 12. Monitors
 
 UptimeRobot > New monitor > Keyword, `https://battle-ball.netlify.app/api/v1/health`, every 5
-minutes, alert when the keyword is missing: `"status":"ok"`, `"accounts":"ok"`, `"emailSends":"ok"`.
+minutes, alert when the keyword is missing: `"status":"ok"`, `"accounts":"ok"`, `"emailSends":"ok"` and `"emailCodes":"ok"` (it turns `near` at 70 codes a day: the early sign of someone spending everyone's codes, audit finding S1).
 You should see: all three Up within 5 minutes. Pause them before switching anything off.
 
 ## Switching one part off, fastest first
