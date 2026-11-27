@@ -97,8 +97,24 @@
 }
 
 .home-new-series[hidden],
-.home-play-row[hidden] ~ .home-more .home-new-series {
+.home-play-place[data-covered] ~ .home-more .home-new-series {
   display: none;
+}
+
+/*
+ * Play's place: the box and Play, or the way back to a match in the same cell over them (they keep
+ * their room, unseen and inert), so nothing below moves when one takes the other's place.
+ */
+.home-play-place {
+  display: grid;
+}
+
+.home-play-place > * {
+  grid-area: 1 / 1;
+}
+
+.home-play-row[data-covered] {
+  visibility: hidden;
 }
 
 /*
@@ -328,4 +344,25 @@
   .home-link {
     font-size: clamp(1rem, 2vh, 1.125rem);
   }
+}
+
+/*
+ * Play waiting for the server to say whether there is a match to go back to (play-waiting.ts): its
+ * place kept, its parts unseen, one skeleton block over the row (unseen itself for 150 ms).
+ */
+.home-play-row {
+  position: relative;
+}
+
+.home-play-row[data-waiting] > * {
+  visibility: hidden;
+}
+
+.home-play-row[data-waiting]::after {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  content: '';
+  animation: skeleton-breathe var(--motion-breathe) var(--ease-swing) infinite;
 }

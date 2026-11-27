@@ -30,7 +30,8 @@ import {
 } from '../../screens/who-text.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { shapeIcon } from '../icons.ts';
-import { element, setText } from '../dom.ts';
+import { element, setHidden, setText } from '../dom.ts';
+import { BACK_TO_IT, inGameLine, type InGame } from '../../screens/friends-text.ts';
 import { createSheet } from '../sheet.ts';
 import { personDisc } from './friend-sheet.ts';
 import { DEFAULT_SKELETON_ROWS, skeletonRows } from './friends-loading.ts';
@@ -50,6 +51,10 @@ export interface WhoSheetHost {
   ) => Promise<string | undefined>;
   /** The Friends tab, to add one. */
   readonly addFriend: () => void;
+  /** The live game the player is in, if any: the sheet offers no new challenge then. */
+  readonly inGame: () => InGame | undefined;
+  /** Back to that game; resolves false when there is none any more (the sheet draws again). */
+  readonly backToGame: () => Promise<boolean>;
 }
 
 /** What the sheet opens with picked: a friend (by the friendship's id), or the link. */
@@ -104,6 +109,8 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   const howOf = (friend: FriendEntry, rulesNow: FriendSetup) =>
     howFor(friend, rulesNow, host.turns, waiting.has(friend.id));
   let all = false;
+  /** The game the player is in, as last drawn: one line and Back to it in the sheet's place. */
+  let game: InGame | undefined;
 
   function say(line: string | undefined): void {
     failure.hidden = line === undefined;
@@ -112,6 +119,12 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
 
   function showSend(): void {
     if (setup === undefined) return;
+    if (game !== undefined) {
+      setText(send, BACK_TO_IT);
+      send.setAttribute('aria-label', `${inGameLine(game)}: ${BACK_TO_IT}`);
+      send.removeAttribute('aria-disabled');
+      return;
+    }
     setText(send, sendWords(picked));
     send.setAttribute('aria-label', sendSpoken(picked, setup));
     // Nothing picked: it says what to do and does nothing (never a request to refuse).
@@ -121,6 +134,13 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
 
   // Nothing picked: no request, so the button never looks busy for it.
   busyOnClick(send, () => {
+    // In a game: its one button goes back to it; gone meanwhile, the friends show again.
+    if (game !== undefined) {
+      return host.backToGame().then((moved) => {
+        if (moved) sheet.close();
+        else draw();
+      });
+    }
     const pick = picked;
     if (pick === undefined || setup === undefined) return undefined;
     say(undefined);
@@ -221,6 +241,14 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   function draw(): void {
     const rulesNow = setup;
     if (rulesNow === undefined) return;
+    // One game at a time (ADR 0089 addendum of 2026-11-27): no friends to pick, no link, one line.
+    game = host.inGame();
+    setHidden(rules, game !== undefined);
+    if (game !== undefined) {
+      root.replaceChildren(element('p', 'friends-card-text who-sheet-in-game', inGameLine(game)));
+      showSend();
+      return;
+    }
     setText(rules, rulesLine(rulesNow));
     if (friends === undefined) {
       const loading = element('section', 'who-sheet-group');

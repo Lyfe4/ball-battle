@@ -27,7 +27,7 @@ import { createRowMotion } from './row-motion.ts';
 import { personRow } from './person-row.ts';
 import { litAfter } from './waiting-rows.ts';
 import { busyOnClick } from '../busy-button.ts';
-import { addField } from './friends-add-field.ts';
+import { addField, friendCodeRow } from './friends-add-field.ts';
 import {
   DEFAULT_SKELETON_ROWS,
   failureCard,
@@ -37,7 +37,7 @@ import {
   holdRows,
   createReread,
 } from './friends-loading.ts';
-import { createFriendSheet } from './friend-sheet.ts';
+import { createFriendSheet, type GameWay } from './friend-sheet.ts';
 import { challengeRow, gamesGroup, turnRow, type WaitingRowsHost } from './waiting-rows.ts';
 import { element } from '../dom.ts';
 import {
@@ -67,6 +67,8 @@ export interface FriendsHost {
   readonly challenge?: (friend: FriendEntry) => void;
   /** Whether the build plays by turns (ADR 0085): a friend not online can still be challenged. */
   readonly turns?: boolean;
+  /** The live game the player is in: rows offer no Challenge (ADR 0089 addendum of 2026-11-27). */
+  readonly game?: GameWay;
   /** The friends changed here (a request sent or answered): the inbox reads now. */
   readonly changed?: () => void;
   /** The tab's link card, always last (ADR 0087). */
@@ -106,12 +108,7 @@ export interface FriendsSection {
 export function createFriendsSection(host: FriendsHost): FriendsSection {
   const root = element('div', 'friends');
 
-  const codeRow = element('p', 'friends-code');
-  const codeText = element('strong', 'friends-code-value');
-  const copy = element('button', 'hud-button hud-button-compact friends-copy', 'Copy');
-  copy.type = 'button';
-  copy.setAttribute('aria-label', 'Copy your friend code');
-  codeRow.append(element('span', 'friends-code-label', 'Your friend code'), codeText, copy);
+  const { codeRow, codeText, copy } = friendCodeRow();
 
   // Adding: the notice's field look, its own Add button, and one line for what happened.
   const { field, input, add, say } = addField();
@@ -160,6 +157,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
   const sheet = createFriendSheet({
     ...(host.challenge === undefined ? {} : { challenge: host.challenge }),
     ...(host.turns === undefined ? {} : { turns: host.turns }),
+    ...(host.game === undefined ? {} : { game: host.game }),
     remove: (id) => made('DELETE', `friends/${id}`)(),
     block: (id) => made('POST', `friends/${id}/block`)(),
     report: (id, reason) => made('POST', `friends/${id}/report`, { reason })(),
@@ -215,7 +213,8 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
         sheet.open(friend, kind, waiting);
       },
       made,
-      challenge: host.challenge,
+      // In a game: no new challenge from a row (the link card leads back to it).
+      challenge: host.game?.inGame() === true ? undefined : host.challenge,
     });
   }
 

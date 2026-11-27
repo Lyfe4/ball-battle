@@ -192,7 +192,8 @@ export function createInboxWatch(
     if (was === undefined || inbox.invites.some((one) => one.token === was.token)) return undefined;
     // Accepted on another of this player's tabs: the sender is in that match now, not gone.
     const sender = inbox.friends.find((friend) => friend.id === was.friend);
-    return sender?.status === 'in_a_match' ? undefined : was.from;
+    const playing = sender?.status === 'in_a_match' || sender?.status === 'with_you';
+    return playing ? undefined : was.from;
   }
 
   async function accept(token: string): Promise<void> {

@@ -4,6 +4,7 @@
 // server's time on both screens (online-live.ts), and the page asks every second or two, which is
 // its heartbeat (live-ask.ts). Requests are online-series-client.ts's; at the end, the fair-play check.
 import { rememberWatched, watchedOf } from '../app/online-device.ts';
+import { rememberSeries } from '../app/live-memory.ts';
 import { reportReplay, seatsOf, sessionOf, sidesOf, stateAtAttempt } from '../app/online-series.ts';
 import { advanceSession, settleCurrent, type SeriesSession } from '../app/series-session.ts';
 import type { SeriesView } from '../api/series.ts';
@@ -214,6 +215,8 @@ export function createOnlinePlay(
     if (first) shownAt = -1;
     // A live match that ended here: its rematch reaches the player anywhere (rematch-watch.ts).
     if (next.live != null && next.status !== 'open') host.ended?.(next);
+    // Home knows at once whether there is a live match to go back to.
+    rememberSeries(next);
     // A series under another ruleset than this page's (a bump mid-series) can't be fought again
     // here: the server plays it on its own frozen sim, and this page shows its rounds on the track.
     // Watching again, the rounds watched are this page's count, not the device's.

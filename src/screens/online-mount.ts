@@ -31,6 +31,8 @@ import { visitCache } from '../app/visit-cache.ts';
 import { createWhoSource } from '../app/who-source.ts';
 import { createAvatars, type Avatars } from '../ui/online/account-button.ts';
 import { TABS } from '../app/tabs.ts';
+import type { HomePlay } from '../app/home-play-state.ts';
+import { showPlayRow } from '../ui/online/play-waiting.ts';
 
 /** The screens a tab opens (tabs.ts), where the avatar shows. */
 const TAB_SCREENS: ReadonlySet<string> = new Set(TABS.map((tab) => tab.screen));
@@ -175,7 +177,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     },
     // Cancelled here: Play in "Back to your lobby"'s place at once (ADR 0089 addendum).
     lobbyGone: () => {
-      matchShowing = false;
+      homePlay = { kind: 'play' };
       showPlay();
     },
     friendsChanged: () => {
@@ -254,19 +256,27 @@ export function mountOnline(context: MountContext): OnlineMount {
   const rematchBack = createHomeBack((back: RematchHomeBack) => {
     back.open();
   }, rematchBackWords);
-  playRow?.before(screens.backToMatch.element, rematchBack.element);
-  let matchShowing = false;
+  // In Play's place, over its row (home.css): the place keeps its height whichever shows.
+  playRow?.after(screens.backToMatch.element, rematchBack.element);
+  /** Play's place: Play, the way back to a live match, or Play waiting for the server to say. */
+  let homePlay: HomePlay = screens.backToMatch.arrive();
   function showPlay(): void {
-    const rematchShowing = rematchBack.show(matchShowing ? null : (rematchWaiting ?? null));
-    if (playRow !== null) playRow.hidden = matchShowing || rematchShowing;
+    const rematchShowing = rematchBack.show(
+      homePlay.kind === 'play' ? (rematchWaiting ?? null) : null,
+    );
+    if (playRow === null) return;
+    const covered = homePlay.kind === 'back' || rematchShowing;
+    showPlayRow(playRow, covered ? 'covered' : homePlay.kind === 'waiting' ? 'waiting' : 'play');
   }
+  // From the first frame of a page opened on Play: never a Play the server hasn't vouched for.
+  showPlay();
   let homeAsk: number | undefined;
   const askHome = async (): Promise<void> => {
     if (homeAsk !== undefined) window.clearTimeout(homeAsk);
     homeAsk = undefined;
-    matchShowing = await screens.backToMatch.refresh();
+    homePlay = await screens.backToMatch.refresh();
     showPlay();
-    if (matchShowing && !homeRoot.hidden) {
+    if (homePlay.kind === 'back' && !homeRoot.hidden) {
       // A lobby shown is asked about again just after it would stop (ADR 0089 addendum): "Back
       // to your lobby" never outlives it.
       const stops = screens.backToMatch.stopsInMs();
@@ -332,6 +342,9 @@ export function mountOnline(context: MountContext): OnlineMount {
     homeShown: () => {
       // Arriving on Play (a visit, Back) closes "Who do you want to play?", as What to play.
       screens.homeShown();
+      // A match this page knows of shows its way back at once; else Play waits for the answer.
+      homePlay = screens.backToMatch.arrive();
+      showPlay();
       void askHome();
       // Just left a live match: said once, on the banner's look, with OK (ADR 0086).
       const they = takeLeft();

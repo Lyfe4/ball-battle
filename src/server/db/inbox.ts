@@ -25,8 +25,9 @@ interface StatusRow {
 }
 
 /**
- * Each accepted friend's status: in a match (a live series they are still heard from on, or a lobby
- * waiting), else online (active within ONLINE_MS), else offline. With `headToHead` (the Friends
+ * Each accepted friend's status: in a game with the reader (a live series or lineups of the two,
+ * ADR 0089 addendum of 2026-11-27), else in a match (a live series they are still heard from on,
+ * lineups, or a lobby waiting), else online (active within ONLINE_MS), else offline. With `headToHead` (the Friends
  * list, ADR 0088; never the inbox, read every 30 s), the player's record against each, from their
  * series together that count (`COUNTED`), in the same statement; absent where they never played.
  */
@@ -39,6 +40,17 @@ export async function friendStatuses(
     select f.id, game.name_seen_by(${userId}, o.user_id, o.username, o.display_name) as name,
       ${headToHead ? db`h.played, h.wins, h.losses,` : db``}
       case
+        when exists (
+          select 1 from game.series s
+          where s.live and s.status = 'open'
+            and ((s.player_a = o.user_id and s.player_b = ${userId}::uuid)
+              or (s.player_b = o.user_id and s.player_a = ${userId}::uuid)))
+          or exists (
+          select 1 from game.starts st
+          where st.series_id is null
+            and ((st.player_a = o.user_id and st.player_b = ${userId}::uuid)
+              or (st.player_b = o.user_id and st.player_a = ${userId}::uuid)))
+          then 'with_you'
         when exists (
           select 1 from game.series s
           join game.presence pr on pr.series_id = s.id

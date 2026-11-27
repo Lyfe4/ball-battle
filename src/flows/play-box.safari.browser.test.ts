@@ -107,6 +107,8 @@ function fakeServer(asked: string[]): void {
         }),
       );
     if (method === 'POST' && path === 'session') return json(200, { name: 'Player 1234' });
+    // Nothing to go back to: home asks before Play shows (ADR 0089 addendum, the setup phase).
+    if (method === 'GET' && path === 'me/match') return json(200, { match: null });
     if (method === 'POST' && path === 'challenges') {
       const sent = JSON.parse(body) as { format: string; bestOf: number };
       return json(200, { token: TOKEN, ...sent, expiresAt: '2026-12-01T00:00:00Z' });

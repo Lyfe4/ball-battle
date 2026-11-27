@@ -9,6 +9,8 @@ import {
   friendsTabLabel,
   hasAnyone,
   challengeUnavailable,
+  inGameLine,
+  inGameWith,
   STATUS_WORDS,
   endingLine,
   friendsTitle,
@@ -34,7 +36,12 @@ describe('the Friends section’s words', () => {
   });
 
   it('names a friend’s challenge and every status in words', () => {
-    expect(Object.values(STATUS_WORDS)).toStrictEqual(['Online', 'In a match', 'Offline']);
+    expect(Object.values(STATUS_WORDS)).toStrictEqual([
+      'Online',
+      'In a game with you',
+      'In a match',
+      'Offline',
+    ]);
   });
 });
 
@@ -132,5 +139,47 @@ describe('Your games’ words (ADR 0086)', () => {
       'You lost: your turn ran out',
     );
     expect(endingLine({ opponent: 'Sam', outcome: 'won' })).toBe('You won vs Sam');
+  });
+});
+
+describe('one game at a time (ADR 0089 addendum of 2026-11-27, the setup phase)', () => {
+  const robin = { name: 'Robin', status: 'with_you' } as const;
+  const jo = { name: 'Jo', status: 'online' } as const;
+  const start = { kind: 'start', id: 's', format: 'reveal', bestOf: 3 } as const;
+  const series = {
+    kind: 'series',
+    id: 'x',
+    format: 'reveal',
+    bestOf: 3,
+    opponent: 'Mina',
+  } as const;
+  const lobby = { kind: 'lobby', token: 't', format: 'reveal', bestOf: 3, invitee: 'Jo' } as const;
+
+  it('knows the player is in a game from a friend in it with them, or what the page knows', () => {
+    expect(inGameWith([jo, robin], undefined)).toStrictEqual({ name: 'Robin' });
+    expect(inGameWith([jo], series)).toStrictEqual({ name: 'Mina' });
+    expect(inGameWith([jo], { ...series, opponent: null })).toStrictEqual({});
+    // A lineup by link: with whom isn't known to the inbox.
+    expect(inGameWith([jo], start)).toStrictEqual({});
+  });
+
+  it('is in no game with only a lobby of their own, nothing, or nothing known', () => {
+    expect(inGameWith([jo], lobby)).toBeUndefined();
+    expect(inGameWith([jo], null)).toBeUndefined();
+    expect(inGameWith([], undefined)).toBeUndefined();
+  });
+
+  it('says it in one line', () => {
+    expect(inGameLine({ name: 'Robin' })).toBe('You’re in a game with Robin');
+    expect(inGameLine({})).toBe('You’re in a game');
+  });
+
+  it('never offers a challenge while in a game, nor to a friend in one with you', () => {
+    expect(challengeUnavailable(jo, false, true, true)).toBe('You’re in a game · Finish it first');
+    expect(challengeUnavailable(robin, false, true)).toBe(
+      'Robin is in a game with you · Finish it first',
+    );
+    // Not in a game: as before.
+    expect(challengeUnavailable(jo, false, false)).toBeUndefined();
   });
 });

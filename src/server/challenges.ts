@@ -16,7 +16,6 @@ import {
   challengeById,
   insertChallenge,
   lobbyWaitingFor,
-  lockPlayer,
   lockPlayers,
   markAccepted,
   markStarted,
@@ -25,13 +24,13 @@ import {
   supersedeOutgoing,
   type ChallengeRow,
 } from './db/challenges.ts';
-import { cancelLobby, liveNowOf, lobbySeen } from './db/live.ts';
+import { cancelLobby, lobbySeen } from './db/live.ts';
 import { inviteeOf } from './friend-challenge.ts';
 import { ApiError, type Deps } from './http.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
+import { checkBetween, checkNotLive } from './one-game.ts';
 import { createSeries } from './series-service.ts';
 import { openStart } from './start.ts';
-import { settleStartIn } from './start-settle.ts';
 
 /** How many series by turns a player may have open at once (ADR 0052 section 11, decided). */
 export const MOST_OPEN_SERIES = 3;
@@ -66,33 +65,6 @@ export async function checkLineup(lineup: readonly string[], bestOf: number): Pr
     lineup.every((ball) => ROSTER.includes(ball));
   if (!valid) {
     throw new ApiError(400, 'bad_request', `A lineup is ${String(bestOf)} different balls`);
-  }
-}
-
-/**
- * Refuses a player who already has a live match, a lobby waiting or a lineup being picked (one at a
- * time). A lineup whose clock ran out is made into its series first: it may have just ended.
- */
-export async function checkNotLive(
-  db: TransactionSql,
-  config: Config,
-  player: string,
-  lobbyGoes = false,
-): Promise<void> {
-  await lockPlayer(db, player);
-  let now = await liveNowOf(db, player);
-  if (now?.kind === 'start' && (await settleStartIn(db, config, now.id))) {
-    now = await liveNowOf(db, player);
-  }
-  // `lobbyGoes`: the player's own lobby is about to be called off by the challenge being sent.
-  if (now !== undefined && !(lobbyGoes && now.kind === 'lobby')) {
-    const where =
-      now.kind === 'series'
-        ? 'You are in a match already'
-        : now.kind === 'start'
-          ? 'You are choosing a lineup already'
-          : 'Your lobby is waiting';
-    throw new ApiError(409, 'in_a_match', `${where}: finish it first`);
   }
 }
 
@@ -136,7 +108,10 @@ export async function createChallenge(
       const theirs = await lobbyWaitingFor(db, invitee, creator);
       if (theirs !== undefined) return crossedSend(db, deps.config, theirs, creator);
     }
-    if (request.live) await checkNotLive(db, deps.config, creator, true);
+    // Nothing new while picking lineups or in a live match, live or by turns (ADR 0089 addendum);
+    // the sender's own lobby is called off below. Nor a second thing between the same two.
+    await checkNotLive(db, deps.config, creator, true);
+    if (invitee !== undefined) await checkBetween(db, creator, invitee, !request.live);
     await insertChallenge(db, {
       tokenHash: hash,
       creator,
@@ -312,6 +287,10 @@ export async function acceptChallenge(
     }
     if (lineup === undefined) throw new ApiError(400, 'bad_request', 'Send {lineup}');
     await checkLineup(lineup, found.bestOf);
+    // By turns too: not while picking lineups or in a live match (a lobby of one's own may wait),
+    // and not a second series by turns with the same player.
+    await checkNotLive(db, deps.config, acceptor, true);
+    await checkBetween(db, acceptor, found.creator, true, true);
     if ((await openSeriesOf(db, acceptor)) >= MOST_OPEN_SERIES) {
       throw new ApiError(409, 'too_many_series', 'Finish one of your open series first');
     }

@@ -22,8 +22,8 @@ describe('online failures', () => {
   });
 
   it('say every refusal the challenge flow can get in the game’s words (ADR 0086)', () => {
-    const services = ['challenges.ts', 'friend-challenge.ts', 'start.ts'].map((file) =>
-      readFileSync(new URL(`../server/${file}`, import.meta.url), 'utf8'),
+    const services = ['challenges.ts', 'one-game.ts', 'friend-challenge.ts', 'start.ts'].map(
+      (file) => readFileSync(new URL(`../server/${file}`, import.meta.url), 'utf8'),
     );
     const codes = new Set(
       services.flatMap((text) =>

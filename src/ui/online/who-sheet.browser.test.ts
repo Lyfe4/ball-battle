@@ -9,6 +9,7 @@ import '../../style.css';
 import type { FriendEntry } from '../../api/friends.ts';
 import { checkOneClose } from '../../flows/look-checks.ts';
 import type { WhoPick } from '../../screens/who-text.ts';
+import type { InGame } from '../../screens/friends-text.ts';
 import { createWhoSheet } from './who-sheet.ts';
 
 const LIVE = { format: 'reveal', bestOf: 3, turns: false } as const;
@@ -25,8 +26,11 @@ const SOME = [
   friend('Priya', 'offline'),
 ];
 
-/** The sheet with a send that answers `answer` (a failure line, or moving on) when let go. */
-function mount(turns = true) {
+/**
+ * The sheet with a send that answers `answer` (a failure line, or moving on) when let go; `game`,
+ * the live game the player is in (Back to it answers `stillThere`).
+ */
+function mount(turns = true, state: { game?: InGame; stillThere?: boolean } = {}) {
   const sent: string[] = [];
   let finish: ((line: string | undefined) => void) | undefined;
   const sheet = createWhoSheet({
@@ -41,6 +45,12 @@ function mount(turns = true) {
       });
     },
     addFriend: () => sent.push('add'),
+    inGame: () => state.game,
+    backToGame: () => {
+      sent.push('back');
+      if (state.stillThere === false) delete state.game;
+      return Promise.resolve(state.stillThere !== false);
+    },
   });
   const answer = async (line?: string) => {
     finish?.(line);
@@ -225,5 +235,31 @@ describe('Who do you want to play? (ADR 0089 addendum of 2026-11-27)', () => {
     // Jo goes offline meanwhile: by turns now, said on the button.
     sheet.update(SOME.map((one) => (one.name === 'Jo' ? { ...one, status: 'offline' } : one)));
     expect(sendButton().textContent).toBe('Play Jo by turns');
+  });
+
+  it('offers no challenge while the player is in a game: one line and Back to it', async () => {
+    const { sheet, sent, answer } = mount(true, { game: { name: 'Robin' } });
+    const withRobin = [friend('Robin', 'with_you'), ...SOME.slice(1)];
+    sheet.open(withRobin, LIVE, { friend: 'f-Jo' });
+    expect(texts('.who-sheet-in-game')).toStrictEqual(['You’re in a game with Robin']);
+    expect(shown('.who-row')).toStrictEqual([]);
+    expect(shown('.who-sheet-rules')).toStrictEqual([]);
+    expect(sendButton().textContent).toBe('Back to it');
+    sendButton().click();
+    await answer();
+    expect(sent).toStrictEqual(['back']);
+    expect(dialog()?.open).toBe(false);
+  });
+
+  it('shows the friends again when the game was over by the time Back to it asked', async () => {
+    const { sheet, sent, answer } = mount(true, { game: {}, stillThere: false });
+    sheet.open(SOME, LIVE);
+    expect(texts('.who-sheet-in-game')).toStrictEqual(['You’re in a game']);
+    sendButton().click();
+    await answer();
+    expect(sent).toStrictEqual(['back']);
+    expect(dialog()?.open).toBe(true);
+    expect(shown('.who-row').length).toBeGreaterThan(0);
+    expect(sendButton().textContent).toBe('Choose who to play');
   });
 });

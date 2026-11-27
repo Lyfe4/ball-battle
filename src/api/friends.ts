@@ -4,10 +4,11 @@
 import type { BestOf, Format } from '../sim/index.ts';
 
 /**
- * An accepted friend's status (PR (d)): in a live match or waiting in a lobby, else online (a
- * request within 150 s), else offline. Never shown for a request or a stranger.
+ * An accepted friend's status (PR (d)): in a live match or lineups with the reader (`with_you`, ADR
+ * 0089 addendum of 2026-11-27), else in a live match or waiting in a lobby, else online (a request
+ * within 150 s), else offline. Never shown for a request or a stranger.
  */
-export type FriendStatus = 'online' | 'in_a_match' | 'offline';
+export type FriendStatus = 'online' | 'with_you' | 'in_a_match' | 'offline';
 
 /** A friend, or the other side of a request. */
 export interface FriendEntry {

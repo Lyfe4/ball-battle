@@ -15,6 +15,14 @@ export interface FailureText {
  */
 export const CHALLENGE_REFUSALS: Readonly<Partial<Record<ErrorCode, FailureText>>> = {
   in_a_match: { title: 'You’re in a match already', body: 'One live match at a time.' },
+  their_challenge_waiting: {
+    title: 'They challenged you already',
+    body: 'Answer their challenge in Friends, under Waiting for you.',
+  },
+  playing_together: {
+    title: 'You have a game together',
+    body: 'Finish your game by turns first, then challenge them again.',
+  },
   challenge_taken: {
     title: 'Someone got there first',
     body: 'Another player took this challenge.',

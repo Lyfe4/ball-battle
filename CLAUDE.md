@@ -277,7 +277,11 @@ Each line is a rule; its ADR has the reasoning.
   the same transaction, a send to a friend who waits for you accepts theirs, an accept stops your
   lobby, a live No thanks ends it. A waiting challenge ends by Cancel challenge or Back once asked;
   anything else keeps it until the server's staleness (`LOBBY_SEEN_MS`). Every state pair is in
-  that addendum's table and `friend-states.online.test.ts`. Live is Reveal and Showdown only. Play
+  that addendum's table and `friend-states.online.test.ts`. While a player is in a live start or
+  match, every send and every other accept is refused, live or by turns (`one-game.ts`); two
+  players have one challenge, start or game by turns between them at a time; Play waits for
+  `/me/match` unless the page knows of a match (`home-play-state.ts`). Live is Reveal and
+  Showdown only. Play
   by turns is offered only where `TURNS_BUILD` (ADR 0085): What to play's How, the lineup in place,
   "Your turn" from the inbox.
 - A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): the incoming banner on

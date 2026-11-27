@@ -133,9 +133,12 @@ export function createHome(
   const fresh = element('button', 'hud-button hud-button-compact home-new-series', 'New series');
   fresh.type = 'button';
   fresh.addEventListener('click', actions.onNewSeries);
-  // The box and Play are one row: "Back to your match" takes their place (online-mount.ts).
+  // The box and Play are one row: "Back to your match" takes their place (online-mount.ts), in the
+  // same grid cell, so the place keeps its height whichever shows (nothing jumps, ADR 0087).
   const playRow = element('div', 'home-play-row');
   playRow.append(box, play);
+  const playPlace = element('div', 'home-play-place');
+  playPlace.append(playRow);
 
   const link = (text: string, onClick: () => void) => {
     const button = element('button', 'text-link home-link', text);
@@ -172,7 +175,7 @@ export function createHome(
   head.classList.add('home-head');
   // Play ends with Free play: the privacy policy and terms are in settings' About, one tap from
   // every screen, and on Profile (ADR 0069 addendum of 2026-11-26).
-  root.append(head, demo, pitch, playRow, more, strip, sheet.element);
+  root.append(head, demo, pitch, playPlace, more, strip, sheet.element);
 
   /** The box and Play as the choice and the held series say. */
   function showPlay(): void {

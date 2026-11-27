@@ -195,6 +195,56 @@ blocked the same read comes on the page's own timer (the waiting screen every 2 
 | blocked                                                                                                 | "Robin said no thanks" (a block reads as a decline)                                            | Banner gone; nothing new arrives                                                                                 | `callOffChallenges` sets declined and cancelled, poking both                    | `blocks.db`, `one-challenge.db`                                                                    |
 | crossed (the friend challenges back, from Play's sheet where the sender shows "Waiting for you · live") | The lineups at once                                                                            | The lineups at once                                                                                              | The second send accepts the first: `start_id` pokes the first sender            | `one-challenge.db`, `crossed-challenges.db`, `friend-states.online`                                |
 
+### The setup phase: one game at a time (2026-11-27, the two-phone test)
+
+The owner's two-phone test found that while both players picked lineups after an Accept (a live
+start, ADR 0080), either could reach Play another way (typing the URL on a phone, the rail on a
+PC) and for about a second Play showed "Play", pressable, instead of "Back to your lineup".
+Through it they sent new challenges, to other friends and to the same friend, and the server took
+them; and "Who do you want to play?" offered the friend they were picking with "In a match · by
+turns instead".
+
+**The cause.** Two things. The server checked `in_a_match` only for a **live** send or accept: a
+send **by turns** (what the sheet offered for a friend "in a match") and an accept by turns skipped
+it. And home showed Play by default and hid it only once `/me/match` answered, so every way into
+Play (a URL, the rail, the tab bar, Back, a reload) showed a pressable Play for that round trip.
+
+**The rules.**
+
+1. **The server is the guard.** While a player is in a live start or a live match, every challenge
+   they send and every other challenge they accept is refused, live or by turns, with
+   `in_a_match`, whatever their page shows (`src/server/one-game.ts`). Their own lobby doesn't
+   count: a send calls it off, as before.
+2. **One thing per pair**, in either direction: a friend's challenge still waiting is answered,
+   not crossed with a second one (`their_challenge_waiting`; a live send to their live lobby is
+   still the crossed accept), and a series by turns between the two is finished before another by
+   turns (`playing_together`). A live match beside a game by turns is fine: one lasts minutes, the
+   other days (the owner's choice, "live only").
+3. **Play never offers what it can't vouch for.** On each arrival Play waits for `/me/match` (in
+   its place, inert, a skeleton after 150 ms) unless this page already knows the player is in
+   something: a lineup, match or lobby one of its screens showed, or what `/me/match` said, kept
+   for the visit in memory (`live-memory.ts`). A known match shows its way back at once, then is
+   confirmed. With no answer (offline), Play shows: vs Bot works offline, and rule 1 refuses a
+   second match. The way back sits in Play's own grid cell, so the place keeps its height
+   whichever shows (the slowed walk measured a 0.062 shift at 390 x 664 when it didn't).
+4. **No new challenge offered while in a game.** "Who do you want to play?" and the Friends tab's
+   link card show one line, "You're in a game with Jo", and Back to it (asked of `/me/match` when
+   tapped, so never stale). Friends' rows lose their inline Challenge; a friend's sheet says why.
+   A friend in a game with you reads **"In a game with you"** (the inbox's new status `with_you`),
+   with Back to it in their sheet. A friend busy with someone else keeps the by-turns fallback as
+   it was.
+
+**The rows** (added to the table above):
+
+| State                                                        | Sender sees                                                                                                | Recipient sees                            | How it gets there                                                                   | Tests                                                                        |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| setup (both picking lineups after an Accept)                 | The lineups; Play by any route shows "Back to your lineup" from its first frame, never a Play to press     | The lineups                               | The start (`?start=`); home reads `/me/match`, or what this page showed             | `one-game.online`, `home-play-state.test`, `slow-walk` (Home during a start) |
+| setup, a new challenge tried (to the same friend or another) | Refused in the game's words ("You're in a match already"); the who sheet and Friends offer only Back to it | Nothing changes: the lineups as they were | `in_a_match` from the server, live or by turns, whatever the page showed            | `busy-sends.db`, `one-game.online`, `who-sheet.browser`                      |
+| setup, another friend's challenge accepted                   | Refused (`in_a_match`); the lineups go on                                                                  | That friend's challenge still waits       | The accept's own check, live or by turns                                            | `busy-sends.db`                                                              |
+| a friend in a game with you                                  | Friends and the who sheet: "In a game with you", Back to it                                                | The same of you                           | The inbox's `with_you` status (a live series or start of the two)                   | `friends-text.test`, `one-game.online`                                       |
+| their challenge waits, you send them another                 | Refused (`their_challenge_waiting`): answer theirs                                                         | Their challenge as it was                 | The send's pair check (a live send to their live lobby is still the crossed accept) | `busy-sends.db`                                                              |
+| a game by turns together, another by turns sent or accepted  | Refused (`playing_together`); a live challenge between them still works                                    | Unchanged                                 | The pair check on send and on accept                                                | `busy-sends.db`                                                              |
+
 ### Why a friend request needed several screen changes
 
 Two causes, both on the page; the server pokes every friendship write (`poke_friendship_*`).

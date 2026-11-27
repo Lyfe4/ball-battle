@@ -4,7 +4,7 @@
 // `is_anonymous`: a copy of a guest's old token stays valid for up to an hour after linking.
 import type { AuthSession } from './auth.ts';
 import { signOut } from './auth.ts';
-import { checkNotLive } from './challenges.ts';
+import { checkNotLive } from './one-game.ts';
 import { sessionCookie } from './cookie.ts';
 import type { TransactionSql } from './db.ts';
 import { liveNowOf } from './db/live.ts';
