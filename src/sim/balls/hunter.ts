@@ -1,6 +1,5 @@
 import { STANDARD_BALL_RADIUS } from '../constants.ts';
 import { defineBall } from '../define-ball.ts';
-import type { BallState } from '../types.ts';
 import { percentOf, secondsOf } from './how-it-works.ts';
 
 export type HunterState = Readonly<{ nextSnareTick: number }>;
@@ -35,12 +34,6 @@ export const SNARE_HOLD_TICKS = 30;
 
 const SPEED = 760;
 const BUMP = 24.5;
-
-/** A Hunter's state, read from any ball (undefined for other balls). */
-export function hunterStateOf(ball: BallState): HunterState | undefined {
-  const { nextSnareTick } = ball.abilityState;
-  return typeof nextSnareTick === 'number' ? { nextSnareTick } : undefined;
-}
 
 /** How many times its bump lands on prey moving at `speed`. */
 export function preyTimes(speed: number): number {

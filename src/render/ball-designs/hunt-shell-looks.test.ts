@@ -6,7 +6,8 @@ import { tortoise } from '../../sim/balls/tortoise.ts';
 import type { BallDefinition, BallState } from '../../sim/types.ts';
 import { createWorld } from '../../sim/world.ts';
 import { theme } from '../theme.ts';
-import { clampGap, hunterDesign, trapSetOf } from './hunter.ts';
+import { hunterDesign } from './hunter.ts';
+import { clampGap } from './jaw-trap.ts';
 import { record } from './test-support.ts';
 import { peekOf, tortoiseDesign } from './tortoise.ts';
 import type { BallDesign, DesignView, Painter } from './types.ts';
@@ -47,9 +48,7 @@ const CASES: readonly (readonly [
   Partial<BallState>,
   Partial<DesignView>,
 ])[] = [
-  ['Hunter, set', hunterDesign, hunter, { abilityState: { nextSnareTick: FIRST_SNARE_TICK } }, {}],
-  ['Hunter, just laid', hunterDesign, hunter, { abilityState: { nextSnareTick: 960 } }, {}],
-  ['Hunter, half set', hunterDesign, hunter, { abilityState: { nextSnareTick: 780 } }, {}],
+  ['Hunter', hunterDesign, hunter, { abilityState: { nextSnareTick: FIRST_SNARE_TICK } }, {}],
   ['Tortoise, out', tortoiseDesign, tortoise, {}, {}],
   ['Tortoise, ducking', tortoiseDesign, tortoise, {}, { glance: 0.6 }],
   ['Tortoise, held', tortoiseDesign, tortoise, held, {}],
@@ -84,16 +83,27 @@ describe('the Hunter and the Tortoise show their state (ADR 0091)', () => {
     });
   }
 
-  it('Hunter: its trap is set before the first snare, shut as it lays one, open again by the next', () => {
-    expect(trapSetOf(FIRST_SNARE_TICK, 0)).toBe(1);
-    const laidAt = 500;
-    const next = laidAt + SNARE_EVERY_TICKS;
-    expect(trapSetOf(next, laidAt)).toBe(0);
-    expect(trapSetOf(next, laidAt + SNARE_EVERY_TICKS / 2)).toBeCloseTo(0.5, 12);
-    expect(trapSetOf(next, next)).toBe(1);
+  it('Hunter: shows no state on the ball (the owner waives ADR 0071: its snares show it)', () => {
     const at = (nextSnareTick: number) =>
       record(hunterDesign, view(hunter, 50, false, { abilityState: { nextSnareTick } }));
-    expect(at(next)).not.toStrictEqual(at(FIRST_SNARE_TICK));
+    const opening = at(FIRST_SNARE_TICK);
+    for (const next of [600, 600 + SNARE_EVERY_TICKS / 2, 600 + SNARE_EVERY_TICKS]) {
+      expect(at(next)).toStrictEqual(opening);
+    }
+  });
+
+  it('Hunter: its ears break its edge by no more than an icon’s padding', () => {
+    const calls = record(hunterDesign, view(hunter, 50, false));
+    const reach = Math.max(
+      ...calls
+        .filter((call) => call.startsWith('lineTo(') || call.startsWith('moveTo('))
+        .map((call) => {
+          const [x = 0, y = 0] = call.slice(7, -1).split(',').map(Number);
+          return Math.hypot(x, y);
+        }),
+    );
+    expect(reach).toBeGreaterThan(1);
+    expect(reach).toBeLessThanOrEqual(1.12);
   });
 
   it('Hunter: a snared ball has the trap snap shut round it, then hold', () => {

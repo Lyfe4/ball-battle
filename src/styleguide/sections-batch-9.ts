@@ -2,30 +2,21 @@
 // shows. sections.ts lists them with the rest; a snare on the floor and a ball a snare holds show in
 // the phone arena.
 import {
-  FIRST_SNARE_TICK,
   SNARE_ARM_TICKS,
-  SNARE_EVERY_TICKS,
   SNARE_HOLD_RADIUS,
   SNARE_HOLD_TICKS,
   SNARE_RADIUS,
   SNARE_TICKS,
 } from '../sim/balls/hunter.ts';
-import type { AbilityState, BallState, ZoneState } from '../sim/types.ts';
+import type { BallState, ZoneState } from '../sim/types.ts';
 import type { Tile } from './sections.ts';
 import { TICK } from './tick.ts';
 
-/** A Hunter `share` of the way from its last snare to its next (0 just laid, 1 set). */
-const setTo = (share: number): AbilityState => ({
-  nextSnareTick: TICK + Math.round((1 - share) * SNARE_EVERY_TICKS),
-});
-
 export const BATCH_NINE: readonly (readonly [string, readonly Tile[]])[] = [
   [
-    'Hunter: a steel jaw trap on its leather, its teeth pointing in: set (open round its pan) while it carries a snare, snapped shut the moment it lays one, opening again as the next comes. Its snares lie on the floor as the same trap in its colour, and a ball a snare holds has the trap clamped round it (see the phone arena)',
+    'Hunter: a hunter under a wolf pelt: the wolf’s head worn as a hood down low (ears up past its edge, slanted amber eyes, a paler muzzle and upper fangs over the brow, ragged fur down its sides), the hunter’s face in shadow under it with only two eyes glinting, a scarf in its leather over the mouth. No state on the ball (the owner waives ADR 0071 for it): its snares on the floor (the same trap, faint until armed) and the trap clamped on a caught ball show its ability (see the phone arena)',
     [
-      { label: 'set', id: 'hunter', abilityState: { nextSnareTick: FIRST_SNARE_TICK } },
-      { label: 'just laid', id: 'hunter', abilityState: setTo(0) },
-      { label: 'half set', id: 'hunter', abilityState: setTo(0.5) },
+      { label: 'hunting', id: 'hunter' },
       { label: 'hit flash', id: 'hunter', flash: 0.6 },
       { label: 'mirror B', id: 'hunter', repeat: true },
       { label: 'defeated', id: 'hunter', defeated: true },
@@ -46,11 +37,10 @@ export const BATCH_NINE: readonly (readonly [string, readonly Tile[]])[] = [
 ];
 
 /**
- * In the phone arena: the Hunter half-way to its next snare, and the ball before it in the grid
- * caught by one of its snares a moment ago (the trap clamped round it).
+ * In the phone arena: the ball before the Hunter in the grid caught by one of its snares a moment
+ * ago (the trap clamped round it).
  */
 export function batchNineState(ball: BallState, balls: readonly BallState[]): BallState {
-  if (ball.definitionId === 'hunter') return { ...ball, abilityState: setTo(0.5) };
   const next = balls[balls.indexOf(ball) + 1];
   if (next?.definitionId !== 'hunter') return ball;
   const status = {

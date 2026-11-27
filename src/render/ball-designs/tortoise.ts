@@ -97,13 +97,16 @@ function drawParts(p: Painter, r: number, accent: string, peek: number): void {
   p.fillStyle = theme.tortoiseSkin;
   p.strokeStyle = accent;
   p.lineWidth = theme.tortoiseSeam * r;
+  // One path for all five (they never overlap): one fill and one stroke.
+  p.beginPath();
   for (const part of PARTS) {
     const { centre } = partAt(part, peek);
-    p.beginPath();
-    p.arc(centre * part.cos * r, centre * part.sin * r, part.radius * r, 0, Math.PI * 2);
-    p.fill();
-    p.stroke();
+    const [x, y] = [centre * part.cos * r, centre * part.sin * r];
+    p.moveTo(x + part.radius * r, y);
+    p.arc(x, y, part.radius * r, 0, Math.PI * 2);
   }
+  p.fill();
+  p.stroke();
 }
 
 /** The carapace: plain shell over the parts, a lighter centre plate and seams out to its rim. */

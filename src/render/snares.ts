@@ -2,7 +2,7 @@
 // Hunter's own jaw trap, set, in its owner's colour, faint until it arms; a ball a snare holds has the
 // trap clamped round it, snapping in over its first few ticks. Reads state only.
 import type { BallState, DefinitionLookup, WorldState, ZoneState } from '../sim/types.ts';
-import { clampGap, drawJawTrap } from './ball-designs/hunter.ts';
+import { clampGap, drawJawTrap } from './ball-designs/jaw-trap.ts';
 import { ownerColor } from './ball-colors.ts';
 import { theme } from './theme.ts';
 
