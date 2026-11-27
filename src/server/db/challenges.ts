@@ -250,3 +250,30 @@ export async function blockedBy(
       and blocked_by = ${viewer}`;
   return row?.id;
 }
+
+/**
+ * What already stands between `player` and `other` (ADR 0089 addendum, one thing per pair):
+ * `theirs`, a challenge from `other` to `player` still waiting (live while its lobby waits, by
+ * turns until it expires, neither declined); `turns`, an open series by turns of the two.
+ */
+export async function betweenOf(
+  db: Db,
+  player: string,
+  other: string,
+): Promise<{ readonly theirs: boolean; readonly turns: boolean }> {
+  const [row] = await db<{ theirs: boolean; turns: boolean }[]>`
+    select
+      exists (select 1 from game.challenges c
+        where c.creator = ${other} and c.invitee = ${player} and c.series_id is null
+          and c.start_id is null and c.cancelled_at is null and c.invitee_declined_at is null
+          and c.expires_at > now()
+          and (not c.live
+            or c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
+      ) as theirs,
+      exists (select 1 from game.series s
+        where s.status = 'open' and not s.live
+          and ((s.player_a = ${player} and s.player_b = ${other})
+            or (s.player_a = ${other} and s.player_b = ${player}))
+      ) as turns`;
+  return { theirs: row?.theirs ?? false, turns: row?.turns ?? false };
+}

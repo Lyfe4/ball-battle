@@ -11,7 +11,7 @@ import {
   type RematchView,
 } from '../api/rematch.ts';
 import type { Side } from '../sim/index.ts';
-import { checkNotLive } from './challenges.ts';
+import { checkNotLive } from './one-game.ts';
 import {
   agreeRematch,
   askRematch,

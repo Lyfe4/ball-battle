@@ -34,12 +34,14 @@ export type LiveNow =
 
 /**
  * The player's live match or waiting lobby, if any (one at a time, ADR 0053). A lobby waits while
- * its sender has asked within LOBBY_SEEN_MS and nobody has accepted or cancelled it.
+ * its sender has asked within LOBBY_SEEN_MS and nobody has accepted or cancelled it. A match or
+ * lineups come before any lobby: they are what the player is in.
  */
 export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undefined> {
   const [row] = await db<
     { kind: 'series' | 'lobby' | 'start'; ref: string; format: Format; best_of: BestOf }[]
   >`
+    select kind, ref, format, best_of from (
     (select 'series' as kind, id::text as ref, format, best_of, created_at from game.series
       where live and status = 'open' and (player_a = ${player} or player_b = ${player}))
     union all
@@ -50,7 +52,8 @@ export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undef
     union all
     (select 'start', id::text, format, best_of, agreed_at from game.starts
       where series_id is null and (player_a = ${player} or player_b = ${player}))
-    order by created_at desc
+    ) live
+    order by kind = 'lobby', created_at desc
     limit 1`;
   if (row === undefined) return undefined;
   if (row.kind === 'series') return { kind: 'series', id: row.ref };

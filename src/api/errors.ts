@@ -30,6 +30,10 @@ export const ERROR_CODES = [
   'challenge_stopped',
   'own_challenge',
   'too_many_series',
+  /** The friend's own challenge to the player still waits: answer it (one thing per pair). */
+  'their_challenge_waiting',
+  /** The two have an open series by turns: finish it before another by turns. */
+  'playing_together',
   /** A rematch that can't be asked or answered now: declined, out of time, or never offered. */
   'rematch_closed',
   /** This deploy has accounts switched off (ADR 0079): sign-in isn't offered. */
