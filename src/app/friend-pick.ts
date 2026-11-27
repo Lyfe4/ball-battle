@@ -61,11 +61,3 @@ export function saveFriendPick(storage: Storage, pick: FriendPick): void {
     // Not remembered this time: Play asks who next time.
   }
 }
-
-export function forgetFriendPick(storage: Storage): void {
-  try {
-    storage().removeItem(FRIEND_PICK_STORAGE_KEY);
-  } catch {
-    // Nothing to forget.
-  }
-}
