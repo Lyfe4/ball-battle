@@ -54,7 +54,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .settings-panel {
+  :where(:root:not([data-motion='reduce'])) .settings-panel {
     animation: settings-open var(--motion-quick) var(--ease-out);
   }
 }
@@ -165,7 +165,7 @@
   display: none;
 }
 
-/* "Show all tips again" on the last row (the × is in the head, ADR 0086). */
+/* About on the last row (the × is in the head, ADR 0086). */
 .settings-foot {
   display: flex;
   flex-wrap: wrap;
@@ -173,8 +173,15 @@
   gap: 0 var(--space-gap);
 }
 
-.settings-again {
-  min-height: var(--tap-target);
+/*
+ * A group's heading with the one action on the whole group beside it (Tips: Show all tips again,
+ * compact, ADR 0087 addendum of 2026-11-28): the heading at the start, the button at the end.
+ */
+.settings-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-gap);
 }
 
 /* Sits on the safe-area insets so the menu can be kept clear of them (settings-menu.ts). */

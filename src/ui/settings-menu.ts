@@ -17,6 +17,15 @@ import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import type { Box } from './tooltip-place.ts';
 import { menuMaxHeight, placeClear, placeMenu, type Insets } from './settings-place.ts';
+import {
+  applyMotion,
+  reduceMotionChosen,
+  setReduceMotion,
+  systemReducesMotion,
+} from '../app/motion.ts';
+
+/** The game's own Reduce motion switch. */
+const MOTION_WORDS = 'Reduce motion';
 
 /** What the menu reads and changes, set once by main.ts. */
 export interface SettingsHost {
@@ -72,6 +81,8 @@ let menu: Menu | undefined;
 /** Called once by main.ts, before any gear can be pressed. */
 export function installSettings(next: SettingsHost): void {
   host = next;
+  // The game's own Reduce motion on the root, as the page starts (motion.ts).
+  applyMotion();
 }
 
 interface Menu {
@@ -118,7 +129,20 @@ function buildMenu(): Menu {
     host?.tips.setReadyCards(!host.tips.readyCards());
     render();
   });
-  const again = element('button', 'hud-button settings-again', 'Show all tips again');
+  // Reduce motion (motion.ts, ADR 0087 addendum of 2026-11-28): the game's own, beside the
+  // device's. On and fixed while the device already asks for it.
+  const motion = createSwitch(MOTION_WORDS, () => {
+    if (systemReducesMotion()) return;
+    setReduceMotion(!reduceMotionChosen());
+    render();
+  });
+  // Beside what it acts on (ADR 0087 addendum of 2026-11-28): compact, on the Tips heading's row,
+  // so the menu has room for Reduce motion and still fits whole over a phone's fight.
+  const again = element(
+    'button',
+    'hud-button hud-button-compact settings-again',
+    'Show all tips again',
+  );
   again.type = 'button';
   again.addEventListener('click', () => {
     host?.tips.reset();
@@ -133,14 +157,16 @@ function buildMenu(): Menu {
   tipsGroup.setAttribute('aria-labelledby', `${PANEL_ID}-tips`);
   const tipsHeading = element('p', 'settings-heading', 'Tips');
   tipsHeading.id = `${PANEL_ID}-tips`;
-  tipsGroup.append(tipsHeading, hints, cards);
+  const tipsHead = element('div', 'settings-group-head');
+  tipsHead.append(tipsHeading, again);
+  tipsGroup.append(tipsHead, hints, cards);
   // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play, and tips.
   const playGroup = element('div', 'settings-group settings-play');
   playGroup.setAttribute('role', 'group');
   playGroup.setAttribute('aria-labelledby', `${PANEL_ID}-play`);
   const playHeading = element('p', 'settings-heading', 'Fights');
   playHeading.id = `${PANEL_ID}-play`;
-  playGroup.append(playHeading, speedRow);
+  playGroup.append(playHeading, speedRow, motion);
 
   const paused = element('p', 'settings-paused', 'The match waits');
   paused.hidden = true;
@@ -151,7 +177,6 @@ function buildMenu(): Menu {
   });
   close.classList.add('settings-close');
   const foot = element('div', 'settings-foot');
-  foot.append(again);
   // About, last (ADR 0069 addendum of 2026-11-26): the privacy policy and terms one tap from every
   // screen, each in a tab of its own so nothing here is left (a fight, a live match's clock).
   const about = element('p', 'settings-about');
@@ -163,8 +188,6 @@ function buildMenu(): Menu {
     link.rel = 'noopener';
     about.append(link);
   }
-  // In the foot, under Show all tips again with no gap of its own (its links' 44 px rows are the
-  // room), so the menu still fits whole above its gear on a phone mid-fight (390 x 664).
   foot.append(about);
   // The note that the match waits shares the title's row, so every row sits where it does on any
   // other screen, and it shows even when the menu scrolls inside itself.
@@ -175,6 +198,12 @@ function buildMenu(): Menu {
   if (host?.online !== undefined) foot.before(host.online.element);
 
   function render(): void {
+    const bySystem = systemReducesMotion();
+    motion.setAttribute('aria-checked', String(bySystem || reduceMotionChosen()));
+    motion.setAttribute('aria-disabled', String(bySystem));
+    const words = motion.querySelector('.settings-switch-text');
+    if (words !== null)
+      words.textContent = bySystem ? `${MOTION_WORDS} · set by your device` : MOTION_WORDS;
     if (host === undefined) return;
     speed ??= createSegmented(
       speedRow,

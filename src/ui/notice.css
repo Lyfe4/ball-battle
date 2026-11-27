@@ -95,7 +95,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .notice-fold-summary::after {
+  :where(:root:not([data-motion='reduce'])) .notice-fold-summary::after {
     transition: rotate var(--motion-quick) var(--ease-out);
   }
 }

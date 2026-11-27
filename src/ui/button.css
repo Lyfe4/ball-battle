@@ -82,6 +82,11 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .hud-button {
+  transition: none;
+}
+
 /*
  * A text link (More about…, Leave series): the focus colour, bolder, with a
  * trailing chevron, so it reads as a link without an underline.

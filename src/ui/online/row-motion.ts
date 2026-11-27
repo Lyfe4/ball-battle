@@ -3,6 +3,7 @@
 // over its place, so the redraw itself stays one synchronous step). A row moving to another group
 // (a request accepted) goes from one and arrives in the other. The first rows of a visit arrive
 // with the list's own reveal, not one by one. Reduced motion: nothing moves or fades.
+import { reducedMotion as motionQuery } from '../../app/motion.ts';
 const ROW = '.friends-row';
 
 const keyOf = (row: HTMLElement): string => {
@@ -16,7 +17,7 @@ const keyOf = (row: HTMLElement): string => {
   return `${group}:${id}`;
 };
 
-const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const still = () => motionQuery().matches;
 
 function tokenMs(name: string): number {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();

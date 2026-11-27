@@ -48,8 +48,9 @@ describe('settings', () => {
     // Both switches start on; turned off, they are saved for the next visit.
     visible('#match-actions .settings-toggle')[0]?.click();
     expect(both()).toStrictEqual(['true', 'true']);
-    // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play, and
-    // tips; Show all tips again and Close on the last row (ADR 0081 addendum of 2026-11-24).
+    // Two groups under their headings (ADR 0079 addendum of 2026-11-22): how fights play (Reduce
+    // motion with them), and tips, with Show all tips again beside its heading and About alone on
+    // the last row (ADR 0087 addendum of 2026-11-28).
     const groups = [
       ...(panel()?.querySelectorAll<HTMLElement>('.settings-group[role="group"]') ?? []),
     ].map((group) => ({
@@ -60,18 +61,14 @@ describe('settings', () => {
       ].map((node) => node.textContent.trim()),
     }));
     expect(groups.slice(0, 2)).toStrictEqual([
-      { name: 'Fights', speed: true, controls: [] },
+      { name: 'Fights', speed: true, controls: ['Reduce motion'] },
       {
         name: 'Tips',
         speed: false,
-        controls: ['Ability hints', 'What to watch cards'],
+        controls: ['Show all tips again', 'Ability hints', 'What to watch cards'],
       },
     ]);
-    expect(
-      [...(panel()?.querySelectorAll('.settings-foot button') ?? [])].map(
-        (node) => node.textContent,
-      ),
-    ).toStrictEqual(['Show all tips again']);
+    expect(panel()?.querySelectorAll('.settings-foot button')).toHaveLength(0);
     switchNamed('Ability hints')?.click();
     switchNamed('What to watch cards')?.click();
     expect(both()).toStrictEqual(['false', 'false']);

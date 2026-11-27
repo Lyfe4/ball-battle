@@ -9,6 +9,7 @@ import {
   startPlayback,
   type Playback,
 } from './app/playback.ts';
+import { reducedMotion } from './app/motion.ts';
 import { isClockBusy } from './app/presentation-clock.ts';
 import { MAX_FRAME_MS } from './app/fixed-step.ts';
 import { scaleFrame } from './app/speed.ts';
@@ -123,7 +124,7 @@ export function createArena(
   const moments = createMoments();
   const drift = createDrift();
   const sourceChips = createSourceChips();
-  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotionQuery = reducedMotion();
   let playback: Playback = startPlayback(initial, theme.introMs);
   let lastFrameMs: number | undefined;
   /** The worlds drawn on the last frames (blended), oldest first, and this frame's real length. */
@@ -169,19 +170,15 @@ export function createArena(
     canvas.focus({ preventScroll: true });
   });
 
-  function applyReducedMotion(): void {
-    effects.setReducedMotion(reducedMotionQuery.matches);
-  }
-  applyReducedMotion();
-  reducedMotionQuery.addEventListener('change', applyReducedMotion);
-
   /**
    * Draws the world between the last two ticks (so motion is smooth at any refresh rate) with
    * every effect at the current effect time.
    */
   function render(): void {
     const { world, effectMs: now } = playback;
+    // The device's setting or the game's, each frame (motion.ts): either can change mid-fight.
     const reduced = reducedMotionQuery.matches;
+    effects.setReducedMotion(reduced);
     const drawn = interpolateWorld(playback.previous, world, interpolationAlpha(playback));
     const smears = smearsOf(drawnBefore, drawn, drawingFrameMs, reduced);
     drawnBefore = [...drawnBefore, drawn].slice(-theme.smearFrames);

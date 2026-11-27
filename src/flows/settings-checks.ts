@@ -49,6 +49,14 @@ async function pressAt(x: number, y: number): Promise<void> {
   await settle();
 }
 
+/** The gear, or the menu's × when the open menu stands over its gear. */
+function gearOrClose(gear: HTMLElement, panel: HTMLElement | null): HTMLElement {
+  const box = gear.getBoundingClientRect();
+  const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+  const close = panel?.querySelector<HTMLElement>('.settings-close');
+  return hit !== null && panel?.contains(hit) === true && close != null ? close : gear;
+}
+
 /** The drawn court, when one is on screen. */
 function courtBox(): DOMRect | undefined {
   const canvas = document.getElementById('arena');
@@ -115,7 +123,9 @@ export async function checkSettings(where: string, playing?: () => boolean): Pro
       });
     }
   }
-  await click(gear);
+  // The gear closes it, unless the menu stands over its gear (a phone mid-fight, too tall for
+  // either side of it, settings-place.ts): then its ×, the one close.
+  await click(gearOrClose(gear, panel()));
   expect(isOpen(), where).toBe(false);
   if (playing !== undefined && court !== undefined) {
     // Closed, the match plays on: the court moves, or the match has gone on to its end since. A

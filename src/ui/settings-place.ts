@@ -89,13 +89,19 @@ export function placeMenu(
     }
   }
   // Nowhere clear of the court: it covers it (the caller then lets the match
-  // wait), but never its own gear, which closes it: the first spot inside the screen clear of it,
-  // else the room above the gear, scrolling inside (large text or a short phone).
+  // wait), and keeps off its own gear where it can: the first spot inside the screen clear of it.
   const offGear = [above, below, minTop, maxTop]
     .map((candidate) => clamp(candidate, minTop, Math.max(minTop, maxTop)))
     .find((candidate) => !overlaps({ left, top: candidate, ...size }, gear));
   if (offGear !== undefined) {
     return { left, top: offGear, covers: overlaps({ left, top: offGear, ...size }, court) };
+  }
+  // Too tall for either side of its gear (a phone mid-fight, 390 x 664, with every row): whole
+  // over its gear too, as close to the gear's top as it can, rather than scrolling in the room
+  // above it (ADR 0087 addendum of 2026-11-28). The match waits, and its × closes it.
+  if (maxTop >= minTop) {
+    const whole = clamp(above, minTop, maxTop);
+    return { left, top: whole, covers: overlaps({ left, top: whole, ...size }, court) };
   }
   const room = gear.top - GAP - minTop;
   if (room >= MIN_SCROLL_HEIGHT) {
