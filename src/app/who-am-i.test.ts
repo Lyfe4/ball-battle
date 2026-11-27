@@ -34,6 +34,28 @@ describe('who this device plays as', () => {
     expect(readMe).not.toHaveBeenCalled();
   });
 
+  it('says an account that has played online is past the first series (ADR 0090)', async () => {
+    const played = vi.fn();
+    await whoAmI(
+      memory(),
+      HINT,
+      () =>
+        Promise.resolve(answer({ name: 'Sam_1', account: true, username: 'Sam_1', played: true })),
+      played,
+    );
+    expect(played).toHaveBeenCalledOnce();
+    // An account new to online play, and a guest, are not.
+    const fresh = vi.fn();
+    await whoAmI(
+      memory(),
+      HINT,
+      () => Promise.resolve(answer({ name: 'Jo', account: true, username: null, played: false })),
+      fresh,
+    );
+    await whoAmI(memory(), HINT, () => Promise.resolve(answer({ name: 'Player 4821' })), fresh);
+    expect(fresh).not.toHaveBeenCalled();
+  });
+
   it('trusts /me over the device keys: Safari cleared them, the cookie stayed', async () => {
     const storage = memory();
     const who = await whoAmI(storage, HINT, () =>

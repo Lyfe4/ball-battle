@@ -19,6 +19,7 @@ export const C6 = 1046.5;
 export const D6 = 1174.66;
 export const E6 = 1318.5;
 export const G6 = 1567.98;
+export const E7 = 2637.02;
 
 /** How one sound is played: its level (0-1) and a little detune (cents) for variety. */
 export interface Play {

@@ -12,7 +12,7 @@
 import type { PlayerResponse } from '../../api/session.ts';
 import { deleteUser } from '../auth-admin.ts';
 import type { Config } from '../config.ts';
-import type { Profile } from '../db/profiles.ts';
+import { meOf, type Profile } from '../db/profiles.ts';
 import { clearedSessionCookie, playerHintCookie } from '../cookie.ts';
 import type { CurrentMatchResponse } from '../../api/live.ts';
 import { currentMatch } from '../current-match.ts';
@@ -20,26 +20,34 @@ import { guard } from '../guard.ts';
 import { alsoWhileOff, ApiError, json, type RouteHandler } from '../http.ts';
 import { inboxOf } from '../inbox.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
-import { sessionOf } from '../session.ts';
+import { sessionOf, sessionWith } from '../session.ts';
 import { requireAccounts } from '../sign-in.ts';
 import { chooseUsername } from '../username.ts';
 
 /** The player as they see themselves; an account says so only where accounts are on (ADR 0079). */
-export function playerResponse(config: Config, player: Profile): PlayerResponse {
-  return config.accounts
-    ? { name: player.name, account: player.account, username: player.username }
-    : { name: player.name };
+export function playerResponse(config: Config, player: Profile, played?: boolean): PlayerResponse {
+  if (!config.accounts) return { name: player.name };
+  return {
+    name: player.name,
+    account: player.account,
+    username: player.username,
+    ...(player.account && played !== undefined ? { played } : {}),
+  };
 }
 
 export const me: RouteHandler = alsoWhileOff(
   async (request, context) => {
     guard(request, ['GET', 'DELETE']);
-    const player = await sessionOf(request, context);
     if (request.method === 'GET') {
+      // The profile and whether the account has played online, in one round trip (sessionWith).
+      const { session, read } = await sessionWith(request, context, (userId) =>
+        meOf(context.deps.sql, userId),
+      );
       // A device signed in before the hint existed gets it on its first read (cookie.ts).
       context.setCookie(playerHintCookie());
-      return json(200, playerResponse(context.deps.config, player));
+      return json(200, playerResponse(context.deps.config, session, read.played));
     }
+    const player = await sessionOf(request, context);
     await deleteUser(context.deps.config, player.userId);
     context.setCookie(clearedSessionCookie());
     return json(204, null);

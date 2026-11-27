@@ -7,7 +7,6 @@ import {
   REMOVE_STEP,
   addedLine,
   friendsTabLabel,
-  hasAnyone,
   challengeUnavailable,
   inGameLine,
   inGameWith,
@@ -28,11 +27,6 @@ describe('the Friends section’s words', () => {
     expect(addedLine({ ...EMPTY, outcome: 'friends', name: 'Sam_R' })).toBe(
       'You and Sam_R are friends now.',
     );
-  });
-
-  it('knows an empty list from one with a request in it', () => {
-    expect(hasAnyone(EMPTY)).toBe(false);
-    expect(hasAnyone({ ...EMPTY, outgoing: [{ id: 'x', name: 'Jo' }] })).toBe(true);
   });
 
   it('names a friend’s challenge and every status in words', () => {

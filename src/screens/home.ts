@@ -134,6 +134,9 @@ export function createHomeController(
       startDemo();
     },
   });
+  // Past the first series from elsewhere (an account that has played online, ADR 0090 addendum):
+  // Play and the box say so at once.
+  firstSeries.listen(showPlay);
 
   function cancel(): void {
     if (queued !== undefined) window.clearTimeout(queued);

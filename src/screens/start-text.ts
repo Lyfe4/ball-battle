@@ -60,7 +60,8 @@ export function startWaiting(
       line: `The match starts when it’s in · ${String(how.seconds ?? 0)} s left`,
     },
     body: [],
-    buttons: [],
-    quiet: { text: 'Home', onClick: how.home },
+    // Waiting, nothing is the player's to do: Home is the way out, never the main action, in the
+    // footer as on every waiting screen (the series by turns' too).
+    buttons: [{ text: 'Home', onClick: how.home, plain: true }],
   };
 }

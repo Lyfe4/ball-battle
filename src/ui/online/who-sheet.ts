@@ -42,12 +42,13 @@ export interface WhoSheetHost {
   /**
    * Sends what was picked: calls `moving` just before the next screen shows (the sheet closes
    * then, so focus lands on that screen), or resolves with the line that says why it didn't, said
-   * above the button.
+   * above the button. `wanted` is false once the player closed the sheet while it was sending.
    */
   readonly send: (
     pick: WhoPick,
     setup: FriendSetup,
     moving: () => void,
+    wanted: () => boolean,
   ) => Promise<string | undefined>;
   /** The Friends tab, to add one. */
   readonly addFriend: () => void;
@@ -111,6 +112,26 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   let all = false;
   /** The game the player is in, as last drawn: one line and Back to it in the sheet's place. */
   let game: InGame | undefined;
+  /** Counts the sheet's openings, so a send knows whether it was opened again since. */
+  let opens = 0;
+  /** What the groups were last drawn as, so a redraw that changes nothing keeps the same rows. */
+  let drawn = '';
+
+  /**
+   * Puts `parts` in the sheet, unless they are what it shows already: an inbox read that changes
+   * nothing redraws nothing, so a tap whose press and release straddle the read still lands on
+   * one row (a click needs both on the same element; WebKit's flow lost a tap to it).
+   */
+  function place(...parts: HTMLElement[]): void {
+    const next = parts.map((part) => part.outerHTML).join('');
+    if (next === drawn && root.childElementCount === parts.length) {
+      // The same rows: only which one is picked may have moved since (`choose` sets it in place).
+      markPicked();
+      return;
+    }
+    drawn = next;
+    root.replaceChildren(...parts);
+  }
 
   function say(line: string | undefined): void {
     failure.hidden = line === undefined;
@@ -147,7 +168,10 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     const moving = () => {
       sheet.close();
     };
-    return host.send(pick, setup, moving).then((line) => {
+    // Closed while it sends (×, Escape, Back, a tap outside), or opened again since: not wanted.
+    const sentFrom = opens;
+    const wanted = () => sheet.isOpen() && opens === sentFrom;
+    return host.send(pick, setup, moving, wanted).then((line) => {
       if (line !== undefined) say(line);
     });
   });
@@ -159,12 +183,16 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
         ? key === 'link'
         : picked.friend.id === key;
 
-  function choose(next: WhoPick | undefined): void {
-    picked = next;
-    say(undefined);
+  function markPicked(): void {
     for (const row of root.querySelectorAll<HTMLElement>('.who-row')) {
       row.setAttribute('aria-checked', String(isPicked(row.dataset['who'] ?? '')));
     }
+  }
+
+  function choose(next: WhoPick | undefined): void {
+    picked = next;
+    say(undefined);
+    markPicked();
     showSend();
   }
 
@@ -245,7 +273,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     game = host.inGame();
     setHidden(rules, game !== undefined);
     if (game !== undefined) {
-      root.replaceChildren(element('p', 'friends-card-text who-sheet-in-game', inGameLine(game)));
+      place(element('p', 'friends-card-text who-sheet-in-game', inGameLine(game)));
       showSend();
       return;
     }
@@ -253,7 +281,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     if (friends === undefined) {
       const loading = element('section', 'who-sheet-group');
       loading.append(skeletonRows(DEFAULT_SKELETON_ROWS));
-      root.replaceChildren(loading, linkRow());
+      place(loading, linkRow());
       showSend();
       return;
     }
@@ -269,7 +297,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
       none.append(element('p', 'friends-card-text', NO_FRIENDS), add);
       // The link is the only way: picked already, the button says what it does.
       picked ??= { kind: 'link' };
-      root.replaceChildren(none, linkRow());
+      place(none, linkRow());
       showSend();
       return;
     }
@@ -299,12 +327,13 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
       }
       parts.push(section);
     }
-    root.replaceChildren(...parts, linkRow());
+    place(...parts, linkRow());
     showSend();
   }
 
   return {
     open(next, rulesNow, preset, last) {
+      opens += 1;
       setup = rulesNow;
       friends = next;
       first = last;

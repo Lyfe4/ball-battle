@@ -58,7 +58,11 @@ export function alsoWhileOff(
 export { ApiError } from './http-error.ts';
 
 /** API answers are never cached by a browser or a CDN, except as a route says (an ETag). */
-const NO_STORE = { 'Cache-Control': 'no-store' };
+/**
+ * Every API answer: never cached, and never sniffed as anything but what it says it is (the page's
+ * security headers in netlify.toml may not reach a function's own response).
+ */
+const NO_STORE = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
 
 export function json(
   status: number,

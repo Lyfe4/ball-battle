@@ -66,10 +66,10 @@ export function pickerFor(
 
   const sheet = createWhoSheet({
     turns: TURNS_BUILD,
-    send: async (pick, setup, moving) => {
-      if (pick.kind === 'link') return challenges.sendNow(setup, undefined, moving);
+    send: async (pick, setup, moving, wanted) => {
+      if (pick.kind === 'link') return challenges.sendNow(setup, undefined, moving, wanted);
       remember(pick.friend, pick.how === 'turns');
-      if (pick.how === 'live') return challenges.sendNow(setup, pick.friend, moving);
+      if (pick.how === 'live') return challenges.sendNow(setup, pick.friend, moving, wanted);
       // By turns: its lineup first; the challenge goes with it.
       moving();
       challenges.turnsWith(pick.friend, setup);

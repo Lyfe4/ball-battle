@@ -7,7 +7,7 @@
 // sim of its own ruleset (series-move.ts).
 import { markSeen } from './db/inbox.ts';
 import { commitmentOf } from '../api/fairness.ts';
-import type { PickRequest, SeriesView } from '../api/series.ts';
+import type { PickRequest, SeriesKind, SeriesView } from '../api/series.ts';
 import type { BestOf, Format, Side } from '../sim/index.ts';
 import type { Config } from './config.ts';
 import type { Sql, TransactionSql } from './db.ts';
@@ -34,6 +34,8 @@ export interface SeriesInput {
   readonly lineups: Readonly<Record<Side, readonly string[]>>;
   /** Played live (ADR 0053): side B, who accepts, is here from the start. */
   readonly live?: boolean;
+  /** Between friends (the default), or ranked (ADR 0083: none is made yet). */
+  readonly kind?: SeriesKind;
 }
 
 /**
@@ -62,6 +64,7 @@ export async function createSeries(db: Db, config: Config, input: SeriesInput): 
   }
   const series: LoadedSeries = {
     id,
+    kind: input.kind ?? 'friend',
     ruleset: CURRENT_RULESET,
     format: input.format,
     bestOf: input.bestOf,
@@ -81,7 +84,7 @@ export async function createSeries(db: Db, config: Config, input: SeriesInput): 
     seeds: rows,
     live: null,
   };
-  await insertSeriesWithSeeds(db, { ...series, kind: 'friend', live }, rows);
+  await insertSeriesWithSeeds(db, { ...series, live }, rows);
   const move = await moveOf(config, series, [], false);
   const toss = seeds.toss === undefined ? [] : [{ purpose: 'toss', index: 0, seed: seeds.toss }];
   // Live: no deadline until both have arrived (the start, live-service.ts).

@@ -55,3 +55,10 @@ describe('createGate', () => {
     expect(gate.pass([one('tick')], 10)).toEqual([1]);
   });
 });
+
+describe('repeats in tune (ADR 0064)', () => {
+  it('moves a repeat at most 20 cents either way, so a tonal sound keeps its note', async () => {
+    const { VARIETY } = await import('./variety.ts');
+    expect(Math.max(...VARIETY.map(Math.abs))).toBeLessThanOrEqual(20);
+  });
+});

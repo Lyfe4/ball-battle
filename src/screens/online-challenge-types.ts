@@ -52,6 +52,7 @@ export interface ChallengeScreens {
     setup: FriendSetup,
     friend: Invitee | undefined,
     moving: () => void,
+    wanted?: () => boolean,
   ): Promise<string | undefined>;
   /** By turns with `friend` on `setup` (the sheet's pick): its lineup first (ADR 0085). */
   turnsWith(friend: Invitee, setup: FriendSetup): void;

@@ -67,6 +67,8 @@ describe('a guest adding an email', () => {
       name: (before as { name: string }).name,
       account: true,
       username: null,
+      // The guest's finished series is the account's: past the first series (ADR 0090 addendum).
+      played: true,
     });
     const [row] = await admin<{ player_a: string }[]>`
       select player_a from game.series where id = ${series}`;

@@ -7,6 +7,12 @@ const deps = { config: { online: true }, sql: {} } as unknown as Deps;
 const off = { config: { online: false }, sql: {} } as unknown as Deps;
 
 describe('a route’s frame', () => {
+  it('answers JSON never cached and never sniffed as anything else', () => {
+    const answer = json(200, { ok: true });
+    expect(answer.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(answer.headers.get('Cache-Control')).toBe('no-store');
+  });
+
   it('answers online_off when this deploy has no online configuration', async () => {
     const lines: string[] = [];
     const handler = endpoint(

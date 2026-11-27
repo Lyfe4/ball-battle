@@ -32,6 +32,8 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['rematch-yes-away.online.test.ts', 12],
     ['friends.online.test.ts', 12],
     ['online-failures.online.test.ts', 5],
+    // Estimated (2026-11-28): one two-phone flow through a lineup, offline and back, about 40 s.
+    ['offline-lineup.online.test.ts', 40],
     // Estimated (2026-11-27): six two-phone flows with sign-ins, about a minute each.
     ['friend-states.online.test.ts', 120],
   ],

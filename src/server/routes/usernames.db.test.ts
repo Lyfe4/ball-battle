@@ -72,7 +72,7 @@ describe('choosing a username', () => {
     expect(answer.status).toBe(200);
     expect(answer.body).toStrictEqual({ username: name });
     const { body } = await player.browser.call(me, 'GET', '/api/v1/me');
-    expect(body).toStrictEqual({ name, account: true, username: name });
+    expect(body).toStrictEqual({ name, account: true, username: name, played: false });
   });
 
   it('refuses another script, a space or a length outside 3-15 with the plain rule', async () => {

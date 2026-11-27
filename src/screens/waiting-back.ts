@@ -9,6 +9,11 @@ import { backStep } from './online-challenge-text.ts';
 export interface WaitingBack {
   /** Asks; true when the player chose to cancel the challenge to `friend` (null: a link). */
   ask(friend: string | null): Promise<boolean>;
+  /**
+   * Takes the question away unanswered (Keep waiting): the challenge moved on meanwhile (accepted,
+   * declined, stopped) or the screen left, so it no longer asks anything true.
+   */
+  close(): void;
 }
 
 export function createWaitingBack(): WaitingBack {
@@ -22,6 +27,9 @@ export function createWaitingBack(): WaitingBack {
       const yes = await sheet.confirm(step);
       sheet.close();
       return yes;
+    },
+    close() {
+      sheet.close();
     },
   };
 }

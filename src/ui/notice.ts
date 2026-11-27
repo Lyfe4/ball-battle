@@ -180,7 +180,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         ...content.buttons.map((spec, index) => {
           const button = element(
             'button',
-            index === 0 ? 'hud-button hud-button-primary' : 'hud-button',
+            index === 0 && spec.plain !== true ? 'hud-button hud-button-primary' : 'hud-button',
             spec.text,
           );
           button.type = 'button';

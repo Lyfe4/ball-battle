@@ -525,3 +525,22 @@ fought the arena takes over as in every fight. A live match is a fight throughou
 series shows its skeleton in the frame too (a task), so a game by turns arriving moves nothing; a
 live one is then a fight, where the arena takes the screen. `frame-anchors` opens the game by
 turns with its answer and holds its row to every other screen's pixels.
+
+## Addendum (2026-11-28): waiting screens, the game's own Reduce motion, rows kept through a read
+
+- **A waiting screen has no main action**: Home there is the way out, a full-width secondary
+  button in the footer under the waiting card, the same on every waiting screen (waiting for a
+  friend's lineup, a series by turns waiting on the other's pick). It was a small dark quiet button
+  on one and the yellow primary on the other. `NoticeButton.plain` keeps a first button from being
+  the primary.
+- **Reduce motion in settings, not yet**: built and then taken out the same night. The menu must
+  fit whole above its gear when it covers an offline match on a 390 × 664 phone
+  (`settings-live.safari.browser.test.ts`), and one more switch row put it 48 px over. It needs
+  room first (for example Show all tips again moving to the foot's About line); the approach is
+  kept for then: a `data-motion="reduce"` root attribute that every reduced-motion block honours
+  beside the media query through `:where()` twins, and one `reducedMotion()` for scripts.
+- **A read that changes nothing redraws nothing** in "Who do you want to play?": each inbox read
+  rebuilt its rows, so a tap whose press and release straddled a read landed on two different nodes
+  and no click fired (the WebKit friend-path flake, and a tap a phone could lose). The sheet keeps
+  its rows when they would be drawn the same, marking the pick in place.
+- **Ended games by turns** keep Open on the row's line, the words wrapping in their column.

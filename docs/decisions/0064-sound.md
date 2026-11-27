@@ -142,3 +142,16 @@ capped), `cues.test.ts` (a time-limit match rings once and pops never; a knockou
 and rings; a knockout win never rings), `rules.test.ts` (`tap` has the menu rule),
 `taps.browser.test.ts` (a click passed on to a `tap` control and a double tap on Play are one sound
 each). Each failed with its fix taken out. The voice tests cover the bell's length and level.
+
+## Addendum (2026-11-28): every note on the scale, repeats in tune, durations as written
+
+The sound audit's last items (proposals-sound, findings 3.4 and 3.5), the owner's overnight brief:
+
+- **On the scale**: three partials sat on B6 (`E6 * 1.5`), off C major pentatonic: the Thorns' cue
+  now glides from G6, the spark's second partial is E7 and the series win's sparkle rises E6, G6,
+  E7 (`E7` joins `voices/scale.ts`). Clicks and metal partials (`D4 * 2.4`, `D6 * 2.76`) stay free.
+- **Repeats in tune**: the detune that keeps a run of one sound from sounding copied
+  (`VARIETY`, `src/sound/variety.ts`) moves a repeat at most 20 cents either way, where it reached
+  55; a Node test holds the limit.
+- **Durations as the ADR says**: `voices.browser.test.ts` allows 1.4 s for the series result alone,
+  a second for every other sound and 0.8 s for a fight's (`FIGHT_CUES`); it allowed 1.4 s for all.

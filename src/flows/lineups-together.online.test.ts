@@ -9,13 +9,12 @@ import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLineupMs } from '../api/start.ts';
 import {
+  agreed,
   buildLineup,
   closePhones,
-  confirmAge,
   openPhones,
   panelOf,
   phone,
-  playAFriend,
   type Phones,
 } from './live-support.ts';
 import { readsBetween, socketOf, waitsOver } from './realtime-support.ts';
@@ -28,26 +27,6 @@ const SOCKETS = [
 
 const statusOf = (page: Page) => page.locator('#online-lineup .lineup-step:visible .lineup-status');
 const SENDER = ['storm', 'quake', 'ghost'] as const;
-
-/** The sender sends a link from vs Friend; the friend opens it and accepts: both on the lineups. */
-async function agreed(sender: Page, friend: Page): Promise<void> {
-  await sender.goto(`${BASE}/`);
-  await playAFriend(sender);
-  await confirmAge(sender);
-  // No lineup and no rules step before the friend accepts: Play sends it.
-  await sender.getByRole('heading', { name: 'Waiting for anyone with the link' }).waitFor();
-  const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
-  await friend.goto(`${BASE}/?challenge=${token}`);
-  await friend.getByRole('heading', { name: /challenges you$/ }).waitFor();
-  await friend.getByRole('button', { name: 'Accept' }).click();
-  await confirmAge(friend);
-  // Both on the same lineups, the sender's lobby moved there by itself.
-  await friend.waitForURL(/[?&]start=/);
-  await sender.waitForURL(/[?&]start=/, { timeout: 20_000 });
-  expect(new URL(sender.url()).searchParams.get('start')).toBe(
-    new URL(friend.url()).searchParams.get('start'),
-  );
-}
 
 describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
   let phones: Phones;
@@ -64,7 +43,7 @@ describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
     async () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
-      await agreed(sender, friend);
+      await agreed(BASE, sender, friend);
       for (const page of [sender, friend]) {
         await statusOf(page)
           .getByText(/^Player \d+ is choosing · \d+ s$/)
@@ -123,7 +102,7 @@ describe.each(SOCKETS)('lineups picked together, $socket', ({ blocked }) => {
     async () => {
       const sender = await phone(phones);
       const friend = await phone(phones);
-      await agreed(sender, friend);
+      await agreed(BASE, sender, friend);
       await buildLineup(sender, 'Lock in', SENDER);
       // The friend picks one ball and lets the clock run out.
       await friend

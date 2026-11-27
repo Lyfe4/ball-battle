@@ -336,3 +336,23 @@ export async function playOut(
     await new Promise((done) => setTimeout(done, 250));
   }
 }
+
+/** The sender sends a link from vs Friend; the friend opens it and accepts: both on the lineups. */
+export async function agreed(base: string, sender: Page, friend: Page): Promise<void> {
+  await sender.goto(`${base}/`);
+  await playAFriend(sender);
+  await confirmAge(sender);
+  // No lineup and no rules step before the friend accepts: Play sends it.
+  await sender.getByRole('heading', { name: 'Waiting for anyone with the link' }).waitFor();
+  const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
+  await friend.goto(`${base}/?challenge=${token}`);
+  await friend.getByRole('heading', { name: /challenges you$/ }).waitFor();
+  await friend.getByRole('button', { name: 'Accept' }).click();
+  await confirmAge(friend);
+  // Both on the same lineups, the sender's lobby moved there by itself.
+  await friend.waitForURL(/[?&]start=/);
+  await sender.waitForURL(/[?&]start=/, { timeout: 20_000 });
+  expect(new URL(sender.url()).searchParams.get('start')).toBe(
+    new URL(friend.url()).searchParams.get('start'),
+  );
+}

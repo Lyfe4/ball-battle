@@ -2,7 +2,7 @@
 // whip-crack, the Titan's stretch, the Thorns' spikes biting back, the Ghost slipping out of the
 // world, the Magnet's hum, the Balloon's squeak, squash and pop.
 import { noise, tone } from '../synth.ts';
-import { A4, A5, C3, C4, C5, C6, D5, E5, E6, G3, G4, G5, type Voice } from './scale.ts';
+import { A4, A5, C3, C4, C5, C6, D5, E5, E6, G3, G4, G5, G6, type Voice } from './scale.ts';
 
 export const BODY_VOICES = {
   /** The Berserker takes a hit and gets angrier: a short low growl, rougher with more rage. */
@@ -82,7 +82,7 @@ export const BODY_VOICES = {
       length: 0.12,
       gain: 0.22 * (0.6 + 0.4 * gain),
     });
-    tone(kit, { from: E6 * 1.5, to: E6, glide: 0.1, at, length: 0.14, gain: 0.06, detune });
+    tone(kit, { from: G6, to: E6, glide: 0.1, at, length: 0.14, gain: 0.06, detune });
     tone(kit, { from: E6 * 2.03, at, length: 0.08, gain: 0.03, detune });
   },
   /** The Ghost phases out: an airy shimmer that bends down, see-through. */

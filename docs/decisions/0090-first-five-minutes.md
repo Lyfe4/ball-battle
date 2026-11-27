@@ -225,3 +225,13 @@ result settles: it is seen at once, where the eye is, and never moves the button
   lit row, with the device in one state throughout (`first-series-reload.safari.browser.test.ts`).
   Log out and Forget me still clear every `ballbattle.*` key, so a shared device gets the guided
   first series again.
+
+### Before accounts reach production (2026-11-28)
+
+- **An account that has played online is past the first series on any device**: `/me` says
+  `played` (a finished or forfeited online series, read in the same statement as the profile,
+  `meOf`), and the page then skips the guided first series (`firstSeries.skip()`), home redrawing
+  Play at once. A guest, or an account new to online play, keeps the guided series. Log out and
+  Forget me still clear every `ballbattle.*` key, so a shared device gets it again.
+- **No "By turns" or "Live" words where the build has no play by turns** (production today):
+  Profile's stats and match rows say neither, as every match there is live.

@@ -33,9 +33,11 @@ const SOME = [
 function mount(turns = true, state: { game?: InGame; stillThere?: boolean } = {}) {
   const sent: string[] = [];
   let finish: ((line: string | undefined) => void) | undefined;
+  const wants: (() => boolean)[] = [];
   const sheet = createWhoSheet({
     turns,
-    send: (pick: WhoPick, _setup, moving) => {
+    send: (pick: WhoPick, _setup, moving, wanted) => {
+      wants.push(wanted);
       sent.push(pick.kind === 'link' ? 'link' : `${pick.how} ${pick.friend.name}`);
       return new Promise((resolve) => {
         finish = (line) => {
@@ -57,7 +59,7 @@ function mount(turns = true, state: { game?: InGame; stillThere?: boolean } = {}
     // The busy button lets go once the request settles.
     await new Promise((resolve) => setTimeout(resolve, 0));
   };
-  return { sheet, sent, answer };
+  return { sheet, sent, answer, wants };
 }
 
 const dialog = () => document.querySelector<HTMLDialogElement>('dialog.who-sheet');
@@ -141,6 +143,43 @@ describe('Who do you want to play? (ADR 0089 addendum of 2026-11-27)', () => {
     expect(sent).toStrictEqual(['live Robin']);
     await answer();
     expect(dialog()?.open).toBe(false);
+  });
+
+  it('keeps its rows through an inbox read that changes nothing, so a tap in it lands', () => {
+    const { sheet } = mount();
+    sheet.open(SOME, LIVE);
+    const robin = () =>
+      [...document.querySelectorAll<HTMLElement>('.who-row')].find((row) =>
+        row.textContent.includes('Robin'),
+      );
+    const before = robin();
+    // A press on Robin, then the inbox answers the same, then the release: one row throughout.
+    before?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    sheet.update([...SOME]);
+    expect(robin()).toBe(before);
+    before?.click();
+    expect(before?.getAttribute('aria-checked')).toBe('true');
+    // A read that does change something redraws, keeping the pick.
+    sheet.update(SOME.map((one) => (one.name === 'Robin' ? { ...one, status: 'offline' } : one)));
+    expect(robin()).not.toBe(before);
+    expect(robin()?.getAttribute('aria-checked')).toBe('true');
+    // Opened again with the same friends: the same rows, nothing picked.
+    sheet.update([...SOME]);
+    sheet.open(SOME, LIVE);
+    expect(document.querySelector('.who-row[aria-checked="true"]')).toBeNull();
+  });
+
+  it('tells a send it is no longer wanted once the sheet is closed while it sends', () => {
+    const { sheet, wants } = mount();
+    sheet.open(SOME, LIVE);
+    document.querySelector<HTMLElement>('.who-row')?.click();
+    document.querySelector<HTMLButtonElement>('.who-sheet-send')?.click();
+    expect(wants[0]?.()).toBe(true);
+    sheet.close();
+    expect(wants[0]?.()).toBe(false);
+    // Opened again: the old send is still not wanted.
+    sheet.open(SOME, LIVE);
+    expect(wants[0]?.()).toBe(false);
   });
 
   it('says a failure above the button, keeps the pick, and sends again on Try', async () => {

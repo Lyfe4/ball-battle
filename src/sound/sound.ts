@@ -11,9 +11,7 @@ import { createGate } from './gate.ts';
 import { FIGHT_RULES, MENU_RULES } from './rules.ts';
 import { PRESSABLE } from '../ui/press.ts';
 import type { Play, SoundName, UiCue } from './voices.ts';
-
-/** Cents each repeat is moved by in turn, so a run of the same sound never sounds copied. */
-const VARIETY = [0, 35, -25, 55, -45, 15];
+import { VARIETY } from './variety.ts';
 
 /**
  * What a control says when pressed, by its `data-sound`: the key moments (Play, Send challenge,

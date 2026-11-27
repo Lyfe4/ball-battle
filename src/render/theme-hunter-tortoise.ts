@@ -4,7 +4,8 @@
 // The Hunter: a hunter under a wolf pelt (the pelt, the wolf's paler muzzle, amber eyes, fangs and
 // dark inner ears, its lines hunterLine r wide), its own face in shadow but for two glinting eyes.
 // Its snares lie on the floor as a steel jaw trap, open, faint until they arm; a ball a snare holds
-// has the trap clamped round it, closing over trapSnapTicks.
+// has the trap clamped round it, closing over trapSnapTicks. A snare that springs snaps shut where it
+// lay, shaking, with dust and splinters in the pelt's browns: never a bolt like the Storm's.
 //
 // The Tortoise: a shell of plates (a lighter centre scute, seams in its accent) with a head and four
 // feet in its skin colour that peek out while it moves and duck in when the shell cuts a hit (with
@@ -27,6 +28,20 @@ export const HUNTER_TORTOISE = {
   trapClampGap: 4,
   trapSnapGap: 22,
   trapWidth: 6,
+  /*
+   * A sprung snare (snares.ts, drawTrapSnap), over a strike's STRIKE_MS: the trap at this share of
+   * the strike's radius (its floor size) snaps shut over trapSnapShut of it, shakes trapShake of its
+   * reach a side for the first half, and throws trapDustCount bits of dust and splinters out in the
+   * pelt's leather browns to trapDustReach of its reach. With reduced motion: no shake, no travel.
+   */
+  trapSnapReach: 0.62,
+  trapSnapShut: 0.3,
+  trapShake: 0.08,
+  trapDustCount: 8,
+  trapDustReach: 2.1,
+  trapDustSize: 0.14,
+  /** The puff of dust round the trap as it shuts: its alpha at the start, in the pelt's brown. */
+  trapPuffAlpha: 0.3,
   tortoiseScute: '#b8c26e',
   tortoiseSkin: '#d8c48e',
   tortoiseSeam: 0.06,

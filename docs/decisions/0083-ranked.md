@@ -117,3 +117,13 @@ user's rows go with their profile (ON DELETE CASCADE); a series keeps its `seaso
 - Nothing is pruned; the daily check watches the size. At about 1,000 daily players the free 500 MB
   fills in a few months (proposal section 11): the warning arrives before that.
 - Ranked depends on accounts and pokes in production, and on the by-turns playtest.
+
+## Addendum (2026-11-28): a series says its kind
+
+Groundwork, nothing a player sees: a series' view carries its row's `kind` (`'friend' | 'ranked'`,
+`SeriesKind` in `src/api/series.ts`) instead of always `'friend'`, the client's decoder refuses any
+other, and `createSeries` takes a kind (the default `'friend'`). A player's open series by turns
+count against `MOST_OPEN_SERIES` only when they are with friends (`openSeriesOf`), so a ranked
+series never blocks a friend's challenge by turns; two players still have one game by turns between
+them at a time (the pair rule, `one-game.ts`). Tested in `view.test.ts`, `online-series.test.ts`
+and `challenges.db.test.ts`.

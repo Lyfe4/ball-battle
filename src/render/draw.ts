@@ -222,7 +222,7 @@ export function drawWorld(
   drawMinions(ctx, world, definitions, cssPixelsPerUnit);
   drawProjectiles(ctx, world, definitions);
   drawSparks(ctx, effects.sparks);
-  drawStrikes(ctx, world, effects.strikes);
+  drawStrikes(ctx, world, effects.strikes, definitions, effects.reducedMotion);
   drawParticles(ctx, effects.particles);
   drawPops(ctx, world, effects.pops, effects.reducedMotion);
   drawCopyPops(ctx, effects.copyPops, effects.reducedMotion);

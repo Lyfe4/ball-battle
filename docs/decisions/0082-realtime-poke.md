@@ -253,9 +253,10 @@ Nothing imports the socket yet: no screen listens, and every build's bundle is a
 - **Heartbeat 25 s** (realtime-js's default), not the proposal's 15 s, until staging's measurement
   says whether heartbeats are billed messages (the proposal's risk 2). A dead socket is then
   noticed within about 50 s; while it looks up, the screens' safety reads still run.
-- **`VITE_POKE`** (`POKE_BUILD`, `src/app/poke-build.ts`): only with online play, and unset in
-  every Netlify context for now (previews and staging included: the owner's rule for this run),
-  so `netlify.toml` builds nothing new. `scripts/check-bundle.ts` refuses the poke's route,
+- **`VITE_POKE`** (`POKE_BUILD`, `src/app/poke-build.ts`): only with online play. Unset in
+  every Netlify context when first built; since then set to 1 in the branch-deploy and
+  deploy-preview contexts (staging and previews, Netlify's dashboard, `scripts/poke-switch.ts`),
+  never production (checked 2026-11-28). `scripts/check-bundle.ts` refuses the poke's route,
   Realtime's socket path or a Phoenix join in a build without it.
 - **CSP**: `connect-src 'self' wss://<staging>.supabase.co wss://<production>.supabase.co` in
   `netlify.toml` and `scripts/security-headers.ts` (a test keeps them equal and checks the refs

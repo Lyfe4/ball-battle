@@ -4,7 +4,7 @@ import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { boltPoints, burnLook, strikeProgress } from './zone-geometry.ts';
 import type { Strike } from './effects.ts';
 import { drawBlast, drawBomb } from './bombs.ts';
-import { drawSnare, isSnare } from './snares.ts';
+import { drawSnare, drawTrapSnap, isSnare } from './snares.ts';
 import { theme } from './theme.ts';
 
 /**
@@ -124,6 +124,8 @@ export function drawStrikes(
   ctx: CanvasRenderingContext2D,
   world: WorldState,
   strikes: readonly Strike[],
+  definitions: DefinitionLookup,
+  reducedMotion: boolean,
 ): void {
   for (const strike of strikes) {
     const { zoneId, ownerId, position, radius, strength } = strike;
@@ -131,6 +133,10 @@ export function drawStrikes(
     const style = owner === undefined ? undefined : BALL_DESIGNS.get(owner.definitionId)?.strike;
     if (style === 'blast') {
       drawBlast(ctx, strike);
+      continue;
+    }
+    if (style === 'snap') {
+      drawTrapSnap(ctx, strike, ownerColor(world.balls, definitions, ownerId), reducedMotion);
       continue;
     }
     if (style === 'shockwave') {

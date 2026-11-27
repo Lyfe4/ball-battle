@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { TOSS_FLIP_MS } from '../api/live.ts';
+import { FIGHT_CUES } from './cue-names.ts';
 import { masterChain } from './engine.ts';
 import { whiteNoise } from './synth.ts';
 import { VOICES, type SoundName } from './voices.ts';
@@ -11,11 +12,22 @@ import { VOICES, type SoundName } from './voices.ts';
 const noAudio = !('OfflineAudioContext' in globalThis);
 
 const RATE = 44_100;
-/** The series result is the longest sound; everything else is far shorter. */
-const LONGEST_S = 1.4;
-/** The coin's flutter lasts while it is in the air, and stops before it lands. */
+/**
+ * How long each sound may last (ADR 0064): nothing but the series result over a second; a fight's
+ * sounds well under it, as they come several a second; the coin's flutter while it is in the air.
+ */
+const SERIES_RESULT_S = 1.4;
+const ANY_S = 1;
+const FIGHT_S = 0.8;
+const FIGHT: ReadonlySet<string> = new Set(FIGHT_CUES);
 const longestOf = (name: SoundName): number =>
-  name === 'coinFlip' ? TOSS_FLIP_MS / 1000 : LONGEST_S;
+  name === 'coinFlip'
+    ? TOSS_FLIP_MS / 1000
+    : name === 'seriesWin' || name === 'seriesLoss'
+      ? SERIES_RESULT_S
+      : FIGHT.has(name)
+        ? FIGHT_S
+        : ANY_S;
 
 async function render(name: SoundName): Promise<{ peak: number; lastLoudS: number }> {
   const ctx = new OfflineAudioContext(1, RATE * 3, RATE);

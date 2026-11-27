@@ -58,6 +58,10 @@ describe('an online series on the page', () => {
     const view = await finishedView();
     expect(decodeSeriesView(JSON.parse(JSON.stringify(view)))).toStrictEqual(view);
     expect(decodeSeriesView({ ...view, you: 'c' })).toBeUndefined();
+    // A ranked series reads as one (ADR 0083); a kind the API never sends is refused.
+    expect(decodeSeriesView({ ...view, kind: 'ranked' })?.kind).toBe('ranked');
+    expect(decodeSeriesView({ ...view, kind: 'ladder' })).toBeUndefined();
+    expect(decodeSeriesView({ ...view, kind: undefined })).toBeUndefined();
     expect(decodeSeriesView({ ...view, rounds: [{ round: 0 }] })).toBeUndefined();
     expect(decodeSeriesView(null)).toBeUndefined();
   });

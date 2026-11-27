@@ -338,8 +338,10 @@ export function createSeriesPanel(
       setHidden(again, !watch);
       setHidden(rematch, !asked);
       setHidden(decline, !actions.includes('decline'));
-      // Online, Home steps back beside a Rematch (ADR 0055): one main button.
-      if (online) newSeries.classList.toggle('hud-button-primary', !asked && !watch);
+      // Online, Home steps back beside a Rematch (ADR 0055): one main button. Waiting on the
+      // other player there is none: Home is the way out, as on every waiting screen.
+      const waitingOn = !playing && moment.online?.waiting !== undefined;
+      if (online) newSeries.classList.toggle('hud-button-primary', !asked && !watch && !waitingOn);
       setHidden(newSeries, !fresh);
       setHidden(home, !actions.includes('home'));
       setHidden(buttons, !play && !asked && !watch && !fresh && !actions.includes('decline'));

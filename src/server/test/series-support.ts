@@ -13,15 +13,9 @@ export interface Player {
   readonly userId: string;
 }
 
-let made = 0;
-
 /** A new guest on its own device and IP. */
 export async function newPlayer(deps: Deps): Promise<Player> {
-  made += 1;
-  const browser = new TestBrowser(
-    deps,
-    `10.9.${String(Math.floor(made / 250))}.${String(made % 250)}`,
-  );
+  const browser = new TestBrowser(deps);
   const answer = await browser.call(session, 'POST', '/api/v1/session', { adult: true });
   if (answer.status !== 201 || browser.cookie === undefined) throw new Error('No guest');
   return { browser, userId: userIdOf(browser.cookie) };

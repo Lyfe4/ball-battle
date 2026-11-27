@@ -5,6 +5,7 @@ import { viewOf, type SeriesRecord } from './view.ts';
 
 const record: SeriesRecord = {
   id: '00000000-0000-4000-8000-000000000000',
+  kind: 'friend',
   ruleset: 15,
   format: 'blind',
   bestOf: 3,
@@ -33,6 +34,11 @@ describe('a Blind series’ view', () => {
   it('never carries an unrevealed salt', () => {
     expect(JSON.stringify(viewOf(record, 'a'))).not.toContain('ab'.repeat(16));
     expect(viewOf(record, 'a').revealed).toStrictEqual([]);
+  });
+
+  it('says what kind of series it is, never a friend’s by default (ADR 0083)', () => {
+    expect(viewOf(record, 'a').kind).toBe('friend');
+    expect(viewOf({ ...record, kind: 'ranked' }, 'b').kind).toBe('ranked');
   });
 
   it('names a deleted player as null, for "Deleted player"', () => {

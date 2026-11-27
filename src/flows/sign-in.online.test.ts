@@ -81,7 +81,12 @@ describe('signing in with an email code', () => {
     const guest = (await me(first)) as { name: string };
     await first.goto(`${BASE}/?view=signin`);
     await signInWith(first, email, 'Choose a username');
-    expect(await me(first)).toStrictEqual({ name: guest.name, account: true, username: null });
+    expect(await me(first)).toStrictEqual({
+      name: guest.name,
+      account: true,
+      username: null,
+      played: false,
+    });
 
     // The server alone checks a name, and says why not under the field.
     await first.getByLabel('Username').fill('sh1t_head');
@@ -92,13 +97,23 @@ describe('signing in with an email code', () => {
     await first.getByRole('button', { name: 'Save' }).click();
     // Saved, the player lands on the Friends tab (ADR 0081).
     await first.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
-    expect(await me(first)).toStrictEqual({ name: username, account: true, username });
+    expect(await me(first)).toStrictEqual({
+      name: username,
+      account: true,
+      username,
+      played: false,
+    });
 
     const second = await phone();
     await second.goto(`${BASE}/?view=signin`);
     await second.getByRole('button', { name: 'I’m 16 or older' }).click();
     await signInWith(second, email);
-    expect(await me(second)).toStrictEqual({ name: username, account: true, username });
+    expect(await me(second)).toStrictEqual({
+      name: username,
+      account: true,
+      username,
+      played: false,
+    });
 
     // Log out, then back in: the account and its username are still there.
     await second.goto(BASE);

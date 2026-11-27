@@ -7,7 +7,6 @@ import { drawStatuses } from '../render/draw-feel.ts';
 import { drawBall, drawWorld, NO_EFFECTS } from '../render/draw.ts';
 import { drawHealPulse } from '../render/draw-cues.ts';
 import { drawAimLines } from '../render/projectiles.ts';
-import { drawStrikes } from '../render/zones.ts';
 import { theme } from '../render/theme.ts';
 import { MINION_RADIUS } from '../sim/balls/necromancer.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
@@ -24,6 +23,8 @@ import { titanRadius } from '../sim/balls/titan.ts';
 import { HALF_RADIUS } from '../sim/balls/slime.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
 import { uiPartsSection } from './ui-parts.ts';
+import { snapsFigure, strikesFigure } from './strikes.ts';
+import { canvasFor } from './canvas.ts';
 
 const LARGE_RADIUS_PX = 56;
 const SMALL_RADIUS_PX = 15;
@@ -59,18 +60,6 @@ function tileWorld(tile: Tile): { world: WorldState; ball: BallState } {
         ]
       : [];
   return { world: { ...base, tick: TICK, balls: [ball, enemy], minions }, ball };
-}
-
-function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
-  const ratio = Math.min(window.devicePixelRatio || 1, theme.maxPixelRatio);
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(cssSize * ratio);
-  canvas.height = Math.round(cssSize * ratio);
-  canvas.style.width = `${cssSize}px`;
-  canvas.style.height = `${cssSize}px`;
-  const ctx = canvas.getContext('2d');
-  if (ctx === null) throw new Error('Canvas 2D is not supported');
-  return { canvas, ctx };
 }
 
 /**
@@ -217,43 +206,6 @@ function phoneArena(): HTMLElement {
   return figure;
 }
 
-/** A Storm strike and a Quake shockwave at three points of its fade, side by side. */
-function strikesFigure(): HTMLElement {
-  const cssSize = 340;
-  const { canvas, ctx } = canvasFor(cssSize);
-  const world = createWorld(1, [
-    getDefinition(BALL_LOOKUP, 'storm'),
-    getDefinition(BALL_LOOKUP, 'quake'),
-  ]);
-  const [storm, quake] = world.balls;
-  if (storm === undefined || quake === undefined) throw new Error('expected two balls');
-  const balls = [
-    { ...storm, position: { x: 250, y: 260 } },
-    { ...quake, position: { x: 760, y: 760 } },
-  ];
-  const shown = { ...world, tick: TICK, balls };
-  const view = { canvasPixels: canvas.width, cssPixels: cssSize };
-  drawWorld(ctx, shown, BALL_LOOKUP, view, NO_EFFECTS);
-  const strike = (zoneId: string, ownerId: string, x: number, y: number, strength: number) => ({
-    zoneId,
-    ownerId,
-    position: { x, y },
-    radius: 180,
-    strength,
-  });
-  drawStrikes(ctx, shown, [
-    strike('zone-0', storm.id, 250, 260, 0.8),
-    strike('zone-1', quake.id, 760, 260, 0.9),
-    strike('zone-2', quake.id, 250, 760, 0.5),
-    strike('zone-3', quake.id, 760, 760, 0.2),
-  ]);
-  const figure = document.createElement('figure');
-  const caption = document.createElement('figcaption');
-  caption.textContent = 'Storm strike; shockwave at 90%, 50% and 20% strength';
-  figure.append(canvas, caption);
-  return figure;
-}
-
 function renderSections(root: HTMLElement, sections: typeof SECTIONS): void {
   for (const [title, tiles] of sections) {
     const heading = document.createElement('h2');
@@ -282,7 +234,7 @@ function render(root: HTMLElement): void {
   renderSections(root, SECTIONS);
   const strikes = document.createElement('h2');
   strikes.textContent = 'Strikes: lightning, then a shockwave sweeping out as it fades';
-  root.append(strikes, strikesFigure());
+  root.append(strikes, strikesFigure(), snapsFigure(false), snapsFigure(true));
   root.append(phoneArenaSection());
 }
 

@@ -44,6 +44,7 @@ export interface Sender {
     setup: FriendSetup,
     friend: Invitee | undefined,
     moving: () => void,
+    wanted?: () => boolean,
   ): Promise<string | undefined>;
   /** A challenge by turns with its sender's lineup (ADR 0085), to the friend `turnsWith` named. */
   sendTurns(chosen: SetupChoices, lineup: Lineup): Promise<void>;
@@ -164,7 +165,7 @@ export function createSender(host: SenderHost): Sender {
   }
 
   return {
-    async sendNow(setup, friend, moving) {
+    async sendNow(setup, friend, moving, wanted = () => true) {
       const chosen: SetupChoices = { ...setup, level: '', turns: false };
       // No guest on this device yet: the 16+ question first, on the send screen.
       if (!hasGuest(host.storage)) {
@@ -199,8 +200,17 @@ export function createSender(host: SenderHost): Sender {
         await host.intoStart(link.startId);
         return undefined;
       }
+      // Closed while it was sending: the player changed their mind, so the challenge just made is
+      // called off and nothing moves (they may be somewhere else by now). A crossed accept above
+      // goes on: its lineups have a clock already.
+      const calledOff = async () => {
+        await callApi('POST', `challenges/${link.token}/cancel`, {});
+        return undefined;
+      };
+      if (!wanted()) return calledOff();
       // The waiting screen's card, read first so it shows complete (the button stays busy).
       const card = await callApi<ChallengeInfo>('GET', `challenges/${link.token}`);
+      if (!wanted()) return calledOff();
       moving();
       host.sent(link.token, card.ok ? card.body : undefined);
       host.go((url) => {

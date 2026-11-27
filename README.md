@@ -327,8 +327,9 @@ Why: every decision has a short record in [docs/decisions](docs/decisions/README
 with its status and what superseded it; ADR 0001 to 0003 cover the rules above.
 Full rules for contributors: [CLAUDE.md](CLAUDE.md).
 
-Production bundle (November 2026, ruleset 23, 30 balls): 357.60 kB JS (112.23 kB gzipped);
-73.64 kB CSS (12.96 kB gzipped); and the self-hosted font's Latin subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
+Production bundle (28 November 2026, ruleset 24, 32 balls, vs Friend on as production builds it):
+491.0 kB JS (154.4 kB gzipped); 132.5 kB CSS (22.0 kB gzipped); and the self-hosted font's Latin
+subset at 41.34 kB. First version baseline: 5.05 kB JS (2.41 kB gzipped).
 
 ## License
 

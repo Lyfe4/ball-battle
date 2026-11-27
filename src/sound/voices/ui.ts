@@ -1,7 +1,7 @@
 // The sounds outside a fight: the countdown, the coin, the few buttons that tap, a pick locking in
 // and the series' end.
 import { noise, tone } from '../synth.ts';
-import { A4, A5, C4, C5, C6, E4, E5, E6, G4, G5, type Voice } from './scale.ts';
+import { A4, A5, C4, C5, C6, E4, E5, E6, E7, G4, G5, G6, type Voice } from './scale.ts';
 
 export const UI_VOICES = {
   /** "Get ready": two soft notes rising, a question. */
@@ -92,7 +92,7 @@ export const UI_VOICES = {
         attack: 0.01,
       });
     });
-    [E6, C6 * 1.5, E6 * 1.5].forEach((pitch, index) => {
+    [E6, G6, E7].forEach((pitch, index) => {
       tone(kit, { from: pitch, at: at + 0.4 + index * 0.08, length: 0.3, gain: 0.05 });
     });
   },
