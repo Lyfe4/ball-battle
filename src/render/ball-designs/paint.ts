@@ -10,6 +10,8 @@ import type { BallDesign, DesignView, Painter } from './types.ts';
 export interface ViewLook {
   readonly color: string;
   readonly heal: number;
+  /** A hit just glanced off its defence: 1 down to 0. */
+  readonly glance?: number;
   readonly cssPixelsPerUnit: number;
   readonly detail?: 'full' | 'simple';
   /** How a floating ball drifts (drift.ts). */
@@ -48,6 +50,7 @@ export function designView(
     minionsOut: world.minions.filter((minion) => minion.ownerId === ball.id).length,
     ...(look.drift === undefined ? {} : { drift: look.drift }),
     ...(look.still === true ? { still: true } : {}),
+    ...(look.glance === undefined || ball.health <= 0 ? {} : { glance: look.glance }),
   };
 }
 
