@@ -12,6 +12,7 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { favouredOf, leanOf, levelOf, setMark } from './balls/matchups.ts';
 import { createPairing } from './balls/pairing.ts';
 import { element } from './dom.ts';
+import { reducedMotion as motionQuery } from '../app/motion.ts';
 
 export type { ReadyMoment } from '../app/ready-moment.ts';
 
@@ -77,7 +78,7 @@ export function createReadyCard(
   }
 
   // A live sticker lifts away at Fight! (ADR 0055, C1); with reduced motion it simply goes.
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = motionQuery();
   let lifting: number | undefined;
   function stopLift(): void {
     if (lifting !== undefined) window.clearTimeout(lifting);

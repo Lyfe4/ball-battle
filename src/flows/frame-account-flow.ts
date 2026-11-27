@@ -19,9 +19,21 @@ const SCREENS = [
 
 export async function checkAccountFrame(): Promise<void> {
   localStorage.setItem(ACCOUNT_STORAGE_KEY, '1');
+  // A phone overlays its scrollbar, so a tall screen and a short one put the header on the same
+  // pixels. Firefox's and WebKit's test browsers draw a classic one at phone size, which moved the
+  // gear by its width on the screens tall enough to scroll (Friends with its list and code card).
+  // As a phone draws it; a desktop's gutter is reserved by base.css and kept.
+  if (!matchMedia('(min-aspect-ratio: 5/4) and (pointer: fine)').matches) {
+    const overlay = document.createElement('style');
+    overlay.textContent = ':root { scrollbar-width: none; }';
+    document.head.append(overlay);
+  }
   await openAs({ online: true, accounts: true }, '', {
     '/api/v1/me': { name: 'robin_b', account: true, username: 'robin_b' },
     '/api/v1/me/inbox': { friends: [], requests: 0, invites: [], turns: [] },
+    // The list answers: without it Friends showed its failure card, and this walk measured a
+    // failing screen, not an account's (ADR 0087 addendum of 2026-11-28).
+    '/api/v1/friends': { code: '7KQ2M9XD', friends: [], incoming: [], outgoing: [], blocked: [] },
     ...RECORD_ANSWERS,
   });
   await onScreen('home');

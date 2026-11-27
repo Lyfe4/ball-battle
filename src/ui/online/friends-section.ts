@@ -30,6 +30,7 @@ import { busyOnClick } from '../busy-button.ts';
 import { addField, friendCodeRow } from './friends-add-field.ts';
 import {
   DEFAULT_SKELETON_ROWS,
+  failPlace,
   failureCard,
   inboxList,
   skeletonRows,
@@ -221,7 +222,11 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   const rowMotion = createRowMotion(root);
 
+  /** Where a failed read's card goes, and its undo (friends-loading.ts). */
+  const failed = failPlace({ root, lists, addCard });
+
   function draw(): void {
+    failed.clear();
     const settle = rowMotion.before();
     // Before `/friends` answers, the friends the inbox named, else skeleton rows.
     const now = list ?? inboxList(inboxFriends);
@@ -285,7 +290,6 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
       }),
     );
     sent.replaceChildren(...groups.filter(withCode).map(box));
-    addCard.hidden = false;
     // The link card last, taken back from the guest's layout if it lent it (friends-tab.ts).
     if (host.link !== undefined && aside.lastElementChild !== host.link) aside.append(host.link);
     // One calm reveal where skeleton rows were seen (ADR 0087 rule 4).
@@ -349,11 +353,9 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     // A failed refresh under what this visit already showed keeps it (the inbox keeps it current).
     if (!answer.ok && list !== undefined) return;
     if (!answer.ok) {
-      // One failure card in the list's place; the link card stays (ADR 0087 rule 7).
-      lists.removeAttribute('data-reveal');
-      root.removeAttribute('data-count-unknown');
-      lists.replaceChildren(failureCard(FRIENDS_FAILED_TITLE, host.line(answer), open));
-      addCard.hidden = true;
+      // One failure card with Try again, where it moves nothing (ADR 0087 rule 7).
+      const line = host.line(answer);
+      failed.fail(inboxFriends !== undefined, failureCard(FRIENDS_FAILED_TITLE, line, open));
       return;
     }
     list = answer.body;

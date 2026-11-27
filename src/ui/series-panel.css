@@ -229,10 +229,11 @@
 }
 
 /*
- * The result on a phone turned sideways (2026-11-28 staging walk): two columns, so the ways on show
- * without a scroll at 812 x 375. On the left the sticker, the first series' unlock card, the note
- * and "How it was won"; on the right the score grid and the buttons. A desktop keeps its one column
- * beside the court (below).
+ * The result on a phone turned sideways (2026-11-28 staging walk, audit): two columns, so every way
+ * on shows without a scroll at 812 x 375. On the left what happened: the sticker, the first
+ * series' unlock card, the score grid and the note; on the right what next: Rematch, Change balls
+ * and Home first, then Copy link and "How it was won". A desktop keeps its one column beside the
+ * court (below).
  */
 @media (min-aspect-ratio: 5/4) {
   .series[data-phase='finished'] {
@@ -250,8 +251,18 @@
     grid-column: 1 / -1;
   }
 
-  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-note, .match-story) {
+  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-track, .series-note) {
     grid-column: 1;
+  }
+
+  /* The grid spans the rows of Copy link and the story, so they follow the buttons closely. */
+  .series[data-phase='finished'] > .series-track {
+    grid-row: span 2;
+  }
+
+  /* The buttons' row is the taller: the sticker sits in its middle. */
+  .series[data-phase='finished'] > .series-result {
+    align-self: center;
   }
 }
 
@@ -262,7 +273,9 @@
 
   .series[data-phase='finished'] > *,
   .series[data-phase='finished'] > :is(.series-bar, .symbol-legend),
-  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-note, .match-story) {
+  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-track, .series-note) {
     grid-column: 1;
+    grid-row: auto;
+    align-self: auto;
   }
 }

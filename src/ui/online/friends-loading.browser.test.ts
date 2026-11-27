@@ -131,7 +131,10 @@ describe('the Friends section loading (ADR 0087)', () => {
     page.answer(
       json(503, { error: { code: 'unavailable', message: 'The server couldn’t answer' } }),
     );
+    const linkBefore = at(page.link);
     await opened;
+    // In the skeleton's place: the link card under it never moves (ADR 0087 addendum of 2026-11-28).
+    expect(at(page.link)).toBe(linkBefore);
     const card = page.root.querySelector('.friends-lists .friends-failure');
     expect(card?.getAttribute('role')).toBe('alert');
     expect(card?.querySelector('.friends-card-title')?.textContent).toBe('Your friends');
@@ -145,6 +148,32 @@ describe('the Friends section loading (ADR 0087)', () => {
     await until(() => page.root.querySelector('.friends-skeleton') !== null, 'the read again');
     page.answer(json(200, TWO));
     await until(() => group(page.root, 'friends').length === 2, 'the rows');
+    expect(page.root.querySelector('.friends-failure')).toBeNull();
+    expect(page.root.querySelector('.friends-add-card .friends-code-value')?.textContent).toBe(
+      '7KQ2-M9XD',
+    );
+  });
+
+  it('keeps the inbox’s friends when the list fails, the failure in the code card’s place', async () => {
+    const page = held();
+    page.friends.statuses(TWO.friends);
+    const opened = page.friends.open();
+    const linkBefore = at(page.link);
+    page.answer(
+      json(503, { error: { code: 'unavailable', message: 'The server couldn’t answer' } }),
+    );
+    await opened;
+    expect(group(page.root, 'friends')).toStrictEqual(['Robin', 'Kai']);
+    expect(page.root.querySelector('.friends-add-card .friends-failure')).not.toBeNull();
+    expect(at(page.link)).toBe(linkBefore);
+    const again = [...page.root.querySelectorAll('.friends-failure button')].find(
+      (button) => button.textContent === 'Try again',
+    );
+    (again as HTMLElement | undefined)?.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    page.answer(json(200, TWO));
+    const code = () => page.root.querySelector('.friends-add-card .friends-code-value');
+    await until(() => code()?.textContent === '7KQ2-M9XD', 'the code, read again');
     expect(page.root.querySelector('.friends-failure')).toBeNull();
   });
 });

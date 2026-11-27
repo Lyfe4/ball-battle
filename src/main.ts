@@ -15,7 +15,7 @@ import { browserStorage as storage } from './app/storage.ts';
 import { createTips } from './app/tips.ts';
 import { createArena } from './arena.ts';
 import { createHomeController } from './screens/home.ts';
-import { createBallLink, createManualScreen } from './screens/manual.ts';
+import { createBallLink, createLazyManual } from './screens/manual-lazy.ts';
 import { createOutdatedController } from './screens/outdated.ts';
 import { inboxViews } from './screens/inbox-views.ts';
 import { mountShell } from './screens/shell.ts';
@@ -96,7 +96,7 @@ const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_L
   friends: () => online,
 });
 
-const manual = createManualScreen(getElement('manual', HTMLElement), BALLS, {
+const manual = createLazyManual(getElement('manual', HTMLElement), BALLS, {
   go,
   back: backOrHome,
 });

@@ -533,9 +533,9 @@ turns with its answer and holds its row to every other screen's pixels.
   friend's lineup, a series by turns waiting on the other's pick). It was a small dark quiet button
   on one and the yellow primary on the other. `NoticeButton.plain` keeps a first button from being
   the primary.
-- **Reduce motion in settings, not yet**: built and then taken out the same night. The menu must
-  fit whole above its gear when it covers an offline match on a 390 × 664 phone
-  (`settings-live.safari.browser.test.ts`), and one more switch row put it 48 px over. It needs
+- **Reduce motion in settings, not yet** (built since: the next addendum): built and then taken
+  out the same night. The menu must fit whole when it covers an offline match on a 390 × 664
+  phone, and one more switch row put it 48 px over. It needs
   room first (for example Show all tips again moving to the foot's About line); the approach is
   kept for then: a `data-motion="reduce"` root attribute that every reduced-motion block honours
   beside the media query through `:where()` twins, and one `reducedMotion()` for scripts.
@@ -544,3 +544,38 @@ turns with its answer and holds its row to every other screen's pixels.
   and no click fired (the WebKit friend-path flake, and a tap a phone could lose). The sheet keeps
   its rows when they would be drawn the same, marking the pick in place.
 - **Ended games by turns** keep Open on the row's line, the words wrapping in their column.
+
+## Addendum (2026-11-28, later): Reduce motion in settings; the menu whole over a phone's fight
+
+- **Reduce motion is in settings**, under Fights after Sound: a switch that sets
+  `data-motion="reduce"` on the root (`src/app/motion.ts`), remembered on the device. Every
+  stylesheet honours it as it honours the device's `prefers-reduced-motion`: a `no-preference`
+  block's rules start with `:where(:root:not([data-motion='reduce']))` and a `reduce` block has a
+  `:where(:root[data-motion='reduce'])` twin, both with no added specificity
+  (`motion-twins.test.ts` fails on a rule without its guard or twin). Scripts that chose by
+  `matchMedia` ask `reducedMotion()`; the arena reads it every frame. While the device already asks
+  for less motion the switch is on and fixed, saying "set by your device".
+- **Show all tips again sits beside the Tips heading**, compact (40 px, its tap target still 44),
+  the one action on the whole group beside what it acts on; About is alone on the last row.
+- **The menu stays whole over a phone's fight.** The night's "48 px over" was measured where the
+  Sound row is missing (the WebKit test engine has no Web Audio); with Sound, as on a real phone,
+  the menu was already 44 px taller than the room above its gear and scrolled, hiding Show all tips
+  again and About. When it must cover the court anyway (the match waits) and fits neither above nor
+  below its gear, it now stands whole over its gear too (`placeMenu`), as the sideways layout
+  already did; its × closes it. It scrolls only when it is taller than the screen itself.
+  `settings-fit.safari.browser.test.ts` holds it at 390 × 664 mid-fight: every row, no scroll,
+  and "The match waits" whenever it covers the court. A live match is unchanged: the menu never
+  covers its court and scrolls beside it (ADR 0054).
+- **Friends keeps its place when the server fails** (the slow walk's intermittent 0.15 on CI). Two
+  races decided whether it moved: the list's failure card was shorter than the skeleton it replaced
+  and the code card under it was hidden, so the link card jumped up; and when `/me` failed on a
+  device that remembers an account, the whole screen swapped to the link card and a second failure
+  card. Now a remembered account keeps its layout when `/me` merely fails (an answer that says
+  signed out still changes it), and a failed list's one card takes the box of what it replaces
+  (`failPlace`, `failInPlace`): with nothing known, the list's (the skeleton's), the code card
+  waiting unseen in its place; with the inbox's friends shown, their rows stay and the card takes
+  the box of the requests the inbox counted, else the code card's. It may be taller than the box,
+  never shorter. `friends-failing.touch.browser.test.ts` holds both reads and fails them in each
+  order (it failed every run before the change); `frame-account-flow.ts` now answers the list, so
+  it measures an account's frame rather than, unknowingly, a failing one (last night's try at
+  this moved its gear because that walk had been a failure all along).

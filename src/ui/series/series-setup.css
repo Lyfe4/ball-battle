@@ -242,6 +242,11 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .lineup-level-chevron {
+  transition: none;
+}
+
 /* The three levels, a full row under the mode line, aligned with the toggle's end. */
 .lineup-level-options {
   flex-basis: 100%;

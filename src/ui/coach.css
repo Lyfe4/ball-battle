@@ -93,6 +93,11 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .coach-enter {
+  animation-name: coach-fade-in;
+}
+
 @keyframes coach-fade-in {
   from {
     opacity: 0;
@@ -149,4 +154,9 @@
   .pick-row[data-coached] .pick-row-badge[data-facing] {
     animation: none;
   }
+}
+
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .pick-row[data-coached] {
+  animation: none;
 }

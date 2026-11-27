@@ -34,3 +34,12 @@ desktop.ini
 
 # Local Netlify folder
 .netlify
+
+# Local working folders: proposals, screenshots and agent scratch (never committed)
+proposals-*/
+screenshots-*/
+.overnight/
+.scratch/
+.shots/
+*.stackdump
+src/flows/zz-*

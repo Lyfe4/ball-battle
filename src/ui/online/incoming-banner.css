@@ -171,3 +171,18 @@
     animation: none;
   }
 }
+
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .incoming-banner {
+  transition: opacity var(--motion-quick) var(--ease-out);
+}
+
+@starting-style {
+  :where(:root[data-motion='reduce']) .incoming-banner {
+    transform: none;
+  }
+}
+
+:where(:root[data-motion='reduce']) .tab-bar-badge[data-pulse] {
+  animation: none;
+}

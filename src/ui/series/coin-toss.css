@@ -135,6 +135,15 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .coin-toss[data-stage='flipping'] .coin-toss-blank {
+  opacity: 1;
+}
+
+:where(:root[data-motion='reduce']) .coin-toss[data-stage='landed'] .coin-toss-words {
+  animation: none;
+}
+
 /*
  * A phone turned sideways (ADR 0061, 0067): 320 to 375 px of height under the header and the bar,
  * which the coin, its rise and the words under it overran. The coin is sized from the height left

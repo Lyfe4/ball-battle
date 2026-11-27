@@ -99,3 +99,65 @@ export function failureCard(
 export function inboxList(friends: readonly FriendEntry[] | undefined): FriendsResponse {
   return { code: '', friends: friends ?? [], incoming: [], outgoing: [], blocked: [] };
 }
+
+/**
+ * A read failed: `card` takes `place`'s box (ADR 0087 addendum of 2026-11-28), at least as tall
+ * as what it replaces, so nothing under it moves however the failures land. `place` stays in the
+ * page, its contents set aside, until `restore` (Try again answered, the list drawn).
+ */
+export function failInPlace(place: HTMLElement, card: HTMLElement): () => void {
+  const height = place.getBoundingClientRect().height;
+  const kept = [...place.childNodes];
+  place.style.minHeight = `${String(height)}px`;
+  place.setAttribute('data-failed', '');
+  place.replaceChildren(card);
+  return () => {
+    place.style.minHeight = '';
+    place.removeAttribute('data-failed');
+    if (place.contains(card)) place.replaceChildren(...kept);
+  };
+}
+
+/** The Friends section's parts a failed read's card can take the place of. */
+interface FailParts {
+  readonly root: HTMLElement;
+  readonly lists: HTMLElement;
+  readonly addCard: HTMLElement;
+}
+
+/**
+ * The list read failed (ADR 0087 addendum of 2026-11-28): `fail` puts the card where it moves
+ * nothing. Where the inbox already named the friends (`inboxKnown`) their rows stay, and the card
+ * takes the box of the requests it counted (their placeholder rows), else the code card's (the code
+ * came with the list). With nothing known it takes the list's box (the skeleton's) and the code
+ * card waits unseen in its place. The link card never moves. `clear` undoes it, for the next draw.
+ */
+export function failPlace(parts: FailParts): {
+  fail(inboxKnown: boolean, card: HTMLElement): void;
+  clear(): void;
+} {
+  const { root, lists, addCard } = parts;
+  let undo: (() => void) | undefined;
+  const clear = () => {
+    undo?.();
+    undo = undefined;
+    root.removeAttribute('data-list-failed');
+  };
+  return {
+    clear,
+    fail(inboxKnown, card) {
+      clear();
+      lists.removeAttribute('data-reveal');
+      // Whatever the count, the cards under the list show now (the code card's own rule aside).
+      root.removeAttribute('data-count-unknown');
+      if (!inboxKnown) {
+        undo = failInPlace(lists, card);
+        root.setAttribute('data-list-failed', '');
+        return;
+      }
+      const waiting = lists.querySelector<HTMLElement>('.friends-group[data-group="incoming"]');
+      const held = waiting?.querySelector('.friends-skeleton') == null ? undefined : waiting;
+      undo = failInPlace(held ?? addCard, card);
+    },
+  };
+}

@@ -90,11 +90,11 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .tip-ring-enter {
+  :where(:root:not([data-motion='reduce'])) .tip-ring-enter {
     animation: tip-ring-enter 360ms ease-out both;
   }
 
-  .arena-caption-enter {
+  :where(:root:not([data-motion='reduce'])) .arena-caption-enter {
     animation: arena-caption-enter 320ms ease-out both;
   }
 }
@@ -107,6 +107,15 @@
   .arena-caption-enter {
     animation: tip-fade-in 320ms linear both;
   }
+}
+
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .tip-ring-enter {
+  animation: tip-fade-in 360ms linear both;
+}
+
+:where(:root[data-motion='reduce']) .arena-caption-enter {
+  animation: tip-fade-in 320ms linear both;
 }
 
 @keyframes tip-ring-enter {
