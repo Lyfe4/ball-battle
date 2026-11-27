@@ -92,16 +92,27 @@ describe('pokes on Realtime', () => {
     const pageB = await listen(b);
     expect(await until(() => pageA.up() && pageB.up(), 10_000)).toBe(true);
 
-    await admin`select game.poke(${a.userId}::uuid, 'inbox')`;
-    expect(await until(() => pageA.heard.length > 0, 5_000)).toBe(true);
+    // Pokes until its owner hears one: local Realtime starts broadcasting a moment after the first
+    // socket joins and drops what came before (a poke is a hint; repeats change nothing).
+    const pokeUntilHeard = async (player: Player, event: string, page: { heard: string[] }) => {
+      for (let tries = 0; tries < 30 && page.heard.length === 0; tries += 1) {
+        await admin`select game.poke(${player.userId}::uuid, ${event})`;
+        await until(() => page.heard.length > 0, 500);
+      }
+    };
+    await pokeUntilHeard(a, 'inbox', pageA);
     // Time enough for a wrong delivery to land.
     await new Promise((resolve) => setTimeout(resolve, 1_500));
-    expect({ a: pageA.heard, b: pageB.heard }).toStrictEqual({ a: ['inbox'], b: [] });
+    const only = (heard: readonly string[]) => [...new Set(heard)];
+    expect({ a: only(pageA.heard), b: pageB.heard }).toStrictEqual({ a: ['inbox'], b: [] });
     // B's socket hears its own: its silence above was not a dead socket.
-    await admin`select game.poke(${b.userId}::uuid, 'match')`;
-    expect(await until(() => pageB.heard.length > 0, 5_000)).toBe(true);
-    expect({ a: pageA.heard, b: pageB.heard }).toStrictEqual({ a: ['inbox'], b: ['match'] });
-  }, 30_000);
+    await pokeUntilHeard(b, 'match', pageB);
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    expect({ a: only(pageA.heard), b: only(pageB.heard) }).toStrictEqual({
+      a: ['inbox'],
+      b: ['match'],
+    });
+  }, 40_000);
 
   it('keep their log from every browser role', async () => {
     for (const role of ['anon', 'authenticated']) {
