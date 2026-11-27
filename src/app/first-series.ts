@@ -59,6 +59,8 @@ export interface FirstSeries {
   chose(format: Format): void;
   /** True the first time a graduated device starts a series in `format`: its "How it goes" box. */
   takeFormatBox(format: Format): boolean;
+  /** Calls `listener` whenever the state changes on this page (home redraws Play, ADR 0090). */
+  listen(listener: () => void): void;
 }
 
 function read(storage: FirstSeriesStorage, key: string): string | null {
@@ -102,9 +104,12 @@ export function createFirstSeries(storage: FirstSeriesStorage): FirstSeries {
   const chosen = setOf(read(storage, FORMATS_CHOSEN_STORAGE_KEY));
   const taught = setOf(read(storage, FORMATS_TAUGHT_STORAGE_KEY));
   const later = (format: Format) => state() === 'graduated' && LATER_FORMATS.includes(format);
+  const listeners: (() => void)[] = [];
   const become = (next: State) => {
+    const changed = known !== next;
     known = next;
     write(storage, FIRST_SERIES_STORAGE_KEY, next);
+    if (changed) for (const listener of listeners) listener();
   };
   return {
     done: () => state() !== 'guided',
@@ -129,6 +134,9 @@ export function createFirstSeries(storage: FirstSeriesStorage): FirstSeries {
       if (!later(format) || chosen.has(format)) return;
       chosen.add(format);
       write(storage, FORMATS_CHOSEN_STORAGE_KEY, [...chosen].join(','));
+    },
+    listen(listener) {
+      listeners.push(listener);
     },
     takeFormatBox(format) {
       if (!later(format) || taught.has(format)) return false;

@@ -62,6 +62,40 @@ export async function profileOf(sql: Db, userId: string): Promise<Profile | unde
 }
 
 /**
+ * `/me`'s read in one statement (ADR 0090 addendum): the player's profile as `profileOf` reads it
+ * (marking them seen), and whether an account has finished an online series (a counted one: played
+ * out or forfeited, never a bot's), so a device it signs in on skips the guided first series.
+ */
+export async function meOf(
+  sql: Db,
+  userId: string,
+): Promise<{ readonly profile: Profile | undefined; readonly played: boolean }> {
+  const [row] = await sql<
+    {
+      readonly name: string;
+      readonly username: string | null;
+      readonly account: boolean;
+      readonly played: boolean;
+    }[]
+  >`
+    with seen as (${markSeen(sql, userId)})
+    select coalesce(p.username, p.display_name) as name, p.username,
+      p.account_at is not null as account,
+      p.account_at is not null and exists (
+        select 1 from game.series s
+        where (s.player_a = p.user_id or s.player_b = p.user_id)
+          and s.status in ('finished', 'forfeit') and s.bot is null
+      ) as played
+    from game.profiles p where p.user_id = ${userId}`;
+  return row === undefined
+    ? { profile: undefined, played: false }
+    : {
+        profile: { userId, name: row.name, username: row.username, account: row.account },
+        played: row.played,
+      };
+}
+
+/**
  * Makes `userId` an account (ADR 0079), with a profile if it has none yet (an account new to this
  * game, whose player confirmed they are 16 or older on this device). Kept from the first time.
  */

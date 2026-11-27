@@ -2,6 +2,7 @@
 // empty state before the first online match, "Your stats", each match row in short and in words,
 // and All matches' lines. Pure, so every state is tested without a DOM.
 import type { Ending, RecentSeries, RecordResponse, Tally } from '../api/record.ts';
+import { TURNS_BUILD } from '../app/turns-build.ts';
 
 export const RECORD_TITLE = 'Your record';
 export const RECORD_MORE = 'More stats';
@@ -67,16 +68,25 @@ function tallyText({ wins, played }: Tally): string {
 }
 
 /** "Your stats", a row each (ADR 0089): the win rate, the four breakdowns, the streak, the ball. */
+/**
+ * `turns`: the build plays by turns (ADR 0085). Without it nothing says "By turns" or "Live"
+ * (every match is live, so the words would say nothing): the stats leave both rows out.
+ */
 export function statRows(
   record: RecordResponse,
   nameOf: (ball: string) => string | undefined,
+  turns: boolean = TURNS_BUILD,
 ): readonly StatFact[] {
   const { stats } = record;
   const rate = record.played === 0 ? 0 : Math.round((100 * record.wins) / record.played);
   const rows: StatFact[] = [
     { label: 'Win rate', value: `${String(rate)}%` },
-    { label: 'Live', value: tallyText(stats.live) },
-    { label: 'By turns', value: tallyText(stats.turns) },
+    ...(turns
+      ? [
+          { label: 'Live', value: tallyText(stats.live) },
+          { label: 'By turns', value: tallyText(stats.turns) },
+        ]
+      : []),
     { label: 'Best of 3', value: tallyText(stats.bestOf3) },
     { label: 'Best of 5', value: tallyText(stats.bestOf5) },
     {
@@ -137,14 +147,25 @@ export interface MatchRow {
   readonly label: string;
 }
 
-export function matchRow(series: RecentSeries, now: Date, locale?: string): MatchRow {
+/** `turns`: the build plays by turns; without it a row says neither Live nor By turns. */
+export function matchRow(
+  series: RecentSeries,
+  now: Date,
+  locale?: string,
+  turns: boolean = TURNS_BUILD,
+): MatchRow {
   const name = series.opponent ?? DELETED_PLAYER;
   const result = series.won ? 'Won' : 'Lost';
   const ending = series.ending === null ? undefined : ENDING_WORDS[series.ending];
   const detail = ending ?? `${String(series.score.you)}–${String(series.score.them)}`;
-  const how = series.live ? 'Live' : 'By turns';
+  const how = !turns ? '' : series.live ? 'Live' : 'By turns';
   const date = shortDate(series.finishedAt, now, locale);
   const spoken = ending ?? `${String(series.score.you)} to ${String(series.score.them)}`;
-  const label = `${result} against ${name}, ${spoken}, ${date}, ${how.toLowerCase()}`;
+  const label = [
+    `${result} against ${name}`,
+    spoken,
+    date,
+    ...(how === '' ? [] : [how.toLowerCase()]),
+  ].join(', ');
   return { name, result, won: series.won, detail, date, how, label };
 }

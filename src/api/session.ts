@@ -15,6 +15,11 @@ export interface PlayerResponse {
   readonly account?: boolean;
   /** The account's username, null until chosen (ADR 0079). Absent where accounts are off. */
   readonly username?: string | null;
+  /**
+   * An account that has finished an online series (ADR 0090 addendum): any device it signs in on
+   * is past the guided first series. Absent where accounts are off, and for a guest.
+   */
+  readonly played?: boolean;
 }
 
 /**

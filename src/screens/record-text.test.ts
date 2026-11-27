@@ -43,7 +43,7 @@ describe('the record’s words (ADR 0088, 0089)', () => {
         favouriteIn: 4,
       },
     });
-    expect(statRows(record, names)).toStrictEqual([
+    expect(statRows(record, names, true)).toStrictEqual([
       { label: 'Win rate', value: '60%' },
       { label: 'Live', value: '2 won · 1 lost' },
       { label: 'By turns', value: '1 won · 1 lost' },
@@ -52,10 +52,18 @@ describe('the record’s words (ADR 0088, 0089)', () => {
       { label: 'Best streak', value: '1 win' },
       { label: 'Most played', value: 'Vampire · 4', ball: 'vampire' },
     ]);
+    // A build without play by turns says neither Live nor By turns (production today).
+    expect(statRows(record, names, false).map((row) => row.label)).toStrictEqual([
+      'Win rate',
+      'Best of 3',
+      'Best of 5',
+      'Best streak',
+      'Most played',
+    ]);
   });
 
   it('says a row in short and in words: the score, or whose forfeit it was', () => {
-    expect(matchRow(series(), NOW, 'en-AU')).toStrictEqual({
+    expect(matchRow(series(), NOW, 'en-AU', true)).toStrictEqual({
       name: 'Jo',
       result: 'Won',
       won: true,
@@ -71,13 +79,14 @@ describe('the record’s words (ADR 0088, 0089)', () => {
       ['theirTime', 'Their time ran out'],
     ] as const;
     for (const [ending, words] of endings) {
-      const row = matchRow(series({ ending, forfeit: true }), NOW, 'en-AU');
+      const row = matchRow(series({ ending, forfeit: true }), NOW, 'en-AU', true);
       expect([row.detail, row.label.split(', ')[1]]).toStrictEqual([words, words]);
     }
     const lost = matchRow(
       series({ opponent: null, won: false, live: false, score: { you: 0, them: 1 } }),
       NOW,
       'en-AU',
+      true,
     );
     expect([lost.name, lost.result, lost.detail, lost.how]).toStrictEqual([
       'Deleted player',
@@ -85,6 +94,9 @@ describe('the record’s words (ADR 0088, 0089)', () => {
       '0–1',
       'By turns',
     ]);
+    // Without play by turns: no Live or By turns, in short or in words.
+    const plain = matchRow(series({ live: false }), NOW, 'en-AU', false);
+    expect([plain.how, plain.label]).toStrictEqual(['', 'Won against Jo, 2 to 1, 24 Nov']);
   });
 
   it('says today and yesterday by name, and the year only when it isn’t this one', () => {

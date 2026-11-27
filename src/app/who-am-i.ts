@@ -25,16 +25,22 @@ export function mayHavePlayer(storage: DeviceStorage, cookies: string): boolean 
   return hasPlayerHint(cookies) || hasGuest(storage) || hasAccount(storage);
 }
 
-/** Asks `/me` (through `readMe`) where this device may have a player. */
+/**
+ * Asks `/me` (through `readMe`) where this device may have a player. An account that has played
+ * online (`played`) calls `onPlayed`: the device is past the guided first series (ADR 0090
+ * addendum).
+ */
 export async function whoAmI(
   storage: DeviceStorage,
   cookies: string,
   readMe: () => Promise<ApiResult<PlayerResponse | undefined>>,
+  onPlayed?: () => void,
 ): Promise<WhoAmI> {
   if (!mayHavePlayer(storage, cookies)) return { kind: 'none' };
   const me = await readMe();
   if (me.ok) {
     const account = me.body?.account === true;
+    if (account && me.body.played === true) onPlayed?.();
     rememberAccount(storage, account);
     if (!account) rememberGuest(storage, true);
     return account ? { kind: 'account', username: me.body.username ?? null } : { kind: 'guest' };

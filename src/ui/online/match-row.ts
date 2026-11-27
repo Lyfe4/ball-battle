@@ -28,7 +28,8 @@ export function createMatchRow(
   const words = element('span', 'friends-words');
   words.append(element('span', 'friends-name', row.name), line);
   const when = element('span', 'friends-status profile-match-when');
-  when.append(element('span', '', row.date), element('span', '', row.how));
+  when.append(element('span', '', row.date));
+  if (row.how !== '') when.append(element('span', '', row.how));
   button.append(disc, words, when);
   busyOnClick(button, () => open(series.id));
   item.append(button);

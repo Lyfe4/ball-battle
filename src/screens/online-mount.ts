@@ -2,6 +2,7 @@
 // the arena tells a series each frame, and the page's layout. `mountOnline` builds it in a build
 // with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
+import { askMe } from './who-ask.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { writeShellParams, type Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
@@ -23,10 +24,7 @@ import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
 import { createRematchWatch, type RematchHomeBack } from './rematch-watch.ts';
 import { createHomeBack } from '../ui/online/back-to-match.ts';
 import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
-import type { PlayerResponse } from '../api/session.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
-import { callApi } from '../app/api.ts';
-import { whoAmI } from '../app/who-am-i.ts';
 import { visitCache } from '../app/visit-cache.ts';
 import { createWhoSource } from '../app/who-source.ts';
 import { createAvatars, type Avatars } from '../ui/online/account-button.ts';
@@ -161,10 +159,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       })
     : undefined;
   // One `/me` for the avatar and the screens, kept for the visit (ADR 0087).
-  const whoSource = createWhoSource(
-    () => whoAmI(browserStorage, document.cookie, () => callApi<PlayerResponse>('GET', 'me')),
-    visitCache,
-  );
+  const whoSource = createWhoSource(askMe, visitCache);
   const screens = createOnlineScreens(hud, foot, BALLS, BALL_LOOKUP, {
     who: whoSource,
     ended: (view) => {
