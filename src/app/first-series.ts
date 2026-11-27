@@ -3,10 +3,11 @@
 // device beside the tips (tips.ts), in its style: storage can be missing or throw, and then the
 // device counts as done, so nobody is ever held in the guided state.
 //
-// The state is decided once and written: a device's first read finds no key and asks whether the
-// device has played before (a key only real play writes, PLAYED_KEYS); the answer is stored, so a
-// key the first series itself writes (its saved series, its tips) can't end it early, and an
-// existing player never sees it (D6). Three states: 'guided' (the first series is ahead),
+// With no key of its own, a device is new unless it has played before (a key only real play
+// writes, PLAYED_KEYS), so an existing player never sees it (D6). Reading writes nothing: a first
+// page load (or the reload after Log out, which leaves nothing of the player) stays empty. The
+// guided state is written when the first series starts (`begin`), before any key it writes itself
+// (its saved series, its tips) could end it early. Three states: 'guided' (the first series is ahead),
 // 'graduated' (it was played here and is over: the new ways to play wear "New" until tried) and
 // 'done' (skipped, or a device that played before: everything, nothing marked new).
 import type { Format } from '../sim/series.ts';
@@ -44,6 +45,8 @@ export type FirstSeriesStorage = () => Pick<Storage, 'getItem' | 'setItem' | 're
 export interface FirstSeries {
   /** False while the guided first series is ahead (or under way); true for everyone else. */
   done(): boolean;
+  /** The guided first series starts (Play): remembered, so the keys it writes can't end it. */
+  begin(): void;
   /** The first series is over, finished or left: everything shows, the new formats marked new. */
   finish(): void;
   /** Skip: show me everything. Everything shows, nothing marked new. */
@@ -82,18 +85,15 @@ function decide(storage: FirstSeriesStorage): State {
   try {
     const stored = storage().getItem(FIRST_SERIES_STORAGE_KEY);
     if (stored === 'guided' || stored === 'graduated' || stored === 'done') return stored;
-    const played = PLAYED_KEYS.some((key) => storage().getItem(key) !== null);
-    const state: State = played ? 'done' : 'guided';
-    storage().setItem(FIRST_SERIES_STORAGE_KEY, state);
-    return state;
+    return PLAYED_KEYS.some((key) => storage().getItem(key) !== null) ? 'done' : 'guided';
   } catch {
     return 'done';
   }
 }
 
 /**
- * The device's first-series state. It is read (and, on a brand-new device, decided and written) on
- * first use, not when made: the page asks when home first shows.
+ * The device's first-series state, read on first use, not when made: the page asks when home first
+ * shows.
  */
 export function createFirstSeries(storage: FirstSeriesStorage): FirstSeries {
   // Kept in memory too, so a page load stays consistent when a write fails.
@@ -108,6 +108,9 @@ export function createFirstSeries(storage: FirstSeriesStorage): FirstSeries {
   };
   return {
     done: () => state() !== 'guided',
+    begin() {
+      if (state() === 'guided') become('guided');
+    },
     finish() {
       if (state() === 'guided') become('graduated');
     },
