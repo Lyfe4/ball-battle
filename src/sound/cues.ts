@@ -4,12 +4,14 @@
 // a ball's ability state between the two worlds (state-cues.ts). A ball's own sound takes the place
 // of the bump when its ability is the bump (a Battery's release, a Berserker's rage, a Speedster's
 // boosted hit, a Ghost passing through, the Balloon's squeak, the Jouster's lance splintering or
-// glancing), and plays beside it otherwise (Thorns' spikes, a Vampire's sip, Frost and Venom
-// landing).
+// glancing, the Hunter's thump on slow prey), and plays beside it otherwise (Thorns' spikes, a
+// Vampire's sip, Frost and Venom landing, the Tortoise's shell knocking).
 import { impactStrength } from '../render/impact.ts';
 import { ARENA_SIZE } from '../sim/constants.ts';
 import { CAPACITY } from '../sim/balls/battery.ts';
 import { rageOf } from '../sim/balls/berserker.ts';
+import { preyTimes } from '../sim/balls/hunter.ts';
+import { SHELL } from '../sim/balls/tortoise.ts';
 import { stacksOf } from '../sim/balls/speedster.ts';
 import type { BallState, SimEvent, Vec2, WorldState } from '../sim/types.ts';
 import { stateCues } from './state-cues.ts';
@@ -61,6 +63,13 @@ const ABILITY_DAMAGE: Readonly<Record<string, FightCue>> = {
   'kraken/onTick': 'crush',
 };
 
+/** How much harder than plain the Hunter's bump must land to thump (its prey slow, held or planted). */
+const HEAVY_PREY = 1.5;
+
+/** A ball's speed as the world before the tick had it (0 if it is gone). */
+const speedOf = (ball: BallState | undefined): number =>
+  ball === undefined ? 0 : Math.hypot(ball.velocity.x, ball.velocity.y);
+
 /** Damage that size, as a share of a hard hit, for ability damage measured in its own units. */
 const share = (amount: number, full: number): number => amount / full;
 
@@ -88,6 +97,13 @@ export function cuesOf(
       contact.set(event.targetId, (contact.get(event.targetId) ?? 0) + event.amount);
       if (event.times !== undefined && kindOf(event.sourceId) === 'jouster') {
         ownBump.set(event.sourceId, event.times > 1 ? 'splinter' : 'spark');
+      }
+      // The Hunter's bump on slow prey (held, slowed, planted) lands half again as hard or more.
+      if (
+        kindOf(event.sourceId) === 'hunter' &&
+        preyTimes(speedOf(before.get(event.targetId))) >= HEAVY_PREY
+      ) {
+        ownBump.set(event.sourceId, 'thump');
       }
     }
     if (event.type === 'abilityTriggered' && event.hook === 'onHitBall') {
@@ -176,6 +192,7 @@ export function cuesOf(
         if (kind === 'battery') add('store', event.reduced / CAPACITY, at);
         if (kind === 'spartan') add('glance', event.reduced / (event.reduced + event.rest), at);
         if (kind === 'balloon') add('squash', share(event.reduced, 12), at);
+        if (kind === 'tortoise') add('knock', share(event.reduced, SHELL), at);
         break;
       }
       case 'statusApplied': {
@@ -246,6 +263,7 @@ function zoneSpawned(owner: string | undefined, at: Vec2, add: AddCue): void {
 function zoneStruck(owner: string | undefined, at: Vec2, hits: number, add: AddCue): void {
   if (owner === 'bomber') add('bombBlast', hits > 0 ? 1 : 0.5, at);
   else if (owner === 'storm') add('thunder', hits > 0 ? 1 : 0.2, at);
+  else if (owner === 'hunter') add('snap', hits > 0 ? 1 : 0.3, at);
   else if (owner === 'quake') {
     if (hits > 0) add('quakeHit', 0.6, at);
   } else if (owner !== 'inferno' && hits > 0) add('hit', 0.6, at);
