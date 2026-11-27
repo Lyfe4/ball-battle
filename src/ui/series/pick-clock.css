@@ -29,13 +29,17 @@
 
 .pick-clock-title {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 0 var(--space-small);
   margin: 0;
   font-size: var(--font-size-lead);
   font-weight: 800;
   line-height: 1.2;
+}
+
+/* The words wrap inside their own box, so the waiting ball stays on the title's line. */
+.pick-clock-title-text {
+  min-width: 0;
 }
 
 .pick-clock-seconds {
