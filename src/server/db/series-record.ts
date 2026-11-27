@@ -9,7 +9,7 @@ import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index
 import type { Sql, TransactionSql } from '../db.ts';
 import type { EndReason, FightTime } from '../live.ts';
 import type { Limit } from '../rate-limit.ts';
-import { markSeen, type Profile } from './profiles.ts';
+import { markSeen, sessionLive, type Profile } from './profiles.ts';
 import type { SeedRow } from '../view.ts';
 import type { SeriesRow } from './series.ts';
 
@@ -109,12 +109,14 @@ export async function loadSeriesAs(
   id: string,
   reader?: string,
   limit?: Limit,
+  sessionId?: string,
 ): Promise<{ readonly profile: Profile | undefined; readonly series: LoadedSeries | undefined }> {
   const window = limit === undefined ? null : `${String(limit.windowSeconds)} seconds`;
   const [raw] = await db<Raw[]>`
     with seen as (${markSeen(db, reader ?? null)}), me as (
       select coalesce(username, display_name) as name, username, account_at is not null as account
-      from game.profiles where user_id = ${reader ?? null}::uuid
+      from game.profiles
+      where user_id = ${reader ?? null}::uuid and ${sessionLive(db, sessionId)}
     ), counted as (
       insert into game.rate_limits (subject, bucket, window_start, count)
       select ${reader ?? null}::text, ${limit?.bucket ?? null}::text,

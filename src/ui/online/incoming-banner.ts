@@ -9,6 +9,7 @@
 // bottom right beside and on a desktop, never over the rail (incoming-banner.css). It moves on the motion tokens
 // alone; with reduced motion it fades. Each answer is a request: its button stays busy until the
 // server has it (busy-button.ts), so a double tap sends one.
+import { tokenMs } from '../motion-token.ts';
 import { busyOnClick } from '../busy-button.ts';
 import { createCloseButton } from '../close-button.ts';
 import { element, setAttr, setHidden, setText } from '../dom.ts';
@@ -38,13 +39,6 @@ export interface IncomingBanner {
 }
 
 const moveLess = () => reducedMotion().matches;
-
-/** A motion token's length in ms (tokens.css), so a script's animation keeps the tokens' time. */
-function tokenMs(name: string): number {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const ms = Number.parseFloat(value);
-  return value.endsWith('ms') ? ms : ms * 1000;
-}
 
 const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();

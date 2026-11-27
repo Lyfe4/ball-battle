@@ -13,7 +13,7 @@ import {
 } from '../../api/record.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { Limit } from '../rate-limit.ts';
-import { markSeen, type Profile } from './profiles.ts';
+import { markSeen, sessionLive, type Profile } from './profiles.ts';
 
 type Db = Sql | TransactionSql;
 
@@ -72,12 +72,12 @@ export interface Loaded<T> {
 }
 
 /** The session's profile, marked seen, and the read counted, as CTEs `me` and `counted`. */
-function reader(db: Db, userId: string, limit: Limit) {
+function reader(db: Db, userId: string, limit: Limit, sessionId: string | undefined) {
   const window = `${String(limit.windowSeconds)} seconds`;
   return db`
     seen as (${markSeen(db, userId)}), me as (
       select coalesce(username, display_name) as name, username, account_at is not null as account
-      from game.profiles where user_id = ${userId}::uuid
+      from game.profiles where user_id = ${userId}::uuid and ${sessionLive(db, sessionId)}
     ), counted as (
       insert into game.rate_limits (subject, bucket, window_start, count)
       select ${userId}::text, ${limit.bucket}::text,
@@ -162,9 +162,10 @@ export async function loadRecord(
   db: Db,
   userId: string,
   limit: Limit,
+  sessionId?: string,
 ): Promise<Loaded<RecordResponse>> {
   const [raw] = await db<RawRecord[]>`
-    with ${reader(db, userId, limit)}, page as (
+    with ${reader(db, userId, limit, sessionId)}, page as (
       select * from mine order by finished_at desc, id limit ${RECENT_SERIES + 1}
     ), runs as (
       -- Each loss starts a new run; a run's wins are its streak.
@@ -210,9 +211,10 @@ export async function loadMatches(
   userId: string,
   limit: Limit,
   after: Cursor,
+  sessionId?: string,
 ): Promise<Loaded<MatchesPage>> {
   const [raw] = await db<RawPage[]>`
-    with ${reader(db, userId, limit)}, page as (
+    with ${reader(db, userId, limit, sessionId)}, page as (
       select * from mine
       where finished_at < ${after.finishedAt}::timestamptz
         or (finished_at = ${after.finishedAt}::timestamptz and id > ${after.id}::uuid)

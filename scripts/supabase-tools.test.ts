@@ -86,9 +86,25 @@ describe('migrations', () => {
       'bfa71eefbdcb66e8b0ca8cd612217437ccd8c827d6fa2c309b19c0b1cd37cb25',
     '20261127120000_one_outgoing_challenge.sql':
       '8b1edcb8ac258270ff2e405fddb151d1ba03723e921107ff9f4239a0fb26d246',
+    '20261128120000_session_live.sql':
+      '8612d4dbe535dff99b0ab0a205b6f5653b504ac3ed0197ef5d6f04b154f3be20',
+    '20261128130000_player_keys_and_orphans.sql':
+      '862c0f86ab0151840a74c932fa295044df330ef50d2413619e381ee466a2271e',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));
+
+  // Expand only (ADR 0068): the live deploy keeps running against a database that is already
+  // migrated, so nothing it uses may go, change type or tighten. Function bodies ($$ ... $$) may
+  // delete their own rows; the statements around them may not.
+  const SHRINKS =
+    /\b(drop\s+(table|column|schema|type|view|materialized\s+view|sequence)|rename\s+(to|column)|truncate|alter\s+column\s+\w+\s+(set\s+data\s+)?type|set\s+not\s+null)\b/i;
+  it.each(files)('%s only expands the schema', (file) => {
+    const text = readFileSync(new URL(file, dir), 'utf8')
+      .replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, '')
+      .replace(/--.*$/gm, '');
+    expect(SHRINKS.exec(text)?.[0]).toBeUndefined();
+  });
 
   it.each(files)('%s is pinned and unchanged', (file) => {
     const text = readFileSync(new URL(file, dir), 'utf8').replaceAll('\r\n', '\n');

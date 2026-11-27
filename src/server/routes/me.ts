@@ -40,8 +40,8 @@ export const me: RouteHandler = alsoWhileOff(
     guard(request, ['GET', 'DELETE']);
     if (request.method === 'GET') {
       // The profile and whether the account has played online, in one round trip (sessionWith).
-      const { session, read } = await sessionWith(request, context, (userId) =>
-        meOf(context.deps.sql, userId),
+      const { session, read } = await sessionWith(request, context, (reader) =>
+        meOf(context.deps.sql, reader.userId, reader.sessionId),
       );
       // A device signed in before the hint existed gets it on its first read (cookie.ts).
       context.setCookie(playerHintCookie());

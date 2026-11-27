@@ -90,8 +90,16 @@ export const health: RouteHandler = async (request, context) => {
   const { deps, noteFailure } = context;
   const [{ row: database, mail }, ruleset, auth] = await Promise.all([
     // One query (one connection never runs two at once): up, and everyone's codes so far.
-    deps.sql<{ readonly ok: number; readonly day: number; readonly month: number }[]>`
+    deps.sql<
+      {
+        readonly ok: number;
+        readonly day: number;
+        readonly month: number;
+        readonly poke: boolean;
+      }[]
+    >`
       select 1 as ok,
+        coalesce((select enabled from game.flags where name = 'poke'), false) as poke,
         coalesce((select count from game.rate_limits where subject = ${EVERYONE}
           and bucket = ${LIMITS.codesDaily.bucket}
           and window_start = date_bin(interval '1 day', now(), timestamptz '2000-01-01')), 0) as day,
@@ -132,6 +140,8 @@ export const health: RouteHandler = async (request, context) => {
     accounts: !deps.config.accounts ? 'off' : accountsFailed.length > 0 ? 'misconfigured' : 'ok',
     accountsFailed,
     emailSends: emailSendsOf(mail),
+    pokes: deps.config.pokeKey !== undefined && database?.poke === true ? 'on' : 'off',
+    turns: deps.config.turns ? 'on' : 'off',
   };
   return json(failed.length === 0 ? 200 : 503, body);
 };

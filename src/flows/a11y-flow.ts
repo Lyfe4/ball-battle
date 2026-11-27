@@ -70,8 +70,21 @@ export async function check(where: string, scope?: Element): Promise<Finding[]> 
   return findingsOf(where, results.violations);
 }
 
-/** Opens each person's sheet from Friends, checks it, closes it. */
+/**
+ * Opens each person's sheet from Friends, checks it, closes it. With the game's own Reduce motion
+ * (motion.ts) for the walk through the sheets: WebKit's scan sometimes read the sheet's colours
+ * mid-slide and failed on contrast (runs 45816658354, 45812359039); faded in, it is read at rest.
+ */
 async function sheets(findings: Finding[]): Promise<void> {
+  document.documentElement.dataset['motion'] = 'reduce';
+  try {
+    await eachSheet(findings);
+  } finally {
+    delete document.documentElement.dataset['motion'];
+  }
+}
+
+async function eachSheet(findings: Finding[]): Promise<void> {
   for (const person of ['Robin', 'Jo', 'Morgan', 'Taylor']) {
     const row = visible('.friends-open').find((node) => node.textContent.includes(person));
     if (row === undefined) continue;

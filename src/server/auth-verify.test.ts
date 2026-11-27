@@ -3,7 +3,7 @@
 // left to the refresh, which a real session survives.
 import { exportJWK, generateKeyPair, SignJWT, type CryptoKey } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { verifyAccess } from './auth.ts';
+import { sessionIdOf, verifyAccess } from './auth.ts';
 import type { Config } from './config.ts';
 
 afterEach(() => {
@@ -17,8 +17,13 @@ function newConfig(): Config {
   return { supabaseUrl: `https://auth-${String(projects)}.test` } as Config;
 }
 
-async function signed(config: Config, key: CryptoKey, kid: string): Promise<string> {
-  return new SignJWT({})
+async function signed(
+  config: Config,
+  key: CryptoKey,
+  kid: string,
+  claims: Record<string, unknown> = {},
+): Promise<string> {
+  return new SignJWT(claims)
     .setProtectedHeader({ alg: 'ES256', kid })
     .setSubject('user-1')
     .setIssuer(`${config.supabaseUrl}/auth/v1`)
@@ -45,7 +50,27 @@ describe('verifyAccess', () => {
     keySetAnswers(() => Response.json({ keys: [{ ...jwk, kid: 'k1' }] }));
     expect(await verifyAccess(config, await signed(config, privateKey, 'k1'))).toStrictEqual({
       userId: 'user-1',
+      sessionId: undefined,
     });
+  });
+
+  it('reads the Auth session a token belongs to, so Log out can end it (game.session_live)', async () => {
+    const config = newConfig();
+    const { privateKey, jwk } = await keyPair();
+    keySetAnswers(() => Response.json({ keys: [{ ...jwk, kid: 'k1' }] }));
+    const sid = '0b6f4a2e-9c1d-4e7f-8a3b-5d2c1e0f9a8b';
+    const token = (session_id: unknown) => signed(config, privateKey, 'k1', { session_id });
+    expect(await verifyAccess(config, await token(sid))).toStrictEqual({
+      userId: 'user-1',
+      sessionId: sid,
+    });
+    expect(sessionIdOf(await token(sid))).toBe(sid);
+    // Anything but a UUID is no session id (the SQL casts it).
+    expect(await verifyAccess(config, await token("x'; drop"))).toStrictEqual({
+      userId: 'user-1',
+      sessionId: undefined,
+    });
+    expect(sessionIdOf('not a token')).toBeUndefined();
   });
 
   it('throws, never "invalid", when the key set answers an error page', async () => {

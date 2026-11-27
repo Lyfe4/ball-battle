@@ -105,3 +105,25 @@ jobs:
             echo "Merges in this batch:"
             git log --merges --format='- %s' "origin/release..$SHA"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # The live site came up on the new code (2026-11-28 audit): the workflow was green as soon as
+      # `release` moved, even if the deploy then failed or the API answered 500. Gives Netlify's
+      # build three minutes (a production build takes one to two; one with nothing to build is
+      # skipped), then waits up to 10 minutes for /health to answer (200, or 404 `online_off` where vs Friend is off) with the
+      # status ok, and for the home page to serve a script; read-only. A red run here means: open
+      # Netlify > Deploys, and roll back there (docs/launch-day-runbook.md).
+      - name: Check the live site
+        run: |
+          sleep 180
+          for attempt in $(seq 1 40); do
+            sleep 15
+            code=$(curl -s -o health.json -w '%{http_code}' https://battle-ball.netlify.app/api/v1/health || true)
+            page=$(curl -s -o /dev/null -w '%{http_code}' https://battle-ball.netlify.app/ || true)
+            if [ "$page" = 200 ] && { { [ "$code" = 200 ] && grep -q '"status":"ok"' health.json; } || { [ "$code" = 404 ] && grep -q 'online_off' health.json; }; }; then
+              echo "Live: home 200, health $code ($(cat health.json))" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Waiting for the live site (home $page, health $code)"
+          done
+          echo "::error::The live site did not come up healthy within 10 minutes: roll back in Netlify > Deploys"
+          exit 1

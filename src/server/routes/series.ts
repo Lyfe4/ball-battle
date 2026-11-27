@@ -66,8 +66,8 @@ export const seriesOne: RouteHandler = async (request, context) => {
     const pick = decodePickRequest(await jsonBody(request));
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
     // The session, the series, the heartbeat and the move's rate-limit count: one statement.
-    const { session: player, read } = await sessionWith(request, context, (userId) =>
-      loadSeriesAs(context.deps.sql, picks, userId, LIMITS.moves),
+    const { session: player, read } = await sessionWith(request, context, (reader) =>
+      loadSeriesAs(context.deps.sql, picks, reader.userId, LIMITS.moves, reader.sessionId),
     );
     if (read.series?.spent !== undefined) refuseOver(LIMITS.moves, read.series.spent);
     const answer = await lockPick(context.deps, picks, player.userId, pick, read.series);
@@ -98,8 +98,8 @@ export const seriesOne: RouteHandler = async (request, context) => {
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
   // The session, the read, the reader's heartbeat and their rate-limit count: one statement.
-  const { session: player, read } = await sessionWith(request, context, (userId) =>
-    loadSeriesAs(context.deps.sql, id, userId, LIMITS.reads),
+  const { session: player, read } = await sessionWith(request, context, (reader) =>
+    loadSeriesAs(context.deps.sql, id, reader.userId, LIMITS.reads, reader.sessionId),
   );
   const loaded = read.series;
   if (loaded?.spent !== undefined) refuseOver(LIMITS.reads, loaded.spent);

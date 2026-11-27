@@ -1,7 +1,7 @@
 // Guests not seen for 90 days are deleted by the sweep (ADR 0052, "Guests"; ADR 0068), the way
 // "Forget me" deletes one, and nobody seen more recently is touched.
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from './inactive.ts';
+import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS, ORPHAN_HOURS } from './inactive.ts';
 import { sweep } from './sweep.ts';
 import { adminSql, testDeps } from './test/support.ts';
 import { newPlayer, newSeries, read, type Player } from './test/series-support.ts';
@@ -104,5 +104,23 @@ describe('accounts (ADR 0079)', () => {
     await lastSeen(account, INACTIVE_ACCOUNT_DAYS + 1);
     await sweep(deps);
     expect(await exists(account)).toStrictEqual({ auth: false, profile: false, sessions: 0 });
+  });
+});
+
+describe('Auth users the game never made a player (2026-11-28 audit)', () => {
+  it('are deleted a day after they were made, and not before', async () => {
+    // Stood in for by guests whose profiles are gone: what an email code to a new address leaves
+    // when the code is never entered (Auth makes the user as it sends the code).
+    const old = await newPlayer(deps);
+    const fresh = await newPlayer(deps);
+    for (const player of [old, fresh]) {
+      await admin`delete from game.profiles where user_id = ${player.userId}`;
+    }
+    await admin`
+      update auth.users set created_at = now() - make_interval(hours => ${ORPHAN_HOURS + 1}::int)
+      where id = ${old.userId}`;
+    await sweep(deps);
+    expect((await exists(old)).auth).toBe(false);
+    expect((await exists(fresh)).auth).toBe(true);
   });
 });

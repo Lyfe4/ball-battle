@@ -54,6 +54,18 @@ export function framesOf(stack: string | undefined): Frame[] {
   return frames.reverse();
 }
 
+/**
+ * An error's message as it leaves for the error service (2026-11-28 audit): an email address or a
+ * `(key)=(value)` pair (a database detail) is replaced, and it is cut at 300 characters, so a
+ * message that quotes what a player sent (a JSON parse error, say) carries none of it.
+ */
+export function scrubbed(message: string): string {
+  return message
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '<email>')
+    .replace(/\)=\([^)]*\)/g, ')=(…)')
+    .slice(0, 300);
+}
+
 /** The one event sent for an error: nothing about the request or the person. */
 export function eventOf(
   error: unknown,
@@ -72,7 +84,7 @@ export function eventOf(
       values: [
         {
           type: known.name,
-          value: known.message,
+          value: scrubbed(known.message),
           stacktrace: { frames: framesOf(known.stack) },
         },
       ],

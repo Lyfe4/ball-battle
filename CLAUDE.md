@@ -12,7 +12,7 @@ accounts, friends and Realtime pokes (ADR 0079, 0082) on staging, off in product
 with a friend on previews and staging only (ADR 0085); the social and frame batches (ADR 0086, 0087).
 A brand-new device's first series is guided (ADR 0090, `src/app/first-series.ts`): Easy bot, the
 bot shows first by seed, home shows less until it is over. Next: the two-phone playtest (`docs/turns-playtest.md`), then accounts and pokes in production
-(`docs/production-accounts-runbook.md`, after the move to Netlify Pro in Sydney, ADR 0084).
+(`docs/launch-day-runbook.md` and `docs/launch-checklist.md`, after the move to Netlify Pro in Sydney, ADR 0084; `node scripts/smoke.ts` checks the live site after each switch).
 Ranked (ADR 0083, `docs/ranked-proposal.md`): trophies over a hidden Glicko-2, by turns first;
 groundwork only (rating maths, schema), nothing a player sees until then.
 The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
@@ -60,12 +60,13 @@ supabase migration new <name>`, then `pnpm exec supabase db reset`).
   where the functions have `BALLBATTLE_ONLINE=1`; production builds `VITE_ONLINE` from
   `BALLBATTLE_ONLINE`, the vs Friend switch (`node scripts/friend-switch.ts on|off|status`, ADR
   0068). Never switch it on unless the user asks. The Realtime poke (ADR 0082) has three switches,
-  on in local, tests and staging, off in production: `VITE_POKE` (the build), `BALLBATTLE_POKE` with
-  `SUPABASE_BROWSER_KEY` (the functions) and the database's flag (no deploy; production on needs
+  on in local, tests and staging, off in production: `VITE_POKE` (the build; production builds it
+  from `BALLBATTLE_POKE`), `BALLBATTLE_POKE` with `SUPABASE_BROWSER_KEY` (the functions) and the database's flag (no deploy; production on needs
   `--production`): `node scripts/poke-switch.ts status|on|off local|staging|production`. Play by
   turns with a friend (ADR 0085) has two: `VITE_TURNS` (`netlify.toml`: previews and the main branch
-  deploy; production's command blanks it) and `BALLBATTLE_TURNS` (the functions, dashboard: the
-  deploy-preview and branch-deploy contexts). Never on in production.
+  deploy; production builds it from `BALLBATTLE_TURNS`) and `BALLBATTLE_TURNS` (the functions,
+  dashboard: the deploy-preview and branch-deploy contexts). Off in production until launch day
+  (`docs/launch-day-runbook.md`); never switch it on unless the user asks.
   `pnpm test:online`: two phones through live
   friend matches in Chromium (a whole match, a pick running out, Leave and forfeit, a disconnect),
   against `netlify dev`. After changing `src/server`, restart `netlify dev`: it can keep serving
@@ -126,13 +127,13 @@ even (its test fails on a file in no shard).
 ## Workflow
 
 Work on a branch and open a pull request; never commit to `main`. Once every CI check passes (the
-CI jobs and Netlify's deploy preview; Netlify's header, pages-changed and redirect checks are
-informational), merge it yourself with a merge commit (no squash) and delete the branch. Never
+CI jobs; Netlify's header, pages-changed and redirect checks are informational, and Deploy
+Previews are off, below), merge it yourself with a merge commit (no squash) and delete the branch. Never
 merge a red pull request: fix it on the branch. GitHub enforces part of this: the ruleset "main:
 CI must pass" requires a pull request (no reviews), merge commits only, and every CI job that runs
 on a pull request (11 names, from GitHub Actions; the online shards report through the one job
 with the old name, so they need no entry); so `gh pr merge --auto --merge
---delete-branch` waits for them. Netlify's preview is not required by it: check it yourself. When
+--delete-branch` waits for them. When
 a CI job is added or renamed, update the ruleset's list in the same pull request (repository
 Settings → Rules → Rulesets), or merges wait forever for a check that never reports. `release` is
 not covered, so Publish still moves it.
