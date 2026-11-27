@@ -111,6 +111,20 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   let all = false;
   /** The game the player is in, as last drawn: one line and Back to it in the sheet's place. */
   let game: InGame | undefined;
+  /** What the groups were last drawn as, so a redraw that changes nothing keeps the same rows. */
+  let drawn = '';
+
+  /**
+   * Puts `parts` in the sheet, unless they are what it shows already: an inbox read that changes
+   * nothing redraws nothing, so a tap whose press and release straddle the read still lands on
+   * one row (a click needs both on the same element; WebKit's flow lost a tap to it).
+   */
+  function place(...parts: HTMLElement[]): void {
+    const next = parts.map((part) => part.outerHTML).join('');
+    if (next === drawn && root.childElementCount === parts.length) return;
+    drawn = next;
+    root.replaceChildren(...parts);
+  }
 
   function say(line: string | undefined): void {
     failure.hidden = line === undefined;
@@ -245,7 +259,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     game = host.inGame();
     setHidden(rules, game !== undefined);
     if (game !== undefined) {
-      root.replaceChildren(element('p', 'friends-card-text who-sheet-in-game', inGameLine(game)));
+      place(element('p', 'friends-card-text who-sheet-in-game', inGameLine(game)));
       showSend();
       return;
     }
@@ -253,7 +267,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
     if (friends === undefined) {
       const loading = element('section', 'who-sheet-group');
       loading.append(skeletonRows(DEFAULT_SKELETON_ROWS));
-      root.replaceChildren(loading, linkRow());
+      place(loading, linkRow());
       showSend();
       return;
     }
@@ -269,7 +283,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
       none.append(element('p', 'friends-card-text', NO_FRIENDS), add);
       // The link is the only way: picked already, the button says what it does.
       picked ??= { kind: 'link' };
-      root.replaceChildren(none, linkRow());
+      place(none, linkRow());
       showSend();
       return;
     }
@@ -299,7 +313,7 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
       }
       parts.push(section);
     }
-    root.replaceChildren(...parts, linkRow());
+    place(...parts, linkRow());
     showSend();
   }
 

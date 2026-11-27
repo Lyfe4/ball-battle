@@ -143,6 +143,26 @@ describe('Who do you want to play? (ADR 0089 addendum of 2026-11-27)', () => {
     expect(dialog()?.open).toBe(false);
   });
 
+  it('keeps its rows through an inbox read that changes nothing, so a tap in it lands', () => {
+    const { sheet } = mount();
+    sheet.open(SOME, LIVE);
+    const robin = () =>
+      [...document.querySelectorAll<HTMLElement>('.who-row')].find((row) =>
+        row.textContent.includes('Robin'),
+      );
+    const before = robin();
+    // A press on Robin, then the inbox answers the same, then the release: one row throughout.
+    before?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    sheet.update([...SOME]);
+    expect(robin()).toBe(before);
+    before?.click();
+    expect(before?.getAttribute('aria-checked')).toBe('true');
+    // A read that does change something redraws, keeping the pick.
+    sheet.update(SOME.map((one) => (one.name === 'Robin' ? { ...one, status: 'offline' } : one)));
+    expect(robin()).not.toBe(before);
+    expect(robin()?.getAttribute('aria-checked')).toBe('true');
+  });
+
   it('says a failure above the button, keeps the pick, and sends again on Try', async () => {
     const { sheet, sent, answer } = mount();
     sheet.open(SOME, LIVE);
