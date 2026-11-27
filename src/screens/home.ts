@@ -79,6 +79,8 @@ export function createHomeController(
    * first visit, the guided first series (ADR 0090), never saved as Play's.
    */
   const play = () => {
+    // The guided series starts here: remembered before it writes keys of its own.
+    if (!firstSeries.done()) firstSeries.begin();
     host.go((url) => {
       writePlayParams(url, firstSeries.done() ? loadPlaySetup(storage) : FIRST_SERIES);
     });
