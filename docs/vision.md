@@ -105,9 +105,19 @@ Since ruleset 20 the shape counts strong counters only (ADR 0073). Ruleset 21's 
 (ADR 0074) brought the Archer, Thorns, Magnet, Necromancer, Bomber, Bloom, Battery and Frost to
 it, and ruleset 22's three new balls (ADR 0075) the Sniper, Ghost, Inferno, Boomerang and
 Spartan. Ruleset 23 (ADR 0077) fixed the Vampire (2/7 to 3/4, its Thirst) and the Archer (5/3 to
-4/4), and its two new balls are on it, but their counters took others off: eleven balls are off
-it, a warning rather than a failure (ADR 0076). Each waits on an ability tweak or a new ball,
-since one-number changes move a ball's whole row:
+4/4), and its two new balls are on it, but their counters took others off: eleven balls were off
+it. Ruleset 24's Hunter and Tortoise (ADR 0091) are on it themselves, fixed the Necromancer (2/2)
+and the Banshee (2/3) and gave the Frost its predator, but took the Bloom off (5/5): ten balls
+are off it, a warning rather than a failure (ADR 0076). Each waits on an ability tweak or a new
+ball, since one-number changes move a ball's whole row:
+
+- **Speedster (4/6) and Boomerang (2/6): at the hard limit.** The Hunter gave the Speedster the
+  win it needed, but the Tortoise's shell halves the small hits both live on, a sixth loss each.
+  The next ball that beats either breaks a hard rule, so before it ships the Speedster needs a
+  small boost (or an ability tweak that takes a loss away), and the Boomerang likewise: no new
+  ball can take a loss away.
+- **Bloom (5/5):** its regrowth outlasts the slow Tortoise, a fifth win. A ball whose bursts beat
+  regrowth, or one fewer slow plain bumper, would close it.
 
 - **Titan (1/1):** growing evens its fights out. One more ball it beats by mass would close it
   (round 8's Cowboy throws by lightness, 82-87%, but its other prey had no room).
@@ -115,18 +125,17 @@ since one-number changes move a ball's whole row:
   them off. Its third win is the Jouster, whose charges glance off a wall-bouncer. A second ball
   that shrugs off small hits, or keeps it off the walls, would close it.
 - **Spider (1/3):** its webs slow every wall-bouncer a little; only the Speedster loses. Prey whose
-  power runs on its own speed would close it, with a predator for the Frost in the same batch,
-  since its slow is the same status.
+  power runs on its own speed would close it; the Frost now has its predator (the Hunter), so the
+  slow it shares with the Frost is no longer the blocker.
 - **Slime (2/0):** nothing beats it. To beat a split you must hit both halves at once and survive
   their double bumps: a sturdy area hitter. Its second win is the Jouster (small halves make a
   lance glance).
 - **Thorns (5/3) and Hex (5/3):** the Mirage and the Jouster bump hard, which spikes throw back,
   and the Mirage's big health feeds the curse. A fifth win from one mechanic each, not yet named.
-- **Speedster (3/5), Boomerang (2/5), Kraken (2/5):** a fifth loss each, from the thirsty Vampire
-  (its rushes' extra hit makes it thirsty), the Mirage (throws at its copy) and the Jouster
-  (dead on into the anchored Kraken).
-- **Necromancer (2/1) and Banshee (1/3):** the Vampire's Thirst and the Necromancer's extra
-  health turned the Magnet's win over it and the Banshee's over the Vampire into edges.
+- **Kraken (2/5):** a fifth loss from the Jouster (dead on into the anchored Kraken).
+- **Necromancer and Banshee: closed in ruleset 24 (ADR 0091).** The Tortoise's shell halves the
+  skulls' bites (the Necromancer's second loss, 65.1%, its thinnest pair) and the wail is the one
+  hit it can't touch (the Banshee's second win).
 
 The history below counts counters at 62%, as the map did then.
 

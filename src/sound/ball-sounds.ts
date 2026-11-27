@@ -17,6 +17,7 @@ export const BALL_SOUNDS: Readonly<Record<string, readonly FightCue[]>> = {
   frost: ['frost'],
   ghost: ['phaseIn', 'ghostPass'],
   hex: ['curse', 'curseBurst'],
+  hunter: ['snap', 'thump'],
   inferno: ['burn'],
   jouster: ['charge', 'splinter', 'spark'],
   kraken: ['ripple', 'grab', 'crush'],
@@ -32,6 +33,7 @@ export const BALL_SOUNDS: Readonly<Record<string, readonly FightCue[]>> = {
   storm: ['stormWarn', 'thunder'],
   thorns: ['thorns'],
   titan: ['grow'],
+  tortoise: ['knock'],
   vampire: ['drain'],
   venom: ['poison', 'poisonTick'],
 };
