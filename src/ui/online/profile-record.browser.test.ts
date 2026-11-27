@@ -84,9 +84,10 @@ describe('an account’s record on Profile (ADR 0088, 0089)', () => {
     if (won === undefined || lost === undefined) throw new Error('No tags');
     expect(getComputedStyle(won).backgroundColor).not.toBe(getComputedStyle(lost).backgroundColor);
     expect(texts('.profile-match-detail')).toStrictEqual(['2–1', '2–1']);
-    expect(texts('.profile-match-when span')).toStrictEqual(['Today', 'Live', 'Today', 'By turns']);
+    // This page is built without play by turns (production's shape): no Live or By turns words.
+    expect(texts('.profile-match-when span')).toStrictEqual(['Today', 'Today']);
     const buttons = shown('.profile-match button');
-    expect(buttons[0]?.getAttribute('aria-label')).toBe('Won against Jo, 2 to 1, Today, live');
+    expect(buttons[0]?.getAttribute('aria-label')).toBe('Won against Jo, 2 to 1, Today');
     buttons[1]?.click();
     expect(opened).toStrictEqual(['s-2']);
     // Five played, two listed: All matches only on a phone, where three would show.
@@ -127,8 +128,6 @@ describe('an account’s record on Profile (ADR 0088, 0089)', () => {
     expect(sheet?.querySelector('.sheet-title')?.textContent).toBe('Your stats');
     expect(texts('.stats-label')).toStrictEqual([
       'Win rate',
-      'Live',
-      'By turns',
       'Best of 3',
       'Best of 5',
       'Best streak',
@@ -136,8 +135,6 @@ describe('an account’s record on Profile (ADR 0088, 0089)', () => {
     ]);
     expect(texts('.stats-value')).toStrictEqual([
       '60%',
-      '2 won · 1 lost',
-      '1 won · 1 lost',
       '3 won · 1 lost',
       '0 won · 1 lost',
       '2 wins',

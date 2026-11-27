@@ -533,11 +533,12 @@ turns with its answer and holds its row to every other screen's pixels.
   friend's lineup, a series by turns waiting on the other's pick). It was a small dark quiet button
   on one and the yellow primary on the other. `NoticeButton.plain` keeps a first button from being
   the primary.
-- **Reduce motion in settings**, beside the device's setting: on and fixed while the device asks
-  for less motion. It sets `data-motion="reduce"` on the root (`src/app/motion.ts`); every
-  reduced-motion block in the stylesheets has a twin guarded by it with `:where()` (no added
-  specificity, so the cascade is unchanged), and scripts ask `reducedMotion()` where they asked
-  `matchMedia`. Remembered on the device (`ballbattle.reduceMotion`), so Forget me clears it.
+- **Reduce motion in settings, not yet**: built and then taken out the same night. The menu must
+  fit whole above its gear when it covers an offline match on a 390 × 664 phone
+  (`settings-live.safari.browser.test.ts`), and one more switch row put it 48 px over. It needs
+  room first (for example Show all tips again moving to the foot's About line); the approach is
+  kept for then: a `data-motion="reduce"` root attribute that every reduced-motion block honours
+  beside the media query through `:where()` twins, and one `reducedMotion()` for scripts.
 - **A read that changes nothing redraws nothing** in "Who do you want to play?": each inbox read
   rebuilt its rows, so a tap whose press and release straddled a read landed on two different nodes
   and no click fired (the WebKit friend-path flake, and a tap a phone could lose). The sheet keeps
