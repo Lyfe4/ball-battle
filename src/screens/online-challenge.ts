@@ -111,6 +111,9 @@ export function createChallengeScreens(
   /** Shows one part; `focus` false keeps focus where it is (the waiting card, asked again). */
   function show(part: Part, content?: NoticeContent, focus = true): void {
     lobby.stop();
+    // "Cancel your challenge?" belongs to the waiting screen alone: anything else shown (the
+    // friend accepted and the lineups open, or it stopped) takes it away unanswered.
+    if (part !== 'notice' || !waitingOn(info)) waitingBack.close();
     roots.notice.hidden = !visible || part !== 'notice';
     roots.lineup.hidden = !visible || (part !== 'lineup' && part !== 'turns');
     lineup.element.hidden = part !== 'lineup';
@@ -281,6 +284,7 @@ export function createChallengeScreens(
       if (!next && visible) sender.forget();
       visible = next;
       if (!next) {
+        waitingBack.close();
         show('notice');
         start.stop();
       }
@@ -324,7 +328,7 @@ export function createChallengeScreens(
       });
       return Promise.resolve();
     },
-    sendNow: (setup, friend, moving) => sender.sendNow(setup, friend, moving),
+    sendNow: (setup, friend, moving, wanted) => sender.sendNow(setup, friend, moving, wanted),
     turnsWith(friend, setup) {
       sender.turnsWith(friend);
       host.go((url) => {
