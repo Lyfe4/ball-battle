@@ -51,7 +51,17 @@ export interface HealthResponse {
    * changes the status: an uptime monitor's keyword check reads it.
    */
   readonly emailSends: EmailSends;
+  /**
+   * The switches as this deploy runs them (2026-11-28 audit, for the launch's smoke check):
+   * `pokes` is on when the functions have the poke (`BALLBATTLE_POKE` with its key) and the
+   * database's flag is on; `turns` when play by turns may be sent (`BALLBATTLE_TURNS`, ADR 0085).
+   * Never changes the status. Optional: a deploy before them doesn't say.
+   */
+  readonly pokes?: Switched;
+  readonly turns?: Switched;
 }
+
+export type Switched = 'on' | 'off';
 
 export type EmailCodes = 'ok' | 'near' | 'full' | 'off';
 

@@ -39,7 +39,43 @@ describe('GET /api/v1/health', () => {
       accounts: 'ok',
       accountsFailed: [],
       emailSends: 'ok',
+      pokes: 'off',
+      turns: deps.config.turns ? 'on' : 'off',
     });
+  });
+
+  it('says the poke and by-turns switches as this deploy runs them (2026-11-28 audit)', async () => {
+    const on = testDeps({
+      BALLBATTLE_POKE: '1',
+      SUPABASE_BROWSER_KEY: 'sb_publishable_browser_test',
+      BALLBATTLE_TURNS: '1',
+    });
+    const [was] = await admin<{ enabled: boolean }[]>`
+      select enabled from game.flags where name = 'poke'`;
+    const read = async () => {
+      const handler = endpoint(
+        'health',
+        health,
+        () => on,
+        () => undefined,
+      );
+      const body = (await (
+        await handler(new Request('http://localhost/api/v1/health'))
+      ).json()) as {
+        pokes: string;
+        turns: string;
+      };
+      return { pokes: body.pokes, turns: body.turns };
+    };
+    try {
+      await admin`update game.flags set enabled = true where name = 'poke'`;
+      expect(await read()).toStrictEqual({ pokes: 'on', turns: 'on' });
+      await admin`update game.flags set enabled = false where name = 'poke'`;
+      expect(await read()).toStrictEqual({ pokes: 'off', turns: 'on' });
+    } finally {
+      await admin`update game.flags set enabled = ${was?.enabled ?? false} where name = 'poke'`;
+      await on.sql.end();
+    }
   });
 
   it('says a code email the relay refused today, and stays 200 (ADR 0082, the mail watch)', async () => {
