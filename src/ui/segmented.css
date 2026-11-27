@@ -51,6 +51,19 @@
   display: block;
 }
 
+/* "New" beside a way to play not tried yet (ADR 0090): a small pill in the text's line. */
+.segmented-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: var(--radius);
+  background: var(--color-accent-2);
+  color: var(--color-accent-2-text);
+  font-size: var(--font-size-tiny);
+  font-weight: 800;
+  line-height: 1.5;
+  vertical-align: 0.1em;
+}
+
 .segmented-hint {
   color: var(--color-text-muted);
   font-size: var(--font-size-tiny);

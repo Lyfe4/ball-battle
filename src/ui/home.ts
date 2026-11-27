@@ -1,7 +1,7 @@
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
-import type { SeriesState } from '../sim/series.ts';
+import type { Format, SeriesState } from '../sim/series.ts';
 import type { Opponent, PlayChoice } from '../app/modes.ts';
 import { busyOnClick } from './busy-button.ts';
 import { shapeIcon } from './icons.ts';
@@ -42,6 +42,8 @@ export interface HomeActions {
   readonly asksWho?: () => boolean;
   /** What to play offers Live or By turns against a friend (ADR 0085). */
   readonly turns?: boolean;
+  /** A format What to play tags "New" (ADR 0090): not tried since the first series. */
+  readonly isNew?: (format: Format) => boolean;
 }
 
 export interface Home {
@@ -121,6 +123,7 @@ export function createHome(
       if (!root.hidden) box.focus({ preventScroll: true });
     },
     ...(actions.turns === undefined ? {} : { turns: actions.turns }),
+    ...(actions.isNew === undefined ? {} : { isNew: actions.isNew }),
   });
   box.addEventListener('click', () => {
     if (choice !== undefined) sheet.open(choice);

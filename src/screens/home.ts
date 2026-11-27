@@ -105,10 +105,13 @@ export function createHomeController(
       host.forget();
       play();
     },
-    // Each opponent's rules are remembered as they are chosen (ADR 0081 addendum).
+    // Each opponent's rules are remembered as they are chosen (ADR 0081 addendum); a format chosen
+    // is no longer new (ADR 0090).
     onChoice: (choice) => {
       savePlayChoice(storage, choice);
+      firstSeries.chose(choice.opponent === 'friend' ? choice.friend.format : choice.bot.format);
     },
+    isNew: (format) => firstSeries.isNew(format),
     // The whole tab at once, in place: no reload, no other screen (ADR 0090, D6).
     onSkip: () => {
       firstSeries.skip();

@@ -24,3 +24,12 @@
     column-gap: var(--space-gutter);
   }
 }
+
+/* The chosen format's rule in a sentence, under its row (ADR 0090): a format is never a name alone. */
+.play-sheet-rule {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+}
