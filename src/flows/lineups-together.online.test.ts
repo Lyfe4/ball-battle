@@ -35,7 +35,7 @@ async function agreed(sender: Page, friend: Page): Promise<void> {
   await playAFriend(sender);
   await confirmAge(sender);
   // No lineup and no rules step before the friend accepts: Play sends it.
-  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
+  await sender.getByRole('heading', { name: 'Waiting for anyone with the link' }).waitFor();
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';
   await friend.goto(`${BASE}/?challenge=${token}`);
   await friend.getByRole('heading', { name: /challenges you$/ }).waitFor();

@@ -179,13 +179,28 @@ export async function pickTogether(
   return new URL(sides[0]?.page.url() ?? '').searchParams.get('online') ?? '';
 }
 
-/** The vs Friend setup's Send challenge (ADR 0080: no lineup), then the lobby. */
+/**
+ * "Who do you want to play?"'s one button (ADR 0089 addendum of 2026-11-27: a friend's Challenge
+ * opens it with them picked), then the waiting screen. No lineup is sent (ADR 0080).
+ */
 export async function sendChallenge(
   page: Page,
-  waiting = 'Waiting for your friend',
+  waiting = 'Waiting for anyone with the link',
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Send challenge' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Who do you want to play?' });
+  await sheet.locator('.who-row[aria-checked="true"]').waitFor();
+  await sheet.locator('.who-sheet-send').click();
   await page.getByRole('heading', { name: waiting }).waitFor();
+}
+
+/** What to play's How against a friend (ADR 0089 addendum): Live or By turns, from Play. */
+export async function friendHow(page: Page, base: string, how: 'Live' | 'By turns'): Promise<void> {
+  await page.goto(`${base}/`);
+  await page.locator('.play-box').click();
+  const sheet = page.getByRole('dialog', { name: 'What to play' });
+  await sheet.getByRole('button', { name: 'vs Friend' }).click();
+  await sheet.getByRole('button', { name: new RegExp(`^${how},`) }).click();
+  await sheet.getByRole('button', { name: 'Close', exact: true }).click();
 }
 
 /** The 16+ card: the first online action on this device. */
@@ -215,7 +230,7 @@ export async function startLiveMatch(
   await sender.goto(`${base}/`);
   await playAFriend(sender, format === 'reveal' ? 'Reveal' : 'Showdown');
   await confirmAge(sender);
-  await sender.getByRole('heading', { name: 'Waiting for your friend' }).waitFor();
+  await sender.getByRole('heading', { name: 'Waiting for anyone with the link' }).waitFor();
   // The age card's button stayed busy until the lobby could show: nothing loading between them.
   expect(await loadingSeen(sender)).toStrictEqual([]);
   const token = new URL(sender.url()).searchParams.get('challenge') ?? '';

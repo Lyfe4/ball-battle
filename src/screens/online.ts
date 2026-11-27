@@ -15,14 +15,19 @@ import { currentMatch, writeMatchParams, type MatchPlace } from './current-match
 import { createChallengeScreens } from './online-challenge.ts';
 import { forgetMeHost } from './forget-me-host.ts';
 import { createOnlinePlay, type OnlinePlay } from './online-play.ts';
-import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
-import { writeSendParams, writeSignInParams } from '../app/online-url.ts';
+import {
+  loadFriendSetup,
+  saveFriendSetup,
+  savePlayOpponent,
+  type FriendSetup,
+} from '../app/modes.ts';
+import { writeSignInParams } from '../app/online-url.ts';
 import { writeShellParams } from '../app/route.ts';
 import { createFriendsTab } from './friends-tab.ts';
 import { createProfileScreens } from './profile-screens.ts';
 import { pickerFor } from './friend-pick-flow.ts';
 import { createOnlineRoots } from './online-roots.ts';
-import type { FriendBox } from './who-text.ts';
+import type { WhoPreset } from '../ui/online/who-sheet.ts';
 import { createSignIn } from './sign-in.ts';
 import type { WhoSource } from '../app/who-source.ts';
 import { createPrimer } from './online-prime.ts';
@@ -32,8 +37,8 @@ export interface OnlineHost {
   go(write: (params: URLSearchParams) => void): void;
   replaceWith(write: (params: URLSearchParams) => void): void;
   home(): void;
-  /** The vs Friend setup: where a challenge is sent from (ADR 0055). */
-  friend(): void;
+  /** Play in place of this screen (an old link that leads there). */
+  homeInstead(): void;
   showWorld(world: WorldState, seed: number): void;
   /** A live round held on its countdown, or already `elapsedMs` under way (ADR 0053). */
   holdLive(world: WorldState, seed: number): void;
@@ -83,14 +88,14 @@ export interface OnlineScreens {
   /** A friend's challenge accepted from the incoming banner: its lineups, read first. */
   openInvite(token: string, live: boolean): Promise<void>;
   /**
-   * The Play tab's Play against a friend: signed in, the friend last picked or "Who do you want to
-   * play?" (ADR 0089); else straight to the link to share (ADR 0081 addendum).
+   * The Play tab's Play against a friend: signed in, "Who do you want to play?" (ADR 0089 addendum
+   * of 2026-11-27); else straight to the link to share (ADR 0081 addendum).
    */
   playFriend(setup: FriendSetup): Promise<void>;
-  /** The box over Play with a friend picked (accounts builds, signed in). */
-  readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
-  /** "Who do you want to play?", from What to play (accounts builds). */
-  readonly chooseWho?: () => void;
+  /** Whether Play against a friend asks who (an account is signed in). */
+  asksWho(): boolean;
+  /** The cancel of a waiting screen just left, until the server has it. */
+  leaving(): Promise<void>;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
   rematchShown(): string | undefined;
   /** Play shows (a visit, Back): "Who do you want to play?" closes. */
@@ -140,27 +145,44 @@ export function createOnlineScreens(
       replaceWith: (write) => {
         host.replaceWith(write);
       },
-      rewrite: (write) => {
-        host.navigation.replace(write);
-      },
       back: (toParent) => {
         host.navigation.back(toParent);
       },
       home,
       friend: () => {
-        host.friend();
+        friendPath(undefined);
+      },
+      friendPath: (rules) => {
+        // Saved first: Play draws its box as it shows.
+        saveFriendSetup(host.storage, { ...loadFriendSetup(host.storage), ...rules });
+        savePlayOpponent(host.storage, 'friend');
+        host.homeInstead();
+        // Already on Play: a guest presses Play there.
+        friendPath(undefined, () => undefined);
       },
       storage: host.storage,
       primeSeries: (id) => primer.series(id),
       toMatch,
       ...(host.lobbyWaits === undefined ? {} : { lobbyWaits: host.lobbyWaits }),
-      // The picker is made just below; a lobby asks for this only after.
-      ...(ACCOUNTS_BUILD ? { lobbyAfter: (card, swap) => picker?.lobbyAfter(card, swap) } : {}),
+      // The picker is made just below; a waiting screen asks for this only after.
+      ...(ACCOUNTS_BUILD ? { lobbyAfter: (card) => picker?.lobbyAfter(card) } : {}),
     },
   );
 
-  // One vs Friend path (ADR 0089): who Play is against, in a build with accounts.
+  // One vs Friend path (ADR 0089 and its addendum): who to play, in a build with accounts.
   const picker = ACCOUNTS_BUILD ? pickerFor(challenges, host) : undefined;
+
+  /**
+   * Every way to play a friend outside Play's own button: Play's box is vs Friend from now on;
+   * signed in, "Who do you want to play?" (`preset` picked); else Play, where Play sends the link
+   * (`guest` overrides that: the Friends tab's link card sends it at once).
+   */
+  function friendPath(preset: WhoPreset, guest?: () => unknown): void {
+    savePlayOpponent(host.storage, 'friend');
+    const otherwise: () => unknown = guest ?? home;
+    if (picker === undefined) void otherwise();
+    else void picker.open(preset, otherwise);
+  }
 
   const back = createBackToMatch(toMatch);
   const backToMatch = {
@@ -168,6 +190,8 @@ export function createOnlineScreens(
     /** Asks for the player's live match, only on a device that has played online. */
     async refresh(): Promise<boolean> {
       if (!hasGuest(host.storage)) return back.show(null);
+      // A waiting screen just left is cancelled first: never "Back to your lobby" for it.
+      await challenges.leaving();
       const match = await currentMatch();
       // Unknown (offline, a failure): keep what shows; the next ask may know.
       return match === undefined ? !back.element.hidden : back.show(match);
@@ -241,18 +265,16 @@ export function createOnlineScreens(
     ...player,
     cookies: () => document.cookie,
     back: backHome,
-    // The vs Friend setup, on the friend's rules as last chosen here (ADR 0081 addendum).
+    // The one path with the link picked; a guest sends it at once, as Play does for them.
     sendLink: () => {
-      const { format, bestOf } = loadFriendSetup(host.storage);
-      host.go((url) => {
-        writeSendParams(url, format, bestOf);
-      });
+      friendPath({ link: true }, () => challenges.playFriend(loadFriendSetup(host.storage)));
     },
     signIn: () => {
       host.go(writeSignInParams);
     },
-    challenge: (friend, turns) => {
-      challenges.challengeFriend(friend, turns);
+    // The one path with that friend picked (ADR 0089 addendum of 2026-11-27).
+    challenge: (friend) => {
+      friendPath({ friend: friend.id });
     },
     ...(host.friendsChanged === undefined ? {} : { changed: host.friendsChanged }),
     ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
@@ -317,14 +339,8 @@ export function createOnlineScreens(
     },
     openInvite: (token, live) => challenges.openInvite(token, live),
     playFriend: (setup) => picker?.play(setup) ?? challenges.playFriend(setup),
-    ...(picker === undefined
-      ? {}
-      : {
-          friendBox: (setup) => picker.box(setup),
-          chooseWho: () => {
-            picker.choose();
-          },
-        }),
+    asksWho: () => picker?.asksWho() ?? false,
+    leaving: () => challenges.leaving(),
     rematchShown: () => challenges.rematchShown(),
     homeShown: () => picker?.close(),
   };

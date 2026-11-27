@@ -8,7 +8,6 @@ import {
   boxWho,
   FORMAT_HINTS,
   friendPlaySpoken,
-  FRIEND_SETUP_NOTE,
   SHEET_WORDS,
   lengthChoiceOf,
   levelLine,
@@ -52,7 +51,7 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
 
   it('says in the box exactly what Play starts (ADR 0081, Option B)', () => {
     const bot = { format: 'reveal', bestOf: 5, level: 'normal' } as const;
-    const friend = { format: 'reveal', bestOf: 3 } as const;
+    const friend = { format: 'reveal', bestOf: 3, turns: false } as const;
     const vsBot = { opponent: 'bot', bot, friend } as const;
     expect(boxWho(vsBot)).toBe('vs Normal bot');
     expect(boxRules(vsBot)).toBe('Best of 5 · Reveal');
@@ -65,8 +64,14 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
     expect(boxWho(vsFriend)).toBe('vs Friend');
     expect(boxRules(vsFriend)).toBe('Live · Best of 3 · Reveal');
     expect(boxSpoken(vsFriend)).toBe('vs Friend, Live · Best of 3 · Reveal: what to play');
-    expect(friendPlaySpoken({ format: 'showdown', bestOf: 5 })).toBe(
+    expect(friendPlaySpoken({ format: 'showdown', bestOf: 5, turns: false })).toBe(
       'Play a friend live, Best of 5, Showdown: send them a link',
+    );
+    // Signed in, Play asks who (ADR 0089 addendum of 2026-11-27); by turns says so.
+    const turns = { opponent: 'friend', bot, friend: { ...friend, turns: true } } as const;
+    expect(boxRules(turns)).toBe('By turns · Best of 3 · Reveal');
+    expect(friendPlaySpoken(turns.friend, true)).toBe(
+      'Play a friend by turns, Best of 3, Reveal: choose who',
     );
   });
 
@@ -76,6 +81,7 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
       against: 'Against',
       length: 'Length',
       format: 'Format',
+      how: 'How',
       level: 'Bot',
     });
     expect(FORMAT_HINTS).toStrictEqual({
@@ -83,12 +89,6 @@ describe('the words for the ways to play (ADR 0046, 0055)', () => {
       showdown: 'winner shows',
       blind: 'set order',
     });
-  });
-
-  it('says what a live friend match asks before it is sent', () => {
-    expect(FRIEND_SETUP_NOTE).toBe(
-      'Live: you both stay until the end, 30 s a pick. You send a link; once they accept, you both pick your lineups.',
-    );
   });
 
   it('describes Blind plainly: set an order, then watch', () => {

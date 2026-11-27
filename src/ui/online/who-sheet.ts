@@ -1,120 +1,219 @@
-// "Who do you want to play?" (ADR 0089, B1): Play against a friend, signed in, opens it when it has
-// nobody to go straight to. The shared sheet (one ×, tap outside, Escape; Back closes it) with the
-// Friends tab's rows: friends online first with Challenge (live, on the Play box's rules), then the
-// rest with Play by turns where the build plays by turns (three, then "Show all N friends"), then
-// "Anyone, with a link ›". With no friends, sending a link is the main button. The friends are the
-// inbox's (no read of its own); before the inbox has answered, sized rows hold their place.
+// "Who do you want to play?" (ADR 0089 and its addendum of 2026-11-27): the one vs Friend path,
+// signed in. Play against a friend opens it, and so does a friend's Challenge on the Friends tab
+// (that friend picked already). The shared sheet (one ×, tap outside, Escape; Back closes it): the
+// rules from Play's box, then friends to pick (online first, the friend last picked first in each
+// group), then "Send a link instead". Picking a row only selects it; one button at the bottom says
+// what it sends ("Challenge Robin", "Play Jo by turns", "Send a link") and sends nothing before
+// it is tapped. It stays busy on its own until the waiting screen can show, and a failure is said
+// above it in the game's words, the pick kept for Try again. Live needs a friend online; else by
+// turns where the build plays by turns; a friend neither can start is listed but can't be picked.
+// The friends are the inbox's (no read of its own); before it answers, sized rows hold their place.
 import type { FriendEntry } from '../../api/friends.ts';
 import type { FriendSetup } from '../../app/modes.ts';
-import { FRIEND_GROUPS } from '../../screens/friends-text.ts';
 import {
   ADD_FRIEND,
-  ANYONE,
-  ANYONE_FIRST,
-  liveLine,
+  friendLine,
+  howFor,
+  LINK_ROW,
+  LINK_ROW_LINE,
   NO_FRIENDS,
-  noneOnlineLine,
   onlineTitle,
   OTHERS_SHOWN,
   othersTitle,
+  rulesLine,
+  sendSpoken,
+  sendWords,
   showAll,
+  whoOrder,
   WHO_TITLE,
+  type WhoPick,
 } from '../../screens/who-text.ts';
-import { element } from '../dom.ts';
+import { busyOnClick } from '../busy-button.ts';
+import { shapeIcon } from '../icons.ts';
+import { element, setText } from '../dom.ts';
 import { createSheet } from '../sheet.ts';
+import { personDisc } from './friend-sheet.ts';
 import { DEFAULT_SKELETON_ROWS, skeletonRows } from './friends-loading.ts';
-import { personRow } from './person-row.ts';
 
 export interface WhoSheetHost {
-  /** A live match with a friend online, on the box's rules. */
-  readonly challenge: (friend: FriendEntry) => void;
-  /** By turns with a friend, where the build plays by turns; else undefined. */
-  readonly turns: ((friend: FriendEntry) => void) | undefined;
-  /** A live match by a link to anyone (what Play did before B1). */
-  readonly anyone: () => void;
+  /** Whether the build plays by turns (ADR 0085). */
+  readonly turns: boolean;
+  /**
+   * Sends what was picked: calls `moving` just before the next screen shows (the sheet closes
+   * then, so focus lands on that screen), or resolves with the line that says why it didn't, said
+   * above the button.
+   */
+  readonly send: (
+    pick: WhoPick,
+    setup: FriendSetup,
+    moving: () => void,
+  ) => Promise<string | undefined>;
   /** The Friends tab, to add one. */
   readonly addFriend: () => void;
 }
 
+/** What the sheet opens with picked: a friend (by the friendship's id), or the link. */
+export type WhoPreset = { readonly friend: string } | { readonly link: true } | undefined;
+
 export interface WhoSheet {
-  /** Opens it on `friends` (undefined: not known yet) and the rules Challenge starts. */
-  open(friends: readonly FriendEntry[] | undefined, setup: FriendSetup): void;
-  /** The inbox said who is a friend now: drawn again if it is open. */
+  /**
+   * Opens on `friends` (undefined: not known yet) and the rules it sends on; `preset` picks a row
+   * already (a friend's Challenge on the Friends tab); `first` is the friend last picked.
+   */
+  open(
+    friends: readonly FriendEntry[] | undefined,
+    setup: FriendSetup,
+    preset?: WhoPreset,
+    first?: string,
+  ): void;
+  /** The inbox said who is a friend now: drawn again if it is open, the pick kept if it still can. */
   update(friends: readonly FriendEntry[]): void;
+  isOpen(): boolean;
   close(): void;
 }
 
-const FRIENDS_GROUP = FRIEND_GROUPS.find((group) => group.key === 'friends') ?? {
-  key: 'friends',
-  title: 'Friends',
-};
-
 export function createWhoSheet(host: WhoSheetHost): WhoSheet {
   const sheet = createSheet({ id: 'who-sheet-title', title: WHO_TITLE, name: 'who-sheet' });
+  const rules = element('p', 'who-sheet-rules');
   const root = element('div', 'who-sheet-groups');
-  sheet.content.append(root);
+  root.setAttribute('role', 'radiogroup');
+  root.setAttribute('aria-labelledby', 'who-sheet-title');
+  // The one button and the line that says why it didn't work, kept at the sheet's foot.
+  const foot = element('div', 'who-sheet-foot');
+  const failure = element('p', 'who-sheet-failure');
+  failure.setAttribute('role', 'alert');
+  failure.hidden = true;
+  const send = element('button', 'hud-button hud-button-primary hud-button-main who-sheet-send');
+  send.type = 'button';
+  send.dataset['sound'] = 'tap';
+  foot.append(failure, send);
+  sheet.content.append(rules, root, foot);
+
   let setup: FriendSetup | undefined;
+  let friends: readonly FriendEntry[] | undefined;
+  let picked: WhoPick | undefined;
+  /** The friend last picked, listed first. */
+  let first: string | undefined;
+  /** A friend to pick once the inbox has answered (a Challenge before it had). */
+  let wanted: string | undefined;
   let all = false;
 
-  /** Each choice closes the sheet first: what it starts takes over the screen. */
-  const then =
-    (act: (friend: FriendEntry) => void) =>
-    (friend: FriendEntry): void => {
+  function say(line: string | undefined): void {
+    failure.hidden = line === undefined;
+    setText(failure, line ?? '');
+  }
+
+  function showSend(): void {
+    if (setup === undefined) return;
+    setText(send, sendWords(picked));
+    send.setAttribute('aria-label', sendSpoken(picked, setup));
+    // Nothing picked: it says what to do and does nothing (never a request to refuse).
+    if (picked === undefined) send.setAttribute('aria-disabled', 'true');
+    else send.removeAttribute('aria-disabled');
+  }
+
+  // Nothing picked: no request, so the button never looks busy for it.
+  busyOnClick(send, () => {
+    const pick = picked;
+    if (pick === undefined || setup === undefined) return undefined;
+    say(undefined);
+    const moving = () => {
       sheet.close();
-      act(friend);
     };
+    return host.send(pick, setup, moving).then((line) => {
+      if (line !== undefined) say(line);
+    });
+  });
 
-  function rows(people: readonly FriendEntry[]): HTMLElement {
-    const list = element('ul', 'friends-list');
-    for (const friend of people) {
-      const online = friend.status === 'online';
-      const pick = online ? host.challenge : host.turns;
-      const row = personRow(FRIENDS_GROUP, friend, {
-        waiting: false,
-        // The whole row is the pick its button makes; a row with nothing to start opens nothing.
-        open: () => {
-          if (pick !== undefined) then(pick)(friend);
-        },
-        made: () => () => Promise.resolve(false),
-        challenge: then(host.challenge),
-        ...(host.turns === undefined ? {} : { turns: then(host.turns) }),
-      });
-      if (pick === undefined) row.querySelector('.friends-open')?.setAttribute('disabled', '');
-      list.append(row);
+  const isPicked = (key: string): boolean =>
+    picked === undefined
+      ? false
+      : picked.kind === 'link'
+        ? key === 'link'
+        : picked.friend.id === key;
+
+  function choose(next: WhoPick | undefined): void {
+    picked = next;
+    say(undefined);
+    for (const row of root.querySelectorAll<HTMLElement>('.who-row')) {
+      row.setAttribute('aria-checked', String(isPicked(row.dataset['who'] ?? '')));
     }
-    return list;
+    showSend();
   }
 
-  function group(title: string, list: HTMLElement, line?: string): HTMLElement {
-    const section = element('section', 'who-sheet-group');
-    section.append(element('h3', 'friends-group-title', title));
-    if (line !== undefined) section.append(element('p', 'who-sheet-line', line));
-    section.append(list);
-    return section;
-  }
-
-  function anyoneRow(first: boolean): HTMLElement {
-    const button = element(
-      'button',
-      first ? 'hud-button hud-button-primary hud-button-main' : 'sheet-row',
-      first ? ANYONE_FIRST : ANYONE,
-    );
+  /** One row: a radio in the look of a chosen option, its disc, name and line. */
+  function row(key: string, name: string, line: string, disc: HTMLElement, pick?: WhoPick) {
+    const button = element('button', 'who-row choice');
     button.type = 'button';
-    button.setAttribute('aria-label', first ? ANYONE_FIRST : ANYONE);
-    if (!first) button.dataset['opens'] = '';
+    button.dataset['who'] = key;
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-checked', String(isPicked(key)));
+    button.setAttribute('aria-label', `${name}: ${line}`);
+    const words = element('span', 'friends-words');
+    words.append(element('span', 'friends-name', name), element('span', 'friends-status', line));
+    button.append(disc, words);
+    if (pick === undefined) button.setAttribute('aria-disabled', 'true');
     button.addEventListener('click', () => {
-      sheet.close();
-      host.anyone();
+      if (pick !== undefined) choose(pick);
     });
     return button;
   }
 
-  function draw(friends: readonly FriendEntry[] | undefined): void {
-    if (setup === undefined) return;
+  function friendRows(people: readonly FriendEntry[], rulesNow: FriendSetup): HTMLElement {
+    const list = element('div', 'who-sheet-rows');
+    for (const friend of people) {
+      const how = howFor(friend, rulesNow, host.turns);
+      const pick: WhoPick | undefined =
+        how === undefined ? undefined : { kind: 'friend', friend, how };
+      const disc = personDisc(friend, 'row');
+      const item = row(friend.id, friend.name, friendLine(friend, how, rulesNow), disc, pick);
+      item.dataset['status'] = friend.status ?? 'offline';
+      list.append(item);
+    }
+    return list;
+  }
+
+  function group(title: string, list: HTMLElement): HTMLElement {
+    const section = element('section', 'who-sheet-group');
+    section.append(element('h3', 'friends-group-title', title), list);
+    return section;
+  }
+
+  function linkRow(): HTMLElement {
+    const disc = element('span', 'who-link-disc');
+    disc.setAttribute('aria-hidden', 'true');
+    disc.append(shapeIcon('link', 'who-link-icon'));
+    return row('link', LINK_ROW, LINK_ROW_LINE, disc, { kind: 'link' });
+  }
+
+  /** The pick, again from `friends` (a status changed): kept while it still can start. */
+  function keepPick(): void {
+    if (picked?.kind !== 'friend' || setup === undefined) return;
+    const id = picked.friend.id;
+    const now = friends?.find((friend) => friend.id === id);
+    const how = now === undefined ? undefined : howFor(now, setup, host.turns);
+    picked =
+      now === undefined || how === undefined ? undefined : { kind: 'friend', friend: now, how };
+  }
+
+  /** The friend a Challenge asked for, picked as soon as the inbox lists them. */
+  function pickWanted(): void {
+    if (wanted === undefined || friends === undefined || setup === undefined) return;
+    const friend = friends.find((one) => one.id === wanted);
+    wanted = undefined;
+    const how = friend === undefined ? undefined : howFor(friend, setup, host.turns);
+    if (friend !== undefined && how !== undefined) picked = { kind: 'friend', friend, how };
+  }
+
+  function draw(): void {
+    const rulesNow = setup;
+    if (rulesNow === undefined) return;
+    setText(rules, rulesLine(rulesNow));
     if (friends === undefined) {
       const loading = element('section', 'who-sheet-group');
       loading.append(skeletonRows(DEFAULT_SKELETON_ROWS));
-      root.replaceChildren(loading, anyoneRow(false));
+      root.replaceChildren(loading, linkRow());
+      showSend();
       return;
     }
     if (friends.length === 0) {
@@ -127,52 +226,69 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
         host.addFriend();
       });
       none.append(element('p', 'friends-card-text', NO_FRIENDS), add);
-      root.replaceChildren(none, anyoneRow(true));
+      // The link is the only way: picked already, the button says what it does.
+      picked ??= { kind: 'link' };
+      root.replaceChildren(none, linkRow());
+      showSend();
       return;
     }
-    const online = friends.filter((friend) => friend.status === 'online');
-    const others = friends.filter((friend) => friend.status !== 'online');
+    const { online, others } = whoOrder(friends, first);
     const parts: HTMLElement[] = [];
-    if (online.length > 0) {
-      parts.push(group(onlineTitle(online.length), rows(online), liveLine(setup)));
-    } else {
-      parts.push(element('p', 'who-sheet-line', noneOnlineLine(host.turns !== undefined)));
-    }
+    if (online.length > 0)
+      parts.push(group(onlineTitle(online.length), friendRows(online, rulesNow)));
     if (others.length > 0) {
-      const shown = all ? others : others.slice(0, OTHERS_SHOWN);
-      const section = group(othersTitle(online.length > 0, others.length), rows(shown));
-      if (!all && others.length > OTHERS_SHOWN) {
+      // A picked friend is always shown, even past "Show all".
+      const pickedId = picked?.kind === 'friend' ? picked.friend.id : undefined;
+      const pickedAt = others.findIndex((one) => one.id === pickedId);
+      const shown = all || pickedAt >= OTHERS_SHOWN ? others : others.slice(0, OTHERS_SHOWN);
+      const section = group(
+        othersTitle(online.length > 0, others.length),
+        friendRows(shown, rulesNow),
+      );
+      if (shown.length < others.length) {
         const more = element('button', 'sheet-row who-sheet-all', showAll(friends.length));
         more.type = 'button';
         more.addEventListener('click', () => {
           all = true;
-          draw(friends);
+          draw();
           // Focus stays in the list it opened: the first friend it added.
-          root
-            .querySelectorAll<HTMLElement>('.friends-open')
-            [online.length + OTHERS_SHOWN]?.focus();
+          root.querySelectorAll<HTMLElement>('.who-row')[online.length + OTHERS_SHOWN]?.focus();
         });
         section.append(more);
       }
       parts.push(section);
     }
-    root.replaceChildren(...parts, anyoneRow(false));
+    root.replaceChildren(...parts, linkRow());
+    showSend();
   }
 
-  let shownFriends: readonly FriendEntry[] | undefined;
   return {
-    open(friends, next) {
-      setup = next;
+    open(next, rulesNow, preset, last) {
+      setup = rulesNow;
+      friends = next;
+      first = last;
       all = false;
-      shownFriends = friends;
-      draw(friends);
+      picked = undefined;
+      wanted = undefined;
+      say(undefined);
+      if (preset !== undefined && 'link' in preset) picked = { kind: 'link' };
+      else if (preset !== undefined) {
+        wanted = preset.friend;
+        first = preset.friend;
+        pickWanted();
+      }
+      draw();
       if (!sheet.element.isConnected) document.body.append(sheet.element);
       sheet.open();
     },
-    update(friends) {
-      shownFriends = friends;
-      if (sheet.isOpen()) draw(shownFriends);
+    update(next) {
+      friends = next;
+      if (!sheet.isOpen()) return;
+      keepPick();
+      pickWanted();
+      draw();
     },
+    isOpen: () => sheet.isOpen(),
     close() {
       sheet.close();
     },

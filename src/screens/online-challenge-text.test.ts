@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChallengeInfo } from '../api/challenges.ts';
 import { cardFor, challengeChips, howItGoes, type CardActions } from './online-challenge-text.ts';
-import { inAMatchCard, lobbyWaitingCard } from './current-match.ts';
+import { inAMatchCard } from './current-match.ts';
 
 const actions: CardActions = {
   token: 'abc',
@@ -61,18 +61,18 @@ describe('a live challenge’s card and lobby (ADR 0055)', () => {
     ]);
   });
 
-  it('gives the lobby one main button, the link in a quiet box and Cancel as a quiet link', () => {
+  it('waits for anyone with the link on the one waiting screen: Share, the link, Cancel', () => {
     const lobby = cardFor(info({ status: 'yours', own: true }), actions);
-    expect(lobby.title).toBe('Your challenge');
+    expect(lobby.title).toBe('Challenge sent');
     expect(lobby.waiting).toStrictEqual({
-      title: 'Waiting for your friend',
+      title: 'Waiting for anyone with the link',
       line: 'Best of 3 · Reveal · live',
     });
     expect(lobby.buttons.map((button) => button.text)).toStrictEqual(['Share link']);
     expect(lobby.link?.url).toBe('https://ballbattle.test/?challenge=abc');
     expect(lobby.link?.copy).toBeDefined();
     expect(lobby.note).toBe(
-      'Once they accept, you both pick your lineups. Stay until the end: leaving for 30 s loses the match.',
+      'Once they accept, you both pick lineups, 60 s. Stay until the end: leaving for 30 s loses the match. Leaving this screen cancels the challenge.',
     );
     expect(lobby.quiet?.text).toBe('Cancel challenge');
   });
@@ -117,22 +117,7 @@ describe('the challenge lifecycle’s words (ADR 0086)', () => {
     expect(cardFor(info(), actions).title).toBe('Player 6908 challenges you');
   });
 
-  it('says whose lobby waits when sending or accepting another, never the server’s sentence', () => {
-    const lobby = { kind: 'lobby', token: 't', format: 'reveal', bestOf: 3 } as const;
-    const ways = {
-      open: () => Promise.resolve(),
-      replace: () => Promise.resolve(),
-      home: () => undefined,
-    };
-    const send = lobbyWaitingCard({ ...lobby, invitee: 'Jo' }, 'send', ways);
-    expect(send.title).toBe('You already challenged Jo');
-    expect(send.buttons.map((button) => button.text)).toStrictEqual([
-      'Open it',
-      'Cancel that and send this',
-    ]);
-    const accept = lobbyWaitingCard({ ...lobby, invitee: null }, 'accept', ways);
-    expect(accept.title).toBe('Your challenge link is waiting');
-    expect(accept.buttons[1]?.text).toBe('Cancel that and accept this');
+  it('says a second live match is refused in the game’s words, never the server’s sentence', () => {
     expect(
       inAMatchCard(
         () => Promise.resolve(),
@@ -164,20 +149,78 @@ describe('the friend lobby (ADR 0086)', () => {
     ]);
   });
 
-  it('after a No thanks leads with Challenge someone else and Home', () => {
-    const card = lobby({ declined: true });
+  it('is the same screen as a link’s: one title, the waiting card, Cancel challenge', () => {
+    const friend = lobby();
+    const anyone = lobby({ invitee: null });
+    expect([friend.title, anyone.title]).toStrictEqual(['Challenge sent', 'Challenge sent']);
+    expect([friend.quiet?.text, anyone.quiet?.text]).toStrictEqual([
+      'Cancel challenge',
+      'Cancel challenge',
+    ]);
+    expect(anyone.buttons[0]?.text).toBe('Share link');
+    expect(anyone.link?.fold).toBeUndefined();
+  });
+});
+
+describe('a challenge of yours that stopped (ADR 0089 addendum of 2026-11-27)', () => {
+  const stopped = (over: Partial<ChallengeInfo> = {}) =>
+    cardFor(info({ status: 'stopped', own: true, invitee: 'Jo', ...over }), actions);
+
+  it('after a No thanks leads with Challenge someone else and Home: nothing waits', () => {
+    const card = stopped({ declined: true });
     expect(card.title).toBe('Jo said no thanks');
     expect(card.buttons.map((button) => button.text)).toStrictEqual([
       'Challenge someone else',
       'Home',
     ]);
-    expect(card.link?.fold).toBe('Also send a link');
+    expect(card.quiet).toBeUndefined();
+    expect(card.waiting).toBeUndefined();
   });
 
-  it('keeps Copy link first in a lobby for a link to anyone', () => {
-    const card = lobby({ invitee: null });
-    expect(card.title).toBe('Your challenge');
-    expect(card.buttons[0]?.text).toBe('Share link');
-    expect(card.link?.fold).toBeUndefined();
+  it('says a newer challenge took its place', () => {
+    const card = stopped({ superseded: true });
+    expect(card.title).toBe('You sent a new challenge');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Home']);
+  });
+
+  it('says it stopped when its screen was left', () => {
+    const card = stopped();
+    expect(card.title).toBe('This challenge stopped');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Challenge a friend', 'Home']);
+  });
+
+  it('tells its friend the sender stopped waiting', () => {
+    const card = cardFor(info({ status: 'stopped' }), actions);
+    expect(card.title).toBe('Player 6908 stopped waiting');
+  });
+});
+
+describe('no dead ends on the vs Friend path (ADR 0027, 0089 addendum of 2026-11-27)', () => {
+  const STATUSES = ['open', 'yours', 'taken', 'accepted', 'expired', 'stopped'] as const;
+  it('offers a way on in every state of a challenge, to its sender and to anyone else', () => {
+    let seen = 0;
+    for (const status of STATUSES) {
+      for (const own of [false, true]) {
+        for (const live of [false, true]) {
+          for (const invitee of [null, 'Jo']) {
+            for (const declined of [false, true]) {
+              for (const superseded of [false, true]) {
+                for (const startId of [null, 'start-1']) {
+                  const card = cardFor(
+                    info({ status, own, live, invitee, declined, superseded, startId }),
+                    actions,
+                  );
+                  const ways = [...card.buttons, ...(card.quiet === undefined ? [] : [card.quiet])];
+                  expect(ways.length, `${status} own=${String(own)}`).toBeGreaterThan(0);
+                  seen += 1;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(seen).toBe(STATUSES.length * 2 ** 6);
+    expect(cardFor(undefined, actions).buttons.length).toBeGreaterThan(0);
   });
 });

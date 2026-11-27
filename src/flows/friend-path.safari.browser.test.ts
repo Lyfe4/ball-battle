@@ -1,10 +1,11 @@
-// One vs Friend path (ADR 0089, B1) through the real page at 390 x 664, signed in with friends, in a
-// build with accounts and play by turns (previews, staging): Play against a friend with nobody
-// picked opens "Who do you want to play?" (no history step; Escape and Back close it); Challenge
-// there sends a live challenge to that friend, straight to their lobby, and the box remembers them;
-// Play then goes straight to them. What to play's "Choose who to play" opens the sheet again;
-// Anyone, with a link is today's lobby, which offers the online friends, and Challenge there stops
-// the link and challenges them instead. Play by turns opens its lineup. Every move ends back on Play.
+// The one vs Friend path (ADR 0089 and its addendum of 2026-11-27) through the real page at 390 x
+// 664, signed in with friends, in a build with accounts and play by turns (previews, staging): Play
+// against a friend opens "Who do you want to play?" (no history step; Escape and Back close it);
+// picking a friend only selects them, and nothing is sent until the one button; it goes to the one
+// waiting screen, and Back from it cancels the challenge. Play never goes straight to anyone, the
+// friend last picked listed first. The Friends tab's Challenge opens the same sheet with that
+// friend picked; What to play only sets rules; the waiting screen offers no other friends. By turns
+// opens its lineup. Every move ends back on Play.
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { ACCOUNT_STORAGE_KEY } from '../app/online-device.ts';
@@ -17,6 +18,7 @@ const KEYS = [
   'ballbattle.online.adult',
   'ballbattle.playOpponent',
   'ballbattle.friendPick',
+  'ballbattle.friendTurns',
 ];
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
 const FRIENDS = [
@@ -27,10 +29,12 @@ const FRIENDS = [
   { id: 'f-5', name: 'Noor', status: 'offline' },
 ];
 const ME = { name: 'sam_k', account: true, username: 'sam_k' };
+const INBOX = { friends: FRIENDS, requests: 0, invites: [], turns: [] };
 
 /** The page's API: who, the inbox, challenges sent (to a friend or anyone) and their lobby. */
 function fakeServer(asked: string[]): void {
   let invitee: string | null = null;
+  let cancelled = false;
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
     const method = init?.method ?? 'GET';
@@ -45,13 +49,22 @@ function fakeServer(asked: string[]): void {
         }),
       );
     if (path === 'me') return json(200, ME);
-    if (path === 'me/inbox') {
-      return json(200, { friends: FRIENDS, requests: 0, invites: [], turns: [] });
+    if (path === 'me/inbox') return json(200, INBOX);
+    if (path === 'me/match') return json(200, { match: null });
+    if (path === 'friends') {
+      return json(200, {
+        code: '7KQ2M9XD',
+        friends: FRIENDS,
+        incoming: [],
+        outgoing: [],
+        blocked: [],
+      });
     }
     if (method === 'POST' && path === 'challenges') {
       const sent = JSON.parse(body) as { friend?: string };
       invitee = FRIENDS.find((one) => one.id === sent.friend)?.name ?? null;
-      return json(200, {
+      cancelled = false;
+      return json(201, {
         token: TOKEN,
         format: 'reveal',
         bestOf: 3,
@@ -59,17 +72,19 @@ function fakeServer(asked: string[]): void {
       });
     }
     if (path === `challenges/${TOKEN}` || path === `challenges/${TOKEN}/cancel`) {
+      if (method === 'POST') cancelled = true;
       return json(200, {
         format: 'reveal',
         bestOf: 3,
         from: 'sam_k',
-        status: method === 'POST' ? 'stopped' : 'yours',
+        status: cancelled ? 'stopped' : 'yours',
         seriesId: null,
         startId: null,
         live: true,
         own: true,
         invitee,
         declined: false,
+        superseded: false,
         blocked: null,
       });
     }
@@ -78,13 +93,20 @@ function fakeServer(asked: string[]): void {
 }
 
 const sheet = () => document.querySelector<HTMLDialogElement>('dialog.who-sheet');
-const inSheet = (name: string) => {
-  const found = [...(sheet()?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find(
-    (node) => node.textContent.trim() === name && node.getClientRects().length > 0,
+const row = (name: string) => {
+  const found = [...(sheet()?.querySelectorAll<HTMLButtonElement>('.who-row') ?? [])].find(
+    (node) => node.querySelector('.friends-name')?.textContent === name,
   );
   if (found === undefined) throw new Error(`No "${name}" in the sheet`);
   return found;
 };
+const sendButton = () => {
+  const found = sheet()?.querySelector<HTMLButtonElement>('.who-sheet-send');
+  if (found == null) throw new Error('No send button');
+  return found;
+};
+const names = () =>
+  [...(sheet()?.querySelectorAll('.who-row .friends-name') ?? [])].map((n) => n.textContent);
 const play = () => {
   const found = visible('.home-play')[0];
   if (found === undefined) throw new Error('No Play');
@@ -95,13 +117,18 @@ const boxSays = () => [
   visible('.play-box-rules')[0]?.textContent,
 ];
 const sentPosts = (asked: readonly string[]) =>
-  asked.filter((line) => line.startsWith('POST challenges'));
-async function inLobby(title: string): Promise<void> {
+  asked.filter((line) => line.startsWith('POST challenges '));
+async function openSheet(): Promise<void> {
+  await userEvent.click(play());
+  await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
+  await until(() => names().length > 1, 5_000, 'friends', false);
+}
+async function waitingFor(who: string): Promise<void> {
   await onScreen('challenge');
   await until(
-    () => visible('#online-challenge :is(h1, h2)').some((node) => node.textContent === title),
+    () => visible('.notice-waiting-title').some((node) => node.textContent === who),
     5_000,
-    `the lobby, "${title}"`,
+    `the waiting screen, "${who}"`,
     false,
   );
 }
@@ -112,7 +139,7 @@ afterAll(() => {
   vi.unstubAllEnvs();
 });
 
-describe('one vs Friend path, signed in (ADR 0089)', () => {
+describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () => {
   it('asks who on Play, with no history step, and Escape and Back close it', async () => {
     vi.stubEnv('VITE_TURNS', '1');
     for (const key of KEYS) window.localStorage.removeItem(key);
@@ -120,27 +147,19 @@ describe('one vs Friend path, signed in (ADR 0089)', () => {
     window.localStorage.setItem('ballbattle.playOpponent', 'friend');
     await openAs({ online: true, accounts: true }, '', {
       '/api/v1/me': ME,
-      '/api/v1/me/inbox': { friends: FRIENDS, requests: 0, invites: [], turns: [] },
+      '/api/v1/me/inbox': INBOX,
     });
     fakeServer([]);
     await onScreen('home');
     expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
-    await userEvent.click(play());
-    await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
-    await until(
-      () => (sheet()?.querySelectorAll('.friends-name').length ?? 0) > 0,
-      5_000,
-      'friends',
-      false,
-    );
+    await openSheet();
     expect(location.search).toBe('');
     expect(
       [...(sheet()?.querySelectorAll('.friends-group-title') ?? [])].map((n) => n.textContent),
     ).toStrictEqual(['Online · 1', 'Not online']);
     await userEvent.keyboard('{Escape}');
     await until(() => sheet()?.open === false, 2_000, 'Escape to close it', false);
-    await userEvent.click(play());
-    await until(() => sheet()?.open === true, 5_000, 'the sheet again', false);
+    await openSheet();
     await back();
     await until(() => sheet()?.open === false, 2_000, 'Back to close it', false);
     history.forward();
@@ -148,80 +167,104 @@ describe('one vs Friend path, signed in (ADR 0089)', () => {
     await settle();
   });
 
-  it('challenges a friend from the sheet, then Play goes straight to them', async () => {
+  it('sends nothing on a pick, only on the button; Back from waiting cancels it', async () => {
     const asked: string[] = [];
     fakeServer(asked);
-    await userEvent.click(play());
-    await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
-    await userEvent.click(inSheet('Challenge'));
-    await inLobby('Waiting for Robin');
+    await openSheet();
+    await userEvent.click(row('Robin'));
+    await userEvent.click(row('Jo'));
+    await userEvent.click(row('Robin'));
+    expect(sentPosts(asked)).toStrictEqual([]);
+    expect(sendButton().textContent).toBe('Challenge Robin');
+    await userEvent.click(sendButton());
+    await waitingFor('Waiting for Robin');
     expect(location.search).toBe(`?challenge=${TOKEN}`);
     expect(sentPosts(asked)).toHaveLength(1);
     expect(sentPosts(asked)[0]).toContain('"friend":"f-1"');
     expect(sentPosts(asked)[0]).toContain('"live":true');
+    // The one waiting screen offers no other friends.
+    expect(visible('.who-lobby')).toHaveLength(0);
     await back();
     await onScreen('home');
-    // Remembered: the box says them, and Play goes straight to them, no sheet.
-    expect(boxSays()).toStrictEqual(['vs Robin', 'Live · Best of 3 · Reveal']);
-    expect(play().getAttribute('aria-label')).toBe('Challenge Robin live, Best of 3 · Reveal');
-    await userEvent.click(play());
-    await inLobby('Waiting for Robin');
-    expect(sheet()?.open).toBe(false);
-    expect(sentPosts(asked)).toHaveLength(2);
-    expect(sentPosts(asked)[1]).toContain('"friend":"f-1"');
-    await back();
-    await onScreen('home');
+    await until(
+      () => asked.some((line) => line.startsWith(`POST challenges/${TOKEN}/cancel`)),
+      5_000,
+      'the cancel of the waiting screen left',
+      false,
+    );
+    // Play never goes straight to anyone: the box says vs Friend, and Play asks again, Robin first.
+    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
+    await openSheet();
+    expect(names()[0]).toBe('Robin');
+    expect(sheet()?.querySelector('.who-row[aria-checked="true"]')).toBeNull();
+    expect(sentPosts(asked)).toHaveLength(1);
+    await userEvent.keyboard('{Escape}');
+    await until(() => sheet()?.open === false, 2_000, 'the sheet to close', false);
   });
 
-  it('offers who again from What to play, and the link’s lobby offers friends online', async () => {
-    const asked: string[] = [];
-    fakeServer(asked);
+  it('What to play only sets rules: no one to choose there', async () => {
     await settle();
-    const open = [...document.querySelectorAll('dialog')].filter((node) => node.open);
-    expect(open.map((node) => node.className)).toStrictEqual([]);
     await userEvent.click(visible('.play-box')[0] ?? play());
     const what = document.querySelector<HTMLDialogElement>('dialog.play-sheet');
     await until(() => what?.open === true, 5_000, 'What to play', false);
-    const choose = [...(what?.querySelectorAll<HTMLButtonElement>('.play-sheet-who') ?? [])][0];
-    if (choose === undefined) throw new Error('No Choose who to play');
-    await userEvent.click(choose);
-    await until(
-      () => sheet()?.open === true && what?.open === false,
-      5_000,
-      'the who sheet',
-      false,
-    );
-    await userEvent.click(inSheet('Anyone, with a link'));
-    await inLobby('Your challenge');
-    expect(sentPosts(asked)[0]).not.toContain('"friend"');
-    await until(() => visible('.who-lobby .friends-name').length === 1, 5_000, 'friends', false);
-    expect(visible('.who-lobby .friends-group-title').map((n) => n.textContent)).toStrictEqual([
-      'Or challenge a friend',
+    expect(what?.querySelector('.play-sheet-who')).toBeNull();
+    const how = [...(what?.querySelectorAll<HTMLButtonElement>('.play-sheet-how button') ?? [])];
+    expect(how.map((node) => node.textContent)).toStrictEqual([
+      'Liveplay now',
+      'By turnsup to a day a move',
     ]);
-    const challenge = visible('.who-lobby .friends-challenge')[0];
-    if (challenge === undefined) throw new Error('No Challenge in the lobby');
-    await userEvent.click(challenge);
-    await inLobby('Waiting for Robin');
-    // The link stopped, then Robin's challenge, its lobby in the link's place: Back is Play.
-    expect(asked.some((line) => line.startsWith(`POST challenges/${TOKEN}/cancel`))).toBe(true);
-    expect(sentPosts(asked).at(-1)).toContain('"friend":"f-1"');
+    await userEvent.keyboard('{Escape}');
+    await until(() => what?.open === false, 2_000, 'What to play to close', false);
+  });
+
+  it('sends a link from the same sheet', async () => {
+    const asked: string[] = [];
+    fakeServer(asked);
+    await openSheet();
+    await userEvent.click(row('Send a link instead'));
+    expect(sendButton().textContent).toBe('Send a link');
+    await userEvent.click(sendButton());
+    await waitingFor('Waiting for anyone with the link');
+    expect(sentPosts(asked)[0]).not.toContain('"friend"');
     await back();
     await onScreen('home');
   });
 
   it('plays by turns with a friend away: its lineup, then Back to Play', async () => {
     fakeServer([]);
-    window.localStorage.removeItem('ballbattle.friendPick');
-    await userEvent.click(play());
-    await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
-    const turns = [
-      ...(sheet()?.querySelectorAll<HTMLButtonElement>('.friends-challenge') ?? []),
-    ].find((node) => node.getAttribute('aria-label') === 'Play by turns with Jo');
-    if (turns === undefined) throw new Error('No Play by turns with Jo');
-    await userEvent.click(turns);
+    await openSheet();
+    await userEvent.click(row('Jo'));
+    expect(sendButton().textContent).toBe('Play Jo by turns');
+    await userEvent.click(sendButton());
     await onScreen('send');
     await back();
     await onScreen('home');
-    expect(boxSays()).toStrictEqual(['vs Jo', 'By turns · Best of 3 · Reveal']);
+    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
+  });
+
+  it('enters the same sheet from the Friends tab’s Challenge, that friend picked', async () => {
+    const asked: string[] = [];
+    fakeServer(asked);
+    await userEvent.click(visible('.tab-bar-tab[data-tab="friends"]')[0] ?? play());
+    await onScreen('friends');
+    await until(
+      () => visible('.friends-challenge').length > 0,
+      5_000,
+      'a friend’s Challenge',
+      false,
+    );
+    await userEvent.click(visible('.friends-challenge')[0] ?? play());
+    await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
+    await until(
+      () => sheet()?.querySelector('.who-row[aria-checked="true"]') !== null,
+      5_000,
+      'Robin picked',
+      false,
+    );
+    expect(sendButton().textContent).toBe('Challenge Robin');
+    expect(sentPosts(asked)).toStrictEqual([]);
+    await userEvent.keyboard('{Escape}');
+    await until(() => sheet()?.open === false, 2_000, 'the sheet to close', false);
+    await onScreen('friends');
   });
 });

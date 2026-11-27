@@ -2,12 +2,10 @@
 // the arena tells a series each frame, and the page's layout. `mountOnline` builds it in a build
 // with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
-import type { FriendBox } from './who-text.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { writeShellParams, type Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
-import { loadFriendSetup, type FriendSetup } from '../app/modes.ts';
-import { writeSendParams } from '../app/online-url.ts';
+import type { FriendSetup } from '../app/modes.ts';
 import { browserStorage } from '../app/storage.ts';
 import { BALL_LOOKUP, BALLS } from '../sim/balls/index.ts';
 import type { Arena } from '../arena.ts';
@@ -67,14 +65,12 @@ export interface OnlineMount {
   /** Home was opened: "Back to your match" asks again. */
   homeShown(): void;
   /**
-   * The Play tab's Play against a friend: signed in, the friend last picked or "Who do you want to
-   * play?" (ADR 0089); else straight to the link to share (ADR 0081 addendum).
+   * The Play tab's Play against a friend: signed in, "Who do you want to play?" (ADR 0089 addendum
+   * of 2026-11-27); else straight to the link to share (ADR 0081 addendum).
    */
   playFriend(setup: FriendSetup): Promise<void>;
-  /** The box over Play with a friend picked (accounts builds, signed in). */
-  readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
-  /** "Who do you want to play?", from What to play (accounts builds). */
-  readonly chooseWho?: () => void;
+  /** Whether Play against a friend asks who (an account is signed in). */
+  asksWho(): boolean;
   /** A live match is on screen: its fights play at 1x and the speed toggle makes way (ADR 0053). */
   isLive(): boolean;
   /** A live fight's rate: 1, or a little off while it catches up with the server (ADR 0063). */
@@ -96,7 +92,7 @@ export interface MountContext {
   readonly navigation: Navigation;
   go(write: (params: URLSearchParams) => void): void;
   replaceWith(write: (params: URLSearchParams) => void): void;
-  goHome(): void;
+  goHome(how?: 'go' | 'replace'): void;
   showWorld(world: WorldState, seed: number): void;
   /** The arena, for a live round's start, countdown and a fight already under way (ADR 0053). */
   arena(): Pick<Arena, 'release' | 'countdown' | 'showAt'>;
@@ -192,12 +188,8 @@ export function mountOnline(context: MountContext): OnlineMount {
     home: () => {
       context.goHome();
     },
-    // The vs Friend setup (a friend's row's Challenge), on the friend's rules as last chosen here.
-    friend: () => {
-      const { format, bestOf } = loadFriendSetup(browserStorage);
-      context.go((url) => {
-        writeSendParams(url, format, bestOf);
-      });
+    homeInstead: () => {
+      context.goHome('replace');
     },
     showWorld: (world, seed) => {
       context.showWorld(world, seed);
@@ -339,8 +331,7 @@ export function mountOnline(context: MountContext): OnlineMount {
       }
     },
     playFriend: (setup) => screens.playFriend(setup),
-    ...(screens.friendBox === undefined ? {} : { friendBox: screens.friendBox }),
-    ...(screens.chooseWho === undefined ? {} : { chooseWho: screens.chooseWho }),
+    asksWho: () => screens.asksWho(),
     isLive: () => screens.play.isLive(),
     liveRate: (playedMs) => screens.play.liveRate(playedMs),
     screenChanged: (screen, now) => {

@@ -8,7 +8,7 @@ import {
   addedLine,
   friendsTabLabel,
   hasAnyone,
-  liveUnavailable,
+  challengeUnavailable,
   STATUS_WORDS,
   endingLine,
   friendsTitle,
@@ -105,24 +105,21 @@ describe('the person’s sheet’s words (ADR 0086)', () => {
     expect(personStatus({}, 'outgoing')).toBe('Request sent');
   });
 
-  it('says why Challenge · live can’t be taken, and the way that works', () => {
+  it('says why Challenge can’t be taken, by turns working any time where it is built', () => {
     const jo = (status: 'online' | 'offline' | 'in_a_match') => ({ name: 'Jo', status });
-    expect(liveUnavailable(jo('online'), false, true)).toBeUndefined();
-    expect(liveUnavailable(jo('offline'), false, true)).toBe(
-      'Jo is offline · Play by turns instead',
-    );
-    expect(liveUnavailable(jo('in_a_match'), false, true)).toBe(
-      'Jo is in a match · Play by turns instead',
-    );
+    expect(challengeUnavailable(jo('online'), false, false)).toBeUndefined();
+    // By turns works any time: "Who do you want to play?" says which (ADR 0089 addendum).
+    expect(challengeUnavailable(jo('offline'), false, true)).toBeUndefined();
+    expect(challengeUnavailable(jo('in_a_match'), false, true)).toBeUndefined();
     // Where the build doesn't play by turns: wait for them.
-    expect(liveUnavailable(jo('offline'), false, false)).toBe(
+    expect(challengeUnavailable(jo('offline'), false, false)).toBe(
       'Jo is offline · Try again when they’re online',
     );
-    expect(liveUnavailable(jo('in_a_match'), false, false)).toBe(
+    expect(challengeUnavailable(jo('in_a_match'), false, false)).toBe(
       'Jo is in a match · Try again after it',
     );
     // Their lobby waits for you: accept theirs, whatever their status.
-    expect(liveUnavailable(jo('in_a_match'), true, true)).toBe(
+    expect(challengeUnavailable(jo('in_a_match'), true, true)).toBe(
       'Jo is waiting for you · Accept in Waiting for you',
     );
   });

@@ -60,10 +60,10 @@ export interface FriendsHost {
   readonly line: (answer: ApiFailure) => string;
   /** Copies the code; false where there is no clipboard. */
   readonly copy: (text: string) => Promise<boolean>;
-  /** Challenge: the vs Friend setup, the challenge going to this friend (PR (d)). */
+  /** Challenge: "Who do you want to play?" with this friend picked (ADR 0089 addendum). */
   readonly challenge?: (friend: FriendEntry) => void;
-  /** Play by turns from a friend's sheet (ADR 0085): by turns, its lineup first. */
-  readonly takeTurns?: (friend: FriendEntry) => void;
+  /** Whether the build plays by turns (ADR 0085): a friend not online can still be challenged. */
+  readonly turns?: boolean;
   /** The friends changed here (a request sent or answered): the inbox reads now. */
   readonly changed?: () => void;
   /** The tab's link card, always last (ADR 0087). */
@@ -148,7 +148,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     send(host.api<FriendsResponse>(method, path, body)).then((done) => done !== undefined);
   const sheet = createFriendSheet({
     ...(host.challenge === undefined ? {} : { challenge: host.challenge }),
-    ...(host.takeTurns === undefined ? {} : { turns: host.takeTurns }),
+    ...(host.turns === undefined ? {} : { turns: host.turns }),
     remove: (id) => made('DELETE', `friends/${id}`)(),
     block: (id) => made('POST', `friends/${id}/block`)(),
     report: (id, reason) => made('POST', `friends/${id}/report`, { reason })(),

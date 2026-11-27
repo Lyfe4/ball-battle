@@ -66,7 +66,6 @@ describe('the tab bar', () => {
       ['?view=pick&a=storm&b=frost', 'task'],
       ['?mode=bo3', 'task'],
       ['?view=signin', 'task'],
-      [LINKS.send, 'task'],
       [LINKS.challenge, 'task'],
       // A match link made before versions: the older-link notice, a task.
       ['?a=storm&b=frost&seed=4', 'task'],

@@ -10,7 +10,6 @@ import type {
   InboxResponse,
   TurnWaiting,
 } from '../api/friends.ts';
-import { TURN_HOURS } from '../api/series.ts';
 
 /** One group of the list: its heading, and what each row's actions say. */
 export interface FriendGroup {
@@ -81,10 +80,8 @@ export const reportTitle = (name: string) => `Report the name ${name}?`;
 
 /** The person's sheet's words (friend-sheet.ts). */
 export const SHEET_LINES = {
-  challenge: 'Challenge · live',
-  turns: 'Play by turns',
-  /** Under Play by turns: what it asks of the two of them (the server's turn, ADR 0085). */
-  turnsHint: `No need to be online together · up to ${String(TURN_HOURS)} h a move`,
+  /** "Who do you want to play?" with them picked, on Play's box's rules (ADR 0089 addendum). */
+  challenge: 'Challenge',
   remove: 'Remove friend',
   report: 'Report name',
   block: 'Block',
@@ -113,21 +110,20 @@ export function personStatus(
 }
 
 /**
- * Why a friend's Challenge · live can't be taken now, and the way that works, as one line under it
- * (the sheet keeps one shape, ADR 0086 as changed 2026-11-26): undefined when it can (online, and
- * not waiting on you). `turns` where the build plays by turns, which works any time.
+ * Why a friend's Challenge can't be taken now, and the way that works, as one line under it (the
+ * sheet keeps one shape, ADR 0086 as changed 2026-11-26): undefined when it can. Live needs them
+ * online; `turns` where the build plays by turns, which works any time ("Who do you want to play?"
+ * says which, ADR 0089 addendum of 2026-11-27). Never over a challenge of theirs waiting on you.
  */
-export function liveUnavailable(
+export function challengeUnavailable(
   person: { readonly name: string; readonly status?: FriendStatus },
   waiting: boolean,
   turns: boolean,
 ): string | undefined {
   if (waiting) return `${person.name} is waiting for you · Accept in Waiting for you`;
-  if (person.status === 'online') return undefined;
-  if (person.status === 'in_a_match') {
-    return `${person.name} is in a match · ${turns ? 'Play by turns instead' : 'Try again after it'}`;
-  }
-  return `${person.name} is offline · ${turns ? 'Play by turns instead' : 'Try again when they’re online'}`;
+  if (person.status === 'online' || turns) return undefined;
+  if (person.status === 'in_a_match') return `${person.name} is in a match · Try again after it`;
+  return `${person.name} is offline · Try again when they’re online`;
 }
 
 /**

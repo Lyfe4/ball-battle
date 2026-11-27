@@ -9,7 +9,7 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { befriend, expireTurn, signedInPhone } from './account-support.ts';
-import { buildLineup, pickIfDue, sendChallenge } from './live-support.ts';
+import { buildLineup, friendHow, pickIfDue, sendChallenge } from './live-support.ts';
 import { socketOf } from './realtime-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
@@ -64,22 +64,24 @@ describe('play by turns with a friend', () => {
       await two.goto(BASE);
       await socketOf(two).waitUp();
 
-      // Jo's sheet → Play by turns → the lineup in place → Send challenge (ADR 0085, 0086). The vs
-      // Friend setup's Play row stays for links (friend-setup).
+      // The one path (ADR 0089 addendum of 2026-11-27): By turns in What to play, then Jo's sheet
+      // → Challenge → "Who do you want to play?", Jo picked → Play Jo by turns → the lineup in
+      // place → Send challenge (ADR 0085, 0086).
+      await friendHow(one, BASE, 'By turns');
       await one.goto(`${BASE}/?view=friends`);
-      await friendsOf(one)
-        .locator('.friends-row', { hasText: jo })
-        .locator('.friends-open')
-        .click();
       const sheetOf = async () => {
         await friendsOf(one)
           .locator('.friends-row', { hasText: jo })
           .locator('.friends-open')
           .click();
+        await one.getByRole('button', { name: `Challenge ${jo}` }).click();
+        const who = one.getByRole('dialog', { name: 'Who do you want to play?' });
+        await who.locator('.who-row[aria-checked="true"]').waitFor();
+        return who;
       };
-      await one.getByRole('button', { name: `Play by turns with ${jo}` }).click();
-      // Its lineup says the rules it sends, with Change: no rules step on the way in, so Back
-      // leaves for Friends, the sheet closed (staging, 2026-11-26).
+      await (await sheetOf()).getByRole('button', { name: /^Play .* by turns, / }).click();
+      // Its lineup says the rules it sends: no rules step on the way in, so Back leaves for
+      // Friends, the sheets closed (staging, 2026-11-26).
       const lineup = one.locator('#online-lineup .lineup-step:visible');
       await lineup
         .locator('.lineup-mode-name', { hasText: /^Best of 3 · Reveal · by turns$/ })
@@ -88,14 +90,7 @@ describe('play by turns with a friend', () => {
       await one.waitForURL((url) => url.searchParams.get('view') === 'friends');
       await friendsOf(one).locator('.friends-row', { hasText: jo }).waitFor();
       expect(await one.locator('dialog[open]').count(), 'the sheet closed').toBe(0);
-      // Change opens the rules step for by turns, and comes back to the tray as it was.
-      await sheetOf();
-      await one.getByRole('button', { name: `Play by turns with ${jo}` }).click();
-      await lineup.locator('.ball-grid button').first().click();
-      await lineup.getByRole('button', { name: 'Change the rules' }).click();
-      await one.getByRole('heading', { name: 'vs Friend' }).waitFor();
-      await one.getByRole('button', { name: 'Choose lineup' }).click();
-      await lineup.locator('.lineup-tray-slot:not(.lineup-tray-empty)').first().waitFor();
+      await (await sheetOf()).getByRole('button', { name: /^Play .* by turns, / }).click();
       await buildLineup(one, 'Send challenge');
       await one.getByRole('heading', { name: `Sent to ${jo}` }).waitFor();
 
@@ -156,10 +151,10 @@ describe('play by turns with a friend', () => {
           .count(),
       ).toBe(1);
 
-      // Challenge · live from the sheet: Back from its lobby returns to Friends, not the setup.
+      // Live again: Challenge from the sheet; Back from its waiting screen returns to Friends.
+      await friendHow(one, BASE, 'Live');
       await one.goto(`${BASE}/?view=friends`);
       await sheetOf();
-      await one.getByRole('button', { name: `Challenge ${jo} live` }).click();
       await sendChallenge(one, `Waiting for ${jo}`);
       await one.locator('.screen-header:visible').getByRole('button', { name: 'Back' }).click();
       await one.waitForURL((url) => url.searchParams.get('view') === 'friends');

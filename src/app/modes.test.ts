@@ -19,6 +19,10 @@ import {
   offeredFormat,
   PLAY_OPPONENT_STORAGE_KEY,
   savePlayChoice,
+  FRIEND_TURNS_STORAGE_KEY,
+  loadFriendSetup,
+  saveFriendSetup,
+  savePlayOpponent,
 } from './modes.ts';
 import { parseRoute } from './route.ts';
 import { SERIES_LENGTH_STORAGE_KEY } from './series-length.ts';
@@ -89,7 +93,7 @@ describe('what the Play tab’s box starts (ADR 0081, Option B)', () => {
   });
 
   it('is the bot on a first visit, and a live Best of 3 · Reveal for a friend', () => {
-    expect(FIRST_FRIEND).toStrictEqual({ format: 'reveal', bestOf: 3 });
+    expect(FIRST_FRIEND).toStrictEqual({ format: 'reveal', bestOf: 3, turns: false });
     expect(loadPlayChoice(memory().storage, ['bot', 'friend'])).toStrictEqual({
       opponent: 'bot',
       bot: FIRST_PLAY,
@@ -102,7 +106,7 @@ describe('what the Play tab’s box starts (ADR 0081, Option B)', () => {
     savePlayChoice(storage, {
       opponent: 'friend',
       bot: { format: 'blind', bestOf: 5, level: 'hard' },
-      friend: { format: 'showdown', bestOf: 5 },
+      friend: { format: 'showdown', bestOf: 5, turns: false },
     });
     expect(store.get(PLAY_OPPONENT_STORAGE_KEY)).toBe('friend');
     expect(store.get(FRIEND_FORMAT_STORAGE_KEY)).toBe('showdown');
@@ -112,8 +116,19 @@ describe('what the Play tab’s box starts (ADR 0081, Option B)', () => {
     expect(loadPlayChoice(storage, ['bot', 'friend'])).toStrictEqual({
       opponent: 'friend',
       bot: { format: 'blind', bestOf: 5, level: 'hard' },
-      friend: { format: 'showdown', bestOf: 5 },
+      friend: { format: 'showdown', bestOf: 5, turns: false },
     });
+  });
+
+  it('remembers Live or By turns for a friend, by turns only where the build plays by turns', () => {
+    const { storage, store } = memory();
+    saveFriendSetup(storage, { format: 'reveal', bestOf: 3, turns: true });
+    expect(store.get(FRIEND_TURNS_STORAGE_KEY)).toBe('true');
+    expect(loadFriendSetup(storage, true).turns).toBe(true);
+    // A build without play by turns plays live, whatever this device remembers.
+    expect(loadFriendSetup(storage, false).turns).toBe(false);
+    savePlayOpponent(storage, 'friend');
+    expect(store.get(PLAY_OPPONENT_STORAGE_KEY)).toBe('friend');
   });
 
   it('falls back to the bot where the build has no friend, and to a live format for a friend', () => {

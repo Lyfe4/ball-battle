@@ -288,7 +288,7 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     await until(
       () =>
         visible('#online-challenge :is(h1, h2)').some(
-          (h) => h.textContent === 'Waiting for your friend',
+          (h) => h.textContent === 'Waiting for anyone with the link',
         ),
       5_000,
       'the lobby',
@@ -329,15 +329,15 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Showdown' });
   });
 
-  it('keeps the old send link’s setup, its formats in the same order', async () => {
+  it('lands an old link to the vs Friend setup in the one path: Play, on its rules', async () => {
+    const asked: string[] = [];
+    fakeServer(asked);
     await follow(LINKS.send);
-    await onScreen('send');
-    expect(visible('.rules-card-name').map((name) => name.textContent)).toStrictEqual([
-      'Reveal',
-      'Showdown',
-    ]);
-    await back();
+    // In the send screen's place: Play, the box on vs Friend with the link's rules, nothing sent.
     await onScreen('home');
     expect(location.search).toBe('');
+    expect(visible('.rules-step')).toHaveLength(0);
+    expect(boxSays().who).toBe('vs Friend');
+    expect(asked.filter((line) => line.startsWith('POST'))).toStrictEqual([]);
   });
 });

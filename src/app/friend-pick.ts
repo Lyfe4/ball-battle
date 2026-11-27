@@ -1,9 +1,8 @@
-// Who Play is against when it is a friend (ADR 0089, B1): the last friend picked in "Who do you want
-// to play?", live or by turns, remembered on this device as each opponent's rules are (modes.ts).
-// It names the account that picked them, so another account on the same device never sees it (Log
-// out clears every `ballbattle.*` key as well). Play goes straight to them only while that can work:
-// still a friend, online for a live match, by turns only where the build plays by turns.
-import type { FriendEntry } from '../api/friends.ts';
+// The friend last picked in "Who do you want to play?" (ADR 0089), remembered on this device so the
+// sheet lists them first next time. Play never goes straight to them (ADR 0089 addendum of
+// 2026-11-27): nothing is sent before the sheet's button is tapped. It names the account that
+// picked them, so another account on the same device never sees it (Log out clears every
+// `ballbattle.*` key as well).
 
 export const FRIEND_PICK_STORAGE_KEY = 'ballbattle.friendPick';
 
@@ -69,20 +68,4 @@ export function forgetFriendPick(storage: Storage): void {
   } catch {
     // Nothing to forget.
   }
-}
-
-/**
- * The friend Play goes straight to, or undefined when it should ask: the pick is still a friend
- * (`friends`, the inbox's list) and the match can start now: live with them online, by turns where
- * `turnsBuild`. Not knowing the list yet is asking.
- */
-export function playableFriend(
-  pick: FriendPick | undefined,
-  friends: readonly FriendEntry[] | undefined,
-  turnsBuild: boolean,
-): FriendEntry | undefined {
-  const friend = pick === undefined ? undefined : friends?.find((one) => one.id === pick.id);
-  if (pick === undefined || friend === undefined) return undefined;
-  if (pick.turns) return turnsBuild ? friend : undefined;
-  return friend.status === 'online' ? friend : undefined;
 }

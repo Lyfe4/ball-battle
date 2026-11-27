@@ -35,7 +35,6 @@ export const FRAME_SCREENS: readonly (readonly [name: string, search: string, sc
   // Its lineup is the same task's next screen: the header stays put, the rail too on a PC (ADR 0087
   // addendum of 2026-11-26).
   ['the lineup', '?mode=bo3&fmt=reveal&step=lineup', 'series'],
-  ['the vs Friend setup', '?view=send&fmt=reveal&mode=bo3', 'send'],
   ['Free play', '?view=pick', 'pick'],
   ['an older link', '?a=brawler&b=vampire&seed=7&v=1', 'outdated'],
 ];
