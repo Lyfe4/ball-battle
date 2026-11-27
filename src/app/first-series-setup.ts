@@ -2,6 +2,7 @@
 // seed chosen for the player's lineup (first-series-seed.ts), and Pick for me's lineup. No DOM
 // here: the measuring script imports it.
 import { easyBot } from '../sim/bot.ts';
+import { standingOf } from '../sim/counter-map.ts';
 import type { BestOf, Format } from '../sim/series.ts';
 
 /**
@@ -36,4 +37,22 @@ export function starterTrio(roster: readonly string[]): readonly string[] {
     if (!chosen.includes(id)) chosen.push(id);
   }
   return chosen.slice(0, 3);
+}
+
+/**
+ * The answer the first pick's coach points at (ADR 0090 addendum, 1b): the player's ball best
+ * against `shown` by the map (▲▲ before ▲), the first of them in lineup order; none when no ball
+ * of theirs is favoured.
+ */
+export function bestAnswer(own: readonly string[], shown: string): string | undefined {
+  let best: string | undefined;
+  let top = 0;
+  for (const ball of own) {
+    const standing = standingOf(ball, shown);
+    if (standing > top) {
+      top = standing;
+      best = ball;
+    }
+  }
+  return best;
 }

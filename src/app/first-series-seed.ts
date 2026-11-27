@@ -169,7 +169,7 @@ function topBy(items: readonly string[], score: (item: string) => number): reado
  * The search, one seed a step: yields after each seed it judges, and returns the seed chosen. From
  * `seed`, the first seed passing every rule that carries a player who reads the marks (ENOUGH),
  * else the best of the first PASSES_KEPT that pass, else (none within SEARCH_STEPS) the first
- * where the bot shows first.
+ * where the bot shows first on a grid with two ▲, else the first where the bot shows first.
  */
 function* search(
   seed: number,
@@ -179,10 +179,18 @@ function* search(
 ): Generator<undefined, number> {
   let best: { seed: number; score: number } | undefined;
   let passes = 0;
+  // Past every rule, still a grid with two ▲ where the bot shows first: never a grid without.
+  let twoFavoured: number | undefined;
   let botFirst: number | undefined;
   for (let step = 0; step < SEARCH_STEPS; step++) {
     const candidate = (seed + step) >>> 0;
-    if (botFirst === undefined && revealFirst(candidate) === 'b') botFirst = candidate;
+    if (revealFirst(candidate) === 'b') {
+      botFirst ??= candidate;
+      if (twoFavoured === undefined) {
+        const b = firstSeriesOn(candidate, a, roster).b;
+        if (gridOf(a, b).favoured >= 2) twoFavoured = candidate;
+      }
+    }
     const score = judge(candidate, a, roster, definitions);
     if (score !== undefined) {
       if (score >= ENOUGH) return candidate;
@@ -191,7 +199,7 @@ function* search(
     }
     yield undefined;
   }
-  return best?.seed ?? botFirst ?? seed;
+  return best?.seed ?? twoFavoured ?? botFirst ?? seed;
 }
 
 /** The guided first series' seed for lineup `a` (`search`), at once: the measuring script's. */

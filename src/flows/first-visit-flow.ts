@@ -80,7 +80,8 @@ async function playFirstSeries(): Promise<void> {
   expect(location.search).toBe('?mode=bo3&fmt=reveal&step=lineup');
   // Play starts it, remembered before the series writes keys of its own.
   expect(stored()).toBe('guided');
-  expect(textOf('.lineup-guide .notice-steps-title')).toBe('How a series goes');
+  expect(textOf('.lineup-guide .coach-title')).toBe('How a series goes');
+  expect(textOf('.lineup-guide .coach-step')).toBe('1 of 3');
   expect(textOf('.lineup-mode-name')).toBe(FIRST_VISIT.play);
   expect(visible('.lineup-level-toggle'), 'Pick for me in the level’s place').toHaveLength(0);
   await checkState('the first lineup');
@@ -88,12 +89,30 @@ async function playFirstSeries(): Promise<void> {
   const names = STARTER_TRIO.map((id) => BALL_LOOKUP.get(id)?.name);
   expect(textsOf('.lineup-tray-name')).toStrictEqual(names);
   await click(button('Reveal lineups'));
+  // The first series' seed is searched for this lineup between frames (ADR 0090 addendum).
+  await until(() => location.search.includes('step=answer'), 10_000, 'round 1’s pick');
   await tossed();
   // The bot shows first (ADR 0090, D2): the first choice is an answer.
   expect(textOf('.answer-step .series-banner')).toMatch(/^Coin toss: the bot shows/);
-  expect(textOf('.answer-guide .notice-steps-title')).toBe('Your first pick');
+  expect(textOf('.answer-guide .coach-title')).toBe('Your first pick');
+  expect(textOf('.answer-guide .coach-step')).toBe('2 of 3');
+  // The coach points at the best answer: one lit row, favoured against the shown ball.
+  const lit = visible('.answer-step .pick-row[data-coached]');
+  expect(lit, 'one lit row').toHaveLength(1);
+  expect(lit[0]?.querySelector('.pick-row-badge[data-facing]')?.textContent).toMatch(/▲/);
+  if (upright()) {
+    // A phone: the banner, the coach and every pick row show without a scroll (1c).
+    const parts = ['.answer-step .series-banner', '.answer-guide', '.answer-step .pick-row'];
+    for (const node of parts.flatMap((selector) => visible(selector))) {
+      const box = node.getBoundingClientRect();
+      expect(box.top >= 0 && Math.round(box.bottom) <= window.innerHeight, node.className).toBe(
+        true,
+      );
+    }
+  }
   await checkState('the first pick');
-  await click(visible('.answer-step .pick-row-pick')[0] ?? document.body);
+  // The lit row: the answer a newcomer is shown.
+  await click(lit[0]?.querySelector('.pick-row-pick') ?? document.body);
   let coached = 0;
   for (;;) {
     await until(() => phase() !== 'playing', 90_000, 'the round to end');
@@ -101,7 +120,10 @@ async function playFirstSeries(): Promise<void> {
     const picks = visible('#series .pick-row-pick');
     if (picks.length > 0) {
       // Round 2: the player shows first, and the line says what that means.
-      expect(textOf('#series .series-coach')).toBe('The bot sees your ball before it answers.');
+      expect(textOf('#series .series-coach .coach-note')).toBe(
+        'The bot sees your ball before it answers.',
+      );
+      expect(textOf('#series .series-coach .coach-step')).toBe('3 of 3');
       coached += 1;
       await checkState('the first series’ round 2 pick');
       await click(picks[0] ?? document.body);
@@ -110,9 +132,15 @@ async function playFirstSeries(): Promise<void> {
   }
   expect(coached, 'round 2’s line showed').toBe(1);
   // The result: the new ways to play, once, and no link to copy yet.
-  expect(textOf('.series-new .notice-steps-title')).toBe('New: more ways to play');
-  expect(textsOf('.series-new li')).toContain('Play a friend with a link.');
-  expect(textsOf('.series-new li')[0]).toBe('From now on a series is Best of 5: first to 3 wins.');
+  expect(textOf('.unlock-card .unlock-title')).toBe('New: more ways to play');
+  // Folded under the sticker: Rematch and Home stay on screen; a tap opens the ways.
+  for (const name of ['Rematch', 'Home']) {
+    const box = button(name).getBoundingClientRect();
+    expect(Math.round(box.bottom) <= window.innerHeight, `${name} on screen`).toBe(true);
+  }
+  await click(visible('.unlock-summary')[0] ?? document.body);
+  expect(textsOf('.unlock-card li')).toContain('Play a friend with a link.');
+  expect(textsOf('.unlock-card li')[0]).toBe('From now on a series is Best of 5: first to 3 wins.');
   expect(visible('.series-share')).toHaveLength(0);
   expect(stored()).toBe('graduated');
   await checkState('the first series’ result');
@@ -155,7 +183,7 @@ async function firstFormats(): Promise<void> {
   }
   await click(button('Reveal lineups'));
   await until(() => visible('.answer-guide').length > 0, 5_000, 'Showdown’s box');
-  expect(textOf('.answer-guide .notice-steps-title')).toBe('How Showdown goes');
+  expect(textOf('.answer-guide .coach-title')).toBe('How Showdown goes');
   await checkState('the first Showdown pick');
   await back();
   await back();
@@ -166,7 +194,7 @@ async function firstFormats(): Promise<void> {
   await closeSheet();
   await click(visible('.home-play')[0] ?? document.body);
   await settle();
-  expect(textOf('.lineup-guide .notice-steps-title')).toBe('How Blind goes');
+  expect(textOf('.lineup-guide .coach-title')).toBe('How Blind goes');
   await checkState('the first Blind lineup');
   await back();
   await onScreen('home');

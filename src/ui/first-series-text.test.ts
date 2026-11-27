@@ -4,7 +4,9 @@ import {
   firstPickSteps,
   formatSteps,
   NEW_TAG,
-  newWaysSteps,
+  newWays,
+  NEW_WAYS_TITLE,
+  NEW_WAYS_WHERE,
   SERIES_STEPS,
   SHOW_FIRST_LINE,
 } from './first-series-text.ts';
@@ -28,7 +30,7 @@ describe('the first series’ words (ADR 0090)', () => {
     expect(steps.note).toContain('6 in 10');
     expect(SYMBOLS.strongFavoured.meaning).toContain('about 7 in 10');
     expect(steps.note).toContain('▲▲: 7 in 10');
-    expect(steps.note).toMatch(/Tap a mark to read why.$/);
+    expect(steps.note).toMatch(/The lit row is your best answer.$/);
   });
 
   it('says the other side of showing first in round 2', () => {
@@ -36,11 +38,15 @@ describe('the first series’ words (ADR 0090)', () => {
   });
 
   it('names the new ways to play once it is over, a friend only where the build has one', () => {
-    const online = newWaysSteps(true);
-    expect(online.title).toBe('New: more ways to play');
-    expect(online.items).toContain('Play a friend with a link.');
-    expect(online.note).toBe('They’re in What to play on the Play tab.');
-    expect(newWaysSteps(false).items.join(' ')).not.toContain('friend');
+    const online = newWays(true).map((way) => way.text);
+    expect(NEW_WAYS_TITLE).toBe('New: more ways to play');
+    expect(online).toContain('Play a friend with a link.');
+    expect(NEW_WAYS_WHERE).toBe('They’re in What to play on the Play tab.');
+    expect(
+      newWays(false)
+        .map((way) => way.text)
+        .join(' '),
+    ).not.toContain('friend');
   });
 
   it('teaches Showdown and Blind with their rule sentences, and Reveal by playing it', () => {

@@ -1,7 +1,7 @@
-// "How it goes": a short title and a few numbered lines in a quiet box, one look wherever the game
-// explains something in steps (ADR 0090): a notice's steps, the first series' coach boxes, the new
-// ways to play, a format's first time. A static part read in place (no live region): it is there
-// when the screen shows, so a screen reader meets it in order.
+// "How it goes": a short title and a few numbered lines in a quiet box, a notice's steps (ADR 0090).
+// Teaching before a fight is the coach's (coach.ts), the first series' unlock its card
+// (unlock-card.ts). A static part read in place (no live region): it is there when the screen
+// shows, so a screen reader meets it in order.
 import { element } from './dom.ts';
 import type { Steps } from './notice-content.ts';
 
@@ -18,24 +18,4 @@ export function createStepsBox(steps: Steps): HTMLElement {
   }
   if (steps.note !== undefined) box.append(element('p', 'notice-steps-note', steps.note));
   return box;
-}
-
-/** A place on a screen that holds a steps box or nothing, redrawn only when its words change. */
-export function createStepsPlace(className: string): {
-  readonly element: HTMLElement;
-  show(steps: Steps | undefined): void;
-} {
-  const place = element('div', className);
-  place.hidden = true;
-  let shown = '';
-  return {
-    element: place,
-    show(steps) {
-      const key = steps === undefined ? '' : JSON.stringify(steps);
-      if (key === shown) return;
-      shown = key;
-      place.replaceChildren(...(steps === undefined ? [] : [createStepsBox(steps)]));
-      place.hidden = steps === undefined;
-    },
-  };
 }

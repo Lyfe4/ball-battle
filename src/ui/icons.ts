@@ -16,6 +16,12 @@ const SHAPES = {
     'M9 7h6v14H9ZM2 12h6v9H2ZM16 15h6v6h-6ZM12 1.5l1.2 2.4l2.6.4l-1.9 1.8l.5 2.6L12 7.5L9.6 8.7l.5-2.6L8.2 4.3l2.6-.4Z',
   bot: 'M11 2h2v3h-2ZM5 6h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2ZM8.5 10a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3ZM15.5 10a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3ZM8 15h8v1.5H8Z',
   friend: FRIENDS,
+  // The first series' unlock card (ADR 0090 addendum, 1e): five balls in a row (Best of 5), two
+  // balls with a bar between (Showdown: the winner shows first), a closed eye (Blind).
+  five: 'M3 10.2a1.8 1.8 0 1 1 0 3.6a1.8 1.8 0 1 1 0-3.6ZM7.5 10.2a1.8 1.8 0 1 1 0 3.6a1.8 1.8 0 1 1 0-3.6ZM12 10.2a1.8 1.8 0 1 1 0 3.6a1.8 1.8 0 1 1 0-3.6ZM16.5 10.2a1.8 1.8 0 1 1 0 3.6a1.8 1.8 0 1 1 0-3.6ZM21 10.2a1.8 1.8 0 1 1 0 3.6a1.8 1.8 0 1 1 0-3.6Z',
+  showdown: 'M6 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8ZM18 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8ZM11 5h2v14h-2Z',
+  blind:
+    'M2 11c3 4 6.2 6 10 6s7-2 10-6l1.6 1.2C20.2 16.5 16.5 19 12 19s-8.2-2.5-11.6-6.8ZM4.6 15.6l1.6 1.2l-2 2.6l-1.6-1.2ZM11 18h2v3.5h-2ZM19.4 15.6l2 2.6l-1.6 1.2l-2-2.6Z',
   // Two links of a chain and the bar between them: "Send a link instead" (ADR 0089 addendum).
   link: 'M10 8H7a4 4 0 0 0 0 8h3v-2H7a2 2 0 0 1 0-4h3ZM14 8h3a4 4 0 0 1 0 8h-3v-2h3a2 2 0 0 0 0-4h-3ZM8 11h8v2H8Z',
 } as const;

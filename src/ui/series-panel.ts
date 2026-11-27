@@ -183,6 +183,7 @@ export function createSeriesPanel(
     bar.legend,
     status,
     result,
+    firstSeries.newWays,
     note,
     waiting,
     toss.element,
@@ -193,7 +194,6 @@ export function createSeriesPanel(
     pairing.element,
     buttons,
     share.element,
-    firstSeries.newWays,
     story.element,
   );
   exit.replaceChildren(leave.element);

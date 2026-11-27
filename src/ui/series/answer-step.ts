@@ -4,7 +4,7 @@ import type { DefinitionLookup } from '../../sim/types.ts';
 import { element } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
 import { pickLine } from '../series-text.ts';
-import { createStepsPlace, type Steps } from '../steps-box.ts';
+import { createCoach, type CoachTip } from '../coach.ts';
 import { createCoinToss } from './coin-toss.ts';
 import { createPickBanner } from './pick-banner.ts';
 import { createPickRows } from './pick-rows.ts';
@@ -18,10 +18,11 @@ export interface AnswerStep {
   /**
    * Shows round 1 of a Reveal or Showdown series about to start: Reveal's coin toss (once per
    * series), then the player's pick (an answer to the bot's shown ball, the ball they show first,
-   * or Showdown's opener). Focuses the heading. `steps` is what the pick teaches a newcomer
-   * (ADR 0090): the first series' "Your first pick", or Showdown's first time.
+   * or Showdown's opener). Focuses the heading. `tip` is what the pick teaches a newcomer
+   * (ADR 0090): the first series' "Your first pick", or Showdown's first time; `coached` the row
+   * the first pick points at (its best answer).
    */
-  open(state: SeriesState, steps?: Steps): void;
+  open(state: SeriesState, tip?: CoachTip, coached?: string): void;
 }
 
 export interface AnswerActions {
@@ -66,7 +67,7 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
   const rows = createPickRows(lookup, actions.onAnswer);
-  const teach = createStepsPlace('answer-guide');
+  const teach = createCoach('answer-guide');
   const toss = createCoinToss(() => {
     reveal();
   });
@@ -81,7 +82,8 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
     teach.element,
     rows.element,
   );
-  let steps: Steps | undefined;
+  let tip: CoachTip | undefined;
+  let coached: string | undefined;
   const nameOf = (id: string) => lookup.get(id)?.name ?? id;
   /** Each series' toss, by its seed: it flips the first time round 1 shows, never again. */
   const tossed = new Map<number, TossTimes>();
@@ -104,21 +106,22 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
         : toss.show({ first, key: String(seed), seats: BOT_SEATS, times, now: () => Date.now() });
     const tossing = stage !== undefined && stage !== 'done';
     banner.element.hidden = tossing;
-    teach.show(tossing ? undefined : steps);
+    teach.show(tossing ? undefined : tip);
     rows.element.hidden = tossing;
     track.element.hidden = tossing;
     const choice = pickChoiceOf(state);
     if (choice === undefined) return;
     banner.show(choice, first);
-    rows.show(choice);
+    rows.show(choice, undefined, coached);
     // Said once the coin has landed: the toss's own line says it while it plays.
     status.textContent = tossing ? '' : pickLine(choice, 0, remainingOf(state, 'b'), nameOf, first);
   }
 
   return {
     element: root,
-    open(state, teaches) {
-      steps = teaches;
+    open(state, teaches, best) {
+      tip = teaches;
+      coached = best;
       shownSetup = state.setup;
       root.removeAttribute('data-track-open');
       drawBar();
