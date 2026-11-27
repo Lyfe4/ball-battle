@@ -317,7 +317,8 @@ Each line is a rule; its ADR has the reasoning.
   shown by `hitReduced` (ADR 0045, 0047, 0049); it may also take more (the Balloon's shots, a
   damage event's `raised`), and an `unblockable` damage action skips it (the Banshee's wail, ADR
   0075). A held ball (the Kraken's `held` status) cruises at `HELD_SHARE`. Hitting harder is
-  `contactDamageOf(self, stats)`, never a `damage` action on hit (ADR 0015); by how head-on it hit
+  `contactDamageOf(self, stats, target)`, never a `damage` action on hit (ADR 0015), which may read
+  the target's speed as it came in, before the bounce (the Hunter's prey, ADR 0091); by how head-on it hit
   is `bumpTimesOf(directness)` (the Jouster's lance, a damage event's `times`, ADR 0077). A returning projectile
   uses `returnAfterTicks`; a zone an enemy can set off declares a swept `trigger` (ADR 0043).
 - Every ball uses `STANDARD_BALL_RADIUS`; the listed exceptions go through `radiusOf`: the Titan

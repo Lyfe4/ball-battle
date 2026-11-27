@@ -3,7 +3,7 @@
 // pitches from one major pentatonic scale on C (voices/scale.ts) so any two sounds that meet still
 // agree. Nothing is harsh: square and sawtooth waves always go through a low-pass, and nothing but
 // the series result lasts over a second. Each ball with an ability has sounds of its own that say
-// what kind of hit it is (voices/shots.ts, zones.ts, body.ts, tricks.ts, life.ts); the Brawler has
+// what kind of hit it is (voices/shots.ts, zones.ts, body.ts, tricks.ts, hunt-shell.ts, life.ts); the Brawler has
 // only the shared bump.
 import { BODY_VOICES } from './voices/body.ts';
 import { LIFE_VOICES } from './voices/life.ts';
@@ -11,6 +11,7 @@ import type { FightCue } from './cue-names.ts';
 import type { Voice } from './voices/scale.ts';
 import { SHARED_VOICES } from './voices/shared.ts';
 import { SHOT_VOICES } from './voices/shots.ts';
+import { HUNT_SHELL_VOICES } from './voices/hunt-shell.ts';
 import { TRICK_VOICES } from './voices/tricks.ts';
 import { UI_VOICES } from './voices/ui.ts';
 import { ZONE_VOICES } from './voices/zones.ts';
@@ -24,6 +25,7 @@ const FIGHT_VOICES: Readonly<Record<FightCue, Voice>> = {
   ...ZONE_VOICES,
   ...BODY_VOICES,
   ...TRICK_VOICES,
+  ...HUNT_SHELL_VOICES,
   ...LIFE_VOICES,
 } satisfies Record<FightCue, Voice>;
 

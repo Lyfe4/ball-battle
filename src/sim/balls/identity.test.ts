@@ -29,6 +29,7 @@ import { SHOT_TIMES } from './balloon.ts';
 import { banshee, WAIL_DAMAGE } from './banshee.ts';
 import { CRUSH_PER_TENTACLE, tentaclesFor } from './kraken.ts';
 import { jouster } from './jouster.ts';
+import { hunter, MOST_TIMES as MOST_PREY_TIMES, SNARE_BITE } from './hunter.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -178,19 +179,22 @@ describe('the ball roster: identity rules', () => {
       archer: ARROW_DAMAGE,
       storm: ZONE_DAMAGE,
       frost: 0,
-      // Reflection of the hardest contact hit in the roster, a raging Berserker's and a fully grown
-      // Titan's included.
+      // Reflection of the hardest contact hit in the roster, a raging Berserker's, a fully grown
+      // Titan's and the Hunter's on the slowest prey included.
       thorns: reflectFor(
         Math.max(
           ...BALLS.map((ball) => ball.contactDamage),
           berserker.contactDamage + RAGE_DAMAGE,
           titan.contactDamage * GROWN_HIT,
+          hunter.contactDamage * MOST_PREY_TIMES,
         ),
       ),
       venom: POISON_DAMAGE,
       // Its rage is contact damage, not an ability hit.
       berserker: 0,
       sniper: SHOT_DAMAGE,
+      // Its bump on prey is contact damage; a snare's bite only carries the hold.
+      hunter: SNARE_BITE,
       quake: SHOCKWAVE_DAMAGE,
       // Its pull only steers; its hits are contact hits.
       magnet: 0,
@@ -200,6 +204,8 @@ describe('the ball roster: identity rules', () => {
       // A rewind heals nothing it didn't have; it is no hit.
       chrono: 0,
       titan: 0,
+      // Its shell only changes what lands on it.
+      tortoise: 0,
       inferno: BURN_DAMAGE,
       // One hit each way; each is its own hit.
       boomerang: BOOMERANG_DAMAGE,
