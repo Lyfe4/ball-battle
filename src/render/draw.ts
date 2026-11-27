@@ -36,6 +36,7 @@ import { drawTrails } from './trails.ts';
 import { STILL } from './drift.ts';
 import { drawShadows } from './shadows.ts';
 import { drawRipples, drawTentacles } from './tentacles.ts';
+import { drawStings } from './stings.ts';
 import { drawWails } from './wails.ts';
 
 /** How big the canvas is: its backing store, and how large it appears on screen. */
@@ -213,6 +214,7 @@ export function drawWorld(
     }
   });
   drawTentacles(ctx, world);
+  drawStings(ctx, world, definitions);
   drawCurses(ctx, world, effects.reducedMotion);
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);
