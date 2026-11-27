@@ -51,7 +51,9 @@ afterAll(() => {
   rmSync(repo, { recursive: true, force: true });
 });
 
-describe('the build ignore rule', () => {
+// Each case spawns a dozen git and bash processes: well inside a second on Linux, but over Vitest's
+// 5 s on a busy Windows machine (2026-11-28). A budget of its own, as tests that play fights have.
+describe('the build ignore rule', { timeout: 30_000 }, () => {
   it('skips a push of docs, Markdown, workflows or tests alone', () => {
     const before = git('rev-parse', 'HEAD');
     const after = commit({
