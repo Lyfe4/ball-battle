@@ -8,6 +8,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { signInWith } from './account-support.ts';
 import { allowLocalRealtime } from './realtime-support.ts';
+import { asOnlineFlowDevice } from './online-device-support.ts';
 
 const BASE = process.env['ONLINE_BASE_URL'] ?? 'http://localhost:8888';
 const PHONE = { width: 390, height: 664 };
@@ -32,6 +33,7 @@ afterAll(async () => {
 
 async function phone(): Promise<Page> {
   const context = await browser.newContext({ viewport: PHONE });
+  await asOnlineFlowDevice(context);
   contexts.push(context);
   await allowLocalRealtime(context, BASE);
   return context.newPage();

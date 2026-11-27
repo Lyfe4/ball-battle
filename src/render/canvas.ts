@@ -13,13 +13,27 @@ export interface CanvasFit {
   stop(): void;
 }
 
-/** The container's content box (its padding is the page gutter), as a ResizeObserver reports it. */
+/**
+ * The container's content box (its padding is the page gutter), exactly as a ResizeObserver reports
+ * it: from its laid-out box, never `clientWidth` and `clientHeight`, which round to whole pixels. A
+ * rounded 331 for a 330.67 px box drew the first frame a pixel larger than the observer's size a
+ * frame later (ADR 0087: nothing resizes after the first paint; ADR 0090's first-visit home).
+ */
 function contentSizeOf(container: HTMLElement): { width: number; height: number } {
   const style = getComputedStyle(container);
   const px = (value: string) => Number.parseFloat(value) || 0;
+  const box = container.getBoundingClientRect();
+  const across = (a: string, b: string) =>
+    px(style.getPropertyValue(a)) + px(style.getPropertyValue(b));
   return {
-    width: container.clientWidth - px(style.paddingLeft) - px(style.paddingRight),
-    height: container.clientHeight - px(style.paddingTop) - px(style.paddingBottom),
+    width:
+      box.width -
+      across('padding-left', 'padding-right') -
+      across('border-left-width', 'border-right-width'),
+    height:
+      box.height -
+      across('padding-top', 'padding-bottom') -
+      across('border-top-width', 'border-bottom-width'),
   };
 }
 

@@ -5,6 +5,7 @@
 // the flow also proves a drawn round is replayed before home offers to resume.
 import { expect } from 'vitest';
 import { BOT_LEVEL_STORAGE_KEY } from '../app/bot-level.ts';
+import { SERIES_LENGTH_STORAGE_KEY } from '../app/series-length.ts';
 import { SERIES_STORAGE_KEY } from '../app/series-save.ts';
 import { SPEED_STORAGE_KEY } from '../app/speed.ts';
 import { pinSeed } from './fixed-seed.ts';
@@ -105,6 +106,8 @@ const DRAWN_ROUND_1 = 798;
 export async function runHomeResumeFlow(): Promise<void> {
   window.localStorage.setItem(SPEED_STORAGE_KEY, '2');
   window.localStorage.setItem(BOT_LEVEL_STORAGE_KEY, 'normal');
+  // The pinned draw is a Best of 3's (a new series is Best of 5 unless chosen, ADR 0090 addendum).
+  window.localStorage.setItem(SERIES_LENGTH_STORAGE_KEY, '3');
   pinSeed(DRAWN_ROUND_1);
   const framed = await openFramed('');
 

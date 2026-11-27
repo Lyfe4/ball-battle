@@ -13,7 +13,9 @@ import {
   withLinkPicks,
   type SeriesSession,
 } from '../../app/series-session.ts';
-import { randomBot } from '../../sim/bot.ts';
+import { botShowsFirstSeed, FIRST_SERIES } from '../../app/first-series-setup.ts';
+import { BALLS } from '../../sim/balls/index.ts';
+import { easyBot, randomBot } from '../../sim/bot.ts';
 import { RULESET_VERSION } from '../../sim/ruleset.ts';
 import {
   FORMATS,
@@ -51,6 +53,9 @@ interface Breadth {
 }
 const FULL: Breadth = { draws: MAX_DRAWS, picks: Infinity };
 
+/** The guided first series (ADR 0090) is walked as its screen shows it. */
+let guided = false;
+
 /** The screen at this moment: settled says whether the match on screen has ended. */
 const screenOf = (session: SeriesSession, settled: boolean): SeriesScreen =>
   seriesScreenOf({
@@ -58,6 +63,7 @@ const screenOf = (session: SeriesSession, settled: boolean): SeriesScreen =>
     current: session.current,
     settled,
     linkState: withLinkPicks(session),
+    guided,
   });
 
 interface Walked {
@@ -182,4 +188,37 @@ describe('no dead ends in a Best of 5 (ADR 0048)', () => {
       expect(replayed.decided).toHaveLength(live.decided.length);
     });
   }
+});
+
+describe('no dead ends in the guided first series (ADR 0090)', () => {
+  it('offers a way on at every moment, from the bot’s first shown ball to the result', () => {
+    guided = true;
+    try {
+      const seed = botShowsFirstSeed(11);
+      const setup: SeriesSetup = {
+        ...setupOf(
+          FIRST_SERIES.format,
+          easyBot.pickLineup(
+            seed,
+            BALLS.map((ball) => ball.id),
+            3,
+          ),
+        ),
+        seed,
+        opponent: { kind: 'bot', bot: FIRST_SERIES.level, lineupSeed: seed },
+      };
+      const start = resolvePicks(beginSession(setup), randomBot);
+      // The bot shows first: round 1 opens on the player's answer.
+      const answers = screenOf(start, false).choice;
+      expect(answers?.kind).toBe('answer');
+      const live: Walked = { moments: 0, decided: [], deadEnds: [] };
+      for (const ball of answers?.options ?? []) {
+        walk(resolvePicks(pickInSession(start, ball), randomBot), live, []);
+      }
+      expect(live.deadEnds).toStrictEqual([]);
+      expect(live.decided.length).toBeGreaterThan(0);
+    } finally {
+      guided = false;
+    }
+  });
 });

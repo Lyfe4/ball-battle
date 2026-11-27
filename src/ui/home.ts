@@ -1,10 +1,11 @@
 import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
-import type { SeriesState } from '../sim/series.ts';
+import type { Format, SeriesState } from '../sim/series.ts';
 import type { Opponent, PlayChoice } from '../app/modes.ts';
 import { busyOnClick } from './busy-button.ts';
 import { shapeIcon } from './icons.ts';
+import { FIRST_VISIT } from './first-series-text.ts';
 import { createPlaySheet } from './play-sheet.ts';
 import { createScreenHeader } from './screen-header.ts';
 import {
@@ -33,12 +34,16 @@ export interface HomeActions {
   /** The sheet changed what Play starts: remembered on this device. */
   readonly onChoice: (choice: PlayChoice) => void;
   readonly onFreePlay: () => void;
+  /** A first visit's Skip: show me everything (ADR 0090, D6): the whole tab from now on. */
+  readonly onSkip: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
   /** Against a friend, whether Play asks who (signed in) rather than sending a link. */
   readonly asksWho?: () => boolean;
   /** What to play offers Live or By turns against a friend (ADR 0085). */
   readonly turns?: boolean;
+  /** A format What to play tags "New" (ADR 0090): not tried since the first series. */
+  readonly isNew?: (format: Format) => boolean;
 }
 
 export interface Home {
@@ -49,9 +54,10 @@ export interface Home {
   setWaiting(waiting: boolean): void;
   /**
    * The box says what Play starts (`choice`), Play says it too, or against the bot with a series
-   * held, Resume series with its format and score, and New series.
+   * held, Resume series with its format and score, and New series. `firstVisit` (ADR 0090): no box
+   * and no Free play, the pitch in the demo's line, Play's line "Your first series", and the skip.
    */
-  setPlay(choice: PlayChoice, held: SeriesState | undefined): void;
+  setPlay(choice: PlayChoice, held: SeriesState | undefined, firstVisit?: boolean): void;
   /**
    * Arriving on the tab (a visit, a tab, Back): the sheet closes if it was open, and focus moves to
    * Play (or Resume series), the one obvious first action.
@@ -92,6 +98,9 @@ export function createHome(
 
   let choice: PlayChoice | undefined;
   let held: SeriesState | undefined;
+  /** A first visit (ADR 0090): Play is the one action, the guided first series. */
+  let firstVisit = false;
+  let demoText = '';
 
   // What Play starts, in one tappable box (ADR 0081 addendum, Option B): who, then the rules; its
   // arrow the one every link draws (`.text-link::after`). It opens the sheet that changes them.
@@ -114,6 +123,7 @@ export function createHome(
       if (!root.hidden) box.focus({ preventScroll: true });
     },
     ...(actions.turns === undefined ? {} : { turns: actions.turns }),
+    ...(actions.isNew === undefined ? {} : { isNew: actions.isNew }),
   });
   box.addEventListener('click', () => {
     if (choice !== undefined) sheet.open(choice);
@@ -149,7 +159,10 @@ export function createHome(
     return button;
   };
   const more = element('div', 'home-more');
-  more.append(link(FREE_PLAY, actions.onFreePlay), fresh);
+  const freePlay = link(FREE_PLAY, actions.onFreePlay);
+  // A first visit's way to the whole tab, in Free play's place (ADR 0090, D6): it shows more.
+  const skip = link(FIRST_VISIT.skip, actions.onSkip);
+  more.append(freePlay, skip, fresh);
 
   const strip = element('ul', 'home-strip');
   strip.setAttribute('aria-label', `${String(balls.length)} balls`);
@@ -180,6 +193,12 @@ export function createHome(
   /** The box and Play as the choice and the held series say. */
   function showPlay(): void {
     if (choice === undefined) return;
+    setHidden(box, firstVisit);
+    setHidden(freePlay, firstVisit);
+    setHidden(skip, !firstVisit);
+    // The desktop's pitch is said once: in the demo's line on a first visit.
+    setHidden(pitch, firstVisit);
+    setText(demoLine, firstVisit ? FIRST_VISIT.pitch : demoText);
     // Who and the rules, never a person: Play asks who (ADR 0089 addendum of 2026-11-27).
     if (iconOf !== choice.opponent) {
       iconOf = choice.opponent;
@@ -192,11 +211,14 @@ export function createHome(
     const resumed = bot ? held : undefined;
     setText(playLabel, resumed === undefined ? PLAY_LABEL : RESUME_PLAY.label);
     // Play's rules are the box's, said to a screen reader in Play's name; a held series has its
-    // own (its format and score), so Resume series shows them.
-    setText(playMeta, resumed === undefined ? '' : resumeLine(resumed));
-    setHidden(playMeta, resumed === undefined);
+    // own (its format and score), so Resume series shows them, and a first visit has no box, so
+    // Play says what it starts.
+    const meta = resumed === undefined ? (firstVisit ? FIRST_VISIT.play : '') : resumeLine(resumed);
+    setText(playMeta, meta);
+    setHidden(playMeta, meta === '');
     let spoken = friendPlaySpoken(choice.friend, actions.asksWho?.() ?? false);
     if (bot) spoken = resumed === undefined ? playSpoken(choice.bot) : resumeSpoken(resumed);
+    if (firstVisit && resumed === undefined) spoken = FIRST_VISIT.playSpoken;
     play.setAttribute('aria-label', spoken);
     fresh.hidden = resumed === undefined;
   }
@@ -208,14 +230,16 @@ export function createHome(
     },
     showDemo(a, b) {
       const name = (id: string) => byId.get(id)?.name ?? id;
-      setText(demoLine, `Demo match: ${name(a)} vs ${name(b)}`);
+      demoText = `Demo match: ${name(a)} vs ${name(b)}`;
+      if (!firstVisit) setText(demoLine, demoText);
     },
     setWaiting(waiting) {
       watch.hidden = !waiting;
     },
-    setPlay(next, nextHeld) {
+    setPlay(next, nextHeld, nextFirstVisit = false) {
       choice = next;
       held = nextHeld;
+      firstVisit = nextFirstVisit;
       showPlay();
     },
     arrive() {

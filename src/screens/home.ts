@@ -3,6 +3,8 @@
 // Play and Free play (ADR 0055, 0081 Option B). main.ts owns the arena and hands this module what it
 // needs through `HomeHost`.
 import { demoAt } from '../app/demo.ts';
+import { firstSeries } from '../app/first-series-device.ts';
+import { FIRST_SERIES } from '../app/first-series-setup.ts';
 import {
   loadPlayChoice,
   loadPlaySetup,
@@ -10,6 +12,7 @@ import {
   savePlayChoice,
   writePlayParams,
   type FriendSetup,
+  type PlayChoice,
 } from '../app/modes.ts';
 import { writePickParams } from '../app/route.ts';
 import { browserStorage as storage } from '../app/storage.ts';
@@ -71,11 +74,26 @@ export function createHomeController(
   let waiting = false;
   let queued: number | undefined;
 
-  /** Play (ADR 0055): the last series set up against the bot, at its lineup, one tap from home. */
+  /**
+   * Play (ADR 0055): the last series set up against the bot, at its lineup, one tap from home; on a
+   * first visit, the guided first series (ADR 0090), never saved as Play's.
+   */
   const play = () => {
+    // The guided series starts here: remembered before it writes keys of its own.
+    if (!firstSeries.done()) firstSeries.begin();
     host.go((url) => {
-      writePlayParams(url, loadPlaySetup(storage));
+      writePlayParams(url, firstSeries.done() ? loadPlaySetup(storage) : FIRST_SERIES);
     });
+  };
+
+  /** What the box and Play say now: on a first visit, the first series against the bot. */
+  const showPlay = () => {
+    const remembered = loadPlayChoice(storage, PLAY_CHOICES);
+    const first = !firstSeries.done();
+    const choice: PlayChoice = first
+      ? { ...remembered, opponent: 'bot', bot: FIRST_SERIES }
+      : remembered;
+    home.setPlay(choice, host.held(), first);
   };
 
   const home = createHome(root, balls, PLAY_CHOICES, {
@@ -89,9 +107,18 @@ export function createHomeController(
       host.forget();
       play();
     },
-    // Each opponent's rules are remembered as they are chosen (ADR 0081 addendum).
+    // Each opponent's rules are remembered as they are chosen (ADR 0081 addendum); a format chosen
+    // is no longer new (ADR 0090).
     onChoice: (choice) => {
       savePlayChoice(storage, choice);
+      firstSeries.chose(choice.opponent === 'friend' ? choice.friend.format : choice.bot.format);
+    },
+    isNew: (format) => firstSeries.isNew(format),
+    // The whole tab at once, in place: no reload, no other screen (ADR 0090, D6).
+    onSkip: () => {
+      firstSeries.skip();
+      showPlay();
+      home.arrive();
     },
     // Free play opens on the pair the demo is showing (ADR 0020).
     onFreePlay: () => {
@@ -131,7 +158,7 @@ export function createHomeController(
     },
     open() {
       // As last chosen on this device: a setup or a lineup may have changed it.
-      home.setPlay(loadPlayChoice(storage, PLAY_CHOICES), host.held());
+      showPlay();
       waiting = reducedMotion.matches;
       home.setWaiting(waiting);
       startDemo();

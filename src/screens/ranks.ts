@@ -1,6 +1,6 @@
-// The Ranks tab (ADR 0081), in builds with accounts only (previews and staging): the trophy road, a
-// friends board and an everyone board, each a coming-soon card (coming-soon.ts) that reads
-// nothing, and a way on: play a friend now. It ships to production once it holds one real thing.
+// The Ranks tab (ADR 0081), in builds with accounts only (previews and staging): one coming-soon
+// card (coming-soon.ts, ADR 0090 D5) that reads nothing, saying ranked is coming, and a way on:
+// play a friend now. It ships to production once it holds one real thing.
 import { createComingSoon } from '../ui/coming-soon.ts';
 import { element } from '../ui/dom.ts';
 import { createScreenHeader } from '../ui/screen-header.ts';
@@ -25,14 +25,14 @@ export function createRanks(root: HTMLElement, host: RanksHost): RanksScreen {
   const header = createScreenHeader(RANKS.title, 'Back', host.back, { tab: 'ranks' });
   const body = element('div', 'ranks');
   const intro = element('p', 'ranks-intro', RANKS.intro);
-  const cards = RANKS.cards.map((card) => createComingSoon(card.title, [], card.line));
+  const card = createComingSoon(RANKS.card.title, [], RANKS.card.line);
   const play = element('button', 'hud-button hud-button-primary', RANKS.button);
   play.type = 'button';
   play.addEventListener('click', host.playFriend);
-  // The boards in one box: on a desktop they fill the main column beside the intro and its button
-  // (frame.css, ADR 0087); on a phone they stand between them, as one column.
+  // The card in the boards' box: on a desktop it fills the main column beside the intro and its
+  // button (frame.css, ADR 0087); on a phone it stands between them, as one column.
   const boards = element('div', 'ranks-boards');
-  boards.append(...cards);
+  boards.append(card);
   body.append(intro, boards, play);
   root.replaceChildren(header.element, body);
   return {

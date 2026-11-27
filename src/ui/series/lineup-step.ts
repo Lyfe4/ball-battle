@@ -16,7 +16,21 @@ import {
 } from '../lineup-draft.ts';
 import { setupLine } from '../modes-text.ts';
 import { createScreenHeader } from '../screen-header.ts';
+import { createStepsPlace, type Steps } from '../steps-box.ts';
 import { createLevelChoice } from './level-choice.ts';
+
+/**
+ * What a lineup teaches, for a newcomer (ADR 0090): the first series' "How a series goes" and Pick
+ * for me, or a format's first time ("How it goes" in Blind).
+ */
+export interface LineupGuide {
+  /** A box between the rules and the tray. */
+  readonly steps?: Steps;
+  /** In the level's place, Pick for me: fills the tray with these (still changed by a tap). */
+  readonly pickForMe?: Lineup;
+  /** In place of the rules line: "Your first series · vs Easy bot". */
+  readonly line?: string;
+}
 
 export interface LineupStep {
   readonly element: HTMLElement;
@@ -36,6 +50,8 @@ export interface LineupStep {
   ): void;
   /** The lineup in the tray, complete or not. */
   draft(): Draft;
+  /** What this lineup teaches, after `open`; undefined teaches nothing (every later lineup). */
+  guide(guide: LineupGuide | undefined): void;
   /**
    * The line under what the lineup is for, against a player picking theirs at the same time ("Jo
    * is choosing · 42 s", ADR 0080); undefined hides it. Written only when it changes.
@@ -60,6 +76,9 @@ export interface LineupActions {
 }
 
 const TRAY_ICON_PX = 36;
+
+/** The first series' quick start (ADR 0090): a ready-made lineup, changed like any other. */
+export const PICK_FOR_ME = 'Pick for me';
 
 /**
  * Picking the balls for a series, phone first and showing little (ADR 0025): a tray of three slots
@@ -89,7 +108,21 @@ export function createLineupStep(
   const statusLine = element('p', 'lineup-status');
   statusLine.setAttribute('role', 'status');
   statusLine.hidden = true;
-  mode.append(modeName, level.element, statusLine);
+  const pickForMe = element(
+    'button',
+    'hud-button hud-button-compact lineup-pick-for-me',
+    PICK_FOR_ME,
+  );
+  pickForMe.type = 'button';
+  pickForMe.hidden = true;
+  let starters: Lineup | undefined;
+  pickForMe.addEventListener('click', () => {
+    if (starters === undefined) return;
+    update(draftOf(starters, (id) => byId.has(id), size));
+    done.focus();
+  });
+  mode.append(modeName, level.element, pickForMe, statusLine);
+  const teach = createStepsPlace('lineup-guide');
   if (actions.onRules !== undefined) {
     const onRules = actions.onRules;
     const change = element('button', 'hud-button hud-button-compact lineup-rules', 'Change');
@@ -145,7 +178,10 @@ export function createLineupStep(
   footer.append(done);
   /** The same button, by a name `open`'s `done` (its words) doesn't hide. */
   const doneButton = done;
-  root.append(header.element, mode, tray, grid.element, footer);
+  root.append(header.element, mode, teach.element, tray, grid.element, footer);
+  /** The rules line as `open` wrote it, for a guide that is taken away. */
+  let rulesLine = '';
+  let levelShown = false;
 
   /** Reveal and Showdown pick each round's ball as they go, so the lineup has no order. */
   const unordered = () => format !== 'blind';
@@ -208,15 +244,14 @@ export function createLineupStep(
       // bot goes on quietly.
       if (done === undefined) delete doneButton.dataset['sound'];
       else doneButton.dataset['sound'] = 'tap';
-      setText(
-        modeName,
-        [setupLine(format, size), ...(pace === undefined ? [] : [pace])].join(' · '),
-      );
+      rulesLine = [setupLine(format, size), ...(pace === undefined ? [] : [pace])].join(' · ');
+      setText(modeName, rulesLine);
       // Five slots share the row in a Best of 5 (series-setup.css).
       tray.style.setProperty('--tray-slots', String(size));
       tray.classList.toggle('lineup-tray-compact', size > 3);
       // Blind has no choices a level changes (ADR 0035), so no level to show.
-      level.element.hidden = nextLevel === undefined || !botChooses(format);
+      levelShown = nextLevel !== undefined && botChooses(format);
+      level.element.hidden = !levelShown;
       if (nextLevel !== undefined) level.show(nextLevel);
       // In Reveal the order isn't set here (the sides take turns showing), so no numbers.
       tray.classList.toggle('lineup-tray-unordered', unordered());
@@ -225,6 +260,14 @@ export function createLineupStep(
       header.focus();
     },
     draft: () => draft,
+    guide(guide) {
+      starters = guide?.pickForMe;
+      setHidden(pickForMe, starters === undefined);
+      // Pick for me takes the level's place: the first series' bot is set (ADR 0090).
+      level.element.hidden = !levelShown || starters !== undefined;
+      setText(modeName, guide?.line ?? rulesLine);
+      teach.show(guide?.steps);
+    },
     status(text) {
       setHidden(statusLine, text === undefined);
       if (text !== undefined) setText(statusLine, text);

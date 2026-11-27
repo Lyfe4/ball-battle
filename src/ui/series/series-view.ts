@@ -230,6 +230,11 @@ export interface SeriesMoment {
   /** Who the player is, and the other side's name: the bot offline (`BOT_SEATS`). */
   readonly seats?: Seats;
   /**
+   * The guided first series (ADR 0090): round 2's pick says what showing first means, and the
+   * result shows the new ways to play, with no link to copy (there is nobody to send it to yet).
+   */
+  readonly guided?: boolean;
+  /**
    * Who must pick now, when a server says so (an online series, ADR 0052): Showdown's opener is
    * due from both sides at once, which the sim records A first. Offline it is the sim's own.
    */

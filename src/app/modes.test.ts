@@ -41,9 +41,15 @@ function memory(entries: Record<string, string> = {}) {
 }
 
 describe('home’s Play (ADR 0055)', () => {
-  it('is Best of 3 · Reveal · vs Normal bot on a first visit', () => {
-    expect(FIRST_PLAY).toStrictEqual({ format: 'reveal', bestOf: 3, level: 'normal' });
+  it('is Best of 5 · Reveal · vs Normal bot with nothing chosen (ADR 0090 addendum)', () => {
+    expect(FIRST_PLAY).toStrictEqual({ format: 'reveal', bestOf: 5, level: 'normal' });
     expect(loadPlaySetup(memory().storage)).toStrictEqual(FIRST_PLAY);
+  });
+
+  it('keeps a length the player chose: Best of 3 stays Best of 3', () => {
+    const chosen = memory({ [SERIES_LENGTH_STORAGE_KEY]: '3' });
+    expect(loadPlaySetup(chosen.storage).bestOf).toBe(3);
+    expect(loadFriendSetup(memory({ [FRIEND_BEST_OF_STORAGE_KEY]: '3' }).storage).bestOf).toBe(3);
   });
 
   it('remembers the last series set up against the bot: length, format and level', () => {
@@ -92,8 +98,8 @@ describe('what the Play tab’s box starts (ADR 0081, Option B)', () => {
     expect(playChoicesFor(false)).toStrictEqual(['bot']);
   });
 
-  it('is the bot on a first visit, and a live Best of 3 · Reveal for a friend', () => {
-    expect(FIRST_FRIEND).toStrictEqual({ format: 'reveal', bestOf: 3, turns: false });
+  it('is the bot on a first visit, and a live Best of 5 · Reveal for a friend', () => {
+    expect(FIRST_FRIEND).toStrictEqual({ format: 'reveal', bestOf: 5, turns: false });
     expect(loadPlayChoice(memory().storage, ['bot', 'friend'])).toStrictEqual({
       opponent: 'bot',
       bot: FIRST_PLAY,

@@ -1,6 +1,6 @@
 // The Play tab (ADR 0055, 0081), through the real page. Run at 375 x 812 and 390 x 664 with touch,
 // 1280 x 800 and 1920 x 1080: the mode box and Play show whole without a scroll, clear of the tab
-// bar; Play opens the remembered series' lineup in one tap (a first visit: Best of 3 · Reveal · vs
+// bar; Play opens the remembered series' lineup in one tap (nothing chosen: Best of 5 · Reveal · vs
 // Normal bot), the level is changed there and remembered; the box's sheet changes the rules, which
 // become Play's; old setup links still open the bot's setup, whose choices survive Back from the
 // lineup and become Play's; Free play and the Balls tab are one step in; Back from every screen
@@ -122,16 +122,16 @@ async function play(): Promise<void> {
   const plays = visible('.home-play');
   expect(plays).toHaveLength(1);
   expect(plays[0]?.getAttribute('aria-label')).toBe(
-    'Play Best of 3, Reveal, against the Normal bot',
+    'Play Best of 5, Reveal, against the Normal bot',
   );
-  expect(playMeta()).toBe('vs Normal bot · Best of 3 · Reveal');
+  expect(playMeta()).toBe('vs Normal bot · Best of 5 · Reveal');
   checkPlayShows();
   if (plays[0] !== undefined) await click(plays[0]);
   await settle();
 
-  expect(search()).toBe('?mode=bo3&fmt=reveal&step=lineup');
+  expect(search()).toBe('?mode=bo5&fmt=reveal&step=lineup');
   expect(visible('.rules-step')).toHaveLength(0);
-  expect(setupLine()).toBe('Best of 3 · Reveal');
+  expect(setupLine()).toBe('Best of 5 · Reveal');
   expect(levelToggle()?.textContent).toContain('vs Normal bot');
   checkStop('Play lineup');
 
@@ -149,21 +149,21 @@ async function play(): Promise<void> {
   await click(toggle);
   await userEvent.keyboard('{Escape}');
   expect(toggle.getAttribute('aria-expanded')).toBe('false');
-  expect(search()).toBe('?mode=bo3&fmt=reveal&step=lineup');
+  expect(search()).toBe('?mode=bo5&fmt=reveal&step=lineup');
 
   // The series is played against the level chosen here.
-  await pickLineup(['storm', 'berserker', 'brawler']);
+  await pickLineup(['storm', 'berserker', 'brawler', 'archer', 'venom']);
   await click(button('Reveal lineups'));
   await settle();
   expect(visible('.answer-step .series-bar-about')[0]?.textContent).toBe(
-    'Best of 3 · Reveal · Easy',
+    'Best of 5 · Reveal · Easy',
   );
   await back();
-  expect(search()).toBe('?mode=bo3&fmt=reveal&step=lineup');
+  expect(search()).toBe('?mode=bo5&fmt=reveal&step=lineup');
   // A lineup reached from Play goes back home.
   await inAppBack();
   expect(search()).toBe('');
-  expect(playMeta()).toBe('vs Easy bot · Best of 3 · Reveal');
+  expect(playMeta()).toBe('vs Easy bot · Best of 5 · Reveal');
 }
 
 /**

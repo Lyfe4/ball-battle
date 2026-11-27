@@ -2,7 +2,9 @@
 
 - Status: Accepted
 - Date: 2026-11-13
-- Amended by: ADR 0055 (the length is chosen on each opponent's setup screen)
+- Amended by: ADR 0055 (the length is chosen on each opponent's setup screen), ADR 0090 addendum
+  (2026-11-27: Best of 5 is now the default length of a new series, after a device's guided first
+  series, unless the player chose otherwise; a link with no length is still Best of 3)
 - Amends: ADR 0017 (a series' length is part of its setup), ADR 0035 (Hard plays any length),
   ADR 0046 (§2: Other modes lists every format under a length choice)
 

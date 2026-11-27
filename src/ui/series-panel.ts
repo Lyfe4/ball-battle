@@ -25,6 +25,8 @@ import { createPickRows } from './series/pick-rows.ts';
 import { createSeriesBar } from './series/series-bar.ts';
 import { createSeriesTrack } from './series/series-track.ts';
 import { createMatchStory } from './match-story.ts';
+import { createFirstSeriesParts } from './series/first-series-parts.ts';
+import { createShareLink } from './series/share-link.ts';
 import {
   lastPlayOf,
   offersLeave,
@@ -147,6 +149,8 @@ export function createSeriesPanel(
   const toss = createSeriesToss(() => actions.onRedraw?.());
   const banner = createPickBanner(definitions);
   const picks = createPickRows(definitions, actions.onPick);
+  // The first series' round 2 line and its result's new ways to play (ADR 0090).
+  const firstSeries = createFirstSeriesParts();
 
   // How the round just played was won (ADR 0036, 0037), between rounds and at the end: last, and
   // quiet while a pick is asked for, so it never competes with the choice.
@@ -170,9 +174,7 @@ export function createSeriesPanel(
   const waiting = element('div', 'series-waiting');
   let waitingKey = '';
   buttons.append(next, again, rematch, decline, newSeries, home);
-  const share = button('Copy link', 'hud-button series-share', () => {
-    void copyLink();
-  });
+  const share = createShareLink();
   // Leaving forgets the series (ADR 0042), so it is asked once, in place. Online it doesn't.
   const leave = createLeaveConfirm(actions.onLeave, !online);
   root.append(
@@ -186,10 +188,12 @@ export function createSeriesPanel(
     toss.element,
     track.element,
     banner.element,
+    firstSeries.coach,
     picks.element,
     pairing.element,
     buttons,
-    share,
+    share.element,
+    firstSeries.newWays,
     story.element,
   );
   exit.replaceChildren(leave.element);
@@ -199,17 +203,6 @@ export function createSeriesPanel(
     node.type = 'button';
     node.addEventListener('click', onClick);
     return node;
-  }
-
-  /** The finished series' link (already in the address bar) to the clipboard. */
-  async function copyLink(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setText(share, 'Link copied');
-    } catch {
-      // No clipboard (an insecure context, or refused): the address bar still holds the link.
-      setText(share, 'Copy the address bar to share');
-    }
   }
 
   // The same opening world for the same play, so the story isn't reset every frame.
@@ -350,8 +343,13 @@ export function createSeriesPanel(
       setHidden(newSeries, !fresh);
       setHidden(home, !actions.includes('home'));
       setHidden(buttons, !play && !asked && !watch && !fresh && !actions.includes('decline'));
-      setHidden(share, !finished || online);
-      if (!finished) setText(share, 'Copy link');
+      share.show(finished && !online && moment.guided !== true);
+      firstSeries.show(
+        moment.guided === true,
+        choice,
+        actions.includes('pick') && !tossing,
+        finished,
+      );
       leave.setHidden(!offersLeave(screen, moment.online));
       leave.setLive(moment.online?.live === true);
       const said = playing ? undefined : moment.online?.note;

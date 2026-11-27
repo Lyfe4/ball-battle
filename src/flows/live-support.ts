@@ -7,6 +7,7 @@ import { expect } from 'vitest';
 import { attemptWatchMs, LEAD_MS, roundWatchMs, TOSS_LEAD_MS } from '../api/live.ts';
 import { MATCH_TIME_LIMIT_TICKS } from '../sim/constants.ts';
 import { MAX_ATTEMPTS } from '../sim/series.ts';
+import { asOnlineFlowDevice } from './online-device-support.ts';
 import { allowLocalRealtime, blockRealtime, watchPage } from './realtime-support.ts';
 
 /**
@@ -124,6 +125,7 @@ export async function phone(
 ): Promise<Page> {
   const context = await phones.browser.newContext({ viewport });
   phones.contexts.push(context);
+  await asOnlineFlowDevice(context);
   await allowLocalRealtime(context, phones.base);
   if (phones.blocked === true) await blockRealtime(context);
   const page = await context.newPage();

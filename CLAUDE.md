@@ -10,14 +10,15 @@ formats (blind, reveal, showdown; ADR 0019, 0021, 0029, 0035) and three bot leve
 online (previews, staging, and the live site behind the vs Friend switch, ADR 0068), live friend matches in Reveal and Showdown (ADR 0052, 0053), their lineups picked together after accepting (ADR 0080);
 accounts, friends and Realtime pokes (ADR 0079, 0082) on staging, off in production; play by turns
 with a friend on previews and staging only (ADR 0085); the social and frame batches (ADR 0086, 0087).
-Next: the two-phone playtest (`docs/turns-playtest.md`), then accounts and pokes in production
+A brand-new device's first series is guided (ADR 0090, `src/app/first-series.ts`): Easy bot, the
+bot shows first by seed, home shows less until it is over. Next: the two-phone playtest (`docs/turns-playtest.md`), then accounts and pokes in production
 (`docs/production-accounts-runbook.md`, after the move to Netlify Pro in Sydney, ADR 0084).
 Ranked (ADR 0083, `docs/ranked-proposal.md`): trophies over a hidden Glicko-2, by turns first;
 groundwork only (rating maths, schema), nothing a player sees until then.
 The Play tab (ADR 0055, 0081, `src/app/modes.ts`): a box over Play says what Play starts and opens
 "What to play" (who, length, format, the bot's level), remembered per opponent; Play goes straight
-in (first visit: Best of 3 · Reveal · vs Normal bot to its lineup; vs Friend in online builds sends
-the challenge and shows its link). The series rules and bots are pure sim code
+in (a new device: the guided first series, ADR 0090; after it, Best of 5 · Reveal · vs Normal bot
+to its lineup; vs Friend in online builds sends the challenge and shows its link). The series rules and bots are pure sim code
 (`src/sim/series.ts`, `src/sim/bot.ts`), the same functions a server would run, so keep them
 deterministic and DOM-free. Every decision is an ADR in `docs/decisions/` (indexed in its
 README, with status); the last audit is `docs/audit-2026-11.md`.
@@ -174,8 +175,9 @@ Each line is a rule; its ADR has the reasoning.
   the route, a saved series after a reload and a future server all use it; no second check.
   Series data from outside is read only by `decodeSeriesSetup` (`src/sim/series-decode.ts`),
   which `verifySeries` runs first; it takes `unknown` and never throws.
-- A series' length is `SeriesSetup.bestOf` (absent is 3, `mode=bo5` in a link), never a constant
-  (ADR 0048).
+- A new series is Best of 5 unless the player chose a length (`NEW_SERIES_BEST_OF`, ADR 0090
+  addendum); only the guided first series is Best of 3. A series' length is `SeriesSetup.bestOf`
+  (absent is 3, `mode=bo5` in a link), never a constant (ADR 0048).
 - Rules read a series' seeds only through `src/sim/series-seeds.ts` (`roundSeedOf`,
   `firstToShowOf`, `botSeedOf`): a local series and a link derive them from `seed`, a server
   series names them in `SeriesSetup.seeds`, secret until each lock (ADR 0051, 0052). The server
@@ -364,6 +366,9 @@ Each line is a rule; its ADR has the reasoning.
   disabled before it is trusted.
 - A new screen state or format must pass `no-dead-end.test.ts` (ADR 0027); a new screen gets a key
   in `screenKeyOf` and a flow in `history-rules.test.ts` (ADR 0025).
+- Browser flows start as a device past its guided first series (`browser-setup.ts`, ADR 0090); a
+  first-visit flow starts with `openAsNewDevice`. A key a first page load writes must never mean
+  "played before" (`PLAYED_KEYS`).
 
 **UI**
 

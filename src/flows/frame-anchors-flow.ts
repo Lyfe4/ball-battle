@@ -12,6 +12,7 @@
 // row's top differ by no more than half a pixel, and the page's width doesn't change (a scrollbar
 // coming and going). With a friend's banner open (ADR 0086) nothing moves: it floats over the row.
 import { expect } from 'vitest';
+import { firstSeries } from '../app/first-series-device.ts';
 import { LATER_NAME } from '../screens/incoming-text.ts';
 import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
 import { TURNS_SERIES, turnsAnswers } from './online-looks-support.ts';
@@ -38,6 +39,15 @@ export const FRAME_SCREENS: readonly (readonly [name: string, search: string, sc
   ['the lineup', '?mode=bo3&fmt=reveal&step=lineup', 'series'],
   ['Free play', '?view=pick', 'pick'],
   ['an older link', '?a=brawler&b=vampire&seed=7&v=1', 'outdated'],
+];
+
+/**
+ * A brand-new device's Play and lineup (ADR 0090): the guided first visit, in the same frame. The
+ * device is made new for them (Show all tips again does it), then skips back to everything.
+ */
+export const FIRST_VISIT_SCREENS: readonly (readonly [name: string, search: string])[] = [
+  ['Play, a first visit', ''],
+  ['the first lineup', '?mode=bo3&fmt=reveal&step=lineup'],
 ];
 
 /**
@@ -269,6 +279,17 @@ export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
     seen.push({ name, screen, anchors: headerAnchors(name, content) });
     await bannerMovesNothing(name);
   }
+  firstSeries.reset();
+  for (const [name, search] of FIRST_VISIT_SCREENS) {
+    const screen = search === '' ? 'home' : 'series';
+    await follow('?view=manual');
+    await follow(search);
+    await until(() => screenOn() === screen, 5_000, name, false);
+    await settle();
+    const content = screen === 'home' && checks.play !== 'frame' ? 'skip' : 'check';
+    seen.push({ name, screen, anchors: headerAnchors(name, content) });
+  }
+  firstSeries.skip();
   const whole = seen.filter((one) => one.screen !== 'home' || checks.play === 'frame');
   const first = whole[0];
   if (first === undefined) throw new Error('No screen to compare');

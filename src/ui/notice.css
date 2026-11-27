@@ -104,27 +104,6 @@
   rotate: 180deg;
 }
 
-/* "How it goes": three short steps in a box. */
-.notice-steps {
-  padding: var(--space-gap) var(--space-gutter);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-}
-
-.notice-steps-title {
-  margin: 0 0 var(--space-small);
-  font-size: var(--font-size-lead);
-  font-weight: 800;
-}
-
-.notice-steps-list {
-  display: grid;
-  gap: var(--space-small);
-  margin: 0;
-  padding-left: 1.25em;
-  line-height: 1.4;
-}
-
 /* A field to type in (ADR 0079): an email, a sign-in code. Full width, big enough to tap. */
 .notice-field {
   display: grid;

@@ -1,17 +1,23 @@
 // The ways to play and where each leads (ADR 0046, 0055, 0081). The Play tab's mode box says what
 // Play starts, and its sheet changes it (ADR 0081 addendum, Option B): who (vs Bot, and vs Friend in
 // builds with online play) and each opponent's rules, remembered per opponent on this device.
-// Against the bot, Play starts that series straight at its lineup; a first visit plays Best of 3 ·
-// Reveal · vs Normal bot. Against a friend, Play asks who ("Who do you want to play?", signed in)
+// Against the bot, Play starts that series straight at its lineup; a brand-new device's first series
+// is the guided one (ADR 0090), and after it Play is Best of 5 · Reveal · vs Normal bot unless chosen
+// otherwise (ADR 0090 addendum). Against a friend, Play asks who ("Who do you want to play?", signed in)
 // or sends a link (a guest) on the friend's rules: length, format, and live or by turns (ADR 0089
 // addendum of 2026-11-27).
 import { LIVE_FORMATS } from '../api/live.ts';
 import { DEFAULT_BOT } from '../sim/bot.ts';
-import { DEFAULT_BEST_OF, FORMATS, type BestOf, type Format } from '../sim/series.ts';
+import { FORMATS, type BestOf, type Format } from '../sim/series.ts';
 import { loadBotLevel, saveBotLevel } from './bot-level.ts';
 import { ONLINE_BUILD } from './online-build.ts';
 import { TURNS_BUILD } from './turns-build.ts';
-import { loadSeriesLength, parseSeriesLength, saveSeriesLength } from './series-length.ts';
+import {
+  loadSeriesLength,
+  NEW_SERIES_BEST_OF,
+  parseSeriesLength,
+  saveSeriesLength,
+} from './series-length.ts';
 import { writeSeriesModeParams } from './series-url.ts';
 
 /** Whether the bot makes choices a level changes (ADR 0035): never in Blind. */
@@ -28,12 +34,13 @@ export interface PlaySetup {
 }
 
 /**
- * A first visit's Play: Best of 3, Reveal, against the Normal bot. Reveal is measured with the most
- * skill, the most reads and the most different bot levels (`docs/best-of-5-measurements.md`).
+ * Play with nothing chosen: Best of 5, Reveal, against the Normal bot (ADR 0090 addendum). Reveal is
+ * measured with the most skill, the most reads and the most different bot levels
+ * (`docs/best-of-5-measurements.md`).
  */
 export const FIRST_PLAY: PlaySetup = {
   format: 'reveal',
-  bestOf: DEFAULT_BEST_OF,
+  bestOf: NEW_SERIES_BEST_OF,
   level: DEFAULT_BOT.id,
 };
 
@@ -113,10 +120,10 @@ export interface FriendSetup {
   readonly turns: boolean;
 }
 
-/** A first live match: the first live format, Best of 3. */
+/** A first match against a friend: the first live format, Best of 5 (ADR 0090 addendum). */
 export const FIRST_FRIEND: FriendSetup = {
   format: SETUP_FORMATS.friend[0] ?? 'reveal',
-  bestOf: DEFAULT_BEST_OF,
+  bestOf: NEW_SERIES_BEST_OF,
   turns: false,
 };
 

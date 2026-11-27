@@ -8,6 +8,8 @@
 // the device's storage (so a reload keeps round 1's pick where it was, ADR 0042) until the series
 // starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from '../app/bot-level.ts';
+import { firstSeries } from '../app/first-series-device.ts';
+import { botShowsFirstSeed, FIRST_SERIES, starterTrio } from '../app/first-series-setup.ts';
 import { savePlaySetup, SETUP_FORMATS } from '../app/modes.ts';
 import { loadSetup, saveSetup } from '../app/series-save.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
@@ -27,8 +29,10 @@ import {
   type SeriesState,
 } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
+import { FIRST_VISIT, firstPickSteps, formatSteps, SERIES_STEPS } from '../ui/first-series-text.ts';
 import type { Draft } from '../ui/lineup-draft.ts';
-import { createLineupStep } from '../ui/series/lineup-step.ts';
+import { createLineupStep, type LineupGuide } from '../ui/series/lineup-step.ts';
+import type { Steps } from '../ui/steps-box.ts';
 import { createAnswerStep } from '../ui/series/answer-step.ts';
 import { createResumeCard } from '../ui/series/resume-card.ts';
 import { createRulesStep } from '../ui/series/rules-step.ts';
@@ -84,6 +88,40 @@ export function createSeriesSetup(
   let draft: Draft = saved.draft;
   /** Reveal and Showdown: the series about to start, while the player makes round 1's pick. */
   let revealed: SeriesSetup | undefined = saved.revealed;
+
+  /**
+   * The guided first series (ADR 0090): a first visit's Best of 3 · Reveal, against the Easy bot on
+   * a seed where the bot shows first; its lineup teaches and offers Pick for me.
+   */
+  const guided = () =>
+    !firstSeries.done() && format === FIRST_SERIES.format && bestOf === FIRST_SERIES.bestOf;
+  /**
+   * The formats whose first-time box is up on this page: taken once per device (first-series.ts),
+   * it stays up until a series in that format starts, so a Back and forth doesn't lose it.
+   */
+  const teaching = new Set<Format>();
+  function formatBox(shown: Format): Steps | undefined {
+    if (!teaching.has(shown) && !firstSeries.takeFormatBox(shown)) return undefined;
+    teaching.add(shown);
+    return formatSteps(shown);
+  }
+
+  /** What the lineup teaches now: the first series', or Blind's first time. */
+  function lineupGuide(): LineupGuide | undefined {
+    if (guided()) {
+      return { steps: SERIES_STEPS, pickForMe: starterTrio(ballIds), line: FIRST_VISIT.play };
+    }
+    const steps = format === 'blind' ? formatBox('blind') : undefined;
+    return steps === undefined ? undefined : { steps };
+  }
+
+  /** What round 1's pick teaches: the first answer's ▲, or Showdown's first time. */
+  function answerSteps(state: SeriesState): Steps | undefined {
+    if (formatOf(state.setup) === 'showdown') return formatBox('showdown');
+    if (!guided()) return undefined;
+    const shown = state.picks.find((pick) => pick.round === 0 && pick.side === 'b')?.ball;
+    return shown === undefined ? undefined : firstPickSteps(lookup.get(shown)?.name ?? shown);
+  }
 
   /** Keeps the tray and the revealed series on the device, as they are now. */
   function remember(): void {
@@ -141,9 +179,12 @@ export function createSeriesSetup(
     onDone: (own) => {
       draft = own;
       // The bot picks from the series seed, so the setup (and the link) fully decides the series.
-      const seed = generateSeed();
+      // The first series' seed lets the bot show first (ADR 0090, D2): a seed, never a rule.
+      const first = guided();
+      const seed = first ? botShowsFirstSeed(generateSeed()) : generateSeed();
       // Blind has no choices for a bot to make, so every level plays it alike: the default.
-      const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : level, seed);
+      const against = first ? FIRST_SERIES.level : level;
+      const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : against, seed);
       const setup: SeriesSetup = {
         ruleset: RULESET_VERSION,
         seed,
@@ -162,6 +203,7 @@ export function createSeriesSetup(
         return;
       }
       remember();
+      teaching.delete('blind');
       host.start(setup);
     },
   });
@@ -179,6 +221,7 @@ export function createSeriesSetup(
       // Started, the series is saved as a series: the answer step can't be reopened (ADR 0025).
       revealed = undefined;
       remember();
+      teaching.delete(formatOf(series));
       host.start(series, ball);
     },
   });
@@ -209,11 +252,13 @@ export function createSeriesSetup(
     } else if (step === 'lineup') {
       revealed = undefined;
       remember();
-      lineup.open(format, draft, level, bestOf);
+      lineup.open(format, draft, guided() ? FIRST_SERIES.level : level, bestOf);
+      lineup.guide(lineupGuide());
     } else if (revealed !== undefined) {
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
       // choices the series makes when it starts, so what is shown here is what plays.
-      answer.open(resolvePicks(beginSession(revealed), botOf(revealed)).state);
+      const state = resolvePicks(beginSession(revealed), botOf(revealed)).state;
+      answer.open(state, answerSteps(state));
     }
   }
 

@@ -1,7 +1,8 @@
 import { botChooses, SETUP_FORMATS, type Opponent, type PlayChoice } from '../app/modes.ts';
 import { BOT_LEVELS } from '../sim/bot.ts';
-import { BEST_OF } from '../sim/series.ts';
-import { element } from './dom.ts';
+import { BEST_OF, type Format } from '../sim/series.ts';
+import { element, setText } from './dom.ts';
+import { NEW_TAG } from './first-series-text.ts';
 import {
   FORMAT_HINTS,
   howChoices,
@@ -11,7 +12,7 @@ import {
 } from './modes-text.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import { createSheet } from './sheet.ts';
-import { FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
+import { FORMAT_LINES, FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
 
 export interface PlaySheet {
   readonly element: HTMLDialogElement;
@@ -28,6 +29,8 @@ export interface PlaySheetActions {
   readonly onClosed: () => void;
   /** Against a friend, Live or By turns: only where the build plays by turns (ADR 0085). */
   readonly turns?: boolean;
+  /** A format tagged "New" (ADR 0090): not tried since the first series. */
+  readonly isNew?: (format: Format) => boolean;
 }
 
 /**
@@ -57,8 +60,9 @@ export function createPlaySheet(
 
   function change(next: PlayChoice): void {
     choice = next;
-    render();
+    // Remembered first (a format chosen is no longer new, ADR 0090), then drawn.
     actions.onChange(next);
+    render();
   }
 
   const group = (name: string) => element('div', `play-sheet-group segmented-rows ${name}`);
@@ -89,20 +93,32 @@ export function createPlaySheet(
     },
   );
 
-  // Each opponent offers its own formats, so the row is made again when the opponent changes.
+  // Each opponent offers its own formats, so the row is made again when the opponent changes; a
+  // format's "New" tag (ADR 0090) comes off in place, so focus stays on the format tapped.
   const formatRoot = group('play-sheet-format');
+  // The chosen format's rule in a sentence, under the row: a format is never just a name.
+  const formatRule = element('p', 'play-sheet-rule');
   let formats: { readonly of: Opponent; readonly control: Segmented<string> } | undefined;
+  const tagOf = (format: Format) => (actions.isNew?.(format) === true ? NEW_TAG : undefined);
   function formatsFor(opponent: Opponent): Segmented<string> {
-    if (formats?.of === opponent) return formats.control;
+    const offered = SETUP_FORMATS[opponent];
+    if (formats?.of === opponent) {
+      for (const format of offered) formats.control.retag(format, tagOf(format));
+      return formats.control;
+    }
     const control = createSegmented<string>(
       formatRoot,
       'play-sheet-format',
       SHEET_WORDS.format,
-      SETUP_FORMATS[opponent].map((format) => ({
-        value: format,
-        text: FORMAT_SHORT[format],
-        hint: FORMAT_HINTS[format],
-      })),
+      offered.map((format) => {
+        const tag = tagOf(format);
+        return {
+          value: format,
+          text: FORMAT_SHORT[format],
+          hint: FORMAT_HINTS[format],
+          ...(tag === undefined ? {} : { tag }),
+        };
+      }),
       rules()?.format ?? 'reveal',
       (value) => {
         if (choice === undefined) return;
@@ -114,6 +130,8 @@ export function createPlaySheet(
       },
     );
     formats = { of: opponent, control };
+    // The row is made afresh: the rule goes back under it.
+    formatRoot.append(formatRule);
     return control;
   }
 
@@ -157,6 +175,7 @@ export function createPlaySheet(
     against.select(choice.opponent);
     length.select(current.bestOf);
     formatsFor(choice.opponent).select(current.format);
+    setText(formatRule, FORMAT_LINES[current.format]);
     level.select(choice.bot.level);
     levelRoot.hidden = choice.opponent !== 'bot' || !botChooses(choice.bot.format);
     how.select(choice.friend.turns ? 'turns' : 'live');

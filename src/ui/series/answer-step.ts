@@ -4,6 +4,7 @@ import type { DefinitionLookup } from '../../sim/types.ts';
 import { element } from '../dom.ts';
 import { createScreenHeader } from '../screen-header.ts';
 import { pickLine } from '../series-text.ts';
+import { createStepsPlace, type Steps } from '../steps-box.ts';
 import { createCoinToss } from './coin-toss.ts';
 import { createPickBanner } from './pick-banner.ts';
 import { createPickRows } from './pick-rows.ts';
@@ -17,9 +18,10 @@ export interface AnswerStep {
   /**
    * Shows round 1 of a Reveal or Showdown series about to start: Reveal's coin toss (once per
    * series), then the player's pick (an answer to the bot's shown ball, the ball they show first,
-   * or Showdown's opener). Focuses the heading.
+   * or Showdown's opener). Focuses the heading. `steps` is what the pick teaches a newcomer
+   * (ADR 0090): the first series' "Your first pick", or Showdown's first time.
    */
-  open(state: SeriesState): void;
+  open(state: SeriesState, steps?: Steps): void;
 }
 
 export interface AnswerActions {
@@ -64,6 +66,7 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
   const status = element('p', 'visually-hidden');
   status.setAttribute('aria-live', 'polite');
   const rows = createPickRows(lookup, actions.onAnswer);
+  const teach = createStepsPlace('answer-guide');
   const toss = createCoinToss(() => {
     reveal();
   });
@@ -75,8 +78,10 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
     toss.element,
     track.element,
     banner.element,
+    teach.element,
     rows.element,
   );
+  let steps: Steps | undefined;
   const nameOf = (id: string) => lookup.get(id)?.name ?? id;
   /** Each series' toss, by its seed: it flips the first time round 1 shows, never again. */
   const tossed = new Map<number, TossTimes>();
@@ -99,6 +104,7 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
         : toss.show({ first, key: String(seed), seats: BOT_SEATS, times, now: () => Date.now() });
     const tossing = stage !== undefined && stage !== 'done';
     banner.element.hidden = tossing;
+    teach.show(tossing ? undefined : steps);
     rows.element.hidden = tossing;
     track.element.hidden = tossing;
     const choice = pickChoiceOf(state);
@@ -111,7 +117,8 @@ export function createAnswerStep(lookup: DefinitionLookup, actions: AnswerAction
 
   return {
     element: root,
-    open(state) {
+    open(state, teaches) {
+      steps = teaches;
       shownSetup = state.setup;
       root.removeAttribute('data-track-open');
       drawBar();

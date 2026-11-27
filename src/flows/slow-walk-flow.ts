@@ -8,10 +8,11 @@
 // it knew nor a failure card with Try again. The screens are the page's own, reached by their URLs
 // (FRAME_SCREENS and the online flows' states), with the API answered by the test.
 import { expect, vi } from 'vitest';
+import { firstSeries } from '../app/first-series-device.ts';
 import { rememberLive } from '../app/live-memory.ts';
 import { ACCOUNT_STORAGE_KEY, rememberGuest } from '../app/online-device.ts';
 import { visitCache } from '../app/visit-cache.ts';
-import { FRAME_SCREENS } from './frame-anchors-flow.ts';
+import { FIRST_VISIT_SCREENS, FRAME_SCREENS } from './frame-anchors-flow.ts';
 import { ONLINE_STATES, type OnlineAnswers } from './online-looks-support.ts';
 import { frames, until, visible } from './page-support.ts';
 import { RECORD_ANSWERS } from './profile-answers.ts';
@@ -270,6 +271,22 @@ export async function walkSlowly(failing: boolean): Promise<void> {
       );
     }
   }
+  // A brand-new device's Play and lineup (ADR 0090): nothing on them waits on the server.
+  firstSeries.reset();
+  for (const [name, search] of FIRST_VISIT_SCREENS) {
+    await look(
+      name,
+      async () => {
+        await follow('?view=manual');
+        await follow(search);
+        await until(() => screenOn() === (search === '' ? 'home' : 'series'), 5_000, name, false);
+      },
+      slow,
+      failing,
+      problems,
+    );
+  }
+  firstSeries.skip();
   await homeInAStart(api, slow, failing, problems);
   if (!failing) {
     for (const state of ONLINE_STATES) {
