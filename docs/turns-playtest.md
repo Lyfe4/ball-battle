@@ -37,14 +37,14 @@ ADR 0083's gate before ranked server work. Staging only: https://main--battle-ba
 
 ## Step by step, two phones
 
-| #   | Phone A does                              | A should see                                                                                            | B should see                                                                                                      |
-| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1   | Friends → B's row → **Play by turns**     | the lineup for the challenge                                                                            | nothing yet                                                                                                       |
-| 2   | Picks a lineup → **Send challenge**       | "Sent to B"; Your games doesn't list it yet                                                             | within seconds: the Friends badge goes up by 1; Waiting for you: "A challenges you · … take turns". **No banner** |
-| 3   | (B) Accept → picks → **Accept challenge** | the badge (if it's A's turn): "Your turn vs B" in Waiting for you                                       | the series screen                                                                                                 |
-| 4   | Whoever is due taps **Play** and picks    | the series moves on; the row leaves Waiting for you and appears in Your games as "B's turn · 24 h left" | badge +1; "Your turn vs A" with Play                                                                              |
-| 5   | Repeat until the series ends              | an ending row in Your games ("You won vs B") until A taps Open                                          | the same, its own words, until B taps Open                                                                        |
-| 6   | Open the ending                           | the ended series; the row is gone (also after a reload)                                                 | B's row stays until B opens it                                                                                    |
+| #   | Phone A does                                                                    | A should see                                                                                            | B should see                                                                                                      |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1   | Play tab → What to play: How **By turns** → Play → pick B → **Play B by turns** | the lineup for the challenge                                                                            | nothing yet                                                                                                       |
+| 2   | Picks a lineup → **Send challenge**                                             | "Sent to B"; Your games doesn't list it yet                                                             | within seconds: the Friends badge goes up by 1; Waiting for you: "A challenges you · … take turns". **No banner** |
+| 3   | (B) Accept → picks → **Accept challenge**                                       | the badge (if it's A's turn): "Your turn vs B" in Waiting for you                                       | the series screen                                                                                                 |
+| 4   | Whoever is due taps **Play** and picks                                          | the series moves on; the row leaves Waiting for you and appears in Your games as "B's turn · 24 h left" | badge +1; "Your turn vs A" with Play                                                                              |
+| 5   | Repeat until the series ends                                                    | an ending row in Your games ("You won vs B") until A taps Open                                          | the same, its own words, until B taps Open                                                                        |
+| 6   | Open the ending                                                                 | the ended series; the row is gone (also after a reload)                                                 | B's row stays until B opens it                                                                                    |
 
 Also try once per session:
 
@@ -71,5 +71,6 @@ Also try once per session:
 ## Known limits (ADR 0085)
 
 - The lineup has no URL of its own: a reload returns to the sheet, setup or card.
-- Guests can send a by-turns link from the setup, but only accounts get the inbox and "Your turn".
+- Only accounts play by turns, with a friend (a guest's Play sends a live link); the inbox and
+  "Your turn" are theirs too.
 - No notification outside the open app.
