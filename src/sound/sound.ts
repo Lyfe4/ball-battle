@@ -12,8 +12,11 @@ import { FIGHT_RULES, MENU_RULES } from './rules.ts';
 import { PRESSABLE } from '../ui/press.ts';
 import type { Play, SoundName, UiCue } from './voices.ts';
 
-/** Cents each repeat is moved by in turn, so a run of the same sound never sounds copied. */
-const VARIETY = [0, 35, -25, 55, -45, 15];
+/**
+ * Cents each repeat is moved by in turn, so a run of the same sound never sounds copied: at most
+ * 20 either way, so a tonal sound stays on its note of the scale (ADR 0064; it reached 55).
+ */
+export const VARIETY: readonly number[] = [0, 12, -10, 20, -18, 6];
 
 /**
  * What a control says when pressed, by its `data-sound`: the key moments (Play, Send challenge,

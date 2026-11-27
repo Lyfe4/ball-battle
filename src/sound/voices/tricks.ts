@@ -2,7 +2,7 @@
 // popping like glass, the Jouster's gallop as it charges, its lance splintering head-on and only
 // scraping a spark at a glance (ADR 0064).
 import { noise, tone } from '../synth.ts';
-import { C4, C6, D6, E4, E6, G3, G4, G6, type Voice } from './scale.ts';
+import { C4, C6, D6, E4, E6, E7, G3, G4, G6, type Voice } from './scale.ts';
 
 export const TRICK_VOICES = {
   /**
@@ -119,6 +119,6 @@ export const TRICK_VOICES = {
       gain: 0.16 * level,
     });
     tone(kit, { from: G6 * 1.5, at: at + 0.03, length: 0.03, gain: 0.04 * level, detune });
-    tone(kit, { from: E6 * 1.5, at: at + 0.06, length: 0.03, gain: 0.03 * level, detune });
+    tone(kit, { from: E7, at: at + 0.06, length: 0.03, gain: 0.03 * level, detune });
   },
 } satisfies Record<string, Voice>;
