@@ -20,6 +20,8 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['lineups-together.online.test.ts', 158],
     ['challenge-on-end.online.test.ts', 120],
     ['sign-in.online.test.ts', 18],
+    // Estimated (2026-11-27): one two-phone flow with two sign-ins, about 90 s.
+    ['one-game.online.test.ts', 90],
   ],
   [
     ['slime-live.online.test.ts', 167],
