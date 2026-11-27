@@ -156,7 +156,7 @@ icons, and moving only as the sim's clock or the shared glance does:
   wolf's head is worn as a hood down low over the ball: its two ears stand up past the edge (at
   most 12% of r), its slanted amber eyes and paler muzzle, down to a dark nose, sit on top, its
   upper fangs hang along the hood's rim over the hunter's brow, and ragged tufts of fur run down
-  its sides. Under it the hunter's face is in shadow, only two eyes glinting out of the dark, in
+  its sides. Under it the hunter's face is in shadow, only two eyes glinting out of the dark (pale gold with a white point, the brightest thing on the ball, brighter than the wolf's amber, so they read at 30 px), in
   the spirit of the Spartan's helmet hiding its face; its leather (the ball's colour) is the cloak
   round it and a scarf over the mouth. Our own shapes, upright, never turning. At phone size the
   ears and the two eyes carry it. The pelt is a warm brown-grey `#a8907e` (0.120 from the Quake,

@@ -98,22 +98,22 @@ function drawShadowedFace(p: Painter, r: number): void {
   p.arc(0, 0, 0.6 * r, 0, Math.PI * 2);
   p.fill();
   p.restore();
-  // Two narrow eyes glinting out of the dark, each with a bright point.
+  // Two narrow eyes glinting out of the dark, the brightest thing on the ball, each with a white point.
   p.fillStyle = theme.hunterEyeGlint;
   p.beginPath();
   for (const side of [-1, 1]) {
-    p.moveTo(side * 0.32 * r, 0.24 * r);
-    p.lineTo(side * 0.22 * r, 0.19 * r);
-    p.lineTo(side * 0.12 * r, 0.24 * r);
-    p.lineTo(side * 0.22 * r, 0.27 * r);
+    p.moveTo(side * 0.37 * r, 0.24 * r);
+    p.lineTo(side * 0.22 * r, 0.165 * r);
+    p.lineTo(side * 0.07 * r, 0.24 * r);
+    p.lineTo(side * 0.22 * r, 0.285 * r);
     p.closePath();
   }
   p.fill();
   p.fillStyle = theme.hunterEyeSpark;
   p.beginPath();
   for (const side of [-1, 1]) {
-    p.moveTo(side * 0.22 * r + 0.025 * r, 0.23 * r);
-    p.arc(side * 0.22 * r, 0.23 * r, 0.025 * r, 0, Math.PI * 2);
+    p.moveTo(side * 0.22 * r + 0.038 * r, 0.23 * r);
+    p.arc(side * 0.22 * r, 0.23 * r, 0.038 * r, 0, Math.PI * 2);
   }
   p.fill();
 }
