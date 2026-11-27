@@ -22,12 +22,17 @@ export function waitingBall(size: WaitingBallSize = 'large'): HTMLElement {
   const ball = element('span', 'waiting-ball');
   ball.dataset['size'] = size;
   ball.setAttribute('aria-hidden', 'true');
-  // How far into the page's life it is made: the loop starts that far in (a negative delay). On
-  // the animations' own clock (the frame's time), not performance.now(), which runs ahead of it
-  // within a frame: a busy frame put a ball drawn again a pixel or two off the one before.
+  // How far into the page's life it is made: the loop starts that far in (a negative delay), on
+  // the animations' own clock (the frame's time). A CSS animation only gets its start time on the
+  // next frame, so on a busy page it would start late by that frame and sit a pixel or two off
+  // the balls before it: once it is on the page, its start is pinned to that same clock, so every
+  // ball's loop is the page's time exactly.
   const clock = document.timeline.currentTime;
-  const now = typeof clock === 'number' ? clock : performance.now();
-  ball.style.setProperty('--waiting-since', `-${String(Math.round(now))}ms`);
+  const since = typeof clock === 'number' ? clock : performance.now();
+  ball.style.setProperty('--waiting-since', `-${String(since)}ms`);
+  requestAnimationFrame(() => {
+    for (const animation of ball.getAnimations({ subtree: true })) animation.startTime = since;
+  });
   return ball;
 }
 
