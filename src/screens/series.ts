@@ -3,6 +3,8 @@
 // series saved before a reload is taken back here, held until the route shows it (ADR 0042).
 import { clearSeries, loadSeries, saveSeries, type SaveStorage } from '../app/series-save.ts';
 import type { ScreenHandler } from '../app/router.ts';
+import { firstSeries } from '../app/first-series-device.ts';
+import { FIRST_SERIES } from '../app/first-series-setup.ts';
 import { writeHomeParams } from '../app/route.ts';
 import { seriesRound } from '../app/screen-rules.ts';
 import { writeSeriesModeParams } from '../app/series-url.ts';
@@ -10,6 +12,7 @@ import type { Navigation } from '../app/navigation.ts';
 import { createSeriesController, type SeriesController } from './series-play.ts';
 import { createSeriesSetup, type SeriesSetupFlow } from './series-setup.ts';
 import type { SeriesPanelRoots } from '../ui/series-panel.ts';
+import { bestOfOf, formatOf } from '../sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
 
 export interface SeriesScreensHost {
@@ -113,6 +116,16 @@ export function createSeriesScreens(
     },
     home: () => {
       host.go(writeHomeParams);
+    },
+    // The first series is the first visit's (ADR 0090): Best of 3 · Reveal against the Easy bot.
+    isFirstSeries: (series) =>
+      !firstSeries.done() &&
+      series.opponent.kind === 'bot' &&
+      series.opponent.bot === FIRST_SERIES.level &&
+      formatOf(series) === FIRST_SERIES.format &&
+      bestOfOf(series) === FIRST_SERIES.bestOf,
+    firstSeriesOver: () => {
+      firstSeries.finish();
     },
     leave: (left) => {
       navigation.back(() => {

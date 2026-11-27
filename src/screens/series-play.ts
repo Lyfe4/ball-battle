@@ -51,6 +51,10 @@ export interface SeriesHost {
   /** Home from the end of a series (ADR 0081): the Play tab. */
   home(): void;
   leave(setup: SeriesSetup | undefined): void;
+  /** Whether `setup` is this device's guided first series (ADR 0090). */
+  isFirstSeries(setup: SeriesSetup): boolean;
+  /** The first series is over, finished or left: home shows everything from now on. */
+  firstSeriesOver(): void;
 }
 
 export interface SeriesController {
@@ -116,6 +120,8 @@ export function createSeriesController(
   /** True while the arena still holds the series' match. */
   const ours = () => host.worldsShown() === shownAt;
   let phase: SeriesPhase = 'playing';
+  /** The series in hand is the guided first series: kept to its end, though the device moves on. */
+  let guided = false;
 
   /** Sets the series in hand and saves it, so a reload finds it as it is now. */
   function keep(next: SeriesSession | undefined): void {
@@ -158,6 +164,9 @@ export function createSeriesController(
       // Leaving on purpose forgets the series: there is nothing to resume (ADR 0042). A Back,
       // which can be an accident, holds it instead.
       const left = session?.state.setup;
+      // Leaving the first series ends it (ADR 0090): nobody is held in the guided state.
+      if (guided) host.firstSeriesOver();
+      guided = false;
       keep(undefined);
       host.leave(left);
     },
@@ -201,6 +210,7 @@ export function createSeriesController(
     if (firstPick !== undefined && awaitingPick(started.state) === 'a') {
       started = resolvePicks(pickInSession(started, firstPick), bot);
     }
+    guided = host.isFirstSeries(setup);
     keep(started);
     onScreen = true;
     phase = 'playing';
@@ -235,6 +245,7 @@ export function createSeriesController(
     },
     adopt(saved) {
       session = saved;
+      guided = host.isFirstSeries(saved.state.setup);
       onScreen = false;
       shownAt = -1;
     },
@@ -263,8 +274,11 @@ export function createSeriesController(
       const settled = showBotBallNow(settleCurrent(session, world), botOf(session.state.setup));
       if (settled === before) return;
       keep(settled);
-      // Decided: now the link can show both lineups and every pick.
-      if (settled.state.winner !== undefined) writeAddress(settled);
+      // Decided: now the link can show both lineups and every pick, and the first series is over.
+      if (settled.state.winner !== undefined) {
+        writeAddress(settled);
+        if (guided) host.firstSeriesOver();
+      }
     },
     update(world, celebrated) {
       if (session === undefined || !onScreen) return;
@@ -274,6 +288,7 @@ export function createSeriesController(
         current: session.current,
         settled,
         linkState: withLinkPicks(session),
+        guided,
       });
       if (shown === phase) return;
       phase = shown;
