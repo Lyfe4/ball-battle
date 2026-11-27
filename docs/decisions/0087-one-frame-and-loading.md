@@ -566,3 +566,16 @@ turns with its answer and holds its row to every other screen's pixels.
   `settings-fit.safari.browser.test.ts` holds it at 390 × 664 mid-fight: every row, no scroll,
   and "The match waits" whenever it covers the court. A live match is unchanged: the menu never
   covers its court and scrolls beside it (ADR 0054).
+- **Friends keeps its place when the server fails** (the slow walk's intermittent 0.15 on CI). Two
+  races decided whether it moved: the list's failure card was shorter than the skeleton it replaced
+  and the code card under it was hidden, so the link card jumped up; and when `/me` failed on a
+  device that remembers an account, the whole screen swapped to the link card and a second failure
+  card. Now a remembered account keeps its layout when `/me` merely fails (an answer that says
+  signed out still changes it), and a failed list's one card takes the box of what it replaces
+  (`failPlace`, `failInPlace`): with nothing known, the list's (the skeleton's), the code card
+  waiting unseen in its place; with the inbox's friends shown, their rows stay and the card takes
+  the box of the requests the inbox counted, else the code card's. It may be taller than the box,
+  never shorter. `friends-failing.touch.browser.test.ts` holds both reads and fails them in each
+  order (it failed every run before the change); `frame-account-flow.ts` now answers the list, so
+  it measures an account's frame rather than, unknowingly, a failing one (last night's try at
+  this moved its gear because that walk had been a failure all along).

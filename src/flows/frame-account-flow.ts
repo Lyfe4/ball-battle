@@ -22,6 +22,9 @@ export async function checkAccountFrame(): Promise<void> {
   await openAs({ online: true, accounts: true }, '', {
     '/api/v1/me': { name: 'robin_b', account: true, username: 'robin_b' },
     '/api/v1/me/inbox': { friends: [], requests: 0, invites: [], turns: [] },
+    // The list answers: without it Friends showed its failure card, and this walk measured a
+    // failing screen, not an account's (ADR 0087 addendum of 2026-11-28).
+    '/api/v1/friends': { code: '7KQ2M9XD', friends: [], incoming: [], outgoing: [], blocked: [] },
     ...RECORD_ANSWERS,
   });
   await onScreen('home');

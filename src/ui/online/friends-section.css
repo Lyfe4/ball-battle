@@ -29,6 +29,29 @@
   visibility: hidden;
 }
 
+/* The list failed in its place: the friend code came with it, so its card waits unseen there. */
+.friends[data-list-failed] .friends-add-card {
+  visibility: hidden;
+}
+
+/* A box a failure card holds in its place (failInPlace): the card fills it, its words at the top. */
+.friends-lists[data-failed],
+.friends-add-card[data-failed],
+.friends-lists > .friends-group[data-failed] {
+  display: grid;
+}
+
+.friends-add-card[data-failed],
+.friends-lists > .friends-group[data-failed] {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+:is(.friends-lists, .friends-add-card, .friends-group)[data-failed] > .friends-failure {
+  align-content: start;
+}
+
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .friends[data-count-unknown] .friends-aside > * {
     visibility: visible;
