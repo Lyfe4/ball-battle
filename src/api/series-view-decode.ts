@@ -3,6 +3,7 @@
 // The final setup is checked by verifySeries itself, so here it is only an object or null.
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
 import type { LiveEndReason, LiveView } from './live.ts';
+import { SERIES_KINDS } from './series.ts';
 import type {
   SeedCommitment,
   SeedPurpose,
@@ -139,12 +140,14 @@ export function decodeSeriesView(raw: unknown): SeriesView | undefined {
   const commitments = listOf(raw['commitments'], commitmentOf);
   const revealed = listOf(raw['revealed'], revealOf);
   const named = STATUSES.find((s) => s === status);
+  const kind = SERIES_KINDS.find((k) => k === raw['kind']);
   const turnOk: Turn | null | undefined =
     turn === null ? null : isSide(turn) || turn === 'both' ? turn : undefined;
   const final = raw['final'];
   const live = liveOf(raw['live'] ?? null);
   if (
     live === undefined ||
+    kind === undefined ||
     nameA === undefined ||
     nameB === undefined ||
     lineupA === undefined ||
@@ -164,7 +167,7 @@ export function decodeSeriesView(raw: unknown): SeriesView | undefined {
   }
   return {
     id,
-    kind: 'friend',
+    kind,
     ruleset,
     format,
     bestOf,

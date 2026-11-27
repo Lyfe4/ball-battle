@@ -30,9 +30,16 @@ export interface SeedReveal extends SeedCommitment {
 export type SeriesStatus = 'open' | 'finished' | 'forfeit' | 'void';
 export type Turn = Side | 'both';
 
+/**
+ * What kind of series: between friends (live or by turns), or a ranked one (ADR 0083, built on the
+ * same series rules; none is made yet). The database also knows 'open' and 'ladder', never made.
+ */
+export type SeriesKind = 'friend' | 'ranked';
+export const SERIES_KINDS: readonly SeriesKind[] = ['friend', 'ranked'];
+
 export interface SeriesView {
   readonly id: string;
-  readonly kind: 'friend';
+  readonly kind: SeriesKind;
   readonly ruleset: number;
   readonly format: Format;
   readonly bestOf: BestOf;

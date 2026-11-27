@@ -155,4 +155,18 @@ describe('a friend challenge', () => {
     const fourth = (await send(await newPlayer(deps))).body as ChallengeLink;
     expect(code((await accept(friend, fourth.token)).body)).toBe('too_many_series');
   });
+
+  it('never counts a ranked series against a friend’s challenge by turns (ADR 0083)', async () => {
+    const friend = await newPlayer(deps);
+    for (let n = 0; n < 3; n += 1) {
+      const link = (await send(await newPlayer(deps))).body as ChallengeLink;
+      expect((await accept(friend, link.token)).status).toBe(200);
+    }
+    // The three are ranked (none is made by the game yet; set in SQL as ranked would make them).
+    await admin`
+      update game.series set kind = 'ranked'
+      where status = 'open' and not live and (player_a = ${friend.userId} or player_b = ${friend.userId})`;
+    const fourth = (await send(await newPlayer(deps))).body as ChallengeLink;
+    expect((await accept(friend, fourth.token)).status).toBe(200);
+  });
 });

@@ -183,11 +183,16 @@ export async function supersedeOutgoing(
   return rows.length;
 }
 
-/** Open series by turns a player is in (live ones finish in minutes and have their own rule). */
+/**
+ * Open series by turns a player has with friends (live ones finish in minutes and have their own
+ * rule). A ranked series never counts (ADR 0083): it is not a game between friends, so it never
+ * blocks a friend's challenge by turns, which the pair rule alone limits (one-game.ts).
+ */
 export async function openSeriesOf(db: Db, player: string): Promise<number> {
   const [row] = await db<{ count: number }[]>`
     select count(*)::int as count from game.series
-    where status = 'open' and not live and (player_a = ${player} or player_b = ${player})`;
+    where status = 'open' and not live and kind = 'friend'
+      and (player_a = ${player} or player_b = ${player})`;
   return row?.count ?? 0;
 }
 

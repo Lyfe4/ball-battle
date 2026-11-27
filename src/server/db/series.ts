@@ -1,7 +1,7 @@
 // game.series and its rows (seeds, picks, rounds): plain SQL, one function per statement. Every
 // time in a rule is the database's `now()` (ADR 0052, section 6 item 7): a host clock never decides
 // a deadline.
-import type { SeriesStatus, Turn } from '../../api/series.ts';
+import type { SeriesKind, SeriesStatus, Turn } from '../../api/series.ts';
 import type { BestOf, Format, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { SeedRow } from '../view.ts';
@@ -13,6 +13,7 @@ export { TURN_HOURS } from '../../api/series.ts';
 
 export interface SeriesRow {
   readonly id: string;
+  readonly kind: SeriesKind;
   readonly ruleset: number;
   readonly format: Format;
   readonly bestOf: BestOf;
@@ -31,7 +32,6 @@ export interface SeriesRow {
 }
 
 export interface NewSeries extends Omit<SeriesRow, 'names' | 'expired'> {
-  readonly kind: 'friend';
   /** Played live (ADR 0053). */
   readonly live: boolean;
 }

@@ -43,6 +43,7 @@ export interface LoadedSeries extends SeriesRow {
 interface Raw {
   /** Null when there is no such series (the row is the reader's alone). */
   readonly id: string | null;
+  readonly kind: LoadedSeries['kind'];
   readonly ruleset: number;
   readonly format: LoadedSeries['format'];
   readonly best_of: LoadedSeries['bestOf'];
@@ -132,7 +133,7 @@ export async function loadSeriesAs(
       on conflict (series_id, side) do update set seen_at = excluded.seen_at
       returning side, seen_at
     )
-    select s.id, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
+    select s.id, s.kind, s.ruleset, s.format, s.best_of, s.player_a, s.player_b,
       coalesce(pa.username, pa.display_name) as name_a,
       coalesce(pb.username, pb.display_name) as name_b, s.lineup_a, s.lineup_b, s.key_id,
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
@@ -188,6 +189,7 @@ function seriesOf(raw: Raw, id: string): LoadedSeries {
   return {
     ...spent,
     id,
+    kind: raw.kind,
     ruleset: raw.ruleset,
     format: raw.format,
     bestOf: raw.best_of,

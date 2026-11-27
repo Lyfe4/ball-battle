@@ -12,6 +12,20 @@ export interface Answer {
   readonly headers: Headers;
 }
 
+/**
+ * A network address no other browser in this run has: every test file starts its own count from a
+ * random base, so two files never share a network's rate limits by accident (they counted against
+ * each other when every file's first player was 10.9.0.1). A test that wants one network for two
+ * browsers passes the same address to both (`elsewhere` keeps it).
+ */
+const ipBase = Math.floor(Math.random() * 0x3fff) * 0x100;
+let ips = 0;
+export function uniqueIp(): string {
+  ips += 1;
+  const n = ipBase + ips;
+  return `10.${String((n >> 16) & 255)}.${String((n >> 8) & 255)}.${String(n & 255)}`;
+}
+
 export class TestBrowser {
   /** The session cookie's value, as the browser holds it. */
   cookie: string | undefined;
@@ -20,7 +34,7 @@ export class TestBrowser {
   readonly ip: string;
   readonly deps: Deps;
 
-  constructor(deps: Deps, ip = '203.0.113.10') {
+  constructor(deps: Deps, ip = uniqueIp()) {
     this.deps = deps;
     this.ip = ip;
   }

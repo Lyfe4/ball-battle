@@ -1,7 +1,14 @@
 // `viewOf` (ADR 0052, "What a player is sent"): the one function that decides what a player sees
 // of a series. Pure, and tested per format at every step: nothing seed-shaped before its lock,
 // no pick the format hides, and in Blind no opponent lineup until the end.
-import type { SeedCommitment, SeedReveal, SeriesStatus, SeriesView, Turn } from '../api/series.ts';
+import type {
+  SeedCommitment,
+  SeedReveal,
+  SeriesKind,
+  SeriesStatus,
+  SeriesView,
+  Turn,
+} from '../api/series.ts';
 import { AWAY_AFTER_MS, START_WINDOW_MS, type LiveView } from '../api/live.ts';
 import type { BestOf, Format, PickRecord, RoundRecord, SeriesSetup, Side } from '../sim/index.ts';
 import type { LiveClock } from './db/series-record.ts';
@@ -16,6 +23,7 @@ export interface SeedRow extends SeedCommitment {
 /** Everything stored about a series, as the view needs it. */
 export interface SeriesRecord {
   readonly id: string;
+  readonly kind: SeriesKind;
   readonly ruleset: number;
   readonly format: Format;
   readonly bestOf: BestOf;
@@ -51,7 +59,7 @@ export function viewOf(record: SeriesRecord, viewer: Side): SeriesView {
   const hideLineup = record.format === 'blind' && !ended;
   return {
     id: record.id,
-    kind: 'friend',
+    kind: record.kind,
     ruleset: record.ruleset,
     format: record.format,
     bestOf: record.bestOf,
