@@ -3,6 +3,16 @@
 import type { StickerWords } from './sticker-words.ts';
 import type { WaitingContent } from './waiting-content.ts';
 
+/** "How it goes": a title and a few short lines, in a quiet box (steps-box.ts). */
+export interface Steps {
+  readonly title: string;
+  readonly items: readonly string[];
+  /** A list whose order isn't a sequence (the new ways to play): bullets, not numbers. */
+  readonly unordered?: boolean;
+  /** A line after the list. */
+  readonly note?: string;
+}
+
 export interface NoticeButton {
   readonly text: string;
   /** A request (it returns a promise) shows on the button until it settles (busy-button.ts). */
@@ -56,7 +66,7 @@ export interface NoticeContent {
    */
   readonly part?: object;
   /** A short numbered list in a box: "How it goes". */
-  readonly steps?: { readonly title: string; readonly items: readonly string[] };
+  readonly steps?: Steps;
   /**
    * A link in a quiet box under the buttons, with Copy where there is a clipboard. Folded under
    * `fold` (a friend's lobby: "Also send a link", ADR 0086), with `share` inside it.

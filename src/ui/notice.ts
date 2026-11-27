@@ -8,6 +8,7 @@ import { busyOnClick } from './busy-button.ts';
 import { element } from './dom.ts';
 import { createScreenHeader } from './screen-header.ts';
 import type { NoticeContent, NoticeField } from './notice-content.ts';
+import { createStepsBox } from './steps-box.ts';
 import { createSticker } from './sticker.ts';
 import { createWaiting } from './waiting.ts';
 
@@ -166,13 +167,7 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         );
         parts.push(links);
       }
-      if (content.steps !== undefined) {
-        const steps = element('section', 'notice-steps');
-        const list = element('ol', 'notice-steps-list');
-        list.append(...content.steps.items.map((item) => element('li', '', item)));
-        steps.append(element('h2', 'notice-steps-title', content.steps.title), list);
-        parts.push(steps);
-      }
+      if (content.steps !== undefined) parts.push(createStepsBox(content.steps));
       if (content.field !== undefined) {
         field.show(content.field, () => {
           footer.querySelector<HTMLButtonElement>('.hud-button')?.click();

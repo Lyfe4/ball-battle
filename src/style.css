@@ -26,6 +26,7 @@
 @import './ui/play-sheet.css';
 @import './ui/manual/manual.css';
 @import './ui/manual/matchup-spectrum.css';
+@import './ui/steps-box.css';
 @import './ui/notice.css';
 @import './ui/waiting.css';
 @import './ui/skeleton.css';

@@ -14,6 +14,7 @@
 // Shifts are therefore counted from the stage showing, which is all a player sees in production.
 import { expect } from 'vitest';
 import { FIRST_PAINT_FONT, STAGE_SHOWN_MARK } from '../app/first-paint.ts';
+import { FIRST_SERIES_STORAGE_KEY, PLAYED_KEYS } from '../app/first-series.ts';
 import { frames } from './page-support.ts';
 import { openFramed, waitFor, type Framed } from './reload-support.ts';
 
@@ -88,8 +89,10 @@ function canvasFit(framed: Framed) {
   if (canvas === null || container === null) throw new Error('No arena');
   const style = framed.win().getComputedStyle(container);
   const px = (value: string) => Number.parseFloat(value) || 0;
-  const width = container.clientWidth - px(style.paddingLeft) - px(style.paddingRight);
-  const height = container.clientHeight - px(style.paddingTop) - px(style.paddingBottom);
+  // Its exact box, as the arena measures it (canvas.ts): `clientWidth` rounds to whole pixels.
+  const outer = container.getBoundingClientRect();
+  const width = outer.width - px(style.paddingLeft) - px(style.paddingRight);
+  const height = outer.height - px(style.paddingTop) - px(style.paddingBottom);
   const square = Math.max(0, Math.floor(Math.min(width, height)));
   const ratio = Math.min(framed.win().devicePixelRatio || 1, 2);
   const box = canvas.getBoundingClientRect();
@@ -162,4 +165,15 @@ export async function checkFirstPaint(search: string, where: string): Promise<vo
       FIRST_PAINT_CLS,
     );
   }
+}
+
+/**
+ * A brand-new device's first visit (ADR 0090): its Play paints once, in its place, as the guided
+ * first visit, and the load writes nothing that means play, so the device is still new after it.
+ */
+export async function checkNewDeviceFirstPaint(): Promise<void> {
+  localStorage.removeItem(FIRST_SERIES_STORAGE_KEY);
+  await checkFirstPaint('', 'Play, a first visit');
+  expect(localStorage.getItem(FIRST_SERIES_STORAGE_KEY)).toBe('guided');
+  expect(PLAYED_KEYS.filter((key) => localStorage.getItem(key) !== null)).toStrictEqual([]);
 }

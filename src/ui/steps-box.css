@@ -1,0 +1,32 @@
+/*
+ * "How it goes" (steps-box.ts, ADR 0090): a short title and a few lines in a quiet box, one look
+ * wherever the game explains something in steps.
+ */
+.notice-steps {
+  padding: var(--space-gap) var(--space-gutter);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+}
+
+.notice-steps-title {
+  margin: 0 0 var(--space-small);
+  font-size: var(--font-size-lead);
+  font-weight: 800;
+}
+
+.notice-steps-list + .notice-steps-note {
+  margin-top: var(--space-small);
+}
+
+.notice-steps-list {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding-left: 1.25em;
+  line-height: 1.4;
+}
+
+.notice-steps-note {
+  margin: 0;
+  line-height: 1.4;
+}

@@ -355,6 +355,15 @@
   .lineup-step:not(:has(> .resume-card:not([hidden]))) > .screen-footer {
     grid-row: 4;
   }
+
+  /* What a newcomer's lineup teaches (ADR 0090): under the main action, in the left column. */
+  .lineup-step > .lineup-guide {
+    grid-area: 6 / 1;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-guide {
+    grid-row: 5;
+  }
 }
 
 /* Desktop (ADR 0031): each step laid out for the space, centred in the sheet. */
@@ -422,6 +431,15 @@
   /* Reveal's coin toss (ADR 0061): across both columns under the bar, while the pick waits. */
   .answer-step > .coin-toss {
     grid-area: 4 / 1 / -1 / -1;
+  }
+
+  /* What a newcomer's first pick teaches (ADR 0090): on the left, the track under it. */
+  .answer-step > .answer-guide {
+    grid-area: 4 / 1;
+  }
+
+  .answer-step:has(> .answer-guide:not([hidden])) > .series-track {
+    grid-row: 5 / -1;
   }
 }
 
