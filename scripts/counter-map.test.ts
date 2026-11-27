@@ -107,7 +107,11 @@ describe('the counter map', () => {
   });
 
   it('names exactly the ruleset 22 roster as added before the floor', () => {
-    expect(BEFORE_THE_FLOOR).toStrictEqual(BALLS.slice(0, 28).map((ball) => ball.id));
+    // Every ball added since (ADR 0077, 0091), wherever it sits in the picker.
+    const addedSince = ['mirage', 'jouster', 'hunter', 'tortoise'];
+    const roster = BALLS.map((ball) => ball.id);
+    expect(addedSince.every((id) => roster.includes(id))).toBe(true);
+    expect(BEFORE_THE_FLOOR).toStrictEqual(roster.filter((id) => !addedSince.includes(id)));
   });
 
   it('keeps each even pick even against everyone but its listed counters (docs/vision.md)', () => {
