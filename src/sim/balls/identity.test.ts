@@ -6,6 +6,7 @@ import { ARENA_SIZE, STANDARD_BALL_RADIUS } from '../constants.ts';
 import { createWorld } from '../world.ts';
 import { POISON_DAMAGE } from '../status.ts';
 import { archer, ARROW_DAMAGE } from './archer.ts';
+import { CANNONBALL_DAMAGE } from './pirate.ts';
 import { berserker, RAGE_DAMAGE } from './berserker.ts';
 import { brawler } from './brawler.ts';
 import { frost } from './frost.ts';
@@ -222,6 +223,7 @@ describe('the ball roster: identity rules', () => {
       // Its copy deals nothing; the lance is a bump (ADR 0077).
       mirage: 0,
       jouster: 0,
+      pirate: CANNONBALL_DAMAGE,
     };
     // A shot that hits the Balloon harder (ADR 0075) stays under the strike too: the spear the most.
     expect(Math.round(Math.max(SPEAR_DAMAGE, SHOT_DAMAGE, ARROW_DAMAGE) * SHOT_TIMES)).toBeLessThan(
