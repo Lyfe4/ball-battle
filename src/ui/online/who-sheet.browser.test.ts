@@ -161,6 +161,10 @@ describe('Who do you want to play? (ADR 0089 addendum of 2026-11-27)', () => {
     sheet.update(SOME.map((one) => (one.name === 'Robin' ? { ...one, status: 'offline' } : one)));
     expect(robin()).not.toBe(before);
     expect(robin()?.getAttribute('aria-checked')).toBe('true');
+    // Opened again with the same friends: the same rows, nothing picked.
+    sheet.update([...SOME]);
+    sheet.open(SOME, LIVE);
+    expect(document.querySelector('.who-row[aria-checked="true"]')).toBeNull();
   });
 
   it('says a failure above the button, keeps the pick, and sends again on Try', async () => {

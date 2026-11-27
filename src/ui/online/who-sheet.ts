@@ -121,7 +121,11 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
    */
   function place(...parts: HTMLElement[]): void {
     const next = parts.map((part) => part.outerHTML).join('');
-    if (next === drawn && root.childElementCount === parts.length) return;
+    if (next === drawn && root.childElementCount === parts.length) {
+      // The same rows: only which one is picked may have moved since (`choose` sets it in place).
+      markPicked();
+      return;
+    }
     drawn = next;
     root.replaceChildren(...parts);
   }
@@ -173,12 +177,16 @@ export function createWhoSheet(host: WhoSheetHost): WhoSheet {
         ? key === 'link'
         : picked.friend.id === key;
 
-  function choose(next: WhoPick | undefined): void {
-    picked = next;
-    say(undefined);
+  function markPicked(): void {
     for (const row of root.querySelectorAll<HTMLElement>('.who-row')) {
       row.setAttribute('aria-checked', String(isPicked(row.dataset['who'] ?? '')));
     }
+  }
+
+  function choose(next: WhoPick | undefined): void {
+    picked = next;
+    say(undefined);
+    markPicked();
     showSend();
   }
 
