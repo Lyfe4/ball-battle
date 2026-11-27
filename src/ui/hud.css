@@ -122,6 +122,11 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .hud-ball {
+  transition: none;
+}
+
 /*
  * Speed and the way out of a series share one row under the health bars on a phone (ADR 0039):
  * speed at the start, Leave series (a quiet text link) at the far end, well apart. Beside the arena

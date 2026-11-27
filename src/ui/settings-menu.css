@@ -54,7 +54,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .settings-panel {
+  :where(:root:not([data-motion='reduce'])) .settings-panel {
     animation: settings-open var(--motion-quick) var(--ease-out);
   }
 }

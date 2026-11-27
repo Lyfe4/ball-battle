@@ -182,6 +182,11 @@
   }
 }
 
+/* The game's own Reduce motion (settings), as the system's. */
+:where(:root[data-motion='reduce']) .friends-lists[data-reveal] {
+  animation-name: none;
+}
+
 .friends-add-row {
   display: flex;
   gap: var(--space-small);

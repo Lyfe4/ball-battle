@@ -14,6 +14,7 @@ import { createCloseButton } from '../close-button.ts';
 import { element, setAttr, setHidden, setText } from '../dom.ts';
 import type { Incoming } from '../../screens/incoming-text.ts';
 import { personDisc } from './friend-sheet.ts';
+import { reducedMotion } from '../../app/motion.ts';
 
 export interface IncomingActions {
   /** Accept, or Choose lineup. */
@@ -36,7 +37,7 @@ export interface IncomingBanner {
   fold(target: HTMLElement | undefined): void;
 }
 
-const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const moveLess = () => reducedMotion().matches;
 
 /** A motion token's length in ms (tokens.css), so a script's animation keeps the tokens' time. */
 function tokenMs(name: string): number {
@@ -167,7 +168,7 @@ export function createIncomingBanner(
       root.setAttribute('data-folding', '');
       const from = root.getBoundingClientRect();
       const to = target?.getClientRects().length ? target.getBoundingClientRect() : undefined;
-      const still = reducedMotion() || to === undefined;
+      const still = moveLess() || to === undefined;
       const frames: Keyframe[] = still
         ? [{ opacity: 1 }, { opacity: 0 }]
         : [
@@ -189,7 +190,7 @@ export function createIncomingBanner(
         .then(() => {
           if (folding !== done) return;
           hide();
-          if (target !== undefined && !reducedMotion()) pulse(target);
+          if (target !== undefined && !moveLess()) pulse(target);
         })
         .catch(() => undefined);
     },

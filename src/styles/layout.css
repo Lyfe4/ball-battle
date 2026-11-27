@@ -241,7 +241,7 @@
 
 /* The dim comes after the Winner sticker's moment (ADR 0033), and eases in rather than snapping. */
 @media (min-aspect-ratio: 5/4) and (prefers-reduced-motion: no-preference) {
-  .stage[data-round-over] .arena-container {
+  :where(:root:not([data-motion='reduce'])) .stage[data-round-over] .arena-container {
     transition: opacity var(--motion-slow) var(--ease-out);
   }
 }

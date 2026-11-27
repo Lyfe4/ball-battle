@@ -3,6 +3,7 @@ import type { DefinitionLookup } from '../../sim/types.ts';
 import { element, setAttr, setHidden, setText } from '../dom.ts';
 import type { PickClock } from '../../screens/pick-clock-text.ts';
 import { waitingBall } from '../waiting.ts';
+import { reducedMotion as motionQuery } from '../../app/motion.ts';
 
 export interface PickClockCard {
   /** The card, placed by the series panel above its track, or by its owner (a rematch notice). */
@@ -48,7 +49,7 @@ export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): P
   track?.before(root);
   track?.after(next);
 
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = motionQuery();
   let drawn = '';
   let width = '';
 
