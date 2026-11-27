@@ -211,3 +211,12 @@ a gate rule; `ball-sounds.slow.test.ts` hears every one in real fights and no th
   floor and a caught ball costs about 80 µs more than without.
 - The Tortoise's mirror draws 5.0% of its fights and the Hunter's 4.0% (mirrors are outside the
   targets): two shells take half of each other's small hits, so some run to the time limit.
+
+## Addendum (2026-11-28): a sprung snare snaps shut
+
+A snare that springs drew the zones' default strike, the Storm's flash and lightning bolt, which
+read as a strike from the sky. It now has its own strike look (`strike: 'snap'`,
+`drawTrapSnap` in `src/render/snares.ts`): the Hunter's jaw trap snapping shut where it lay, a short
+side-to-side shake, a puff of dust and splinters in the pelt's browns, all fading over the strike's
+350 ms; with reduced motion the trap shuts and fades in place, the dust still. The style guide shows
+it at four strengths, both ways. Render only: no fight changes.
