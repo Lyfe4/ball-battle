@@ -4,6 +4,7 @@ import { BALL_DESIGNS } from './ball-designs/index.ts';
 import { boltPoints, burnLook, strikeProgress } from './zone-geometry.ts';
 import type { Strike } from './effects.ts';
 import { drawBlast, drawBomb } from './bombs.ts';
+import { drawSnare, isSnare } from './snares.ts';
 import { theme } from './theme.ts';
 
 /**
@@ -20,6 +21,10 @@ export function drawZones(
   for (const zone of world.zones) {
     if (zone.endTick !== undefined) {
       drawBurn(ctx, zone, world.tick);
+      continue;
+    }
+    if (isSnare(zone)) {
+      drawSnare(ctx, zone, ownerColor(world.balls, definitions, zone.ownerId), world.tick);
       continue;
     }
     if (zone.trigger !== undefined) {

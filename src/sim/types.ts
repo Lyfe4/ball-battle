@@ -13,6 +13,11 @@ export interface Vec2 {
   readonly y: number;
 }
 
+/** The ball being bumped, as `contactDamageOf` sees it: its speed as it came in, before the bounce. */
+export interface BumpTarget {
+  readonly speed: number;
+}
+
 /** The square play area. Spans [0, size] on both axes. */
 export interface Arena {
   readonly size: number;
@@ -89,9 +94,10 @@ export interface BallDefinition<S extends AbilityState = AbilityState> extends B
   /**
    * Base contact damage in the ball's current state, for an ability that changes how hard it hits
    * (the Berserker's rage). A pure query, not a hook, read from the ball as it was before the
-   * exchange; directness still scales it (ADR 0008, 0015). Defaults to `contactDamage`.
+   * exchange; directness still scales it (ADR 0008, 0015). `target` is what it bumps as it came
+   * in, before the bounce (the Hunter reads its speed). Defaults to `contactDamage`.
    */
-  readonly contactDamageOf?: (self: BallView<S>, stats: BallStats) => number;
+  readonly contactDamageOf?: (self: BallView<S>, stats: BallStats, target: BumpTarget) => number;
   /**
    * How much harder its bump lands by how directly it hit (the cosine of its approach angle), on
    * top of the directness scaling (ADR 0077: the Jouster's lance, triple head-on). A pure query.

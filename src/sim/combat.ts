@@ -6,6 +6,7 @@ import type {
   BallDefeatedEvent,
   BallDefinition,
   BallState,
+  BumpTarget,
   DamageEvent,
   DefinitionLookup,
   SimEvent,
@@ -74,8 +75,12 @@ export function isPhased(ball: BallState, definition: BallDefinition): boolean {
  * if it declares one, otherwise its `contactDamage` (ADR 0015). Throws for a non-finite or
  * negative value, which only a bug can produce.
  */
-export function contactDamageOf(ball: BallState, definition: BallDefinition): number {
-  const damage = definition.contactDamageOf?.(ball, definition) ?? definition.contactDamage;
+export function contactDamageOf(
+  ball: BallState,
+  definition: BallDefinition,
+  target: BumpTarget,
+): number {
+  const damage = definition.contactDamageOf?.(ball, definition, target) ?? definition.contactDamage;
   if (!Number.isFinite(damage) || damage < 0) {
     throw new Error(`Ball "${ball.id}" has an invalid contact damage (${String(damage)})`);
   }
@@ -112,8 +117,16 @@ export function applyContactDamage(
   newContacts: readonly PairContact[],
   definitions: DefinitionLookup,
   tick: number,
+  before: readonly BallState[] = balls,
 ): DamageResult {
   const byId = new Map(balls.map((ball) => [ball.id, ball]));
+  if (newContacts.length === 0) return { balls, damage: [], reduced: [] };
+  const beforeById = new Map(before.map((ball) => [ball.id, ball]));
+  // What a bump reads of the ball it hits: its speed as it came in, before the bounce.
+  const bumpTargetOf = (target: BallState): BumpTarget => {
+    const { x, y } = (beforeById.get(target.id) ?? target).velocity;
+    return { speed: Math.sqrt(x * x + y * y) };
+  };
   const damage: DamageEvent[] = [];
   const reduced: HitReducedEvent[] = [];
 
@@ -125,7 +138,10 @@ export function applyContactDamage(
     return {
       target,
       source,
-      raw: impactDamage(contactDamageOf(source, definition) * times, multiplier),
+      raw: impactDamage(
+        contactDamageOf(source, definition, bumpTargetOf(target)) * times,
+        multiplier,
+      ),
       multiplier,
       times,
       reduced: 0,
