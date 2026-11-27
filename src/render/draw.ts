@@ -37,6 +37,7 @@ import { STILL } from './drift.ts';
 import { drawShadows } from './shadows.ts';
 import { drawRipples, drawTentacles } from './tentacles.ts';
 import { drawWails } from './wails.ts';
+import { drawWaves } from './waves.ts';
 
 /** How big the canvas is: its backing store, and how large it appears on screen. */
 export interface CanvasView {
@@ -146,6 +147,7 @@ export function drawWorld(
   drawSnaps(ctx, world, effects.snaps, effects.reducedMotion);
   drawRipples(ctx, world, effects.reducedMotion);
   drawWails(ctx, world, effects.reducedMotion);
+  drawWaves(ctx, world);
   drawShadows(ctx, world, effects.drift);
   drawTrails(ctx, world);
   drawCopies(

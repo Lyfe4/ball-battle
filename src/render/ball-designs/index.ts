@@ -29,6 +29,7 @@ import { bansheeDesign } from './banshee.ts';
 import { krakenDesign } from './kraken.ts';
 import { mirageDesign } from './mirage.ts';
 import { jousterDesign } from './jouster.ts';
+import { poseidonDesign } from './poseidon.ts';
 
 /**
  * How each kind of ball looks, keyed by definition id. A ball without an entry is drawn as a
@@ -65,4 +66,5 @@ export const BALL_DESIGNS: ReadonlyMap<string, BallDesign> = new Map([
   ['kraken', krakenDesign],
   ['mirage', mirageDesign],
   ['jouster', jousterDesign],
+  ['poseidon', poseidonDesign],
 ]);
