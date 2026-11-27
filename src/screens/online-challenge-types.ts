@@ -29,6 +29,8 @@ export interface ChallengeHost {
   toMatch(match: CurrentMatch): Promise<void>;
   /** The sender's waiting screen waits for the friend (each of its asks): news is expected. */
   readonly lobbyWaits?: () => void;
+  /** The sender's waiting challenge was cancelled: home shows no way back to it, at once. */
+  readonly lobbyGone?: () => void;
   /** What a guest's waiting link shows after it: how to challenge friends by name (ADR 0089). */
   readonly lobbyAfter?: (card: ChallengeInfo) => HTMLElement | undefined;
 }

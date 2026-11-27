@@ -128,6 +128,8 @@ const boxSays = () => [
 const sentPosts = (asked: readonly string[]) =>
   asked.filter((line) => line.startsWith('POST challenges '));
 async function openSheet(): Promise<void> {
+  // Play shows in its row (never a stale "Back to your lobby" after a cancel).
+  await until(() => visible('.home-play-row .home-play').length > 0, 2_000, 'Play', false);
   await userEvent.click(play());
   await until(() => sheet()?.open === true, 5_000, 'the sheet', false);
   await until(() => names().length > 1, 5_000, 'friends', false);
