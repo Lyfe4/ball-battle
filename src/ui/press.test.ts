@@ -162,9 +162,11 @@ describe('a tap shows on every control', () => {
         // A fill on no class can't be checked: name the control.
         if (name === undefined) return true;
         const rules = RULES.filter((rule) => rule.selectors.some((one) => own(name).test(one)));
-        // A summary keeps the shared corners unless a rule of its own squares them.
+        // A summary keeps the shared corners unless a rule of its own squares them. `inherit`
+        // squares them too: a summary inherits from its details' own slot, which has no corners,
+        // not from the card.
         if (SUMMARIES.has(name.slice(1))) {
-          return rules.some((rule) => /border-radius: 0\b/.test(rule.body));
+          return rules.some((rule) => /border-radius: (0\b|inherit)/.test(rule.body));
         }
         return !rules.some((rule) => rule.body.includes('border-radius:'));
       })

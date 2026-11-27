@@ -1,5 +1,5 @@
 // The first series' unlock (ADR 0090 addendum "The unlock moment", 1e): at its result, win or lose,
-// once, a reward card by the result sticker: a gold edge, "New: more ways to play" and a row of
+// once, a reward card by the result sticker: a gold outline, "New: more ways to play" and a row of
 // small icons, one per new way. Folded, it is one row, so Rematch and Home stay on a 390 x 664
 // screen; a tap opens it to the lines, each beside its icon. It comes in after the sticker has
 // landed, on the motion tokens (a fade with reduced motion).

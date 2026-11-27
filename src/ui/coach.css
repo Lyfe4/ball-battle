@@ -1,28 +1,19 @@
 /*
- * The coach (coach.ts, ADR 0090 addendum "One coach"): every moment the game teaches before a fight,
- * in one look that reads as a guide, not content. The surface box with the tip's cream along its
- * left edge and the tip's "i" (arena-tips.css), a step marker, a notch under it pointing at what it
- * talks about (the slots, the pick rows), and one entrance: up a few pixels and in, on the motion
- * tokens; with reduced motion a fade. Acted on, it settles to its title line.
+ * The coach (coach.ts, ADR 0090 addendum "One coach"): the arena's tip card (`.tip-card`,
+ * frame-tip.css), so the game teaches in one look, with only what a guide needs on top: a step
+ * marker in the title line, a notch pointing at what it talks about (the slots, the pick rows), one
+ * entrance (up a few pixels and in, on the motion tokens; with reduced motion a fade) and, acted on,
+ * settling to its title line.
  */
 .coach {
   position: relative;
-  display: grid;
-  gap: 6px;
-  padding: 10px var(--space-gap) 10px calc(var(--space-gap) + 2px);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  /* The tip's cream as an edge, and a faint outline in it: the arena's tips wear the same. */
-  box-shadow:
-    inset 4px 0 0 var(--color-tip),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-tip) 25%, transparent);
 }
 
 .coach[hidden] {
   display: none;
 }
 
-/* The notch: a small cream-edged point under the box, at the left, toward what it explains. */
+/* The notch: a small point of the card, its faint cream outline on the two outer sides. */
 .coach::after {
   position: absolute;
   bottom: -7px;
@@ -36,19 +27,13 @@
   rotate: 45deg;
 }
 
+/* The step marker's pill keeps the title line one height. */
 .coach-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
   min-height: 24px;
 }
 
 .coach-title {
   flex: 1;
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1.25;
 }
 
 /* "1 of 3": the guide's place, quiet, at the end of the title line. */
@@ -58,16 +43,13 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-tip) 14%, transparent);
   color: var(--color-tip);
-  font-size: var(--font-size-small);
   font-weight: 800;
   white-space: nowrap;
 }
 
 .coach-body {
   display: grid;
-  gap: 4px;
-  font-size: var(--font-size-small);
-  line-height: 1.4;
+  gap: 2px;
 }
 
 .coach-body[hidden] {
@@ -86,17 +68,12 @@
 }
 
 /* Settled (acted on): the title line alone, no notch, a little quieter. */
-.coach[data-settled] {
-  padding-block: 6px;
-}
-
 .coach[data-settled]::after {
   display: none;
 }
 
 .coach[data-settled] .coach-title {
   color: var(--color-text-muted);
-  font-size: var(--font-size-small);
 }
 
 .coach-enter {
@@ -124,8 +101,8 @@
 
 /*
  * The answer the coach points at (ADR 0090 addendum, 1b): in the first series, the best answer's
- * row and its mark glow in the tip's cream, a slow breath on the swing curve; with reduced motion a
- * still ring. Only ever one row.
+ * row and its mark glow in the tip's cream, one slow breath together on the swing curve; with reduced
+ * motion still rings. Only ever one row.
  */
 .pick-row[data-coached] {
   border-radius: var(--radius);
@@ -133,8 +110,13 @@
   animation: coach-glow var(--motion-breathe) var(--ease-swing) infinite alternate;
 }
 
+/*
+ * The lit answer's mark breathes with its row: the same token, curve and direction, started on the
+ * same frame (both from the row's data-coached), so the two rings swell and settle together.
+ */
 .pick-row[data-coached] .pick-row-badge[data-facing] {
   box-shadow: 0 0 0 3px var(--color-tip);
+  animation: coach-cell-glow var(--motion-breathe) var(--ease-swing) infinite alternate;
 }
 
 @keyframes coach-glow {
@@ -149,8 +131,22 @@
   }
 }
 
+@keyframes coach-cell-glow {
+  from {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-tip) 55%, transparent);
+  }
+
+  to {
+    box-shadow:
+      0 0 0 3px var(--color-tip),
+      0 0 14px 2px color-mix(in srgb, var(--color-tip) 45%, transparent);
+  }
+}
+
+/* With reduced motion both are still rings. */
 @media (prefers-reduced-motion: reduce) {
-  .pick-row[data-coached] {
+  .pick-row[data-coached],
+  .pick-row[data-coached] .pick-row-badge[data-facing] {
     animation: none;
   }
 }
