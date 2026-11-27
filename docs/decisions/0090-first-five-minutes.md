@@ -23,7 +23,8 @@ the Play tab offered everything at once; the Ranks tab was three "Coming soon" c
 1. **D1: the first series is against the Easy bot**: Best of 3 · Reveal, picks at random, no script.
    It is never saved as Play's: after it, the box says Best of 5 · Reveal · vs Normal bot (the
    addendum below).
-2. **D2: the bot shows first in round 1**, by the choice of seed, never a rule. Reveal's toss is a
+2. **D2: the bot shows first in round 1**, by the choice of seed, never a rule (since the addendum of
+   2026-11-28 the seed is chosen for the player's lineup, with more rules; this stepping is gone). Reveal's toss is a
    pure function of the series seed (`revealFirst`), so the lineup step steps from a fresh seed to
    the nearest one whose toss gives the bot (`botShowsFirstSeed`, `src/app/first-series-setup.ts`):
    bounded to 64 steps and deterministic, as browser tests pin `generateSeed` to one value. No sim
@@ -74,6 +75,8 @@ All of it is one component (`steps-box.ts`, the notice's "How it goes" box), sta
 place, and a device's choices, never a server's: no new function call, no migration.
 
 ## The guided series' win rate
+
+_As first built; superseded by the addendum of 2026-11-28 (the seed chosen for the lineup)._
 
 Measured with `node scripts/first-series-measure.ts 3000` (ruleset 24, 32 balls; ruleset 23 was
 within a point): 3,000 whole series per row, real fights, Best of 3 · Reveal against Easy on a stepped seed. "▲ picker" takes
@@ -127,3 +130,98 @@ wins." This amends ADR 0048, where Best of 3 was the default.
   of 3 against a friend (`src/flows/online-device-support.ts`), the length their live matches were
   written and timed for, and the default itself is checked by `modes.test.ts`,
   `series-length.test.ts` and the first-visit flow.
+
+## Addendum (2026-11-28): tuned to teach, one coach, the unlock moment
+
+The owner's verdict on the built first series: the guide works, but it looked like any other card,
+sat away from what it explained, and the first series was a coin flip (53% for a player reading the
+marks). Decided and built overnight (the owner's brief, unattended; each choice below is the
+reasonable reading, open to change).
+
+### The first series is tuned to teach (replaces D2's seed stepping)
+
+**Say it plainly: the guided first series is tuned so a newcomer who reads the marks almost always
+wins it.** Only that series (the guided Best of 3 · Reveal against Easy, on a device in the guided
+state), never a later series, a link, a friend or online. It is still a choice of seed, never a sim
+rule: the seed is chosen after the player's lineup is set (Pick for me included), so the bot's lineup,
+the toss, every Easy choice and every fight follow from it, and `verifySeries` accepts it as any seed.
+`firstSeriesSeed` (`src/app/first-series-seed.ts`) looks at seeds from a fresh one, at most 2,048,
+for one that passes every rule:
+
+- **A natural grid** (`isNaturalGrid`): two or three ▲ for the player (one ▲▲ at most), at most one
+  ▼, no ▼▼, the rest even. Never a grid full of green.
+- **Round 1**: the bot shows first, a ball the player has a ▲ answer to.
+- **Round 2**: whatever the player shows, Easy's answer is never favoured against it.
+- **Every favoured fight is won**: each fight where the player's ball is favoured (round 1's answers,
+  round 2's ball against each answer, round 3's last two balls) is pre-played on the seed and must
+  go the favoured ball's way. A pick that isn't favoured plays its fight as it falls: no even fight
+  is ever chosen, so "▲ matters" stays true.
+- **Preferred**: a seed where a player taking the highest ▲ is carried by favoured fights alone
+  (round 1's answer, then round 2's or, if round 2 is lost, round 3's), else the best of the first
+  six that pass by how often round 3 favours the player; past 2,048 seeds, the first with two ▲
+  where the bot shows first.
+
+The search plays up to a dozen fights per passing seed, about 40 ms (median, up to 200 ms) on a
+desktop, so the page runs it between frames (`firstSeriesSeedSliced`, 12 ms slices) with Reveal
+lineups busy (`busyOnClick`); a Back meanwhile starts nothing. Measured with `node
+scripts/first-series-measure.ts 3000` (ruleset 24, 32 balls), 3,000 whole series per row:
+
+| Player   | Lineup      | Series won (±2σ) | Round 1 won | 2+ ▲ in the grid | Natural grid |
+| -------- | ----------- | ---------------- | ----------- | ---------------- | ------------ |
+| ▲ picker | random      | 96.6% ± 0.7%     | 99.8%       | 100.0%           | 99.7%        |
+| random   | random      | 70.1% ± 1.7%     | 68.7%       | 100.0%           | 99.7%        |
+| ▲ picker | Pick for me | 92.4% ± 1.0%     | 100.0%      | 100.0%           | 100.0%       |
+| random   | Pick for me | 72.4% ± 1.6%     | 69.3%       | 100.0%           | 100.0%       |
+
+The bot showed first in every series. The targets (▲ picker 90% or more, random 70-80%, 2+ ▲
+always) are met without the grid looking rigged; the 0.3% of grids that aren't "natural" are lineups
+where no seed in 2,048 passed every rule, which fall back to two ▲ where the bot shows first.
+
+### One coach (`coach.ts`, `coach.css`)
+
+Every moment the game teaches before a fight has one look that reads as a guide, not content: the
+first series' "How a series goes" (1 of 3), "Your first pick" (2 of 3) and "Round 2: you show
+first" (3 of 3), and a format's first time ("How Showdown goes", "How Blind goes", no step marker).
+
+- **Its look** is the arena tips' (ADR 0036): the tip's cream along the left edge, a faint cream
+  outline and the tip's "i", so the game has one teaching colour; not the accent yellow, which is
+  the main action's. A step marker ("2 of 3") where the guide has steps.
+- **Placed against what it explains**, a notch pointing at it: over the pick rows (a phone, a
+  desktop), beside them with the notch across (a phone turned sideways); over the lineup's slots on
+  a desktop, under the main action pointing up at them on a phone turned sideways (its sticky
+  button would otherwise cover the tray).
+- **Enters once** on the motion tokens (up 6 px and in, `--motion-slow`, `--ease-out`); a fade with
+  reduced motion. **Acted on, it settles**: the lineup's coach keeps its title line once the slots
+  are full; the pick's goes with the pick.
+- **Points at the answer** (1b): in the first series' round 1, the best answer's row (▲▲ before ▲,
+  `bestAnswer`) and its mark wear a cream ring that breathes (`--motion-breathe`, `--ease-swing`);
+  a still ring with reduced motion. The coach says so: "The lit row is your best answer."
+- **Round 1 fits a phone** (1c): on a phone held upright, round 1's pick reads the score line with
+  the track a tap away (as a phone turned sideways already did, ADR 0067), so the banner, the coach
+  and every pick row show at 390 × 664 without a scroll (checked in the first-visit flow). The
+  rows' heads show the bot's balls, so nothing is lost.
+- **Tooltips never cover a coach**: a mark's tooltip goes to the other side when the coach is in
+  the way (`placeTooltip`'s `avoid`).
+
+### The unlock moment (`unlock-card.ts`)
+
+At the first result, win or lose, "New: more ways to play" is a reward card directly under the
+result sticker: a gold edge and wash, the title in gold and one small icon per new way (Best of 5,
+Showdown, the bots, a friend). Folded it is one 48 px row, so Rematch, Change balls and Home stay on
+a 390 × 664 screen (the flow checks it); a tap opens the lines, each beside its icon. It enters one
+slow beat after the sticker lands. A compact strip that opens was chosen over showing it after the
+result settles: it is seen at once, where the eye is, and never moves the buttons later.
+
+### Also fixed from the owner's screenshots
+
+- **What to play's "New" tag** sits on the button's top left edge, out of the text's flow, so every
+  format button has one height at every size (Showdown's wrapped under its name).
+- **The score grid's waiting balls** are one overlapping cluster on one line, 30 px high, however
+  many (a Best of 5's five stacked in three rows).
+- **Ranks is one card** at every size: "Ranked is coming / Trophies for online wins. Until then,
+  play a friend." and Play a friend now under it; the intro that said it twice is gone, and the
+  desktop's aside with it (amends D5).
+- **A reload in the middle of the first series** comes back to the same series, its coach and its
+  lit row, with the device in one state throughout (`first-series-reload.safari.browser.test.ts`).
+  Log out and Forget me still clear every `ballbattle.*` key, so a shared device gets the guided
+  first series again.
