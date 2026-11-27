@@ -22,8 +22,12 @@ export function waitingBall(size: WaitingBallSize = 'large'): HTMLElement {
   const ball = element('span', 'waiting-ball');
   ball.dataset['size'] = size;
   ball.setAttribute('aria-hidden', 'true');
-  // How far into the page's life it is made: the loop starts that far in (a negative delay).
-  ball.style.setProperty('--waiting-since', `-${String(Math.round(performance.now()))}ms`);
+  // How far into the page's life it is made: the loop starts that far in (a negative delay). On
+  // the animations' own clock (the frame's time), not performance.now(), which runs ahead of it
+  // within a frame: a busy frame put a ball drawn again a pixel or two off the one before.
+  const clock = document.timeline.currentTime;
+  const now = typeof clock === 'number' ? clock : performance.now();
+  ball.style.setProperty('--waiting-since', `-${String(Math.round(now))}ms`);
   return ball;
 }
 

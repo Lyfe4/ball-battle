@@ -252,6 +252,7 @@ export async function runFirstVisitFlow(): Promise<void> {
   await settle();
   await click(button('Pick for me'));
   await click(button('Reveal lineups'));
+  await until(() => location.search.includes('step=answer'), 10_000, 'round 1’s pick');
   await tossed();
   await click(visible('.answer-step .pick-row-pick')[0] ?? document.body);
   await click(button('Leave series'));
