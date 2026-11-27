@@ -183,7 +183,7 @@ Every moment the game teaches before a fight has one look that reads as a guide,
 first series' "How a series goes" (1 of 3), "Your first pick" (2 of 3) and "Round 2: you show
 first" (3 of 3), and a format's first time ("How Showdown goes", "How Blind goes", no step marker).
 
-- **Its look** is the arena tips' (ADR 0036): the tip's cream along the left edge, a faint cream
+- **Its look** (amended below: the arena's tip card itself, no edge) is the arena tips' (ADR 0036): the tip's cream along the left edge, a faint cream
   outline and the tip's "i", so the game has one teaching colour; not the accent yellow, which is
   the main action's. A step marker ("2 of 3") where the guide has steps.
 - **Placed against what it explains**, a notch pointing at it: over the pick rows (a phone, a
@@ -235,3 +235,22 @@ result settles: it is seen at once, where the eye is, and never moves the button
   Forget me still clear every `ballbattle.*` key, so a shared device gets it again.
 - **No "By turns" or "Live" words where the build has no play by turns** (production today):
   Profile's stats and match rows say neither, as every match there is live.
+
+### The coach is the tip card (2026-11-28)
+
+- **The coach reuses the in-game tip style**: it is the arena caption's own card (`.tip-card`,
+  `.tip-card-head`, `.tip-card-title` in `frame-tip.css`): the quiet surface, the faint 1 px cream
+  outline, the "i" and a small bold title. The cream left edge is gone, as the caption's stripe went
+  in ADR 0036's addendum of 2026-11-23 (it read as a generic card look). On top it keeps only the
+  step marker, the notch and settling once acted on.
+- **The unlock card** loses its gold left edge and its wash from the left in the same way: the
+  surface with a faint gold outline, the title and icons in gold. No other card wore an edge.
+- **Its header's hover and pressed fill keeps the card's corners**: its header inherited its
+  corners, which a `<summary>` takes from its details' own slot (no corners), so the fill was
+  square. It now takes base.css's one summary rule (all four corners folded, the top two open), as
+  every other fold does; `press.test.ts` refuses `inherit` on a summary, and the first-visit flow
+  checks the shape folded and open. No other fold header (How it was won, How it works, Free
+  play's why, fair play) or Profile's card had the problem.
+- **The lit answer's ▲ mark breathes with its row**: the same `--motion-breathe` and `--ease-swing`,
+  started on the same frame; with reduced motion both are still rings (checked in the first-visit
+  flow).

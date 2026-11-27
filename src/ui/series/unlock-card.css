@@ -1,22 +1,15 @@
 /*
  * The first series' unlock card (unlock-card.ts, ADR 0090 addendum, 1e): a reward, not a note. The
- * surface with a gold edge and a faint gold wash, the title in gold, the new ways as small icons on
- * the folded row. It enters after the result sticker has landed (one slow beat), up a few pixels;
- * with reduced motion it only fades in.
+ * tip card's form (frame-tip.css), a quiet surface with a faint outline and no stripe, in gold
+ * instead of cream: a gold outline, the title in gold, the new ways as small icons on the folded
+ * row. It enters after the result sticker has landed (one slow beat), up a few pixels; with reduced
+ * motion it only fades in.
  */
 .unlock-card {
   width: 100%;
   border-radius: var(--radius);
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-accent) 16%, transparent),
-      transparent 70%
-    ),
-    var(--color-surface);
-  box-shadow:
-    inset 4px 0 0 var(--color-accent),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
   animation: unlock-in var(--motion-slow) var(--ease-out) var(--motion-slow) both;
 }
 
@@ -29,8 +22,8 @@
   align-items: center;
   gap: var(--space-small);
   min-height: var(--button-height);
-  padding: var(--space-small) var(--button-pad) var(--space-small) calc(var(--button-pad) + 2px);
-  border-radius: inherit;
+  /* Its hover and pressed fill takes the card's corners from base.css's summary rule. */
+  padding: var(--space-small) var(--button-pad);
   cursor: pointer;
   list-style: none;
 }
@@ -78,7 +71,7 @@
   display: grid;
   gap: var(--space-small);
   margin: 0;
-  padding: 0 var(--button-pad) 0 calc(var(--button-pad) + 2px);
+  padding: 0 var(--button-pad);
   list-style: none;
   font-size: var(--font-size-small);
   line-height: 1.4;
@@ -96,7 +89,7 @@
 
 .unlock-where {
   margin: 0;
-  padding: var(--space-small) var(--button-pad) var(--space-gap) calc(var(--button-pad) + 2px);
+  padding: var(--space-small) var(--button-pad) var(--space-gap);
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
 }

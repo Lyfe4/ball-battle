@@ -84,10 +84,11 @@ export function createArenaTips(
   const ring = createTipRing(layer, lookup);
   const mark = element('canvas', 'arena-caption-mark');
   mark.setAttribute('aria-hidden', 'true');
-  const title = element('strong', 'arena-caption-title');
-  const head = element('span', 'arena-caption-head');
+  const title = element('strong', 'tip-card-title arena-caption-title');
+  const head = element('span', 'tip-card-head arena-caption-head');
   head.append(tipMark(), mark, title);
   const sentence = element('span', 'arena-caption-text');
+  caption.classList.add('tip-card');
   caption.replaceChildren(head, sentence);
   caption.hidden = true;
 

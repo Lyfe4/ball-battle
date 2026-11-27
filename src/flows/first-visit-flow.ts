@@ -18,6 +18,7 @@ import { FIRST_VISIT } from '../ui/first-series-text.ts';
 import { FORMAT_LINES } from '../ui/series-text.ts';
 import { check, linesOf, serious } from './a11y-flow.ts';
 import { controlProblems } from './controls-look-flow.ts';
+import { checkFoldShape, checkGlowInStep } from './first-visit-looks.ts';
 import { headerAnchors } from './frame-anchors-flow.ts';
 import { back, button, settle, tossed, until, visible } from './page-support.ts';
 import { closeSheet, openSheet, playMeta } from './play-sheet-support.ts';
@@ -100,6 +101,7 @@ async function playFirstSeries(): Promise<void> {
   const lit = visible('.answer-step .pick-row[data-coached]');
   expect(lit, 'one lit row').toHaveLength(1);
   expect(lit[0]?.querySelector('.pick-row-badge[data-facing]')?.textContent).toMatch(/▲/);
+  checkGlowInStep(lit[0]);
   if (upright()) {
     // A phone: the banner, the coach and every pick row show without a scroll (1c).
     const parts = ['.answer-step .series-banner', '.answer-guide', '.answer-step .pick-row'];
@@ -138,7 +140,9 @@ async function playFirstSeries(): Promise<void> {
     const box = button(name).getBoundingClientRect();
     expect(Math.round(box.bottom) <= window.innerHeight, `${name} on screen`).toBe(true);
   }
+  checkFoldShape('.unlock-card', '.unlock-summary');
   await click(visible('.unlock-summary')[0] ?? document.body);
+  checkFoldShape('.unlock-card', '.unlock-summary');
   expect(textsOf('.unlock-card li')).toContain('Play a friend with a link.');
   expect(textsOf('.unlock-card li')[0]).toBe('From now on a series is Best of 5: first to 3 wins.');
   expect(visible('.series-share')).toHaveLength(0);

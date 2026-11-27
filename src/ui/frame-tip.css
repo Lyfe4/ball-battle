@@ -4,7 +4,7 @@
  * watched: home, the manual and the setup screens never show it.
  */
 .frame-tip,
-.arena-caption {
+.tip-card {
   margin: 0;
   padding: var(--space-small) var(--space-gap);
   border-radius: var(--radius);
@@ -21,8 +21,32 @@
 }
 
 /*
- * The ability caption (arena-tips.ts, ADR 0036 addenda of 2026-11-22 and 2026-11-23): the same quiet
- * box with a very faint cream outline, the tip's own colour, in a fixed place by the match for about
+ * The tip's card (ADR 0036 addendum of 2026-11-23): the same quiet box with a very faint cream
+ * outline, the tip's own colour, and no stripe; a head line of the tip's "i" and a bold title, then
+ * its words. The arena's ability caption and the coach before a fight (coach.css, ADR 0090) are
+ * both this card, so the game teaches in one look.
+ */
+.tip-card {
+  display: grid;
+  gap: 2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-tip) 25%, transparent);
+}
+
+.tip-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tip-card-title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 800;
+  line-height: inherit;
+}
+
+/*
+ * The ability caption (arena-tips.ts): the tip's card in a fixed place by the match for about
  * 7 s. On a phone it floats under the panel's last row (the speed row), so showing it never moves
  * the court or the panel.
  */
@@ -34,9 +58,6 @@
   position: absolute;
   inset-inline: 0;
   top: calc(100% + var(--space-gap));
-  display: grid;
-  gap: 2px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-tip) 25%, transparent);
 }
 
 /* Beside a phone's court turned sideways: the last row of the panel (it scrolls inside itself). */
@@ -57,18 +78,8 @@
 }
 
 /* The tip's "i", the ball's small drawing, then its name and ability in its colour (arena-tips.ts). */
-.arena-caption-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .arena-caption-mark {
   flex: none;
-}
-
-.arena-caption-title {
-  font-weight: 800;
 }
 
 .arena-caption[hidden],

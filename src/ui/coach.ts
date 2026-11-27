@@ -1,8 +1,9 @@
 // The coach (ADR 0090 addendum "One coach"): one look for every moment the game teaches before a
 // fight — the first series' "How a series goes", "Your first pick" and round 2's line, and a
-// format's first time ("How Showdown goes", "How Blind goes"). It reads as a guide, not content: the
-// tip's own cream edge and "i" (the arena's tips wear the same, ADR 0036), a step marker where the
-// guide has steps ("1 of 3"), and an entrance on the motion tokens. It sits against the thing it
+// format's first time ("How Showdown goes", "How Blind goes"). It is the arena's tip card itself
+// (`.tip-card`, frame-tip.css, ADR 0036): the quiet box, the faint cream outline and the tip's "i".
+// On top only what a guide needs: a step marker where it has steps ("1 of 3"), and an entrance on
+// the motion tokens. It sits against the thing it
 // talks about, a notch pointing at it, and shrinks to its title line once acted on. A static part
 // read in place (no live region): it is there when the screen shows, so a screen reader meets it
 // in order, its words redrawn only when they change.
@@ -28,7 +29,7 @@ export interface Coach {
 export const stepWords = (at: number, of: number): string => `${String(at)} of ${String(of)}`;
 
 export function createCoach(className: string): Coach {
-  const root = element('section', `coach ${className}`);
+  const root = element('section', `tip-card coach ${className}`);
   root.hidden = true;
   let shown = '';
   return {
@@ -43,10 +44,10 @@ export function createCoach(className: string): Coach {
         root.replaceChildren();
         return;
       }
-      const head = element('div', 'coach-head');
+      const head = element('div', 'tip-card-head coach-head');
       const mark = element('span', 'tip-i', 'i');
       mark.setAttribute('aria-hidden', 'true');
-      head.append(mark, element('h2', 'coach-title', tip.steps.title));
+      head.append(mark, element('h2', 'tip-card-title coach-title', tip.steps.title));
       if (tip.step !== undefined) {
         const step = element('span', 'coach-step', stepWords(tip.step.at, tip.step.of));
         step.setAttribute('aria-label', `Step ${stepWords(tip.step.at, tip.step.of)}`);
