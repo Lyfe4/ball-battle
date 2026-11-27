@@ -120,11 +120,30 @@
   opacity: var(--opacity-lost);
 }
 
+/*
+ * The balls a side has yet to play, as one compact cluster on one line (2026-11-27): each overlaps
+ * the one before, ringed in the card's colour so each still reads, and the cell keeps the row's
+ * height whatever the count (five in a Best of 5 stacked in three rows before).
+ */
 .series-track-pool {
-  flex-wrap: wrap;
-  gap: 2px;
+  flex-wrap: nowrap;
   max-width: 100%;
+  height: 30px;
   border-radius: var(--radius);
+}
+
+.series-track-pool > .series-track-icon {
+  flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.series-track-pool > .series-track-icon + .series-track-icon {
+  margin-left: -4px;
+}
+
+.series-track-pool:has(> :nth-child(4)) > .series-track-icon + .series-track-icon {
+  margin-left: -9px;
 }
 
 .series-track-unknown {
@@ -167,15 +186,6 @@
 .series-banner-ask {
   color: var(--color-text-muted);
   font-weight: 600;
-}
-
-/* The first series' round 2 (ADR 0090): one quiet line under the banner, what showing first means. */
-.series-coach {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  font-weight: 600;
-  text-align: center;
 }
 
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {

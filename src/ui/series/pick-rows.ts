@@ -11,8 +11,11 @@ import type { PickChoice } from './series-view.ts';
 
 export interface PickRows {
   readonly element: HTMLElement;
-  /** Shows one row per option; rebuilt only when the choice changes. */
-  show(choice: PickChoice, seats?: Seats): void;
+  /**
+   * Shows one row per option; rebuilt only when the choice changes. `coached` is the row the
+   * first series' coach points at (coach.css), if any.
+   */
+  show(choice: PickChoice, seats?: Seats, coached?: string): void;
   /** Focuses the first option. */
   focus(options?: FocusOptions): void;
 }
@@ -158,9 +161,9 @@ export function createPickRows(
 
   return {
     element: root,
-    show(choice, shownSeats = BOT_SEATS) {
+    show(choice, shownSeats = BOT_SEATS, coached) {
       seats = shownSeats;
-      const next = JSON.stringify([choice, seats]);
+      const next = JSON.stringify([choice, seats, coached]);
       if (next === shown) return;
       shown = next;
       if (theirEdge !== undefined) {
@@ -170,7 +173,13 @@ export function createPickRows(
       // Four or five of the bot's balls (a Best of 5, ADR 0048): the narrower rows (pick-rows.css).
       root.classList.toggle('pick-rows-wide', choice.opponents.length >= WIDE_FROM);
       heads(choice);
-      rows.replaceChildren(...choice.options.map((ball) => row(choice, ball)));
+      rows.replaceChildren(
+        ...choice.options.map((ball) => {
+          const holder = row(choice, ball);
+          if (ball === coached) holder.dataset['coached'] = '';
+          return holder;
+        }),
+      );
     },
     focus(options) {
       rows.querySelector<HTMLButtonElement>('.pick-row-pick')?.focus(options);

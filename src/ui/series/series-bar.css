@@ -75,6 +75,23 @@
   .series[data-phase='playing']:not([data-track-open]) > .series-track {
     display: none;
   }
+
+  /*
+   * Round 1's pick on a phone (ADR 0090 addendum, 1c): the score line too, the track a tap away, so
+   * the banner, a coach and every pick row fit 390 x 664. The rows' heads show the bot's balls.
+   */
+  .answer-step .series-bar-about,
+  .answer-step .series-bar-score-round {
+    display: none;
+  }
+
+  .answer-step .series-bar-score:not([hidden]) {
+    display: inline-flex;
+  }
+
+  .answer-step:not([data-track-open]) > .series-track {
+    display: none;
+  }
 }
 
 /*

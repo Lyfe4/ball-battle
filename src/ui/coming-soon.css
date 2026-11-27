@@ -74,20 +74,9 @@
   line-height: 1.45;
 }
 
-/* The Ranks tab (ranks.ts): the intro, its coming-soon cards and its way on, one column. */
+/* The Ranks tab (ranks.ts): its one coming-soon card and its way on, one column at every size. */
 .ranks {
   display: grid;
   gap: var(--space-gap);
   margin-top: var(--space-gap);
-}
-
-/* The boards stand in the one column with the intro and the button (frame.css: the main column). */
-.ranks-boards {
-  display: contents;
-}
-
-.ranks-intro {
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.45;
 }

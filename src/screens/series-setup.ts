@@ -9,7 +9,8 @@
 // starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from '../app/bot-level.ts';
 import { firstSeries } from '../app/first-series-device.ts';
-import { botShowsFirstSeed, FIRST_SERIES, starterTrio } from '../app/first-series-setup.ts';
+import { bestAnswer, FIRST_SERIES, starterTrio } from '../app/first-series-setup.ts';
+import { firstSeriesSeedSliced } from '../app/first-series-seed.ts';
 import { savePlaySetup, SETUP_FORMATS } from '../app/modes.ts';
 import { loadSetup, saveSetup } from '../app/series-save.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
@@ -17,6 +18,7 @@ import { beginSession, botOf, resolvePicks } from '../app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from '../app/series-url.ts';
 import { botFor, DEFAULT_BOT } from '../sim/bot.ts';
 import { indexDefinitions } from '../sim/definitions.ts';
+import type { Lineup } from '../sim/series.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import {
   bestOfOf,
@@ -29,10 +31,16 @@ import {
   type SeriesState,
 } from '../sim/series.ts';
 import type { BallDefinition } from '../sim/types.ts';
-import { FIRST_VISIT, firstPickSteps, formatSteps, SERIES_STEPS } from '../ui/first-series-text.ts';
+import {
+  FIRST_SERIES_GUIDE,
+  FIRST_VISIT,
+  firstPickSteps,
+  formatSteps,
+  SERIES_STEPS,
+} from '../ui/first-series-text.ts';
+import type { CoachTip } from '../ui/coach.ts';
 import type { Draft } from '../ui/lineup-draft.ts';
 import { createLineupStep, type LineupGuide } from '../ui/series/lineup-step.ts';
-import type { Steps } from '../ui/steps-box.ts';
 import { createAnswerStep } from '../ui/series/answer-step.ts';
 import { createResumeCard } from '../ui/series/resume-card.ts';
 import { createRulesStep } from '../ui/series/rules-step.ts';
@@ -100,27 +108,41 @@ export function createSeriesSetup(
    * it stays up until a series in that format starts, so a Back and forth doesn't lose it.
    */
   const teaching = new Set<Format>();
-  function formatBox(shown: Format): Steps | undefined {
+  /** Counts the steps opened, so a search that outlives its lineup starts nothing. */
+  let openings = 0;
+  function formatBox(shown: Format): CoachTip | undefined {
     if (!teaching.has(shown) && !firstSeries.takeFormatBox(shown)) return undefined;
     teaching.add(shown);
-    return formatSteps(shown);
+    const steps = formatSteps(shown);
+    return steps === undefined ? undefined : { steps };
   }
 
   /** What the lineup teaches now: the first series', or Blind's first time. */
   function lineupGuide(): LineupGuide | undefined {
     if (guided()) {
-      return { steps: SERIES_STEPS, pickForMe: starterTrio(ballIds), line: FIRST_VISIT.play };
+      return {
+        tip: { steps: SERIES_STEPS, step: { at: 1, of: FIRST_SERIES_GUIDE } },
+        pickForMe: starterTrio(ballIds),
+        line: FIRST_VISIT.play,
+      };
     }
-    const steps = format === 'blind' ? formatBox('blind') : undefined;
-    return steps === undefined ? undefined : { steps };
+    const tip = format === 'blind' ? formatBox('blind') : undefined;
+    return tip === undefined ? undefined : { tip };
   }
 
   /** What round 1's pick teaches: the first answer's ▲, or Showdown's first time. */
-  function answerSteps(state: SeriesState): Steps | undefined {
+  function answerTip(state: SeriesState): CoachTip | undefined {
     if (formatOf(state.setup) === 'showdown') return formatBox('showdown');
-    if (!guided()) return undefined;
-    const shown = state.picks.find((pick) => pick.round === 0 && pick.side === 'b')?.ball;
-    return shown === undefined ? undefined : firstPickSteps(lookup.get(shown)?.name ?? shown);
+    const shown = shownFirst(state);
+    if (shown === undefined) return undefined;
+    const steps = firstPickSteps(lookup.get(shown)?.name ?? shown);
+    return { steps, step: { at: 2, of: FIRST_SERIES_GUIDE } };
+  }
+
+  /** The bot's ball shown first in the guided series' round 1, which the first pick answers. */
+  function shownFirst(state: SeriesState): string | undefined {
+    if (!guided() || formatOf(state.setup) !== FIRST_SERIES.format) return undefined;
+    return state.picks.find((pick) => pick.round === 0 && pick.side === 'b')?.ball;
   }
 
   /** Keeps the tray and the revealed series on the device, as they are now. */
@@ -178,35 +200,54 @@ export function createSeriesSetup(
     },
     onDone: (own) => {
       draft = own;
-      // The bot picks from the series seed, so the setup (and the link) fully decides the series.
-      // The first series' seed lets the bot show first (ADR 0090, D2): a seed, never a rule.
-      const first = guided();
-      const seed = first ? botShowsFirstSeed(generateSeed()) : generateSeed();
-      // Blind has no choices for a bot to make, so every level plays it alike: the default.
-      const against = first ? FIRST_SERIES.level : level;
-      const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : against, seed);
-      const setup: SeriesSetup = {
-        ruleset: RULESET_VERSION,
-        seed,
-        a: own,
-        b: botFor(opponent).pickLineup(seed, ballIds, bestOf),
-        opponent,
-        ...(format === 'blind' ? {} : { format }),
-        // Best of 3 writes no length, as every series before ADR 0048.
-        ...(bestOf === DEFAULT_BEST_OF ? {} : { bestOf }),
-      };
-      if (format !== 'blind') {
-        revealed = setup;
-        remember();
-        host.move(to('answer'));
-        open('answer');
-        return;
+      // The first series' seed is chosen for this lineup (ADR 0090 addendum "Tuned to teach"):
+      // searched between frames, the button busy meanwhile; a seed, never a rule.
+      if (!guided()) {
+        startWith(own, generateSeed(), level);
+        return undefined;
       }
-      remember();
-      teaching.delete('blind');
-      host.start(setup);
+      const opened = openings;
+      const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      return firstSeriesSeedSliced(
+        generateSeed(),
+        own,
+        ballIds,
+        lookup,
+        () => performance.now(),
+        pause,
+      ).then((seed) => {
+        // Left meanwhile (Back, a link): the lineup is no longer what starts.
+        if (opened !== openings) return;
+        startWith(own, seed, FIRST_SERIES.level);
+      });
     },
   });
+
+  /** The bot picks from the series seed, so the setup (and the link) fully decides the series. */
+  function startWith(own: Lineup, seed: number, against: string): void {
+    // Blind has no choices for a bot to make, so every level plays it alike: the default.
+    const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : against, seed);
+    const setup: SeriesSetup = {
+      ruleset: RULESET_VERSION,
+      seed,
+      a: own,
+      b: botFor(opponent).pickLineup(seed, ballIds, bestOf),
+      opponent,
+      ...(format === 'blind' ? {} : { format }),
+      // Best of 3 writes no length, as every series before ADR 0048.
+      ...(bestOf === DEFAULT_BEST_OF ? {} : { bestOf }),
+    };
+    if (format !== 'blind') {
+      revealed = setup;
+      remember();
+      host.move(to('answer'));
+      open('answer');
+      return;
+    }
+    remember();
+    teaching.delete('blind');
+    host.start(setup);
+  }
 
   const answer = createAnswerStep(lookup, {
     onBack: () => {
@@ -239,6 +280,7 @@ export function createSeriesSetup(
   });
 
   function open(step: SetupStep): void {
+    openings++;
     // The screen's accessible name says its length (ADR 0048); index.html's is Best of 3's.
     root.setAttribute('aria-label', `Best of ${String(bestOf)} setup`);
     for (const [name, section] of Object.entries(steps)) section.hidden = name !== step;
@@ -258,7 +300,9 @@ export function createSeriesSetup(
       // The series as it starts: the toss, and the bot's shown ball when it won it. The same seeded
       // choices the series makes when it starts, so what is shown here is what plays.
       const state = resolvePicks(beginSession(revealed), botOf(revealed)).state;
-      answer.open(state, answerSteps(state));
+      const shown = shownFirst(state);
+      const best = shown === undefined ? undefined : bestAnswer(state.setup.a, shown);
+      answer.open(state, answerTip(state), best);
     }
   }
 

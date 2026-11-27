@@ -18,15 +18,17 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
   it('opens each shell screen, and Back from one reached by a link puts Play in its place', async () => {
     await openAs({ online: true, accounts: true }, '?view=ranks');
     await onScreen('ranks');
-    // Ranks (PR 9, ADR 0090 D5): one card, coming soon, plainly, with a way on.
+    // Ranks (PR 9, ADR 0090 D5 and its addendum): one card, coming soon, plainly, with a way on.
     expect(placeholderTitle()).toBe('Ranks');
     expect(visible('#shell-screen .soon-card-title').map((t) => t.textContent)).toStrictEqual([
       'Ranked is coming',
     ]);
     expect(visible('#shell-screen .soon-sticker')).toHaveLength(1);
     expect(visible('#shell-screen .soon-card-line')[0]?.textContent).toBe(
-      'Until then, play a friend.',
+      'Trophies for online wins. Until then, play a friend.',
     );
+    // Said once (ADR 0090 addendum): no intro over the card.
+    expect(visible('#shell-screen .ranks-intro')).toHaveLength(0);
     // A tab has no Back of its own (ADR 0081 addendum of 2026-11-24): the Play tab leads home.
     expect(visible('#shell-screen .screen-back')).toHaveLength(0);
     tabLink('Play').click();

@@ -1,13 +1,13 @@
-// How often a newcomer wins the guided first series (ADR 0090): Best of 3 · Reveal against the Easy
-// bot, on a seed stepped so the bot shows first in round 1, as the client starts it. Whole series
-// are played headlessly with real fights. Two players: one who picks a ▲ (▲▲ first) whenever one
-// exists, else at random; one who picks at random. Each with a random lineup and with Pick for me's
-// starter trio.
-// --answerable also steps past seeds whose first shown ball has no ▲ answer in the player's lineup
-// (a variant considered in ADR 0090, not built).
-//   node scripts/first-series-measure.ts [series=2000] [--answerable]
+// How often a newcomer wins the guided first series (ADR 0090 and its addendum "Tuned to teach"):
+// Best of 3 · Reveal against the Easy bot, on the seed the lineup step chooses for the player's
+// lineup (`firstSeriesSeed`), as the client starts it. Whole series are played headlessly with real
+// fights. Two players: one who picks a ▲ (▲▲ first) whenever one exists, else at random; one who
+// picks at random. Each with a random lineup and with Pick for me's starter trio. Also counts the
+// grids with two or more ▲ for the player, and their shape.
+//   node scripts/first-series-measure.ts [series=2000]
 // Not part of CI.
-import { botShowsFirstSeed, STARTER_TRIO } from '../src/app/first-series-setup.ts';
+import { STARTER_TRIO } from '../src/app/first-series-setup.ts';
+import { firstSeriesSeed, gridOf, isNaturalGrid } from '../src/app/first-series-seed.ts';
 import { BALL_LOOKUP, BALLS } from '../src/sim/balls/index.ts';
 import { botPick, easyBot } from '../src/sim/bot.ts';
 import { standingOf } from '../src/sim/counter-map.ts';
@@ -27,7 +27,6 @@ import { firstToShowOf } from '../src/sim/series-seeds.ts';
 import { matchWorld, playToEnd } from '../src/sim/series-verify.ts';
 
 const count = Number(process.argv.find((arg) => /^\d+$/.test(arg)) ?? 2000);
-const answerable = process.argv.includes('--answerable');
 const roster = BALLS.map((ball) => ball.id);
 
 type Policy = 'favoured' | 'random';
@@ -57,16 +56,6 @@ const seriesOn = (seed: number, a: readonly string[]) =>
     format: 'reveal',
   });
 
-/** The variant: past seeds (up to 64 more) whose first shown ball no ball of `a` is ▲ against. */
-function answerableSeed(seed: number, a: readonly string[]): number {
-  for (let step = 0; step <= 64; step++) {
-    const candidate = botShowsFirstSeed((seed + step) >>> 0);
-    const shown = botPick(easyBot, seriesOn(candidate, a));
-    if (shown !== undefined && a.some((ball) => standingOf(ball, shown) > 0)) return candidate;
-  }
-  return seed;
-}
-
 /** Three different balls, each lineup as likely (a partial Fisher-Yates shuffle). */
 function threeOf(ids: readonly string[], random: () => number): readonly string[] {
   const pool = [...ids];
@@ -81,6 +70,8 @@ interface Tally {
   wins: number;
   firstRound: number;
   botFirst: number;
+  twoFavoured: number;
+  natural: number;
 }
 
 function playMany(policy: Policy, lineup: 'random' | 'starter'): Tally {
@@ -90,12 +81,14 @@ function playMany(policy: Policy, lineup: 'random' | 'starter'): Tally {
     if (item === undefined) throw new Error('Nothing to choose from');
     return item;
   };
-  const tally: Tally = { wins: 0, firstRound: 0, botFirst: 0 };
+  const tally: Tally = { wins: 0, firstRound: 0, botFirst: 0, twoFavoured: 0, natural: 0 };
   for (let n = 0; n < count; n++) {
     const a = lineup === 'starter' ? STARTER_TRIO : threeOf(roster, random);
-    let seed = botShowsFirstSeed(deriveSeed([n, 0xfe5]));
-    if (answerable) seed = answerableSeed(seed, a);
+    const seed = firstSeriesSeed(deriveSeed([n, 0xfe5]), a, roster, BALL_LOOKUP);
     let state = seriesOn(seed, a);
+    const grid = gridOf(a, state.setup.b);
+    if (grid.favoured >= 2) tally.twoFavoured++;
+    if (isNaturalGrid(grid)) tally.natural++;
     if (firstToShowOf(state.setup) === 'b') tally.botFirst++;
     while (state.winner === undefined) {
       const due = awaitingPick(state);
@@ -121,7 +114,9 @@ const started = Date.now();
 console.log(
   `Ruleset ${String(RULESET_VERSION)}, ${String(roster.length)} balls, ${String(count)} series a row`,
 );
-console.log('player    lineup   series won (±2σ)   round 1 won   bot showed first');
+console.log(
+  'player    lineup   series won (±2σ)   round 1 won   bot showed first   2+ ▲   natural grid',
+);
 for (const lineup of ['random', 'starter'] as const) {
   for (const policy of ['favoured', 'random'] as const) {
     const t = playMany(policy, lineup);
@@ -129,7 +124,8 @@ for (const lineup of ['random', 'starter'] as const) {
     const error = 2 * Math.sqrt((rate * (1 - rate)) / count);
     console.log(
       `${policy.padEnd(9)} ${lineup.padEnd(8)} ${pct(rate).padStart(6)} ± ${pct(error).padEnd(8)}` +
-        `   ${pct(t.firstRound / count).padStart(6)}        ${pct(t.botFirst / count)}`,
+        `   ${pct(t.firstRound / count).padStart(6)}        ${pct(t.botFirst / count).padEnd(17)}` +
+        ` ${pct(t.twoFavoured / count).padEnd(7)} ${pct(t.natural / count)}`,
     );
   }
 }

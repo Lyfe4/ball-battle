@@ -36,7 +36,10 @@ describe('the Friends and Ranks tabs on a desktop', () => {
     await follow('?view=ranks');
     await onScreen('ranks');
     await settle();
-    checkAside('.ranks-screen', '.ranks-boards', '.ranks-intro');
-    expect(Math.abs(boxOf('.ranks .hud-button').left - boxOf('.ranks-intro').left)).toBeLessThan(1);
+    // Ranks: one card and its way on under it, one column (ADR 0090 addendum), never an aside.
+    const card = boxOf('.ranks .soon-card');
+    const play = boxOf('.ranks .hud-button');
+    expect(Math.abs(card.left - play.left)).toBeLessThan(1);
+    expect(play.top).toBeGreaterThan(card.bottom);
   });
 });

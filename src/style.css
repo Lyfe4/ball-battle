@@ -35,6 +35,8 @@
 @import './ui/series-panel.css';
 @import './ui/series/leave-confirm.css';
 @import './ui/series/pick-rows.css';
+@import './ui/coach.css';
+@import './ui/series/unlock-card.css';
 @import './ui/series/coin-toss.css';
 @import './ui/series/pick-clock.css';
 @import './ui/series/fair-play.css';

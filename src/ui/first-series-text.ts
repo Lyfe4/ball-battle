@@ -24,37 +24,52 @@ export const SERIES_STEPS: Steps = {
 };
 
 /**
- * Under round 1's banner, the bot having shown `shown` first: what ▲ says, in the odds the marks'
- * own tooltips give (symbols.ts), and that a mark explains itself. One short paragraph, so the
- * pick rows stay near the top of a phone.
+ * Over round 1's pick rows, the bot having shown `shown` first: what ▲ says, in the odds the marks'
+ * own tooltips give (symbols.ts), and that the lit row is the best answer (coach.css). One short
+ * paragraph, so every pick row fits a phone (ADR 0090 addendum, 1c).
  */
 export function firstPickSteps(shown: string): Steps {
   return {
     title: 'Your first pick',
     items: [],
-    note: `${MARKS.favoured} under ${shown}: your ball is favoured, it wins about 6 in 10 (${STRONG_MARKS.favoured}: 7 in 10). Tap a mark to read why.`,
+    note: `${MARKS.favoured} under ${shown}: your ball is favoured, it wins about 6 in 10 (${STRONG_MARKS.favoured}: 7 in 10). The lit row is your best answer.`,
   };
 }
 
 /** Round 2 of the first series, the player showing first: the other side of round 1. */
 export const SHOW_FIRST_LINE = 'The bot sees your ball before it answers.';
 
+/** Round 2's coach: the line above, under its own title. */
+export const SHOW_FIRST_STEPS: Steps = {
+  title: 'Round 2: you show first',
+  items: [],
+  note: SHOW_FIRST_LINE,
+};
+
+/** The first series' coach has three steps: the lineup, the first pick, round 2. */
+export const FIRST_SERIES_GUIDE = 3;
+
+/** One new way to play on the unlock card: its icon (icons.ts) and its line. */
+export interface NewWay {
+  readonly icon: 'five' | 'showdown' | 'blind' | 'bot' | 'friend';
+  readonly text: string;
+}
+
+/** The unlock card's title, and where the new ways are. */
+export const NEW_WAYS_TITLE = 'New: more ways to play';
+export const NEW_WAYS_WHERE = 'They’re in What to play on the Play tab.';
+
 /**
- * At the first series' result, win or lose (once): what is now on the Play tab. A friend only where
- * the build plays one.
+ * At the first series' result, win or lose (once): what is now on the Play tab, each with its icon.
+ * A friend only where the build plays one.
  */
-export function newWaysSteps(friend: boolean): Steps {
-  return {
-    title: 'New: more ways to play',
-    items: [
-      'From now on a series is Best of 5: first to 3 wins.',
-      'Showdown and Blind: two more ways to pick.',
-      'The Normal and Hard bots.',
-      ...(friend ? ['Play a friend with a link.'] : []),
-    ],
-    unordered: true,
-    note: 'They’re in What to play on the Play tab.',
-  };
+export function newWays(friend: boolean): readonly NewWay[] {
+  return [
+    { icon: 'five', text: 'From now on a series is Best of 5: first to 3 wins.' },
+    { icon: 'showdown', text: 'Showdown and Blind: two more ways to pick.' },
+    { icon: 'bot', text: 'The Normal and Hard bots.' },
+    ...(friend ? [{ icon: 'friend', text: 'Play a friend with a link.' } as const] : []),
+  ];
 }
 
 /** The tag on a way to play not tried yet, in What to play. */

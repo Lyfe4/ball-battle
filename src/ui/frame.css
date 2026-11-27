@@ -173,8 +173,8 @@
  *   with Add, Sent and Blocked, then the link card). A guest's Friends keeps that split: what stands
  *   in the friends' place (Sign in to keep friends, or the failure card) in the main column, the link
  *   card in the aside, where an account's sits.
- * - Ranks (list): the three boards in the main column; the aside says what ranks are and offers the
- *   one thing to do until they open (the intro and Play a friend now).
+ * - Ranks (list): no aside until it holds boards: one card saying ranked is coming and what it
+ *   will be, and Play a friend now under it, in the list column (ADR 0090 addendum).
  * - Profile (reading): who you are, Recent matches and your account's rows in the reading line;
  *   the stats card in the aside (ADR 0088), the danger zone under it, apart from them (the quality
  *   bar: destructive actions sit apart).
@@ -182,16 +182,17 @@
  *   sign-in's words are what its button agrees to, so they stay together in one reading line.
  */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  /* Ranks keeps the list column: one card and its way on (ADR 0090 addendum), no aside. */
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    :is(.friends-screen, .ranks-screen, .matches-screen)
+    :is(.friends-screen, .matches-screen)
     > :not(.screen-header) {
     max-width: none;
   }
 
   body[data-shell]:not([data-shell='fight'])
     .stage:not([data-home])
-    :is(.friends, .friends-tab:not(:has(> .friends)), .ranks) {
+    :is(.friends, .friends-tab:not(:has(> .friends))) {
     grid-template-columns: minmax(0, 1fr) var(--col-aside);
     column-gap: var(--space-columns);
     align-items: start;
@@ -227,28 +228,6 @@
     .friends-tab:not(:has(> .friends))
     > .friends-link-card {
     grid-area: 1 / 2;
-  }
-
-  /*
-   * Ranks: the boards down the main column, the intro and its one action in the aside. The boards
-   * span every row, the last of which is flexible, so they never stretch the aside's rows apart.
-   */
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks {
-    grid-template-rows: auto auto 1fr;
-  }
-
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks-boards {
-    display: grid;
-    grid-area: 1 / 1 / -1 / 2;
-    gap: var(--space-gap);
-  }
-
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks > .ranks-intro {
-    grid-area: 1 / 2;
-  }
-
-  body[data-shell]:not([data-shell='fight']) .stage:not([data-home]) .ranks > .hud-button {
-    grid-area: 2 / 2;
   }
 
   /*

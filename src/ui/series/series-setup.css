@@ -318,7 +318,7 @@
 @media (min-aspect-ratio: 5/4) {
   .lineup-step {
     grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto auto auto 1fr;
     column-gap: var(--space-gutter);
     align-items: start;
   }
@@ -331,6 +331,11 @@
     grid-area: 2 / 1;
   }
 
+  /*
+   * The left column, top down: the mode line, Resume (a series held), the tray and the main action,
+   * then a newcomer's coach, pointing up at the slots (on a phone turned sideways the button is
+   * sticky, so a coach above the tray would put the tray under it). A part not shown takes no row.
+   */
   .lineup-step > .resume-card {
     grid-area: 3 / 1;
   }
@@ -343,11 +348,21 @@
     grid-area: 5 / 1;
   }
 
+  .lineup-step > .lineup-guide {
+    grid-area: 6 / 1;
+  }
+
+  .lineup-step > .lineup-guide::after {
+    top: -7px;
+    bottom: auto;
+    rotate: -135deg;
+  }
+
   .lineup-step > .ball-grid {
     grid-area: 2 / 2 / -1 / 3;
   }
 
-  /* With no series held, the tray and the main action move up under the mode line. */
+  /* With no series held, the tray, the main action and the coach move up under the mode line. */
   .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-tray {
     grid-row: 3;
   }
@@ -356,13 +371,63 @@
     grid-row: 4;
   }
 
-  /* What a newcomer's lineup teaches (ADR 0090): under the main action, in the left column. */
-  .lineup-step > .lineup-guide {
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-guide {
+    grid-row: 5;
+  }
+}
+
+/*
+ * Round 1's pick on a phone turned sideways (ADR 0090 addendum, 1c): two columns, so the picks
+ * show without a scroll. On the left the bar (the score line, the track a tap away), the banner and
+ * any coach, its notch pointing across at the rows; on the right the pick rows. A desktop lays it
+ * out again below.
+ */
+@media (min-aspect-ratio: 5/4) {
+  .answer-step {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto auto auto auto 1fr;
+    column-gap: var(--space-gutter);
+    align-items: start;
+  }
+
+  .answer-step > .screen-header {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  .answer-step > .series-bar {
+    grid-area: 2 / 1;
+  }
+
+  .answer-step > .symbol-legend {
+    grid-area: 3 / 1;
+  }
+
+  .answer-step > .series-track {
+    grid-area: 4 / 1;
+  }
+
+  .answer-step > .series-banner {
+    grid-area: 5 / 1;
+  }
+
+  .answer-step > .answer-guide {
     grid-area: 6 / 1;
   }
 
-  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-guide {
-    grid-row: 5;
+  .answer-step > .answer-guide::after {
+    top: 22px;
+    right: -7px;
+    bottom: auto;
+    left: auto;
+    rotate: -45deg;
+  }
+
+  .answer-step > .pick-rows {
+    grid-area: 2 / 2 / -1 / 3;
+  }
+
+  .answer-step > .coin-toss {
+    grid-area: 3 / 1 / -1 / -1;
   }
 }
 
@@ -390,6 +455,42 @@
   .lineup-step {
     grid-template-columns: var(--setup-width) minmax(0, 1fr);
     column-gap: var(--space-columns);
+  }
+
+  /*
+   * A desktop has the height: a newcomer's coach sits over the tray it explains, its notch down.
+   * Top down: the mode line, Resume, the coach, the tray, the main action.
+   */
+  .lineup-step > .lineup-guide {
+    grid-area: 4 / 1;
+  }
+
+  .lineup-step > .lineup-guide::after {
+    top: auto;
+    bottom: -7px;
+    rotate: 45deg;
+  }
+
+  .lineup-step:has(> .lineup-guide:not([hidden])) > .lineup-tray {
+    grid-row: 5;
+  }
+
+  .lineup-step:has(> .lineup-guide:not([hidden])) > .screen-footer {
+    grid-row: 6;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))) > .lineup-guide {
+    grid-row: 3;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))):has(> .lineup-guide:not([hidden]))
+    > .lineup-tray {
+    grid-row: 4;
+  }
+
+  .lineup-step:not(:has(> .resume-card:not([hidden]))):has(> .lineup-guide:not([hidden]))
+    > .screen-footer {
+    grid-row: 5;
   }
 
   /* Reveal's round 1: where the series stands on the left, the pick on the right. */
@@ -433,13 +534,26 @@
     grid-area: 4 / 1 / -1 / -1;
   }
 
-  /* What a newcomer's first pick teaches (ADR 0090): on the left, the track under it. */
+  /* What a newcomer's first pick teaches (ADR 0090 addendum): over the rows it points at. */
   .answer-step > .answer-guide {
-    grid-area: 4 / 1;
+    grid-area: 3 / 2;
   }
 
-  .answer-step:has(> .answer-guide:not([hidden])) > .series-track {
-    grid-row: 5 / -1;
+  .answer-step > .answer-guide::after {
+    top: auto;
+    right: auto;
+    bottom: -7px;
+    left: 22px;
+    rotate: 45deg;
+  }
+
+  /* The track takes the left column from under the bar while the legend is closed. */
+  .answer-step:not(:has(> .symbol-legend:not([hidden]))) > .series-track {
+    grid-row: 3 / -1;
+  }
+
+  .answer-step:has(> .answer-guide:not([hidden])) > .pick-rows {
+    grid-row: 4 / -1;
   }
 }
 

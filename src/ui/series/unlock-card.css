@@ -1,0 +1,131 @@
+/*
+ * The first series' unlock card (unlock-card.ts, ADR 0090 addendum, 1e): a reward, not a note. The
+ * surface with a gold edge and a faint gold wash, the title in gold, the new ways as small icons on
+ * the folded row. It enters after the result sticker has landed (one slow beat), up a few pixels;
+ * with reduced motion it only fades in.
+ */
+.unlock-card {
+  width: 100%;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-accent) 16%, transparent),
+      transparent 70%
+    ),
+    var(--color-surface);
+  box-shadow:
+    inset 4px 0 0 var(--color-accent),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  animation: unlock-in var(--motion-slow) var(--ease-out) var(--motion-slow) both;
+}
+
+.unlock-card[hidden] {
+  display: none;
+}
+
+.unlock-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: var(--button-height);
+  padding: var(--space-small) var(--button-pad) var(--space-small) calc(var(--button-pad) + 2px);
+  border-radius: inherit;
+  cursor: pointer;
+  list-style: none;
+}
+
+.unlock-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The ▾, turning over while open, as the other folds do (notice.css). */
+.unlock-summary::after {
+  color: var(--color-text-muted);
+  content: '▾' / '';
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .unlock-summary::after {
+    transition: rotate var(--motion-quick) var(--ease-out);
+  }
+}
+
+.unlock-card[open] > .unlock-summary::after {
+  rotate: 180deg;
+}
+
+.unlock-title {
+  flex: 1;
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
+.unlock-icons {
+  display: flex;
+  gap: 6px;
+  color: var(--color-accent);
+}
+
+.unlock-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: currentcolor;
+}
+
+.unlock-list {
+  display: grid;
+  gap: var(--space-small);
+  margin: 0;
+  padding: 0 var(--button-pad) 0 calc(var(--button-pad) + 2px);
+  list-style: none;
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+}
+
+.unlock-item {
+  display: flex;
+  align-items: start;
+  gap: var(--space-small);
+}
+
+.unlock-item .unlock-icon {
+  color: var(--color-accent);
+}
+
+.unlock-where {
+  margin: 0;
+  padding: var(--space-small) var(--button-pad) var(--space-gap) calc(var(--button-pad) + 2px);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+@keyframes unlock-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unlock-card {
+    animation-name: unlock-fade-in;
+  }
+}
+
+@keyframes unlock-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (hover: hover) {
+  .unlock-summary:hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+}
+
+.unlock-summary[data-pressed] {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}

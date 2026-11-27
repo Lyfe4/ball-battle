@@ -97,10 +97,15 @@ export function installSymbolTooltips(doc: Document = document): void {
     const box = (symbols.length === 1 ? symbols[0] : on)?.getBoundingClientRect();
     if (box === undefined) return;
     const page = doc.documentElement;
+    // A coach on screen is never covered (ADR 0090 addendum): the other side, where there's room.
+    const coaches = [...doc.querySelectorAll<HTMLElement>('.coach')]
+      .filter((coach) => coach.offsetParent !== null)
+      .map((coach) => coach.getBoundingClientRect());
     const at = placeTooltip(
       box,
       { width: tip.offsetWidth, height: tip.offsetHeight },
       { width: page.clientWidth, height: page.clientHeight },
+      coaches,
     );
     tip.style.left = `${String(at.left)}px`;
     tip.style.top = `${String(at.top)}px`;

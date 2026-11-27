@@ -16,7 +16,7 @@ import {
 } from '../lineup-draft.ts';
 import { setupLine } from '../modes-text.ts';
 import { createScreenHeader } from '../screen-header.ts';
-import { createStepsPlace, type Steps } from '../steps-box.ts';
+import { createCoach, type CoachTip } from '../coach.ts';
 import { createLevelChoice } from './level-choice.ts';
 
 /**
@@ -24,8 +24,8 @@ import { createLevelChoice } from './level-choice.ts';
  * for me, or a format's first time ("How it goes" in Blind).
  */
 export interface LineupGuide {
-  /** A box between the rules and the tray. */
-  readonly steps?: Steps;
+  /** The coach between the rules and the tray, pointing at the slots; settles once they're full. */
+  readonly tip?: CoachTip;
   /** In the level's place, Pick for me: fills the tray with these (still changed by a tap). */
   readonly pickForMe?: Lineup;
   /** In place of the rules line: "Your first series · vs Easy bot". */
@@ -122,7 +122,7 @@ export function createLineupStep(
     done.focus();
   });
   mode.append(modeName, level.element, pickForMe, statusLine);
-  const teach = createStepsPlace('lineup-guide');
+  const teach = createCoach('lineup-guide');
   if (actions.onRules !== undefined) {
     const onRules = actions.onRules;
     const change = element('button', 'hud-button hud-button-compact lineup-rules', 'Change');
@@ -222,6 +222,8 @@ export function createLineupStep(
       ),
     });
     const complete = completeLineup(draft, size) !== undefined;
+    // Acted on: with the slots full, the coach keeps only its title line.
+    teach.settle(complete);
     // Not `disabled`: a disabled button leaves the tab order, so Tab from the grid ran off the page
     // before the lineup was full. `aria-disabled` keeps it reachable, saying how many are left;
     // the click does nothing until the lineup is complete (busyOnClick's handler).
@@ -266,7 +268,8 @@ export function createLineupStep(
       // Pick for me takes the level's place: the first series' bot is set (ADR 0090).
       level.element.hidden = !levelShown || starters !== undefined;
       setText(modeName, guide?.line ?? rulesLine);
-      teach.show(guide?.steps);
+      teach.show(guide?.tip);
+      teach.settle(completeLineup(draft, size) !== undefined);
     },
     status(text) {
       setHidden(statusLine, text === undefined);

@@ -51,17 +51,28 @@
   display: block;
 }
 
-/* "New" beside a way to play not tried yet (ADR 0090): a small pill in the text's line. */
+/*
+ * "New" on a way to play not tried yet (ADR 0090): a small pill on the button's top left edge, out
+ * of the text's flow, so every button in the row keeps one height at every size (it wrapped under a
+ * long name, 2026-11-27); the chosen check takes the top right.
+ */
+.segmented-button:has(.segmented-tag) {
+  position: relative;
+}
+
 .segmented-tag {
-  display: inline-block;
+  position: absolute;
+  top: calc(var(--choice-badge) / -3);
+  left: var(--space-small);
+  z-index: 1;
   padding: 0 6px;
+  box-shadow: 0 0 0 2px var(--color-page);
   border-radius: var(--radius);
   background: var(--color-accent-2);
   color: var(--color-accent-2-text);
   font-size: var(--font-size-tiny);
   font-weight: 800;
   line-height: 1.5;
-  vertical-align: 0.1em;
 }
 
 .segmented-hint {

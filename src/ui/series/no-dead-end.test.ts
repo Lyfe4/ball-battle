@@ -13,8 +13,9 @@ import {
   withLinkPicks,
   type SeriesSession,
 } from '../../app/series-session.ts';
-import { botShowsFirstSeed, FIRST_SERIES } from '../../app/first-series-setup.ts';
-import { BALLS } from '../../sim/balls/index.ts';
+import { FIRST_SERIES, STARTER_TRIO } from '../../app/first-series-setup.ts';
+import { firstSeriesSeed } from '../../app/first-series-seed.ts';
+import { BALL_LOOKUP, BALLS } from '../../sim/balls/index.ts';
 import { easyBot, randomBot } from '../../sim/bot.ts';
 import { RULESET_VERSION } from '../../sim/ruleset.ts';
 import {
@@ -194,7 +195,8 @@ describe('no dead ends in the guided first series (ADR 0090)', () => {
   it('offers a way on at every moment, from the bot’s first shown ball to the result', () => {
     guided = true;
     try {
-      const seed = botShowsFirstSeed(11);
+      const roster = BALLS.map((ball) => ball.id);
+      const seed = firstSeriesSeed(11, STARTER_TRIO, roster, BALL_LOOKUP);
       const setup: SeriesSetup = {
         ...setupOf(
           FIRST_SERIES.format,
