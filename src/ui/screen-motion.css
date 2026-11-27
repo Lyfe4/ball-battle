@@ -69,13 +69,3 @@
     animation: screen-in var(--motion-quick) var(--ease-out) both;
   }
 }
-
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) ::view-transition-new(root),
-:root:where([data-motion='reduce'])[data-motion-css]
-  .stage
-  .hud
-  > section:not([hidden])
-  > :not(.screen-header) {
-  animation: screen-in var(--motion-quick) var(--ease-out) both;
-}

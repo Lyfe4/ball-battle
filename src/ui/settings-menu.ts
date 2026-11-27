@@ -17,15 +17,6 @@ import { element } from './dom.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import type { Box } from './tooltip-place.ts';
 import { menuMaxHeight, placeClear, placeMenu, type Insets } from './settings-place.ts';
-import {
-  applyMotion,
-  reduceMotionChosen,
-  setReduceMotion,
-  systemReducesMotion,
-} from '../app/motion.ts';
-
-/** The game's own Reduce motion switch. */
-const MOTION_WORDS = 'Reduce motion';
 
 /** What the menu reads and changes, set once by main.ts. */
 export interface SettingsHost {
@@ -81,8 +72,6 @@ let menu: Menu | undefined;
 /** Called once by main.ts, before any gear can be pressed. */
 export function installSettings(next: SettingsHost): void {
   host = next;
-  // The game's own Reduce motion on the root, as the page starts (motion.ts).
-  applyMotion();
 }
 
 interface Menu {
@@ -129,13 +118,6 @@ function buildMenu(): Menu {
     host?.tips.setReadyCards(!host.tips.readyCards());
     render();
   });
-  // Reduce motion (motion.ts, ADR 0087 addendum of 2026-11-28): the game's own, beside the
-  // device's. On and fixed while the device already asks for it.
-  const motion = createSwitch(MOTION_WORDS, () => {
-    if (systemReducesMotion()) return;
-    setReduceMotion(!reduceMotionChosen());
-    render();
-  });
   const again = element('button', 'hud-button settings-again', 'Show all tips again');
   again.type = 'button';
   again.addEventListener('click', () => {
@@ -158,7 +140,7 @@ function buildMenu(): Menu {
   playGroup.setAttribute('aria-labelledby', `${PANEL_ID}-play`);
   const playHeading = element('p', 'settings-heading', 'Fights');
   playHeading.id = `${PANEL_ID}-play`;
-  playGroup.append(playHeading, speedRow, motion);
+  playGroup.append(playHeading, speedRow);
 
   const paused = element('p', 'settings-paused', 'The match waits');
   paused.hidden = true;
@@ -193,12 +175,6 @@ function buildMenu(): Menu {
   if (host?.online !== undefined) foot.before(host.online.element);
 
   function render(): void {
-    const bySystem = systemReducesMotion();
-    motion.setAttribute('aria-checked', String(bySystem || reduceMotionChosen()));
-    motion.setAttribute('aria-disabled', String(bySystem));
-    const words = motion.querySelector('.settings-switch-text');
-    if (words !== null)
-      words.textContent = bySystem ? `${MOTION_WORDS} · set by your device` : MOTION_WORDS;
     if (host === undefined) return;
     speed ??= createSegmented(
       speedRow,

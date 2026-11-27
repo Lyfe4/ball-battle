@@ -63,8 +63,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(:root:not([data-motion='reduce'])) .waiting-ball::before,
-  :where(:root:not([data-motion='reduce'])) .waiting-ball::after {
+  .waiting-ball::before,
+  .waiting-ball::after {
     animation-duration: var(--motion-swing);
     animation-timing-function: var(--ease-swing);
     animation-delay: var(--waiting-since);
@@ -72,11 +72,11 @@
     animation-direction: alternate;
   }
 
-  :where(:root:not([data-motion='reduce'])) .waiting-ball::before {
+  .waiting-ball::before {
     animation-name: waiting-rise;
   }
 
-  :where(:root:not([data-motion='reduce'])) .waiting-ball::after {
+  .waiting-ball::after {
     animation-name: waiting-shadow;
   }
 }

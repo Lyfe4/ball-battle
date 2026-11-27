@@ -135,25 +135,3 @@
     display: none;
   }
 }
-
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .busy-ball {
-  --busy-size: 8px;
-
-  width: calc(var(--busy-size) * 4);
-  height: var(--busy-size);
-  margin: calc(var(--busy-size) / -2) 0 0 calc(var(--busy-size) * -2);
-}
-
-:where(:root[data-motion='reduce']) .busy-ball::before {
-  left: 0;
-  background: var(--busy-colour, currentcolor);
-  box-shadow:
-    calc(var(--busy-size) * 1.5) 0 0 var(--busy-colour, currentcolor),
-    calc(var(--busy-size) * 3) 0 0 var(--busy-colour, currentcolor);
-  animation: none;
-}
-
-:where(:root[data-motion='reduce']) .busy-ball::after {
-  display: none;
-}

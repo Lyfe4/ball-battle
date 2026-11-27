@@ -6,7 +6,6 @@
 // once without motion, and in the transition's own callback with it (a frame later).
 import type { ScreenKey } from '../app/history-rules.ts';
 import { screenMotionOf, type ScreenMotion } from '../app/screen-motion.ts';
-import { reducedMotion as motionQuery } from '../app/motion.ts';
 
 const HEAD = 'screen-head';
 
@@ -28,7 +27,7 @@ export function playScreenMotion(motion: ScreenMotion, update: () => void): void
     return;
   }
   // Reduced motion: the CSS fade alone (a View Transition's group still moves its picture).
-  const still = motionQuery().matches;
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (still || typeof document.startViewTransition !== 'function') {
     update();
     // The CSS fallback: the stage's content under its header animates once (screen-motion.css).

@@ -23,7 +23,6 @@ import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.
 import { TURNS_BUILD } from '../app/turns-build.ts';
 import { createWorld } from '../sim/world.ts';
 import { createHome } from '../ui/home.ts';
-import { reducedMotion as motionQuery } from '../app/motion.ts';
 
 /** How long a finished demo's result stays up before the next demo starts. */
 const NEXT_DEMO_MS = 2500;
@@ -69,7 +68,7 @@ export function createHomeController(
   lookup: DefinitionLookup,
   host: HomeHost,
 ): HomeController {
-  const reducedMotion = motionQuery();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   // A random first demo, then the map in order, so repeat visits don't always open the same way.
   let index = generateSeed();
   let waiting = false;

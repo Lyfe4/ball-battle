@@ -72,15 +72,15 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(:root:not([data-motion='reduce'])) .stage[data-round-over] .winner-sticker {
+  .stage[data-round-over] .winner-sticker {
     transition: opacity 0.4s ease-out;
   }
 
-  :where(:root:not([data-motion='reduce'])) .winner-sticker-card {
+  .winner-sticker-card {
     animation: winner-stick 480ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
   }
 
-  :where(:root:not([data-motion='reduce'])) .winner-confetti-piece {
+  .winner-confetti-piece {
     animation: winner-pop 650ms cubic-bezier(0.1, 0.8, 0.3, 1) both;
   }
 }

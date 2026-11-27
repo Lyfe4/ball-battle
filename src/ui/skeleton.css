@@ -82,11 +82,6 @@
   }
 }
 
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .skeleton-block {
-  animation: none;
-}
-
 /* Desktop (ADR 0031): a card loads at the notice's readable width, as the card will show. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .skeleton-card {
@@ -118,9 +113,4 @@
   [data-revealed] {
     animation: none;
   }
-}
-
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) [data-revealed] {
-  animation: none;
 }

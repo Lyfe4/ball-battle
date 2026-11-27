@@ -141,11 +141,6 @@
   }
 }
 
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .quick-why-summary::after {
-  transition: none;
-}
-
 .quick-why-reason {
   margin: 0;
   padding: 0 var(--space-gap) var(--space-small);

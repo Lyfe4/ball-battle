@@ -117,11 +117,6 @@
   }
 }
 
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .ball-detail-how-summary::after {
-  transition: none;
-}
-
 .ball-detail-how-rules {
   display: grid;
   gap: 4px;

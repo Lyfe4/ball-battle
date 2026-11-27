@@ -46,7 +46,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(:root:not([data-motion='reduce'])) .unlock-summary::after {
+  .unlock-summary::after {
     transition: rotate var(--motion-quick) var(--ease-out);
   }
 }
@@ -112,11 +112,6 @@
   .unlock-card {
     animation-name: unlock-fade-in;
   }
-}
-
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .unlock-card {
-  animation-name: unlock-fade-in;
 }
 
 @keyframes unlock-fade-in {

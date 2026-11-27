@@ -14,7 +14,6 @@ import { cue } from '../../sound/sound.ts';
 import { element, setAttr, setText } from '../dom.ts';
 import { BOT_SEATS, otherSide, type Seats } from './seats.ts';
 import type { SeriesMoment } from './series-view.ts';
-import { reducedMotion as motionQuery } from '../../app/motion.ts';
 
 /** One toss to show: who won it, a key that names it, the seats, and its moments on `now`'s clock. */
 export interface TossPlay {
@@ -103,7 +102,7 @@ export function createCoinToss(onStage: () => void): CoinToss {
   words.setAttribute('aria-live', 'polite');
   root.append(stage, words);
 
-  const reducedMotion = motionQuery();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   /** A face's label: one of four or five characters ("P4821") is set smaller, to fit the coin. */
   const label = (node: HTMLElement, text: string) => {
     setText(node, text);

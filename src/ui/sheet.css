@@ -148,15 +148,3 @@
     }
   }
 }
-
-/* The game's own Reduce motion (settings), as the system's. */
-:where(:root[data-motion='reduce']) .sheet,
-:where(:root[data-motion='reduce']) .sheet[open] {
-  transform: none;
-}
-
-@starting-style {
-  :where(:root[data-motion='reduce']) .sheet[open] {
-    transform: none;
-  }
-}

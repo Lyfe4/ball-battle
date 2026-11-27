@@ -101,7 +101,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(:root:not([data-motion='reduce'])) .pick-clock-fill {
+  .pick-clock-fill {
     transition: transform 250ms linear;
   }
 }

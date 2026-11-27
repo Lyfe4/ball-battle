@@ -35,7 +35,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(:root:not([data-motion='reduce'])) .leave-confirm-row {
+  .leave-confirm-row {
     animation: leave-confirm-in var(--motion-quick) var(--ease-out) both;
   }
 }
