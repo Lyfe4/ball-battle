@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { eventOf, framesOf, report, startMonitor, targetOf } from './monitor.ts';
+import { eventOf, scrubbed, framesOf, report, startMonitor, targetOf } from './monitor.ts';
 
 afterEach(() => {
   startMonitor(undefined);
@@ -23,6 +23,16 @@ describe('error reports', () => {
       ['event_id', 'exception', 'level', 'platform', 'tags', 'timestamp'].sort(),
     );
     expect(JSON.stringify(event)).toMatch(/"value":"boom"/);
+  });
+
+  it('carry no email address, database value or long quote a player sent (2026-11-28 audit)', () => {
+    expect(scrubbed('No user for sam@example.co.uk here')).toBe('No user for <email> here');
+    expect(scrubbed('Key (lower(username))=(robin_b) already exists')).toBe(
+      'Key (lower(username))=(…) already exists',
+    );
+    expect(scrubbed('x'.repeat(500))).toHaveLength(300);
+    const event = eventOf(new Error('Unexpected token in jo@x.io'), {}, 'e1', 1);
+    expect(JSON.stringify(event)).not.toContain('jo@x.io');
   });
 
   it('read a V8 stack oldest frame first', () => {
