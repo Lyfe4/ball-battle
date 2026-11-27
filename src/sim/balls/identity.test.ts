@@ -29,6 +29,7 @@ import { SHOT_TIMES } from './balloon.ts';
 import { banshee, WAIL_DAMAGE } from './banshee.ts';
 import { CRUSH_PER_TENTACLE, tentaclesFor } from './kraken.ts';
 import { jouster } from './jouster.ts';
+import { BURST_DAMAGE as MOLE_BURST } from './mole.ts';
 import { BOOMERANG_DAMAGE, BOOMERANG_SPEED, boomerang } from './boomerang.ts';
 import {
   BLAST_DAMAGE,
@@ -222,6 +223,8 @@ describe('the ball roster: identity rules', () => {
       // Its copy deals nothing; the lance is a bump (ADR 0077).
       mirage: 0,
       jouster: 0,
+      // Its burst from below, once a dig.
+      mole: MOLE_BURST,
     };
     // A shot that hits the Balloon harder (ADR 0075) stays under the strike too: the spear the most.
     expect(Math.round(Math.max(SPEAR_DAMAGE, SHOT_DAMAGE, ARROW_DAMAGE) * SHOT_TIMES)).toBeLessThan(

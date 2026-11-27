@@ -150,6 +150,7 @@ export const theme = {
     kraken: '#083344',
     mirage: '#881337',
     jouster: '#422006',
+    mole: '#2b1a0e',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
