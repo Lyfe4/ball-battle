@@ -1,0 +1,202 @@
+// Counter-map entries for the Tortoise (ADR 0091): every pair of it with another ball, labelled from
+// the full 500-seed `pnpm balance` run of ruleset 24 by the one rule (ADR 0073). Its pair with the
+// Hunter is in counter-map-hunter.ts.
+import type { CounterEntry } from './counter-map.ts';
+
+/**
+ * Its shell takes 3 off every hit, at most half: balls that win by many small hits lose half of each (the Venom's poison, the Boomerang's two-way throws, the Speedster's many bumps, the Necromancer's bites, the Quake's shockwaves, the Inferno's burns). Big single hits barely notice it; the wail skips it; a slow plain bumper is what the Frost slows and the Bloom outlasts.
+ */
+export const TORTOISE_ENTRIES: readonly CounterEntry[] = [
+  {
+    x: 'tortoise',
+    y: 'brawler',
+    intended: 'even',
+    reason: 'The Brawler’s 26 bump loses only 3 to the Tortoise’s shell: plain against plain.',
+  },
+  {
+    x: 'tortoise',
+    y: 'speedster',
+    intended: 'x',
+    level: 'strong',
+    reason: 'The Speedster hits by many bumps, and the Tortoise’s shell takes 3 off every one.',
+  },
+  {
+    x: 'tortoise',
+    y: 'vampire',
+    intended: 'even',
+    reason: 'The Tortoise’s shell trims each Vampire bump, but the Vampire still heals from them.',
+  },
+  {
+    x: 'tortoise',
+    y: 'archer',
+    intended: 'even',
+    reason: 'Arrows lose 3 each to the Tortoise’s shell, and its bump is heavy on a frail Archer.',
+  },
+  {
+    x: 'tortoise',
+    y: 'storm',
+    intended: 'even',
+    reason: 'The Storm’s 42 strike barely notices the Tortoise’s 3-point shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'frost',
+    intended: 'y',
+    level: 'strong',
+    reason: 'Every Frost hit slows the slow, plain Tortoise further, so it can’t close in.',
+  },
+  {
+    x: 'tortoise',
+    y: 'thorns',
+    intended: 'even',
+    reason: 'Spikes send back part of each Tortoise bump; its shell trims the Thorns’ bumps.',
+  },
+  {
+    x: 'tortoise',
+    y: 'venom',
+    intended: 'x',
+    level: 'strong',
+    reason: 'Venom poison ticks of 5 land at 3 through the Tortoise’s shell, its light bump at 7.',
+  },
+  {
+    x: 'tortoise',
+    y: 'berserker',
+    intended: 'even',
+    reason: 'The Tortoise’s shell trims each hit, but Berserker rage bumps are too big to care.',
+  },
+  {
+    x: 'tortoise',
+    y: 'sniper',
+    intended: 'even',
+    reason: 'A 22 Sniper shot loses only 3 to the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'quake',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Quake shockwaves of 7 land at 4 through the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'magnet',
+    intended: 'even',
+    reason: 'The Magnet’s pull forces a plain brawl; the Tortoise’s shell trims its heavy bump.',
+  },
+  {
+    x: 'tortoise',
+    y: 'ghost',
+    intended: 'even',
+    reason: 'Ghost hits are mid-sized; the Tortoise’s shell trims each a little.',
+  },
+  {
+    x: 'tortoise',
+    y: 'necromancer',
+    intended: 'x',
+    level: 'strong',
+    reason: 'Skeleton bites and the Necromancer’s light bumps each lose 3 to the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'chrono',
+    intended: 'even',
+    reason: 'The Tortoise’s bump is under the Chrono’s big-hit line; its shell trims the Chrono’s.',
+  },
+  {
+    x: 'tortoise',
+    y: 'titan',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The grown Titan’s big bumps barely notice the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'inferno',
+    intended: 'x',
+    level: 'edge',
+    reason: 'Inferno burns of 3 land at 2 through the Tortoise’s shell, and its bump is light.',
+  },
+  {
+    x: 'tortoise',
+    y: 'boomerang',
+    intended: 'x',
+    level: 'strong',
+    reason: 'The Boomerang’s 7 hits each way land at 4 through the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'bomber',
+    intended: 'y',
+    level: 'edge',
+    reason: 'A 28 Bomber blast loses only 3 to the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'spartan',
+    intended: 'even',
+    reason: 'The spear barely notices the Tortoise’s shell; the Spartan’s shield halves its bumps.',
+  },
+  {
+    x: 'tortoise',
+    y: 'bloom',
+    intended: 'y',
+    level: 'strong',
+    reason: 'The slow Tortoise leaves the Bloom alone long enough to regrow between bumps.',
+  },
+  {
+    x: 'tortoise',
+    y: 'hex',
+    intended: 'even',
+    reason: 'The Hex curse is a share of health; the Tortoise’s shell takes only 3 off it.',
+  },
+  {
+    x: 'tortoise',
+    y: 'spider',
+    intended: 'even',
+    reason: 'Spider web nips land halved through the Tortoise’s shell; bumps are plain.',
+  },
+  {
+    x: 'tortoise',
+    y: 'battery',
+    intended: 'even',
+    reason: 'The Tortoise’s bump is under the Battery’s big-hit line: plain bumps both ways.',
+  },
+  {
+    x: 'tortoise',
+    y: 'slime',
+    intended: 'even',
+    reason: 'The Tortoise’s shell trims each Slime half’s bump, but there are two of them.',
+  },
+  {
+    x: 'tortoise',
+    y: 'balloon',
+    intended: 'even',
+    reason: 'Plain bumps both ways; the Tortoise’s shell takes 3 off the Balloon’s.',
+  },
+  {
+    x: 'tortoise',
+    y: 'banshee',
+    intended: 'y',
+    level: 'strong',
+    reason: 'Nothing blocks the Banshee’s wail: 33 lands whole through the Tortoise’s shell.',
+  },
+  {
+    x: 'tortoise',
+    y: 'kraken',
+    intended: 'y',
+    level: 'edge',
+    reason: 'The Tortoise’s shell halves the Kraken’s crush, but a held Tortoise can’t bump.',
+  },
+  {
+    x: 'tortoise',
+    y: 'mirage',
+    intended: 'even',
+    reason: 'The Mirage’s copy draws nothing from the bumping Tortoise: plain trades.',
+  },
+  {
+    x: 'tortoise',
+    y: 'jouster',
+    intended: 'even',
+    reason: 'A head-on Jouster lance of 33 loses only 3 to the Tortoise’s shell.',
+  },
+];

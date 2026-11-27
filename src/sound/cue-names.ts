@@ -38,6 +38,7 @@ export const FIGHT_CUES = [
   'ripple',
   'grab',
   'crush',
+  'snap',
   // In the body.
   'rage',
   'rageHit',
@@ -55,6 +56,8 @@ export const FIGHT_CUES = [
   'charge',
   'splinter',
   'spark',
+  'thump',
+  'knock',
   // Health and time.
   'frost',
   'poison',

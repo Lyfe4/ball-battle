@@ -18,6 +18,8 @@ import { createWorld } from '../sim/world.ts';
 import { batchFiveExtras, batchFourExtras, batchSixState } from './arena-extras.ts';
 import { batchSevenState } from './sections-batch-7.ts';
 import { batchEightState } from './sections-batch-8.ts';
+import { batchNineState, batchNineZones } from './sections-batch-9.ts';
+import { drawGlance } from '../render/glance-ring.ts';
 import { titanRadius } from '../sim/balls/titan.ts';
 import { HALF_RADIUS } from '../sim/balls/slime.ts';
 import { arenaAbilityState, right, SECTIONS, TICK, type Tile } from './sections.ts';
@@ -78,8 +80,9 @@ function canvasFor(cssSize: number): { canvas: HTMLCanvasElement; ctx: CanvasRen
 function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTMLCanvasElement {
   // Room for the status rings outside the edge when there are any.
   const rings = tile.statuses?.length ?? 0;
-  // Room for rings and a heal's swelling ring.
-  const extra = Math.max(rings === 0 ? 12 : 16 + rings * 16, tile.heal === undefined ? 0 : 44);
+  // Room for rings and a heal's swelling ring or a glance's shards.
+  const swells = tile.heal !== undefined || tile.glance !== undefined;
+  const extra = Math.max(rings === 0 ? 12 : 16 + rings * 16, swells ? 44 : 0);
   const cssSize = Math.ceil(radiusPx * 2 + extra);
   const { canvas, ctx } = canvasFor(cssSize);
   const { world, ball } = tileWorld(tile);
@@ -101,6 +104,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     color: ballColor(definition.color, tile.repeat === true),
     isRepeat: tile.repeat === true,
     flash: tile.flash ?? 0,
+    glance: tile.glance ?? 0,
     phased: definition.phasedOf?.(shown) ?? false,
     heal: tile.heal ?? 0,
     design: BALL_DESIGNS.get(tile.id),
@@ -116,6 +120,7 @@ function drawTile(tile: Tile, radiusPx: number, detail?: 'full' | 'simple'): HTM
     drawHealPulse(ctx, shown, pulse, false);
   }
   if (rings > 0) drawStatuses(ctx, shown);
+  drawGlance(ctx, shown, tile.glance ?? 0, false);
   return canvas;
 }
 
@@ -152,7 +157,8 @@ function phoneArena(): HTMLElement {
     }))
     .map((ball, _index, all) => batchSixState(ball, all))
     .map((ball, _index, all) => batchSevenState(ball, all))
-    .map(batchEightState);
+    .map(batchEightState)
+    .map((ball, _index, all) => batchNineState(ball, all));
   // A Slime split in two (ADR 0060): the half beside it, smaller, on its side.
   const slime = balls.find((ball) => ball.definitionId === 'slime');
   if (slime !== undefined) {
@@ -196,7 +202,10 @@ function phoneArena(): HTMLElement {
     healAmount: (id: string) => (id === healed ? 9 : 0),
     glance: (id: string) => (id === late.glancedId ? 0.7 : 0),
   };
-  const extras = { zones: [...zones, ...late.zones], projectiles: late.projectiles };
+  const extras = {
+    zones: [...zones, ...late.zones, ...batchNineZones(balls)],
+    projectiles: late.projectiles,
+  };
   drawWorld(ctx, { ...world, tick: TICK, balls, minions, ...extras }, BALL_LOOKUP, view, {
     ...effects,
     rewinds,

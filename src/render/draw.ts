@@ -24,6 +24,7 @@ import type { SourceChip } from './source-chips.ts';
 import { drawMinions } from './minions.ts';
 import { drawAimLines, drawProjectiles, drawPullLines, drawSparks } from './projectiles.ts';
 import { drawGlance } from './glance-ring.ts';
+import { drawSnared } from './snares.ts';
 import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 import { drawCurses } from './curse.ts';
@@ -197,6 +198,7 @@ export function drawWorld(
         isRepeat,
         flash: effects.flash(ball.id),
         heal,
+        glance: effects.glance(ball.id),
         design,
         cssPixelsPerUnit,
         phased,
@@ -213,6 +215,7 @@ export function drawWorld(
     }
   });
   drawTentacles(ctx, world);
+  drawSnared(ctx, world, definitions);
   drawCurses(ctx, world, effects.reducedMotion);
   drawKnockouts(ctx, world, definitions, effects.knockouts);
   drawWinnerRing(ctx, world, effects.winner);
@@ -270,6 +273,8 @@ export interface BallLook {
   readonly flash: number;
   /** Heal effect strength, 0 to 1. */
   readonly heal: number;
+  /** A hit just glanced off its defence, 0 to 1 (the Tortoise ducks). */
+  readonly glance?: number;
   readonly design: BallDesign | undefined;
   /** How many CSS pixels one world unit covers, to pick the design's detail level. */
   readonly cssPixelsPerUnit: number;

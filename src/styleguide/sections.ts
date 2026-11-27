@@ -10,6 +10,7 @@ import { BATCH_FIVE } from './sections-batch-5.ts';
 import { BATCH_SIX } from './sections-batch-6.ts';
 import { BATCH_SEVEN } from './sections-batch-7.ts';
 import { BATCH_EIGHT } from './sections-batch-8.ts';
+import { BATCH_NINE } from './sections-batch-9.ts';
 import { TICK } from './tick.ts';
 
 export { TICK };
@@ -30,6 +31,8 @@ export interface Tile {
   /** The heal's size as a share of max health (ADR 0028); 0.15 or more is a full-size pulse. */
   readonly healShare?: number;
   readonly flash?: number;
+  /** A hit just glanced off its defence (the glance ring; the Tortoise ducks), 1 down to 0. */
+  readonly glance?: number;
   /** Statuses (ADR 0009, 0012), drawn with their rings, as in a match. */
   readonly statuses?: readonly StatusKind[];
   /** One of its own minions in play, off the tile (a Necromancer whose skull is out). */
@@ -192,6 +195,7 @@ export const SECTIONS: readonly (readonly [string, readonly Tile[]])[] = [
   ...BATCH_SIX,
   ...BATCH_SEVEN,
   ...BATCH_EIGHT,
+  ...BATCH_NINE,
   [
     'Heals (ADR 0028): a green wash and a swelling ring, sized by the heal; any ball',
     [

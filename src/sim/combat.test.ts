@@ -289,6 +289,6 @@ describe('contactDamageOf (ADR 0015)', () => {
     const broken = { ...rager, contactDamageOf: () => Number.NaN };
     const [ball] = createWorld(1, [broken, blue]).balls;
     if (ball === undefined) throw new Error('expected a ball');
-    expect(() => contactDamageOf(ball, broken)).toThrow(/invalid contact damage/);
+    expect(() => contactDamageOf(ball, broken, { speed: 0 })).toThrow(/invalid contact damage/);
   });
 });
