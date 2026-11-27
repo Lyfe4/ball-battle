@@ -53,13 +53,19 @@ export interface StartMove {
   readonly seq: number;
 }
 
+/** The largest draft counter the database holds (a Postgres `integer`). */
+export const MAX_SEQ = 0x7fff_ffff;
+
 export function decodeStartMove(body: unknown): StartMove | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
   const fields = body as Record<string, unknown>;
   const lineup = lineupOf(fields['lineup']);
   const { lock, seq } = fields;
   if (lineup === undefined || typeof lock !== 'boolean') return undefined;
-  if (typeof seq !== 'number' || !Number.isSafeInteger(seq) || seq < 0) return undefined;
+  // The draft's counter is a Postgres integer: anything larger is refused here, never a 500 there.
+  if (typeof seq !== 'number' || !Number.isSafeInteger(seq) || seq < 0 || seq > MAX_SEQ) {
+    return undefined;
+  }
   return { lineup, lock, seq };
 }
 
