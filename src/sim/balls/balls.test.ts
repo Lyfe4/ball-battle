@@ -20,6 +20,8 @@ import { sniper } from './sniper.ts';
 import { BALLS } from './index.ts';
 import { MAX_STACKS, speedForStacks, speedster } from './speedster.ts';
 import { storm } from './storm.ts';
+import { hunter } from './hunter.ts';
+import { tortoise } from './tortoise.ts';
 import { thorns } from './thorns.ts';
 import { THIRST_SPEED, vampire } from './vampire.ts';
 import { venom } from './venom.ts';
@@ -76,6 +78,8 @@ describe('the ball roster', () => {
       venom: venom.speed,
       berserker: berserker.speed,
       sniper: sniper.speed,
+      // Its snares hold others; its bump reads their speed, never changes its own.
+      hunter: hunter.speed,
       quake: quake.speed,
       // The pull only steers the enemy; it never changes either ball's speed (ADR 0026).
       magnet: magnet.speed,
@@ -86,6 +90,8 @@ describe('the ball roster', () => {
       chrono: chrono.speed,
       // It grows, which only widens the detection limit; its speed never changes.
       titan: titan.speed,
+      // Its shell only changes what lands on it.
+      tortoise: tortoise.speed,
       inferno: inferno.speed,
       // Its boomerang is a projectile, swept like an arrow (ADR 0005, 0043); the ball keeps its speed.
       boomerang: boomerang.speed,
