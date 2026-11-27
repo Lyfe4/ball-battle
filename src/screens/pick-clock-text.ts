@@ -26,6 +26,11 @@ export interface PickClock {
   /** The whole time in seconds (30 a pick): with reduced motion the bar steps by these. */
   readonly total: number;
   readonly urgent: boolean;
+  /**
+   * The player waits on the other (their pick, their arrival, their answer, their lineup): the card
+   * shows its waiting dots (ADR 0087 addendum of 2026-11-27: every wait on another player shows).
+   */
+  readonly waiting?: boolean;
   /** The waiting player's line: what the other is answering, and the balls they pick from. */
   readonly answering?: { readonly line: string; readonly from: readonly string[] };
   /** What happens next, under the track. */

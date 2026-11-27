@@ -61,7 +61,9 @@ export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): P
       setAttr(root, 'data-kind', clock.kind);
       setAttr(root, 'data-urgent', String(clock.urgent));
       setText(titleText, clock.title);
-      setHidden(dots, clock.kind !== 'theirs');
+      // Every wait on the other player shows it, not only their pick (ADR 0087 addendum).
+      const waits = clock.kind === 'theirs' || clock.kind === 'join' || clock.waiting === true;
+      setHidden(dots, !waits);
       setText(seconds, `${String(clock.seconds)} s`);
       // Reduced motion: the bar steps with the seconds; else it follows the time and glides.
       const left = reducedMotion.matches ? Math.min(1, clock.seconds / clock.total) : clock.left;

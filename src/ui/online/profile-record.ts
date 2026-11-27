@@ -30,6 +30,7 @@ import {
   failureCard,
   SKELETON_AFTER_MS,
   skeletonRows,
+  unseenAtFirst,
 } from './friends-loading.ts';
 import { createMatchRow } from './match-row.ts';
 import { createStatsSheet } from './stats-sheet.ts';
@@ -112,10 +113,8 @@ export function createProfileRecord(host: ProfileRecordHost): ProfileRecord {
     list.replaceChildren(...skeletonRows(rows).children);
     list.classList.add('friends-skeleton');
     list.setAttribute('aria-hidden', 'true');
-    list.hidden = true;
-    window.setTimeout(() => {
-      if (list.classList.contains('friends-skeleton')) list.hidden = false;
-    }, SKELETON_AFTER_MS);
+    list.hidden = false;
+    unseenAtFirst(list);
     all.hidden = true;
     recent.hidden = false;
   }
@@ -128,6 +127,8 @@ export function createProfileRecord(host: ProfileRecordHost): ProfileRecord {
     list.classList.remove('friends-skeleton');
     list.removeAttribute('aria-hidden');
     list.hidden = false;
+    // The rows are seen at once, however soon they came (unseenAtFirst's mark goes with them).
+    delete list.dataset['unseen'];
     holder.toggleAttribute('data-empty', record.played === 0);
     if (record.played === 0) {
       asSection();
