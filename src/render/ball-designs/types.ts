@@ -86,9 +86,10 @@ export interface BallDesign {
   /**
    * How the ball's zones look when they strike: a lightning bolt (the default), a clean shockwave
    * ring that sweeps out to the zone's edge, nothing beyond the burning patch's own flare, or a
-   * bomb's blast: a warm flash with a ring sweeping out (ADR 0043).
+   * bomb's blast: a warm flash with a ring sweeping out (ADR 0043), or a trap's snap: jaws closing
+   * with a short shake and a puff of dust (the Hunter's snares, ADR 0091).
    */
-  readonly strike?: 'bolt' | 'shockwave' | 'burn' | 'blast';
+  readonly strike?: 'bolt' | 'shockwave' | 'burn' | 'blast' | 'snap';
   /** How the ball's shots look in flight: a round head with a streak (the default) or a spear. */
   readonly shot?: 'dot' | 'spear';
 }

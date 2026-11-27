@@ -218,6 +218,8 @@ function drawWolf(p: Painter, r: number, accent: string): void {
  */
 export const hunterDesign: BallDesign = {
   facing: 'none',
+  // A sprung snare snaps shut where it lay, never a bolt (snares.ts).
+  strike: 'snap',
   draw(p, { radius: r, accent, base }) {
     drawShadowedFace(p, r);
     drawScarf(p, r, base, accent);
