@@ -10,6 +10,7 @@
 // Escape and a tap outside close it, and focus returns to the gear. Everything in it is saved per
 // device by the code it calls.
 import { PLAYBACK_SPEEDS, type PlaybackSpeed } from '../app/speed.ts';
+import { firstSeries } from '../app/first-series-device.ts';
 import type { Tips } from '../app/tips.ts';
 import { createCloseButton } from './close-button.ts';
 import { element } from './dom.ts';
@@ -121,6 +122,9 @@ function buildMenu(): Menu {
   again.type = 'button';
   again.addEventListener('click', () => {
     host?.tips.reset();
+    // The next visit to Play is a first one too (ADR 0090): a shared device can give the next
+    // newcomer the guided first series.
+    firstSeries.reset();
     render();
     again.textContent = 'All tips will show again';
   });

@@ -4,6 +4,7 @@ import type { Browser, Page } from 'playwright';
 import postgres from 'postgres';
 import { PHONE } from './live-support.ts';
 import { allowLocalRealtime, blockRealtime, watchPage } from './realtime-support.ts';
+import { asOnlineFlowDevice } from './online-device-support.ts';
 
 /** The local Supabase's mail catcher (`supabase start`), where every code is sent. */
 const MAILPIT = 'http://127.0.0.1:54324';
@@ -97,6 +98,7 @@ export async function signedInPhone(
   blocked = false,
 ): Promise<Page> {
   const context = await browser.newContext({ viewport: PHONE });
+  await asOnlineFlowDevice(context);
   await allowLocalRealtime(context, base);
   if (blocked) await blockRealtime(context);
   const page = await context.newPage();
