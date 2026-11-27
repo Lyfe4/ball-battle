@@ -16,6 +16,8 @@ export interface Vec2 {
 /** The ball being bumped, as `contactDamageOf` sees it: its speed as it came in, before the bounce. */
 export interface BumpTarget {
   readonly speed: number;
+  /** True while it is turned to stone (the Medusa's gaze, prototype). */
+  readonly stoned: boolean;
 }
 
 /** The square play area. Spans [0, size] on both axes. */
@@ -293,6 +295,8 @@ export type AbilityAction<S extends AbilityState = AbilityState> =
       readonly status: StatusKind;
       readonly durationTicks: number;
     }
+  /** Ends a status on a ball now, if it has one (the Medusa shattering stone, prototype). */
+  | { readonly kind: 'clearStatus'; readonly targetId: string; readonly status: StatusKind }
   /**
    * Puts the hook owner back at an earlier position, velocity and health (the Chrono, ADR 0034).
    * The only action that acts on an owner at 0 health, from `onKnockedOut`.

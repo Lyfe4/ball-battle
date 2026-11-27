@@ -1,6 +1,6 @@
 import { isAlive } from './combat.ts';
 import { getDefinition } from './definitions.ts';
-import { hasStatus, HELD_SHARE, slowedSpeed } from './status.ts';
+import { hasStatus, HELD_SHARE, slowedSpeed, STONE_SHARE } from './status.ts';
 import type { BallDefinition, BallState, DefinitionLookup } from './types.ts';
 import { scale } from './vec2.ts';
 
@@ -13,7 +13,8 @@ import { scale } from './vec2.ts';
 export function cruiseSpeedOf(ball: BallState, definition: BallDefinition): number {
   const own = definition.cruiseSpeed?.(ball.abilityState, definition) ?? definition.speed;
   const slowed = hasStatus(ball, 'slowed') ? slowedSpeed(own) : own;
-  const speed = hasStatus(ball, 'held') ? slowed * HELD_SHARE : slowed;
+  const held = hasStatus(ball, 'held') ? slowed * HELD_SHARE : slowed;
+  const speed = hasStatus(ball, 'stoned') ? held * STONE_SHARE : held;
   if (!Number.isFinite(speed) || speed <= 0) {
     throw new Error(`Ball "${ball.id}" has an invalid cruise speed (${String(speed)})`);
   }

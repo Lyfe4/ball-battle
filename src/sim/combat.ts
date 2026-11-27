@@ -2,6 +2,7 @@ import type { PairContact } from './collision.ts';
 import { CONTACT_SLOP, MIN_IMPACT_MULTIPLIER } from './constants.ts';
 import { getDefinition } from './definitions.ts';
 import { defendHit, type HitReducedEvent } from './defence.ts';
+import { hasStatus } from './status.ts';
 import type {
   BallDefeatedEvent,
   BallDefinition,
@@ -124,8 +125,9 @@ export function applyContactDamage(
   const beforeById = new Map(before.map((ball) => [ball.id, ball]));
   // What a bump reads of the ball it hits: its speed as it came in, before the bounce.
   const bumpTargetOf = (target: BallState): BumpTarget => {
-    const { x, y } = (beforeById.get(target.id) ?? target).velocity;
-    return { speed: Math.sqrt(x * x + y * y) };
+    const then = beforeById.get(target.id) ?? target;
+    const { x, y } = then.velocity;
+    return { speed: Math.sqrt(x * x + y * y), stoned: hasStatus(then, 'stoned') };
   };
   const damage: DamageEvent[] = [];
   const reduced: HitReducedEvent[] = [];

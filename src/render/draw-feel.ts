@@ -170,6 +170,30 @@ export function drawStatuses(ctx: CanvasRenderingContext2D, ball: BallState): vo
     radius += theme.statusRingSpacing;
   }
   if (hasStatus(ball, 'poisoned')) drawPoisonRing(ctx, ball, radius);
+  if (hasStatus(ball, 'stoned')) drawStone(ctx, ball);
+}
+
+/** A ball turned to stone (the Medusa, prototype): a grey wash over it and one jagged crack. */
+function drawStone(ctx: CanvasRenderingContext2D, ball: BallState): void {
+  const { x, y } = ball.position;
+  const r = ball.radius;
+  ctx.save();
+  ctx.globalAlpha = theme.stoneAlpha;
+  ctx.fillStyle = theme.stoneFill;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = theme.stoneCrack;
+  ctx.lineWidth = r * theme.markLine * 0.6;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - 0.6 * r, y - 0.5 * r);
+  ctx.lineTo(x - 0.15 * r, y - 0.1 * r);
+  ctx.lineTo(x - 0.3 * r, y + 0.2 * r);
+  ctx.lineTo(x + 0.25 * r, y + 0.55 * r);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawSlowRing(ctx: CanvasRenderingContext2D, ball: BallState, radius: number): void {

@@ -8,8 +8,9 @@ import type { BallState } from './types.ts';
  * - slowed: cruise speed is reduced (ADR 0012).
  * - poisoned: takes small ability damage from its source on a fixed interval (ADR 0012).
  * - held: wrapped by the Kraken's tentacles, it cruises at a small share of its speed (ADR 0075).
+ * - stoned: turned to stone by the Medusa's gaze (prototype), it all but stops.
  */
-export type StatusKind = 'slowed' | 'poisoned' | 'held';
+export type StatusKind = 'slowed' | 'poisoned' | 'held' | 'stoned';
 
 /** A status on a ball. Plain serialisable data; a ball holds at most one of each kind. */
 export interface StatusState {
@@ -86,6 +87,9 @@ export function slowedSpeed(speed: number): number {
 /** Share of its cruise speed a held ball keeps (ADR 0075): wrapped, it barely moves. */
 export const HELD_SHARE = 0.15;
 
+/** Share of its cruise speed a stoned ball keeps (prototype): it all but stops. */
+export const STONE_SHARE = 0.04;
+
 /** Ability damage each poison tick deals (ADR 0012). The Venom's lever. */
 export const POISON_DAMAGE = 5;
 /** Ticks between poison ticks, counted from when the poison was first applied. */
@@ -152,4 +156,18 @@ export function expireStatuses(
     return { ...ball, statuses: ball.statuses.filter((status) => status.expiresTick > tick) };
   });
   return { balls: next, events };
+}
+
+/** The ball with its status of `kind` ended now (the Medusa shattering stone), or undefined if it has none. */
+export function withoutStatus(
+  ball: BallState,
+  kind: StatusKind,
+  tick: number,
+): { readonly ball: BallState; readonly event: StatusExpiredEvent } | undefined {
+  if (!hasStatus(ball, kind)) return undefined;
+  const statuses = ball.statuses.filter((status) => status.kind !== kind);
+  return {
+    ball: { ...ball, statuses },
+    event: { type: 'statusExpired', tick, ballId: ball.id, status: kind },
+  };
 }

@@ -28,6 +28,7 @@ import { theme } from './theme.ts';
 import { drawStrikes, drawZones } from './zones.ts';
 import { drawCurses } from './curse.ts';
 import { drawWebs } from './webs.ts';
+import { drawGazes } from './gazes.ts';
 import { drawPops, drawSnaps, drawSplits } from './draw-moments.ts';
 import type { CopyPopMoment, LanceMoment, PopMoment, SnapMoment, SplitMoment } from './moments.ts';
 import { drawCopies, drawCopyPops } from './mirage-copy.ts';
@@ -154,6 +155,7 @@ export function drawWorld(
     (ballId) => ownerColor(world.balls, definitions, ballId),
     effects.reducedMotion,
   );
+  drawGazes(ctx, world);
   drawAimLines(ctx, world);
   drawPullLines(ctx, world);
   drawRewinds(

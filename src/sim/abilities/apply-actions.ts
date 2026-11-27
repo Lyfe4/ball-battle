@@ -4,7 +4,7 @@ import { hasSplit, splitBall } from './split.ts';
 import { spawnMinion } from '../minions/spawn.ts';
 import type { MinionState } from '../minions/types.ts';
 import { spawnProjectile } from '../projectiles/spawn.ts';
-import { assertStatusDuration, resistedDuration, withStatus } from '../status.ts';
+import { assertStatusDuration, resistedDuration, withoutStatus, withStatus } from '../status.ts';
 import { defendHit } from '../defence.ts';
 import { assertSteerShare, steerToward } from '../steer.ts';
 import { spawnZone } from '../zones/spawn.ts';
@@ -213,6 +213,13 @@ export function applyActions(
           const applied = withStatus(target, request, ownerId, tick);
           events.push(applied.event);
           return applied.ball;
+        });
+        break;
+      case 'clearStatus':
+        update(action.targetId, (target) => {
+          const cleared = withoutStatus(target, action.status, tick);
+          if (cleared !== undefined) events.push(cleared.event);
+          return cleared?.ball;
         });
         break;
       case 'rewind': {

@@ -150,7 +150,17 @@ export const theme = {
     kraken: '#083344',
     mirage: '#881337',
     jouster: '#422006',
+    medusa: '#173225',
   } as Readonly<Record<string, string>>,
+  /** The Medusa's gaze (prototype): cream like a tip, faint while it winds up, bright as she glares. */
+  medusaGlare: '#fef3c7',
+  medusaWindupAlpha: 0.12,
+  medusaGlareAlpha: 0.45,
+  medusaGlareTicks: 14,
+  /** A ball turned to stone: a grey wash over it, with a crack. */
+  stoneFill: '#a8a29e',
+  stoneAlpha: 0.75,
+  stoneCrack: '#44403c',
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
   /** Line weight of design markings, as a fraction of the ball's radius, so it holds at any size. */

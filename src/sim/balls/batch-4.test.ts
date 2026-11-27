@@ -145,7 +145,8 @@ describe('Titan', () => {
     if (hitOf === undefined) throw new Error('the Titan declares contactDamageOf');
     const [start] = createWorld(2, [titan, red]).balls;
     if (start === undefined) throw new Error('expected the Titan');
-    const at = (radius: number) => hitOf({ ...start, radius }, titan, { speed: titan.speed });
+    const at = (radius: number) =>
+      hitOf({ ...start, radius }, titan, { speed: titan.speed, stoned: false });
     const halfway = (titan.radius + MAX_RADIUS) / 2;
     expect(at(titan.radius)).toBe(titan.contactDamage);
     expect(at(halfway)).toBeCloseTo((titan.contactDamage * (1 + GROWN_HIT)) / 2, 9);
