@@ -36,6 +36,7 @@ import { banshee } from './banshee.ts';
 import { kraken } from './kraken.ts';
 import { mirage } from './mirage.ts';
 import { CHARGE_SPEED, jouster } from './jouster.ts';
+import { phoenix } from './phoenix.ts';
 
 const matchups: (readonly [BallDefinition, BallDefinition])[] = BALLS.flatMap((a) =>
   BALLS.map((b) => [a, b] as const),
@@ -108,6 +109,7 @@ describe('the ball roster', () => {
       mirage: mirage.speed,
       // A charge is the roster's fastest burst short of the Speedster's stacks (ADR 0077).
       jouster: jouster.speed * CHARGE_SPEED,
+      phoenix: phoenix.speed,
     };
     // The smallest a ball gets: only the Slime's halves are smaller than it starts.
     const smallest = (ball: BallDefinition) => (ball.id === slime.id ? HALF_RADIUS : ball.radius);
