@@ -63,6 +63,8 @@ export interface OnlineHost {
   readonly declineInvite?: (token: string) => Promise<string | undefined>;
   /** The sender's lobby waits for the friend: the inbox reads quickly meanwhile. */
   readonly lobbyWaits?: () => void;
+  /** The sender cancelled their waiting challenge: home's way back to it goes at once. */
+  readonly lobbyGone?: () => void;
 }
 
 export interface OnlineScreens {
@@ -169,6 +171,11 @@ export function createOnlineScreens(
       primeSeries: (id) => primer.series(id),
       toMatch,
       ...(host.lobbyWaits === undefined ? {} : { lobbyWaits: host.lobbyWaits }),
+      lobbyGone: () => {
+        lobbyStops = undefined;
+        back.show(null);
+        host.lobbyGone?.();
+      },
       // The picker is made just below; a waiting screen asks for this only after.
       ...(ACCOUNTS_BUILD ? { lobbyAfter: (card) => picker?.lobbyAfter(card) } : {}),
     },

@@ -173,6 +173,11 @@ export function mountOnline(context: MountContext): OnlineMount {
       lobbyWaiting = Date.now() + 5_000;
       inboxWatch?.quicken();
     },
+    // Cancelled here: Play in "Back to your lobby"'s place at once (ADR 0089 addendum).
+    lobbyGone: () => {
+      matchShowing = false;
+      showPlay();
+    },
     friendsChanged: () => {
       inboxWatch?.poke();
     },

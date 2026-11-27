@@ -248,6 +248,8 @@ export function createChallengeScreens(
     else if (card?.startId != null) await intoStart(card.startId);
     else {
       if (card !== undefined) info = card;
+      // Known gone: Play shows at once, never a stale "Back to your lobby" until home asks.
+      if (answer.ok) host.lobbyGone?.();
       home();
     }
   }
