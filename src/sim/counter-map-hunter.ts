@@ -12,7 +12,7 @@ export const HUNTER_ENTRIES: readonly CounterEntry[] = [
     x: 'hunter',
     y: 'brawler',
     intended: 'even',
-    reason: 'The Brawler’s 26 bump meets the Hunter’s 25 at the same speed: plain against plain.',
+    reason: 'The Brawler’s 26 bump meets the Hunter’s 24.5 at the same speed: plain against plain.',
   },
   {
     x: 'hunter',
@@ -30,7 +30,8 @@ export const HUNTER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hunter',
     y: 'archer',
-    intended: 'even',
+    intended: 'y',
+    level: 'edge',
     reason: 'The Archer keeps away, and the Hunter’s snares rarely catch a ball that stays away.',
   },
   {
@@ -55,8 +56,7 @@ export const HUNTER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hunter',
     y: 'venom',
-    intended: 'y',
-    level: 'edge',
+    intended: 'even',
     reason: 'The Venom’s poison keeps ticking while the Hunter waits for slow prey.',
   },
   {
@@ -142,7 +142,8 @@ export const HUNTER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hunter',
     y: 'hex',
-    intended: 'even',
+    intended: 'y',
+    level: 'edge',
     reason: 'The Hex’s curse turns the Hunter’s heavy bumps against it.',
   },
   {
@@ -182,8 +183,10 @@ export const HUNTER_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'hunter',
     y: 'kraken',
-    intended: 'even',
-    reason: 'The Kraken anchors to squeeze, slow prey for the Hunter, but its tentacles hold back.',
+    intended: 'y',
+    level: 'edge',
+    reason:
+      'The Kraken’s tentacles hold the Hunter; anchored, it is slow prey only while it squeezes.',
   },
   {
     x: 'hunter',

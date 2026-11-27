@@ -33,7 +33,7 @@ export const SNARE_BITE = 2;
 export const SNARE_HOLD_TICKS = 30;
 
 const SPEED = 760;
-const BUMP = 25;
+const BUMP = 24.5;
 
 /** How many times its bump lands on prey moving at `speed`. */
 export function preyTimes(speed: number): number {
@@ -54,7 +54,7 @@ export const hunter = defineBall<HunterState>({
   id: 'hunter',
   name: 'Hunter',
   description: 'Hits slow prey hardest; leaves snares that hold.',
-  color: '#7c5a3a',
+  color: '#b07a4f',
   ability: { name: 'Hunt', shownBy: { kind: 'zoneSpawned' }, tipOn: 'zone' },
   howItWorks: [
     `Its bump of ${String(BUMP)} lands harder the slower its prey is moving: up to ${String(MOST_TIMES)} times on a held or planted ball, as little as ${percentOf(LEAST_TIMES)} on a fast one.`,
@@ -62,7 +62,7 @@ export const hunter = defineBall<HunterState>({
   ],
   radius: STANDARD_BALL_RADIUS,
   speed: SPEED,
-  maxHealth: 65,
+  maxHealth: 66,
   contactDamage: BUMP,
   initialAbilityState: { nextSnareTick: FIRST_SNARE_TICK },
   contactDamageOf: (_self, stats, target) => stats.contactDamage * preyTimes(target.speed),
