@@ -34,11 +34,14 @@ export function createLazyManual(
     { legend: true, tab: 'balls' },
   );
   root.replaceChildren(header.element);
+  // Busy until the manual is drawn: a screen reader hears it is loading, and flows wait for it.
+  root.setAttribute('aria-busy', 'true');
 
   function load(): void {
     loading ??= import('./manual.ts')
       .then(({ createManualScreen }) => {
         real = createManualScreen(root, balls, host);
+        root.removeAttribute('aria-busy');
         real.setVisible(visible);
         if (asked !== undefined && visible) real.show(asked.ball, asked.chart);
       })

@@ -81,6 +81,18 @@ export const screenOn = (): string | undefined =>
 /** Waits for screen `screen`, failing with where the page is. */
 export async function onScreen(screen: string): Promise<void> {
   await until(() => screenOn() === screen, 5_000, `the ${screen} screen`, false);
+  // The Balls manual is a chunk of its own (manual-lazy.ts): drawn once it has come.
+  if (screen === 'manual') await manualDrawn();
+}
+
+/** Waits for the Balls manual's chunk to be drawn (busy until then, manual-lazy.ts). */
+export async function manualDrawn(): Promise<void> {
+  await until(
+    () => document.querySelector('#manual[aria-busy]') === null,
+    10_000,
+    'the Balls manual',
+    false,
+  );
 }
 
 /** The shell's own screen's heading (Ranks), if it shows. */

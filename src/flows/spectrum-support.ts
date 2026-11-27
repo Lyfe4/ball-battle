@@ -1,6 +1,7 @@
 // The matchup chart (ADR 0073 addendum of 2026-11-23) through the real page, for its browser flows at
 // each layout: the phone's stacked bands with the reason under the tapped chip's row, the beside
 // layout's panel next to the bands, and a desktop's five columns under the reason's strip.
+import { manualDrawn } from './shell-routes-support.ts';
 import { expect } from 'vitest';
 import page from '../../index.html?raw';
 import { frames, settle, visible } from './page-support.ts';
@@ -14,6 +15,7 @@ export async function openChart(): Promise<void> {
   document.body.replaceChildren(...body.children);
   history.replaceState(null, '', `${location.pathname}?view=manual&tab=chart`);
   await import('../main.ts');
+  await manualDrawn();
   await settle();
 }
 
