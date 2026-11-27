@@ -6,7 +6,7 @@ import { RECENT_SERIES } from '../src/api/record.ts';
 import { describe, expect, it } from 'vitest';
 import { GRACE_MS, START_WINDOW_MS } from '../src/api/live.ts';
 import { LEGAL_LINKS, adultCard } from '../src/screens/online-challenge-text.ts';
-import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS } from '../src/server/inactive.ts';
+import { INACTIVE_ACCOUNT_DAYS, INACTIVE_DAYS, ORPHAN_HOURS } from '../src/server/inactive.ts';
 import { SIGN_IN_SECONDS } from '../src/server/sealed-cookie.ts';
 import { REPORT_DAYS } from '../src/server/blocks.ts';
 import { DECLINE_DAYS } from '../src/server/db/friends.ts';
@@ -60,6 +60,8 @@ describe('the privacy policy and terms', () => {
     expect(INACTIVE_ACCOUNT_DAYS).toBe(730);
     expect(privacy).toContain('until 24 months after you last played online');
     expect(privacy).toContain('An account nobody has used for 24 months is deleted');
+    expect(ORPHAN_HOURS).toBe(24);
+    expect(privacy).toContain('never entered is deleted within a day');
     expect(SIGN_IN_SECONDS).toBe(600);
     expect(privacy).toContain('Up to 10 minutes, on your device.');
     expect(privacy).toContain('Each works for 10 minutes');

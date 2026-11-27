@@ -3,8 +3,14 @@
 // (and the IP recorded on them) and cascades to their profile, forfeiting any open series to the
 // opponent; finished series stay in the opponent's history as "Deleted player".
 import { deleteUser } from './auth-admin.ts';
-import { inactivePlayers } from './db/profiles.ts';
+import { inactivePlayers, orphanUsers } from './db/profiles.ts';
 import type { Deps } from './http.ts';
+
+/**
+ * How long an Auth user the game never made a player stays (an email code never entered): a day.
+ * The privacy policy says the same (2026-11-28 audit, migration 20261128130000).
+ */
+export const ORPHAN_HOURS = 24;
 
 /** How long a guest may stay away before they are deleted. The privacy policy says the same. */
 export const INACTIVE_DAYS = 90;
@@ -23,14 +29,21 @@ export const INACTIVE_PER_SWEEP = 25;
  */
 const FAILURES_PER_SWEEP = 2;
 
-/** Deletes up to INACTIVE_PER_SWEEP guests; throws the first failure once the rest are tried. */
+/**
+ * Deletes up to INACTIVE_PER_SWEEP players away too long, then, in what is left of that, Auth
+ * users with no profile older than ORPHAN_HOURS; throws the first failure once the rest are tried.
+ */
 export async function deleteInactiveGuests(deps: Deps): Promise<number> {
-  const ids = await inactivePlayers(
+  const away = await inactivePlayers(
     deps.sql,
     INACTIVE_DAYS,
     INACTIVE_ACCOUNT_DAYS,
     INACTIVE_PER_SWEEP,
   );
+  const ids = [
+    ...away,
+    ...(await orphanUsers(deps.sql, ORPHAN_HOURS, INACTIVE_PER_SWEEP - away.length)),
+  ];
   let deleted = 0;
   const failures: unknown[] = [];
   for (const id of ids) {

@@ -147,6 +147,14 @@ export async function inactivePlayers(
   return rows.map((row) => row.user_id);
 }
 
+/** Auth users the game never made a player, made over `hours` ago, oldest first (inactive.ts). */
+export async function orphanUsers(sql: Sql, hours: number, limit: number): Promise<string[]> {
+  if (limit <= 0) return [];
+  const rows = await sql<{ readonly id: string }[]>`
+    select id from game.orphan_users(make_interval(hours => ${hours}::int), ${limit}::int) as id`;
+  return rows.map((row) => row.id);
+}
+
 /** Days a username stays before it may change again (ADR 0079). */
 export const USERNAME_DAYS = 30;
 
