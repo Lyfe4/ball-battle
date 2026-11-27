@@ -8,16 +8,29 @@ import type { ChallengeInfo } from '../api/challenges.ts';
 import type { SeriesView } from '../api/series.ts';
 import { visitCache, type VisitKey } from './visit-cache.ts';
 
-const LIVE_MATCH: VisitKey<CurrentMatch | null> = { name: 'live-match' };
-
-/** The player is in `match` (a screen showed it, or the server said), or in nothing (`null`). */
-export function rememberLive(match: CurrentMatch | null): void {
-  visitCache.write(LIVE_MATCH, match);
+/** What was learnt, and (a lobby) until when by this device's clock it can still be waiting. */
+interface Known {
+  readonly match: CurrentMatch | null;
+  readonly until?: number;
 }
 
-/** What this visit last learnt: a match, nothing, or not learnt yet (undefined). */
-export function knownLive(): CurrentMatch | null | undefined {
-  return visitCache.read(LIVE_MATCH);
+const LIVE_MATCH: VisitKey<Known> = { name: 'live-match' };
+
+/**
+ * The player is in `match` (a screen showed it, or the server said), or in nothing (`null`). A
+ * lobby is known only until it would stop unless its page is heard from (`stopsInMs`, a duration
+ * from now: one device's clock, so clocks never differ).
+ */
+export function rememberLive(match: CurrentMatch | null, now = Date.now()): void {
+  const stops = match?.kind === 'lobby' ? match.stopsInMs : undefined;
+  visitCache.write(LIVE_MATCH, stops === undefined ? { match } : { match, until: now + stops });
+}
+
+/** What this visit last learnt: a match, nothing, or not learnt (undefined, or a lobby gone stale). */
+export function knownLive(now = Date.now()): CurrentMatch | null | undefined {
+  const known = visitCache.read(LIVE_MATCH);
+  if (known?.until !== undefined && now >= known.until) return undefined;
+  return known?.match;
 }
 
 /** A live series a screen showed: open, the way back to it; over, nothing. */
