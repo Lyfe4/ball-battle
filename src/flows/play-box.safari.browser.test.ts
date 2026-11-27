@@ -162,14 +162,14 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     // The chooser and Change rules went: the box is the one way to the rules.
     expect(visible('.home-chooser')).toHaveLength(0);
     expect(visible('.home-link').map((link) => link.textContent)).toStrictEqual(['Free play']);
-    expect(boxSays()).toStrictEqual({ who: 'vs Normal bot', rules: 'Best of 3 · Reveal' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Normal bot', rules: 'Best of 5 · Reveal' });
     expect(box().getAttribute('aria-haspopup')).toBe('dialog');
     expect(box().getAttribute('aria-label')).toBe(
-      'vs Normal bot, Best of 3 · Reveal: what to play',
+      'vs Normal bot, Best of 5 · Reveal: what to play',
     );
     expect(play().textContent.trim()).toBe('Play');
     expect(play().getAttribute('aria-label')).toBe(
-      'Play Best of 3, Reveal, against the Normal bot',
+      'Play Best of 5, Reveal, against the Normal bot',
     );
     // The box sits right above Play, and both lie whole above the tab bar without a scroll.
     const bar = visible('nav.tab-bar')[0]?.getBoundingClientRect();
@@ -195,7 +195,7 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(document.activeElement?.id).toBe('play-sheet-title');
     expect(groups()).toStrictEqual([
       { name: 'Against', choices: ['vs Bot', 'vs Friend'], chosen: ['vs Bot'] },
-      { name: 'Length', choices: ['Best of 3', 'Best of 5'], chosen: ['Best of 3'] },
+      { name: 'Length', choices: ['Best of 3', 'Best of 5'], chosen: ['Best of 5'] },
       { name: 'Format', choices: ['Reveal', 'Showdown', 'Blind'], chosen: ['Reveal'] },
       { name: 'Bot', choices: ['Easy', 'Normal', 'Hard'], chosen: ['Normal'] },
     ]);
@@ -203,15 +203,16 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(choice('Reveal').getAttribute('aria-label')).toBe('Reveal, take turns');
 
     // Each choice applies at once, and is this device's next time.
-    await userEvent.click(choice('Best of 5'));
+    // (Best of 5 is already chosen, ADR 0090 addendum: the length changes to Best of 3.)
+    await userEvent.click(choice('Best of 3'));
     await userEvent.click(choice('Hard bot'));
-    expect(boxSays()).toStrictEqual({ who: 'vs Hard bot', rules: 'Best of 5 · Reveal' });
-    expect(window.localStorage.getItem(SERIES_LENGTH_STORAGE_KEY)).toBe('5');
+    expect(boxSays()).toStrictEqual({ who: 'vs Hard bot', rules: 'Best of 3 · Reveal' });
+    expect(window.localStorage.getItem(SERIES_LENGTH_STORAGE_KEY)).toBe('3');
     expect(window.localStorage.getItem(BOT_LEVEL_STORAGE_KEY)).toBe('hard');
     // Blind has no level to choose.
     await userEvent.click(choice('Blind'));
     expect(groups().map((group) => group.name)).toStrictEqual(['Against', 'Length', 'Format']);
-    expect(boxSays()).toStrictEqual({ who: 'vs Bot', rules: 'Best of 5 · Blind' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Bot', rules: 'Best of 3 · Blind' });
     await userEvent.click(choice('Reveal'));
     // Escape only ever closes (ADR 0038): focus back on the box.
     await userEvent.keyboard('{Escape}');
@@ -227,18 +228,18 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     await userEvent.click(choice('vs Friend'));
     expect(groups()).toStrictEqual([
       { name: 'Against', choices: ['vs Bot', 'vs Friend'], chosen: ['vs Friend'] },
-      { name: 'Length', choices: ['Best of 3', 'Best of 5'], chosen: ['Best of 3'] },
+      { name: 'Length', choices: ['Best of 3', 'Best of 5'], chosen: ['Best of 5'] },
       { name: 'Format', choices: ['Reveal', 'Showdown'], chosen: ['Reveal'] },
     ]);
-    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Reveal' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 5 · Reveal' });
     await userEvent.click(choice('Showdown'));
     expect(window.localStorage.getItem(FRIEND_FORMAT_STORAGE_KEY)).toBe('showdown');
     // The bot's rules are its own.
     expect(window.localStorage.getItem(PLAY_FORMAT_STORAGE_KEY)).toBe('reveal');
     await userEvent.click(choice('vs Bot'));
-    expect(boxSays()).toStrictEqual({ who: 'vs Hard bot', rules: 'Best of 5 · Reveal' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Hard bot', rules: 'Best of 3 · Reveal' });
     await userEvent.click(choice('vs Friend'));
-    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Showdown' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 5 · Showdown' });
 
     // One close, the ×, last in the sheet's head, named Close; no Done anywhere.
     const close = checkOneClose('What to play', dialog);
@@ -266,7 +267,7 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     // The choice outlives the tab: it is read again on open.
     expect(window.localStorage.getItem(PLAY_OPPONENT_STORAGE_KEY)).toBe('friend');
     expect(play().getAttribute('aria-label')).toBe(
-      'Play a friend live, Best of 3, Showdown: send them a link',
+      'Play a friend live, Best of 5, Showdown: send them a link',
     );
   });
 
@@ -303,7 +304,7 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     // Sent with the sheet's rules, live.
     const sent = asked.find((line) => line.startsWith('POST challenges'));
     expect(sent).toContain('"format":"showdown"');
-    expect(sent).toContain('"bestOf":3');
+    expect(sent).toContain('"bestOf":5');
     expect(sent).toContain('"live":true');
     // The 16+ step took no entry of its own: Back from the lobby is home.
     await back();
@@ -328,7 +329,7 @@ describe('the Play tab’s mode box (ADR 0081, Option B)', () => {
     expect(document.querySelector('dialog.who-sheet')).toBeNull();
     await back();
     await onScreen('home');
-    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 3 · Showdown' });
+    expect(boxSays()).toStrictEqual({ who: 'vs Friend', rules: 'Live · Best of 5 · Showdown' });
   });
 
   it('lands an old link to the vs Friend setup in the one path: Play, on its rules', async () => {

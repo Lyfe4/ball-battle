@@ -162,7 +162,7 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     });
     fakeServer([]);
     await onScreen('home');
-    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
+    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 5 · Reveal']);
     await openSheet();
     expect(location.search).toBe('');
     expect(
@@ -220,7 +220,7 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     await onScreen('home');
     expect(asked.some((line) => line.startsWith(`POST challenges/${TOKEN}/cancel`))).toBe(true);
     // Play never goes straight to anyone: the box says vs Friend, and Play asks again, Robin first.
-    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
+    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 5 · Reveal']);
     await openSheet();
     expect(names()[0]).toBe('Robin');
     expect(sheet()?.querySelector('.who-row[aria-checked="true"]')).toBeNull();
@@ -288,7 +288,7 @@ describe('one vs Friend path, signed in (ADR 0089 addendum of 2026-11-27)', () =
     await onScreen('send');
     await back();
     await onScreen('home');
-    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 3 · Reveal']);
+    expect(boxSays()).toStrictEqual(['vs Friend', 'Live · Best of 5 · Reveal']);
   });
 
   it('enters the same sheet from the Friends tab’s Challenge, that friend picked', async () => {
