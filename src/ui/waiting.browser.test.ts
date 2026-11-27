@@ -24,6 +24,22 @@ describe('the waiting ball', () => {
     if (!reduced) expect(after).toBeLessThan(23);
   });
 
+  it('keeps the page’s time even when its first frame comes late (a busy page, CI)', async () => {
+    const first = waitingBall();
+    document.body.replaceChildren(first);
+    // The frame that starts its loop is held up: a long task right after it is drawn.
+    const busyUntil = performance.now() + 120;
+    while (performance.now() < busyUntil) {
+      // Busy, as a loaded phone or CI machine is.
+    }
+    await wait(400);
+    const again = waitingBall();
+    document.body.append(again);
+    const before = heightOf(first);
+    const after = heightOf(again);
+    expect(Math.abs(after - before), `${String(after)} against ${String(before)}`).toBeLessThan(1);
+  });
+
   it('rises and falls on one even curve, top and bottom soft (no jump between frames)', async () => {
     document.body.replaceChildren(waitingBall());
     const ball = document.querySelector('.waiting-ball');

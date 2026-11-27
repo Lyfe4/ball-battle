@@ -62,7 +62,8 @@
 
 .segmented-tag {
   position: absolute;
-  top: calc(var(--choice-badge) / -3);
+  /* Two-thirds above the button's edge, so it never touches the name under it. */
+  top: calc(var(--space-gap) * -1);
   left: var(--space-small);
   z-index: 1;
   padding: 0 6px;

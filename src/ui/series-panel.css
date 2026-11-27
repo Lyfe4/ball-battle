@@ -227,3 +227,42 @@
 .series-waiting[hidden] {
   display: none;
 }
+
+/*
+ * The result on a phone turned sideways (2026-11-28 staging walk): two columns, so the ways on show
+ * without a scroll at 812 x 375. On the left the sticker, the first series' unlock card, the note
+ * and "How it was won"; on the right the score grid and the buttons. A desktop keeps its one column
+ * beside the court (below).
+ */
+@media (min-aspect-ratio: 5/4) {
+  .series[data-phase='finished'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    column-gap: var(--space-gutter);
+    align-items: start;
+  }
+
+  .series[data-phase='finished'] > * {
+    grid-column: 2;
+  }
+
+  .series[data-phase='finished'] > :is(.series-bar, .symbol-legend) {
+    grid-column: 1 / -1;
+  }
+
+  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-note, .match-story) {
+    grid-column: 1;
+  }
+}
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .series[data-phase='finished'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .series[data-phase='finished'] > *,
+  .series[data-phase='finished'] > :is(.series-bar, .symbol-legend),
+  .series[data-phase='finished'] > :is(.series-result, .unlock-card, .series-note, .match-story) {
+    grid-column: 1;
+  }
+}
