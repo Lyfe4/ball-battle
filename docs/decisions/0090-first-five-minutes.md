@@ -75,27 +75,27 @@ place, and a device's choices, never a server's: no new function call, no migrat
 
 ## The guided series' win rate
 
-Measured with `node scripts/first-series-measure.ts 3000` (ruleset 23, 30 balls): 3,000 whole
-series per row, real fights, Best of 3 · Reveal against Easy on a stepped seed. "▲ picker" takes
+Measured with `node scripts/first-series-measure.ts 3000` (ruleset 24, 32 balls; ruleset 23 was
+within a point): 3,000 whole series per row, real fights, Best of 3 · Reveal against Easy on a stepped seed. "▲ picker" takes
 the highest ▲ against what it faces when there is one (the shown ball, answering; the bot's balls
 left, showing first), else any; "random" picks at random. Lineups are three random balls, or Pick
 for me's.
 
 | Player   | Lineup      | Series won (±2σ) | Round 1 won |
 | -------- | ----------- | ---------------- | ----------- |
-| ▲ picker | random      | 52.9% ± 1.8%     | 54.8%       |
-| ▲ picker | Pick for me | 52.9% ± 1.8%     | 57.5%       |
-| random   | random      | 49.2% ± 1.8%     | 48.3%       |
-| random   | Pick for me | 50.6% ± 1.8%     | 51.1%       |
+| ▲ picker | random      | 53.0% ± 1.8%     | 56.0%       |
+| ▲ picker | Pick for me | 54.0% ± 1.8%     | 56.3%       |
+| random   | random      | 49.8% ± 1.8%     | 49.1%       |
+| random   | Pick for me | 51.9% ± 1.8%     | 50.7%       |
 
 The bot showed first in every series (100%). Winnable, not guaranteed, and far under the 85%
-ceiling; if anything it is close to a coin flip, because a random 3 from 30 often holds no ▲ against
+ceiling; if anything it is close to a coin flip, because a random 3 from 32 often holds no ▲ against
 the shown ball, and Easy's random answer in round 2 can't be read.
 
 **A considered variant, not built:** also step past seeds whose first shown ball has no ▲ answer in
-the player's lineup (still a seed choice, bounded; `--answerable`). It lifts round 1 to 64.4% (Pick
-for me 65.2%) and the series to 56.0% (56.4%) for a ▲ picker, and leaves a random picker at
-51-52%. It rewards reading the marks, the lesson the first pick teaches, without scripting a
+the player's lineup (still a seed choice, bounded; `--answerable`). It lifts round 1 to 66.6% (Pick
+for me 65.2%) and the series to 58.6% (56.9%) for a ▲ picker, and leaves a random picker at
+52-53%. It rewards reading the marks, the lesson the first pick teaches, without scripting a
 win; worth choosing if the first series should feel more winnable.
 
 ## Consequences
