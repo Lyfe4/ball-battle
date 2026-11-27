@@ -29,6 +29,11 @@
   visibility: hidden;
 }
 
+/* The list failed: the friend code came with it, so its card waits unseen in its place. */
+.friends[data-list-failed] .friends-add-card {
+  visibility: hidden;
+}
+
 @media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
   .friends[data-count-unknown] .friends-aside > * {
     visibility: visible;

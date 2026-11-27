@@ -99,3 +99,21 @@ export function failureCard(
 export function inboxList(friends: readonly FriendEntry[] | undefined): FriendsResponse {
   return { code: '', friends: friends ?? [], incoming: [], outgoing: [], blocked: [] };
 }
+
+/**
+ * The list read failed: `card` in the list's place, and nothing moves. The list keeps the height it
+ * had (the skeleton's), the cards under it keep theirs (the friend code's unseen: it came with the
+ * list), so the link card stays where it was (ADR 0087).
+ */
+export function failInPlace(root: HTMLElement, lists: HTMLElement, card: HTMLElement): void {
+  lists.removeAttribute('data-reveal');
+  lists.style.minHeight = `${String(lists.getBoundingClientRect().height)}px`;
+  lists.replaceChildren(card);
+  root.setAttribute('data-list-failed', '');
+}
+
+/** The list drawn again (Try again answered): its own height, everything seen. */
+export function drawnAgain(root: HTMLElement, lists: HTMLElement): void {
+  lists.style.minHeight = '';
+  root.removeAttribute('data-list-failed');
+}

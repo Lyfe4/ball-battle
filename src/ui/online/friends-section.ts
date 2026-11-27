@@ -30,6 +30,8 @@ import { busyOnClick } from '../busy-button.ts';
 import { addField, friendCodeRow } from './friends-add-field.ts';
 import {
   DEFAULT_SKELETON_ROWS,
+  drawnAgain,
+  failInPlace,
   failureCard,
   inboxList,
   skeletonRows,
@@ -223,6 +225,7 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
 
   function draw(): void {
     const settle = rowMotion.before();
+    drawnAgain(root, lists);
     // Before `/friends` answers, the friends the inbox named, else skeleton rows.
     const now = list ?? inboxList(inboxFriends);
     const fade = skeletonShown(lists);
@@ -349,11 +352,9 @@ export function createFriendsSection(host: FriendsHost): FriendsSection {
     // A failed refresh under what this visit already showed keeps it (the inbox keeps it current).
     if (!answer.ok && list !== undefined) return;
     if (!answer.ok) {
-      // One failure card in the list's place; the link card stays (ADR 0087 rule 7).
-      lists.removeAttribute('data-reveal');
+      // One failure card in the list's place; the link card stays (ADR 0087 rule 7), nothing moves.
       root.removeAttribute('data-count-unknown');
-      lists.replaceChildren(failureCard(FRIENDS_FAILED_TITLE, host.line(answer), open));
-      addCard.hidden = true;
+      failInPlace(root, lists, failureCard(FRIENDS_FAILED_TITLE, host.line(answer), open));
       return;
     }
     list = answer.body;

@@ -206,6 +206,11 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     if (known?.kind === 'account') void friends.open();
     const who = await host.who.ask();
     if (who.kind === known?.kind) return;
+    // `/me` didn't answer (offline, failing) for a device that remembers an account: the account's
+    // layout stays, its list showing what it read or its own failure card with Try again, rather
+    // than the whole screen swapping to the link and another failure card (a jump on a flaky
+    // network). An answer that says signed out (`none`) still changes it.
+    if (who.kind === 'unknown' && known?.kind === 'account') return;
     shown(who);
     if (who.kind === 'account') await friends.open();
   }
