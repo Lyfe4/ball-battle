@@ -3,9 +3,9 @@
 // token, refreshes it when it has expired (rewriting the cookie), and requires the player's
 // profile, so a deleted guest's old cookie stops working at once. `sessionWith` is the same for a
 // route whose first statement reads the profile itself (the series read: one round trip, not two).
-import { AuthError, refreshSession, verifyAccess } from './auth.ts';
+import { AuthError, refreshSession, sessionIdOf, verifyAccess } from './auth.ts';
 import { clearedSessionCookie, readSession, sessionCookie, type SessionTokens } from './cookie.ts';
-import { profileOf, type Profile } from './db/profiles.ts';
+import { profileOf, type Profile, type Reader } from './db/profiles.ts';
 import { ApiError, type RouteContext } from './http.ts';
 
 export interface Session extends Profile {
@@ -21,7 +21,14 @@ const unauthenticated = (context: RouteContext, message: string): ApiError => {
 async function verifiedOf(
   request: Request,
   context: RouteContext,
-): Promise<{ readonly userId: string; readonly tokens: SessionTokens } | undefined> {
+): Promise<
+  | {
+      readonly userId: string;
+      readonly sessionId: string | undefined;
+      readonly tokens: SessionTokens;
+    }
+  | undefined
+> {
   const tokens = readSession(request);
   if (tokens === undefined) return undefined;
   const { config } = context.deps;
@@ -30,7 +37,11 @@ async function verifiedOf(
     try {
       const refreshed = await refreshSession(config, tokens.refresh);
       context.setCookie(sessionCookie(refreshed.tokens));
-      return { userId: refreshed.userId, tokens: refreshed.tokens };
+      return {
+        userId: refreshed.userId,
+        sessionId: sessionIdOf(refreshed.tokens.access),
+        tokens: refreshed.tokens,
+      };
     } catch (error) {
       // Refused (revoked, or reused past its window): the guest has to start again. Auth being
       // down or busy (a 429 counts our functions' shared address, not this player) is our fault,
@@ -47,7 +58,7 @@ async function verifiedOf(
     }
   }
   if (verified === 'invalid') throw unauthenticated(context, 'Your session is not valid');
-  return { userId: verified.userId, tokens };
+  return { userId: verified.userId, sessionId: verified.sessionId, tokens };
 }
 
 /** The session of a verified token whose profile `profile` is (a 401 when it has none). */
@@ -56,7 +67,9 @@ function sessionFrom(
   tokens: SessionTokens,
   profile: Profile | undefined,
 ): Session {
-  if (profile === undefined) throw unauthenticated(context, 'This player no longer exists');
+  // No profile: the player was deleted, or this token's session was signed out (Log out), which
+  // the profile's read checks (`game.session_live`): either way it no longer plays.
+  if (profile === undefined) throw unauthenticated(context, 'Your session has ended');
   context.setUser(profile.userId);
   return { ...profile, tokens };
 }
@@ -68,7 +81,7 @@ export async function optionalSession(
 ): Promise<Session | undefined> {
   const verified = await verifiedOf(request, context);
   if (verified === undefined) return undefined;
-  const profile = await profileOf(context.deps.sql, verified.userId);
+  const profile = await profileOf(context.deps.sql, verified.userId, verified.sessionId);
   return sessionFrom(context, verified.tokens, profile);
 }
 
@@ -82,17 +95,17 @@ export async function sessionOf(request: Request, context: RouteContext): Promis
 
 /**
  * `sessionOf`, with the route's first statement reading the profile (`read`, given the token's
- * user, answers it as `profile`, marked seen as `profileOf` marks it, and writes nothing for a
+ * user and session, answers it as `profile` only while that session is signed in, marked seen as `profileOf` marks it, and writes nothing for a
  * player without one): the session and that statement in one round trip. The same 401s.
  */
 export async function sessionWith<T extends { readonly profile: Profile | undefined }>(
   request: Request,
   context: RouteContext,
-  read: (userId: string) => Promise<T>,
+  read: (reader: Reader) => Promise<T>,
 ): Promise<{ readonly session: Session; readonly read: T }> {
   const verified = await verifiedOf(request, context);
   if (verified === undefined)
     throw new ApiError(401, 'unauthenticated', 'Start playing online first');
-  const answer = await read(verified.userId);
+  const answer = await read({ userId: verified.userId, sessionId: verified.sessionId });
   return { session: sessionFrom(context, verified.tokens, answer.profile), read: answer };
 }

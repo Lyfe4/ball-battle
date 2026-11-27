@@ -4,7 +4,7 @@
 // rather than the library's default of none. A token from a project still on the legacy shared
 // secret is refused: staging and production must use asymmetric signing keys (the default for new
 // projects).
-import { createRemoteJWKSet, errors, jwtVerify } from 'jose';
+import { createRemoteJWKSet, decodeJwt, errors, jwtVerify } from 'jose';
 import { ticketData } from './auth-tickets.ts';
 import type { Config } from './config.ts';
 import type { SessionTokens } from './cookie.ts';
@@ -81,7 +81,30 @@ const TOKEN_REFUSALS = [
   errors.JOSENotSupported,
 ];
 
-export type Verified = { readonly userId: string } | 'expired' | 'invalid';
+/**
+ * A verified token's player, and the Auth session it belongs to (`session_id`): signed out, that
+ * session is gone and the API refuses the token though it has not expired (`game.session_live`).
+ */
+export type Verified =
+  { readonly userId: string; readonly sessionId: string | undefined } | 'expired' | 'invalid';
+
+const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** A token claim's session id, if it is one. */
+const sessionIdIn = (claim: unknown): string | undefined =>
+  typeof claim === 'string' && SESSION_ID.test(claim) ? claim : undefined;
+
+/**
+ * The session id of an access token Auth has just handed us (a refresh's answer, over TLS from
+ * Auth itself, so read without verifying): undefined if it names none.
+ */
+export function sessionIdOf(access: string): string | undefined {
+  try {
+    return sessionIdIn(decodeJwt(access)['session_id']);
+  } catch {
+    return undefined;
+  }
+}
 
 /** Whose access token this is, or why it can't be used. */
 export async function verifyAccess(config: Config, token: string, now?: Date): Promise<Verified> {
@@ -94,7 +117,9 @@ export async function verifyAccess(config: Config, token: string, now?: Date): P
       ...(now === undefined ? {} : { currentDate: now }),
     });
     const id = payload.sub;
-    return typeof id === 'string' && id !== '' ? { userId: id } : 'invalid';
+    return typeof id === 'string' && id !== ''
+      ? { userId: id, sessionId: sessionIdIn(payload['session_id']) }
+      : 'invalid';
   } catch (error) {
     if (error instanceof errors.JWTExpired) return 'expired';
     // Signed by a key no longer published (Auth's keys were rotated): checked before its expiry,

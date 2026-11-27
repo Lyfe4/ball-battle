@@ -5,7 +5,7 @@
 // read's count and the answer in one statement (`sessionWith`). Reads, so no poke; private and
 // never cached.
 import { cursorOf, loadMatches, loadRecord, type Loaded } from '../db/record.ts';
-import type { Profile } from '../db/profiles.ts';
+import type { Profile, Reader } from '../db/profiles.ts';
 import { guard } from '../guard.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
 import { LIMITS, refuseOver } from '../rate-limit.ts';
@@ -17,7 +17,7 @@ type Reading<T> = Loaded<T> & { readonly profile: Profile | undefined };
 async function answer<T>(
   request: Request,
   context: RouteContext,
-  read: (userId: string) => Promise<Reading<T>>,
+  read: (reader: Reader) => Promise<Reading<T>>,
 ): Promise<Response> {
   const { session, read: loaded } = await sessionWith(request, context, read);
   if (loaded.spent !== undefined) refuseOver(LIMITS.reads, loaded.spent);
@@ -30,7 +30,9 @@ async function answer<T>(
 export const meRecord: RouteHandler = async (request, context) => {
   requireAccounts(context);
   guard(request, ['GET']);
-  return answer(request, context, (userId) => loadRecord(context.deps.sql, userId, LIMITS.reads));
+  return answer(request, context, (reader) =>
+    loadRecord(context.deps.sql, reader.userId, LIMITS.reads, reader.sessionId),
+  );
 };
 
 export const meMatches: RouteHandler = async (request, context) => {
@@ -38,8 +40,8 @@ export const meMatches: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
   const after = cursorOf(new URL(request.url).searchParams.get('after'));
   if (after === undefined) throw new ApiError(400, 'bad_request', 'Which page of matches?');
-  return answer(request, context, (userId) =>
-    loadMatches(context.deps.sql, userId, LIMITS.reads, after),
+  return answer(request, context, (reader) =>
+    loadMatches(context.deps.sql, reader.userId, LIMITS.reads, after, reader.sessionId),
   );
 };
 

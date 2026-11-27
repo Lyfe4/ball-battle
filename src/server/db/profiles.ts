@@ -13,6 +13,21 @@ export interface Profile {
   readonly account: boolean;
 }
 
+/** Who a request reads as: the token's player and its Auth session (`Verified`, auth.ts). */
+export interface Reader {
+  readonly userId: string;
+  readonly sessionId: string | undefined;
+}
+
+/**
+ * True while the token's Auth session is still signed in (`game.session_live`, migration
+ * 20261128120000): every statement that reads the session's profile ands it in, so a token kept
+ * after Log out finds no profile and is refused, in the same round trip.
+ */
+export function sessionLive(sql: Db, sessionId: string | undefined) {
+  return sql`game.session_live(${sessionId ?? null}::uuid)`;
+}
+
 /** "Player 4821": four random digits, never anything the player typed. */
 export function generatedName(): string {
   const [value = 0] = crypto.getRandomValues(new Uint32Array(1));
@@ -49,13 +64,17 @@ export function markSeen(sql: Db, userId: string | null) {
 }
 
 /** The player's profile, if they still have one, marking them seen (`markSeen`). */
-export async function profileOf(sql: Db, userId: string): Promise<Profile | undefined> {
+export async function profileOf(
+  sql: Db,
+  userId: string,
+  sessionId?: string,
+): Promise<Profile | undefined> {
   const [row] = await sql<
     { readonly name: string; readonly username: string | null; readonly account: boolean }[]
   >`
     with seen as (${markSeen(sql, userId)})
     select coalesce(username, display_name) as name, username, account_at is not null as account
-    from game.profiles where user_id = ${userId}`;
+    from game.profiles where user_id = ${userId} and ${sessionLive(sql, sessionId)}`;
   return row === undefined
     ? undefined
     : { userId, name: row.name, username: row.username, account: row.account };
@@ -69,6 +88,7 @@ export async function profileOf(sql: Db, userId: string): Promise<Profile | unde
 export async function meOf(
   sql: Db,
   userId: string,
+  sessionId?: string,
 ): Promise<{ readonly profile: Profile | undefined; readonly played: boolean }> {
   const [row] = await sql<
     {
@@ -86,7 +106,7 @@ export async function meOf(
         where (s.player_a = p.user_id or s.player_b = p.user_id)
           and s.status in ('finished', 'forfeit') and s.bot is null
       ) as played
-    from game.profiles p where p.user_id = ${userId}`;
+    from game.profiles p where p.user_id = ${userId} and ${sessionLive(sql, sessionId)}`;
   return row === undefined
     ? { profile: undefined, played: false }
     : {
