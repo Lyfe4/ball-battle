@@ -4,6 +4,7 @@
  */
 import { BALLOON_BANSHEE_KRAKEN } from './theme-balloon-banshee-kraken.ts';
 import { MIRAGE_JOUSTER } from './theme-mirage-jouster.ts';
+import { HUNTER_TORTOISE } from './theme-hunter-tortoise.ts';
 
 export const theme = {
   /**
@@ -150,6 +151,8 @@ export const theme = {
     kraken: '#083344',
     mirage: '#881337',
     jouster: '#422006',
+    hunter: '#2a1708',
+    tortoise: '#1a2e05',
   } as Readonly<Record<string, string>>,
   /** Accent for a ball without its own entry. */
   defaultAccent: '#111827',
@@ -171,6 +174,7 @@ export const theme = {
   speedsterEmptyAlpha: 0.22,
   ...BALLOON_BANSHEE_KRAKEN,
   ...MIRAGE_JOUSTER,
+  ...HUNTER_TORTOISE,
   /** The Battery's stored charge, and how strongly its empty inside is tinted with the casing. */
   batteryCharge: '#fde047',
   batteryWellAlpha: 0.12,
