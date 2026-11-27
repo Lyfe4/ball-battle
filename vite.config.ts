@@ -29,6 +29,26 @@ const fixedSeeds: Plugin = {
   },
 };
 
+const MAIN = seedModule('./src/main.ts');
+
+/**
+ * A page loaded in a frame by a flow (reload-support.ts) runs outside the test runner, where
+ * Vitest's rewrite of `import()` (`__vitest_browser_runner__.wrapDynamicImport`) has no runner:
+ * the page's first chunk import (the Balls manual, manual-lazy.ts) threw and the page never
+ * started. The same pass-through Vitest itself prepends to a worker, before the page's script,
+ * kept when the runner is there. Only the test projects use it.
+ */
+const framedImports: Plugin = {
+  name: 'ballbattle-framed-imports',
+  transform(code, id) {
+    if (normalizePath(id.split('?')[0] ?? '') !== MAIN) return null;
+    // On the page script's first line, so its lines keep their numbers.
+    const shim =
+      'globalThis.__vitest_browser_runner__ ??= { wrapDynamicImport: (load) => load() };';
+    return { code: `${shim} ${code}`, map: null };
+  },
+};
+
 const tap: BrowserCommand<[selector: string]> = async (context, selector) => {
   await context.iframe.locator(selector).first().tap();
 };
@@ -79,7 +99,7 @@ function phoneProject(
 ): TestProjectInlineConfiguration {
   return {
     extends: true,
-    plugins: [fixedSeeds, firstVisitCounter],
+    plugins: [fixedSeeds, framedImports, firstVisitCounter],
     test: {
       name,
       include: [`src/**/*.${suffix}.browser.test.ts`, ...also],
@@ -178,7 +198,7 @@ export default defineConfig({
       },
       {
         extends: true,
-        plugins: [fixedSeeds],
+        plugins: [fixedSeeds, framedImports],
         test: {
           name: 'browsers',
           // The known match results, and flows through the real page (`*.browser.test.ts`).
@@ -208,7 +228,7 @@ export default defineConfig({
       },
       {
         extends: true,
-        plugins: [fixedSeeds],
+        plugins: [fixedSeeds, framedImports],
         test: {
           // Flows that need a desktop screen (a mouse hover, the arena beside a result), at a fixed
           // size: resizing the viewport during a run upset the session history of later files in
@@ -229,7 +249,7 @@ export default defineConfig({
       },
       {
         extends: true,
-        plugins: [fixedSeeds],
+        plugins: [fixedSeeds, framedImports],
         test: {
           // Flows that must also hold on a full HD screen (`*.full.browser.test.ts`, ADR 0038), where
           // the legend bug was found: fixed at 1920 x 1080 for the same reason as browsers-wide.

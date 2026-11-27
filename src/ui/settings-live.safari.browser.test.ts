@@ -55,10 +55,15 @@ afterEach(() => {
 describe('settings in a live match', () => {
   it('cover the court whole when they must: every row shows without a scroll inside', () => {
     // The menu as it is, too tall for the room above its gear at its own size: it once kept that
-    // size, capped and scrolling, which cut Show all tips again and Close off at the bottom.
-    const { panel, covers } = open(true);
+    // size, capped and scrolling, which cut Show all tips again and Close off at the bottom. Now
+    // it stays whole, over its gear too where it must (ADR 0087 addendum of 2026-11-28), inside
+    // the visible screen.
+    const { covers } = open(true);
     expect(covers).toBe(true);
     const menu = document.getElementById('settings-panel');
+    // Measured where it rests, past its opening slide.
+    for (const animation of menu?.getAnimations() ?? []) animation.finish();
+    const panel = menu?.getBoundingClientRect() ?? new DOMRect();
     const again = [...(menu?.querySelectorAll('button') ?? [])].find((control) =>
       control.textContent.trim().startsWith('Show all tips again'),
     );
@@ -69,8 +74,8 @@ describe('settings in a live match', () => {
       scrolls: menu === null ? 'none' : menu.scrollHeight > menu.clientHeight + 1,
       againInside: shown !== undefined && shown.bottom <= panel.bottom + 0.5,
       aboutInside: about !== undefined && about.height > 0 && about.bottom <= panel.bottom + 0.5,
-      overGear: panel.bottom > 386,
-    }).toStrictEqual({ scrolls: false, againInside: true, aboutInside: true, overGear: false });
+      onScreen: panel.top >= 16 - 0.5 && panel.bottom <= window.innerHeight - 16 + 0.5,
+    }).toStrictEqual({ scrolls: false, againInside: true, aboutInside: true, onScreen: true });
   });
 
   it('cover the court and hold an offline match when nothing else fits', () => {
