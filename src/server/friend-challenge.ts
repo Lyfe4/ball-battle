@@ -26,11 +26,14 @@ export async function inviteeOf(
 
 /**
  * The friend a challenge was sent to says No thanks: it leaves their inbox and the sender's lobby
- * says so. Anyone else, or a link no longer waiting: nothing to say no to.
+ * says so. A live one ends there (ADR 0089 addendum of 2026-11-27): its link stops too, so the
+ * sender is never left waiting in a lobby nobody will join. Anyone else, or a link no longer
+ * waiting: nothing to say no to.
  */
 export async function declineInvite(deps: Deps, token: string, userId: string): Promise<void> {
   const rows = await deps.sql`
-    update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now())
+    update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now()),
+      cancelled_at = case when live then coalesce(cancelled_at, now()) else cancelled_at end
     where token_hash = ${await hashOf(token)} and invitee = ${userId} and series_id is null
       and start_id is null
     returning 1`;

@@ -97,14 +97,14 @@ describe('a live link', () => {
 });
 
 describe('one live match at a time', () => {
-  it('refuses a second link while the sender’s lobby waits, and allows one once it stopped', async () => {
+  it('lets a second link take the first’s place: one outgoing challenge (ADR 0089)', async () => {
     const sender = await newPlayer(deps);
     const token = tokenOf(await sendLive(sender));
     const second = await sendLive(sender);
-    expect(second.status).toBe(409);
-    expect(code(second.body)).toBe('in_a_match');
-    // A retry of the first create still gets its link.
-    await lobbyQuiet(token, LOBBY_SEEN_MS + 1_000);
+    expect(second.status).toBe(201);
+    expect(statusOf((await linkInfo(await newPlayer(deps), token)).body)).toBe('stopped');
+    // One that stopped on its own is simply replaced too.
+    await lobbyQuiet(tokenOf(second), LOBBY_SEEN_MS + 1_000);
     expect((await sendLive(sender)).status).toBe(201);
   });
 
@@ -120,11 +120,12 @@ describe('one live match at a time', () => {
     expect(statusOf((await linkInfo(await newPlayer(deps), fromC)).body)).toBe('open');
   });
 
-  it('refuses a player waiting in their own lobby from accepting another link', async () => {
+  it('stops a player’s own lobby when they accept another link (ADR 0089)', async () => {
     const [a, c] = [await newPlayer(deps), await newPlayer(deps)];
-    tokenOf(await sendLive(a));
+    const own = tokenOf(await sendLive(a));
     const fromC = tokenOf(await sendLive(c));
-    expect(code((await acceptLink(a, fromC)).body)).toBe('in_a_match');
+    expect((await acceptLink(a, fromC)).status).toBe(200);
+    expect(statusOf((await linkInfo(await newPlayer(deps), own)).body)).toBe('stopped');
   });
 
   it('holds when one player sends and accepts at the same moment on two hosts', async () => {
@@ -132,8 +133,16 @@ describe('one live match at a time', () => {
     const fromC = tokenOf(await sendLive(c));
     const twin = { ...a, browser: a.browser.elsewhere(other) };
     const [sent, accepted] = await Promise.all([sendLive(a), acceptLink(twin, fromC)]);
-    const ok = [sent.status, accepted.status].filter((status) => status < 300);
-    expect(ok).toHaveLength(1);
+    // The accept always wins: sent first, its lobby stops; sent after, it is refused.
+    expect(accepted.status).toBe(200);
+    if (sent.status === 201) {
+      expect(statusOf((await linkInfo(c, tokenOf(sent))).body)).toBe('stopped');
+    } else expect(code(sent.body)).toBe('in_a_match');
+    const [{ count } = { count: 0 }] = await admin<{ count: number }[]>`
+      select count(*)::int as count from game.challenges
+      where creator = ${a.userId} and cancelled_at is null and series_id is null
+        and start_id is null`;
+    expect(count).toBe(0);
   });
 
   it('lets a player start again once their match has ended', async () => {
@@ -144,7 +153,7 @@ describe('one live match at a time', () => {
     expect((await sendLive(a)).status).toBe(201);
   });
 
-  it('leaves play by turns as it was: up to three open series, a lobby allowed beside them', async () => {
+  it('leaves play by turns as it was: up to three open series; a lobby then takes a link’s place', async () => {
     const [a, b] = [await newPlayer(deps), await newPlayer(deps)];
     const byTurns = await a.browser.call(challenges, 'POST', '/api/v1/challenges', {
       format: 'blind',
@@ -158,5 +167,7 @@ describe('one live match at a time', () => {
       status: 'open',
     });
     expect((await sendLive(a)).status).toBe(201);
+    // One outgoing challenge (ADR 0089): the link by turns stopped.
+    expect(statusOf((await linkInfo(b, tokenOf(byTurns))).body)).toBe('stopped');
   });
 });

@@ -94,6 +94,8 @@ export interface InviteRow {
   readonly format: Format;
   readonly bestOf: BestOf;
   readonly live: boolean;
+  /** Live: ms from now until the sender's lobby stops unless they're heard from again. */
+  readonly stopsInMs: number | null;
 }
 
 export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
@@ -103,7 +105,9 @@ export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
       (select f.id from game.friendships f
         where f.low = least(c.creator, ${userId}::uuid) and f.high = greatest(c.creator, ${userId}::uuid)
       ) as friend,
-      c.format, c.best_of as "bestOf", c.live
+      c.format, c.best_of as "bestOf", c.live,
+      case when c.live then greatest(0, ceil(extract(epoch from (c.creator_seen_at
+        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}) - now())) * 1000))::int end as "stopsInMs"
     from game.challenges c
     join game.profiles p on p.user_id = c.creator
     where c.invitee = ${userId} and c.series_id is null and c.start_id is null

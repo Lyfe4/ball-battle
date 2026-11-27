@@ -5,6 +5,7 @@ import { errorOf } from '../../api/errors.ts';
 import { TestBrowser } from '../test/client.ts';
 import { LINEUP_3, LINEUP_5, newPlayer, read, type Player } from '../test/series-support.ts';
 import { adminSql, testDeps } from '../test/support.ts';
+import { linkInfo } from '../test/live-support.ts';
 import { challengeOne, challenges } from './challenges.ts';
 
 const deps = testDeps();
@@ -130,12 +131,19 @@ describe('a friend challenge', () => {
     expect((await info(nobody, 'A'.repeat(22))).status).toBe(404);
   });
 
-  it('lets a player keep at most 5 links out, though a retry of one still answers', async () => {
+  it('keeps one link out at a time: a new one stops the last, whose retry still answers', async () => {
     const sender = await newPlayer(deps);
-    const ids = Array.from({ length: 5 }, () => crypto.randomUUID());
-    for (const id of ids) expect((await send(sender, 'reveal', 3, id)).status).toBe(201);
-    expect((await send(sender, 'reveal', 3, ids[4])).status).toBe(201);
-    expect(code((await send(sender)).body)).toBe('too_many_series');
+    const friend = await newPlayer(deps);
+    const first = crypto.randomUUID();
+    const old = (await send(sender, 'reveal', 3, first)).body as ChallengeLink;
+    const made = (await send(sender)).body as ChallengeLink;
+    expect((await linkInfo(friend, old.token)).body).toMatchObject({ status: 'stopped' });
+    expect((await linkInfo(friend, made.token)).body).toMatchObject({ status: 'open' });
+    // A retry of the first create answers its link, and stops nothing else.
+    expect(((await send(sender, 'reveal', 3, first)).body as ChallengeLink).token).toBe(old.token);
+    expect((await linkInfo(friend, made.token)).body).toMatchObject({ status: 'open' });
+    // A stopped link by turns can't be taken.
+    expect(code((await accept(friend, old.token)).body)).toBe('challenge_stopped');
   });
 
   it('lets a player keep at most 3 open series', async () => {

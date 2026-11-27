@@ -138,7 +138,16 @@ describe('challenging a friend', () => {
     const { invites } = await inbox(friend);
     // With the friendship it came through, for Block and Report name (2026-11-25).
     expect(invites).toStrictEqual([
-      { token, from: me.username, friend: id, format: 'reveal', bestOf: 3, live: true },
+      {
+        token,
+        from: me.username,
+        friend: id,
+        format: 'reveal',
+        bestOf: 3,
+        live: true,
+        // When it stops unless the sender is heard from (ADR 0089 addendum of 2026-11-27).
+        stopsInMs: expect.any(Number) as unknown,
+      },
     ]);
     const lobby = (await linkInfo(me, token)).body as ChallengeInfo;
     expect([lobby.invitee, lobby.declined]).toStrictEqual([friend.username, false]);
@@ -161,7 +170,8 @@ describe('challenging a friend', () => {
     );
     expect(no.status).toBe(204);
     expect((await inbox(friend)).invites).toStrictEqual([]);
-    expect(((await linkInfo(me, token)).body as ChallengeInfo).declined).toBe(true);
+    // A live No thanks ends it: the lobby says so, and nothing waits any more.
+    expect((await linkInfo(me, token)).body).toMatchObject({ declined: true, status: 'stopped' });
   });
 
   it('leaves the inbox once the sender stops waiting', async () => {

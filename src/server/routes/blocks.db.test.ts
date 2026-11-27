@@ -137,24 +137,38 @@ describe('blocking', () => {
     expect((await list(me)).incoming).toStrictEqual([]);
   });
 
-  it('calls off challenges both ways, and no new one can be sent', async () => {
+  /** The pair's challenges as the blocker sees them: theirs first. */
+  const challengeRows = (me: Player) => admin<
+    { mine: boolean; cancelled: boolean; declined: boolean }[]
+  >`
+    select creator = ${me.userId} as mine, cancelled_at is not null as cancelled,
+      invitee_declined_at is not null as declined
+    from game.challenges where ${me.userId} in (creator, invitee) order by 1`;
+
+  it('calls off the blocker’s own challenge to them', async () => {
     const me = await account();
     const them = await account();
     const id = await friendsWith(me, them);
     expect((await challengeTo(me, id)).status).toBe(201);
+    await act(me, id, 'block');
+    expect((await inbox(them)).invites).toStrictEqual([]);
+    expect([...(await challengeRows(me))]).toStrictEqual([
+      { mine: true, cancelled: true, declined: false },
+    ]);
+  });
+
+  it('ends theirs as a No thanks does, and no new one can be sent', async () => {
+    const me = await account();
+    const them = await account();
+    const id = await friendsWith(me, them);
+    // (Two at once would be crossed: sending to a friend who waits for you accepts theirs.)
     expect((await challengeTo(them, id)).status).toBe(201);
     expect((await inbox(me)).invites.map((invite) => invite.friend)).toStrictEqual([id]);
     await act(me, id, 'block');
     expect((await inbox(me)).invites).toStrictEqual([]);
-    expect((await inbox(them)).invites).toStrictEqual([]);
-    const rows = await admin<{ mine: boolean; cancelled: boolean; declined: boolean }[]>`
-      select creator = ${me.userId} as mine, cancelled_at is not null as cancelled,
-        invitee_declined_at is not null as declined
-      from game.challenges where ${me.userId} in (creator, invitee) order by 1`;
-    // Theirs reads as No thanks, the answer any friend may give; mine is called off.
-    expect([...rows]).toStrictEqual([
-      { mine: false, cancelled: false, declined: true },
-      { mine: true, cancelled: true, declined: false },
+    // Theirs reads as No thanks, the answer any friend may give, and a live one stops there.
+    expect([...(await challengeRows(me))]).toStrictEqual([
+      { mine: false, cancelled: true, declined: true },
     ]);
     expect(code(await challengeTo(them, id))).toStrictEqual([404, 'not_found']);
   });

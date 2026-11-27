@@ -35,6 +35,12 @@ export interface Invite {
   readonly bestOf: BestOf;
   /** Played live (ADR 0053); else by turns (ADR 0085): Accept builds a lineup first. */
   readonly live: boolean;
+  /**
+   * Live: how long after this answer the sender's lobby stops unless they're heard from again
+   * (`LOBBY_SEEN_MS` after their last read), so the page reads again then and the banner never
+   * outlives the lobby (ADR 0089 addendum of 2026-11-27). A duration, not a time: clocks differ.
+   */
+  readonly stopsInMs?: number;
 }
 
 /** A series by turns waiting on this account's pick (ADR 0085): "Your turn". */
