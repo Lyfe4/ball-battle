@@ -198,6 +198,9 @@ a gate rule; `ball-sounds.slow.test.ts` hears every one in real fights and no th
   older-link notice, and open online series keep their frozen ruleset. No migration.
 - 32 balls: the bots, Reveal, Showdown and online play read the roster and the map, as before; the
   bots' tests pass on the new roster unchanged (`SAME_FIGHTS_AS` stays empty, ADR 0073).
+- The longest manual entry is now the Speedster's Weak vs (six strong counters and five edges): the
+  desktop columns' cards sit 2 px apart with 4 px under them (from 4 and 5) so it still fits
+  1280 x 800 (`desktop-layout.wide.browser.test.ts`). The phone keeps its spacing.
 - `contactDamageOf` can read its target: a later ball may hit by what it hits, still in one place.
 - **Draw cost (ADR 0063).** Each drawn whole by `drawBall` in Chromium with the CPU slowed 6×, a
   phone-sized canvas, raster included, the least of nine rounds, beside today's balls in the same
