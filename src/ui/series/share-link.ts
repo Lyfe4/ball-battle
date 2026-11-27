@@ -15,11 +15,17 @@ export function createShareLink(): ShareLink {
   const share = element('button', 'hud-button series-share', COPY);
   share.type = 'button';
   share.addEventListener('click', () => {
-    void navigator.clipboard.writeText(window.location.href).then(
+    // No clipboard (an insecure context has none at all, or it was refused): the address bar
+    // still holds the link. Asked as a promise either way, so a missing clipboard never throws.
+    const clipboard = navigator.clipboard as Clipboard | undefined;
+    const copied =
+      clipboard === undefined
+        ? Promise.reject(new Error('No clipboard'))
+        : clipboard.writeText(window.location.href);
+    void copied.then(
       () => {
         setText(share, 'Link copied');
       },
-      // No clipboard (an insecure context, or refused): the address bar still holds the link.
       () => {
         setText(share, 'Copy the address bar to share');
       },
