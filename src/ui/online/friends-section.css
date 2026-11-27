@@ -283,7 +283,6 @@
   padding-inline: var(--space-gap);
 }
 
-.friends-waiting,
 .friends-empty {
   margin: 0;
   color: var(--color-text-muted);
@@ -298,11 +297,6 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
-}
-
-/* A text action keeps a finger's whole target. */
-.friends-action {
-  min-height: var(--tap-target);
 }
 
 /* A friend's status (PR (d)): a dot in a status colour, with its words. */

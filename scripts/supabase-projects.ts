@@ -10,8 +10,6 @@ export const PROJECTS = {
   production: 'wtqmptuhonbtjwxjwtwl',
 } as const;
 
-export type ProjectName = keyof typeof PROJECTS;
-
 /** The project named `name`, or undefined for anything else (an argument from outside). */
 export function projectRefOf(name: string | undefined): string | undefined {
   return name === 'staging' || name === 'production' ? PROJECTS[name] : undefined;

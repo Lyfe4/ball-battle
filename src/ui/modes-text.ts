@@ -1,6 +1,5 @@
 // The words for the ways to play (ADR 0046, 0055, 0081): the Play tab's mode box, its sheet and
 // Play, the setup screens, the bot level on the lineup step. Pure, so they are tested without a DOM.
-import { PICK_SECONDS } from '../api/live.ts';
 import {
   botChooses,
   type FriendSetup,
@@ -47,13 +46,6 @@ export const OPPONENT_CARDS: Readonly<Record<Opponent, { readonly name: string }
   bot: { name: 'vs Bot' },
   friend: { name: 'vs Friend' },
 };
-
-/** What a live friend match asks of both players, said on the vs Friend setup (ADR 0053). */
-export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PICK_SECONDS)} s a pick. You send a link; once they accept, you both pick your lineups.`;
-
-/** What play by turns asks, said on the vs Friend setup where it is offered (ADR 0085). */
-export const TURNS_SETUP_NOTE =
-  'Pick your lineup now. Once they accept with theirs, you take turns, up to a day each; a turn left too long loses the series.';
 
 /**
  * Play against a friend (ADR 0089 addendum of 2026-11-27): who next, signed in (`ask`), else a

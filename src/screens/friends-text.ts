@@ -40,11 +40,6 @@ export function addedLine(answer: AddFriendResponse): string {
     : `Request sent to ${answer.name}.`;
 }
 
-/** Whether the list holds anybody. */
-export function hasAnyone(list: FriendsResponse): boolean {
-  return list.friends.length + list.incoming.length + list.outgoing.length > 0;
-}
-
 /** Remove, asked in place: the row's question. */
 export const REPORT_CHOICES: readonly { readonly reason: ReportReason; readonly text: string }[] = [
   { reason: 'offensive', text: 'Rude or hurtful' },

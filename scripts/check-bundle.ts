@@ -37,7 +37,7 @@ export const ACCOUNTS_MARK =
 
 /**
  * What only the Realtime poke's code contains (ADR 0082): its route, Realtime's socket path and
- * the Phoenix join. A build without `VITE_POKE` (every one but local and tests, for now) holds none
+ * the Phoenix join. A build without `VITE_POKE` (production, for now) holds none
  * of it. Never a key: the browser key comes from GET /me/poke at run time.
  */
 export const POKE_MARK = /\bme\/poke\b|realtime\/v1\/websocket|phx_join/;
