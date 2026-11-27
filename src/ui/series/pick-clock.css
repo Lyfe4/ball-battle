@@ -2,7 +2,7 @@
  * A live match's pick card (pick-clock.ts, ADR 0055 B2): a raised card above the track with the
  * title and the seconds on one row, a bar across it, and for the waiting player what the other is
  * answering. Calm lilac until 10 s, then the accent yellow; the seconds never change size and
- * nothing flashes. The three dots pulse softly in the second accent while the other picks.
+ * nothing flashes. The small waiting ball (waiting.css) rises and falls while the other picks.
  */
 .pick-clock {
   display: grid;
@@ -16,8 +16,7 @@
 
 .pick-clock[hidden],
 .pick-clock-next[hidden],
-.pick-clock-answer[hidden],
-.pick-clock-dots[hidden] {
+.pick-clock-answer[hidden] {
   display: none;
 }
 
@@ -70,18 +69,6 @@
   color: var(--color-accent);
 }
 
-.pick-clock-dots {
-  display: inline-flex;
-  gap: 5px;
-}
-
-.pick-clock-dots > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-accent-2);
-}
-
 .pick-clock-answer {
   display: grid;
   gap: var(--space-small);
@@ -112,28 +99,5 @@
 @media (prefers-reduced-motion: no-preference) {
   .pick-clock-fill {
     transition: transform 250ms linear;
-  }
-
-  .pick-clock-dots > span {
-    animation: pick-clock-dot 1.2s ease-in-out infinite;
-  }
-
-  .pick-clock-dots > span:nth-child(2) {
-    animation-delay: 200ms;
-  }
-
-  .pick-clock-dots > span:nth-child(3) {
-    animation-delay: 400ms;
-  }
-}
-
-@keyframes pick-clock-dot {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-
-  50% {
-    opacity: 1;
   }
 }

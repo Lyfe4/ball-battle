@@ -15,7 +15,7 @@ import { createPickClock } from '../ui/series/pick-clock.ts';
 import type { SeriesMoment } from '../ui/series/series-view.ts';
 import { liveNote } from './live-text.ts';
 import { createOnlineRematch, type OnlineRematch } from './online-rematch.ts';
-import { OLDER_VERSION, waitNote } from './online-text.ts';
+import { OLDER_VERSION, turnWaiting, waitNote } from './online-text.ts';
 import { pickClockOf } from './pick-clock-text.ts';
 
 export interface ExtrasHost {
@@ -85,8 +85,11 @@ export function createSeriesExtras(
       const note = older ? [said, OLDER_VERSION].filter(Boolean).join(' ') : said;
       const choice = rematch.choice();
       const toss = live ? liveTossOf(view) : undefined;
+      // By turns, waiting on the other's pick: the waiting card, once every round is watched.
+      const waiting = live || !all ? undefined : turnWaiting(view, Date.now());
       return {
         note: all ? note : undefined,
+        ...(waiting === undefined ? {} : { waiting }),
         live,
         // Live, played out or forfeit while this page still shows a fight of it: nothing to leave.
         over: live && view.status !== 'open',

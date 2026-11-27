@@ -1,0 +1,134 @@
+/*
+ * The one look of a wait on another player (waiting.ts): a ball rising and falling over its
+ * shadow, on the swing tokens: one swing up, one down (`alternate`), on a curve that eases both
+ * ends alike, so the turn at the top and at the bottom is a soft stop and never a jump. Its loop
+ * keeps the page's time (`--waiting-since`, a negative delay), so a ball drawn again mid-wait is
+ * where the last one was. Under reduced motion it sits still on its shadow.
+ */
+.waiting-ball {
+  --waiting-size: 56px;
+  --waiting-rise: 24px;
+  --waiting-shadow: 6px;
+
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--waiting-size);
+  height: calc(var(--waiting-size) + var(--waiting-rise) + var(--waiting-shadow) / 2);
+}
+
+.waiting-ball[hidden] {
+  display: none;
+}
+
+.waiting-ball[data-size='small'] {
+  --waiting-size: 14px;
+  --waiting-rise: 7px;
+  --waiting-shadow: 3px;
+
+  align-self: center;
+}
+
+.waiting-ball::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--waiting-size);
+  height: var(--waiting-size);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 30%, rgb(255 255 255 / 0.35) 0 14%, transparent 16%),
+    var(--color-accent);
+  box-shadow: inset calc(var(--waiting-size) * -0.1) calc(var(--waiting-size) * -0.1) 0
+    var(--color-accent-slab);
+  transform: translateY(var(--waiting-rise));
+}
+
+.waiting-ball::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  width: 70%;
+  height: var(--waiting-shadow);
+  border-radius: 50%;
+  background: var(--color-sunken);
+}
+
+/* On a raised card (the pick clock) the shadow is the card's own sunken colour, a little darker. */
+.pick-clock .waiting-ball::after {
+  background: var(--color-text-muted);
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .waiting-ball::before,
+  .waiting-ball::after {
+    animation-duration: var(--motion-swing);
+    animation-timing-function: var(--ease-swing);
+    animation-delay: var(--waiting-since);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+
+  .waiting-ball::before {
+    animation-name: waiting-rise;
+  }
+
+  .waiting-ball::after {
+    animation-name: waiting-shadow;
+  }
+}
+
+@keyframes waiting-rise {
+  from {
+    transform: translateY(var(--waiting-rise));
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes waiting-shadow {
+  to {
+    scale: 0.7;
+    opacity: 0.6;
+  }
+}
+
+/* The card: the ball over its title and one quiet line, in a quiet box. */
+.waiting {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-small);
+  padding: var(--space-gutter) var(--space-gap);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+/* The title, with the friend's disc before it when it waits for someone by name. */
+.waiting-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.waiting-line {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Desktop: inside a notice's card the box sits into it, as the notice's other boxes do. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5/4) {
+  .notice .waiting {
+    background: var(--color-sunken);
+  }
+}

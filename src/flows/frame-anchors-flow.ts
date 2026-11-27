@@ -1,7 +1,7 @@
 // One frame (ADR 0087): every screen where nothing fights has the same header row, and at one size
 // its parts sit on the same pixels on every screen. The flow opens each such screen in turn (the tab
 // screens, a ball's page, the chart, Profile, All matches, sign-in, each setup, a lineup, Free play, the
-// older-link notice)
+// older-link notice, a game by turns waiting on the other's pick)
 // in a build with accounts and online play (the API refuses everything: no screen waits on a
 // server), and reads the header row's boxes.
 //
@@ -14,6 +14,7 @@
 import { expect } from 'vitest';
 import { LATER_NAME } from '../screens/incoming-text.ts';
 import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
+import { TURNS_SERIES, turnsAnswers } from './online-looks-support.ts';
 import { settle, until, visible } from './page-support.ts';
 import { follow, onScreen, openAs, screenOn } from './shell-routes-support.ts';
 
@@ -37,6 +38,14 @@ export const FRAME_SCREENS: readonly (readonly [name: string, search: string, sc
   ['the lineup', '?mode=bo3&fmt=reveal&step=lineup', 'series'],
   ['Free play', '?view=pick', 'pick'],
   ['an older link', '?a=brawler&b=vampire&seed=7&v=1', 'outdated'],
+];
+
+/**
+ * Screens in the frame only with a server's answer: a series by turns between its fights (the
+ * 2026-11-27 staging walk found it bare), opened with its answer (online-looks-support.ts).
+ */
+const ANSWERED_SCREENS: readonly (readonly [name: string, search: string, screen: string])[] = [
+  ['a game by turns', `?online=${TURNS_SERIES}`, 'online'],
 ];
 
 interface Anchors {
@@ -247,12 +256,14 @@ async function checkMidTransition(): Promise<void> {
 
 /** Opens every frame screen and checks its header row, and that none of it moves between them. */
 export async function checkFrameAnchors(checks: FrameChecks): Promise<void> {
-  await openAs({ online: true, accounts: true }, '');
+  await openAs({ online: true, accounts: true }, '', turnsAnswers(Date.now()));
   await onScreen('home');
   const seen: { readonly name: string; readonly screen: string; readonly anchors: Anchors }[] = [];
-  for (const [name, search, screen] of FRAME_SCREENS) {
+  for (const [name, search, screen] of [...FRAME_SCREENS, ...ANSWERED_SCREENS]) {
     if (search !== '') await follow(search);
-    await until(() => screenOn() === screen, 5_000, name, false);
+    // An online screen is in the frame once its answer is drawn (its header row shown).
+    const drawn = () => screen !== 'online' || visible('.turns-head').length > 0;
+    await until(() => screenOn() === screen && drawn(), 5_000, name, false);
     await settle();
     const content = screen === 'home' && checks.play !== 'frame' ? 'skip' : 'check';
     seen.push({ name, screen, anchors: headerAnchors(name, content) });

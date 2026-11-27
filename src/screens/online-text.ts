@@ -9,6 +9,7 @@ import { otherSide } from '../ui/series/seats.ts';
 import { failureText } from './online-failure-text.ts';
 import { FORMAT_SHORT, bestOfName } from '../ui/series-text.ts';
 import type { NoticeContent } from '../ui/notice-content.ts';
+import type { WaitingContent } from '../ui/waiting-content.ts';
 
 export type LoadStatus = 'loading' | 'ready' | 'missing' | FailureKind;
 
@@ -65,7 +66,23 @@ export function waitNote(view: SeriesView, now: number): string | undefined {
   const left = timeLeft(view.deadline, now);
   const yours = dueOf(view).includes(view.you);
   if (yours) return left === undefined ? undefined : `Your turn · ${left}`;
-  return `Waiting for ${they}${left === undefined ? '' : ` · ${left}`}`;
+  // Waiting on the other's pick: the waiting card says it (`turnWaiting`), not a line.
+  return undefined;
+}
+
+/**
+ * By turns, waiting on the other player's pick: the waiting card (waiting.ts), with their disc and
+ * the time they have left. Undefined when it is the player's turn or the series is over.
+ */
+export function turnWaiting(view: SeriesView, now: number): WaitingContent | undefined {
+  if (view.status !== 'open' || dueOf(view).includes(view.you)) return undefined;
+  const { they } = seatsOf(view);
+  const left = timeLeft(view.deadline, now);
+  return {
+    title: `Waiting for ${they}`,
+    line: left === undefined ? 'It’s their pick' : `It’s their pick · ${left}`,
+    ...(view.names[otherSide(view.you)] === null ? {} : { who: they }),
+  };
 }
 
 /** "Best of 3 · Reveal": what a challenge is. */

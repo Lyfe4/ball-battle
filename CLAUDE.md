@@ -467,7 +467,8 @@ Each line is a rule; its ADR has the reasoning.
   until that screen is read (`online-prime.ts`); no "Loading…" page between screens. A screen
   that loads on its own (a cold link, a reload) shows its skeleton (`skeleton.ts`, ADR 0054);
   skeletons keep their place from the first frame, unseen until 150 ms (`unseenAtFirst`). Every
-  wait on another player shows its indicator. `slow-walk-flow.ts` walks every screen with the API
+  wait on another player shows the one waiting ball (`waiting.ts`, ADR 0087 addendum of 2026-11-27,
+  later). `slow-walk-flow.ts` walks every screen with the API
   slowed and failing (ADR 0087 addendum of 2026-11-27): a new screen or state joins it.
 - A tap shows on what it presses (ADR 0070, `press.ts`): a finger marks the control
   `data-pressed`, styled exactly as its hover, and every hover sits in `(hover: hover)`

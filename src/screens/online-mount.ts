@@ -57,7 +57,11 @@ export interface OnlineMount {
   /** The arena holds one of its rounds (OnlinePlay.roundOnArena). */
   roundOnArena(): boolean;
   phase(): SeriesPhase | undefined;
-  /** The online series' screen shows a notice, not a series (its shell is a task's, tabs.ts). */
+  /**
+   * The online series' screen is a task's, not a fight's (tabs.ts): it shows a notice or its
+   * skeleton in the series' place, or a series by turns between its fights, in the page frame
+   * (turns-frame.ts).
+   */
   noticeShown(): boolean;
   /** The health bars' labels for the online series on screen. */
   sides(): readonly string[] | undefined;
@@ -329,8 +333,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     playing: () => screens.play.isPlaying(),
     roundOnArena: () => screens.play.roundOnArena(),
     phase: () => screens.play.phase(),
-    // The series' notice section (online.ts) is up in the series' place.
-    noticeShown: () => document.getElementById('online-series-notice')?.hidden === false,
+    noticeShown: () => screens.play.framed(),
     sides: () => screens.play.sides(),
     yourSide: () => screens.play.yourSide(),
     setVisible: (screen) => {

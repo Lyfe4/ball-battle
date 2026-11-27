@@ -5,7 +5,7 @@
 // screens are the page's own, reached by their URLs, so nothing here is a copy of a screen.
 import type { ChallengeInfo } from '../api/challenges.ts';
 import type { StartView } from '../api/start.ts';
-import { liveSeries, rematch } from './online-views-support.ts';
+import { liveSeries, rematch, turnsSeries } from './online-views-support.ts';
 import { settle, until, visible } from './page-support.ts';
 import { follow, OFFLINE, screenOn, withStatus } from './shell-routes-support.ts';
 
@@ -15,6 +15,12 @@ export type OnlineAnswers = Record<string, unknown>;
 const START = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 /** The live series' id, ending in two digits of its own for each end. */
 const SERIES = '11111111-2222-4333-8444-5555555555';
+/** A series by turns, waiting on the other's pick (frame-anchors opens it too). */
+export const TURNS_SERIES = '11111111-2222-4333-8444-666666666600';
+/** Its answer, for a walk that opens it. */
+export const turnsAnswers = (now: number): OnlineAnswers => ({
+  [`/api/v1/series/${TURNS_SERIES}`]: turnsSeries(TURNS_SERIES, now),
+});
 
 const card = (over: Partial<ChallengeInfo>): ChallengeInfo => ({
   format: 'reveal',
@@ -167,6 +173,24 @@ export const ONLINE_STATES: readonly OnlineState[] = [
     search: `?start=${START}`,
     answers: (now) => ({ [`/api/v1/starts/${START}`]: start(now) }),
     ready: shows('.lineup-step .lineup-status'),
+  },
+  {
+    name: 'your lineup in, waiting for theirs',
+    search: `?start=${START}`,
+    answers: (now) => ({
+      [`/api/v1/starts/${START}`]: {
+        ...start(now),
+        draft: ['archer', 'thorns', 'vampire'],
+        locked: true,
+      },
+    }),
+    ready: shows('.notice .waiting', 'lineup'),
+  },
+  {
+    name: 'a game by turns, their pick',
+    search: `?online=${TURNS_SERIES}`,
+    answers: turnsAnswers,
+    ready: shows('#online-series .waiting', 'Waiting for Sam_R'),
   },
   {
     name: 'a live fight',

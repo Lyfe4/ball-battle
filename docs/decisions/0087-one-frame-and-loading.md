@@ -488,3 +488,40 @@ motion (the arena, its tip following a ball, the round turning into the result) 
 
 Not walked: sign-in signed out (its own flows cover it), a by-turns series (its screen is the bot
 series' own), Safari's engine (WebKit runs the walk too; its layout shifts aren't reported).
+
+## Addendum (2026-11-27, later): one waiting look, and a game by turns in the frame
+
+The owner's staging check found three things.
+
+1. **The waiting ball jumped.** Its loop was smooth (one swing up, one down, `alternate`, on
+   `--ease-swing`), but the lobby redraws its card every couple of seconds and each redraw made a
+   new ball, whose loop started again at the bottom wherever the old one was. Measured in the page:
+   a new element every ~1.8 s. Now every ball keeps the page's time, not its element's: it is made
+   with its loop offset by the page's clock (`--waiting-since`, a negative delay), so a ball drawn
+   again is where the last one was, and every ball on any screen is in step. Still under reduced
+   motion. `waiting.browser.test.ts` draws one again mid-wait and steps the loop frame by frame.
+2. **One waiting look.** The friend lobby showed the friend's letter disc in the ball's place, and
+   the pick clock three dots. Every wait on another player is now the one component
+   (`src/ui/waiting.ts`): the card (the ball over its title and line, the friend's disc beside the
+   title) in the lobby, a lineup in and waiting for theirs, a game by turns waiting on the other's
+   pick; the small ball by the title on the pick clock (their pick, a rematch asked, waiting to
+   join). `one-of-each` owns its classes; `controls-look` fails on any screen state that says
+   "Waiting for" someone with no ball laid out (`waiting-look.ts`); the slow walk counts only the
+   ball as waiting on them.
+3. **"Your games" read as the live match.** On staging, a live lineup ran between yoop and calvino
+   while a game by turns between the same two (sent at 03:48 UTC, yoop's pick at 05:37) waited on
+   calvino: the row was that game, as designed (a live match beside a game by turns is allowed,
+   ADR 0089 addendum), but its section's name didn't say so. It is **Your games by turns**; a live
+   series was never listed (`gamesFor`'s `not s.live`, now pinned by `turns-inbox.db.test.ts`). A
+   game or a turn whose time runs out leaves the list at once by this device's clock, and the inbox
+   is read again just after the deadline (`nextStop`), whose read writes the forfeit and pokes both
+   players, so the ending shows (once, until seen) without a refresh. A game finished, forfeit or
+   called off already leaves by its poke (the series trigger, ADR 0085).
+
+**A game by turns sits in the frame between its fights** (`turns-frame.ts`): the header row (Back,
+"Best of 3 · Reveal", the legend's ?, the gear last) over the panel, whose own bar steps aside, and
+the reading column; the shell is a task's, so a PC keeps its rail. While one of its rounds is
+fought the arena takes over as in every fight. A live match is a fight throughout. A cold online
+series shows its skeleton in the frame too (a task), so a game by turns arriving moves nothing; a
+live one is then a fight, where the arena takes the screen. `frame-anchors` opens the game by
+turns with its answer and holds its row to every other screen's pixels.

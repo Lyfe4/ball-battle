@@ -2,13 +2,14 @@
 // header with Back, a short body, and the buttons that move on, the first the primary. One look
 // for every notice: a link from another version, and online play's states (offline, a challenge
 // already taken, the 16+ confirmation). A friend's card and the lobby add parts of their own
-// (ADR 0055): a sticker, chips, a waiting ball, steps, the link in a quiet box and a quiet action.
+// (ADR 0055): a sticker, chips, the waiting card (waiting.ts), steps, the link in a quiet box and
+// a quiet action.
 import { busyOnClick } from './busy-button.ts';
-import { personDisc } from './online/friend-sheet.ts';
 import { element } from './dom.ts';
 import { createScreenHeader } from './screen-header.ts';
 import type { NoticeContent, NoticeField } from './notice-content.ts';
 import { createSticker } from './sticker.ts';
+import { createWaiting } from './waiting.ts';
 
 export type { NoticeContent, NoticeField } from './notice-content.ts';
 
@@ -149,23 +150,8 @@ export function createNotice(root: HTMLElement, onBack: () => void): Notice {
         chips.append(...content.chips.map((chip) => element('li', 'notice-chip', chip)));
         parts.push(chips);
       }
-      if (content.waiting !== undefined) {
-        const waiting = element('div', 'notice-waiting');
-        const who = content.waiting.who;
-        // Waiting for someone by name: their disc, pulsing gently (ADR 0086); else the ball.
-        const ball =
-          who === undefined
-            ? element('span', 'notice-waiting-ball')
-            : personDisc({ id: '', name: who }, 'row');
-        ball.classList.add(who === undefined ? 'notice-waiting-mark' : 'notice-waiting-disc');
-        ball.setAttribute('aria-hidden', 'true');
-        waiting.append(
-          ball,
-          element('h2', 'notice-waiting-title', content.waiting.title),
-          element('p', 'notice-waiting-line', content.waiting.line),
-        );
-        parts.push(waiting);
-      }
+      // A wait on another player: the one waiting card (waiting.ts).
+      if (content.waiting !== undefined) parts.push(createWaiting(content.waiting));
       parts.push(...content.body.map((text) => element('p', 'notice-text', text)));
       if (content.links !== undefined) {
         const links = element('p', 'notice-text notice-links');

@@ -2,6 +2,7 @@ import { drawBallIcon } from '../../render/ball-icon.ts';
 import type { DefinitionLookup } from '../../sim/types.ts';
 import { element, setAttr, setHidden, setText } from '../dom.ts';
 import type { PickClock } from '../../screens/pick-clock-text.ts';
+import { waitingBall } from '../waiting.ts';
 
 export interface PickClockCard {
   /** The card, placed by the series panel above its track, or by its owner (a rematch notice). */
@@ -13,8 +14,8 @@ export interface PickClockCard {
 const ICON_PX = 36;
 
 /**
- * A live match's pick card (ADR 0055, B2): the title (whose pick, with three soft dots while the
- * other picks), the seconds at its end, and a bar across it, calm lilac until 10 s and then the
+ * A live match's pick card (ADR 0055, B2): the title (whose pick, with the small waiting ball while
+ * the other picks), the seconds at its end, and a bar across it, calm lilac until 10 s and then the
  * accent yellow, the seconds the same size, no flashing, no sound. The waiting player also sees
  * what the other is answering and the balls they pick from. The same card on both phones; before
  * the match starts, the 60 s to join; while the other is away, their grace. The bar glides; with
@@ -25,10 +26,9 @@ export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): P
   const head = element('div', 'pick-clock-head');
   const title = element('h2', 'pick-clock-title');
   const titleText = element('span', 'pick-clock-title-text');
-  const dots = element('span', 'pick-clock-dots');
-  dots.setAttribute('aria-hidden', 'true');
-  dots.append(element('span', ''), element('span', ''), element('span', ''));
-  title.append(titleText, dots);
+  // While it waits on the other player: the one waiting ball (waiting.ts), small, by the title.
+  const ball = waitingBall('small');
+  title.append(titleText, ball);
   const seconds = element('span', 'pick-clock-seconds');
   head.append(title, seconds);
   const bar = element('div', 'pick-clock-bar');
@@ -63,7 +63,7 @@ export function createPickClock(lookup: DefinitionLookup, panel: HTMLElement): P
       setText(titleText, clock.title);
       // Every wait on the other player shows it, not only their pick (ADR 0087 addendum).
       const waits = clock.kind === 'theirs' || clock.kind === 'join' || clock.waiting === true;
-      setHidden(dots, !waits);
+      setHidden(ball, !waits);
       setText(seconds, `${String(clock.seconds)} s`);
       // Reduced motion: the bar steps with the seconds; else it follows the time and glides.
       const left = reducedMotion.matches ? Math.min(1, clock.seconds / clock.total) : clock.left;

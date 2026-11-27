@@ -27,6 +27,7 @@
 @import './ui/manual/manual.css';
 @import './ui/manual/matchup-spectrum.css';
 @import './ui/notice.css';
+@import './ui/waiting.css';
 @import './ui/skeleton.css';
 @import './ui/series/series-setup.css';
 @import './ui/series/series-bar.css';
