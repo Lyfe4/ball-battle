@@ -40,4 +40,14 @@ describe('placing the tooltip', () => {
       375 - 8 - 120,
     );
   });
+
+  it('never covers a coach where the other side has room (ADR 0090 addendum)', () => {
+    const coach = { left: 16, top: 120, width: 343, height: 70 };
+    const mark = { left: 100, top: 200, width: 20, height: 20 };
+    expect(placeTooltip(mark, size, view, [coach]).top).toBe(226);
+    // No room below either: above, as before.
+    const low = { left: 100, top: 780, width: 20, height: 20 };
+    const tall = { left: 0, top: 700, width: 375, height: 90 };
+    expect(placeTooltip(low, size, view, [tall]).top).toBe(750);
+  });
 });
