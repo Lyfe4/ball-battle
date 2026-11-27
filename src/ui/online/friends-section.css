@@ -129,17 +129,26 @@
 
 /*
  * Skeleton rows while the list is read (ADR 0087): each exactly a row's height (a tap target and the
- * row's padding), in the skeleton's calm look; hidden until the read has taken 150 ms
- * (friends-loading.ts). What replaces them fades in once.
+ * row's padding), in the skeleton's calm look; in their place at once, unseen until the read has
+ * taken 150 ms (friends-loading.ts, `unseenAtFirst`). What replaces them fades in once.
  */
 .friends-skeleton[hidden] {
   display: none;
+}
+
+[data-unseen] {
+  visibility: hidden;
 }
 
 .friends-skeleton-row {
   height: calc(var(--tap-target) + 2 * var(--space-small));
   border-radius: var(--radius);
   background: var(--color-raised);
+}
+
+/* A request's place: its name, then Accept and Decline under it (the row's gap between). */
+.friends-skeleton-row.friends-skeleton-request {
+  height: calc(var(--tap-target) + var(--button-height) + 3 * var(--space-small));
 }
 
 /* Rows in and out of a redraw (row-motion.ts, ADR 0087): in over --motion-base; out, a still copy. */

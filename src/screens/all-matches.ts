@@ -11,7 +11,7 @@ import { element } from '../ui/dom.ts';
 import {
   DEFAULT_SKELETON_ROWS,
   failureCard,
-  SKELETON_AFTER_MS,
+  unseenAtFirst,
   skeletonRows,
 } from '../ui/online/friends-loading.ts';
 import { createMatchRow } from '../ui/online/match-row.ts';
@@ -91,13 +91,16 @@ export function createAllMatches(root: HTMLElement, host: AllMatchesHost): AllMa
       tail.replaceChildren(element('p', 'matches-end', endLine(played)));
       return;
     }
-    tail.replaceChildren(loadingRow());
+    // An empty mark the list's end is watched by: the loading row shows only while a page is read
+    // (a skeleton with no read under way would be a spinner with no end, ADR 0087 addendum).
+    tail.replaceChildren();
     observer.observe(tail);
   }
 
   async function more(): Promise<void> {
     if (loading || next === null) return;
     loading = true;
+    tail.replaceChildren(loadingRow());
     const at = showing;
     const answer = await host.page(next);
     loading = false;
@@ -124,6 +127,8 @@ export function createAllMatches(root: HTMLElement, host: AllMatchesHost): AllMa
     list.classList.remove('friends-skeleton');
     list.removeAttribute('aria-hidden');
     list.hidden = false;
+    // The rows are seen at once, however soon they came (unseenAtFirst's mark goes with them).
+    delete list.dataset['unseen'];
     list.replaceChildren();
     if (played === 0) {
       observer.disconnect();
@@ -150,10 +155,8 @@ export function createAllMatches(root: HTMLElement, host: AllMatchesHost): AllMa
     list.replaceChildren(...skeletonRows(DEFAULT_SKELETON_ROWS).children);
     list.classList.add('friends-skeleton');
     list.setAttribute('aria-hidden', 'true');
-    list.hidden = true;
-    window.setTimeout(() => {
-      if (list.classList.contains('friends-skeleton')) list.hidden = false;
-    }, SKELETON_AFTER_MS);
+    list.hidden = false;
+    unseenAtFirst(list);
     tail.replaceChildren();
     const answer = await host.record();
     if (at !== showing) return;

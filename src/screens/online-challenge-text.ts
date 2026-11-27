@@ -25,15 +25,12 @@ export interface CardActions {
   readonly lineups: (id: string) => Promise<unknown>;
   /** Open the series it started. */
   readonly series: (id: string) => void;
-  /** Send a challenge of one's own instead. */
+  /** Send a challenge of one's own instead: the one vs Friend path (ADR 0089 addendum). */
   readonly sendOwn: () => void;
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
-  /**
-   * The sender stops waiting in a live lobby (ADR 0053), then Home, or the vs Friend setup to
-   * challenge someone else (`'friend'`, after a No thanks, ADR 0086).
-   */
-  readonly cancel: (then?: 'friend') => Promise<unknown>;
+  /** The sender stops waiting on the waiting screen (ADR 0053), then Home. */
+  readonly cancel: () => Promise<unknown>;
   /** The viewer blocked the sender (ADR 0086): Unblock that pair, then the card again. */
   readonly unblock: (pair: string) => Promise<unknown>;
 }
@@ -67,21 +64,27 @@ export const challengeChips = (info: Pick<ChallengeInfo, 'format' | 'bestOf'>) =
   `Live · ${String(PICK_SECONDS)} s a pick`,
 ];
 
+/** The sender's own live link to anyone, still waiting: a guest's says how to sign in (ADR 0089). */
+export function waitsForAnyone(card: ChallengeInfo): boolean {
+  return waitingOn(card) && card.invitee === null;
+}
+
+/** The sender's own live challenge, still waiting: the waiting screen, which leaving cancels. */
+export function waitingOn(card: ChallengeInfo | undefined): boolean {
+  return (
+    card !== undefined &&
+    card.live &&
+    card.own &&
+    card.status === 'yours' &&
+    card.seriesId === null &&
+    card.startId === null
+  );
+}
+
 /**
  * What a challenge's card says and offers; `undefined` is a link nobody made. `inApp`: the link was
  * opened inside an app's own browser, so a live challenge's card suggests the phone's browser first.
  */
-/** The sender's own live link to anyone, still waiting: its lobby may offer friends (ADR 0089). */
-export function waitsForAnyone(card: ChallengeInfo): boolean {
-  return (
-    card.live &&
-    card.own &&
-    card.status === 'yours' &&
-    card.invitee === null &&
-    card.seriesId === null
-  );
-}
-
 export function cardFor(
   info: ChallengeInfo | undefined,
   actions: CardActions,
@@ -138,11 +141,7 @@ export function cardFor(
       };
     case 'stopped':
       return info.own
-        ? {
-            title: 'This link has stopped',
-            body: ['You left the lobby, so it stopped waiting. Send your friend a new one.'],
-            buttons: [own, home],
-          }
+        ? stoppedOwn(info, actions)
         : {
             title: `${from} stopped waiting`,
             body: [what, 'Send them a challenge of your own.'],
@@ -165,21 +164,7 @@ export function cardFor(
           ],
         };
       }
-      if (info.live) {
-        // Sent to a friend (ADR 0079 PR (d), ADR 0086): the friend lobby.
-        if (info.invitee !== null) return friendLobby(info, info.invitee, actions);
-        // A link to anyone (ADR 0055): one main button, Share; the link to read in a quiet box
-        // with Copy; the stay rule; Cancel challenge, the quiet button.
-        return {
-          title: 'Your challenge',
-          waiting: { title: 'Waiting for your friend', line: `${what} · live` },
-          body: [],
-          buttons: [shareButton(actions)],
-          link: actions.canShare ? { url: actions.url, copy: actions.copy } : { url: actions.url },
-          note: `Once they accept, you both pick your lineups. ${STAY_STEP}`,
-          quiet: { text: 'Cancel challenge', onClick: () => actions.cancel() },
-        };
-      }
+      if (info.live) return waitingCard(info, actions);
       // By turns to a friend (ADR 0085): it waits in their Friends tab; no lobby to wait in.
       if (info.invitee !== null) {
         return {
@@ -242,28 +227,43 @@ export function cardFor(
 export const nextLine = (bestOf: BestOf): string =>
   `Once they accept, you both pick lineups, ${String(startLineupMs(bestOf) / 1000)} s. ${STAY_STEP}`;
 
+/** Said on the waiting screen: away from it for a minute (another app, the phone locked), it stops. */
+export const LEAVING_LINE = 'Away from this screen for a minute, it stops.';
+
+/** Back on the waiting screen asks first (waiting-back.ts): what it does, Keep waiting the default. */
+export function backStep(friend: string | null) {
+  return {
+    title: friend === null ? 'Cancel your challenge?' : `Cancel your challenge to ${friend}?`,
+    text:
+      friend === null
+        ? 'Nobody can join it with the link after this.'
+        : `${friend} won’t be able to accept it.`,
+    action: 'Cancel challenge',
+    cancel: 'Keep waiting',
+  } as const;
+}
+
 /**
- * The friend lobby (ADR 0086): "Challenge sent", a card with the friend's disc and "Waiting for Jo"
- * pulsing gently, the rules, one line on what comes next, Cancel challenge, and the link folded
- * under "Also send a link". Their No thanks leads with Challenge someone else and Home.
+ * The one waiting screen (ADR 0089 addendum of 2026-11-27), for a friend or a link alike:
+ * "Challenge sent", the waiting card ("Waiting for Jo" with the friend's disc pulsing gently, or
+ * "Waiting for anyone with the link" with the bouncing ball), the rules, what comes next and that
+ * leaving cancels it, Cancel challenge. A link to anyone leads with Share and shows the link; a
+ * friend's folds it under "Also send a link".
  */
-function friendLobby(info: ChallengeInfo, friend: string, actions: CardActions): NoticeContent {
+function waitingCard(info: ChallengeInfo, actions: CardActions): NoticeContent {
   const what = `${challengeLine(info)} · live`;
-  const link = {
-    url: actions.url,
-    fold: 'Also send a link',
-    share: shareButton(actions),
-    ...(actions.canShare ? { copy: actions.copy } : {}),
-  };
-  if (info.declined) {
+  const friend = info.invitee;
+  const quiet = { text: 'Cancel challenge', onClick: () => actions.cancel() };
+  const note = `${nextLine(info.bestOf)} ${LEAVING_LINE}`;
+  if (friend === null) {
     return {
-      title: `${friend} said no thanks`,
-      body: [what, 'The link still works for anyone you send it to.'],
-      buttons: [
-        { text: 'Challenge someone else', onClick: () => actions.cancel('friend') },
-        { text: 'Home', onClick: actions.home },
-      ],
-      link,
+      title: 'Challenge sent',
+      waiting: { title: 'Waiting for anyone with the link', line: what },
+      body: [],
+      buttons: [shareButton(actions)],
+      link: actions.canShare ? { url: actions.url, copy: actions.copy } : { url: actions.url },
+      note,
+      quiet,
     };
   }
   return {
@@ -271,9 +271,46 @@ function friendLobby(info: ChallengeInfo, friend: string, actions: CardActions):
     waiting: { title: `Waiting for ${friend}`, line: what, who: friend },
     body: [],
     buttons: [],
-    note: nextLine(info.bestOf),
-    link,
-    quiet: { text: 'Cancel challenge', onClick: () => actions.cancel() },
+    note,
+    link: {
+      url: actions.url,
+      fold: 'Also send a link',
+      share: shareButton(actions),
+      ...(actions.canShare ? { copy: actions.copy } : {}),
+    },
+    quiet,
+  };
+}
+
+/**
+ * The sender's own challenge that stopped, said by why: their friend said No thanks (Challenge
+ * someone else), a newer challenge of theirs took its place, or they left the waiting screen.
+ */
+function stoppedOwn(info: ChallengeInfo, actions: CardActions): NoticeContent {
+  const what = `${challengeLine(info)}${info.live ? ' · live' : ''}`;
+  const home = { text: 'Home', onClick: actions.home };
+  const again = { text: 'Challenge someone else', onClick: actions.sendOwn };
+  if (info.declined) {
+    return {
+      title: `${info.invitee ?? 'Your friend'} said no thanks`,
+      body: [what],
+      buttons: [again, home],
+    };
+  }
+  if (info.superseded === true) {
+    return {
+      title: 'You sent a new challenge',
+      body: [what, 'This one stopped when you sent it: one challenge at a time.'],
+      buttons: [home],
+    };
+  }
+  return {
+    title: 'This challenge stopped',
+    body: [
+      what,
+      'You cancelled it, or were away from its screen for a minute. Send a new one when you’re ready.',
+    ],
+    buttons: [{ text: 'Challenge a friend', onClick: actions.sendOwn }, home],
   };
 }
 

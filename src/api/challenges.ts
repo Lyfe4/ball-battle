@@ -30,6 +30,11 @@ export interface ChallengeLink {
   readonly bestOf: BestOf;
   /** ISO 8601: links last 7 days. */
   readonly expiresAt: string;
+  /**
+   * Sent to a friend whose own lobby waited for the sender (crossed, ADR 0086): theirs was
+   * accepted instead, and both pick their lineups here (`token` is their link).
+   */
+  readonly startId?: string;
 }
 
 /** GET /api/v1/challenges/:token: what a friend sees before building a lineup. */
@@ -53,8 +58,13 @@ export interface ChallengeInfo {
   readonly own: boolean;
   /** To its sender: the friend it was sent to (ADR 0079 PR (d)), else null. */
   readonly invitee: string | null;
-  /** To its sender: that friend said No thanks. */
+  /** To its sender: that friend said No thanks (a live one stopped there). */
   readonly declined: boolean;
+  /**
+   * To its sender: a newer challenge of theirs called this one off (one outgoing at a time, ADR
+   * 0089 addendum of 2026-11-27). Absent from a server before it.
+   */
+  readonly superseded?: boolean;
   /**
    * To a viewer who blocked its sender (ADR 0086): that pair's id, for Unblock; else null. The
    * sender is never told.

@@ -159,6 +159,8 @@ describe('the match to go back to', () => {
       bestOf: 3,
       // A link to anyone waits for nobody by name (ADR 0086).
       invitee: null,
+      // Home asks again when it would stop (ADR 0089 addendum of 2026-11-27).
+      stopsInMs: expect.any(Number) as unknown,
     });
     const id = await playLink(sender, friend, token);
     for (const player of [sender, friend]) {

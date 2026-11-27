@@ -97,7 +97,7 @@ export const ONLINE_STATES: readonly OnlineState[] = [
     search: '?challenge=tokdeclinedxxxxxxxxxxx',
     answers: () => ({
       [challenge('tokdeclinedxxxxxxxxxxx')]: card({
-        status: 'yours',
+        status: 'stopped',
         own: true,
         invitee: 'Jo',
         declined: true,
@@ -106,12 +106,25 @@ export const ONLINE_STATES: readonly OnlineState[] = [
     ready: shows('.notice', 'said no thanks'),
   },
   {
+    name: 'a challenge of yours a newer one replaced',
+    search: '?challenge=toksupersededxxxxxxxxx',
+    answers: () => ({
+      [challenge('toksupersededxxxxxxxxx')]: card({
+        status: 'stopped',
+        own: true,
+        invitee: 'Jo',
+        superseded: true,
+      }),
+    }),
+    ready: shows('.notice', 'You sent a new challenge'),
+  },
+  {
     name: 'the link lobby',
     search: '?challenge=toklinkxxxxxxxxxxxxxxx',
     answers: () => ({
       [challenge('toklinkxxxxxxxxxxxxxxx')]: card({ status: 'yours', own: true }),
     }),
-    ready: shows('.notice', 'Waiting for your friend'),
+    ready: shows('.notice', 'Waiting for anyone with the link'),
   },
   {
     name: 'a link that stopped',

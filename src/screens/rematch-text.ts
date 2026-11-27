@@ -27,13 +27,14 @@ export function rematchClockOf(
   };
   if (rematch.state === 'asked') {
     return rematch.askedBy === you
-      ? { kind: 'rematch', title: `Waiting for ${they} to answer`, ...timed }
+      ? { kind: 'rematch', title: `Waiting for ${they} to answer`, waiting: true, ...timed }
       : { kind: 'rematch', title: `${they} wants a rematch`, ...timed };
   }
   if (rematch.state === 'agreed') {
     return {
       kind: 'rematch',
       title: rematch.lineupIn ? `Waiting for ${they}’s lineup` : 'Rematch on: build your lineup',
+      waiting: rematch.lineupIn,
       ...timed,
     };
   }

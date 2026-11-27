@@ -23,6 +23,7 @@ export async function inboxOf(deps: Deps, userId: string): Promise<InboxResponse
       format: row.format,
       bestOf: row.bestOf,
       live: row.live,
+      ...(row.stopsInMs === null ? {} : { stopsInMs: row.stopsInMs }),
     });
   }
   // A turn that ran out is the forfeit it is before it is listed (no sweep outside production).

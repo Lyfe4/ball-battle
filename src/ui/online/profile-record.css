@@ -155,6 +155,8 @@ button.profile-stats[data-pressed] {
 
 .matches-tail {
   display: grid;
+  /* Never empty to the eye, but a mark with a size for the end of the list to be watched by. */
+  min-height: 1px;
 }
 
 .matches-loading {

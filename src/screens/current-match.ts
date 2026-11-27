@@ -1,5 +1,6 @@
 // The live match or lobby a player can go back to (ADR 0053): home's "Back to your match", and the
-// way back offered when starting a second one is refused. The server says which (`/me/match`);
+// way back offered when starting a second one is refused (a lobby of one's own never is: a new
+// challenge or an accept calls it off, ADR 0089 addendum of 2026-11-27). The server says which (`/me/match`);
 // this only turns its answer into where to go.
 import type { CurrentMatch, CurrentMatchResponse } from '../api/live.ts';
 import { callApi } from '../app/api.ts';
@@ -27,40 +28,6 @@ export function writeMatchParams(params: URLSearchParams, match: MatchPlace): vo
   if (match.kind === 'series') writeOnlineSeriesParams(params, match.id);
   else if (match.kind === 'start') writeStartParams(params, match.id);
   else writeChallengeParams(params, match.token);
-}
-
-/** What was refused for being in a match already: sending a challenge, or accepting one. */
-export type RefusedMove = 'send' | 'accept';
-
-/**
- * Sending or accepting a live challenge with a lobby of one's own waiting (ADR 0086): "You already
- * challenged Jo", with Open it (the lobby) and Cancel that and send this (or accept this).
- */
-export function lobbyWaitingCard(
-  lobby: Extract<CurrentMatch, { kind: 'lobby' }>,
-  move: RefusedMove,
-  actions: {
-    readonly open: () => Promise<void>;
-    /** Cancels the lobby, then does the refused move again. */
-    readonly replace: () => Promise<unknown>;
-    readonly home: () => void;
-  },
-): NoticeContent {
-  return {
-    title:
-      lobby.invitee === null
-        ? 'Your challenge link is waiting'
-        : `You already challenged ${lobby.invitee}`,
-    body: ['One live challenge at a time.'],
-    buttons: [
-      { text: 'Open it', onClick: actions.open },
-      {
-        text: move === 'send' ? 'Cancel that and send this' : 'Cancel that and accept this',
-        onClick: actions.replace,
-      },
-    ],
-    quiet: { text: 'Home', onClick: actions.home },
-  };
 }
 
 /**

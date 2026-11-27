@@ -27,9 +27,11 @@ async function callOffChallenges(db: TransactionSql, me: string, them: string): 
   await db`
     update game.challenges set cancelled_at = coalesce(cancelled_at, now())
     where creator = ${me} and invitee = ${them} and series_id is null and start_id is null`;
-  // Theirs reads to them as "No thanks", the answer any friend may give.
+  // Theirs reads to them as "No thanks", the answer any friend may give: a live one ends, as a
+  // No thanks does (friend-challenge.ts).
   await db`
-    update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now())
+    update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now()),
+      cancelled_at = case when live then coalesce(cancelled_at, now()) else cancelled_at end
     where creator = ${them} and invitee = ${me} and series_id is null and start_id is null`;
 }
 

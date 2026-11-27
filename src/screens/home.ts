@@ -17,8 +17,7 @@ import { generateSeed } from '../app/fresh-seed.ts';
 import { getDefinition } from '../sim/definitions.ts';
 import type { SeriesState } from '../sim/series.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { CHOOSE_WHO, type FriendBox } from './who-text.ts';
-import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
+import { TURNS_BUILD } from '../app/turns-build.ts';
 import { createWorld } from '../sim/world.ts';
 import { createHome } from '../ui/home.ts';
 
@@ -37,14 +36,14 @@ export interface HomeHost {
   forget(): void;
   /**
    * Play against a friend (online builds; made after home, so asked for when needed): signed in,
-   * the friend last picked or "Who do you want to play?" (ADR 0089), else a live challenge on these
+   * "Who do you want to play?" (ADR 0089 addendum of 2026-11-27), else a live challenge on these
    * rules straight to the link to share, the 16+ question first on a device without a guest. Busy
-   * until it shows. The box says the friend picked; What to play offers to choose another.
+   * until it shows.
    */
   friends(): {
     playFriend(setup: FriendSetup): Promise<void>;
-    readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
-    readonly chooseWho?: () => void;
+    /** Whether Play asks who (signed in) rather than sending a link. */
+    readonly asksWho?: () => boolean;
   };
 }
 
@@ -100,17 +99,8 @@ export function createHomeController(
         writePickParams(url, demoAt(index).matchup);
       });
     },
-    friendBox: (setup) => host.friends().friendBox?.(setup),
-    ...(ACCOUNTS_BUILD
-      ? {
-          who: {
-            label: CHOOSE_WHO,
-            open: () => {
-              host.friends().chooseWho?.();
-            },
-          },
-        }
-      : {}),
+    asksWho: () => host.friends().asksWho?.() ?? false,
+    turns: TURNS_BUILD,
     onWatch: () => {
       waiting = false;
       home.setWaiting(false);

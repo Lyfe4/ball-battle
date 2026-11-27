@@ -1,13 +1,13 @@
 // Challenging a friend through the real page (ADR 0079, PR (d)): two phones signed in to accounts
 // that are friends. The friend sits on home; the sender sees them online, taps Challenge on the
-// Friends section, picks the setup and a lineup, and waits in the lobby, which names the friend.
+// Friends section ("Who do you want to play?", the friend picked), sends it, and waits.
 // The friend's inbox poll brings the incoming banner ("Sam_… challenges you"); Accept goes
 // straight to the lineup, and a live match starts on both phones. `netlify dev` serving an online
 // build with accounts; iPhone Safari's visible size, Chromium only. Twice (ADR 0082): by Realtime
 // poke, where the card comes within seconds and the lobby reads only on its 20 s heartbeat; and
 // with the socket blocked, where the card comes with the 30 s read and the lobby reads every 2 s.
-// And from the Play tab (ADR 0089, B1): Play against a friend opens "Who do you want to play?",
-// whose Challenge sends the friend a live challenge straight to its lobby; the box remembers them.
+// And from the Play tab (ADR 0089 addendum of 2026-11-27): Play against a friend opens "Who do you
+// want to play?", where a pick only selects and its one button sends the friend a live challenge.
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { INBOX_MS } from '../app/inbox-poll.ts';
@@ -79,7 +79,8 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
       const row = friendsOf(one).locator('.friends-row', { hasText: jo });
       await row.locator('.friends-status[data-status="online"]').waitFor();
       await row.getByRole('button', { name: `Challenge ${jo}` }).click();
-      await one.getByRole('heading', { name: 'vs Friend' }).waitFor();
+      // The one path (ADR 0089 addendum): "Who do you want to play?", Jo picked, nothing sent yet.
+      await one.getByRole('dialog', { name: 'Who do you want to play?' }).waitFor();
       await (blocked ? Promise.resolve() : socketOf(two).waitUp());
       await sendChallenge(one, `Waiting for ${jo}`);
 
@@ -143,9 +144,9 @@ describe.each(SOCKETS)('challenging a friend, $socket', ({ blocked }) => {
   );
 });
 
-describe('challenging a friend from Play’s sheet (ADR 0089)', () => {
+describe('challenging a friend from Play’s sheet (ADR 0089 addendum of 2026-11-27)', () => {
   it(
-    'opens "Who do you want to play?", and Challenge reaches the friend; the box remembers them',
+    'opens "Who do you want to play?": a pick only selects, its button reaches the friend',
     { timeout: 180_000 },
     async () => {
       const stem = crypto.randomUUID().slice(0, 6);
@@ -157,7 +158,7 @@ describe('challenging a friend from Play’s sheet (ADR 0089)', () => {
       await two.goto(BASE);
       await two.getByRole('button', { name: `Profile, ${jo}` }).waitFor();
 
-      // Play against a friend: the sheet, the friend online with Challenge.
+      // Play against a friend: the sheet; picking Jo sends nothing; the button does.
       await one.evaluate(() => {
         localStorage.setItem('ballbattle.playOpponent', 'friend');
       });
@@ -165,11 +166,14 @@ describe('challenging a friend from Play’s sheet (ADR 0089)', () => {
       await one.getByRole('button', { name: `Profile, ${sam}` }).waitFor();
       await one.getByRole('button', { name: 'Play a friend live', exact: false }).click();
       const sheet = one.getByRole('dialog', { name: 'Who do you want to play?' });
-      await sheet.getByRole('button', { name: `Challenge ${jo}` }).click();
+      await sheet.locator('.who-row', { hasText: jo }).click();
+      await sheet.locator('.who-row[aria-checked="true"]', { hasText: jo }).waitFor();
+      const card = two.getByRole('region', { name: 'Challenge' });
+      expect(await card.isVisible()).toBe(false);
+      await sheet.getByRole('button', { name: `Challenge ${jo} live`, exact: false }).click();
       await one.getByText(`Waiting for ${jo}`).waitFor();
       expect(new URL(one.url()).searchParams.has('challenge')).toBe(true);
 
-      const card = two.getByRole('region', { name: 'Challenge' });
       await card.getByText(`${sam} challenges you`, { exact: true }).waitFor({ timeout: 10_000 });
       await card.getByRole('button', { name: 'Accept' }).click();
       await pickTogether([{ page: two }, { page: one }]);

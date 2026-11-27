@@ -18,6 +18,7 @@ import {
   type SeriesState,
 } from '../sim/series.ts';
 import { bestOfName, FORMAT_SHORT, LEVEL_NAMES, seriesRule } from './series-text.ts';
+import { TURNS_BUILD } from '../app/turns-build.ts';
 
 /** "vs Normal bot": the level a series is played against. */
 export function levelLine(level: string): string {
@@ -54,9 +55,17 @@ export const FRIEND_SETUP_NOTE = `Live: you both stay until the end, ${String(PI
 export const TURNS_SETUP_NOTE =
   'Pick your lineup now. Once they accept with theirs, you take turns, up to a day each; a turn left too long loses the series.';
 
-/** Play against a friend (ADR 0081): a live match sent by a link, on the sheet's rules. */
-export function friendPlaySpoken(setup: FriendSetup): string {
-  return `${PLAY_LABEL} a friend live, ${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}: send them a link`;
+/**
+ * Play against a friend (ADR 0089 addendum of 2026-11-27): who next, signed in (`ask`), else a
+ * live match sent by a link, on the sheet's rules.
+ */
+export function friendPlaySpoken(setup: FriendSetup, ask = false): string {
+  // By turns only where the build plays by turns (`scripts/check-bundle.ts`'s mark).
+  const how = TURNS_BUILD && setup.turns ? 'by turns' : 'live';
+  const rules = `${bestOfName(setup.bestOf)}, ${FORMAT_SHORT[setup.format]}`;
+  return ask
+    ? `${PLAY_LABEL} a friend ${how}, ${rules}: choose who`
+    : `${PLAY_LABEL} a friend ${how}, ${rules}: send them a link`;
 }
 
 /** The mode box's first line: who Play is against ("vs Normal bot"; Blind has no level). */
@@ -68,7 +77,8 @@ export function boxWho(choice: PlayChoice): string {
 /** The mode box's second line: the rules ("Best of 5 · Reveal", a friend's "Live · …"). */
 export function boxRules(choice: PlayChoice): string {
   if (choice.opponent === 'friend') {
-    return `Live · ${setupLine(choice.friend.format, choice.friend.bestOf)}`;
+    const how = TURNS_BUILD && choice.friend.turns ? 'By turns' : 'Live';
+    return `${how} · ${setupLine(choice.friend.format, choice.friend.bestOf)}`;
   }
   return setupLine(choice.bot.format, choice.bot.bestOf);
 }
@@ -87,8 +97,26 @@ export const SHEET_WORDS = {
   against: 'Against',
   length: 'Length',
   format: 'Format',
+  how: 'How',
   level: 'Bot',
 } as const;
+
+/**
+ * A friend match's two ways (ADR 0085), only where the build plays by turns: a build without it
+ * holds none of their words (`scripts/check-bundle.ts`).
+ */
+export function howChoices(): readonly {
+  readonly value: string;
+  readonly text: string;
+  readonly hint: string;
+}[] {
+  return TURNS_BUILD
+    ? [
+        { value: 'live', text: 'Live', hint: 'play now' },
+        { value: 'turns', text: 'By turns', hint: 'up to a day a move' },
+      ]
+    : [];
+}
 
 /** Each format in a few words, under its name in the sheet (the setup's cards say it whole). */
 export const FORMAT_HINTS: Readonly<Record<Format, string>> = {

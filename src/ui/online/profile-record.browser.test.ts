@@ -51,7 +51,8 @@ function mount() {
 
 const shown = (selector: string) =>
   [...document.querySelectorAll<HTMLElement>(selector)].filter(
-    (node) => node.closest('[hidden]') === null && node.getClientRects().length > 0,
+    // Seen: laid out, and not a placeholder still unseen in its place (unseenAtFirst).
+    (node) => node.closest('[hidden], [data-unseen]') === null && node.getClientRects().length > 0,
   );
 const texts = (selector: string) => shown(selector).map((node) => node.textContent.trim());
 const tick = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

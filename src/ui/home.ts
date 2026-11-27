@@ -2,8 +2,7 @@ import { drawBallIcon } from '../render/ball-icon.ts';
 import type { BallDefinition } from '../sim/types.ts';
 import { element, setHidden, setText } from './dom.ts';
 import type { SeriesState } from '../sim/series.ts';
-import type { FriendSetup, Opponent, PlayChoice } from '../app/modes.ts';
-import type { FriendBox } from '../screens/who-text.ts';
+import type { Opponent, PlayChoice } from '../app/modes.ts';
 import { busyOnClick } from './busy-button.ts';
 import { shapeIcon } from './icons.ts';
 import { createPlaySheet } from './play-sheet.ts';
@@ -24,8 +23,9 @@ import {
 export interface HomeActions {
   /**
    * Play (ADR 0055, 0081): what the box says. Against the bot, its series straight to the lineup,
-   * or with a series held, carry on with it; against a friend, a live challenge sent and its link
-   * to share. A promise is a request: Play stays busy until the next screen can show.
+   * or with a series held, carry on with it; against a friend, signed in, "Who do you want to
+   * play?" (ADR 0089 addendum of 2026-11-27), else a live challenge sent and its link to share. A
+   * promise is a request: Play stays busy until the next screen can show.
    */
   readonly onPlay: (choice: PlayChoice) => unknown;
   /** With a series held: forget it and start a fresh one. */
@@ -35,10 +35,10 @@ export interface HomeActions {
   readonly onFreePlay: () => void;
   /** Reduced motion: the demo waits on a still frame until asked to play. */
   readonly onWatch: () => void;
-  /** Against a friend, the friend Play goes straight to, as the box says it (ADR 0089). */
-  readonly friendBox?: (setup: FriendSetup) => FriendBox | undefined;
-  /** "Who do you want to play?", from What to play's row (accounts builds, ADR 0089). */
-  readonly who?: { readonly label: string; readonly open: () => void };
+  /** Against a friend, whether Play asks who (signed in) rather than sending a link. */
+  readonly asksWho?: () => boolean;
+  /** What to play offers Live or By turns against a friend (ADR 0085). */
+  readonly turns?: boolean;
 }
 
 export interface Home {
@@ -102,7 +102,7 @@ export function createHome(
   const boxWhoLine = element('span', 'play-box-who');
   const boxRulesLine = element('span', 'play-box-rules');
   box.append(boxIcon, boxWhoLine, boxRulesLine);
-  /** What the box's icon shows: an opponent's shape, or a picked friend's initial. */
+  /** What the box's icon shows: an opponent's shape. */
   let iconOf: string | undefined;
   const sheet = createPlaySheet(opponents, {
     onChange: (next) => {
@@ -113,7 +113,7 @@ export function createHome(
     onClosed: () => {
       if (!root.hidden) box.focus({ preventScroll: true });
     },
-    ...(actions.who === undefined ? {} : { who: actions.who }),
+    ...(actions.turns === undefined ? {} : { turns: actions.turns }),
   });
   box.addEventListener('click', () => {
     if (choice !== undefined) sheet.open(choice);
@@ -177,19 +177,14 @@ export function createHome(
   /** The box and Play as the choice and the held series say. */
   function showPlay(): void {
     if (choice === undefined) return;
-    // Against a friend picked before (ADR 0089): their initial, "vs Robin" and how.
-    const friend = choice.opponent === 'friend' ? actions.friendBox?.(choice.friend) : undefined;
-    const icon = friend === undefined ? choice.opponent : `friend ${friend.initial}`;
-    if (iconOf !== icon) {
-      iconOf = icon;
-      const disc = element('span', 'play-box-initial', friend?.initial ?? '');
-      boxIcon.replaceChildren(
-        friend === undefined ? shapeIcon(choice.opponent, 'play-box-shape') : disc,
-      );
+    // Who and the rules, never a person: Play asks who (ADR 0089 addendum of 2026-11-27).
+    if (iconOf !== choice.opponent) {
+      iconOf = choice.opponent;
+      boxIcon.replaceChildren(shapeIcon(choice.opponent, 'play-box-shape'));
     }
-    setText(boxWhoLine, friend?.who ?? boxWho(choice));
-    setText(boxRulesLine, friend?.rules ?? boxRules(choice));
-    box.setAttribute('aria-label', friend?.spoken ?? boxSpoken(choice));
+    setText(boxWhoLine, boxWho(choice));
+    setText(boxRulesLine, boxRules(choice));
+    box.setAttribute('aria-label', boxSpoken(choice));
     const bot = choice.opponent === 'bot';
     const resumed = bot ? held : undefined;
     setText(playLabel, resumed === undefined ? PLAY_LABEL : RESUME_PLAY.label);
@@ -197,7 +192,7 @@ export function createHome(
     // own (its format and score), so Resume series shows them.
     setText(playMeta, resumed === undefined ? '' : resumeLine(resumed));
     setHidden(playMeta, resumed === undefined);
-    let spoken = friend?.play ?? friendPlaySpoken(choice.friend);
+    let spoken = friendPlaySpoken(choice.friend, actions.asksWho?.() ?? false);
     if (bot) spoken = resumed === undefined ? playSpoken(choice.bot) : resumeSpoken(resumed);
     play.setAttribute('aria-label', spoken);
     fresh.hidden = resumed === undefined;

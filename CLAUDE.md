@@ -272,10 +272,14 @@ Each line is a rule; its ADR has the reasoning.
   longer than the page's own presentation (`live-watch.test.ts`); picks before `ends_at` are
   refused. The page starts each fight with a timer for its server time (`online-live.ts`), plays
   it at 1x, and shows nothing of a round before its `ends_at`.
-- One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock.
-  Live is Reveal and Showdown only. Play by turns is offered only where `TURNS_BUILD` (ADR 0085):
-  in a friend's sheet and a Play row on the vs Friend setup, the lineup in place, "Your turn" from
-  the inbox.
+- One live match or waiting lobby per player (`in_a_match`), held by a per-player advisory lock,
+  and one outgoing challenge (ADR 0089 addendum of 2026-11-27): a send calls off the older one in
+  the same transaction, a send to a friend who waits for you accepts theirs, an accept stops your
+  lobby, a live No thanks ends it. A waiting challenge ends by Cancel challenge or Back once asked;
+  anything else keeps it until the server's staleness (`LOBBY_SEEN_MS`). Every state pair is in
+  that addendum's table and `friend-states.online.test.ts`. Live is Reveal and Showdown only. Play
+  by turns is offered only where `TURNS_BUILD` (ADR 0085): What to play's How, the lineup in place,
+  "Your turn" from the inbox.
 - A rematch reaches the other player anywhere (ADR 0070, `rematch-watch.ts`): the incoming banner on
   any screen but over a fight (ADR 0086), Accept straight to the lineup, the asker told of a no.
 - A rematch (ADR 0055) is a row in `game.rematches` (`src/server/rematch.ts`): asked within 2
@@ -424,12 +428,15 @@ Each line is a rule; its ADR has the reasoning.
   closes things.
 - Home by opponent (ADR 0055, 0081 Option B): the box over Play says what it starts (`PlayChoice`:
   who, and each opponent's rules, remembered per opponent) and opens the "What to play" dialog
-  (`play-sheet.ts`), whose Against row is `PLAY_CHOICES` (Ranked and Casual join it later); Play
-  goes straight to the bot's lineup or, against a friend, sends the challenge (no rules step);
-  signed in, to the friend last picked or "Who do you want to play?" first (ADR 0089, B1). Profile
+  (`play-sheet.ts`), whose Against row is `PLAY_CHOICES` (Ranked and Casual join it later); it
+  sets rules only, never people. Play goes straight to the bot's lineup or, against a friend,
+  signed in, opens "Who do you want to play?" (`who-sheet.ts`): a tap only selects, its one button
+  sends; every other way to play a friend opens the same sheet (ADR 0089 addendum); a guest's
+  Play sends the link (no rules step). Profile
   shows three matches; All matches is its own screen (`?view=matches`), paged by `/me/matches`.
-  Formats are always Reveal, Showdown, Blind (`SETUP_FORMATS`). Every setup is the one
-  `rules-step.ts` screen (old links, the Friends tab), and its choices rewrite its own entry. A lineup's in-app Back without
+  Formats are always Reveal, Showdown, Blind (`SETUP_FORMATS`). The vs Bot setup is the one
+  `rules-step.ts` screen, and its choices rewrite its own entry; there is no vs Friend setup (an
+  old `?view=send` lands on Play). A lineup's in-app Back without
   history goes to its setup. `?mode=bo3` links open the vs Bot setup; `?view=modes` opens home; a
   lineup URL's format is its own (none is Blind). The 16+ question comes first in the vs Friend
   flow, on a device without a guest. While a series is held (`held()`), home's Play is Resume
@@ -454,7 +461,10 @@ Each line is a rule; its ADR has the reasoning.
   (`src/ui/busy-button.ts`): a handler that returns a promise is a request. Never a second
   spinner or a disabled button for it. A button that moves to another online screen stays busy
   until that screen is read (`online-prime.ts`); no "Loading…" page between screens. A screen
-  that loads on its own (a cold link, a reload) shows its skeleton (`skeleton.ts`, ADR 0054).
+  that loads on its own (a cold link, a reload) shows its skeleton (`skeleton.ts`, ADR 0054);
+  skeletons keep their place from the first frame, unseen until 150 ms (`unseenAtFirst`). Every
+  wait on another player shows its indicator. `slow-walk-flow.ts` walks every screen with the API
+  slowed and failing (ADR 0087 addendum of 2026-11-27): a new screen or state joins it.
 - A tap shows on what it presses (ADR 0070, `press.ts`): a finger marks the control
   `data-pressed`, styled exactly as its hover, and every hover sits in `(hover: hover)`
   (`press.test.ts`).

@@ -2,7 +2,13 @@ import { botChooses, SETUP_FORMATS, type Opponent, type PlayChoice } from '../ap
 import { BOT_LEVELS } from '../sim/bot.ts';
 import { BEST_OF } from '../sim/series.ts';
 import { element } from './dom.ts';
-import { FORMAT_HINTS, lengthChoiceOf, OPPONENT_CARDS, SHEET_WORDS } from './modes-text.ts';
+import {
+  FORMAT_HINTS,
+  howChoices,
+  lengthChoiceOf,
+  OPPONENT_CARDS,
+  SHEET_WORDS,
+} from './modes-text.ts';
 import { createSegmented, type Segmented } from './segmented.ts';
 import { createSheet } from './sheet.ts';
 import { FORMAT_SHORT, LEVEL_NAMES } from './series-text.ts';
@@ -20,15 +26,17 @@ export interface PlaySheetActions {
   readonly onChange: (choice: PlayChoice) => void;
   /** It closed, by any way out: focus goes back to what opened it. */
   readonly onClosed: () => void;
-  /** "Who do you want to play?" (accounts builds, ADR 0089): a row under Against a friend. */
-  readonly who?: { readonly label: string; readonly open: () => void };
+  /** Against a friend, Live or By turns: only where the build plays by turns (ADR 0085). */
+  readonly turns?: boolean;
 }
 
 /**
  * "What to play" (ADR 0081 addendum, Option B): a modal dialog the Play tab's box opens, a sheet
  * from the bottom on a phone held upright and a panel in the middle beside and on a desktop. Who
  * (only where a build offers more than the bot), the length, the format (each opponent's own, in
- * one order) and, against the bot where it makes choices, its level: each the shared segmented
+ * one order), against a friend how (Live or By turns, where the build plays by turns) and, against
+ * the bot where it makes choices, its level. Rules only, never people (ADR 0089 addendum of
+ * 2026-11-27): Play asks who, in "Who do you want to play?". Each the shared segmented
  * choice (ADR 0054), applied as it is tapped, so nothing needs a Done. Built on the sheet (sheet.ts):
  * one close, the shared × last in its head; Escape, a tap outside and Back (home.ts) close it too;
  * focus goes to its title as it opens, and the dialog keeps it inside while it is open.
@@ -125,19 +133,22 @@ export function createPlaySheet(
     },
   );
 
-  // Who, against a friend (ADR 0089): the sheet that picks them, in this one's place.
-  const onWho = actions.who;
-  const who = element('button', 'sheet-row play-sheet-who', onWho?.label ?? '');
-  who.type = 'button';
-  // Named by its words alone: the chevron a row that opens something draws is decoration.
-  who.setAttribute('aria-label', onWho?.label ?? '');
-  who.dataset['opens'] = '';
-  who.addEventListener('click', () => {
-    sheet.close();
-    onWho?.open();
-  });
+  // Against a friend: live now, or by turns (where the build plays by turns).
+  const howRoot = group('play-sheet-how');
+  const how = createSegmented<string>(
+    howRoot,
+    'play-sheet-how',
+    SHEET_WORDS.how,
+    howChoices(),
+    choice?.friend.turns === true ? 'turns' : 'live',
+    (value) => {
+      if (choice !== undefined) {
+        change({ ...choice, friend: { ...choice.friend, turns: value === 'turns' } });
+      }
+    },
+  );
   const groups = element('div', 'play-sheet-groups');
-  groups.append(againstRoot, who, lengthRoot, formatRoot, levelRoot);
+  groups.append(againstRoot, howRoot, lengthRoot, formatRoot, levelRoot);
   sheet.content.append(groups);
 
   function render(): void {
@@ -148,7 +159,8 @@ export function createPlaySheet(
     formatsFor(choice.opponent).select(current.format);
     level.select(choice.bot.level);
     levelRoot.hidden = choice.opponent !== 'bot' || !botChooses(choice.bot.format);
-    who.hidden = choice.opponent !== 'friend' || onWho === undefined;
+    how.select(choice.friend.turns ? 'turns' : 'live');
+    howRoot.hidden = choice.opponent !== 'friend' || actions.turns !== true;
   }
 
   return {

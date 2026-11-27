@@ -439,3 +439,52 @@ From the owner's look at the screenshots of the addendum above, at 1920 × 1080:
   speed): the foot wraps while it is open (`panel-parts` checks the width at three sizes).
 - **"Jo said no" is told once per page session**, a reload included: the endings told are kept as
   series ids in `sessionStorage` (`told-endings.ts`, the most recent 20), nothing personal.
+
+## Addendum (2026-11-27): never waiting without feedback
+
+The owner's rule after the staging walk of the one vs Friend path (ADR 0089 addendum of the same
+day): no tap and no screen ever leaves a player waiting without feedback. As built:
+
+- **Taps**: a tap that waits on the server is busy on its own button (`busyOnClick`), never a
+  frozen page; "Who do you want to play?"'s one button is (it closed the sheet first, then sent,
+  with a second of nothing). A button with nothing to do yet (the sheet's, nothing picked) is never
+  a request, so it never looks busy.
+- **Waits on another player** show the waiting indicator: the waiting screen's ball (a link) or
+  the friend's pulsing disc, the lineups' "Waiting for Sam's lineup" card, and the pick card's
+  three soft dots, now on every wait on the other (their pick, their arrival, a rematch you asked,
+  their lineup after a rematch), not only their pick (`PickClock.waiting`).
+- **Skeletons keep their place from the first frame**, unseen until 150 ms (`unseenAtFirst`,
+  `[data-unseen] { visibility: hidden }`); they were `hidden` (no space) until then, so a slow read
+  showed them by pushing the page down. Friends' "Waiting for you" is drawn before `/friends`
+  answers, as many request-sized places as the inbox counts. All matches shows its loading row
+  only while a page is read (it sat at the list's end as the scroll mark, a skeleton with no read).
+
+### The audit: the slowed-API walk
+
+`slow-walk-flow.ts` walks every screen a signed-in player reaches (FRAME_SCREENS: Play, Balls, the
+chart, a ball, Friends, Ranks, Profile, All matches, the vs Bot setup and lineup, Free play, an
+older link) cold and warm, and every online state (`ONLINE_STATES`: a friend's card, the waiting
+screen for a friend and for a link and their endings, a link taken, accepted, failed and offline,
+the lineups together, a live fight and Leave, the end and each rematch moment), every API call
+slowed to 1.5 s. It fails when a screen's content area is empty 300 ms in, when the layout shifts
+more than 0.02 after first paint where nothing fights, when a skeleton is still up with no read
+under way, or when a wait on the other player has no indicator; failing (every call a 500), when
+Friends, Profile or All matches, cold, show no Try again. Phone (390 x 664) and desktop (1920 x
+1080), each engine; layout shifts are Chromium's only (no other engine reports them). A fight's own
+motion (the arena, its tip following a ball, the round turning into the result) is the arena's
+(ADR 0007, 0039) and isn't counted.
+
+| Screen (first frame, API slowed)                                         | Before                                                                                                                                                                        | After                                                                                              |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Play, Balls, the chart, a ball, Ranks, the setups, the lineup, Free play | Their static content (no read)                                                                                                                                                | Unchanged                                                                                          |
+| Friends, cold                                                            | Friends from the inbox; requests nothing until `/friends` (1.5 s), then "Waiting for you" pushed the code card down; skeletons appeared at 150 ms and pushed too: shift 0.153 | Requests' places from the inbox's count, every skeleton's space kept from the first frame: shift 0 |
+| Friends, warm                                                            | What this visit read, refreshed in place                                                                                                                                      | Unchanged                                                                                          |
+| Profile, cold                                                            | Who you are; the record's skeleton appeared at 150 ms and pushed the account rows and Privacy · Terms: shift 0.155                                                            | Space kept from the first frame: shift 0                                                           |
+| All matches                                                              | The record's rows; a skeleton row parked at the list's end with no read under way                                                                                             | The end is an empty mark; the loading row only while a page is read                                |
+| A friend's card, a link opened cold                                      | The card's skeleton (ADR 0054)                                                                                                                                                | Unchanged                                                                                          |
+| The waiting screen                                                       | Shown complete on arrival (the card read before moving)                                                                                                                       | Unchanged; one layout for a friend or a link (ADR 0089 addendum)                                   |
+| The lineups together, a live fight, the end                              | Their own skeleton, then the fight                                                                                                                                            | Unchanged; every wait on the other player shows its dots                                           |
+| Failing, cold: Friends, Profile, All matches                             | The failure card with Try again                                                                                                                                               | Unchanged (now tested)                                                                             |
+
+Not walked: sign-in signed out (its own flows cover it), a by-turns series (its screen is the bot
+series' own), Safari's engine (WebKit runs the walk too; its layout shifts aren't reported).

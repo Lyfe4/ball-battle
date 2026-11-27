@@ -1,11 +1,14 @@
 /*
- * "Who do you want to play?" (who-sheet.ts, ADR 0089): its groups a stack gap apart, each a quiet
- * title, an optional line and the Friends tab's rows; "Anyone, with a link" last as a row (with no
- * friends, the main button). The link lobby's friends and a guest's sign-in line, after the link.
+ * "Who do you want to play?" (who-sheet.ts, ADR 0089 and its addendum of 2026-11-27): the rules it
+ * sends on, its groups a stack gap apart (a quiet title, then the rows), "Send a link instead" last,
+ * and its foot: the failure line, if any, over the one button that sends, kept at the sheet's
+ * bottom edge while the list scrolls. Each row is a chosen option (choice.css): the chosen one has
+ * the selected fill, the ring and the check sticker; one nothing can start with is quiet. A guest's
+ * sign-in line on the waiting screen.
  */
 .who-sheet-groups,
 .who-sheet-group,
-.who-lobby {
+.who-sheet-rows {
   display: grid;
   gap: var(--space-small);
 }
@@ -14,11 +17,63 @@
   gap: var(--space-group);
 }
 
-.who-sheet-line,
+.who-sheet-rules,
 .who-lobby-line {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
+}
+
+.who-sheet-rules {
+  font-weight: 700;
+}
+
+.who-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  width: 100%;
+  min-height: var(--button-height);
+  padding: var(--space-small) var(--button-pad);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .who-row:hover:not([aria-disabled='true']) {
+    background: var(--color-selected);
+  }
+}
+
+.who-row[data-pressed]:not([aria-disabled='true']) {
+  background: var(--color-selected);
+}
+
+.who-row[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The link's row has a disc of its own, a chain link in a person's disc's place. */
+.who-link-disc {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+
+.who-link-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentcolor;
 }
 
 .who-sheet-add {
@@ -27,20 +82,38 @@
   padding: 0;
 }
 
-/* The notice lines its parts up at the start: the friends take the line's whole width. */
-.who-lobby {
-  justify-self: stretch;
-  width: 100%;
-  margin-top: var(--space-group);
+/* The foot stays at the sheet's bottom edge while its list scrolls, on the sheet's own fill. */
+.who-sheet-foot {
+  position: sticky;
+  bottom: calc(-1 * (var(--space-gutter) + env(safe-area-inset-bottom)));
+  display: grid;
+  gap: var(--space-small);
+  margin-inline: calc(-1 * var(--space-gutter));
+  padding: var(--space-gap) var(--space-gutter)
+    calc(var(--space-gutter) + env(safe-area-inset-bottom));
+  margin-bottom: calc(-1 * (var(--space-gutter) + env(safe-area-inset-bottom)));
+  background: var(--color-surface);
 }
 
+.who-sheet-failure {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.who-sheet-failure[hidden] {
+  display: none;
+}
+
+/* With nothing picked, the button says what to do and looks it: never a request to refuse. */
+.who-sheet-send[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* The notice lines its parts up at the start. */
 .who-lobby-sign-in {
   min-height: var(--tap-target);
   padding: 0;
-}
-
-/* A friend with nothing to start (not online, no play by turns in this build): quiet. */
-.who-sheet .friends-open:disabled {
-  cursor: default;
-  opacity: 0.6;
 }

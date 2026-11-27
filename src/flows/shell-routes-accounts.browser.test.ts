@@ -53,7 +53,9 @@ describe('the shell’s URLs with accounts (previews, staging)', () => {
     ]);
     await follow('?view=ranks');
     await pressPlaceholder('Play a friend now');
-    await onScreen('send');
+    // The one vs Friend path (ADR 0089 addendum): Play, its box on vs Friend, nothing sent.
+    await onScreen('home');
+    expect(visible('.play-box-who')[0]?.textContent).toBe('vs Friend');
   });
 
   it('keeps every older URL: Google’s return, a challenge, a start and a series', async () => {

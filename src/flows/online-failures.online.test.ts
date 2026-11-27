@@ -168,33 +168,27 @@ describe('accepting a challenge on a phone', () => {
     });
   }
 
-  it('with a lobby of one’s own says whose, and "Cancel that and accept this" accepts (ADR 0086)', async () => {
+  it('refused as in a match already says so in the game’s words, with the way back (ADR 0086)', async () => {
+    // A lobby of one's own never refuses an accept now (ADR 0089 addendum): only lineups or a match.
     const page = await phone();
     await lineupReady(page);
-    const accept = await routeAccept(page, (route) =>
+    await routeAccept(page, (route) =>
       json(route, 409, {
-        error: { code: 'in_a_match', message: 'Your lobby is waiting: finish it first' },
+        error: {
+          code: 'in_a_match',
+          message: 'You are choosing a lineup already: finish it first',
+        },
       }),
     );
-    const LOBBY = 'BBBBBBBBBBBBBBBBBBBBBB';
     await page.route('**/api/v1/me/match', (route) =>
-      json(route, 200, {
-        match: { kind: 'lobby', token: LOBBY, format: 'reveal', bestOf: 3, invitee: 'Jo' },
-      }),
+      json(route, 200, { match: { kind: 'start', id: START, format: 'reveal', bestOf: 3 } }),
     );
-    const cancelled: string[] = [];
-    await page.route(`**/api/v1/challenges/${LOBBY}/cancel`, (route) => {
-      cancelled.push(LOBBY);
-      accept.recover();
-      return json(route, 200, { status: 'stopped' });
-    });
     await page.getByRole('button', { name: 'Accept' }).click();
-    await page.getByRole('heading', { name: 'You already challenged Jo' }).waitFor();
+    await page.getByRole('heading', { name: 'You’re in a match already' }).waitFor();
     // Never the server's sentence.
     await expect(page.getByText('finish it first').count()).resolves.toBe(0);
-    await page.getByRole('button', { name: 'Cancel that and accept this' }).click();
+    await page.getByRole('button', { name: 'Back to your match' }).click();
     await page.waitForURL(new RegExp(`[?&]start=${START}`));
-    expect(cancelled).toStrictEqual([LOBBY]);
   });
 
   it('from a player the viewer blocked says so, with Unblock, then the challenge (ADR 0086)', async () => {

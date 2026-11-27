@@ -109,7 +109,11 @@ function section(start: FriendsResponse = START) {
     },
   });
   document.body.replaceChildren(friends.element);
-  return { friends, sent, root: friends.element, challenged, changes: () => changes };
+  /** A change made on the server by someone else (a request sent to this player). */
+  const arrive = (next: FriendsResponse) => {
+    list = next;
+  };
+  return { friends, sent, root: friends.element, challenged, changes: () => changes, arrive };
 }
 
 const until = async (check: () => boolean, what: string) => {
@@ -125,6 +129,30 @@ const group = (root: HTMLElement, key: string) =>
   [...root.querySelectorAll(`.friends-group[data-group="${key}"] .friends-name`)].map(
     (name) => name.textContent,
   );
+
+describe('the Friends section hearing the inbox (ADR 0089 addendum of 2026-11-27)', () => {
+  it('reads the list again for a request it hasn’t drawn, once, and never for the same news', async () => {
+    const { friends, sent, root, arrive } = section({ ...START, incoming: [] });
+    await friends.open();
+    const reads = () => sent.filter((line) => line === 'GET friends').length;
+    const before = reads();
+    // What the list drew already: nothing to read.
+    friends.heard(0, START.friends);
+    expect(reads()).toBe(before);
+    // A request arrives: the inbox says one waits, so its row is read and drawn, no reload.
+    arrive({ ...START, incoming: [{ id: 'r-9', name: 'Kim_K' }] });
+    friends.heard(1, START.friends);
+    friends.heard(1, START.friends);
+    await until(() => group(root, 'incoming').includes('Kim_K'), 'the new request');
+    expect(reads()).toBe(before + 1);
+    // A request of yours accepted elsewhere: a new friend, read again too.
+    const jo = { id: 'f-2', name: 'Jo_K', status: 'online' as const };
+    arrive({ ...START, incoming: [{ id: 'r-9', name: 'Kim_K' }], friends: [...START.friends, jo] });
+    friends.heard(1, [...START.friends, jo]);
+    await until(() => group(root, 'friends').includes('Jo_K'), 'the new friend');
+    expect(reads()).toBe(before + 2);
+  });
+});
 
 describe('the Friends section', () => {
   it('shows the code, adds by what was typed, accepts and declines requests', async () => {

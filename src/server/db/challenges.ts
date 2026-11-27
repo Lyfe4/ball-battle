@@ -25,13 +25,18 @@ export interface ChallengeRow {
   /** Who accepted it: side B of its start or series. */
   readonly acceptor: string | null;
   readonly live: boolean;
-  /** A live link nobody accepted whose sender cancelled it or left the lobby. */
+  /**
+   * Nobody accepted it and it was called off (cancelled, a No thanks to a live one, or a newer
+   * challenge from its sender), or it is live and its sender left the lobby.
+   */
   readonly stopped: boolean;
   readonly requestId: string;
   /** The friend it was sent to (ADR 0079 PR (d)), by name, and whether they said No thanks. */
   readonly invitee: string | null;
   readonly inviteeName: string | null;
   readonly declined: boolean;
+  /** Called off by a newer challenge from the same sender (one outgoing at a time). */
+  readonly superseded: boolean;
 }
 
 interface Raw {
@@ -52,6 +57,7 @@ interface Raw {
   readonly invitee: string | null;
   readonly invitee_name: string | null;
   readonly declined: boolean;
+  readonly superseded: boolean;
 }
 
 export async function challengeByHash(
@@ -59,22 +65,40 @@ export async function challengeByHash(
   hash: Buffer,
   lock = false,
 ): Promise<ChallengeRow | undefined> {
+  return challengeWhere(db, { hash }, lock);
+}
+
+/** A challenge by its row id (a crossed lobby found by `lobbyWaitingFor`). */
+export async function challengeById(
+  db: Db,
+  id: string,
+  lock = false,
+): Promise<ChallengeRow | undefined> {
+  return challengeWhere(db, { id }, lock);
+}
+
+async function challengeWhere(
+  db: Db,
+  key: { readonly hash: Buffer } | { readonly id: string },
+  lock: boolean,
+): Promise<ChallengeRow | undefined> {
   const forUpdate = lock ? db`for update of c` : db``;
+  const where = 'hash' in key ? db`c.token_hash = ${key.hash}` : db`c.id = ${key.id}`;
   const [raw] = await db<Raw[]>`
     select c.id, c.creator, coalesce(p.username, p.display_name) as creator_name, c.format, c.best_of, c.lineup,
       c.expires_at, c.expires_at < now() as expired,
       coalesce(c.series_id, st.series_id) as series_id, c.start_id,
       coalesce(st.player_b, s.player_b) as acceptor,
       c.live, c.request_id, c.invitee, coalesce(i.username, i.display_name) as invitee_name,
-      c.invitee_declined_at is not null as declined,
-      (c.live and c.series_id is null and c.start_id is null and (c.cancelled_at is not null
-        or c.creator_seen_at <= now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))) as stopped
+      c.invitee_declined_at is not null as declined, c.superseded_by is not null as superseded,
+      (c.series_id is null and c.start_id is null and (c.cancelled_at is not null
+        or (c.live and c.creator_seen_at <= now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})))) as stopped
     from game.challenges c
     left join game.profiles p on p.user_id = c.creator
     left join game.profiles i on i.user_id = c.invitee
     left join game.series s on s.id = c.series_id
     left join game.starts st on st.id = c.start_id
-    where c.token_hash = ${hash}
+    where ${where}
     ${forUpdate}`;
   return raw === undefined
     ? undefined
@@ -97,6 +121,7 @@ export async function challengeByHash(
         invitee: raw.invitee,
         inviteeName: raw.invitee_name,
         declined: raw.declined,
+        superseded: raw.superseded,
       };
 }
 
@@ -136,15 +161,26 @@ export async function markStarted(db: Db, id: string, startId: string): Promise<
 }
 
 /**
- * Links by turns a player has out that nobody has accepted yet and that haven't expired. A live
- * link is one at a time instead (`liveNowOf`), and stops when its sender leaves.
+ * One outgoing challenge per player (ADR 0089 addendum of 2026-11-27): calls off every challenge
+ * of `creator`'s nobody has accepted or called off yet, but `keep` (the one just sent; none when
+ * the send became an accept; `liveOnly` when accepting a live match, which leaves challenges by
+ * turns alone). A live one stops at once; its friend's inbox loses it by the poke `cancelled_at`
+ * sends (20261124120000_poke.sql). The sender's lock is held (`lockPlayer`).
  */
-export async function openChallengesOf(db: Db, creator: string): Promise<number> {
-  const [row] = await db<{ count: number }[]>`
-    select count(*)::int as count from game.challenges
-    where creator = ${creator} and not live and series_id is null and start_id is null
-      and expires_at > now()`;
-  return row?.count ?? 0;
+export async function supersedeOutgoing(
+  db: Db,
+  creator: string,
+  keep: string | undefined,
+  liveOnly = false,
+): Promise<number> {
+  const rows = await db`
+    update game.challenges set cancelled_at = now(), superseded_by = ${keep ?? null}
+    where creator = ${creator} and series_id is null and start_id is null
+      and cancelled_at is null and expires_at > now()
+      ${keep === undefined ? db`` : db`and id <> ${keep}`}
+      ${liveOnly ? db`and live` : db``}
+    returning 1`;
+  return rows.length;
 }
 
 /** Open series by turns a player is in (live ones finish in minutes and have their own rule). */

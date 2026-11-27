@@ -10,7 +10,7 @@ import '../style.css';
 import type { InboxResponse } from '../api/friends.ts';
 import { waitingCount } from './friends-text.ts';
 import { LATER_NAME } from './incoming-text.ts';
-import { createInboxWatch, INVITE_FOLD_MS } from './inbox-watch.ts';
+import { createInboxWatch, INVITE_FOLD_MS, nextStop } from './inbox-watch.ts';
 
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
 const INBOX: InboxResponse = {
@@ -270,5 +270,24 @@ describe('a friend’s challenge on the incoming banner', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(sent).toStrictEqual([]);
     expect(badge).toStrictEqual([0]);
+  });
+});
+
+describe('when a friend’s lobby stops (ADR 0089 addendum of 2026-11-27)', () => {
+  it('is the first live challenge’s stopsInMs: the page reads again then', () => {
+    const live = (token: string, stopsInMs?: number) => ({
+      token,
+      from: 'Sam_R',
+      format: 'reveal' as const,
+      bestOf: 3 as const,
+      live: true,
+      ...(stopsInMs === undefined ? {} : { stopsInMs }),
+    });
+    expect(nextStop({ invites: [] })).toBeUndefined();
+    expect(nextStop({ invites: [live('a', 40_000), live('b', 12_000)] })).toBe(12_000);
+    // By turns waits days; a server from before the field says nothing.
+    expect(
+      nextStop({ invites: [{ ...live('c', 5_000), live: false }, live('d')] }),
+    ).toBeUndefined();
   });
 });

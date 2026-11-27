@@ -102,6 +102,11 @@ export type CurrentMatch =
       readonly bestOf: 3 | 5;
       /** The friend it waits for (ADR 0079 PR (d)), by name; null for a link to anyone. */
       readonly invitee: string | null;
+      /**
+       * How long after this answer the lobby stops unless its page is heard from again: home asks
+       * again then, so "Back to your lobby" never outlives it. A duration: clocks differ.
+       */
+      readonly stopsInMs?: number;
     }
   /** Lineups being picked together (ADR 0080). */
   | {

@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { FriendEntry } from '../api/friends.ts';
 import {
   FRIEND_PICK_STORAGE_KEY,
   forgetFriendPick,
   loadFriendPick,
   parseFriendPick,
-  playableFriend,
   saveFriendPick,
   type FriendPick,
 } from './friend-pick.ts';
@@ -21,11 +19,6 @@ function memory() {
 }
 
 const ROBIN: FriendPick = { owner: 'sam_k', id: 'f-1', name: 'Robin', turns: false };
-const friend = (id: string, status: NonNullable<FriendEntry['status']>): FriendEntry => ({
-  id,
-  name: id,
-  status,
-});
 
 describe('the friend Play is against (ADR 0089)', () => {
   it('is remembered for the account that picked them, and no other', () => {
@@ -57,20 +50,5 @@ describe('the friend Play is against (ADR 0089)', () => {
     expect(loadFriendPick(throwing, 'sam_k')).toBeUndefined();
     saveFriendPick(throwing, ROBIN);
     forgetFriendPick(throwing);
-  });
-
-  it('goes straight only to a friend still there, online for live, by turns where built', () => {
-    const online = [friend('f-1', 'online')];
-    const away = [friend('f-1', 'offline')];
-    expect(playableFriend(ROBIN, online, false)?.id).toBe('f-1');
-    expect(playableFriend(ROBIN, away, false)).toBeUndefined();
-    expect(playableFriend(ROBIN, [friend('f-1', 'in_a_match')], true)).toBeUndefined();
-    // No longer a friend, or the list not known yet: ask.
-    expect(playableFriend(ROBIN, [friend('f-9', 'online')], true)).toBeUndefined();
-    expect(playableFriend(ROBIN, undefined, true)).toBeUndefined();
-    expect(playableFriend(undefined, online, true)).toBeUndefined();
-    const turns = { ...ROBIN, turns: true };
-    expect(playableFriend(turns, away, true)?.id).toBe('f-1');
-    expect(playableFriend(turns, away, false)).toBeUndefined();
   });
 });

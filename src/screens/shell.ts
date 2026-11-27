@@ -18,6 +18,8 @@ import { createTabBar } from '../ui/tab-bar.ts';
 import { friendsTabLabel } from './friends-text.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { writeSendParams } from '../app/online-url.ts';
+import { loadFriendSetup } from '../app/modes.ts';
+import { browserStorage } from '../app/storage.ts';
 import { createRanks } from './ranks.ts';
 
 export type ShellScreensHost = Pick<Moves, 'go' | 'goHome' | 'backOrHome'>;
@@ -51,9 +53,12 @@ export function mountShell(root: HTMLElement, host: ShellScreensHost): ShellScre
   const ranks = ACCOUNTS_BUILD
     ? createRanks(root, {
         back: host.backOrHome,
+        // The one vs Friend path (ADR 0089 addendum of 2026-11-27) on Play's box's rules: the
+        // send screen's link leads there (Play, and "Who do you want to play?" signed in).
         playFriend: () => {
+          const { format, bestOf } = loadFriendSetup(browserStorage);
           host.go((url) => {
-            writeSendParams(url, 'reveal', 3);
+            writeSendParams(url, format, bestOf);
           });
         },
       })

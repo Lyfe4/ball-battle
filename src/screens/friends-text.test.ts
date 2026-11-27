@@ -8,12 +8,11 @@ import {
   addedLine,
   friendsTabLabel,
   hasAnyone,
-  liveUnavailable,
+  challengeUnavailable,
   STATUS_WORDS,
   endingLine,
   friendsTitle,
   gameName,
-  inboxToWatch,
   waitingCount,
 } from './friends-text.ts';
 
@@ -63,21 +62,6 @@ describe('what waits, on the strip and the badge (ADR 0081)', () => {
     expect(waitingCount({ ...none, invites: [invite], turns: [turn('Sam')] })).toBe(3);
   });
 
-  it('keeps watching an inbox with a game waiting on the other player, friends or not', () => {
-    const empty = { friends: [], requests: 0, invites: [], turns: [] };
-    expect(inboxToWatch(empty)).toBe(false);
-    // A game from a link, or with a friend since removed: their move makes it "Your turn".
-    expect(inboxToWatch({ ...empty, games: [turn('Sam')] })).toBe(true);
-    expect(inboxToWatch({ ...empty, turns: [turn('Sam')] })).toBe(true);
-    expect(inboxToWatch({ ...empty, friends: [friend('offline')] })).toBe(true);
-    expect(inboxToWatch({ ...empty, requests: 1 })).toBe(true);
-    expect(inboxToWatch({ ...empty, invites: [invite] })).toBe(true);
-    // An ending only waits to be seen: nothing more will come of it.
-    expect(
-      inboxToWatch({ ...empty, endings: [{ seriesId: 's', opponent: 'Sam', outcome: 'won' }] }),
-    ).toBe(false);
-  });
-
   it('says who is online in the friends list’s title, never "0 online" (ADR 0086)', () => {
     expect(friendsTitle('Friends', [])).toBe('Friends · 0');
     expect(friendsTitle('Friends', [friend('online'), friend('offline')])).toBe(
@@ -105,24 +89,21 @@ describe('the person’s sheet’s words (ADR 0086)', () => {
     expect(personStatus({}, 'outgoing')).toBe('Request sent');
   });
 
-  it('says why Challenge · live can’t be taken, and the way that works', () => {
+  it('says why Challenge can’t be taken, by turns working any time where it is built', () => {
     const jo = (status: 'online' | 'offline' | 'in_a_match') => ({ name: 'Jo', status });
-    expect(liveUnavailable(jo('online'), false, true)).toBeUndefined();
-    expect(liveUnavailable(jo('offline'), false, true)).toBe(
-      'Jo is offline · Play by turns instead',
-    );
-    expect(liveUnavailable(jo('in_a_match'), false, true)).toBe(
-      'Jo is in a match · Play by turns instead',
-    );
+    expect(challengeUnavailable(jo('online'), false, false)).toBeUndefined();
+    // By turns works any time: "Who do you want to play?" says which (ADR 0089 addendum).
+    expect(challengeUnavailable(jo('offline'), false, true)).toBeUndefined();
+    expect(challengeUnavailable(jo('in_a_match'), false, true)).toBeUndefined();
     // Where the build doesn't play by turns: wait for them.
-    expect(liveUnavailable(jo('offline'), false, false)).toBe(
+    expect(challengeUnavailable(jo('offline'), false, false)).toBe(
       'Jo is offline · Try again when they’re online',
     );
-    expect(liveUnavailable(jo('in_a_match'), false, false)).toBe(
+    expect(challengeUnavailable(jo('in_a_match'), false, false)).toBe(
       'Jo is in a match · Try again after it',
     );
     // Their lobby waits for you: accept theirs, whatever their status.
-    expect(liveUnavailable(jo('in_a_match'), true, true)).toBe(
+    expect(challengeUnavailable(jo('in_a_match'), true, true)).toBe(
       'Jo is waiting for you · Accept in Waiting for you',
     );
   });

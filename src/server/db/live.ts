@@ -65,12 +65,15 @@ export async function lobbyInvitee(
   db: Db,
   creator: string,
   requestId: string,
-): Promise<string | null> {
-  const [row] = await db<{ name: string | null }[]>`
-    select coalesce(i.username, i.display_name) as name from game.challenges c
+): Promise<{ readonly invitee: string | null; readonly stopsInMs: number }> {
+  const [row] = await db<{ name: string | null; stops_in_ms: number }[]>`
+    select coalesce(i.username, i.display_name) as name,
+      greatest(0, ceil(extract(epoch from (c.creator_seen_at
+        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}) - now())) * 1000))::int as stops_in_ms
+    from game.challenges c
     left join game.profiles i on i.user_id = c.invitee
     where c.creator = ${creator} and c.request_id = ${requestId}`;
-  return row?.name ?? null;
+  return { invitee: row?.name ?? null, stopsInMs: row?.stops_in_ms ?? 0 };
 }
 
 /**

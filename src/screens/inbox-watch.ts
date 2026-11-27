@@ -23,7 +23,6 @@ import { callApi, failureKindOf } from '../app/api.ts';
 import { createInboxPoll } from '../app/inbox-poll.ts';
 import { pokes } from '../app/pokes.ts';
 import { createIncomingBanner } from '../ui/online/incoming-banner.ts';
-import { inboxToWatch } from './friends-text.ts';
 import { challengeIncoming, stoppedIncoming } from './incoming-text.ts';
 import { failureLine } from './online-failure-text.ts';
 
@@ -31,6 +30,16 @@ import { failureLine } from './online-failure-text.ts';
 export const INVITE_FOLD_MS = 20_000;
 /** The banner's bar is redrawn this often while it waits. */
 const TICK_MS = 250;
+/** Read this long after a friend's lobby would stop: past the server's own moment. */
+export const STOP_MARGIN_MS = 500;
+
+/** How long until the first of the inbox's live challenges stops unless its sender is heard from. */
+export function nextStop(inbox: Pick<InboxResponse, 'invites'>): number | undefined {
+  const stops = inbox.invites.flatMap((one) =>
+    one.live && one.stopsInMs !== undefined ? [one.stopsInMs] : [],
+  );
+  return stops.length === 0 ? undefined : Math.min(...stops);
+}
 
 export interface InboxWatchHost {
   /**
@@ -203,16 +212,19 @@ export function createInboxWatch(
     return undefined;
   }
 
-  async function read(): Promise<boolean> {
+  async function read(): Promise<void> {
     const answer = await callApi<InboxResponse>('GET', 'me/inbox');
-    if (!answer.ok || answer.body === undefined) return true;
+    if (!answer.ok || answer.body === undefined) return;
     const inbox = answer.body;
     // One the sender stopped is gone from the answer, and its failure with it.
     stopped = stoppedIn(inbox) ?? stopped;
     if (stopped !== undefined) failure = undefined;
     last = inbox;
     render();
-    return inboxToWatch(inbox);
+    // A friend's lobby stops by the clock, which pokes nobody: read again just after it would, so
+    // the banner never outlives it (ADR 0089 addendum of 2026-11-27).
+    const stops = nextStop(inbox);
+    if (stops !== undefined) poll.soon(stops + STOP_MARGIN_MS);
   }
 
   const poll = createInboxPoll({

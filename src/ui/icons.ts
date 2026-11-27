@@ -1,5 +1,6 @@
 // Our own plain shapes (ADR 0081): the tabs' icons (a ball in motion, four balls, two heads, a
-// podium with a star) and the Play box's opponents (the bot's face, two heads for a friend).
+// podium with a star), the Play box's opponents (the bot's face, two heads for a friend) and a
+// link (who-sheet.ts).
 // Drawn in the text's colour, hidden from screen readers: the words beside them say it.
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -15,6 +16,8 @@ const SHAPES = {
     'M9 7h6v14H9ZM2 12h6v9H2ZM16 15h6v6h-6ZM12 1.5l1.2 2.4l2.6.4l-1.9 1.8l.5 2.6L12 7.5L9.6 8.7l.5-2.6L8.2 4.3l2.6-.4Z',
   bot: 'M11 2h2v3h-2ZM5 6h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2ZM8.5 10a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3ZM15.5 10a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3ZM8 15h8v1.5H8Z',
   friend: FRIENDS,
+  // Two links of a chain and the bar between them: "Send a link instead" (ADR 0089 addendum).
+  link: 'M10 8H7a4 4 0 0 0 0 8h3v-2H7a2 2 0 0 1 0-4h3ZM14 8h3a4 4 0 0 1 0 8h-3v-2h3a2 2 0 0 0 0-4h-3ZM8 11h8v2H8Z',
 } as const;
 
 export type Shape = keyof typeof SHAPES;

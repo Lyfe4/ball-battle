@@ -1,7 +1,8 @@
 // A person's sheet on the Friends tab (ADR 0086, social S 5), on the shared sheet (sheet.ts): tap a
 // row and this opens. A friend's: their disc ringed in their status's colour, name and status;
-// Challenge · live, always (unavailable, with why, when it can't succeed); Play by turns where the
-// build plays by turns; Remove friend as a row; then, apart, Report name and Block
+// Challenge, always (unavailable, with why, when it can't succeed), which opens "Who do you want to
+// play?" with them picked (ADR 0089 addendum of 2026-11-27); Remove friend as a row; then, apart,
+// Report name and Block
 // in the danger look. Remove and Block are confirmed with what they do (Cancel the default); Report
 // asks why, with "Also block". A request to you has Accept and Decline, then Report and Block; a
 // request you sent has Cancel request; a blocked player has Unblock. One close, the ×; whatever an
@@ -14,7 +15,7 @@ import {
   BLOCK_STEP,
   handleOf,
   headToHead,
-  liveUnavailable,
+  challengeUnavailable,
   personStatus,
   REMOVE_STEP,
   REPORT_CHOICES,
@@ -23,10 +24,10 @@ import {
 } from '../../screens/friends-text.ts';
 
 export interface FriendSheetHost {
-  /** Challenge · live: the vs Friend setup, the challenge going to this friend. */
+  /** Challenge: "Who do you want to play?" with this friend picked (the one path). */
   readonly challenge?: (friend: FriendEntry) => void;
-  /** Play by turns (ADR 0085, where the build has it): its lineup first; any time. */
-  readonly turns?: (friend: FriendEntry) => void;
+  /** Whether the build plays by turns (ADR 0085): a friend not online can still be challenged. */
+  readonly turns?: boolean;
   /** Each change to a friendship; resolves true when it was made (the tab redrew). */
   readonly remove: (id: string) => Promise<boolean>;
   readonly block: (id: string) => Promise<boolean>;
@@ -185,41 +186,25 @@ export function createFriendSheet(host: FriendSheetHost): FriendSheet {
     return head;
   }
 
-  /** A friend's actions: Challenge · live always, Play by turns where the build has it. */
+  /** A friend's actions: Challenge, always, into the one path with them picked. */
   function friendActions(person: FriendEntry, waiting: boolean): HTMLElement {
     const actions = element('div', 'action-stack friend-sheet-actions');
     const challenge = host.challenge;
-    const turns = host.turns;
-    // Challenge · live always shows, so the sheet keeps one shape (ADR 0086, 2026-11-26). When the
-    // friend can't take it, it stays focusable but unavailable, one line under it says why and the
-    // way that works, and Play by turns (where there is one) is the primary instead.
-    const why = liveUnavailable(person, waiting, turns !== undefined);
+    // Challenge always shows, so the sheet keeps one shape (ADR 0086, 2026-11-26). When nothing can
+    // start with the friend now, it stays focusable but unavailable, and one line under it says why.
+    const why = challengeUnavailable(person, waiting, host.turns === true);
     if (challenge !== undefined) {
-      const live = action(
-        SHEET_LINES.challenge,
-        `Challenge ${person.name} live`,
-        why === undefined,
-      );
-      live.addEventListener('click', () => {
-        if (live.getAttribute('aria-disabled') === 'true') return;
+      const go = action(SHEET_LINES.challenge, `Challenge ${person.name}`, why === undefined);
+      go.addEventListener('click', () => {
+        if (go.getAttribute('aria-disabled') === 'true') return;
         sheet.close();
         challenge(person);
       });
-      actions.append(live);
+      actions.append(go);
       if (why !== undefined) {
-        live.setAttribute('aria-disabled', 'true');
-        actions.append(hint(live, why, 'friend-sheet-why'));
+        go.setAttribute('aria-disabled', 'true');
+        actions.append(hint(go, why, 'friend-sheet-why'));
       }
-    }
-    if (turns !== undefined) {
-      // The way that works, but not over a friend waiting on you: theirs is in Waiting for you.
-      const primary = challenge !== undefined && why !== undefined && !waiting;
-      const take = action(SHEET_LINES.turns, `Play by turns with ${person.name}`, primary);
-      take.addEventListener('click', () => {
-        sheet.close();
-        turns(person);
-      });
-      actions.append(take, hint(take, SHEET_LINES.turnsHint, 'friend-sheet-turns-hint'));
     }
     return actions;
   }

@@ -22,8 +22,8 @@ export async function currentMatch(deps: Deps, userId: string): Promise<CurrentM
   }
   if (now.kind === 'lobby') {
     const token = await tokenFor(deps.config, userId, now.requestId);
-    const invitee = await lobbyInvitee(deps.sql, userId, now.requestId);
-    return { kind: 'lobby', token, format: now.format, bestOf: now.bestOf, invitee };
+    const { invitee, stopsInMs } = await lobbyInvitee(deps.sql, userId, now.requestId);
+    return { kind: 'lobby', token, format: now.format, bestOf: now.bestOf, invitee, stopsInMs };
   }
   const loaded = await loadSeries(deps.sql, now.id);
   if (loaded === undefined) return null;

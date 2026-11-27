@@ -106,9 +106,11 @@ describe('the Friends section loading (ADR 0087)', () => {
     const page = held();
     const opened = page.friends.open();
     const skeleton = () => page.root.querySelector<HTMLElement>('.friends-skeleton');
-    expect(skeleton()?.hidden, 'no skeleton for a quick answer').toBe(true);
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // In its place from the first frame, unseen: a quick answer shows no skeleton, and nothing moves.
     expect(skeleton()?.hidden).toBe(false);
+    expect(skeleton()?.dataset['unseen'], 'no skeleton for a quick answer').toBe('');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(skeleton()?.dataset['unseen']).toBeUndefined();
     expect(skeleton()?.children).toHaveLength(3);
     expect(page.root.querySelector('.friends-add-card')?.hasAttribute('hidden')).toBe(false);
     // How many friends is unknown: the cards under the list wait unseen in their place (beside on a

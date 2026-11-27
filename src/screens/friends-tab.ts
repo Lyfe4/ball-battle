@@ -24,15 +24,12 @@ export interface FriendsTabHost {
   readonly cookies: () => string;
   /** In-app Back: Play, as the tab Back rule says (ADR 0081). */
   readonly back: () => void;
-  /** The send screen: a live challenge by a link. */
+  /** "Who do you want to play?" with the link picked (a guest: the link, as Play sends it). */
   readonly sendLink: () => void;
   /** Sign in: its own screen. */
   readonly signIn: () => void;
-  /**
-   * Challenge a friend: the send screen, for them; `turns` (Play by turns in their sheet, where
-   * TURNS_BUILD, ADR 0085) goes by turns straight to its lineup.
-   */
-  readonly challenge: (friend: FriendEntry, turns?: boolean) => void;
+  /** Challenge a friend: "Who do you want to play?" with them picked (ADR 0089 addendum). */
+  readonly challenge: (friend: FriendEntry) => void;
   /** The friends changed here: the inbox reads now. */
   readonly changed?: () => void;
   /** Accept and No thanks on a friend's challenge (the inbox's, ADR 0081). */
@@ -49,6 +46,8 @@ export interface FriendsTab {
   setVisible(visible: boolean): void;
   /** The friends' status from the inbox, drawn if the list shows. */
   statuses(friends: readonly FriendEntry[]): void;
+  /** What the inbox says waits: news the list hasn't drawn reads it again (friends-section.ts). */
+  heard(requests: number, friends: readonly FriendEntry[]): void;
   /** The friends' open challenges and turns (ADR 0085) from the inbox, first in Waiting for you. */
   invites(
     invites: readonly Invite[],
@@ -103,14 +102,8 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
         challenge: (friend) => {
           host.challenge(friend);
         },
-        // Play by turns only where the build plays by turns (ADR 0085).
-        ...(TURNS_BUILD
-          ? {
-              takeTurns: (friend: FriendEntry) => {
-                host.challenge(friend, true);
-              },
-            }
-          : {}),
+        // A friend not online can be challenged by turns where the build plays by turns (ADR 0085).
+        turns: TURNS_BUILD,
         ...(host.changed === undefined ? {} : { changed: host.changed }),
         ...(host.acceptInvite === undefined ? {} : { acceptInvite: host.acceptInvite }),
         ...(host.declineInvite === undefined ? {} : { declineInvite: host.declineInvite }),
@@ -190,6 +183,9 @@ export function createFriendsTab(root: HTMLElement, host: FriendsTabHost): Frien
     },
     statuses(list) {
       friends?.statuses(list);
+    },
+    heard(requests, list) {
+      friends?.heard(requests, list);
     },
     invites(list, turns, games, endings) {
       friends?.challenges(list, turns, games, endings);

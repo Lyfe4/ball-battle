@@ -3,7 +3,9 @@
 // same link again for a retried create, though only the token's hash is stored. Accepting locks
 // the challenge row, so a link starts one series however many friends open it at once.
 // A live link (ADR 0053) is open while its sender waits in the lobby (each of their reads of it is
-// a heartbeat), and a player is in one live match or lobby at a time.
+// a heartbeat), and a player is in one live match or lobby at a time. A player has one outgoing
+// challenge at a time (ADR 0089 addendum of 2026-11-27): sending one calls off the older one in
+// the same transaction, and sending one to a friend whose own lobby waits for you is an accept.
 import type { Accepted, ChallengeInfo, ChallengeLink, CreateChallenge } from '../api/challenges.ts';
 import { LIVE_FORMATS } from '../api/live.ts';
 import type { Config } from './config.ts';
@@ -11,15 +13,17 @@ import type { TransactionSql } from './db.ts';
 import {
   blockedBy,
   challengeByHash,
+  challengeById,
   insertChallenge,
   lobbyWaitingFor,
   lockPlayer,
   lockPlayers,
   markAccepted,
   markStarted,
-  openChallengesOf,
   openSeriesOf,
   startBetween,
+  supersedeOutgoing,
+  type ChallengeRow,
 } from './db/challenges.ts';
 import { cancelLobby, liveNowOf, lobbySeen } from './db/live.ts';
 import { inviteeOf } from './friend-challenge.ts';
@@ -31,8 +35,6 @@ import { settleStartIn } from './start-settle.ts';
 
 /** How many series by turns a player may have open at once (ADR 0052 section 11, decided). */
 export const MOST_OPEN_SERIES = 3;
-/** How many unanswered links a player may have out at once. */
-export const MOST_OPEN_CHALLENGES = 5;
 
 export async function tokenFor(
   config: Config,
@@ -75,13 +77,15 @@ export async function checkNotLive(
   db: TransactionSql,
   config: Config,
   player: string,
+  lobbyGoes = false,
 ): Promise<void> {
   await lockPlayer(db, player);
   let now = await liveNowOf(db, player);
   if (now?.kind === 'start' && (await settleStartIn(db, config, now.id))) {
     now = await liveNowOf(db, player);
   }
-  if (now !== undefined) {
+  // `lobbyGoes`: the player's own lobby is about to be called off by the challenge being sent.
+  if (now !== undefined && !(lobbyGoes && now.kind === 'lobby')) {
     const where =
       now.kind === 'series'
         ? 'You are in a match already'
@@ -114,39 +118,81 @@ export async function createChallenge(
   }
   const friend = request.friend;
   const token = await tokenFor(deps.config, creator, request.requestId);
+  const hash = await hashOf(token);
   return deps.sql.begin(async (db) => {
-    const existing = await challengeByHash(db, await hashOf(token));
-    if (existing === undefined) {
-      // A challenge to a friend (ADR 0079 PR (d)): only an accepted friend of an account.
-      const invitee =
-        friend === undefined
-          ? undefined
-          : await inviteeOf(db, deps.config, { userId: creator, account }, friend);
-      if (request.live) await checkNotLive(db, deps.config, creator);
-      else if ((await openChallengesOf(db, creator)) >= MOST_OPEN_CHALLENGES) {
-        throw new ApiError(409, 'too_many_series', 'You have enough links waiting already');
-      }
-      await insertChallenge(db, {
-        tokenHash: await hashOf(token),
-        creator,
-        ruleset: CURRENT_RULESET,
-        format: request.format,
-        bestOf: request.bestOf,
-        lineup: request.lineup ?? null,
-        requestId: request.requestId,
-        live: request.live,
-        ...(invitee === undefined ? {} : { invitee }),
-      });
+    // A retry after a lost answer: the same link.
+    const existing = await challengeByHash(db, hash);
+    if (existing !== undefined) return linkOf(token, existing);
+    // A challenge to a friend (ADR 0079 PR (d)): only an accepted friend of an account.
+    const invitee =
+      friend === undefined
+        ? undefined
+        : await inviteeOf(db, deps.config, { userId: creator, account }, friend);
+    // The sender (and the friend) held in one order: one outgoing challenge and one live match per
+    // player on any host, and two friends challenging each other at once wait in turn.
+    await lockPlayers(db, invitee === undefined ? [creator] : [creator, invitee]);
+    if (request.live && invitee !== undefined) {
+      // Crossed (ADR 0086): their lobby waits for the sender, so sending is accepting it.
+      const theirs = await lobbyWaitingFor(db, invitee, creator);
+      if (theirs !== undefined) return crossedSend(db, deps.config, theirs, creator);
     }
-    const made = existing ?? (await challengeByHash(db, await hashOf(token)));
+    if (request.live) await checkNotLive(db, deps.config, creator, true);
+    await insertChallenge(db, {
+      tokenHash: hash,
+      creator,
+      ruleset: CURRENT_RULESET,
+      format: request.format,
+      bestOf: request.bestOf,
+      lineup: request.lineup ?? null,
+      requestId: request.requestId,
+      live: request.live,
+      ...(invitee === undefined ? {} : { invitee }),
+    });
+    const made = await challengeByHash(db, hash);
     if (made === undefined) throw new Error('A challenge just made is missing');
-    return {
-      token,
-      format: made.format,
-      bestOf: made.bestOf,
-      expiresAt: made.expiresAt.toISOString(),
-    };
+    // One outgoing challenge: the older ones stop now, and their friends are poked.
+    await supersedeOutgoing(db, creator, made.id);
+    return linkOf(token, made);
   });
+}
+
+function linkOf(
+  token: string,
+  made: Pick<ChallengeRow, 'format' | 'bestOf' | 'expiresAt'>,
+  startId?: string,
+): ChallengeLink {
+  return {
+    token,
+    format: made.format,
+    bestOf: made.bestOf,
+    expiresAt: made.expiresAt.toISOString(),
+    ...(startId === undefined ? {} : { startId }),
+  };
+}
+
+/**
+ * A live challenge sent to a friend whose own lobby waits for the sender (crossed): their challenge
+ * is accepted instead, on its rules (it came first); the sender's other challenges stop, and both
+ * go to the lineups. The answer names that lobby's link and the start. A retry of the same send
+ * after a lost answer finds the sender in those lineups and is told so (`in_a_match`).
+ */
+async function crossedSend(
+  db: TransactionSql,
+  config: Config,
+  theirsId: string,
+  sender: string,
+): Promise<ChallengeLink> {
+  const theirs = await challengeById(db, theirsId, true);
+  if (theirs === undefined) throw new Error('A crossed lobby just found is missing');
+  await supersedeOutgoing(db, sender, undefined);
+  await checkNotLive(db, config, sender);
+  const startId = await openStart(db, {
+    players: { a: theirs.creator, b: sender },
+    format: theirs.format,
+    bestOf: theirs.bestOf,
+  });
+  await markStarted(db, theirs.id, startId);
+  return linkOf(await tokenFor(config, theirs.creator, theirs.requestId), theirs, startId);
 }
 
 /**
@@ -196,6 +242,7 @@ export async function challengeInfo(
     // Who it was sent to is the sender's alone to see.
     invitee: own ? found.inviteeName : null,
     declined: own && found.declined,
+    superseded: own && found.superseded,
     blocked: blocked ?? null,
   };
 }
@@ -251,10 +298,9 @@ export async function acceptChallenge(
       if (lineup !== undefined) {
         throw new ApiError(400, 'bad_request', 'A live challenge is accepted without a lineup');
       }
-      // Crossed challenges merge: the acceptor's own lobby waiting for this sender goes (its
-      // trigger pokes both: the sender's inbox loses it, the acceptor's lobby moves on).
-      const crossed = await lobbyWaitingFor(db, acceptor, found.creator);
-      if (crossed !== undefined) await cancelLobby(db, crossed, acceptor);
+      // The acceptor's own live challenge still waiting stops (one at a time): crossed, it was to
+      // this sender and the two merge; else its friend is poked and their banner goes.
+      await supersedeOutgoing(db, acceptor, undefined, true);
       await checkNotLive(db, deps.config, acceptor);
       const startId = await openStart(db, {
         players: { a: found.creator, b: acceptor },

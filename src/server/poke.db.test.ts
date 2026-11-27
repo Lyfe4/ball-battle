@@ -16,8 +16,7 @@ import {
 } from './test/series-support.ts';
 import { adminSql, testDeps } from './test/support.ts';
 import { befriend, newAccount } from './test/friends-support.ts';
-import { tokenOf } from './test/live-support.ts';
-import { challengeOne, challenges } from './routes/challenges.ts';
+import { challenges } from './routes/challenges.ts';
 
 const deps = testDeps();
 const admin = adminSql();
@@ -174,7 +173,7 @@ describe('a friend’s challenge', () => {
 });
 
 describe('crossed challenges (ADR 0086)', () => {
-  it('pokes each player once for the merge: the inbox that lost one, the lobby that moved on', async () => {
+  it('pokes each player once for the merge: the lobby that moved on, the inbox that lost it', async () => {
     const sam = await newAccount(deps, admin);
     const jo = await newAccount(deps, admin);
     const id = await befriend(admin, sam, jo);
@@ -186,17 +185,11 @@ describe('crossed challenges (ADR 0086)', () => {
         live: true,
         friend: id,
       });
-    const samsLink = tokenOf(await send(sam));
-    expect((await send(jo)).status).toBe(201);
-    // Jo accepts Sam's: Jo's lobby is cancelled (Sam's inbox loses it, Jo's lobby reads) and Sam's
-    // is accepted (Sam's lobby reads, Jo's inbox loses it). One of each, never twice.
-    const poked = await pokedBy([sam, jo], () =>
-      jo.browser.call(challengeOne, 'POST', `/api/v1/challenges/${samsLink}/accept`, {}),
-    );
-    expect(poked.map((events) => [...events].sort())).toStrictEqual([
-      ['inbox', 'match'],
-      ['inbox', 'match'],
-    ]);
+    expect((await send(sam)).status).toBe(201);
+    // Jo challenges Sam while Sam waits for Jo: that is accepting Sam's (ADR 0089 addendum of
+    // 2026-11-27). Sam's lobby reads and moves on; Jo's inbox loses it. Jo has the answer itself.
+    const poked = await pokedBy([sam, jo], () => send(jo));
+    expect(poked).toStrictEqual([['match'], ['inbox']]);
   });
 });
 
