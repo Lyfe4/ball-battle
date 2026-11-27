@@ -9,7 +9,8 @@
 // starts: it is never written to the URL before the series is decided.
 import { loadBotLevel, saveBotLevel } from '../app/bot-level.ts';
 import { firstSeries } from '../app/first-series-device.ts';
-import { botShowsFirstSeed, FIRST_SERIES, starterTrio } from '../app/first-series-setup.ts';
+import { FIRST_SERIES, starterTrio } from '../app/first-series-setup.ts';
+import { firstSeriesSeedSliced } from '../app/first-series-seed.ts';
 import { savePlaySetup, SETUP_FORMATS } from '../app/modes.ts';
 import { loadSetup, saveSetup } from '../app/series-save.ts';
 import { generateSeed } from '../app/fresh-seed.ts';
@@ -17,6 +18,7 @@ import { beginSession, botOf, resolvePicks } from '../app/series-session.ts';
 import { writeSeriesModeParams, type SeriesLink } from '../app/series-url.ts';
 import { botFor, DEFAULT_BOT } from '../sim/bot.ts';
 import { indexDefinitions } from '../sim/definitions.ts';
+import type { Lineup } from '../sim/series.ts';
 import { RULESET_VERSION } from '../sim/ruleset.ts';
 import {
   bestOfOf,
@@ -100,6 +102,8 @@ export function createSeriesSetup(
    * it stays up until a series in that format starts, so a Back and forth doesn't lose it.
    */
   const teaching = new Set<Format>();
+  /** Counts the steps opened, so a search that outlives its lineup starts nothing. */
+  let openings = 0;
   function formatBox(shown: Format): Steps | undefined {
     if (!teaching.has(shown) && !firstSeries.takeFormatBox(shown)) return undefined;
     teaching.add(shown);
@@ -178,35 +182,54 @@ export function createSeriesSetup(
     },
     onDone: (own) => {
       draft = own;
-      // The bot picks from the series seed, so the setup (and the link) fully decides the series.
-      // The first series' seed lets the bot show first (ADR 0090, D2): a seed, never a rule.
-      const first = guided();
-      const seed = first ? botShowsFirstSeed(generateSeed()) : generateSeed();
-      // Blind has no choices for a bot to make, so every level plays it alike: the default.
-      const against = first ? FIRST_SERIES.level : level;
-      const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : against, seed);
-      const setup: SeriesSetup = {
-        ruleset: RULESET_VERSION,
-        seed,
-        a: own,
-        b: botFor(opponent).pickLineup(seed, ballIds, bestOf),
-        opponent,
-        ...(format === 'blind' ? {} : { format }),
-        // Best of 3 writes no length, as every series before ADR 0048.
-        ...(bestOf === DEFAULT_BEST_OF ? {} : { bestOf }),
-      };
-      if (format !== 'blind') {
-        revealed = setup;
-        remember();
-        host.move(to('answer'));
-        open('answer');
-        return;
+      // The first series' seed is chosen for this lineup (ADR 0090 addendum "Tuned to teach"):
+      // searched between frames, the button busy meanwhile; a seed, never a rule.
+      if (!guided()) {
+        startWith(own, generateSeed(), level);
+        return undefined;
       }
-      remember();
-      teaching.delete('blind');
-      host.start(setup);
+      const opened = openings;
+      const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      return firstSeriesSeedSliced(
+        generateSeed(),
+        own,
+        ballIds,
+        lookup,
+        () => performance.now(),
+        pause,
+      ).then((seed) => {
+        // Left meanwhile (Back, a link): the lineup is no longer what starts.
+        if (opened !== openings) return;
+        startWith(own, seed, FIRST_SERIES.level);
+      });
     },
   });
+
+  /** The bot picks from the series seed, so the setup (and the link) fully decides the series. */
+  function startWith(own: Lineup, seed: number, against: string): void {
+    // Blind has no choices for a bot to make, so every level plays it alike: the default.
+    const opponent = botOpponent(format === 'blind' ? DEFAULT_BOT.id : against, seed);
+    const setup: SeriesSetup = {
+      ruleset: RULESET_VERSION,
+      seed,
+      a: own,
+      b: botFor(opponent).pickLineup(seed, ballIds, bestOf),
+      opponent,
+      ...(format === 'blind' ? {} : { format }),
+      // Best of 3 writes no length, as every series before ADR 0048.
+      ...(bestOf === DEFAULT_BEST_OF ? {} : { bestOf }),
+    };
+    if (format !== 'blind') {
+      revealed = setup;
+      remember();
+      host.move(to('answer'));
+      open('answer');
+      return;
+    }
+    remember();
+    teaching.delete('blind');
+    host.start(setup);
+  }
 
   const answer = createAnswerStep(lookup, {
     onBack: () => {
@@ -239,6 +262,7 @@ export function createSeriesSetup(
   });
 
   function open(step: SetupStep): void {
+    openings++;
     // The screen's accessible name says its length (ADR 0048); index.html's is Best of 3's.
     root.setAttribute('aria-label', `Best of ${String(bestOf)} setup`);
     for (const [name, section] of Object.entries(steps)) section.hidden = name !== step;
