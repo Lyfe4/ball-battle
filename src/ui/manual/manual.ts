@@ -2,6 +2,7 @@ import type { Matchup } from '../../app/matchup.ts';
 import type { BallDefinition } from '../../sim/types.ts';
 import { createBallGrid } from '../balls/ball-grid.ts';
 import { element, setText } from '../dom.ts';
+import { BALLS_TITLE } from './manual-title.ts';
 import { createScreenHeader } from '../screen-header.ts';
 import { createViewTabs } from '../view-tabs.ts';
 import { createMatchupSpectrum } from './matchup-spectrum.ts';
@@ -27,8 +28,6 @@ export interface Manual {
  * detail) with the previous and next balls at its foot, to step through the roster in order. Everything comes from the definitions and
  * the counter map, so it can't go stale.
  */
-/** The Balls tab's heading (ADR 0081: the tab's word; "Ball manual" before 2026-11-24). */
-const BALLS_TITLE = 'Balls';
 
 export function createManual(
   root: HTMLElement,
