@@ -505,6 +505,19 @@
   box-shadow: inset 0 0 0 2px var(--color-accent-2);
 }
 
+/*
+ * A game by turns and how one ended (waiting-rows.ts): one line of Open at the right, centred on
+ * the row, the words taking what is left and wrapping inside their column, so a long ending ("You
+ * won vs Sam: their turn ran out") never pushes Open onto a line of its own (2026-11-27).
+ */
+.friends-row[data-game] {
+  flex-wrap: nowrap;
+}
+
+.friends-row[data-game] > .friends-who {
+  flex: 1;
+}
+
 .friends-row:has(.friends-decline) {
   flex-wrap: wrap;
 }
