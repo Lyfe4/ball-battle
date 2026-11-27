@@ -24,16 +24,13 @@ export function createRanks(root: HTMLElement, host: RanksHost): RanksScreen {
   root.classList.add('ranks-screen');
   const header = createScreenHeader(RANKS.title, 'Back', host.back, { tab: 'ranks' });
   const body = element('div', 'ranks');
-  const intro = element('p', 'ranks-intro', RANKS.intro);
   const card = createComingSoon(RANKS.card.title, [], RANKS.card.line);
   const play = element('button', 'hud-button hud-button-primary', RANKS.button);
   play.type = 'button';
   play.addEventListener('click', host.playFriend);
-  // The card in the boards' box: on a desktop it fills the main column beside the intro and its
-  // button (frame.css, ADR 0087); on a phone it stands between them, as one column.
-  const boards = element('div', 'ranks-boards');
-  boards.append(card);
-  body.append(intro, boards, play);
+  // One card and its way on under it, one column at every size (ADR 0090 addendum): the card says
+  // it once, where an intro over it said it twice.
+  body.append(card, play);
   root.replaceChildren(header.element, body);
   return {
     setVisible(visible) {
