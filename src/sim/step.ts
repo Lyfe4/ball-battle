@@ -153,6 +153,8 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
 
   const isPhasedBall = (ball: BallState): boolean =>
     isPhased(ball, getDefinition(definitions, ball.definitionId));
+  // The balls as they come into a hit, before the bounce (a bump may read its target's speed).
+  const beforeCollisions = balls;
   const collisions = resolveCollisions(
     balls,
     size,
@@ -179,7 +181,7 @@ export function step(world: WorldState, definitions: DefinitionLookup): StepResu
     })),
   );
 
-  const combat = applyContactDamage(balls, newContacts, definitions, tick);
+  const combat = applyContactDamage(balls, newContacts, definitions, tick, beforeCollisions);
   balls = combat.balls;
   events.push(...combat.reduced, ...combat.damage);
 
