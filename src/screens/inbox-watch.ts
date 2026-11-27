@@ -33,12 +33,24 @@ const TICK_MS = 250;
 /** Read this long after a friend's lobby would stop: past the server's own moment. */
 export const STOP_MARGIN_MS = 500;
 
-/** How long until the first of the inbox's live challenges stops unless its sender is heard from. */
-export function nextStop(inbox: Pick<InboxResponse, 'invites'>): number | undefined {
+/**
+ * How long until the inbox's clock decides something nobody pokes about: the first of its live
+ * challenges stops unless its sender is heard from, or a game by turns or a turn runs out (its
+ * forfeit is written by the next read, which pokes both players). A deadline already past by this
+ * device's clock is left to that read and the safety read: never a read at once, again and again.
+ */
+export function nextStop(
+  inbox: Pick<InboxResponse, 'invites'> & Partial<Pick<InboxResponse, 'turns' | 'games'>>,
+  now = Date.now(),
+): number | undefined {
   const stops = inbox.invites.flatMap((one) =>
     one.live && one.stopsInMs !== undefined ? [one.stopsInMs] : [],
   );
-  return stops.length === 0 ? undefined : Math.min(...stops);
+  const runs = [...(inbox.turns ?? []), ...(inbox.games ?? [])]
+    .map((one) => Date.parse(one.deadline) - now)
+    .filter((ms) => ms > 0);
+  const all = [...stops, ...runs];
+  return all.length === 0 ? undefined : Math.min(...all);
 }
 
 export interface InboxWatchHost {
@@ -223,7 +235,7 @@ export function createInboxWatch(
     last = inbox;
     render();
     // A friend's lobby stops by the clock, which pokes nobody: read again just after it would, so
-    // the banner never outlives it (ADR 0089 addendum of 2026-11-27).
+    // the banner never outlives it (ADR 0089 addendum of 2026-11-27); so does a game by turns.
     const stops = nextStop(inbox);
     if (stops !== undefined) poll.soon(stops + STOP_MARGIN_MS);
   }

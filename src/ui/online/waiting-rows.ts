@@ -8,6 +8,7 @@ import {
   challengesYou,
   endingLine,
   gameName,
+  stillRunning,
   turnName,
   YOUR_GAMES,
 } from '../../screens/friends-text.ts';
@@ -121,8 +122,8 @@ function openRow(name: string, what: string, seriesId: string, host: WaitingRows
 }
 
 /**
- * Your games (ADR 0086): each game by turns waiting on the other player (whose turn, the time left,
- * Open), then each ending not seen yet ("You won vs Sam: their turn ran out"), gone once opened.
+ * Your games by turns (ADR 0086): each game by turns waiting on the other player (whose turn, the
+ * time left, Open) while its time runs, then each ending not seen yet ("You won vs Sam: their turn ran out"), gone once opened.
  * Undefined when there is nothing to list: the section isn't drawn.
  */
 export function gamesGroup(
@@ -131,11 +132,13 @@ export function gamesGroup(
   now: number,
   host: WaitingRowsHost,
 ): HTMLElement | undefined {
-  if (games.length + endings.length === 0) return undefined;
+  // One whose time ran out leaves at once: the server settles it on the next read (inbox-watch).
+  const running = games.filter((game) => stillRunning(game, now));
+  if (running.length + endings.length === 0) return undefined;
   const group = element('section', 'friends-group');
   group.dataset['group'] = 'games';
   const list = element('ul', 'friends-list');
-  for (const game of games) {
+  for (const game of running) {
     list.append(
       openRow(gameName(game), timeLeft(game.deadline, now) ?? '', game.seriesId, host).item,
     );
