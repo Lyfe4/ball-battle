@@ -17,6 +17,7 @@ import type { Side } from '../sim/index.ts';
 import type { Config } from './config.ts';
 import type { TransactionSql } from './db.ts';
 import { lobbyWaitingFor, lockPlayers, supersedeOutgoing } from './db/challenges.ts';
+import { blockedBetween } from './db/friends.ts';
 import { checkNotLive } from './one-game.ts';
 import {
   agreeRematch,
@@ -127,6 +128,8 @@ export async function moveRematch(
     const { a, b } = before.players;
     const other = side === 'a' ? b : a;
     if (answer === 'yes') {
+      // A block between them closes it (ADR 0079: the blocked player never reaches the blocker).
+      if (other !== null && (await blockedBetween(db, userId, other))) throw closed();
       if (state === 'none' && offerable(before)) {
         // Their live challenge already waits for this player: one invitation per pair, so theirs
         // is answered (its banner is on this screen), not crossed with a rematch.

@@ -12,6 +12,7 @@
 import type { FriendsResponse, ReportReason } from '../api/friends.ts';
 import { callOffBetween } from './db/challenges.ts';
 import { otherOf, ownRow } from './db/friends.ts';
+import { declineRematchesBetween } from './db/rematch.ts';
 import { listFriends } from './friends.ts';
 import { ApiError, type Deps } from './http.ts';
 import { LIMITS, spend } from './rate-limit.ts';
@@ -37,6 +38,8 @@ export async function blockFriend(deps: Deps, me: string, id: string): Promise<F
     }
     // Blocked by them already: their block holds the row, and they read as nobody to me.
     await callOffBetween(db, me, them);
+    // A rematch offer is a way to reach them too: it ends as a No thanks.
+    await declineRematchesBetween(db, me, them);
   });
   return listFriends(deps, me);
 }
