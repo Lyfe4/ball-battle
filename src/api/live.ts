@@ -31,6 +31,12 @@ export const GRACE_MS = 30_000;
 export const START_WINDOW_MS = 60_000;
 /** A sender's lobby stays open while their page has asked within this long. */
 export const LOBBY_SEEN_MS = 60_000;
+/**
+ * A live challenge to a friend waits this long for their answer (ADR 0089 addendum of 2026-11-28),
+ * then ends: the sender's lobby says they didn't answer, with Send again. A link to anyone has no
+ * answer window: it waits while its sender does.
+ */
+export const INVITE_ANSWER_MS = 60_000;
 
 /** Live play is offered in these formats only: Blind live is two players watching (decision 4). */
 export const LIVE_FORMATS: readonly Format[] = ['reveal', 'showdown'];

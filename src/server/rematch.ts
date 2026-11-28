@@ -3,6 +3,9 @@
 // series' row, so two answers at once are decided one after the other on any host; an ask out of
 // time is read against the database's `now()` and never written. The new match is a new live
 // series between the same two players, in the same format and length, with new seeds.
+// A rematch asked is a live invitation like a challenge to a friend (ADR 0089 addendum of
+// 2026-11-28): one per pair, one out per player. Every move takes both players' locks first, in
+// one order, then the series row, as a challenge sent or accepted does, so the two never cross.
 import {
   REMATCH_ANSWER_MS,
   REMATCH_OFFER_MS,
@@ -11,12 +14,17 @@ import {
   type RematchView,
 } from '../api/rematch.ts';
 import type { Side } from '../sim/index.ts';
+import type { Config } from './config.ts';
+import type { TransactionSql } from './db.ts';
+import { lobbyWaitingFor, lockPlayers, supersedeOutgoing } from './db/challenges.ts';
 import { checkNotLive } from './one-game.ts';
 import {
   agreeRematch,
   askRematch,
   declineRematch,
   rematchRow,
+  seriesPlayers,
+  withdrawRematchAsks,
   type RematchRow,
 } from './db/rematch.ts';
 import { ApiError, type Deps } from './http.ts';
@@ -111,25 +119,60 @@ export async function moveRematch(
 ): Promise<RematchView> {
   const answer = request.answer;
   return deps.sql.begin(async (db) => {
+    // Both players first (a series' players never change), then the series row: the order a
+    // challenge between them takes too, so a send and a rematch at once wait in turn.
+    await lockPlayers(db, (await seriesPlayers(db, seriesId)) ?? []);
     const { row: before, side } = playerOf(await rematchRow(db, seriesId, true), userId);
     const { state } = rematchStateOf(before);
     const { a, b } = before.players;
+    const other = side === 'a' ? b : a;
     if (answer === 'yes') {
-      if (state === 'none' && offerable(before)) await askRematch(db, seriesId, side);
-      else if (state === 'asked' && before.askedBy !== side && a !== null && b !== null) {
-        // Both players are in this match from the yes (one at a time, ADR 0053), each locked in a
-        // fixed order so two hosts never wait on each other; the lineups start at once.
-        for (const player of [a, b].sort()) await checkNotLive(db, deps.config, player);
-        await agreeRematch(db, seriesId);
-        await openStart(db, {
-          players: { a, b },
-          format: before.format,
-          bestOf: before.bestOf,
-          rematchOf: seriesId,
-        });
+      if (state === 'none' && offerable(before)) {
+        // Their live challenge already waits for this player: one invitation per pair, so theirs
+        // is answered (its banner is on this screen), not crossed with a rematch.
+        if (other !== null && (await lobbyWaitingFor(db, other, userId)) !== undefined) {
+          throw new ApiError(
+            409,
+            'their_challenge_waiting',
+            'They challenged you already: answer theirs',
+          );
+        }
+        // One live invitation out at a time: this player's waiting live challenge stops.
+        await supersedeOutgoing(db, userId, undefined, true);
+        await askRematch(db, seriesId, side);
+      } else if (state === 'asked' && before.askedBy !== side) {
+        await acceptRematchIn(db, deps.config, seriesId, before, userId);
       } else if (state !== 'asked' && state !== 'agreed' && state !== 'started') throw closed();
     } else if (state === 'asked') await declineRematch(db, seriesId, side);
     else if (state !== 'declined') throw closed();
     return viewOfRematch(playerOf(await rematchRow(db, seriesId), userId).row, side);
+  });
+}
+
+/**
+ * `agreer` says yes to the rematch asked of them on `seriesId` (`row`, read under its lock with
+ * both players' locks held): their own live invitations still out stop (a challenge, another
+ * rematch asked), both players are then in this match (one at a time, ADR 0053) and the lineups
+ * start at once. Answers the start's id. Also a live challenge sent to the player who asked
+ * (`createChallenge`): both want to play, so it is this yes, on the rematch's rules.
+ */
+export async function acceptRematchIn(
+  db: TransactionSql,
+  config: Config,
+  seriesId: string,
+  row: RematchRow,
+  agreer: string,
+): Promise<string> {
+  const { a, b } = row.players;
+  if (a === null || b === null) throw closed();
+  await supersedeOutgoing(db, agreer, undefined, true);
+  await withdrawRematchAsks(db, agreer, seriesId);
+  for (const player of [a, b].sort()) await checkNotLive(db, config, player);
+  await agreeRematch(db, seriesId);
+  return openStart(db, {
+    players: { a, b },
+    format: row.format,
+    bestOf: row.bestOf,
+    rematchOf: seriesId,
   });
 }

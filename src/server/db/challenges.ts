@@ -1,7 +1,7 @@
 // game.challenges: friend links (ADR 0052). Times are the database's: a link expires 7 days after
 // it was made, by `now()`; a live link (ADR 0053) stops once its sender's lobby has been silent for
 // LOBBY_SEEN_MS, or is cancelled.
-import { LOBBY_SEEN_MS } from '../../api/live.ts';
+import { INVITE_ANSWER_MS, LOBBY_SEEN_MS } from '../../api/live.ts';
 import type { BestOf, Format } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 
@@ -17,6 +17,8 @@ export interface ChallengeRow {
   readonly lineup: readonly string[] | null;
   readonly expiresAt: Date;
   readonly expired: boolean;
+  /** Ms from the read until it expires (0 once it has), by the database's clock. */
+  readonly expiresInMs: number;
   readonly seriesId: string | null;
   /** The lineups picked together once a live link was accepted (ADR 0080). */
   readonly startId: string | null;
@@ -37,6 +39,8 @@ export interface ChallengeRow {
   readonly declined: boolean;
   /** Called off by a newer challenge from the same sender (one outgoing at a time). */
   readonly superseded: boolean;
+  /** The friendship of the creator and the invitee (Send again names it), if they are friends. */
+  readonly inviteeFriend: string | null;
 }
 
 interface Raw {
@@ -48,6 +52,7 @@ interface Raw {
   readonly lineup: string[] | null;
   readonly expires_at: Date;
   readonly expired: boolean;
+  readonly expires_in_ms: number;
   readonly series_id: string | null;
   readonly start_id: string | null;
   readonly acceptor: string | null;
@@ -58,6 +63,7 @@ interface Raw {
   readonly invitee_name: string | null;
   readonly declined: boolean;
   readonly superseded: boolean;
+  readonly invitee_friend: string | null;
 }
 
 export async function challengeByHash(
@@ -87,6 +93,11 @@ async function challengeWhere(
   const [raw] = await db<Raw[]>`
     select c.id, c.creator, coalesce(p.username, p.display_name) as creator_name, c.format, c.best_of, c.lineup,
       c.expires_at, c.expires_at < now() as expired,
+      greatest(0, least(2e9, ceil(extract(epoch from (c.expires_at - now())) * 1000)))::int
+        as expires_in_ms,
+      (select f.id from game.friendships f
+        where f.low = least(c.creator, c.invitee) and f.high = greatest(c.creator, c.invitee)
+          and f.accepted_at is not null) as invitee_friend,
       coalesce(c.series_id, st.series_id) as series_id, c.start_id,
       coalesce(st.player_b, s.player_b) as acceptor,
       c.live, c.request_id, c.invitee, coalesce(i.username, i.display_name) as invitee_name,
@@ -111,6 +122,7 @@ async function challengeWhere(
         lineup: raw.lineup,
         expiresAt: raw.expires_at,
         expired: raw.expired,
+        expiresInMs: raw.expires_in_ms,
         seriesId: raw.series_id,
         startId: raw.start_id,
         accepted: raw.series_id !== null || raw.start_id !== null,
@@ -122,6 +134,7 @@ async function challengeWhere(
         inviteeName: raw.invitee_name,
         declined: raw.declined,
         superseded: raw.superseded,
+        inviteeFriend: raw.invitee_friend,
       };
 }
 
@@ -145,7 +158,9 @@ export async function insertChallenge(db: Db, challenge: NewChallenge): Promise<
     values (${challenge.tokenHash}, ${challenge.creator}, ${challenge.ruleset}, ${challenge.format},
       ${challenge.bestOf}, ${challenge.lineup === null ? null : [...challenge.lineup]},
       ${challenge.requestId},
-      now() + interval '7 days', ${challenge.live},
+      case when ${challenge.live} and ${challenge.invitee ?? null}::uuid is not null
+        then now() + make_interval(secs => ${INVITE_ANSWER_MS / 1000})
+        else now() + interval '7 days' end, ${challenge.live},
       case when ${challenge.live} then now() end, ${challenge.invitee ?? null})
     on conflict (creator, request_id) do nothing`;
 }
@@ -222,7 +237,7 @@ export async function lobbyWaitingFor(
   const [row] = await db<{ id: string }[]>`
     select id from game.challenges
     where creator = ${creator} and invitee = ${invitee} and live and series_id is null
-      and start_id is null and cancelled_at is null
+      and start_id is null and cancelled_at is null and expires_at > now()
       and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})
     order by created_at desc
     limit 1`;

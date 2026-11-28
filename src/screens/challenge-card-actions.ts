@@ -11,8 +11,8 @@ export interface CardMoves {
   /** Into the lineups being picked for it. */
   readonly lineups: (id: string) => Promise<unknown>;
   go(write: (params: URLSearchParams) => void): void;
-  /** Challenge a friend: the one vs Friend path (ADR 0089 addendum of 2026-11-27). */
-  readonly friend: () => void;
+  /** Challenge a friend: the one vs Friend path (ADR 0089 addendum of 2026-11-27), `id` picked. */
+  readonly friend: (id?: string) => void;
   /** Cancel challenge, on the waiting screen. */
   readonly cancel: () => Promise<unknown>;
   readonly unblock: (pair: string) => Promise<unknown>;
@@ -29,7 +29,12 @@ export function cardActionsFor(token: string, moves: CardMoves): CardActions {
         writeOnlineSeriesParams(url, id);
       });
     },
-    sendOwn: moves.friend,
+    sendOwn: () => {
+      moves.friend();
+    },
+    sendAgain: (id) => {
+      moves.friend(id);
+    },
     share: () => shareLink(token),
     url: challengeUrl(token),
     canShare: typeof navigator.share === 'function',
