@@ -24,12 +24,14 @@ import {
   friendCounts,
   friendRows,
   insertRequest,
+  otherOf,
   ownRow,
   pairRow,
   renewRequest,
   withdrawRow,
   type FriendCounts,
 } from './db/friends.ts';
+import { callOffBetween } from './db/challenges.ts';
 import { friendStatuses } from './db/inbox.ts';
 import { ApiError, type Deps } from './http.ts';
 import { LIMITS, spend } from './rate-limit.ts';
@@ -174,7 +176,7 @@ export async function acceptFriend(deps: Deps, me: string, id: string): Promise<
       throw new ApiError(404, 'not_found', 'That request is gone');
     }
     if (row.accepted || row.requestedBy === me) return;
-    await accept(db, me, row.low === me ? row.high : row.low, row.id);
+    await accept(db, me, otherOf(row, me), row.id);
   });
   return listFriends(deps, me);
 }
@@ -190,8 +192,11 @@ export async function removeFriend(deps: Deps, me: string, id: string): Promise<
     // A block is undone only by Unblock; blocked, cancelling hides the request and keeps the row.
     if (row.blockedBy === me) return;
     if (row.blockedBy !== null) await withdrawRow(db, row.id, true);
-    else if (row.accepted) await deleteRow(db, row.id);
-    else if (row.requestedBy !== me) await declineRow(db, row.id);
+    else if (row.accepted) {
+      await deleteRow(db, row.id);
+      // No longer friends: a challenge either way that hasn't started ends, as with a block.
+      await callOffBetween(db, me, otherOf(row, me));
+    } else if (row.requestedBy !== me) await declineRow(db, row.id);
     // A declined request stays until its 30 days are up, so cancelling it can't clear the way.
     else if (row.declinedRecently) await withdrawRow(db, row.id, true);
     else await deleteRow(db, row.id);

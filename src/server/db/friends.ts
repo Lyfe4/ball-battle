@@ -174,3 +174,7 @@ export async function purgeDeclines(sql: Sql): Promise<number> {
     returning 1`;
   return rows.length;
 }
+
+/** The pair's other account. */
+export const otherOf = (row: { low: string; high: string }, me: string): string =>
+  row.low === me ? row.high : row.low;
