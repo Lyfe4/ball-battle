@@ -491,7 +491,7 @@ re-send spends nothing, seen failing with codes counted; the hourly cap),
 seen failing without it), `friends-section.browser.test.ts` (More, Keep first, Block, Report,
 Unblock), `scripts/reports.test.ts`, `legal-pages.test.ts`, `inbox.db.test.ts`.
 
-## Addendum (2026-11-28, launch eve): a captcha before the email code, proposed, not built
+## Addendum (2026-11-28, launch eve): a captcha before the email code. Built (after launch), off until keys
 
 The audit's list 5, item 1: anyone rotating networks can spend everyone's email codes for a day.
 The launch-eve brief asked for Cloudflare Turnstile before the code, off unless a site key is set,
@@ -532,3 +532,70 @@ code, for three reasons found while reading:
 - The privacy page gains Cloudflare (it sees the IP and the browser) before it is switched on.
 - Meanwhile the early warning stays the runbook's `emailCodes` keyword monitor (`near` at 70 a
   day), and `BALLBATTLE_EMAIL_CODES=off` is the emergency switch (Google sign-in goes on).
+
+### As built (after launch), off until keys
+
+Built from the plan above, with what measuring changed. Nothing is on anywhere: no deploy has the
+keys, and Supabase's own captcha setting stays off.
+
+- **The route.** `POST /auth/email` takes `captcha`; `checkCaptcha` (`email-sign-in.ts`) runs after
+  the 16+ and live-match checks and before any code is counted, and `verifyTurnstile`
+  (`src/server/turnstile.ts`) sends `siteverify` the secret, the token and `remoteip`, with a 3 s
+  timeout. It passes only on `success` with the request's own hostname and the action
+  `email-code` (Cloudflare's test secrets answer `example.com` and no action, so those two are
+  skipped only under a test secret). A missing, wrong, spent or foreign token is 400
+  `captcha_failed`, "We couldn't check you're a person: try again", under the email field with a
+  new widget. Cloudflare slow, down, failing or refusing our secret is 503 `captcha_failed`,
+  reported, "try again in a minute, or continue with Google": never a code unchecked.
+- **Only a first code.** Not every send, as the plan read: Send a new code to the same address from
+  the same device within its sealed cookie's 10 minutes passes without a token (the code card has
+  no widget, and every code to one address is counted per address anyway). Another address or
+  another device needs a check of its own, so one solved widget can't spend everyone's codes. The
+  page sends a token unless it is resending the same address within 9 minutes.
+- **Off unless both.** The functions check only with `BALLBATTLE_TURNSTILE_SITE_KEY` and
+  `TURNSTILE_SECRET_KEY` both set; one alone is off, never a ConfigError (which would take every
+  route down, Forget me included). Production builds `VITE_TURNSTILE_SITE_KEY` from the same
+  site-key variable (netlify.toml), so the page and the functions are switched together; staging
+  would set `VITE_TURNSTILE_SITE_KEY` in the dashboard beside them. Without it, `captchaFor` is
+  undefined, the widget's chunk and loader are dropped, and `check-bundle.ts` fails a build that
+  holds `challenges.cloudflare.com` (`CAPTCHA_MARK`); what stays is inert plumbing (the field
+  passed through, the error code).
+- **The page.** The widget is its own chunk (about 1 kB), fetched the first time the email field
+  shows, never on the first load. It sits in a box under the field reserved at 65 px; Turnstile
+  puts its frame inline, which grew the box to 68.5-69 px, so the box has no font size and stays
+  65 px before and after in all three engines. A notice moves its parts on every show, which
+  reloads a frame, so the widget is rendered afresh each time the card shows, and reset after each
+  send (tokens are single-use). Sending waits for the token (up to 60 s, for a check that wants a
+  click) with the button busy; a widget that fails or never loads is the one failure card,
+  "We couldn't check you're a person", Try again back to the ways in.
+- **The CSP and Trusted Types, measured.** `scripts/turnstile-probe.ts` serves the production
+  headers and runs the page's own check with Cloudflare's test keys in Chromium 158, Firefox 159
+  and WebKit 27.2. Under the proposed policy the one violation was our own loader setting
+  `script.src` from a string (`require-trusted-types-for`, sink "HTMLScriptElement src"), in all
+  three. The loader now makes that one URL through a Trusted Types policy of its own
+  (`turnstile`, which refuses any other URL); after it, no `securitypolicyviolation` event and no
+  CSP or Trusted Types console line in any engine, with the passing (1x), failing (2x) and
+  click-to-pass (3x) keys, and siteverify accepted the passing key's token. Firefox logs
+  Cloudflare's frame asking for features it doesn't know (`cross-origin-isolated`, `autoplay`,
+  `keyboard-map`, `xr-spatial-tracking`) as warnings. So the CSP gained exactly
+  `https://challenges.cloudflare.com` in `script-src` and a new `frame-src`: no default policy,
+  nothing unsafe, no other directive. It is its own commit rather than its own pull request, as
+  the owner asked. The probe needs the network, so it is run by hand, not in CI; the CSP test
+  pins the two directives and that nothing unsafe or a default policy creeps in.
+- **Tests.** `turnstile.test.ts` (a fake siteverify: success, refusals, another host or action,
+  the test secret, timeout, unreachable, 5xx, our secret refused, nothing logged of the token or
+  secret), `email-captcha.db.test.ts` (on: no token, a refused token, a good one with the
+  player's IP, the same address again without one, another address and another device needing
+  their own, Cloudflare down; off: nothing asks Cloudflare; seen failing with the check removed
+  and with the same-address pass removed), `sign-in.browser.test.ts` (the real controller over a
+  fake widget: the box under the field, the token sent, a new one per address and after a
+  refusal, the failure card; seen failing with the token left out of the body), `config`,
+  `check-bundle`, `security-headers` and `legal-pages` tests.
+- **Privacy.** `privacy.html` names Cloudflare (it sees the IP address and the browser while the
+  check runs; the server sends it the token and the IP) and changes its date.
+
+To switch it on, staging first: make a Turnstile widget in Cloudflare (managed, the site's
+hostnames: staging's, production's and `localhost` for `netlify dev`), set
+`BALLBATTLE_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` for the functions and
+`VITE_TURNSTILE_SITE_KEY` for staging's build, redeploy, and sign in with an email code on a phone
+and a desktop.
