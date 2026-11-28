@@ -17,10 +17,9 @@ export const BALLOON_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'balloon',
     y: 'speedster',
-    intended: 'x',
-    level: 'edge',
+    intended: 'even',
     reason:
-      'The Balloon bumps for 24 every time; the Speedster needs wall bounces to hit that hard.',
+      'The Balloon bumps for 24; the Speedster’s bounces build its bump that high, and often.',
   },
   {
     x: 'balloon',
