@@ -490,3 +490,45 @@ re-send spends nothing, seen failing with codes counted; the hourly cap),
 `email-sign-in.db.test.ts` (four paths each at least the floor and within 250 ms of each other,
 seen failing without it), `friends-section.browser.test.ts` (More, Keep first, Block, Report,
 Unblock), `scripts/reports.test.ts`, `legal-pages.test.ts`, `inbox.db.test.ts`.
+
+## Addendum (2026-11-28, launch eve): a captcha before the email code, proposed, not built
+
+The audit's list 5, item 1: anyone rotating networks can spend everyone's email codes for a day.
+The launch-eve brief asked for Cloudflare Turnstile before the code, off unless a site key is set,
+its token passed through our route to Supabase Auth's own captcha check. It was stopped before any
+code, for three reasons found while reading:
+
+1. **The CSP can't hold it only when on.** Turnstile needs a script and a frame from
+   `https://challenges.cloudflare.com` (`script-src`, `frame-src`). The CSP is one static header
+   in `netlify.toml` for every context (ADR 0052, `security-headers.ts`); a variable can't widen
+   it, and a second header only narrows it. So "off" would still mean production's CSP trusting a
+   third party's script on every page from launch day. Unlike the page's error reports (ADR 0093),
+   a widget can't go through our own origin.
+2. **Trusted Types.** The CSP requires `require-trusted-types-for 'script'`; whether Turnstile's
+   script works under it is unknown and can only be shown with a real site key in a real build.
+3. **Supabase's captcha setting is project-wide.** Switched on, Auth asks for a token on sign-ups,
+   anonymous ones included, and on `/otp`. Our guests are made by the functions (`signup`
+   anonymously, `auth.ts`), so guest creation would need a token too or stop; and whether Auth
+   exempts calls made with the secret key isn't documented, so it can't be relied on either way.
+   A Turnstile token is also single-use: our route and Auth can't both verify it.
+
+**What to build after launch, staging first:**
+
+- Verify the token in our own route, never through Auth's setting (leave it off): `POST
+/auth/email` takes `captcha`, and `sendCode` checks it with Cloudflare's `siteverify` (secret
+  `TURNSTILE_SECRET_KEY`, the player's IP as `remoteip`, a 3 s timeout) before any code is counted,
+  refusing `captcha_failed`: "We couldn't check you're a person: try again". Only a device without
+  an account asks (a signed-in player never sends codes).
+- Off unless both are set: the page's site key at build time (`VITE_TURNSTILE_SITE_KEY` from
+  `BALLBATTLE_TURNSTILE_SITE_KEY`, as the other switches) and the functions' secret; off, exactly
+  today's behaviour, and `check-bundle.ts` refuses the widget's code in a build without it.
+- The CSP change is its own pull request with its own decision: `script-src` and `frame-src`
+  gain `https://challenges.cloudflare.com`, checked under Trusted Types with Cloudflare's test
+  keys (`1x00000000000000000000AA` passes, `2x00000000000000000000AB` fails) in `pnpm preview`
+  in all three engines.
+- The widget sits in a box reserved at its size (65 px, the tip-card style) under the email field,
+  so nothing jumps; Turnstile's own label is its accessible name, and a failure is the one
+  failure card with Try again.
+- The privacy page gains Cloudflare (it sees the IP and the browser) before it is switched on.
+- Meanwhile the early warning stays the runbook's `emailCodes` keyword monitor (`near` at 70 a
+  day), and `BALLBATTLE_EMAIL_CODES=off` is the emergency switch (Google sign-in goes on).

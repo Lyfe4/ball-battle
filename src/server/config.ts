@@ -46,6 +46,11 @@ export interface Config {
   /** Sentry's DSN, when errors are reported (PII off). */
   readonly sentryDsn: string | undefined;
   /**
+   * Whether pages' own errors are taken (POST /client-error, launch eve): `BALLBATTLE_ERROR_REPORTS=1`
+   * with online play on and `SENTRY_DSN` set. Off, the route answers 404 and sends nothing.
+   */
+  readonly errorReports: boolean;
+  /**
    * The Realtime poke's browser key (ADR 0082): `SUPABASE_BROWSER_KEY`, a publishable key of its
    * own, handed to a player's page by GET /me/poke while `BALLBATTLE_POKE=1` (only with online play
    * on); undefined means pokes are off. Never the functions' own publishable key: this one can be
@@ -147,6 +152,8 @@ function settingsOf(env: Readonly<Record<string, string | undefined>>, online: b
     seedKeys: keys,
     currentSeedKey: current,
     sentryDsn: dsn === undefined || dsn === '' ? undefined : dsn,
+    errorReports:
+      online && env['BALLBATTLE_ERROR_REPORTS'] === '1' && dsn !== undefined && dsn !== '',
     pokeKey:
       online && env['BALLBATTLE_POKE'] === '1' ? required(env, 'SUPABASE_BROWSER_KEY') : undefined,
   };

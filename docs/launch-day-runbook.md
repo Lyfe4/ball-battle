@@ -25,9 +25,21 @@ main --limit 1` says success.
    Recommended: Supabase Pro for production before accounts go live (daily backups kept 7 days),
    then one restore drill (restore a backup into a scratch project and open it). You should see:
    Supabase > production > Database > Backups lists a backup from today.
-4. **Optional, recommended: error reporting.** Create a free Sentry project and set `SENTRY_DSN`
-   for Production and Branch deploys in Netlify (the server already reports to it,
-   `src/server/monitor.ts`). You should see: a test error from staging appears in Sentry.
+4. **Optional, recommended: error reporting** (ADR 0093). Server and page errors both reach
+   Sentry through the functions, scrubbed; the page only ever posts to its own
+   `/api/v1/client-error`, so no CSP change and no DSN in the page. Off until all of these are set.
+   Staging first:
+   1. A privacy line first, merged green: under "Who else handles it", **Sentry**, a US company,
+      receives error reports from the game's server and pages: what failed and where in the code,
+      never your IP address, guest ID, name, email address or what you typed. Date the page.
+   2. A free Sentry project; Netlify > Environment variables, Branch deploys: `SENTRY_DSN` (the
+      project's DSN, Functions), `BALLBATTLE_ERROR_REPORTS` = `1` (Builds, Functions) and
+      `VITE_ERROR_REPORTS` = `1` (Builds). Trigger a staging deploy.
+   3. You should see: in a staging page's console, `Promise.reject(new Error('test 1234'))` appears
+      in Sentry within a minute as `test <n>`, platform javascript, with no IP or user.
+   4. Then Production: `SENTRY_DSN` and `BALLBATTLE_ERROR_REPORTS` = `1` (production builds
+      `VITE_ERROR_REPORTS` from it). Undo: delete `BALLBATTLE_ERROR_REPORTS`, deploy (the page's
+      reporter goes; the server's own reports stay while `SENTRY_DSN` is set).
 
 ## 1. Netlify Pro, functions in Sydney
 
@@ -205,5 +217,9 @@ again later, merge a fix to `main` and run Publish.
 ## The week after
 
 - Daily: the Supabase daily check is green; Resend > Emails shows no bounces.
+- Leave Supabase > Authentication > Attack Protection > **captcha off**. It is project-wide:
+  on, Auth asks for a token on anonymous sign-ups too, and the functions make every guest that
+  way, so guests would stop. A Turnstile check before the email code is proposed, built in our
+  own route (ADR 0079 addendum of 2026-11-28); until then the `emailCodes` monitor is the warning.
 - Weekly: Netlify > Usage (credits against 3,000), Supabase > Usage (Realtime messages and
   connections), `node scripts/reports.ts production` (reported names).

@@ -11,4 +11,6 @@ interface ImportMetaEnv {
   readonly VITE_POKE?: string;
   /** "1" in builds offering play by turns (ADR 0085): previews and staging, never production. */
   readonly VITE_TURNS?: string;
+  /** "1" in builds that report the page's own errors (launch eve, `src/app/error-report.ts`). */
+  readonly VITE_ERROR_REPORTS?: string;
 }

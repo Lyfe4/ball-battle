@@ -171,6 +171,11 @@ export const LIMITS = {
   },
   /** Accepting, declining, cancelling, removing, blocking and unblocking by one account. */
   friendChanges: { bucket: 'friend.change', max: 120, windowSeconds: 3600 },
+  /**
+   * A page's error reports from one network (launch eve): a page sends at most 5 a load, so a
+   * class of players hitting one bug fits, and a script can't spend the error service's quota.
+   */
+  pageErrors: { bucket: 'page.error', max: 60, windowSeconds: 3600 },
   /** A Google sign-in's state, used once (ADR 0079): a copied cookie can't finish it again. */
   googleState: { bucket: 'google.state', max: 1, windowSeconds: 600 },
 } as const satisfies Record<string, Limit>;

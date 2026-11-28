@@ -19,7 +19,7 @@ function section(name: string): string {
 describe('the vs Friend switch', () => {
   it('builds production’s client from BALLBATTLE_ONLINE, unset meaning off', () => {
     expect(section('context.production')).toContain(
-      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" VITE_ACCOUNTS=\\"${BALLBATTLE_ACCOUNTS:-}\\" VITE_POKE=\\"${BALLBATTLE_POKE:-}\\" VITE_TURNS=\\"${BALLBATTLE_TURNS:-}\\" pnpm build"',
+      'command = "VITE_ONLINE=\\"${BALLBATTLE_ONLINE:-}\\" VITE_ACCOUNTS=\\"${BALLBATTLE_ACCOUNTS:-}\\" VITE_POKE=\\"${BALLBATTLE_POKE:-}\\" VITE_TURNS=\\"${BALLBATTLE_TURNS:-}\\" VITE_ERROR_REPORTS=\\"${BALLBATTLE_ERROR_REPORTS:-}\\" pnpm build"',
     );
   });
 
