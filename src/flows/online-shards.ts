@@ -22,8 +22,8 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['lineups-together.online.test.ts', 158],
     ['challenge-on-end.online.test.ts', 120],
     ['sign-in.online.test.ts', 18],
-    // Estimated (2026-11-27): one two-phone flow with two sign-ins, about 90 s.
-    ['one-game.online.test.ts', 90],
+    // Measured locally (2026-11-29): three phones asleep past a clock, a minute or more each.
+    ['phone-sleep.online.test.ts', 240],
   ],
   [
     ['slime-live.online.test.ts', 167],
@@ -38,6 +38,10 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['offline-lineup.online.test.ts', 40],
     // Estimated (2026-11-27): six two-phone flows with sign-ins, about a minute each.
     ['friend-states.online.test.ts', 120],
+    // Estimated (2026-11-27): one two-phone flow with two sign-ins, about 90 s.
+    ['one-game.online.test.ts', 90],
+    // Measured locally (2026-11-29): four two-phone flows, each ended by a Leave.
+    ['leave-and-return.online.test.ts', 38],
   ],
 ];
 
