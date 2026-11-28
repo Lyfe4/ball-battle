@@ -38,8 +38,9 @@ also cuts each database round trip from about 190 ms to a few.
 1. Netlify > team > Billing > Change plan > Pro. (Leaving the legacy plan is permanent.)
 2. Netlify > `battle-ball` > Project configuration > Build & deploy > Functions region > Asia
    Pacific (Sydney). Nothing is live until the next deploy (step 3).
-3. A small pull request changing `privacy.html`: Netlify's line says the server runs in Ohio;
-   make it Sydney, Australia, with today's date. Merge it green before step 3.
+3. `privacy.html` already says the server code runs in Sydney, Australia, dated 29 November 2026
+   (merged the night before, live with step 3's publish). If launch moves past 29 November, a
+   small pull request changing only the date, merged green before step 3.
 
 You should see: Billing says Pro; after step 3, the production deploy's Functions tab says Sydney.
 Undo: the region setting back to Ohio and a deploy (and the privacy line). The plan can't go back.
@@ -73,7 +74,9 @@ You should see, within about 5 minutes:
 
 - the run green; Netlify > Deploys: a production deploy of `release`, Published;
 - `curl -s https://battle-ball.netlify.app/api/v1/health`: `"status":"ok"`, `"ruleset":24` (or
-  today's), `"accounts":"off"`, `"pokes":"off"`, `"turns":"off"`, `"emailSends":"ok"`;
+  today's), `"accounts":"off"`, `"pokes":"off"`, `"turns":"off"`, `"emailSends":"ok"`,
+  `"dbMatchesUrl":true` (the functions' database is production's project; `false` means
+  `DATABASE_URL` points elsewhere: roll back at once, fix the variable, deploy again);
 - `node scripts/smoke.ts --read-only`: every line PASS.
 
 Undo: Netlify > Deploys > the previous production deploy > Publish deploy. Migrations stay.

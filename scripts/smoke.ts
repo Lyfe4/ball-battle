@@ -91,6 +91,13 @@ async function health(): Promise<void> {
       .map(([k, v]) => `${k}=${v}`)
       .join(' ')}`,
   );
+  // The functions' database is SUPABASE_URL's project (launch eve): DATABASE_URL is masked.
+  const matches = body['dbMatchesUrl'];
+  if (typeof matches === 'boolean') {
+    report(matches, 'database is SUPABASE_URL’s project', `dbMatchesUrl ${String(matches)}`);
+  } else {
+    console.log('      dbMatchesUrl: not reported by this deploy');
+  }
   for (const [name, want] of expected) {
     const got =
       name === 'accounts' && want === 'on' ? (seen[name] === 'ok' ? 'on' : seen[name]) : seen[name];

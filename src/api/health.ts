@@ -59,6 +59,13 @@ export interface HealthResponse {
    */
   readonly pokes?: Switched;
   readonly turns?: Switched;
+  /**
+   * Whether the database the functions connect to is the project SUPABASE_URL names (launch eve,
+   * `src/server/project-ref.ts`): DATABASE_URL is masked in Netlify, so this is how a deploy
+   * pointing at another project's database shows. Never changes the status; the smoke check
+   * fails on false. Optional: a deploy before it doesn't say.
+   */
+  readonly dbMatchesUrl?: boolean;
 }
 
 export type Switched = 'on' | 'off';
