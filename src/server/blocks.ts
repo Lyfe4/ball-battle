@@ -10,30 +10,14 @@
 // (scripts/reports.ts); from then on the reporter sees that player as "Player 1234" until the name
 // changes (`game.name_seen_by`). Counted per account a day before anything is written.
 import type { FriendsResponse, ReportReason } from '../api/friends.ts';
-import type { TransactionSql } from './db.ts';
-import { ownRow } from './db/friends.ts';
+import { callOffBetween } from './db/challenges.ts';
+import { otherOf, ownRow } from './db/friends.ts';
+import { declineRematchesBetween } from './db/rematch.ts';
 import { listFriends } from './friends.ts';
 import { ApiError, type Deps } from './http.ts';
 import { LIMITS, spend } from './rate-limit.ts';
 
 const gone = () => new ApiError(404, 'not_found', 'That player is gone');
-
-/** The pair's other account. */
-const otherOf = (row: { low: string; high: string }, me: string) =>
-  row.low === me ? row.high : row.low;
-
-/** Calls off challenges between the two that haven't started: the blocker's, and theirs. */
-async function callOffChallenges(db: TransactionSql, me: string, them: string): Promise<void> {
-  await db`
-    update game.challenges set cancelled_at = coalesce(cancelled_at, now())
-    where creator = ${me} and invitee = ${them} and series_id is null and start_id is null`;
-  // Theirs reads to them as "No thanks", the answer any friend may give: a live one ends, as a
-  // No thanks does (friend-challenge.ts).
-  await db`
-    update game.challenges set invitee_declined_at = coalesce(invitee_declined_at, now()),
-      cancelled_at = case when live then coalesce(cancelled_at, now()) else cancelled_at end
-    where creator = ${them} and invitee = ${me} and series_id is null and start_id is null`;
-}
 
 /** Blocks the other side of friendship `id`: a friend, a request either way, a challenge's sender. */
 export async function blockFriend(deps: Deps, me: string, id: string): Promise<FriendsResponse> {
@@ -53,7 +37,9 @@ export async function blockFriend(deps: Deps, me: string, id: string): Promise<F
         where id = ${row.id}`;
     }
     // Blocked by them already: their block holds the row, and they read as nobody to me.
-    await callOffChallenges(db, me, them);
+    await callOffBetween(db, me, them);
+    // A rematch offer is a way to reach them too: it ends as a No thanks.
+    await declineRematchesBetween(db, me, them);
   });
   return listFriends(deps, me);
 }

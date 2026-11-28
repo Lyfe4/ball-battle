@@ -158,6 +158,19 @@ export async function withdrawRematchAsks(db: Db, player: string, keep?: string)
       ${keep === undefined ? db`` : db`and r.series_id <> ${keep}`}`;
 }
 
+/**
+ * Ends every rematch offer between `x` and `y` still waiting for an answer, as a No thanks from
+ * the one asked (a block, ADR 0079: the blocked player never reaches the blocker again).
+ */
+export async function declineRematchesBetween(db: Db, x: string, y: string): Promise<void> {
+  await db`
+    update game.rematches r set declined_by = case when r.asked_by = 'a' then 'b' else 'a' end
+    from game.series s
+    where s.id = r.series_id and r.asked_by is not null and r.agreed_at is null
+      and r.declined_by is null
+      and ((s.player_a = ${x} and s.player_b = ${y}) or (s.player_a = ${y} and s.player_b = ${x}))`;
+}
+
 /** The two players of a series (fixed once made), read before their locks are taken. */
 export async function seriesPlayers(
   db: Db,

@@ -174,3 +174,16 @@ export async function purgeDeclines(sql: Sql): Promise<number> {
     returning 1`;
   return rows.length;
 }
+
+/** The pair's other account. */
+export const otherOf = (row: { low: string; high: string }, me: string): string =>
+  row.low === me ? row.high : row.low;
+
+/** Whether either of `x` and `y` has blocked the other. */
+export async function blockedBetween(db: Db, x: string, y: string): Promise<boolean> {
+  const [low, high] = x < y ? [x, y] : [y, x];
+  const [row] = await db<{ blocked: boolean }[]>`
+    select exists (select 1 from game.friendships
+      where low = ${low} and high = ${high} and blocked_by is not null) as blocked`;
+  return row?.blocked ?? false;
+}
