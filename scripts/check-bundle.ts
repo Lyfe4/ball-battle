@@ -49,6 +49,12 @@ export const POKE_MARK = /\bme\/poke\b|realtime\/v1\/websocket|phx_join/;
 export const TURNS_MARK = /\bBy turns\b/;
 
 /**
+ * What only the page's error reports contain (launch eve): their route. A build without
+ * `VITE_ERROR_REPORTS` (every build until it is set) holds none of it: no reporter, no listener.
+ */
+export const ERROR_REPORT_MARK = /\bclient-error\b/;
+
+/**
  * What is wrong with one bundled file: `online` says whether this build may call the API,
  * `accounts` whether it may sign in, and `poke` whether it may open the poke's socket.
  */
@@ -59,6 +65,7 @@ export function problemsIn(
   accounts = online,
   poke = false,
   turns = false,
+  errorReports = false,
 ): string[] {
   const problems = SECRET_MARKS.filter((mark) => mark.test(text)).map(
     (mark) => `${name} holds something shaped like a secret (${mark.source.slice(0, 20)}…)`,
@@ -75,6 +82,9 @@ export function problemsIn(
   if (!turns && TURNS_MARK.test(text)) {
     problems.push(`${name} offers play by turns in a build without it (VITE_TURNS unset)`);
   }
+  if (!errorReports && ERROR_REPORT_MARK.test(text)) {
+    problems.push(`${name} reports errors in a build without it (VITE_ERROR_REPORTS unset)`);
+  }
   return problems;
 }
 
@@ -88,13 +98,21 @@ function filesIn(dir: string): string[] {
  * Checks dist/ and fails the process on any problem; `online` is whether it may call the API,
  * `accounts` whether it may sign in, `poke` whether it may open the poke's socket.
  */
-export function reportDist(online: boolean, accounts = false, poke = false, turns = false): void {
+export function reportDist(
+  online: boolean,
+  accounts = false,
+  poke = false,
+  turns = false,
+  errorReports = false,
+): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
   const files = filesIn(dist)
     .filter((file) => /\.(?:js|html|css|json|webmanifest)$/.test(file))
     .map((file) => ({ name: file.slice(dist.length + 1), text: readFileSync(file, 'utf8') }));
   const problems = [
-    ...files.flatMap(({ name, text }) => problemsIn(name, text, online, accounts, poke, turns)),
+    ...files.flatMap(({ name, text }) =>
+      problemsIn(name, text, online, accounts, poke, turns, errorReports),
+    ),
     // The size budget (bundle-budget.ts), in the same check so CI's build job holds it.
     ...budgetProblems(files),
   ];
@@ -113,5 +131,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     online && process.env['VITE_ACCOUNTS'] === '1',
     online && process.env['VITE_POKE'] === '1',
     online && process.env['VITE_TURNS'] === '1',
+    online && process.env['VITE_ERROR_REPORTS'] === '1',
   );
 }

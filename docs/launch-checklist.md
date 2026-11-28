@@ -41,7 +41,9 @@ Projects: staging is Netlify `main--battle-ball.netlify.app` with Supabase `ball
 | `GOOGLE_CLIENT_ID`         | yes    | set           | empty                                      | production's client id (step 7)                                                                                                      |
 | `GOOGLE_CLIENT_SECRET`     | yes    | set           | empty                                      | production's secret (step 7); scope to Functions                                                                                     |
 | `BALLBATTLE_EMAIL_CODES`   | no     | not set (on)  | not set (on)                               | keep unset; `off` is the emergency switch                                                                                            |
-| `SENTRY_DSN`               | yes    | not set       | not set                                    | recommended: set for both (server errors are already built to report there)                                                          |
+| `SENTRY_DSN`               | yes    | not set       | not set                                    | recommended: set for both, staging first, after the privacy line (runbook "Before the day", step 4)                                  |
+| `BALLBATTLE_ERROR_REPORTS` | no     | not set (off) | not set (off)                              | `1` with `SENTRY_DSN` to take pages' error reports (Builds, Functions; production builds `VITE_ERROR_REPORTS` from it)               |
+| `VITE_ERROR_REPORTS`       | no     | not set (off) | not set                                    | staging only: `1` beside the one above (branch deploys build from it); never set for production                                      |
 
 ## Supabase: Auth
 

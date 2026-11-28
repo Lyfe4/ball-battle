@@ -4,6 +4,10 @@
 // body or user is ever in an event, so personal data stays off whatever an SDK's defaults become.
 // It speaks Sentry's documented envelope protocol with `fetch`, rather than the Node SDK, whose
 // OpenTelemetry instrumentation a function has no use for and Netlify's bundler can't trace.
+// A page's own errors (launch eve) come through POST /api/v1/client-error and leave here too
+// (`pageEventOf`), scrubbed again by `pageScrubbed`.
+import type { ClientErrorReport } from '../api/client-error.ts';
+import { pageScrubbed, pageStackScrubbed, scrubbed } from '../api/scrub.ts';
 
 /** Where events go, read from a DSN: `https://<key>@<host>/<project>`. */
 export interface SentryTarget {
@@ -41,9 +45,13 @@ interface Frame {
 export function framesOf(stack: string | undefined): Frame[] {
   const frames: Frame[] = [];
   for (const line of (stack ?? '').split('\n').slice(1)) {
-    const match = /^\s*at (?:(.+?) \()?(.+?):(\d+):(\d+)\)?$/.exec(line);
+    const match =
+      /^\s*at (?:(.+?) \()?(.+?):(\d+):(\d+)\)?$/.exec(line) ??
+      // Firefox and Safari: `name@file:line:column`, the name possibly empty.
+      /^\s*(?:([^@\s]*)@)?(\S+?):(\d+):(\d+)$/.exec(line);
     if (match === null) continue;
-    const [, name, file, row, column] = match;
+    const [, rawName, file, row, column] = match;
+    const name = rawName === '' ? undefined : rawName;
     frames.push({
       ...(name === undefined ? {} : { function: name }),
       ...(file === undefined ? {} : { filename: file }),
@@ -54,17 +62,7 @@ export function framesOf(stack: string | undefined): Frame[] {
   return frames.reverse();
 }
 
-/**
- * An error's message as it leaves for the error service (2026-11-28 audit): an email address or a
- * `(key)=(value)` pair (a database detail) is replaced, and it is cut at 300 characters, so a
- * message that quotes what a player sent (a JSON parse error, say) carries none of it.
- */
-export function scrubbed(message: string): string {
-  return message
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '<email>')
-    .replace(/\)=\([^)]*\)/g, ')=(…)')
-    .slice(0, 300);
-}
+export { scrubbed };
 
 /** The one event sent for an error: nothing about the request or the person. */
 export function eventOf(
@@ -107,7 +105,50 @@ export async function report(
 ): Promise<void> {
   if (target === undefined) return;
   const eventId = crypto.randomUUID().replaceAll('-', '');
-  const event = eventOf(error, tags, eventId, Date.now() / 1000);
+  await sendEvent(eventOf(error, tags, eventId, Date.now() / 1000), eventId, send);
+}
+
+/** The one event sent for a page's error: what the page sent, scrubbed again, and nothing else. */
+export function pageEventOf(
+  page: ClientErrorReport,
+  eventId: string,
+  timestamp: number,
+): Record<string, unknown> {
+  // Frames' files lose their origin: the page's own assets, by path.
+  const frames = framesOf(`\n${pageStackScrubbed(page.stack)}`).map((frame) =>
+    frame.filename === undefined
+      ? frame
+      : { ...frame, filename: frame.filename.replace(/^[a-z][\w+.-]*:\/\/[^/]*/i, '') },
+  );
+  return {
+    event_id: eventId,
+    timestamp,
+    platform: 'javascript',
+    level: 'error',
+    tags: { route: 'page', kind: page.kind },
+    exception: {
+      values: [{ type: page.type, value: pageScrubbed(page.message), stacktrace: { frames } }],
+    },
+  };
+}
+
+/** Reports a page's error, as `report` does; false when reporting is off here. Never throws. */
+export async function reportPage(
+  page: ClientErrorReport,
+  send: typeof fetch = fetch,
+): Promise<boolean> {
+  if (target === undefined) return false;
+  const eventId = crypto.randomUUID().replaceAll('-', '');
+  await sendEvent(pageEventOf(page, eventId, Date.now() / 1000), eventId, send);
+  return true;
+}
+
+async function sendEvent(
+  event: Record<string, unknown>,
+  eventId: string,
+  send: typeof fetch,
+): Promise<void> {
+  if (target === undefined) return;
   const envelope = [
     JSON.stringify({ event_id: eventId, sent_at: new Date().toISOString(), dsn: target.dsn }),
     JSON.stringify({ type: 'event' }),

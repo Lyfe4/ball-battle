@@ -2,6 +2,7 @@
 // the arena tells a series each frame, and the page's layout. `mountOnline` builds it in a build
 // with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
+import { installErrorReports } from '../app/error-report-build.ts';
 import { askMe } from './who-ask.ts';
 import type { Navigation } from '../app/navigation.ts';
 import { writeShellParams, type Screen } from '../app/route.ts';
@@ -108,6 +109,8 @@ export interface MountContext {
 }
 
 export function mountOnline(context: MountContext): OnlineMount {
+  // The page's own errors, where this build reports them (launch eve, error-report-build.ts).
+  installErrorReports();
   // The HUD the online screens sit in (beside the offline ones), and its foot for the way out.
   const hud = getElement('hud-status', HTMLElement).parentElement ?? document.body;
   const foot = getElement('hud-speed', HTMLElement).parentElement ?? document.body;

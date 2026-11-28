@@ -125,4 +125,12 @@ describe('the bundle check', () => {
     expect(problemsIn('a.js', text, true, true, true, true)).toStrictEqual([]);
     expect(problemsIn('a.js', 'you take turns, up to a day each', true)).toStrictEqual([]);
   });
+
+  it('refuses the page’s error reports in a build without VITE_ERROR_REPORTS (launch eve)', () => {
+    const text = 'const E="/api/v1/client-error";fetch(E,{method:"POST",keepalive:!0})';
+    expect(problemsIn('a.js', text, true, true, true, true)).toStrictEqual([
+      'a.js reports errors in a build without it (VITE_ERROR_REPORTS unset)',
+    ]);
+    expect(problemsIn('a.js', text, true, true, true, true, true)).toStrictEqual([]);
+  });
 });
