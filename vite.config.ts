@@ -125,6 +125,10 @@ export default defineConfig({
     // The game, and the privacy policy and terms as pages of their own (ADR 0069): plain HTML that
     // reads without the game's script. The dev-only pages (styleguide, brand, sounds) stay out.
     rolldownOptions: {
+      // The build's switches (ACCOUNTS_BUILD is ONLINE_BUILD && VITE_ACCOUNTS, app/*-build.ts) are
+      // constants folded into each condition, two steps deep, so a switched-off branch leaves the
+      // bundle in a chunk too (online play's, online-lazy.ts), where the minifier can't see them.
+      optimization: { inlineConst: { mode: 'smart', pass: 2 } },
       input: {
         main: 'index.html',
         privacy: 'privacy.html',

@@ -5,8 +5,8 @@ import { createMoves } from './app/moves.ts';
 import { showWhenLaidOut } from './app/first-paint.ts';
 import { createNavigation } from './app/navigation.ts';
 import { parseRoute, writeHomeParams, type Route } from './app/route.ts';
-import { ONLINE_BUILD } from './app/online-build.ts';
 import { createRouter } from './app/router.ts';
+import { afterReady, gateRoutes } from './app/route-gate.ts';
 import { initialAppState, isCalmMoment, readyMomentOf, screenTitle } from './app/screen-rules.ts';
 import { generateSeed } from './app/fresh-seed.ts';
 import { readMode } from './app/series-url.ts';
@@ -20,8 +20,8 @@ import { createOutdatedController } from './screens/outdated.ts';
 import { inboxViews } from './screens/inbox-views.ts';
 import { mountShell } from './screens/shell.ts';
 import { createQuickController } from './screens/quick.ts';
-import { mountOnline } from './screens/online-mount.ts';
-import { offlineMount } from './screens/online-off.ts';
+import { onlineFor } from './screens/online-lazy.ts';
+import type { OnlineMount } from './screens/online-mount.ts';
 import { createSeriesScreens } from './screens/series.ts';
 import { createSeriesStage } from './screens/series-stage.ts';
 import { installNewVersion } from './screens/new-version.ts';
@@ -75,10 +75,12 @@ const hud = createHud(hudRoot, BALL_LOOKUP, {
   },
 });
 
-// Each screen change with its motion (ADR 0087): the URL's route, or the one given.
-const showCurrentRoute = withScreenMotion(screenKeyOf, currentRoute, (route) => {
+// Each screen change with its motion (ADR 0087): the URL's route, or the one given. An online
+// screen waits for online play's code (online-lazy.ts), the screen on show staying until then.
+const showRoute = withScreenMotion(screenKeyOf, currentRoute, (route) => {
   router.show(route);
 });
+const showCurrentRoute = gateRoutes(currentRoute, (screen) => online.ready(screen), showRoute);
 const { go, replaceWith, goHome, backOrHome } = createMoves(navigation, showCurrentRoute);
 
 const home = createHomeController(getElement('home', HTMLElement), BALLS, BALL_LOOKUP, {
@@ -163,25 +165,23 @@ const seriesScreens = createSeriesScreens(
 
 const { setup: seriesSetup, play: series } = seriesScreens;
 
-// Online play (ADR 0052), only in builds that have it: production holds none of it.
-const online = ONLINE_BUILD
-  ? mountOnline({
-      navigation,
-      go,
-      replaceWith,
-      goHome,
-      showWorld,
-      arena: () => arena,
-      worldsShown: () => worldsShown,
-      showControls,
-      redraw: () => {
-        arena.redraw();
-      },
-      waiting: inboxViews(shell),
-    })
-  : offlineMount(() => {
-      goHome('replace');
-    });
+// Online play (ADR 0052), only in builds that have it: production holds none of it. Its code is a
+// chunk of its own, asked for now (online-lazy.ts).
+const online: OnlineMount = onlineFor({
+  navigation,
+  go,
+  replaceWith,
+  goHome,
+  showWorld,
+  arena: () => arena,
+  worldsShown: () => worldsShown,
+  showControls,
+  redraw: () => {
+    arena.redraw();
+  },
+  waiting: inboxViews(shell),
+  reshow: showCurrentRoute,
+});
 // The avatar on every tab screen and atop the rail (ADR 0081), in a build with accounts.
 if (online.avatars !== undefined) shell.holdAvatars(online.avatars);
 
@@ -354,5 +354,8 @@ navigation.onChange(showCurrentRoute);
 // Something is on the arena from the first frame: the link's match (its URL corrected if an id was
 // invalid), or a match behind a setup screen, which keeps its own URL; home puts on its demo.
 showCurrentRoute(initialRoute);
-// The first screen is laid out: the stage shows in one frame, in the font (ADR 0087).
-showWhenLaidOut(window, stage, arena.fit);
+// The first screen is laid out: the stage shows in one frame, in the font (ADR 0087). A link to an
+// online screen is laid out once online play's code has come (or failed): never a blank screen.
+afterReady(online.ready(initialRoute.screen), () => {
+  showWhenLaidOut(window, stage, arena.fit);
+});

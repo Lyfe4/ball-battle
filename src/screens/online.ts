@@ -7,7 +7,6 @@ import type { Navigation } from '../app/navigation.ts';
 import type { DeviceStorage } from '../app/online-device.ts';
 import type { ScreenHandler } from '../app/router.ts';
 import type { BallDefinition, DefinitionLookup, WorldState } from '../sim/types.ts';
-import { createForgetMe, type ForgetMe } from '../ui/online/forget-me.ts';
 import type { InboxResponse } from '../api/friends.ts';
 import type { SeriesView } from '../api/series.ts';
 import { writeMatchParams, type MatchPlace } from './current-match.ts';
@@ -82,7 +81,6 @@ export interface OnlineScreens {
   readonly play: OnlinePlay;
   /** Home's "Back to your match" (ADR 0053) and what Play's place shows meanwhile. */
   readonly backToMatch: HomeBack;
-  readonly forgetMe: ForgetMe;
   /** Shows the online screen parts for `screen` and hides the rest. */
   setVisible(screen: string): void;
   /** The inbox's friends and open challenges, for the Friends tab's lists (ADR 0081). */
@@ -280,9 +278,6 @@ export function createOnlineScreens(
     backToGame,
   });
 
-  // Settings' Forget me, in an online build without accounts (no account screen there).
-  const forgetMe = createForgetMe(forgetMeHost(host.storage, startAfresh));
-
   return {
     online: {
       show: (route) => {
@@ -322,7 +317,6 @@ export function createOnlineScreens(
     },
     play,
     backToMatch,
-    forgetMe,
     setVisible(screen) {
       friendsTab.setVisible(screen === 'friends');
       signIn?.setVisible(screen === 'signin');

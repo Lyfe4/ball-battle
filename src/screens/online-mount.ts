@@ -1,11 +1,11 @@
 // Online play on the page, as main.ts sees it (ADR 0052): the router's three online screens, what
 // the arena tells a series each frame, and the page's layout. `mountOnline` builds it in a build
-// with online play; `offlineMount` (online-off.ts) stands in without it, sending any online URL
+// with online play, in a chunk of its own that `lazyOnline` (online-lazy.ts) loads and stands in
+// for until it comes; `offlineMount` (online-off.ts) stands in without it, sending any online URL
 // home. main.ts holds one or the other, so it never asks which build it is in again.
-import { installErrorReports } from '../app/error-report-build.ts';
 import { askMe } from './who-ask.ts';
 import type { Navigation } from '../app/navigation.ts';
-import { writeShellParams, type Screen } from '../app/route.ts';
+import type { Screen } from '../app/route.ts';
 import type { ScreenHandlers } from '../app/router.ts';
 import type { FriendSetup } from '../app/modes.ts';
 import { browserStorage } from '../app/storage.ts';
@@ -28,7 +28,7 @@ import { rematchBackWords } from '../ui/online/back-to-match-text.ts';
 import { ACCOUNTS_BUILD } from '../app/accounts-build.ts';
 import { visitCache } from '../app/visit-cache.ts';
 import { createWhoSource } from '../app/who-source.ts';
-import { createAvatars, type Avatars } from '../ui/online/account-button.ts';
+import type { Avatars } from '../ui/online/account-button.ts';
 import { TABS } from '../app/tabs.ts';
 import type { HomePlay } from '../app/home-play-state.ts';
 import { showPlayRow } from '../ui/online/play-waiting.ts';
@@ -49,6 +49,11 @@ export interface OnlineMount {
   readonly avatars: Pick<Avatars, 'head'> | undefined;
   /** Settings' online group, when there is one. */
   readonly settings: Pick<SettingsHost, 'online'>;
+  /**
+   * Undefined when `screen` can show now; else it shows once this resolves (online-lazy.ts: an
+   * online screen waits for online play's code, or for it to fail).
+   */
+  ready(screen: Screen): Promise<void> | undefined;
   settle(world: WorldState): void;
   update(world: WorldState, celebrated: boolean): void;
   /** The online series is on screen. */
@@ -106,11 +111,11 @@ export interface MountContext {
   redraw(): void;
   /** What waits on the player, from the inbox (undefined: nothing, or not signed in). */
   waiting(inbox: InboxResponse | undefined): void;
+  /** The avatar (accounts builds), made by the stand-in so it shows from the first frame. */
+  readonly avatars: Avatars | undefined;
 }
 
 export function mountOnline(context: MountContext): OnlineMount {
-  // The page's own errors, where this build reports them (launch eve, error-report-build.ts).
-  installErrorReports();
   // The HUD the online screens sit in (beside the offline ones), and its foot for the way out.
   const hud = getElement('hud-status', HTMLElement).parentElement ?? document.body;
   const foot = getElement('hud-speed', HTMLElement).parentElement ?? document.body;
@@ -232,12 +237,7 @@ export function mountOnline(context: MountContext): OnlineMount {
   // The avatar on every tab screen (ADR 0081), in the header on a phone and atop the rail beside:
   // what `/me` says, read when a tab screen shows after a page load, Profile or sign-in, never
   // polled. It opens Profile; the shell places it.
-  const openProfile = (): void => {
-    context.go((url) => {
-      writeShellParams(url, 'profile');
-    });
-  };
-  const avatars = ACCOUNTS_BUILD ? createAvatars(openProfile) : undefined;
+  const { avatars } = context;
   /** Read again on the next tab screen: a sign-in, a log out or a new username may change it. */
   let whoStale = true;
   const askWho = async (): Promise<void> => {
@@ -320,9 +320,10 @@ export function mountOnline(context: MountContext): OnlineMount {
       ...(screens.matches === undefined ? {} : { matches: screens.matches }),
     },
     avatars,
-    // With accounts, everything about the player is on the account screen; settings are this
-    // device's alone. Without, Forget me stays in settings (ADR 0078).
-    settings: ACCOUNTS_BUILD ? {} : { online: screens.forgetMe },
+    // Settings' Forget me (an online build without accounts, ADR 0078) is the stand-in's: settings
+    // are made before this code comes (online-lazy.ts).
+    settings: {},
+    ready: () => undefined,
     settle: (world) => {
       screens.play.settle(world);
     },

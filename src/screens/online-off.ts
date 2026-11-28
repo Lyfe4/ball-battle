@@ -29,6 +29,7 @@ export function offlineMount(goHome: () => void): OnlineMount {
         }),
       ),
     },
+    ready: () => undefined,
     settle: () => undefined,
     update: () => undefined,
     playing: () => false,
