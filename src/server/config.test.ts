@@ -114,3 +114,22 @@ describe('the poke switch (ADR 0082)', () => {
     expect(() => configOf({ ...ONLINE, BALLBATTLE_POKE: '1' })).toThrow(/SUPABASE_BROWSER_KEY/);
   });
 });
+
+describe('Turnstile’s keys (ADR 0079 addendum of 2026-11-28)', () => {
+  const both = { BALLBATTLE_TURNSTILE_SITE_KEY: ' 0x4site ', TURNSTILE_SECRET_KEY: '0x4secret' };
+
+  it('are on only with both the site key and the secret', () => {
+    expect(configOf(ONLINE)?.turnstile).toBeUndefined();
+    expect(configOf({ ...ONLINE, ...both })?.turnstile).toStrictEqual({
+      siteKey: '0x4site',
+      secret: '0x4secret',
+    });
+  });
+
+  it('are off, never an error, with only one of them: the rest of the API stays up', () => {
+    for (const name of Object.keys(both)) {
+      expect(configOf({ ...ONLINE, ...both, [name]: ' ' })?.turnstile).toBeUndefined();
+      expect(configOf({ ...ONLINE, ...both, [name]: undefined })?.online).toBe(true);
+    }
+  });
+});

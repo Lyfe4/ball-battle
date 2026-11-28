@@ -42,6 +42,15 @@ describe('email addresses (ADR 0079)', () => {
       expect(decodeSendCode(body)).toBeUndefined();
     }
   });
+
+  it('keep a Turnstile token only when it is a string Cloudflare could have made', () => {
+    const email = 'sam@example.com';
+    expect(decodeSendCode({ email, captcha: 'tok' })).toStrictEqual({ email, captcha: 'tok' });
+    for (const captcha of ['', 7, null, 'x'.repeat(2049)]) {
+      expect(decodeSendCode({ email, captcha })).toStrictEqual({ email });
+    }
+    expect(decodeSendCode({ email, captcha: 'x'.repeat(2048) })?.captcha).toHaveLength(2048);
+  });
 });
 
 describe('codes', () => {

@@ -70,8 +70,12 @@
 # BALLBATTLE_TURNS and BALLBATTLE_POKE for production (docs/launch-day-runbook.md).
 # The page's error reports (launch eve) likewise: VITE_ERROR_REPORTS from BALLBATTLE_ERROR_REPORTS,
 # unset (off) until SENTRY_DSN is set; staging sets VITE_ERROR_REPORTS in the dashboard.
+# The check before a first email code (ADR 0079 addendum of 2026-11-28) likewise:
+# VITE_TURNSTILE_SITE_KEY from BALLBATTLE_TURNSTILE_SITE_KEY, which the functions read too, with
+# TURNSTILE_SECRET_KEY; unset (off) everywhere until the owner sets both. Staging would set
+# VITE_TURNSTILE_SITE_KEY in the dashboard beside them.
 [context.production]
-  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" VITE_ACCOUNTS=\"${BALLBATTLE_ACCOUNTS:-}\" VITE_POKE=\"${BALLBATTLE_POKE:-}\" VITE_TURNS=\"${BALLBATTLE_TURNS:-}\" VITE_ERROR_REPORTS=\"${BALLBATTLE_ERROR_REPORTS:-}\" pnpm build"
+  command = "VITE_ONLINE=\"${BALLBATTLE_ONLINE:-}\" VITE_ACCOUNTS=\"${BALLBATTLE_ACCOUNTS:-}\" VITE_POKE=\"${BALLBATTLE_POKE:-}\" VITE_TURNS=\"${BALLBATTLE_TURNS:-}\" VITE_ERROR_REPORTS=\"${BALLBATTLE_ERROR_REPORTS:-}\" VITE_TURNSTILE_SITE_KEY=\"${BALLBATTLE_TURNSTILE_SITE_KEY:-}\" pnpm build"
 
 [context.deploy-preview.environment]
   VITE_ONLINE = "1"

@@ -13,6 +13,7 @@ import { DECLINE_DAYS } from '../src/server/db/friends.ts';
 import { ENDING_DAYS, ONLINE_MS } from '../src/server/db/inbox.ts';
 import { USERNAME_DAYS } from '../src/server/db/profiles.ts';
 import { LIMITS } from '../src/server/rate-limit.ts';
+import { SITEVERIFY_URL } from '../src/server/turnstile.ts';
 
 const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
 const privacy = read('privacy.html');
@@ -78,6 +79,15 @@ describe('the privacy policy and terms', () => {
       86_400,
     );
     expect(privacy).toContain('<strong>Resend</strong>');
+  });
+
+  it('name Cloudflare, which the check before a first code reaches (ADR 0079, 2026-11-28)', () => {
+    // The page loads its script and the server sends it the player's IP: both Cloudflare's.
+    expect(new URL(SITEVERIFY_URL).hostname).toBe('challenges.cloudflare.com');
+    expect(read('src/ui/turnstile.ts')).toContain("'https://challenges.cloudflare.com/turnstile/");
+    const text = privacy.replace(/\s+/g, ' ');
+    expect(text).toContain('<strong>Cloudflare</strong>, a US company, runs the check');
+    expect(text).toContain("our server sends Cloudflare the check's answer and your IP address");
   });
 
   it('name the username, its 30 days, Delete account and Log out (ADR 0079)', () => {

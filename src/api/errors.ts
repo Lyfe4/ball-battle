@@ -44,6 +44,11 @@ export const ERROR_CODES = [
   'email_busy',
   /** An address Auth won't send to. */
   'bad_email',
+  /**
+   * Turnstile's check before a device's first email code (ADR 0079 addendum of 2026-11-28): a
+   * missing, wrong or spent token (400), or Cloudflare out of reach (503).
+   */
+  'captcha_failed',
   /** A code that is wrong, expired, or tried too often. */
   'wrong_code',
   /** A sign-in step with nothing started on this device (its 10 minutes ran out). */

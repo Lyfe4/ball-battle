@@ -55,6 +55,13 @@ export const TURNS_MARK = /\bBy turns\b/;
 export const ERROR_REPORT_MARK = /\bclient-error\b/;
 
 /**
+ * What only the check before a first email code contains (ADR 0079 addendum of 2026-11-28):
+ * Cloudflare Turnstile's script, in the widget's own chunk. A build without
+ * `VITE_TURNSTILE_SITE_KEY` (every build until it is set) holds none of it: no chunk, no loader.
+ */
+export const CAPTCHA_MARK = 'challenges.cloudflare.com';
+
+/**
  * What is wrong with one bundled file: `online` says whether this build may call the API,
  * `accounts` whether it may sign in, and `poke` whether it may open the poke's socket.
  */
@@ -66,6 +73,7 @@ export function problemsIn(
   poke = false,
   turns = false,
   errorReports = false,
+  captcha = false,
 ): string[] {
   const problems = SECRET_MARKS.filter((mark) => mark.test(text)).map(
     (mark) => `${name} holds something shaped like a secret (${mark.source.slice(0, 20)}…)`,
@@ -84,6 +92,9 @@ export function problemsIn(
   }
   if (!errorReports && ERROR_REPORT_MARK.test(text)) {
     problems.push(`${name} reports errors in a build without it (VITE_ERROR_REPORTS unset)`);
+  }
+  if (!captcha && text.includes(CAPTCHA_MARK)) {
+    problems.push(`${name} loads Turnstile in a build without it (VITE_TURNSTILE_SITE_KEY unset)`);
   }
   return problems;
 }
@@ -104,6 +115,7 @@ export function reportDist(
   poke = false,
   turns = false,
   errorReports = false,
+  captcha = false,
 ): void {
   const dist = fileURLToPath(new URL('../dist', import.meta.url));
   const files = filesIn(dist)
@@ -111,7 +123,7 @@ export function reportDist(
     .map((file) => ({ name: file.slice(dist.length + 1), text: readFileSync(file, 'utf8') }));
   const problems = [
     ...files.flatMap(({ name, text }) =>
-      problemsIn(name, text, online, accounts, poke, turns, errorReports),
+      problemsIn(name, text, online, accounts, poke, turns, errorReports, captcha),
     ),
     // The size budget (bundle-budget.ts), in the same check so CI's build job holds it.
     ...budgetProblems(files),
@@ -132,5 +144,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     online && process.env['VITE_POKE'] === '1',
     online && process.env['VITE_TURNS'] === '1',
     online && process.env['VITE_ERROR_REPORTS'] === '1',
+    online &&
+      process.env['VITE_ACCOUNTS'] === '1' &&
+      (process.env['VITE_TURNSTILE_SITE_KEY'] ?? '') !== '',
   );
 }

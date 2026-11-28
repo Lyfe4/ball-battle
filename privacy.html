@@ -28,7 +28,7 @@
       </nav>
 
       <h1 class="legal-title">Privacy policy</h1>
-      <p class="legal-updated">Last updated 29 November 2026</p>
+      <p class="legal-updated">Last updated 30 November 2026</p>
 
       <p>
         BallBattle is made by Calvin Reinke, in New South Wales, Australia. This policy explains
@@ -283,6 +283,17 @@
           <dd class="legal-keep">Deleted once Resend has it, within seconds.</dd>
         </div>
         <div>
+          <dt>Where the game asks for it: a check that you're a person, before a first code</dt>
+          <dd>
+            So nobody can use the game to send codes to many addresses. When the sign-in screen
+            offers an email code, the page loads Cloudflare Turnstile's check, which sees your IP
+            address and your browser while it runs. Before a code goes to an address for the first
+            time, our server sends Cloudflare the check's answer and your IP address, and hears back
+            whether it passed.
+          </dd>
+          <dd class="legal-keep">We keep nothing from it.</dd>
+        </div>
+        <div>
           <dt>A sign-in cookie for each step</dt>
           <dd>Which step you're on, and which email a code went to.</dd>
           <dd class="legal-keep">Up to 10 minutes, on your device.</dd>
@@ -301,6 +312,11 @@
         <li>
           <strong>Resend</strong>, a US company, sends the sign-in code emails. It sees the address
           and the email, and keeps its delivery records for 30 days.
+        </li>
+        <li>
+          <strong>Cloudflare</strong>, a US company, runs the check that you're a person before a
+          first sign-in code, where the game asks for one. It sees your IP address and your browser
+          while the check runs.
         </li>
         <li>
           <strong>Netlify</strong>, a US company, hosts the site. The game's server code runs in

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { NoticeContent, NoticeField } from '../ui/notice-content.ts';
 import {
   adultSignInCard,
+  captchaFailedCard,
   chooseCard,
   codeCard,
   googleNote,
@@ -42,6 +43,7 @@ describe('the sign-in screen’s cards (ADR 0079)', () => {
       codeSent(undefined),
       switchCard('email', nothing, nothing),
       signInOffCard(none),
+      captchaFailedCard(nothing, none),
     ];
     for (const card of cards) expect(card.buttons.length, card.title).toBeGreaterThan(0);
   });
@@ -55,6 +57,23 @@ describe('the sign-in screen’s cards (ADR 0079)', () => {
       'Google sign-in doesn’t work inside Instagram: open this page in Safari to use it, or use an email code.',
     );
     expect(googleNote(true, SAFARI)).toBeUndefined();
+  });
+
+  it('puts the check’s box under the email field only where the build has one (ADR 0079)', () => {
+    expect(choose(true).part).toBeUndefined();
+    const box = {};
+    const card = chooseCard({
+      google: true,
+      emailCodes: true,
+      userAgent: SAFARI,
+      email,
+      sendCode: nothing,
+      withGoogle: nothing,
+      cancel: none,
+      captcha: box,
+    });
+    expect(card.part).toBe(box);
+    expect(texts(captchaFailedCard(nothing, none))).toStrictEqual(['Try again', 'Not now']);
   });
 
   it('offers only Google while email codes are off', () => {

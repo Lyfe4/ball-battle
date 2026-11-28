@@ -29,6 +29,7 @@ import { pickerFor } from './friend-pick-flow.ts';
 import { createOnlineRoots } from './online-roots.ts';
 import type { WhoPreset } from '../ui/online/who-sheet.ts';
 import { createSignIn } from './sign-in.ts';
+import { captchaFor } from '../app/captcha-build.ts';
 import type { WhoSource } from '../app/who-source.ts';
 import { createPrimer } from './online-prime.ts';
 
@@ -228,6 +229,8 @@ export function createOnlineScreens(
           },
           userAgent: navigator.userAgent,
           cookies: () => document.cookie,
+          // The check before a first email code, where the build has a site key (ADR 0079).
+          captcha: captchaFor(),
           // A guest's Forget me on the ways in; Log out and Delete account are Profile's (ADR 0081).
           forget: () => forgetMeHost(host.storage, startAfresh).forget(),
           // Signed in, the player lands on the Friends tab (ADR 0081).

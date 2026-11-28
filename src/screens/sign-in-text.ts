@@ -55,6 +55,11 @@ export interface ChooseCard {
   readonly problem?: string;
   /** A guest's Forget me, quietly at the end (ADR 0079 addendum of 2026-11-22). */
   readonly forgetMe?: () => void;
+  /**
+   * The check's box under the email field, reserved at the widget's size (ADR 0079 addendum of
+   * 2026-11-28): an element, typed opaquely as a notice's part is.
+   */
+  readonly captcha?: object;
 }
 
 /** The ways in: an email code, and Google where it works. */
@@ -81,6 +86,7 @@ export function chooseCard(card: ChooseCard): NoticeContent {
     title: 'Sign in',
     body,
     field: card.email,
+    ...(card.captcha === undefined ? {} : { part: card.captcha }),
     buttons: [{ text: 'Email me a code', onClick: card.sendCode }, ...google],
     ...(note === undefined ? {} : { note }),
     quiet: { text: 'Not now', onClick: card.cancel },
@@ -113,6 +119,24 @@ export function codeCard(card: CodeCard): NoticeContent {
     ...(card.resend === undefined
       ? { note: 'You can ask for a new code in a minute.' }
       : { quiet: { text: 'Send a new code', onClick: card.resend } }),
+  };
+}
+
+/**
+ * The check before a first code didn't load, or Cloudflare refused this browser (ADR 0079 addendum
+ * of 2026-11-28): the one failure card, Try again back to the ways in with a new check.
+ */
+export function captchaFailedCard(
+  retry: () => Promise<unknown>,
+  cancel: () => void,
+): NoticeContent {
+  return {
+    title: 'We couldn’t check you’re a person',
+    body: ['The check before sending a code didn’t work. Try again, or continue with Google.'],
+    buttons: [
+      { text: 'Try again', onClick: retry },
+      { text: 'Not now', onClick: cancel },
+    ],
   };
 }
 

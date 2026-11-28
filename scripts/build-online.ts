@@ -13,4 +13,5 @@ process.env['VITE_POKE'] = '1';
 // With play by turns to a friend (ADR 0085), as previews and staging are built.
 process.env['VITE_TURNS'] = '1';
 await build({ logLevel: 'warn' });
-reportDist(true, true, true, true);
+// A Turnstile site key in the shell (Cloudflare's test key, say) builds the widget's chunk.
+reportDist(true, true, true, true, false, (process.env['VITE_TURNSTILE_SITE_KEY'] ?? '') !== '');
