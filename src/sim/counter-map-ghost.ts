@@ -19,8 +19,10 @@ export const GHOST_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'ghost',
     y: 'speedster',
-    intended: 'even',
-    reason: 'The phased Ghost slips the Speedster’s rush; a solid Ghost takes it whole.',
+    intended: 'x',
+    level: 'edge',
+    reason:
+      'The phased Ghost slips the Speedster’s rush and hits it for 12 on every fast pass through.',
   },
   {
     x: 'ghost',

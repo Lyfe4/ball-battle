@@ -45,10 +45,10 @@ export function seriesAgainst(
 }
 
 /**
- * A Blind series with a round that goes to sudden death (found by search, ruleset 21): the
+ * A Blind series whose round 1 goes to sudden death (found by search, ruleset 25): the
  * player's Speedster against the bot's.
  */
-export const SUDDEN_DEATH: SeriesSetup = seriesAgainst('blind', DEFAULT_BOT.id, 30142, [
+export const SUDDEN_DEATH: SeriesSetup = seriesAgainst('blind', DEFAULT_BOT.id, 41538, [
   'speedster',
   'vampire',
   'archer',

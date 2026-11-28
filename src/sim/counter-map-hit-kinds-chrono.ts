@@ -20,7 +20,8 @@ export const HIT_KIND_CHRONO_ENTRIES: readonly CounterEntry[] = [
   {
     x: 'chrono',
     y: 'speedster',
-    intended: 'even',
+    intended: 'x',
+    level: 'edge',
     reason: 'The Chrono bumps for 22, and a stacked Speedster rush is too small to rewind.',
   },
   {

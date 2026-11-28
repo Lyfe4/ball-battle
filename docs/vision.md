@@ -115,7 +115,8 @@ ball, since one-number changes move a ball's whole row:
   win it needed, but the Tortoise's shell halves the small hits both live on, a sixth loss each.
   The next ball that beats either breaks a hard rule, so before it ships the Speedster needs a
   small boost (or an ability tweak that takes a loss away), and the Boomerang likewise: no new
-  ball can take a loss away.
+  ball can take a loss away. Proposed for the Speedster, to ship with that batch: 0.13 speed per
+  stack (ruleset 25, ADR 0091 addendum) takes it to 4/5.
 - **Bloom (5/5):** its regrowth outlasts the slow Tortoise, a fifth win. A ball whose bursts beat
   regrowth, or one fewer slow plain bumper, would close it.
 

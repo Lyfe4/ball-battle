@@ -220,3 +220,42 @@ read as a strike from the sky. It now has its own strike look (`strike: 'snap'`,
 side-to-side shake, a puff of dust and splinters in the pelt's browns, all fading over the strike's
 350 ms; with reduced motion the trap shuts and fades in place, the dust still. The style guide shows
 it at four strengths, both ways. Render only: no fight changes.
+
+## Addendum (2026-11-28): the Speedster's speed per stack, 0.12 → 0.13 (ruleset 25)
+
+Status: **Proposed, ships with the next ball batch.** Built on a draft pull request and not
+merged: no ruleset ships before the batch it makes room for.
+
+Section 3 left the Speedster at six strong losses, the hard limit, so any new ball that beats it
+breaks a rule. This takes one loss away with the smallest change that does, `SPEED_PER_STACK`
+0.12 → 0.13 (`src/sim/balls/speedster.ts`): five stacks now reach 1,320 rather than 1,280.
+Screened at 150 seeds against health 70 → 71-73, contact 14 → 15, damage per stack 2 → 3 and
+speed 800 → 840: each moved the whole row too far, put a pair past 78% or a sensitivity past 20
+points; health 71, checked at 500 seeds as well, needed six relabels, three of them on a line.
+Speed per stack takes one strong loss away and needs four.
+
+**Measured** (500 seeds, `pnpm balance`, every ball): the Speedster 46.5 → 48.1%, strong 4/6 →
+**4/5**, gap -1. Its rows move with it: Kraken 59.1 → 64.4%, Boomerang 72.4 → 75.7, Archer 71.3 →
+74.5, Storm 59.0 → 61.2, Vampire 34.7 → 38.7, Frost 26.1 → 30.7; against it the Chrono 57.8 →
+60.1%, the Ghost 57.0 → 58.1, the Titan 58.5 → 60.5. Every other pair is unchanged (no other ball
+changed). Four entries were relabelled by the one rule (ADR 0073), each with its mechanism:
+
+| Pair                 | Was            | Now             | Measured | Why                                                                              |
+| -------------------- | -------------- | --------------- | -------: | -------------------------------------------------------------------------------- |
+| Vampire vs Speedster | Vampire strong | **edge**        |    61.2% | the faster rush lands more often, and its bonus is a hit the Vampire never heals |
+| Ghost vs Speedster   | even           | **Ghost edge**  |    58.1% | a faster Speedster runs through the phased Ghost more often, 12 each pass        |
+| Chrono vs Speedster  | even           | **Chrono edge** |    60.1% | the Chrono's 22 bump against 14, and a rush too small to rewind                  |
+| Balloon vs Speedster | Balloon edge   | **even**        |    54.9% | the faster bounces build the Speedster's bump to the Balloon's 24 sooner         |
+
+Every hard rule passes as in section 3 (every ball 45-55%, worst side 22.5%, draws 0.6%, median
+16.1 s, comebacks 18.7%, every pair in its band, no ball over 6 strong wins or losses); the worst
+sensitivity is still the Venom against the Jouster, 17.7 points (a warning, as before), and the
+Speedster's worst is 14.0 (the Venom). The Ghost's edge is 0.1 point over its line at 500 seeds
+and the Kraken's loss 0.6 under strong; CI's 150-seed check is in the pull request.
+
+**Shape:** the Speedster is off it still (4/5, one strong loss over the shape's four) but one loss
+under the limit, so a new ball may beat it. The Vampire's strong win becoming an edge takes it to
+2/4, newly off the shape's "within 1" (a warning). The bots read the levels, so their choices change
+and ruleset 24's series show the older-link notice (`SAME_FIGHTS_AS` stays empty). The pass-through
+margin and the identity rules hold (`pnpm test:slow`): the Boomerang still outruns a stacked
+Speedster by 1.2 times (1,700 > 1,584).

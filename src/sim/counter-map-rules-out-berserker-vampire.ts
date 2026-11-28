@@ -202,8 +202,9 @@ export const RULES_OUT_BERSERKER_VAMPIRE_ENTRIES: readonly CounterEntry[] = [
     x: 'vampire',
     y: 'speedster',
     intended: 'x',
-    level: 'strong',
-    reason: 'The Vampire heals off each bump, and the Speedster’s rush hit speeds it up.',
+    level: 'edge',
+    reason:
+      'The Vampire heals off each bump; the Speedster’s rush speeds it up but is never healed.',
   },
   {
     x: 'vampire',
