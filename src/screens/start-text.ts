@@ -10,7 +10,10 @@ const nameOf = (view: Pick<StartView, 'they'>): string => view.they ?? 'Your fri
 /** The line under the lineup's header while this player chooses. */
 export function startLine(view: StartView, seconds: number): string {
   const state = view.theirsLocked ? 'is ready' : 'is choosing';
-  return `${nameOf(view)} ${state} · ${String(seconds)} s`;
+  // A rematch is on the match before's rules, however it was agreed (a challenge sent to the
+  // friend who offered it is its yes, ADR 0089 addendum of 2026-11-28): said, so nobody is surprised.
+  const rematch = view.rematchOf === null ? '' : 'Rematch, same rules · ';
+  return `${rematch}${nameOf(view)} ${state} · ${String(seconds)} s`;
 }
 
 /**

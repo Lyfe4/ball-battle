@@ -60,7 +60,7 @@ export async function friendStatuses(
           or exists (
           select 1 from game.challenges c
           where c.creator = o.user_id and c.live and c.series_id is null and c.start_id is null
-            and c.cancelled_at is null
+            and c.cancelled_at is null and c.expires_at > now()
             and c.creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
           or exists (
           select 1 from game.starts st
@@ -118,8 +118,8 @@ export async function invitesFor(db: Db, userId: string): Promise<InviteRow[]> {
         where f.low = least(c.creator, ${userId}::uuid) and f.high = greatest(c.creator, ${userId}::uuid)
       ) as friend,
       c.format, c.best_of as "bestOf", c.live,
-      case when c.live then greatest(0, ceil(extract(epoch from (c.creator_seen_at
-        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}) - now())) * 1000))::int end as "stopsInMs"
+      case when c.live then greatest(0, ceil(extract(epoch from (least(c.creator_seen_at
+        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}), c.expires_at) - now())) * 1000))::int end as "stopsInMs"
     from game.challenges c
     join game.profiles p on p.user_id = c.creator
     where c.invitee = ${userId} and c.series_id is null and c.start_id is null

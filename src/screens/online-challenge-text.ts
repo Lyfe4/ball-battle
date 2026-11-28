@@ -27,6 +27,8 @@ export interface CardActions {
   readonly series: (id: string) => void;
   /** Send a challenge of one's own instead: the one vs Friend path (ADR 0089 addendum). */
   readonly sendOwn: () => void;
+  /** The same friend again, picked on the one vs Friend path, on the rules last sent them. */
+  readonly sendAgain: (friendId: string) => unknown;
   /** Share (or copy) the sender's own link; resolves to what happened, for the button. */
   readonly share: () => Promise<string>;
   /** The sender stops waiting on the waiting screen (ADR 0053), then Home. */
@@ -295,6 +297,17 @@ function stoppedOwn(info: ChallengeInfo, actions: CardActions): NoticeContent {
       title: `${info.invitee ?? 'Your friend'} said no thanks`,
       body: [what],
       buttons: [again, home],
+    };
+  }
+  // Their friend let it run out (ADR 0089 addendum of 2026-11-28): nothing waits any more.
+  const id = info.inviteeFriend;
+  if (info.unanswered === true) {
+    const send =
+      id === undefined ? again : { text: 'Send again', onClick: () => actions.sendAgain(id) };
+    return {
+      title: `${info.invitee ?? 'Your friend'} didn’t answer`,
+      body: [what],
+      buttons: [send, home],
     };
   }
   if (info.superseded === true) {

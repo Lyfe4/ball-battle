@@ -98,6 +98,8 @@ export interface OnlineScreens {
   asksWho(): boolean;
   /** The ended series whose rematch's lineups show now, if any (ADR 0080). */
   rematchShown(): string | undefined;
+  /** Whom the sender's waiting screen waits for while it shows, else undefined. */
+  waitingFor(): string | undefined;
   /** Play shows (a visit, Back): "Who do you want to play?" closes. */
   homeShown(): void;
 }
@@ -154,8 +156,8 @@ export function createOnlineScreens(
         host.navigation.back(toParent);
       },
       home,
-      friend: () => {
-        friendPath(undefined);
+      friend: (id) => {
+        friendPath(id === undefined ? undefined : { friend: id });
       },
       friendPath: (rules) => {
         // Saved first: Play draws its box as it shows.
@@ -339,6 +341,7 @@ export function createOnlineScreens(
     playFriend: (setup) => picker?.play(setup) ?? challenges.playFriend(setup),
     asksWho: () => picker?.asksWho() ?? false,
     rematchShown: () => challenges.rematchShown(),
+    waitingFor: () => challenges.waitingFor(),
     homeShown: () => picker?.close(),
   };
 }

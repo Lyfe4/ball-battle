@@ -133,6 +133,7 @@ export function mountOnline(context: MountContext): OnlineMount {
     ownScreen: () => screens.play.endScreen() ?? screens.rematchShown(),
     seriesShown: () => screens.play.seriesShown(),
     endingTold: (id) => screens.play.rematch.told(id),
+    waitingFor: () => screens.waitingFor(),
     backChanged: (back) => {
       rematchWaiting = back;
       showPlay();
@@ -148,6 +149,7 @@ export function mountOnline(context: MountContext): OnlineMount {
         open: (token, live) => screens.openInvite(token, live),
         // One banner at a time: the end screen's rematch question first, then the challenge.
         calm: () => calm && !screens.play.rematch.holds(),
+        waitingFor: () => screens.waitingFor(),
         onFriends: () => onScreen === 'friends',
         badge: () =>
           document.querySelector<HTMLElement>('.tab-bar-tab[data-tab="friends"] .tab-bar-badge') ??
