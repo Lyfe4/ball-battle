@@ -8,7 +8,7 @@ import type { SeriesStatus, Turn } from '../../api/series.ts';
 import type { PickRecord, RoundRecord, SeriesSetup, Side } from '../../sim/index.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 import type { EndReason, FightTime } from '../live.ts';
-import type { Limit } from '../rate-limit.ts';
+import { countedAs, type ReadCount } from '../read-count.ts';
 import { markSeen, sessionLive, type Profile } from './profiles.ts';
 import type { SeedRow } from '../view.ts';
 import type { SeriesRow } from './series.ts';
@@ -87,16 +87,16 @@ const msOf = (date: Date | null): number | null => (date === null ? null : date.
 
 /**
  * The series with everything about it, in one round trip; undefined when there is none. When
- * `reader` plays in an open live series, this read is their heartbeat on it; with `limit`, the read
- * is counted against the reader's rate limit in the same statement (see `spend`).
+ * `reader` plays in an open live series, this read is their heartbeat on it; with `count`, the read
+ * is counted against the reader's rate limit in the same statement (read-count.ts).
  */
 export async function loadSeries(
   db: Db,
   id: string,
   reader?: string,
-  limit?: Limit,
+  count?: ReadCount,
 ): Promise<LoadedSeries | undefined> {
-  return (await loadSeriesAs(db, id, reader, limit)).series;
+  return (await loadSeriesAs(db, id, reader, count)).series;
 }
 
 /**
@@ -108,25 +108,15 @@ export async function loadSeriesAs(
   db: Db,
   id: string,
   reader?: string,
-  limit?: Limit,
+  count?: ReadCount,
   sessionId?: string,
 ): Promise<{ readonly profile: Profile | undefined; readonly series: LoadedSeries | undefined }> {
-  const window = limit === undefined ? null : `${String(limit.windowSeconds)} seconds`;
   const [raw] = await db<Raw[]>`
     with seen as (${markSeen(db, reader ?? null)}), me as (
       select coalesce(username, display_name) as name, username, account_at is not null as account
       from game.profiles
       where user_id = ${reader ?? null}::uuid and ${sessionLive(db, sessionId)}
-    ), counted as (
-      insert into game.rate_limits (subject, bucket, window_start, count)
-      select ${reader ?? null}::text, ${limit?.bucket ?? null}::text,
-        date_bin(${window}::interval, now(), timestamptz '2000-01-01'), 1
-      where ${window}::text is not null and exists (select 1 from me)
-      on conflict (subject, bucket, window_start)
-        do update set count = game.rate_limits.count + 1
-      returning count,
-        ceil(extract(epoch from (window_start + ${window}::interval - now())))::integer as retry
-    ), beat as (
+    ), ${countedAs(db, reader ?? null, count, () => db`exists (select 1 from me)`)}, beat as (
       insert into game.presence (series_id, side, seen_at)
       select s.id, case when s.player_a = ${reader ?? null}::uuid then 'a' else 'b' end, now()
       from game.series s
@@ -141,7 +131,7 @@ export async function loadSeriesAs(
       s.status, s.winner, s.version, s.turn, s.turn_deadline,
       (s.status = 'open' and s.turn_deadline < now()) as expired, s.final_setup,
       s.live, now() as now, s.created_at, s.started_at, s.turn_opens_at, s.end_reason,
-      (select count from counted) as spent_count, (select retry from counted) as spent_retry,
+      (select count from spent) as spent_count, (select retry from spent) as spent_retry,
       exists (select 1 from me) as me_found, (select name from me) as me_name,
       (select username from me) as me_username, (select account from me) as me_account,
       coalesce((select seen_at from beat where side = 'a'),

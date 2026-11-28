@@ -19,7 +19,7 @@ import { currentMatch } from '../current-match.ts';
 import { guard } from '../guard.ts';
 import { alsoWhileOff, ApiError, json, type RouteHandler } from '../http.ts';
 import { inboxOf } from '../inbox.ts';
-import { LIMITS, spend } from '../rate-limit.ts';
+import { spendRead } from '../read-count.ts';
 import { sessionOf, sessionWith } from '../session.ts';
 import { requireAccounts } from '../sign-in.ts';
 import { chooseUsername } from '../username.ts';
@@ -59,7 +59,7 @@ export const me: RouteHandler = alsoWhileOff(
 export const meMatch: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
-  await spend(context.deps.sql, player.userId, LIMITS.reads);
+  await spendRead(context.deps, player.userId);
   const match = await currentMatch(context.deps, player.userId);
   const body: CurrentMatchResponse = { match };
   return json(200, body, { 'Cache-Control': 'private, no-store' });
@@ -74,7 +74,7 @@ export const meInbox: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
   if (!player.account) throw new ApiError(403, 'not_an_account', 'Sign in to see your friends');
-  await spend(context.deps.sql, player.userId, LIMITS.reads);
+  await spendRead(context.deps, player.userId);
   return json(200, await inboxOf(context.deps, player.userId), {
     'Cache-Control': 'private, no-store',
   });

@@ -31,7 +31,8 @@ export function testDeps(extra: Readonly<Record<string, string>> = {}): Deps {
     ...extra,
   });
   if (config === undefined) throw new Error('unreachable');
-  return { config, sql: databaseFor(config.databaseUrl), codeFloorMs: 0 };
+  // Every read counted exactly (read-count.ts samples one in ten): read-count.db.test.ts checks both.
+  return { config, sql: databaseFor(config.databaseUrl), codeFloorMs: 0, readWeight: () => 1 };
 }
 
 /** The local database's superuser: for test setup and for checking what other roles can do. */

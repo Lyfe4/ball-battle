@@ -60,3 +60,22 @@ read only when a player opens All matches and scrolls past what the record alrea
 player with 20 or fewer matches never asks for one. Against the estimate (63 / 140 calls a
 player-day) this is noise: a page is a deliberate scroll, not a poll, and nothing reads it in the
 background.
+
+## Addendum (2026-11-29): reads counted one in ten (proposed, after launch)
+
+Every counted read upserted its rate-limit row: about one write a second per player in a live
+match, and most of a daily player's database writes (the 2026-11-28 audit, "every read writes a
+row"). Now one read in ten (`READ_SAMPLE`, the server's own `crypto` randomness) adds ten, and the
+other nine only read the window's count in the same statement, with no write (`read-count.ts`,
+`countedAs`). The count is the same on average, so the 900-per-5-minutes limit holds; and a read
+that only looks is still refused once the window is over, so a loop is stopped on every request,
+not one in ten. No extra round trip: the read and its count stay one statement (the series and
+record reads) or one query (the rest).
+
+- Writes saved: about 90% of rate-limit writes. A typical daily player with friends makes about
+  140 calls a day (Mix F above), nearly all counted reads; about 125 upserts become about 13.
+- Honest players: 500 reads in 5 minutes counts 500 ± 67, so reaching 900 is a six-sigma event.
+- Picks keep counting against `moves` exactly (weight 1), and every other limit is unchanged.
+- Tests set `Deps.readWeight` to 1 (exact counts); `read-count.db.test.ts` checks 0 and 10 on all
+  three ways a read is counted, and fails if a look skips the window's count.
+- Not changed: the seen mark and the live heartbeat's presence write (they are the game's state).

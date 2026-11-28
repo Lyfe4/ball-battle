@@ -7,6 +7,7 @@ import { decodeStartMove } from '../../api/start.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
+import { spendRead } from '../read-count.ts';
 import { sessionOf } from '../session.ts';
 import { moveStart, readStart } from '../start.ts';
 
@@ -18,7 +19,7 @@ export const startOne: RouteHandler = async (request, context) => {
   guard(request, ['GET', 'POST']);
   const player = await sessionOf(request, context);
   if (request.method === 'GET') {
-    await spend(context.deps.sql, player.userId, LIMITS.reads);
+    await spendRead(context.deps, player.userId);
     return json(200, await readStart(context.deps, id, player.userId));
   }
   const move = decodeStartMove(await jsonBody(request));

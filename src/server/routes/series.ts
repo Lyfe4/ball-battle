@@ -22,6 +22,7 @@ import { settleExpired } from '../db/series.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, refuseOver, spend } from '../rate-limit.ts';
+import { readCountOf, spendRead } from '../read-count.ts';
 import { moveRematch, rematchOf } from '../rematch.ts';
 import { leaveSeries, lockPick, readSeries, type Served } from '../series-service.ts';
 import { sessionOf, sessionWith } from '../session.ts';
@@ -53,7 +54,7 @@ export const seriesList: RouteHandler = async (request, context) => {
   guard(request, ['GET']);
   const player = await sessionOf(request, context);
   // Counted: every list settles every expired series, not only this player's.
-  await spend(context.deps.sql, player.userId, LIMITS.reads);
+  await spendRead(context.deps, player.userId);
   await settleExpired(context.deps.sql);
   return json(200, { series: await listFor(context.deps.sql, player.userId) });
 };
@@ -67,7 +68,13 @@ export const seriesOne: RouteHandler = async (request, context) => {
     if (pick === undefined) throw new ApiError(400, 'bad_request', 'Send {round, ball}');
     // The session, the series, the heartbeat and the move's rate-limit count: one statement.
     const { session: player, read } = await sessionWith(request, context, (reader) =>
-      loadSeriesAs(context.deps.sql, picks, reader.userId, LIMITS.moves, reader.sessionId),
+      loadSeriesAs(
+        context.deps.sql,
+        picks,
+        reader.userId,
+        { limit: LIMITS.moves, weight: 1 },
+        reader.sessionId,
+      ),
     );
     if (read.series?.spent !== undefined) refuseOver(LIMITS.moves, read.series.spent);
     const answer = await lockPick(context.deps, picks, player.userId, pick, read.series);
@@ -78,7 +85,7 @@ export const seriesOne: RouteHandler = async (request, context) => {
     guard(request, ['GET', 'POST']);
     const player = await sessionOf(request, context);
     if (request.method === 'GET') {
-      await spend(context.deps.sql, player.userId, LIMITS.reads);
+      await spendRead(context.deps, player.userId);
       return json(200, await rematchOf(context.deps, rematch, player.userId));
     }
     const move = decodeRematchRequest(await jsonBody(request));
@@ -98,11 +105,12 @@ export const seriesOne: RouteHandler = async (request, context) => {
   if (id === undefined) throw new ApiError(404, 'not_found', 'No such series');
   guard(request, ['GET']);
   // The session, the read, the reader's heartbeat and their rate-limit count: one statement.
+  const count = readCountOf(context.deps);
   const { session: player, read } = await sessionWith(request, context, (reader) =>
-    loadSeriesAs(context.deps.sql, id, reader.userId, LIMITS.reads, reader.sessionId),
+    loadSeriesAs(context.deps.sql, id, reader.userId, count, reader.sessionId),
   );
   const loaded = read.series;
-  if (loaded?.spent !== undefined) refuseOver(LIMITS.reads, loaded.spent);
+  if (loaded?.spent !== undefined) refuseOver(count.limit, loaded.spent);
   const answer = await readSeries(context.deps, id, player.userId, loaded);
   const headers = headersOf(answer);
   if (request.headers.get('If-None-Match') === headers['ETag']) return json(304, null, headers);

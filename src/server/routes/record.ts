@@ -9,6 +9,7 @@ import type { Profile, Reader } from '../db/profiles.ts';
 import { guard } from '../guard.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
 import { LIMITS, refuseOver } from '../rate-limit.ts';
+import { readCountOf } from '../read-count.ts';
 import { sessionWith } from '../session.ts';
 import { requireAccounts } from '../sign-in.ts';
 
@@ -31,7 +32,7 @@ export const meRecord: RouteHandler = async (request, context) => {
   requireAccounts(context);
   guard(request, ['GET']);
   return answer(request, context, (reader) =>
-    loadRecord(context.deps.sql, reader.userId, LIMITS.reads, reader.sessionId),
+    loadRecord(context.deps.sql, reader.userId, readCountOf(context.deps), reader.sessionId),
   );
 };
 
@@ -41,7 +42,13 @@ export const meMatches: RouteHandler = async (request, context) => {
   const after = cursorOf(new URL(request.url).searchParams.get('after'));
   if (after === undefined) throw new ApiError(400, 'bad_request', 'Which page of matches?');
   return answer(request, context, (reader) =>
-    loadMatches(context.deps.sql, reader.userId, LIMITS.reads, after, reader.sessionId),
+    loadMatches(
+      context.deps.sql,
+      reader.userId,
+      readCountOf(context.deps),
+      after,
+      reader.sessionId,
+    ),
   );
 };
 

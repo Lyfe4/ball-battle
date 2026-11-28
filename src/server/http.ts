@@ -24,6 +24,11 @@ export interface Deps {
    * never tells whether an address has an account. Tests set 0, or a short floor to check it.
    */
   readonly codeFloorMs?: number;
+  /**
+   * A counted read's weight (read-count.ts): unset, one in ten adds ten and the rest only look.
+   * Tests set 1 to count every read exactly, or 0 and 10 to check each side.
+   */
+  readonly readWeight?: () => number;
 }
 
 export interface RouteContext {
