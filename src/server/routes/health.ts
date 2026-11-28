@@ -18,6 +18,7 @@ import type {
 import type { Config } from '../config.ts';
 import { createAuthHealth, isAccountCheck } from '../auth-health.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
+import { databaseMatchesUrl } from '../project-ref.ts';
 import { EVERYONE, ipSubject, LIMITS, spend } from '../rate-limit.ts';
 import { CURRENT_RULESET, rulesetSim } from '../rulesets.ts';
 
@@ -142,6 +143,7 @@ export const health: RouteHandler = async (request, context) => {
     emailSends: emailSendsOf(mail),
     pokes: deps.config.pokeKey !== undefined && database?.poke === true ? 'on' : 'off',
     turns: deps.config.turns ? 'on' : 'off',
+    dbMatchesUrl: databaseMatchesUrl(deps.config.databaseUrl, deps.config.supabaseUrl),
   };
   return json(failed.length === 0 ? 200 : 503, body);
 };

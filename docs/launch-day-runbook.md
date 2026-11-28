@@ -73,7 +73,9 @@ You should see, within about 5 minutes:
 
 - the run green; Netlify > Deploys: a production deploy of `release`, Published;
 - `curl -s https://battle-ball.netlify.app/api/v1/health`: `"status":"ok"`, `"ruleset":24` (or
-  today's), `"accounts":"off"`, `"pokes":"off"`, `"turns":"off"`, `"emailSends":"ok"`;
+  today's), `"accounts":"off"`, `"pokes":"off"`, `"turns":"off"`, `"emailSends":"ok"`,
+  `"dbMatchesUrl":true` (the functions' database is production's project; `false` means
+  `DATABASE_URL` points elsewhere: roll back at once, fix the variable, deploy again);
 - `node scripts/smoke.ts --read-only`: every line PASS.
 
 Undo: Netlify > Deploys > the previous production deploy > Publish deploy. Migrations stay.

@@ -25,23 +25,23 @@ Projects: staging is Netlify `main--battle-ball.netlify.app` with Supabase `ball
 
 "set" means a value exists for that context; "empty" an entry with no value.
 
-| Variable                   | Secret | Staging       | Production today                           | For launch                                                                                                 |
-| -------------------------- | ------ | ------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `BALLBATTLE_ONLINE`        | no     | `1`           | `1`                                        | keep                                                                                                       |
-| `BALLBATTLE_ACCOUNTS`      | no     | `1`           | empty                                      | `1` (`friend-switch.ts on --accounts`, step 9)                                                             |
-| `BALLBATTLE_POKE`          | no     | `1`           | not set                                    | `1` (step 8)                                                                                               |
-| `VITE_POKE`                | no     | `1`           | not set                                    | nothing: production now builds it from `BALLBATTLE_POKE`                                                   |
-| `BALLBATTLE_TURNS`         | no     | `1`           | not set                                    | `1` (step 11)                                                                                              |
-| `SUPABASE_URL`             | no     | set (staging) | set (production project, verified by host) | keep                                                                                                       |
-| `SUPABASE_PUBLISHABLE_KEY` | no     | set           | set, differs                               | keep                                                                                                       |
-| `SUPABASE_BROWSER_KEY`     | no     | set           | set, differs                               | keep; **Calvin to check** it is production's `browser_poke` key (Supabase > production > API Keys)         |
-| `SUPABASE_SECRET_KEY`      | yes    | set           | set                                        | keep; scope to Functions once on Pro                                                                       |
-| `DATABASE_URL`             | yes    | set           | set                                        | **Calvin to check** it names production's pooler user (`postgres.wtqmptuhonbtjwxjwtwl`); masked to the API |
-| `SEED_KEYS`                | yes    | set           | set                                        | keep                                                                                                       |
-| `GOOGLE_CLIENT_ID`         | yes    | set           | empty                                      | production's client id (step 7)                                                                            |
-| `GOOGLE_CLIENT_SECRET`     | yes    | set           | empty                                      | production's secret (step 7); scope to Functions                                                           |
-| `BALLBATTLE_EMAIL_CODES`   | no     | not set (on)  | not set (on)                               | keep unset; `off` is the emergency switch                                                                  |
-| `SENTRY_DSN`               | yes    | not set       | not set                                    | recommended: set for both (server errors are already built to report there)                                |
+| Variable                   | Secret | Staging       | Production today                           | For launch                                                                                                                           |
+| -------------------------- | ------ | ------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `BALLBATTLE_ONLINE`        | no     | `1`           | `1`                                        | keep                                                                                                                                 |
+| `BALLBATTLE_ACCOUNTS`      | no     | `1`           | empty                                      | `1` (`friend-switch.ts on --accounts`, step 9)                                                                                       |
+| `BALLBATTLE_POKE`          | no     | `1`           | not set                                    | `1` (step 8)                                                                                                                         |
+| `VITE_POKE`                | no     | `1`           | not set                                    | nothing: production now builds it from `BALLBATTLE_POKE`                                                                             |
+| `BALLBATTLE_TURNS`         | no     | `1`           | not set                                    | `1` (step 11)                                                                                                                        |
+| `SUPABASE_URL`             | no     | set (staging) | set (production project, verified by host) | keep                                                                                                                                 |
+| `SUPABASE_PUBLISHABLE_KEY` | no     | set           | set, differs                               | keep                                                                                                                                 |
+| `SUPABASE_BROWSER_KEY`     | no     | set           | set, differs                               | keep; **Calvin to check** it is production's `browser_poke` key (Supabase > production > API Keys)                                   |
+| `SUPABASE_SECRET_KEY`      | yes    | set           | set                                        | keep; scope to Functions once on Pro                                                                                                 |
+| `DATABASE_URL`             | yes    | set           | set                                        | check `/health` `"dbMatchesUrl":true` after the publish (masked to the API; the functions compare its project with `SUPABASE_URL`'s) |
+| `SEED_KEYS`                | yes    | set           | set                                        | keep                                                                                                                                 |
+| `GOOGLE_CLIENT_ID`         | yes    | set           | empty                                      | production's client id (step 7)                                                                                                      |
+| `GOOGLE_CLIENT_SECRET`     | yes    | set           | empty                                      | production's secret (step 7); scope to Functions                                                                                     |
+| `BALLBATTLE_EMAIL_CODES`   | no     | not set (on)  | not set (on)                               | keep unset; `off` is the emergency switch                                                                                            |
+| `SENTRY_DSN`               | yes    | not set       | not set                                    | recommended: set for both (server errors are already built to report there)                                                          |
 
 ## Supabase: Auth
 

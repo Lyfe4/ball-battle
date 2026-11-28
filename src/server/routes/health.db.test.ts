@@ -41,6 +41,7 @@ describe('GET /api/v1/health', () => {
       emailSends: 'ok',
       pokes: 'off',
       turns: deps.config.turns ? 'on' : 'off',
+      dbMatchesUrl: true,
     });
   });
 
@@ -76,6 +77,24 @@ describe('GET /api/v1/health', () => {
       await admin`update game.flags set enabled = ${was?.enabled ?? false} where name = 'poke'`;
       await on.sql.end();
     }
+  });
+
+  it('says whether its database is SUPABASE_URL’s project, and stays 200 when it isn’t', async () => {
+    // Only the connection string differs: the checks still read the local database and Auth.
+    const other =
+      'postgresql://game_api_v2.abcdefghijklmnopqrst:x@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres';
+    const handler = endpoint(
+      'health',
+      health,
+      () => ({ ...deps, config: { ...deps.config, databaseUrl: other } }),
+      () => undefined,
+    );
+    const response = await handler(new Request('http://localhost/api/v1/health'));
+    const text = await response.text();
+    expect(response.status).toBe(200);
+    expect((JSON.parse(text) as { dbMatchesUrl: boolean }).dbMatchesUrl).toBe(false);
+    expect(text).not.toContain('abcdefghijklmnopqrst');
+    expect(text).not.toContain('game_api');
   });
 
   it('says a code email the relay refused today, and stays 200 (ADR 0082, the mail watch)', async () => {
