@@ -1,9 +1,12 @@
 /*
  * The check before a first email code (ADR 0079 addendum of 2026-11-28): a box under the email
- * field reserved at Cloudflare's widget's height before it loads, so nothing jumps when it renders.
- * Flex, so the widget's frame sits on no text baseline (measured: 65 px, the box exactly that).
+ * field reserved at Cloudflare's widget's height (65 px) before it loads, so nothing jumps when it
+ * renders. The widget's frame sits inline in Cloudflare's own markup: with no font size here it
+ * sits on no text line, so the box is exactly the frame (measured in all three engines,
+ * scripts/turnstile-probe.ts). Its words are inside the frame, a page of their own.
  */
 .sign-in-captcha {
-  display: flex;
   min-height: 65px;
+  font-size: 0;
+  line-height: 0;
 }
