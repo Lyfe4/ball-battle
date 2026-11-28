@@ -145,7 +145,7 @@ function joins(connection: { url: string; key: string; topic: string }): Promise
       const config = {
         broadcast: { self: false, ack: false },
         presence: { key: '' },
-        private: false,
+        private: true,
       };
       const join = {
         topic: `realtime:${connection.topic}`,

@@ -152,7 +152,13 @@ Undo: `node scripts/friend-switch.ts off --accounts` (one deploy).
 
 You should see: "production: Pokes are on"; `/api/v1/health` `"pokes":"on"`; signed in, DevTools >
 Network shows `GET /api/v1/me/poke` answering a topic and a `wss://wtqmptuhonbtjwxjwtwl.supabase.co`
-socket open with no CSP error. Undo: `node scripts/poke-switch.ts off production` (instant).
+socket open with no CSP error; its join message has `"private":true` (ADR 0092 addendum: only the
+server can send a poke). Undo: `node scripts/poke-switch.ts off production` (instant).
+
+Optional, Calvin, in the dashboard (no deploy): Realtime > Settings > "Allow public access" off,
+staging first, then production. Pokes don't need it; off, nobody can open public channels on the
+project's Realtime (its connections and messages are ours). Check after: a signed-in page's poke
+socket still joins (DevTools > Network > the socket's messages: `phx_reply` with `"status":"ok"`).
 
 ## 11. The smoke check and the two-phone test
 

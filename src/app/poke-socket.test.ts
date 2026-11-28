@@ -141,7 +141,7 @@ afterEach(() => {
 });
 
 describe('joining', () => {
-  it('opens the socket with the browser key and joins the player’s public topic', () => {
+  it('opens the socket with the browser key and joins the player’s private topic, listen-only', () => {
     open();
     expect(latest().url).toBe(
       'wss://ref.supabase.co/realtime/v1/websocket?apikey=sb_publishable_browser&vsn=1.0.0',
@@ -149,7 +149,7 @@ describe('joining', () => {
     latest().open();
     const join = latest().joinMessage();
     expect(join.topic).toBe('realtime:p:0123456789abcdef0123456789abcdef');
-    expect(join.payload).toMatchObject({ config: { private: false, broadcast: { self: false } } });
+    expect(join.payload).toMatchObject({ config: { private: true, broadcast: { self: false } } });
     expect(join.join_ref).toBe(join.ref);
   });
 
