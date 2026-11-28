@@ -94,7 +94,8 @@ describe('a tap on a touch phone', () => {
     // so a light kept for 200 ms by press.ts's own clock once measured 179 ms here (Firefox, CI).
     // Ten frames at 60 Hz (two frames short of the 200 ms) is still a light anyone sees, and a
     // light cut short by a real bug (a stray pointerdown, the timer dropped) measures far less.
-    expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 2 * FRAME_MS);
+    // Firefox's clock is whole milliseconds, so ten frames can read as 166 against 166.67 (#270).
+    expect(seen.unlitAt - seen.litAt).toBeGreaterThanOrEqual(PRESS_SHOWN_MS - 2 * FRAME_MS - 1);
     expect(send.hasAttribute('data-pressed'), 'never stuck lit').toBe(false);
     expect(lookOf(send, 'filter').look).toBe('none');
   });
