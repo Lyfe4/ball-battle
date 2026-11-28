@@ -3,8 +3,8 @@
 // answering one (the card, with Accept); then both pick lineups together (`?start=`). A waiting
 // challenge ends by Cancel challenge, or Back once asked (waiting-back.ts); another tab or screen,
 // or the app hidden, keeps it, and the server stops it once its screen is unwatched for a minute
-// (LOBBY_SEEN_MS), telling both. The 16+ question comes first,
-// once per device, never on load. Every state has a way on (ADR 0027). By turns (ADR 0085), each
+// (LOBBY_SEEN_MS), or a friend's after a minute unanswered (INVITE_ANSWER_MS). The 16+ question
+// comes first, once per device. Every state has a way on (ADR 0027). By turns (ADR 0085), each
 // player's lineup goes with the challenge they send or accept, picked here in place.
 import { callApi } from '../app/api.ts';
 import { inAppBrowserOf } from '../app/in-app-browser.ts';
@@ -239,7 +239,7 @@ export function createChallengeScreens(
     if (waitingOn(card) && visible) {
       // Home knows at once that this lobby waits.
       if (token !== undefined) rememberLobby(token, card);
-      lobby.next();
+      lobby.next(card.endsInMs);
       host.lobbyWaits?.();
     }
   }
@@ -273,11 +273,6 @@ export function createChallengeScreens(
       unblock: (pair) => unblockThen(pair, () => loadCard(), failed),
     });
 
-  /** Another of these screens shows (a new challenge, the lineups, the send screen). */
-  function moveOn(): void {
-    start.stop();
-  }
-
   return {
     setVisible(next) {
       // Leaving these screens forgets a friend picked for by turns; a waiting challenge stays.
@@ -297,11 +292,10 @@ export function createChallengeScreens(
       }
     },
     showChallenge(next) {
-      moveOn();
+      start.stop(); // Another of these screens shows.
       if (token !== next) info = undefined;
       token = next;
-      // Read just before (the waiting screen after a send): shown at once, and asked again as the
-      // waiting screen does. Else the card's layout until it comes (ADR 0054).
+      // Read just before (after a send): shown at once, then asked as the waiting screen does.
       if (info === undefined) {
         show('loading');
         void loadCard();
@@ -312,12 +306,13 @@ export function createChallengeScreens(
       }
     },
     showStart(id) {
-      moveOn();
+      start.stop();
       start.open(id);
     },
     rematchShown: () => start.rematchOf(),
+    waitingFor: () => (visible && lobby.waiting() ? (info?.invitee ?? undefined) : undefined),
     openInvite(next, live = true) {
-      moveOn();
+      start.stop();
       token = next;
       info = undefined;
       if (live) return accept('go');
@@ -336,12 +331,12 @@ export function createChallengeScreens(
       });
     },
     async playFriend(setup) {
-      moveOn();
+      start.stop();
       token = undefined;
       await sender.playFriend(setup);
     },
     showSend(format: Format, bestOf: BestOf) {
-      moveOn();
+      start.stop();
       token = undefined;
       // Play's own step (the 16+ question, or a failure), or a lineup by turns to send.
       const left = sender.takeLeft();

@@ -35,6 +35,13 @@ export interface ChallengeLink {
    * accepted instead, and both pick their lineups here (`token` is their link).
    */
   readonly startId?: string;
+  /**
+   * Sent to a friend whose rematch offer waited for the sender (both want to play, ADR 0089
+   * addendum of 2026-11-28): it was the sender's yes to it instead, on the rematch's rules (this
+   * `format` and `bestOf`), and both pick their lineups at `startId`. No link was made (`token` is
+   * empty).
+   */
+  readonly rematchOf?: string;
 }
 
 /** GET /api/v1/challenges/:token: what a friend sees before building a lineup. */
@@ -65,6 +72,18 @@ export interface ChallengeInfo {
    * 0089 addendum of 2026-11-27). Absent from a server before it.
    */
   readonly superseded?: boolean;
+  /**
+   * To its sender: their friend didn't answer the live challenge in time (`INVITE_ANSWER_MS`, ADR
+   * 0089 addendum of 2026-11-28); it ended (`stopped`). Absent from a server before it.
+   */
+  readonly unanswered?: boolean;
+  /**
+   * To its sender, while a live challenge to a friend waits: ms from this answer until it ends
+   * unanswered. A duration, never a time, so the phone's clock never matters.
+   */
+  readonly endsInMs?: number;
+  /** To its sender: the friendship of the friend it was sent to, for Send again; else absent. */
+  readonly inviteeFriend?: string;
   /**
    * To a viewer who blocked its sender (ADR 0086): that pair's id, for Unblock; else null. The
    * sender is never told.

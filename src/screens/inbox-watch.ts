@@ -69,6 +69,8 @@ export interface InboxWatchHost {
   inbox(answer: InboxResponse | undefined): void;
   /** Something is expected (a rematch window, a lobby waiting): the inbox reads every 2 s. */
   expecting(): boolean;
+  /** Whom the sender's waiting screen waits for, while it shows: their banner never sits on it. */
+  waitingFor?(): string | undefined;
 }
 
 export interface InboxWatch {
@@ -112,7 +114,7 @@ export function createInboxWatch(
     last === undefined ? [] : last.invites.filter((one) => !answered.has(one.token));
   /** The newest live challenge that may still pop up; one by turns waits in the lists (ADR 0085). */
   const popping = (): Invite | undefined =>
-    open().find((one) => one.live && !folded.has(one.token));
+    open().find((one) => one.live && !folded.has(one.token) && one.from !== host.waitingFor?.());
   const seen = () => seenMs + (seenSince === undefined ? 0 : Date.now() - seenSince);
   const leftOf = () => Math.max(0, 1 - seen() / foldMs);
 

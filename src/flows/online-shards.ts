@@ -14,6 +14,8 @@ export const ONLINE_SHARDS: readonly (readonly (readonly [file: string, seconds:
     ['inbox-poke.online.test.ts', 94],
     ['rematch-anywhere.online.test.ts', 59],
     ['live-sync.online.test.ts', 23],
+    // Measured locally (2026-11-28): three two-phone flows, two waiting out a minute and 30 s.
+    ['pair-invite.online.test.ts', 160],
   ],
   [
     ['live-match.online.test.ts', 230],

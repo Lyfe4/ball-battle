@@ -6,6 +6,8 @@
 // a heartbeat), and a player is in one live match or lobby at a time. A player has one outgoing
 // challenge at a time (ADR 0089 addendum of 2026-11-27): sending one calls off the older one in
 // the same transaction, and sending one to a friend whose own lobby waits for you is an accept.
+// A rematch offer is a live invitation too (ADR 0089 addendum of 2026-11-28): a send to the friend
+// whose offer waits for you is your yes to it, and a send takes back your own offer.
 import type { Accepted, ChallengeInfo, ChallengeLink, CreateChallenge } from '../api/challenges.ts';
 import { LIVE_FORMATS } from '../api/live.ts';
 import type { Config } from './config.ts';
@@ -25,6 +27,8 @@ import {
   type ChallengeRow,
 } from './db/challenges.ts';
 import { cancelLobby, lobbySeen } from './db/live.ts';
+import { rematchAskedOf, rematchRow, withdrawRematchAsks } from './db/rematch.ts';
+import { acceptRematchIn, rematchStateOf } from './rematch.ts';
 import { inviteeOf } from './friend-challenge.ts';
 import { ApiError, type Deps } from './http.ts';
 import { CURRENT_RULESET, rulesetSim } from './rulesets.ts';
@@ -107,6 +111,11 @@ export async function createChallenge(
       // Crossed (ADR 0086): their lobby waits for the sender, so sending is accepting it.
       const theirs = await lobbyWaitingFor(db, invitee, creator);
       if (theirs !== undefined) return crossedSend(db, deps.config, theirs, creator);
+      // Both want to play: their rematch offer waits for the sender, so sending is saying yes.
+      const offer = await rematchAskedOf(db, invitee, creator);
+      const said =
+        offer === undefined ? undefined : await rematchSend(db, deps.config, offer, creator);
+      if (said !== undefined) return said;
     }
     // Nothing new while picking lineups or in a live match, live or by turns (ADR 0089 addendum);
     // the sender's own lobby is called off below. Nor a second thing between the same two.
@@ -125,8 +134,10 @@ export async function createChallenge(
     });
     const made = await challengeByHash(db, hash);
     if (made === undefined) throw new Error('A challenge just made is missing');
-    // One outgoing challenge: the older ones stop now, and their friends are poked.
+    // One outgoing challenge: the older ones stop now, and their friends are poked; so does a
+    // rematch this sender offered that still waits.
     await supersedeOutgoing(db, creator, made.id);
+    await withdrawRematchAsks(db, creator);
     return linkOf(token, made);
   });
 }
@@ -160,6 +171,7 @@ async function crossedSend(
   const theirs = await challengeById(db, theirsId, true);
   if (theirs === undefined) throw new Error('A crossed lobby just found is missing');
   await supersedeOutgoing(db, sender, undefined);
+  await withdrawRematchAsks(db, sender);
   await checkNotLive(db, config, sender);
   const startId = await openStart(db, {
     players: { a: theirs.creator, b: sender },
@@ -168,6 +180,31 @@ async function crossedSend(
   });
   await markStarted(db, theirs.id, startId);
   return linkOf(await tokenFor(config, theirs.creator, theirs.requestId), theirs, startId);
+}
+
+/**
+ * A live challenge sent to the friend whose rematch offer (on `seriesId`) waits for the sender: both
+ * want to play (ADR 0089 addendum of 2026-11-28), so it is the sender's yes to that offer, on its
+ * rules (the match before's format and length), and no link is made. Both go to the lineups; the
+ * lineup screen says it is the rematch. Undefined when the offer ended meanwhile (a send then).
+ */
+async function rematchSend(
+  db: TransactionSql,
+  config: Config,
+  seriesId: string,
+  sender: string,
+): Promise<ChallengeLink | undefined> {
+  const row = await rematchRow(db, seriesId, true);
+  if (row === undefined || rematchStateOf(row).state !== 'asked') return undefined;
+  const startId = await acceptRematchIn(db, config, seriesId, row, sender);
+  return {
+    token: '',
+    format: row.format,
+    bestOf: row.bestOf,
+    expiresAt: new Date(row.now).toISOString(),
+    startId,
+    rematchOf: seriesId,
+  };
 }
 
 /**
@@ -191,13 +228,16 @@ export async function challengeInfo(
     // A friend may have accepted between the read and the heartbeat: the lobby moves on at once.
     found = (await challengeByHash(deps.sql, await hashOf(token))) ?? found;
   }
+  // A live challenge to a friend unanswered in time (ADR 0089 addendum of 2026-11-28): its sender
+  // reads it as stopped, saying why; anyone else as expired.
+  const unanswered = own && found.live && found.invitee !== null && found.expired;
   const status: ChallengeInfo['status'] = found.accepted
     ? viewer !== undefined && viewer === found.acceptor
       ? 'accepted'
       : own
         ? 'yours'
         : 'taken'
-    : found.stopped
+    : found.stopped || unanswered
       ? 'stopped'
       : own
         ? 'yours'
@@ -218,6 +258,11 @@ export async function challengeInfo(
     invitee: own ? found.inviteeName : null,
     declined: own && found.declined,
     superseded: own && found.superseded,
+    ...(unanswered && !found.stopped ? { unanswered: true } : {}),
+    ...(status === 'yours' && found.live && found.invitee !== null && !found.accepted
+      ? { endsInMs: found.expiresInMs }
+      : {}),
+    ...(own && found.inviteeFriend !== null ? { inviteeFriend: found.inviteeFriend } : {}),
     blocked: blocked ?? null,
   };
 }
@@ -276,6 +321,7 @@ export async function acceptChallenge(
       // The acceptor's own live challenge still waiting stops (one at a time): crossed, it was to
       // this sender and the two merge; else its friend is poked and their banner goes.
       await supersedeOutgoing(db, acceptor, undefined, true);
+      await withdrawRematchAsks(db, acceptor);
       await checkNotLive(db, deps.config, acceptor);
       const startId = await openStart(db, {
         players: { a: found.creator, b: acceptor },

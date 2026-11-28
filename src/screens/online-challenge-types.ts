@@ -15,8 +15,8 @@ export interface ChallengeHost {
   /** In-app Back, or `toParent` when there is no history to go back to. */
   back(toParent: () => void): void;
   home(): void;
-  /** Challenge a friend: the one vs Friend path (ADR 0089 addendum of 2026-11-27). */
-  readonly friend: () => void;
+  /** Challenge a friend: the one vs Friend path (ADR 0089 addendum of 2026-11-27), `id` picked. */
+  readonly friend: (id?: string) => void;
   /**
    * An old link to the vs Friend setup (`?view=send`): Play with the box on vs Friend and these
    * rules, in its place, and "Who do you want to play?" signed in. Nothing is sent.
@@ -65,6 +65,8 @@ export interface ChallengeScreens {
   showStart(id: string): void;
   /** The ended series whose rematch's lineups show now, if any: it asks for itself. */
   rematchShown(): string | undefined;
+  /** Whom the sender's waiting screen waits for while it shows (a friend's name), else undefined. */
+  waitingFor(): string | undefined;
   /** The page is visible again: a waiting screen asks now. */
   resumed(): void;
   /**
