@@ -12,7 +12,7 @@ import {
   type RecordStats,
 } from '../../api/record.ts';
 import type { Sql, TransactionSql } from '../db.ts';
-import type { Limit } from '../rate-limit.ts';
+import { countedAs, type ReadCount } from '../read-count.ts';
 import { markSeen, sessionLive, type Profile } from './profiles.ts';
 
 type Db = Sql | TransactionSql;
@@ -71,23 +71,13 @@ export interface Loaded<T> {
   readonly answer: T | undefined;
 }
 
-/** The session's profile, marked seen, and the read counted, as CTEs `me` and `counted`. */
-function reader(db: Db, userId: string, limit: Limit, sessionId: string | undefined) {
-  const window = `${String(limit.windowSeconds)} seconds`;
+/** The session's profile, marked seen, and the read counted, as CTEs `me` and `spent`. */
+function reader(db: Db, userId: string, count: ReadCount, sessionId: string | undefined) {
   return db`
     seen as (${markSeen(db, userId)}), me as (
       select coalesce(username, display_name) as name, username, account_at is not null as account
       from game.profiles where user_id = ${userId}::uuid and ${sessionLive(db, sessionId)}
-    ), counted as (
-      insert into game.rate_limits (subject, bucket, window_start, count)
-      select ${userId}::text, ${limit.bucket}::text,
-        date_bin(${window}::interval, now(), timestamptz '2000-01-01'), 1
-      where exists (select 1 from me)
-      on conflict (subject, bucket, window_start)
-        do update set count = game.rate_limits.count + 1
-      returning count,
-        ceil(extract(epoch from (window_start + ${window}::interval - now())))::integer as retry
-    ), mine as (
+    ), ${countedAs(db, userId, count, () => db`exists (select 1 from me)`)}, mine as (
       select s.id, s.ruleset, s.format, s.best_of, s.live, s.status, s.end_reason, s.finished_at,
         coalesce(s.winner = case when s.player_a = ${userId}::uuid then 'a' else 'b' end, false)
           as won,
@@ -103,7 +93,7 @@ function reader(db: Db, userId: string, limit: Limit, sessionId: string | undefi
 const READER_COLUMNS = (db: Db) => db`
   exists (select 1 from me) as me_found, (select name from me) as me_name,
   (select username from me) as me_username, (select account from me) as me_account,
-  (select count from counted) as spent_count, (select retry from counted) as spent_retry`;
+  (select count from spent) as spent_count, (select retry from spent) as spent_retry`;
 
 /**
  * The first RECENT_SERIES rows of `page` (a CTE of `mine`'s columns, one more than a page) as
@@ -161,11 +151,11 @@ const tally = (db: Db, where: ReturnType<typeof COUNTED>) => db`json_build_objec
 export async function loadRecord(
   db: Db,
   userId: string,
-  limit: Limit,
+  count: ReadCount,
   sessionId?: string,
 ): Promise<Loaded<RecordResponse>> {
   const [raw] = await db<RawRecord[]>`
-    with ${reader(db, userId, limit, sessionId)}, page as (
+    with ${reader(db, userId, count, sessionId)}, page as (
       select * from mine order by finished_at desc, id limit ${RECENT_SERIES + 1}
     ), runs as (
       -- Each loss starts a new run; a run's wins are its streak.
@@ -209,12 +199,12 @@ const EMPTY_STATS: RecordStats = {
 export async function loadMatches(
   db: Db,
   userId: string,
-  limit: Limit,
+  count: ReadCount,
   after: Cursor,
   sessionId?: string,
 ): Promise<Loaded<MatchesPage>> {
   const [raw] = await db<RawPage[]>`
-    with ${reader(db, userId, limit, sessionId)}, page as (
+    with ${reader(db, userId, count, sessionId)}, page as (
       select * from mine
       where finished_at < ${after.finishedAt}::timestamptz
         or (finished_at = ${after.finishedAt}::timestamptz and id > ${after.id}::uuid)

@@ -7,7 +7,7 @@ import { decodePoke, socketUrlOf, type PokeResponse } from '../../api/poke.ts';
 import { pokeKeyOf } from '../db/poke.ts';
 import { guard } from '../guard.ts';
 import { json, type RouteHandler } from '../http.ts';
-import { LIMITS, spend } from '../rate-limit.ts';
+import { spendRead } from '../read-count.ts';
 import { sessionOf } from '../session.ts';
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
@@ -18,7 +18,7 @@ export const mePoke: RouteHandler = async (request, context) => {
   const { config, sql } = context.deps;
   if (config.pokeKey === undefined)
     return json(200, { off: true } satisfies PokeResponse, NO_STORE);
-  await spend(sql, player.userId, LIMITS.reads);
+  await spendRead(context.deps, player.userId);
   const pokeKey = await pokeKeyOf(sql, player.userId);
   const body: PokeResponse =
     pokeKey === undefined

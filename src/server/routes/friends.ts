@@ -12,6 +12,7 @@ import { acceptFriend, addFriend, listFriends, removeFriend } from '../friends.t
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteContext, type RouteHandler } from '../http.ts';
 import { ipSubject, LIMITS, spend, spendAll, type Limit } from '../rate-limit.ts';
+import { spendRead } from '../read-count.ts';
 import { sessionOf, type Session } from '../session.ts';
 import { requireAccounts } from '../sign-in.ts';
 
@@ -32,7 +33,7 @@ export const friends: RouteHandler = async (request, context) => {
   const player = await accountOf(request, context);
   const { deps } = context;
   if (request.method === 'GET') {
-    await spend(deps.sql, player.userId, LIMITS.reads);
+    await spendRead(deps, player.userId);
     return json(200, await listFriends(deps, player.userId), {
       'Cache-Control': 'private, no-store',
     });

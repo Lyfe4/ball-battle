@@ -19,6 +19,7 @@ import { declineInvite } from '../friend-challenge.ts';
 import { guard, jsonBody } from '../guard.ts';
 import { ApiError, json, type RouteHandler } from '../http.ts';
 import { LIMITS, spend } from '../rate-limit.ts';
+import { spendRead } from '../read-count.ts';
 import { optionalSession, sessionOf } from '../session.ts';
 
 const ONE = /^\/api\/v1\/challenges\/([A-Za-z0-9_-]+)(\/accept|\/cancel|\/decline)?$/;
@@ -41,7 +42,7 @@ export const challengeOne: RouteHandler = async (request, context) => {
   if (match?.[2] === undefined) {
     guard(request, ['GET']);
     const viewer = await optionalSession(request, context).catch(() => undefined);
-    if (viewer !== undefined) await spend(context.deps.sql, viewer.userId, LIMITS.reads);
+    if (viewer !== undefined) await spendRead(context.deps, viewer.userId);
     return json(200, await challengeInfo(context.deps, token, viewer?.userId));
   }
   guard(request, ['POST']);
