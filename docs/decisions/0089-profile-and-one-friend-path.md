@@ -272,3 +272,87 @@ Two causes, both on the page; the server pokes every friendship write (`poke_fri
 - A recipient reads its inbox once at each live invite's `stopsInMs` (about once a minute while a
   banner waits).
 - Back, once confirmed, is one cancel call, as Cancel challenge is; Keep waiting costs nothing.
+
+## Addendum (2026-11-28): one live invitation per pair, and endings that arrive on time
+
+The owner's two-phone test on staging (friends caityj and Calvin) found two gaps.
+
+1. **Two live things between one pair.** After a live match, caityj offered a rematch (30 s).
+   Calvin went home by typing the URL, pressed Play, picked caityj and sent a live challenge. The
+   server took it: the pair rule (`checkBetween`) looked only at challenges, never at a rematch
+   offer, so the pair had her offer to him and his challenge to her, and her offer's banner sat on
+   his "Waiting for caityj".
+2. **An ignored challenge never ended.** caityj let both run out. Her rematch offer ended on time
+   (the end screen reads at its deadline), but a live challenge to a friend had no answer window
+   at all: it waited for as long as the sender's lobby kept asking. Nothing ran out, so nothing was
+   written, no poke went, and his waiting screen stayed on "Waiting for caityj".
+
+### Decided: both want to play
+
+A rematch offer is a live invitation like a live challenge to a friend. Between two players there
+is at most one, and each player has at most one out:
+
+- **A live challenge sent to the friend whose rematch offer waits for you is your yes to it**, on
+  the rematch's rules (the match before's format and length, whatever Play's box said). Both go
+  straight to the lineups, and the lineup line says "Rematch, same rules · …", so the rules never
+  surprise anyone. No link is made (`ChallengeLink.rematchOf`, an empty `token`). This is the
+  crossed-challenge rule (item 8 above) applied to rematches: the first invitation's rules win.
+  Chosen over showing the offer with Accept in place of sending because the sender has already
+  said they want to play this friend: a second tap to say it again is a step, not a safeguard.
+- **A send takes back your own rematch offer**, as it calls off your older challenges
+  (`withdrawRematchAsks`: `declined_by` is the asker, which pokes both).
+- **A rematch asked while their live challenge waits for you is refused**
+  (`their_challenge_waiting`): the challenge's banner is already on the end screen, with Accept.
+- **A yes to a rematch stops your own live challenge still waiting** (to anyone), as an Accept
+  does, instead of refusing the yes with `in_a_match`.
+- **Every rematch move takes both players' advisory locks first, in id order, then the series
+  row**, the order a challenge send or accept takes. A send and a rematch move at the same moment,
+  on any hosts, are decided one after the other, and the second sees the first. Tested on two
+  connections at once (`pair-invite.db.test.ts`).
+
+### Decided: a live challenge to a friend lasts a minute
+
+- **`INVITE_ANSWER_MS` = 60 s**, stored as the challenge's `expires_at` (no migration). Every query
+  that treats a lobby as alive also requires `expires_at > now()`. A link to anyone keeps no answer
+  window: it waits while its sender does.
+- **The sender's waiting screen sets a timer to the end it was told** (`ChallengeInfo.endsInMs`, a
+  duration, so the phone's clock never matters), reads just after it, and shows **"caityj didn't
+  answer"** with **Send again** (the one vs Friend path with that friend picked, on the rules last
+  sent them) and **Home** (`unanswered`, `inviteeFriend`). The recipient's banner goes at its
+  `stopsInMs`, now the earlier of the lobby going stale and the answer window.
+- **No banner of the same person sits on a waiting screen** (`waitingFor`, for the rematch banner
+  and the challenge banner): the server rules leave nothing to show there; the guard keeps it so.
+
+### Every time-based ending, and how it reaches the screens
+
+Nothing writes a row when a clock runs out, so nothing pokes; each screen reads at the end it
+already knows, and whatever the server then settles on that read pokes both players.
+
+| Ending                                        | How each screen learns                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Live challenge to a friend unanswered (new)   | Sender: a timer to `endsInMs`. Recipient: the inbox reads at `stopsInMs`                 |
+| Lobby gone stale (the sender away 60 s)       | Recipient: `stopsInMs` (as before); home's way back: its own `stopsInMs`                 |
+| Rematch offer unanswered (30 s)               | The end screen and the away watch read at the deadline (as before; now a two-phone flow) |
+| Lineups picked together run out               | The lineup screen reads at its deadline; that read settles the start, which pokes both   |
+| Live start window, pick deadlines, away grace | The match screen reads at its deadlines; that read settles, and the write pokes both     |
+| A turn by turns runs out (a day)              | The inbox reads at the soonest deadline; that read writes the forfeit, poking both       |
+| The 15-minute sweep                           | It writes rows (starts, live series, forfeits), whose triggers poke both players         |
+
+Declines, cancels and blocks write rows and poke both, as before. No other gap was found. Left as it
+is: a challenge **by turns** expires after 7 days by the clock alone (its card says so at the next
+read; nobody waits on it), and a sweep is never what tells a watching player: their screen reads
+first.
+
+**The rows** (added to the state table):
+
+| State                                                | Sender sees                                      | Recipient sees                        | How it gets there                                             | Tests                                  |
+| ---------------------------------------------------- | ------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------- | -------------------------------------- |
+| unanswered (a live challenge to a friend, 60 s)      | "Jo didn't answer": Send again, Home             | The banner goes                       | The clock; each page reads at the end it was told             | `pair-invite.db`, `pair-invite.online` |
+| their rematch offer waits, you send them a challenge | The lineups at once, "Rematch, same rules"       | The lineups at once                   | The send is the yes: `agreed_at` and the start poke both      | `pair-invite.db`, `pair-invite.online` |
+| your rematch offer waits, you send them a challenge  | The waiting screen                               | The offer goes, the challenge arrives | The send withdraws the offer (`declined_by`), then the insert | `pair-invite.db`                       |
+| their challenge waits, you ask them for a rematch    | Refused: answer theirs (its banner is on screen) | Their challenge as it was             | The ask's pair check                                          | `pair-invite.db`                       |
+
+### Cost (ADR 0084)
+
+One read more per unanswered live challenge on each phone, at its end, in place of safety reads
+that would have come anyway. No new function.
