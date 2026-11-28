@@ -20,6 +20,7 @@ import { createNotice, type NoticeContent } from '../ui/notice.ts';
 import { createSkeleton } from '../ui/skeleton.ts';
 import { createAccountStep } from './account-step.ts';
 import { askToDelete } from './account-delete.ts';
+import type { Captcha } from '../ui/captcha.ts';
 import { createCodeStep } from './sign-in-code.ts';
 import { offerSwitch } from './sign-in-switch.ts';
 import { inAMatchCard } from './current-match.ts';
@@ -27,7 +28,13 @@ import { inAMatchCard } from './current-match.ts';
 /** Signing in waits for a live match or lobby to end (ADR 0079, `whileNotLive`). */
 const SIGN_IN_IN_A_MATCH = 'Finish or leave your match first, then sign in';
 import { onlineNotice } from './online-text.ts';
-import { adultSignInCard, chooseCard, GOOGLE_PROBLEMS, signInOffCard } from './sign-in-text.ts';
+import {
+  adultSignInCard,
+  captchaFailedCard,
+  chooseCard,
+  GOOGLE_PROBLEMS,
+  signInOffCard,
+} from './sign-in-text.ts';
 
 const GOOGLE_START = '/api/v1/auth/google';
 
@@ -52,6 +59,8 @@ export interface SignInHost {
   readonly forget?: () => Promise<string | undefined>;
   /** Signed in (and its username asked, once): the Friends tab (ADR 0081). */
   readonly landed: () => void;
+  /** The check before a first email code, in a build with one (`captcha-build.ts`). */
+  readonly captcha?: Captcha | undefined;
 }
 
 export interface SignInScreen {
@@ -94,6 +103,14 @@ export function createSignIn(
     email: () => email,
     setEmail: (value) => {
       email = value;
+    },
+    captcha: host.captcha,
+    captchaFailed: () => {
+      const retry = () => {
+        choose();
+        return Promise.resolve();
+      };
+      show(captchaFailedCard(retry, host.back));
     },
   });
 
@@ -147,7 +164,11 @@ export function createSignIn(
           start();
           return;
         default:
-          if (answer.status < 500 || answer.code === 'email_busy') {
+          if (
+            answer.status < 500 ||
+            answer.code === 'email_busy' ||
+            answer.code === 'captcha_failed'
+          ) {
             line(answer.message);
             return;
           }
@@ -173,6 +194,7 @@ export function createSignIn(
           ...(fieldError === undefined ? {} : { error: fieldError }),
         },
         sendCode: codes.send,
+        ...(host.captcha === undefined ? {} : { captcha: host.captcha.element }),
         withGoogle: () => {
           host.leaveFor(adult ? `${GOOGLE_START}?adult=1` : GOOGLE_START);
           // The button stays busy while the page leaves.
@@ -190,6 +212,8 @@ export function createSignIn(
             }),
       }),
     );
+    // On screen again (a notice moves its parts, which reloads a frame): a widget afresh.
+    if (options.emailCodes) host.captcha?.show();
   }
 
   function signedIn(outcome: SignInResponse['outcome'] | undefined, via: 'email' | 'google') {

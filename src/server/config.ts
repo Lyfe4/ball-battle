@@ -57,6 +57,18 @@ export interface Config {
    * revoked alone, which closes every socket.
    */
   readonly pokeKey: string | undefined;
+  /**
+   * Cloudflare Turnstile before a device's first email code (ADR 0079 addendum of 2026-11-28):
+   * `BALLBATTLE_TURNSTILE_SITE_KEY` (the one the page is built with) and `TURNSTILE_SECRET_KEY`,
+   * both or it is off. Never with only one: a page without the widget would be refused every code.
+   */
+  readonly turnstile: TurnstileKeys | undefined;
+}
+
+/** Turnstile's keys (ADR 0079): the secret is the functions' only, never a page's. */
+export interface TurnstileKeys {
+  readonly siteKey: string;
+  readonly secret: string;
 }
 
 /** A Google OAuth client (ADR 0079): never sent to a page but its id, in the redirect. */
@@ -139,6 +151,8 @@ function settingsOf(env: Readonly<Record<string, string | undefined>>, online: b
       'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set together or not at all',
     );
   }
+  const siteKey = env['BALLBATTLE_TURNSTILE_SITE_KEY']?.trim() ?? '';
+  const turnstileSecret = env['TURNSTILE_SECRET_KEY']?.trim() ?? '';
   return {
     online,
     accounts: online && env['BALLBATTLE_ACCOUNTS'] === '1',
@@ -156,5 +170,7 @@ function settingsOf(env: Readonly<Record<string, string | undefined>>, online: b
       online && env['BALLBATTLE_ERROR_REPORTS'] === '1' && dsn !== undefined && dsn !== '',
     pokeKey:
       online && env['BALLBATTLE_POKE'] === '1' ? required(env, 'SUPABASE_BROWSER_KEY') : undefined,
+    turnstile:
+      siteKey === '' || turnstileSecret === '' ? undefined : { siteKey, secret: turnstileSecret },
   };
 }

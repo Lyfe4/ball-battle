@@ -219,7 +219,8 @@ again later, merge a fix to `main` and run Publish.
 - Daily: the Supabase daily check is green; Resend > Emails shows no bounces.
 - Leave Supabase > Authentication > Attack Protection > **captcha off**. It is project-wide:
   on, Auth asks for a token on anonymous sign-ups too, and the functions make every guest that
-  way, so guests would stop. A Turnstile check before the email code is proposed, built in our
-  own route (ADR 0079 addendum of 2026-11-28); until then the `emailCodes` monitor is the warning.
+  way, so guests would stop. Our own Turnstile check before a first email code is built, off
+  until its keys are set (ADR 0079 addendum of 2026-11-28, "As built"): switch it on on staging
+  first; until then the `emailCodes` monitor is the warning.
 - Weekly: Netlify > Usage (credits against 3,000), Supabase > Usage (Realtime messages and
   connections), `node scripts/reports.ts production` (reported names).

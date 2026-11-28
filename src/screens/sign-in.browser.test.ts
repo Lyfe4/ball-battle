@@ -1,9 +1,11 @@
 // The account screen reads who this device is from the server (ADR 0079 addendum of 2026-11-22),
 // through a fake API: a device Safari wiped (no keys, the cookies kept) is shown its account, not
 // the 16+ question but taken on to the Friends tab; a guest is offered Forget me. Log out and
-// Delete account are Profile's (profile.browser.test.ts, ADR 0081).
+// Delete account are Profile's (profile.browser.test.ts, ADR 0081). The check before a first code
+// (ADR 0079 addendum of 2026-11-28) runs the real controller over a fake widget.
 import { describe, expect, it } from 'vitest';
 import type { Fetch } from '../app/api.ts';
+import { createCaptcha, type Captcha, type CaptchaEvents } from '../ui/captcha.ts';
 import { createSignIn, type SignInHost } from './sign-in.ts';
 import { callApi } from '../app/api.ts';
 import { createVisitCache } from '../app/visit-cache.ts';
@@ -40,14 +42,19 @@ function screen(
   storage = memory(),
   cookies = '__Host-bb_player=1',
   held: Record<string, Promise<Response>> = {},
+  captcha?: Captcha,
 ) {
   const notice = document.createElement('section');
   const loading = document.createElement('div');
   document.body.replaceChildren(notice, loading);
   const asked: string[] = [];
-  const send: Fetch = (input) => {
+  /** What each POST /auth/email sent. */
+  const sends: Record<string, unknown>[] = [];
+  const send: Fetch = (input, init) => {
     const path = new URL(input, location.href).pathname.replace('/api/v1/', '');
     asked.push(path);
+    if (path === 'auth/email')
+      sends.push(JSON.parse(init.body as string) as Record<string, unknown>);
     if (path === 'auth/options')
       return Promise.resolve(json(200, { google: false, emailCodes: true }));
     if (path === 'me') return Promise.resolve(json(...me));
@@ -81,11 +88,12 @@ function screen(
       landed: () => {
         landed.push('friends');
       },
+      captcha,
     },
   );
   signIn.setVisible(true);
   signIn.show(undefined);
-  return { notice, asked, deleted, landed };
+  return { notice, asked, deleted, landed, sends };
 }
 
 const heading = (root: HTMLElement) => root.querySelector('.screen-title')?.textContent ?? '';
@@ -132,7 +140,9 @@ describe('the account screen', () => {
       answer = resolve;
     });
     const guest = { name: 'Player 4821', account: false, username: null };
-    const { notice, asked } = screen([200, guest], memory(), undefined, { 'auth/email': sent });
+    const { notice, asked, sends } = screen([200, guest], memory(), undefined, {
+      'auth/email': sent,
+    });
     await until(() => heading(notice) === 'Sign in', 'the ways in');
     const field = notice.querySelector('input');
     const button = [...notice.querySelectorAll('button')].find(
@@ -150,5 +160,112 @@ describe('the account screen', () => {
     answer(json(202, {}));
     await until(() => heading(notice) === 'Check your email', 'the code step');
     expect(asked.filter((path) => path === 'auth/email')).toHaveLength(1);
+    // A build without the check sends what it always sent.
+    expect(sends).toStrictEqual([{ email: 'sam@example.com' }]);
+    expect(notice.querySelector('.sign-in-captcha')).toBeNull();
+  });
+});
+
+/** A widget standing in for Cloudflare's: a token a moment after each render or reset. */
+function fakeWidget(fails = false) {
+  const made = { renders: 0, resets: 0, tokens: 0 };
+  let events: CaptchaEvents | undefined;
+  const issue = () => {
+    setTimeout(() => {
+      if (fails) events?.failed();
+      else {
+        made.tokens += 1;
+        events?.token(`token-${String(made.tokens)}`);
+      }
+    }, 50);
+  };
+  const captcha = createCaptcha((box, given) => {
+    events = given;
+    return Promise.resolve({
+      render() {
+        made.renders += 1;
+        box.replaceChildren(Object.assign(document.createElement('div'), { className: 'fake' }));
+        issue();
+      },
+      reset() {
+        made.resets += 1;
+        issue();
+      },
+    });
+  });
+  return { captcha, made };
+}
+
+const guest = { name: 'Player 4821', account: false, username: null };
+
+/** Types `email` and taps Email me a code. */
+function sendTo(notice: HTMLElement, email: string): void {
+  const field = notice.querySelector('input');
+  const button = [...notice.querySelectorAll('button')].find(
+    (node) => node.textContent === 'Email me a code',
+  );
+  if (field === null || button === undefined) throw new Error('No email field or button');
+  field.value = email;
+  field.dispatchEvent(new Event('input'));
+  button.click();
+}
+
+describe('the check before a first code (ADR 0079 addendum of 2026-11-28)', () => {
+  it('sits under the email field and sends its token with a first code, a new one each address', async () => {
+    const { captcha, made } = fakeWidget();
+    const answers = { 'auth/email': Promise.resolve(json(202, {})) };
+    const { notice, sends } = screen([200, guest], memory(), undefined, answers, captcha);
+    await until(() => heading(notice) === 'Sign in', 'the ways in');
+    const box = notice.querySelector('.sign-in-captcha');
+    expect(box?.previousElementSibling?.classList.contains('notice-field')).toBe(true);
+    await until(() => box?.querySelector('.fake') !== null, 'the widget');
+    sendTo(notice, 'sam@example.com');
+    await until(() => heading(notice) === 'Check your email', 'the code step');
+    expect(sends).toStrictEqual([{ email: 'sam@example.com', captcha: 'token-1' }]);
+    // Use another email: the widget afresh, and its own token (the first was spent).
+    const another = [...notice.querySelectorAll('button')].find(
+      (node) => node.textContent === 'Use another email',
+    );
+    another?.click();
+    await until(() => heading(notice) === 'Sign in', 'the ways in again');
+    sendTo(notice, 'kim@example.com');
+    await until(() => sends.length === 2, 'the second send');
+    expect(sends[1]?.['captcha']).not.toBe('token-1');
+    expect(made.renders).toBe(2);
+  });
+
+  it('says a refused token under the field, then waits for a new one', async () => {
+    const { captcha } = fakeWidget();
+    const refused = json(400, { error: { code: 'captcha_failed', message: 'Try again' } });
+    const answers = { 'auth/email': Promise.resolve(refused) };
+    const { notice, sends } = screen([200, guest], memory(), undefined, answers, captcha);
+    await until(() => notice.querySelector('.sign-in-captcha .fake') !== null, 'the widget');
+    sendTo(notice, 'sam@example.com');
+    await until(
+      () => notice.querySelector('.notice-field-error')?.textContent === 'Try again',
+      'the line',
+    );
+    expect(heading(notice)).toBe('Sign in');
+    sendTo(notice, 'sam@example.com');
+    await until(() => sends.length === 2, 'the second send');
+    const [first, second] = sends.map((body) => body['captcha']);
+    expect(first).toBe('token-1');
+    expect(second).toMatch(/^token-/);
+    expect(second).not.toBe(first);
+  });
+
+  it('shows the one failure card when the check fails, sending nothing, and Try again checks afresh', async () => {
+    const { captcha, made } = fakeWidget(true);
+    const { notice, sends } = screen([200, guest], memory(), undefined, {}, captcha);
+    await until(() => notice.querySelector('.sign-in-captcha .fake') !== null, 'the widget');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    sendTo(notice, 'sam@example.com');
+    await until(() => heading(notice) === 'We couldn’t check you’re a person', 'the failure card');
+    expect(sends).toStrictEqual([]);
+    [...notice.querySelectorAll('button')]
+      .find((node) => node.textContent === 'Try again')
+      ?.click();
+    await until(() => heading(notice) === 'Sign in', 'the ways in');
+    expect(made.renders).toBe(2);
   });
 });

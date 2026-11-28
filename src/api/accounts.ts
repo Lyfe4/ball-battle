@@ -18,7 +18,19 @@ export interface SendCodeRequest {
    * guest confirmed it already.
    */
   readonly adult?: true;
+  /**
+   * Turnstile's token (ADR 0079 addendum of 2026-11-28), where the build has the widget: a device's
+   * first code to an address needs one; sending the same address again within the code's 10 minutes
+   * doesn't. Checked by the server only.
+   */
+  readonly captcha?: string;
 }
+
+/** The Turnstile widget's action on the sign-in screen: the server refuses a token made for another. */
+export const CAPTCHA_ACTION = 'email-code';
+
+/** The longest Turnstile token a page may send (Cloudflare's own limit). */
+const MAX_CAPTCHA = 2048;
 
 /** POST /api/v1/auth/email/verify. */
 export interface VerifyCodeRequest {
@@ -47,10 +59,16 @@ export function normalEmail(text: string): string | undefined {
 /** The body of POST /api/v1/auth/email, if it is one. */
 export function decodeSendCode(body: unknown): SendCodeRequest | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
-  const { email, adult } = body as Record<string, unknown>;
+  const { email, adult, captcha } = body as Record<string, unknown>;
   const normal = typeof email === 'string' ? normalEmail(email) : undefined;
   if (normal === undefined) return undefined;
-  return adult === true ? { email: normal, adult } : { email: normal };
+  return {
+    email: normal,
+    ...(adult === true ? { adult } : {}),
+    ...(typeof captcha === 'string' && captcha !== '' && captcha.length <= MAX_CAPTCHA
+      ? { captcha }
+      : {}),
+  };
 }
 
 /** A code as Auth sends it: 6 digits. Spaces a phone's paste may add are dropped. */

@@ -7,6 +7,7 @@ import {
   PATH_HEADERS,
   REALTIME_ORIGINS,
   SECURITY_HEADERS,
+  TURNSTILE_ORIGIN,
 } from './security-headers.ts';
 import { PROJECTS } from './supabase-projects.ts';
 
@@ -93,5 +94,29 @@ describe('the Realtime poke’s sockets (ADR 0082)', () => {
     expect(() => withLocalRealtime("default-src 'none'")).toThrow(/No connect-src/);
     // netlify.toml, what netlify dev and every deploy serve, never names a local socket.
     expect(toml).not.toContain('ws://');
+  });
+});
+
+describe('Turnstile’s script and frame (ADR 0079 addendum of 2026-11-28)', () => {
+  const directive = (name: string): string[] =>
+    (SECURITY_HEADERS['Content-Security-Policy'] ?? '')
+      .split('; ')
+      .find((one) => one.startsWith(`${name} `))
+      ?.split(' ')
+      .slice(1) ?? [];
+
+  it('lets in Cloudflare’s script and frame, and nothing else of anyone’s', () => {
+    expect(TURNSTILE_ORIGIN).toBe('https://challenges.cloudflare.com');
+    expect(directive('script-src')).toStrictEqual(["'self'", TURNSTILE_ORIGIN]);
+    expect(directive('frame-src')).toStrictEqual([TURNSTILE_ORIGIN]);
+    for (const name of ['style-src', 'img-src', 'font-src', 'manifest-src']) {
+      expect(directive(name)).toStrictEqual(["'self'"]);
+    }
+  });
+
+  it('keeps Trusted Types required, with no default policy and nothing unsafe', () => {
+    const csp = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
+    expect(directive('require-trusted-types-for')).toStrictEqual(["'script'"]);
+    expect(csp).not.toMatch(/unsafe-|trusted-types [^;]*default|\*/);
   });
 });

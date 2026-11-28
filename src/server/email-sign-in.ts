@@ -6,8 +6,14 @@
 // - `signin`: a device without a guest, after the 16+ question; the code signs in or makes one.
 // Every code is counted before Auth is asked (rate-limit.ts): per address and guest, then per
 // network (each address once a window), then everyone's caps under Resend Free's, which answer
-// `email_busy` alike for every player.
-import { decodeSendCode, decodeVerifyCode, type SignInResponse } from '../api/accounts.ts';
+// `email_busy` alike for every player. Where Turnstile is on, a device's first code to an address
+// needs the widget's token first (ADR 0079 addendum of 2026-11-28).
+import {
+  decodeSendCode,
+  decodeVerifyCode,
+  type SendCodeRequest,
+  type SignInResponse,
+} from '../api/accounts.ts';
 import { AuthError, type AuthSession } from './auth.ts';
 import { expectAuth, newTicket } from './auth-tickets.ts';
 import { requestEmailChange, sendSignInCode, verifyCode } from './auth-sign-in.ts';
@@ -33,6 +39,7 @@ import {
   signInPlayer,
   whileNotLive,
 } from './sign-in.ts';
+import { verifyTurnstile } from './turnstile.ts';
 
 type Path = 'link' | 'existing' | 'signin';
 
@@ -62,6 +69,45 @@ async function sendFailure(error: unknown, context: RouteContext): Promise<never
   throw new ApiError(503, 'email_busy', EMAIL_BUSY, { 'Retry-After': '3600' });
 }
 
+/** Turnstile refused the token: the page shows a new widget, and the player tries again. */
+export const CAPTCHA_REFUSED = 'We couldn’t check you’re a person: try again';
+/** Cloudflare couldn't check it just now: never a code unchecked. */
+export const CAPTCHA_UNAVAILABLE =
+  'We couldn’t check you’re a person just now: try again in a minute, or continue with Google';
+
+/**
+ * Turnstile, where it is on (ADR 0079 addendum of 2026-11-28), before any code is counted: a
+ * device's first code to an address needs the widget's token. Sending the same address again from
+ * the same device within its code's 10 minutes (Send a new code) doesn't: the sealed cookie says a
+ * checked request sent it, and every code to one address is counted per address anyway. Another
+ * address is another check, so one solved widget can't spend everyone's codes.
+ */
+async function checkCaptcha(
+  request: Request,
+  context: RouteContext,
+  body: SendCodeRequest,
+  guestId: string | null,
+): Promise<void> {
+  const keys = context.deps.config.turnstile;
+  if (keys === undefined) return;
+  const sent = await sentOf(request, context);
+  if (sent?.email === body.email && sent.guestId === guestId) return;
+  const verdict = await verifyTurnstile(keys, {
+    token: body.captcha,
+    ip: context.ip,
+    hostname: new URL(request.url).hostname,
+  });
+  if (verdict.kind === 'passed') return;
+  if (verdict.kind === 'unavailable') {
+    await report(new Error(`Turnstile: ${verdict.detail}`), {
+      route: 'auth.email',
+      requestId: context.requestId,
+    });
+    throw new ApiError(503, 'captcha_failed', CAPTCHA_UNAVAILABLE, { 'Retry-After': '60' });
+  }
+  throw new ApiError(400, 'captcha_failed', CAPTCHA_REFUSED);
+}
+
 /** POST /api/v1/auth/email. */
 export async function sendCode(request: Request, context: RouteContext): Promise<void> {
   const { config, sql } = context.deps;
@@ -77,6 +123,7 @@ export async function sendCode(request: Request, context: RouteContext): Promise
     throw new ApiError(400, 'age_unconfirmed', 'Online play is for players 16 and over');
   }
   if (guest !== undefined) await checkNotLiveNow(context.deps, [guest.userId]);
+  await checkCaptcha(request, context, body, guest?.userId ?? null);
 
   // The player's own limits first: a refused one never spends everyone's.
   const address = await emailSubject(config, body.email);

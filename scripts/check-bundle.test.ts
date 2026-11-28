@@ -133,4 +133,15 @@ describe('the bundle check', () => {
     ]);
     expect(problemsIn('a.js', text, true, true, true, true, true)).toStrictEqual([]);
   });
+
+  it('refuses Turnstile in a build without VITE_TURNSTILE_SITE_KEY (ADR 0079)', () => {
+    const text = 'const T="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"';
+    expect(problemsIn('t.js', text, true, true, true, true, true)).toStrictEqual([
+      't.js loads Turnstile in a build without it (VITE_TURNSTILE_SITE_KEY unset)',
+    ]);
+    expect(problemsIn('t.js', text, true, true, true, true, true, true)).toStrictEqual([]);
+    // The request's own field and the error code are every accounts build's: not the widget.
+    const send = 'body:{email:e,...t===void 0?{}:{captcha:t}};"captcha_failed"';
+    expect(problemsIn('a.js', send, true, true)).toStrictEqual([]);
+  });
 });

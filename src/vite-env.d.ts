@@ -13,4 +13,9 @@ interface ImportMetaEnv {
   readonly VITE_TURNS?: string;
   /** "1" in builds that report the page's own errors (launch eve, `src/app/error-report.ts`). */
   readonly VITE_ERROR_REPORTS?: string;
+  /**
+   * Cloudflare Turnstile's site key (ADR 0079 addendum of 2026-11-28): set, a device's first email
+   * code waits for the widget (`src/app/captcha-build.ts`). Public by design; unset everywhere today.
+   */
+  readonly VITE_TURNSTILE_SITE_KEY?: string;
 }
