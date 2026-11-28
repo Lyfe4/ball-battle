@@ -2,6 +2,7 @@
 // database's clock. Writes are single statements guarded by the state they move from, so a raced
 // answer changes nothing it shouldn't; the service locks the series row for every move.
 import type { BestOf, Format, Side } from '../../sim/index.ts';
+import { REMATCH_ANSWER_MS } from '../../api/rematch.ts';
 import type { Sql, TransactionSql } from '../db.ts';
 
 type Db = Sql | TransactionSql;
@@ -121,4 +122,49 @@ export async function declineRematch(db: Db, seriesId: string, side: Side): Prom
   await db`
     update game.rematches set declined_by = ${side}
     where series_id = ${seriesId} and agreed_at is null and declined_by is null`;
+}
+
+/**
+ * The rematch `from` asked of `to` that still waits for an answer (ADR 0089 addendum of
+ * 2026-11-28: one live invitation per pair), by its series' id; read with both players' locks held.
+ */
+export async function rematchAskedOf(
+  db: Db,
+  from: string,
+  to: string,
+): Promise<string | undefined> {
+  const [row] = await db<{ series_id: string }[]>`
+    select r.series_id from game.rematches r join game.series s on s.id = r.series_id
+    where r.agreed_at is null and r.declined_by is null and r.new_series_id is null
+      and r.asked_at > now() - make_interval(secs => ${REMATCH_ANSWER_MS / 1000})
+      and ((r.asked_by = 'a' and s.player_a = ${from} and s.player_b = ${to})
+        or (r.asked_by = 'b' and s.player_b = ${from} and s.player_a = ${to}))
+    order by r.asked_at desc
+    limit 1`;
+  return row?.series_id;
+}
+
+/**
+ * Takes back every rematch `player` asked that still waits, but the one after `keep` (one live
+ * invitation out at a time, as `supersedeOutgoing`). Each change pokes both of its players.
+ */
+export async function withdrawRematchAsks(db: Db, player: string, keep?: string): Promise<void> {
+  await db`
+    update game.rematches r set declined_by = r.asked_by
+    from game.series s
+    where s.id = r.series_id and r.agreed_at is null and r.declined_by is null
+      and r.asked_at > now() - make_interval(secs => ${REMATCH_ANSWER_MS / 1000})
+      and ((r.asked_by = 'a' and s.player_a = ${player}) or (r.asked_by = 'b' and s.player_b = ${player}))
+      ${keep === undefined ? db`` : db`and r.series_id <> ${keep}`}`;
+}
+
+/** The two players of a series (fixed once made), read before their locks are taken. */
+export async function seriesPlayers(
+  db: Db,
+  seriesId: string,
+): Promise<readonly string[] | undefined> {
+  const [row] = await db<{ player_a: string | null; player_b: string | null }[]>`
+    select player_a, player_b from game.series where id = ${seriesId}`;
+  if (row === undefined) return undefined;
+  return [row.player_a, row.player_b].filter((one): one is string => one !== null);
 }

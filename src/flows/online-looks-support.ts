@@ -125,6 +125,20 @@ export const ONLINE_STATES: readonly OnlineState[] = [
     ready: shows('.notice', 'You sent a new challenge'),
   },
   {
+    name: 'the friend lobby, unanswered in time',
+    search: '?challenge=tokunansweredxxxxxxxxx',
+    answers: () => ({
+      [challenge('tokunansweredxxxxxxxxx')]: card({
+        status: 'stopped',
+        own: true,
+        invitee: 'Jo',
+        unanswered: true,
+        inviteeFriend: 'friend-1',
+      }),
+    }),
+    ready: shows('.notice', 'Jo didn’t answer'),
+  },
+  {
     name: 'the link lobby',
     search: '?challenge=toklinkxxxxxxxxxxxxxxx',
     answers: () => ({

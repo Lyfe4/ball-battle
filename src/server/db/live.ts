@@ -47,7 +47,7 @@ export async function liveNowOf(db: Db, player: string): Promise<LiveNow | undef
     union all
     (select 'lobby', request_id::text, format, best_of, created_at from game.challenges
       where creator = ${player} and live and series_id is null and start_id is null
-        and cancelled_at is null
+        and cancelled_at is null and expires_at > now()
         and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000}))
     union all
     (select 'start', id::text, format, best_of, agreed_at from game.starts
@@ -71,8 +71,8 @@ export async function lobbyInvitee(
 ): Promise<{ readonly invitee: string | null; readonly stopsInMs: number }> {
   const [row] = await db<{ name: string | null; stops_in_ms: number }[]>`
     select coalesce(i.username, i.display_name) as name,
-      greatest(0, ceil(extract(epoch from (c.creator_seen_at
-        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}) - now())) * 1000))::int as stops_in_ms
+      greatest(0, ceil(extract(epoch from (least(c.creator_seen_at
+        + make_interval(secs => ${LOBBY_SEEN_MS / 1000}), c.expires_at) - now())) * 1000))::int as stops_in_ms
     from game.challenges c
     left join game.profiles i on i.user_id = c.invitee
     where c.creator = ${creator} and c.request_id = ${requestId}`;
@@ -87,7 +87,7 @@ export async function lobbySeen(db: Db, challengeId: string): Promise<void> {
   await db`
     update game.challenges set creator_seen_at = now()
     where id = ${challengeId} and live and series_id is null and start_id is null
-      and cancelled_at is null
+      and cancelled_at is null and expires_at > now()
       and creator_seen_at > now() - make_interval(secs => ${LOBBY_SEEN_MS / 1000})`;
 }
 

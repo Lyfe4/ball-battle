@@ -19,6 +19,7 @@ const actions: CardActions = {
   lineups: () => Promise.resolve(),
   series: () => undefined,
   sendOwn: () => undefined,
+  sendAgain: () => undefined,
   share: () => Promise.resolve('Shared'),
   cancel: () => Promise.resolve(),
   unblock: () => Promise.resolve(),
@@ -181,6 +182,20 @@ describe('a challenge of yours that stopped (ADR 0089 addendum of 2026-11-27)', 
     ]);
     expect(card.quiet).toBeUndefined();
     expect(card.waiting).toBeUndefined();
+  });
+
+  it('says the friend didn’t answer, with Send again to them and Home (2026-11-28)', () => {
+    let again: string | undefined;
+    const card = cardFor(
+      info({ status: 'stopped', own: true, invitee: 'Jo', unanswered: true, inviteeFriend: 'f1' }),
+      { ...actions, sendAgain: (id) => (again = id) },
+    );
+    expect(card.title).toBe('Jo didn’t answer');
+    expect(card.buttons.map((button) => button.text)).toStrictEqual(['Send again', 'Home']);
+    void card.buttons[0]?.onClick();
+    expect(again).toBe('f1');
+    expect(card.waiting).toBeUndefined();
+    expect(card.quiet).toBeUndefined();
   });
 
   it('says a newer challenge took its place', () => {

@@ -12,12 +12,17 @@ const LOBBY_POLL_MS = 2_000;
  * lobby asks only this often, its heartbeat (`creator_seen_at` must stay inside 60 s).
  */
 export const LOBBY_SAFETY_MS = 20_000;
+/** Asked this long after a known end: a slow clock or a request in flight never reads it early. */
+const END_SLACK_MS = 300;
 
 export interface ChallengeLobby {
   /** Whether an ask is due (the lobby waits). */
   readonly waiting: () => boolean;
-  /** The card shows a waiting lobby: its next ask. */
-  next(): void;
+  /**
+   * The card shows a waiting lobby: its next ask, by `endsInMs` at the latest (when the server said
+   * it ends unanswered, ADR 0089 addendum of 2026-11-28), so its end shows without a poke.
+   */
+  next(endsInMs?: number): void;
   /** Stops asking (the card goes, or the sender leaves). */
   stop(): void;
 }
@@ -48,9 +53,13 @@ export function createChallengeLobby(ask: () => Promise<unknown>): ChallengeLobb
 
   return {
     waiting: () => timer !== undefined,
-    next() {
+    next(endsInMs) {
       pace = createPokePace(pokes, LOBBY_SAFETY_MS, now);
-      const ms = again ? 0 : pace.delay(LOBBY_POLL_MS);
+      const paced = pace.delay(LOBBY_POLL_MS);
+      // Just past the end, so the server's clock has passed it too.
+      const ms = again
+        ? 0
+        : Math.min(paced, endsInMs === undefined ? paced : endsInMs + END_SLACK_MS);
       again = false;
       timer = window.setTimeout(() => {
         timer = undefined;

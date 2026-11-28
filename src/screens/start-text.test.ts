@@ -25,6 +25,10 @@ const start = (over: Partial<StartView> = {}): StartView => ({
 describe('the lineups picked together (ADR 0080)', () => {
   it('say whether the other is choosing or ready, never which balls', () => {
     expect(startLine(start(), 42)).toBe('Jo is choosing · 42 s');
+    // A rematch says it is on the match before's rules (ADR 0089 addendum of 2026-11-28).
+    expect(startLine(start({ rematchOf: 's1' }), 42)).toBe(
+      'Rematch, same rules · Jo is choosing · 42 s',
+    );
     expect(startLine(start({ theirsLocked: true }), 7)).toBe('Jo is ready · 7 s');
     expect(startLine(start({ they: null }), 3)).toBe('Your friend is choosing · 3 s');
   });

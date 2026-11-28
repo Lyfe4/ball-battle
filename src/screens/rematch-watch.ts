@@ -72,6 +72,11 @@ export interface RematchWatchHost {
   endingTold(id: string): boolean;
   /** Home's way back changed: shown while the rematch waits on this player. */
   backChanged(back: RematchHomeBack | undefined): void;
+  /**
+   * Whom the sender's waiting screen waits for, while it shows (ADR 0089 addendum of 2026-11-28):
+   * no rematch banner of the same person sits on it.
+   */
+  waitingFor?(): string | undefined;
 }
 
 /** Home's way back to a rematch (2026-11-23): where it goes and what it says. */
@@ -314,7 +319,10 @@ export function createRematchWatch(root: HTMLElement, host: RematchWatchHost): R
     if (said?.kind === 'ended' && watching !== undefined && host.endingTold(watching.id)) {
       said = undefined;
     }
-    const calm = away() && !host.fighting();
+    // Never over a waiting screen for the same person: one invitation per pair (the server's rule)
+    // leaves nothing to say there, and a stray one would read as two at once.
+    const sameAsWaiting = watching !== undefined && host.waitingFor?.() === watching.they;
+    const calm = away() && !host.fighting() && !sameAsWaiting;
     // Nothing more can come of it, and nothing to say: the watch ends.
     if (rematch !== undefined && !rematchOpen(rematch) && !notYet() && said === undefined) forget();
     notice.show(
