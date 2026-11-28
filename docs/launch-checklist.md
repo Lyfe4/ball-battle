@@ -79,18 +79,18 @@ on the right are what the code and `supabase/config.toml` expect:
 
 ## Supabase: database, Realtime and the rest
 
-| Setting                                    | Staging              | Production                                  | For launch                                                                        |
-| ------------------------------------------ | -------------------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| Migrations                                 | all applied          | up to 23 November                           | Publish applies the rest (step 3), all expand only                                |
-| `game.flags` `poke`                        | on                   | off                                         | on (`poke-switch.ts on production --production`, step 10)                         |
-| RLS on `game.*`                            | on, no client grants | same (migrations)                           | none                                                                              |
-| Extensions (`pg_net`, `pgcrypto`, Vault)   | on                   | **Calvin to check** (Database > Extensions) | `pg_net` must be on for the mail relay                                            |
-| Realtime: "Allow public access" (channels) | on                   | **Calvin to check**                         | keep on: pokes use public channels with per-player topics (ADR 0092)              |
-| Realtime quotas (connections, messages)    | free plan            | free plan                                   | check weekly in Usage                                                             |
-| Cron jobs (`pg_cron`)                      | none                 | none                                        | none: the sweep is a Netlify scheduled function                                   |
-| Storage buckets                            | none                 | none                                        | none                                                                              |
-| Plan and backups                           | free                 | free: no downloadable backups               | **Pro before launch** (daily backups, 7 days), and one restore drill into staging |
-| Daily check (`supabase-daily.yml`)         | green                | green                                       | keep; it now also covers the mail watch                                           |
+| Setting                                    | Staging              | Production                                  | For launch                                                                                                                                         |
+| ------------------------------------------ | -------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Migrations                                 | all applied          | up to 23 November                           | Publish applies the rest (step 3), all expand only                                                                                                 |
+| `game.flags` `poke`                        | on                   | off                                         | on (`poke-switch.ts on production --production`, step 10)                                                                                          |
+| RLS on `game.*`                            | on, no client grants | same (migrations)                           | none                                                                                                                                               |
+| Extensions (`pg_net`, `pgcrypto`, Vault)   | on                   | **Calvin to check** (Database > Extensions) | `pg_net` must be on for the mail relay                                                                                                             |
+| Realtime: "Allow public access" (channels) | on                   | **Calvin to check**                         | Calvin's call, staging first: pokes use listen-only private channels (ADR 0092 addendum), so off works and also refuses strangers' public channels |
+| Realtime quotas (connections, messages)    | free plan            | free plan                                   | check weekly in Usage                                                                                                                              |
+| Cron jobs (`pg_cron`)                      | none                 | none                                        | none: the sweep is a Netlify scheduled function                                                                                                    |
+| Storage buckets                            | none                 | none                                        | none                                                                                                                                               |
+| Plan and backups                           | free                 | free: no downloadable backups               | **Pro before launch** (daily backups, 7 days), and one restore drill into staging                                                                  |
+| Daily check (`supabase-daily.yml`)         | green                | green                                       | keep; it now also covers the mail watch                                                                                                            |
 
 ## Switches, on launch day
 

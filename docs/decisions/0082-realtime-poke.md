@@ -9,6 +9,8 @@
   inbox's 30 s wait becomes a slow safety read; Auth gains hooks)
 - Builds on: `docs/realtime-poke-proposal.md` (the reasoning, the cost tables and the PR plan),
   ADR 0080, ADR 0081 (the poke sketched in its cost section)
+- Amended by: ADR 0092's addendum of 2026-11-28 (the topics are private, listen-only channels:
+  only the server can send a poke)
 
 ## Context
 

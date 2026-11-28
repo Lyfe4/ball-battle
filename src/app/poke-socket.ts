@@ -1,12 +1,12 @@
 // The Realtime poke's socket (ADR 0082): our own small Phoenix channels client, no dependency
-// (decision 3). It joins the player's public topic, says whether it can be trusted ("up": joined
+// (decision 3). It joins the player's private topic (listen-only, ADR 0092), says whether it can be trusted ("up": joined
 // and its last heartbeat answered) and hands on each poke's event name. It never reads anything
 // itself: on a poke, or on every move from down to up (pokes sent while down are lost), the
 // screens do the read they always do. While it is down they poll exactly as before.
 //
 // Phoenix's JSON protocol, version 1.0.0: each message is `{ topic, event, payload, ref, join_ref }`;
 // a join and a heartbeat are answered by `phx_reply` with the same `ref`. Realtime drops a socket
-// that stops sending heartbeats, and replays nothing on a public channel, so a lost poke is caught
+// that stops sending heartbeats, and replays nothing on a broadcast channel, so a lost poke is caught
 // only by the screens' own safety reads.
 import { POKE_EVENTS, type PokeEvent, type PokeOn } from '../api/poke.ts';
 
@@ -203,7 +203,7 @@ export function openPokeSocket(options: PokeSocketOptions): PokeSocket {
         channel,
         'phx_join',
         {
-          config: { broadcast: { self: false, ack: false }, presence: { key: '' }, private: false },
+          config: { broadcast: { self: false, ack: false }, presence: { key: '' }, private: true },
         },
         String(ref + 1),
       );

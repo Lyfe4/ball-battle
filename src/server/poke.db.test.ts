@@ -121,7 +121,8 @@ describe('a live match', () => {
       }
       // Realtime adds the message's own id; nothing of the game's.
       expect(Object.keys(row.payload as object)).toStrictEqual(['id']);
-      expect(row.private).toBe(false);
+      // Private: browsers may only listen there (ADR 0092, `poke-isolation.db.test.ts`).
+      expect(row.private).toBe(true);
     }
   });
 });

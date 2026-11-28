@@ -90,6 +90,8 @@ describe('migrations', () => {
       '8612d4dbe535dff99b0ab0a205b6f5653b504ac3ed0197ef5d6f04b154f3be20',
     '20261128130000_player_keys_and_orphans.sql':
       '862c0f86ab0151840a74c932fa295044df330ef50d2413619e381ee466a2271e',
+    '20261128140000_poke_private.sql':
+      '851449d8b3877a218e2ce0d58e894941d301e8d5757624268a1d4564e58321fa',
   };
   const dir = new URL('../supabase/migrations/', import.meta.url);
   const files = readdirSync(dir).filter((file) => file.endsWith('.sql'));
