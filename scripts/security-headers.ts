@@ -13,6 +13,16 @@ export const REALTIME_ORIGINS: readonly string[] = [
   'wss://wtqmptuhonbtjwxjwtwl.supabase.co',
 ];
 
+/**
+ * Cloudflare Turnstile (ADR 0079 addendum of 2026-11-28): its script and the frame it draws, on the
+ * sign-in screen's email step only, and only in a build with a site key (`src/ui/turnstile.ts`; a
+ * build without one holds no such URL, `check-bundle.ts`). The CSP is one static header for every
+ * context, so it is named here whether or not a deploy has the key. Measured under this policy in
+ * Chromium, Firefox and WebKit with Cloudflare's test keys, Trusted Types on: no violation, nothing
+ * else needed (`scripts/turnstile-probe.ts`). Its script URL is made by a policy of our own.
+ */
+export const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
 /** The local stack's Realtime (`supabase start`): `pnpm preview` only, never shipped. */
 export const LOCAL_REALTIME = 'ws://127.0.0.1:54321';
 
@@ -20,7 +30,8 @@ export const LOCAL_REALTIME = 'ws://127.0.0.1:54321';
  * Everything the built app loads comes from its own origin: one module script, one stylesheet and
  * the self-hosted font files from /assets, the icons and the web app manifest; the network calls
  * are to the game's own API on the same origin (ADR 0052, `connect-src 'self'`) and Realtime's
- * socket for the poke (ADR 0082). Trusted
+ * socket for the poke (ADR 0082). The one exception is Turnstile's script and frame, where a build
+ * checks a first email code (TURNSTILE_ORIGIN). Trusted
  * Types are required, so no string can ever reach an HTML or script sink: the game builds its DOM
  * with createElement and textContent only. Nothing else is allowed. Inline styles set through the CSSOM (element.style) are
  * not subject to CSP, so the HUD and canvas sizing keep working under style-src 'self'.
@@ -28,12 +39,13 @@ export const LOCAL_REALTIME = 'ws://127.0.0.1:54321';
 const policyWith = (connect: readonly string[]): string =>
   [
     "default-src 'none'",
-    "script-src 'self'",
+    `script-src 'self' ${TURNSTILE_ORIGIN}`,
     "style-src 'self'",
     "img-src 'self'",
     "font-src 'self'",
     "manifest-src 'self'",
     ['connect-src', "'self'", ...connect].join(' '),
+    `frame-src ${TURNSTILE_ORIGIN}`,
     "base-uri 'none'",
     "form-action 'none'",
     "frame-ancestors 'none'",
