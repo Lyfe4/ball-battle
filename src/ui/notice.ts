@@ -6,7 +6,7 @@
 // a quiet action.
 import { busyOnClick } from './busy-button.ts';
 import { element } from './dom.ts';
-import { createScreenHeader } from './screen-header.ts';
+import { createScreenHeader, type ScreenHeaderOptions } from './screen-header.ts';
 import type { NoticeContent, NoticeField } from './notice-content.ts';
 import { createStepsBox } from './steps-box.ts';
 import { createSticker } from './sticker.ts';
@@ -126,9 +126,16 @@ function createField() {
   };
 }
 
-/** A notice drawing into `root`; `onBack` is its header's Back. */
-export function createNotice(root: HTMLElement, onBack: () => void): Notice {
-  const header = createScreenHeader('', 'Back', onBack);
+/**
+ * A notice drawing into `root`; `onBack` is its header's Back. `tab`: a tab screen's notice, with
+ * the tab's header (no Back, ADR 0081).
+ */
+export function createNotice(
+  root: HTMLElement,
+  onBack: () => void,
+  options: Pick<ScreenHeaderOptions, 'tab'> = {},
+): Notice {
+  const header = createScreenHeader('', 'Back', onBack, options);
   const sticker = createSticker();
   const body = element('div', 'notice-body');
   const footer = element('div', 'screen-footer');

@@ -64,6 +64,8 @@ export async function openAs(build: Build, search: string, answers: Answers = {}
   document.body.replaceChildren(...body.children);
   history.replaceState(null, '', `${location.pathname}${search}`);
   await import('../main.ts');
+  // Online play's code is a chunk of its own (online-lazy.ts): the page is ready once it has come.
+  if (build.online) await import('../screens/online-mount.ts');
   await settle();
 }
 
