@@ -2,7 +2,6 @@
 // of the same player, a reload and the browser's Back, at the lineup, mid-match and at the result.
 // Each must show where things stand, with a way on, and never let one player's two tabs disagree
 // about the match. `netlify dev` serving an online build; iPhone Safari's visible size, Chromium.
-import { appendFileSync } from 'node:fs';
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -28,12 +27,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await closePhones(phones);
 });
-
-const log = (...parts: unknown[]) => {
-  appendFileSync('proposals-overnight2/leave-log.txt', `${parts.map(String).join(' ')}\n`);
-};
-const textOf = async (page: Page) =>
-  (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 260);
 
 /** Both on the lineup screen (not locked in). */
 async function lineups(sender: Page, friend: Page): Promise<void> {
@@ -70,7 +63,6 @@ describe('leaving a live match and coming back', () => {
       for (const page of [tab, friend, sender]) {
         await page.waitForURL(/[?&]online=/, { timeout: 20_000 });
       }
-      log('first tab after the second locked in:', await textOf(sender));
       expect(phones.errors).toStrictEqual([]);
     },
   );
@@ -88,7 +80,6 @@ describe('leaving a live match and coming back', () => {
       await sender.getByRole('button', { name: 'Leave', exact: true }).click();
       await panelOf(friend).locator('.series-result').waitFor({ timeout: SOON_MS });
       await panelOf(tab).locator('.series-result').waitFor({ timeout: SOON_MS });
-      log('second tab after Leave in the first:', await textOf(tab));
       expect(phones.errors).toStrictEqual([]);
     },
   );
@@ -117,7 +108,6 @@ describe('leaving a live match and coming back', () => {
       await panelOf(sender)
         .getByRole('button', { name: /^Rematch/ })
         .waitFor({ timeout: SOON_MS });
-      log('result after a reload:', await textOf(sender));
       expect(phones.errors).toStrictEqual([]);
     },
   );
@@ -132,11 +122,9 @@ describe('leaving a live match and coming back', () => {
       const match = sender.url();
       await sender.goBack();
       await sender.waitForTimeout(1_500);
-      log('Back mid-match shows:', sender.url(), await textOf(sender));
       await sender.goto(`${BASE}/`);
       const way = sender.getByRole('button', { name: /^Back to your/ });
       await way.waitFor({ timeout: SOON_MS });
-      log('home mid-match offers:', await way.innerText());
       await way.click();
       await sender.waitForURL(match, { timeout: SOON_MS });
       // The match went on meanwhile: the friend still sees it under way, not ended.

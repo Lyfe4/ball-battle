@@ -4,7 +4,6 @@
 // it must say where things stand within a few seconds of waking, with a way on: never stuck on a
 // screen that has ended. Shorter sleeps are live-sync's and offline-lineup's. `netlify dev`
 // serving an online build; iPhone Safari's visible size, Chromium.
-import { appendFileSync } from 'node:fs';
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LOBBY_SEEN_MS } from '../api/live.ts';
@@ -79,13 +78,6 @@ async function lineups(sender: Page, friend: Page): Promise<void> {
   for (const page of [sender, friend]) await page.waitForURL(/[?&]start=/, { timeout: 20_000 });
 }
 
-const log = (...parts: unknown[]) => {
-  appendFileSync(
-    'proposals-overnight2/sleep-log.txt',
-    `${parts.map(String).join(' ')}
-`,
-  );
-};
 const textOf = async (page: Page) =>
   (await page.locator('main, body').first().innerText()).replace(/\s+/g, ' ').slice(0, 300);
 
@@ -100,7 +92,6 @@ describe('a phone that sleeps and wakes', () => {
       await expect
         .poll(async () => textOf(sender), { timeout: WAKE_MS })
         .not.toMatch(/Waiting for anyone with the link/);
-      log('lobby woke to:', await textOf(sender));
     },
   );
 
@@ -112,7 +103,6 @@ describe('a phone that sleeps and wakes', () => {
       await lineups(sender, friend);
       await sleep(sender, 80_000);
       await sender.waitForURL(/[?&]online=/, { timeout: WAKE_MS });
-      log('lineup woke to:', await textOf(sender));
     },
   );
 
@@ -126,8 +116,6 @@ describe('a phone that sleeps and wakes', () => {
       await sleep(sender, 70_000);
       await panelOf(sender).locator('.series-result').waitFor({ timeout: WAKE_MS });
       await panelOf(friend).locator('.series-result').waitFor({ timeout: WAKE_MS });
-      log('match woke to:', await textOf(sender));
-      log('friend sees:', await textOf(friend));
     },
   );
 });
